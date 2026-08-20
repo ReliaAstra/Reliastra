@@ -10,6 +10,38 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
 
+_LOCAL_DB_HOSTS = {
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "postgres",
+    "reliastra-postgres",
+}
+
+
+def _normalise_db_url_for_parse(url: str) -> str:
+    """Strip the SQLAlchemy driver suffix so urlparse can read the host."""
+    if url.startswith("postgresql+"):
+        rest = url.split("://", 1)[-1]
+        return f"postgresql://{rest}"
+    return url
+
+
+def _hostname_from_db_url(url: str) -> str:
+    return (urlparse(_normalise_db_url_for_parse(url)).hostname or "").lower()
+
+
+def _is_supabase_postgres_host(host: str) -> bool:
+    host = (host or "").lower()
+    return (
+        host.endswith(".supabase.co")
+        or host.endswith(".supabase.com")
+        or host.endswith("supabase.co")
+        or host.endswith("supabase.com")
+        or "pooler.supabase" in host
+    )
+
+
 _KNOWN_INSECURE_SECRETS = {
     "reliastra-super-secret-key-that-is-at-least-32-characters-long-for-security",
     "reliastra-dev-only-change-in-production-key",
@@ -29,17 +61,19 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/reliastra",
-        description="Database connection URL with asyncpg driver. "
-                    "Accepts both internal and external PostgreSQL URLs (e.g. Supabase, Neon, RDS). "
+        description="Supabase Postgres connection URL with the asyncpg driver. "
+                    "SQLite and in-cluster PostgreSQL are not supported. "
+                    "Use the URI from Supabase → Project Settings → Database "
+                    "(pooler on port 6543 is preferred for the API). "
                     "For SSL databases, set DATABASE_SSL_MODE=require.",
     )
     DATABASE_SSL_MODE: str = Field(
         default="",
         description="PostgreSQL SSL mode: disable | allow | prefer | require | "
                     "verify-ca | verify-full. Appended to DATABASE_URL if set. "
-                    "Supabase and most managed Postgres services require 'require'. "
-                    "Empty/'prefer' negotiates TLS opportunistically (asyncpg "
-                    "default); 'disable' forces plaintext.",
+                    "Empty defaults to 'require' when DATABASE_URL points at "
+                    "Supabase. 'prefer' negotiates TLS opportunistically "
+                    "(asyncpg default); 'disable' forces plaintext.",
     )
     REDIS_URL: str = Field(
         default="redis://localhost:6379/0",
@@ -175,10 +209,10 @@ class Settings(BaseSettings):
     def database_url_with_ssl(self) -> str:
         """Return DATABASE_URL with SSL parameters applied if configured.
 
-        Only PostgreSQL URLs get sslmode appended; SQLite and other drivers
-        are returned unchanged.  Also normalises bare ``postgresql://`` URLs
-        to ``postgresql+asyncpg://`` so that ``create_async_engine`` picks
-        the correct driver even when the environment variable omits it.
+        Only PostgreSQL URLs get sslmode appended. Bare ``postgresql://``
+        URLs are normalised to ``postgresql+asyncpg://`` so that
+        ``create_async_engine`` picks the correct driver even when the
+        environment variable omits it.
         """
         url = self.DATABASE_URL
         # Normalise bare postgresql:// → postgresql+asyncpg://
@@ -193,77 +227,89 @@ class Settings(BaseSettings):
         return urlunparse(parsed._replace(query=new_query))
 
     @model_validator(mode="after")
-    def _validate_supabase_s3_endpoint(self) -> type[Settings]:
+    def _require_postgres_database_url(self) -> Settings:
+        """SQLite and non-Postgres drivers are not supported."""
+        url = (self.DATABASE_URL or "").strip()
+        scheme = url.split(":", 1)[0].lower()
+        if not url or not scheme.startswith("postgresql"):
+            raise ValueError(
+                "DATABASE_URL must be a PostgreSQL URL (Supabase Postgres). "
+                "SQLite and other drivers are not supported. "
+                f"Got scheme {scheme!r}."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _default_ssl_mode_for_supabase(self) -> Settings:
+        """Supabase always serves TLS — default sslmode to require."""
+        if self.DATABASE_SSL_MODE:
+            return self
+        if _is_supabase_postgres_host(_hostname_from_db_url(self.DATABASE_URL)):
+            self.DATABASE_SSL_MODE = "require"
+        return self
+
+    @model_validator(mode="after")
+    def _validate_supabase_s3_endpoint(self) -> Settings:
         """Enforce the Supabase Storage S3 endpoint shape.
 
         Only the Supabase S3 API is supported: the endpoint must be an
         https:// URL ending in ``/storage/v1/s3``.  A trailing slash is
-        stripped.  An empty endpoint is allowed (storage is simply
-        unconfigured) — the production validator below logs a warning
-        when S3 is unconfigured in production but does NOT crash.
+        stripped.  An empty endpoint is allowed outside production
+        (storage is simply unconfigured).
         """
         endpoint = self.SUPABASE_S3_ENDPOINT.strip()
         if not endpoint:
             return self
         if urlparse(endpoint).scheme != "https":
-            logger.warning(
-                "SUPABASE_S3_ENDPOINT is not an https:// URL (got '%s'). "
-                "Resetting to empty — storage will be unavailable. "
-                "Set a valid Supabase Storage S3 endpoint like "
-                "'https://<project-ref>.supabase.co/storage/v1/s3'.",
-                endpoint,
+            raise ValueError(
+                "SUPABASE_S3_ENDPOINT must be an https:// URL, e.g. "
+                "'https://<project-ref>.supabase.co/storage/v1/s3'."
             )
-            self.SUPABASE_S3_ENDPOINT = ""
-            return self
         if not endpoint.rstrip("/").endswith("/storage/v1/s3"):
-            logger.warning(
-                "SUPABASE_S3_ENDPOINT '%s' does not end in '/storage/v1/s3'. "
-                "Resetting to empty — only Supabase Storage's S3-compatible "
-                "API is supported.",
-                endpoint,
+            raise ValueError(
+                "SUPABASE_S3_ENDPOINT must end in '/storage/v1/s3'. "
+                "Only Supabase Storage's S3-compatible API is supported."
             )
-            self.SUPABASE_S3_ENDPOINT = ""
-            return self
         self.SUPABASE_S3_ENDPOINT = endpoint.rstrip("/")
         return self
 
     @model_validator(mode="after")
-    def _reject_insecure_defaults_in_production(self) -> type[Settings]:
-        if self.ENVIRONMENT == "production":
-            if self.SECRET_KEY in _KNOWN_INSECURE_SECRETS:
-                raise ValueError(
-                    "SECRET_KEY must be changed from the default value in production. "
-                    "Set a cryptographically random SECRET_KEY environment variable."
-                )
-            missing = [
-                name
-                for name, value in (
-                    ("SUPABASE_S3_ENDPOINT", self.SUPABASE_S3_ENDPOINT),
-                    ("SUPABASE_S3_REGION", self.SUPABASE_S3_REGION),
-                    ("SUPABASE_S3_ACCESS_KEY_ID", self.SUPABASE_S3_ACCESS_KEY_ID),
-                    (
-                        "SUPABASE_S3_SECRET_ACCESS_KEY",
-                        self.SUPABASE_S3_SECRET_ACCESS_KEY,
-                    ),
-                    ("SUPABASE_S3_BUCKET", self.SUPABASE_S3_BUCKET),
-                )
-                if not value
-            ]
-            if missing:
-                logger.warning(
-                    "Production is missing required Supabase Storage S3 configuration. "
-                    "Missing: %s. Storage operations will fail until these are set. "
-                    "Configure them from the Supabase dashboard "
-                    "(Storage → S3 Access Keys).",
-                    ", ".join(missing),
-                )
-            if self.SUPABASE_S3_ENDPOINT and not self.SUPABASE_S3_ENDPOINT.lower().startswith("https://"):
-                logger.warning(
-                    "SUPABASE_S3_ENDPOINT '%s' is not an https:// URL in production. "
-                    "Resetting to empty — storage will be unavailable.",
-                    self.SUPABASE_S3_ENDPOINT,
-                )
-                self.SUPABASE_S3_ENDPOINT = ""
+    def _reject_insecure_defaults_in_production(self) -> Settings:
+        if self.ENVIRONMENT != "production":
+            return self
+        if self.SECRET_KEY in _KNOWN_INSECURE_SECRETS:
+            raise ValueError(
+                "SECRET_KEY must be changed from the default value in production. "
+                "Set a cryptographically random SECRET_KEY environment variable."
+            )
+        missing = [
+            name
+            for name, value in (
+                ("SUPABASE_S3_ENDPOINT", self.SUPABASE_S3_ENDPOINT),
+                ("SUPABASE_S3_REGION", self.SUPABASE_S3_REGION),
+                ("SUPABASE_S3_ACCESS_KEY_ID", self.SUPABASE_S3_ACCESS_KEY_ID),
+                (
+                    "SUPABASE_S3_SECRET_ACCESS_KEY",
+                    self.SUPABASE_S3_SECRET_ACCESS_KEY,
+                ),
+                ("SUPABASE_S3_BUCKET", self.SUPABASE_S3_BUCKET),
+            )
+            if not value
+        ]
+        if missing:
+            raise ValueError(
+                "Production is missing required Supabase Storage S3 configuration. "
+                f"Missing: {', '.join(missing)}. "
+                "Configure them from the Supabase dashboard "
+                "(Storage → S3 Access Keys)."
+            )
+        host = _hostname_from_db_url(self.DATABASE_URL)
+        if host in _LOCAL_DB_HOSTS or not _is_supabase_postgres_host(host):
+            raise ValueError(
+                "DATABASE_URL must point at Supabase Postgres in production "
+                "(host ending in .supabase.co / .supabase.com), not a "
+                "local or in-cluster database."
+            )
         return self
 
     # Google OAuth settings

@@ -193,6 +193,11 @@ def test_config_accepts_supabase_endpoint_and_strips_trailing_slash():
     assert parsed.SUPABASE_S3_ENDPOINT == VALID_ENDPOINT
 
 
+_PROD_DB = (
+    "postgresql+asyncpg://postgres.abc:pass@aws-0-eu-west-3.pooler.supabase.com:6543/postgres"
+)
+
+
 def test_production_requires_complete_supabase_s3_config(monkeypatch):
     for var in (
         "SUPABASE_S3_ENDPOINT",
@@ -200,6 +205,8 @@ def test_production_requires_complete_supabase_s3_config(monkeypatch):
         "SUPABASE_S3_ACCESS_KEY_ID",
         "SUPABASE_S3_SECRET_ACCESS_KEY",
         "SUPABASE_S3_BUCKET",
+        "DATABASE_URL",
+        "DATABASE_SSL_MODE",
     ):
         monkeypatch.delenv(var, raising=False)
 
@@ -208,4 +215,46 @@ def test_production_requires_complete_supabase_s3_config(monkeypatch):
             _env_file=None,
             ENVIRONMENT="production",
             SECRET_KEY="x" * 48,
+            DATABASE_URL=_PROD_DB,
         )
+
+
+def test_rejects_sqlite_database_url():
+    with pytest.raises(ValueError, match="PostgreSQL"):
+        Settings(
+            _env_file=None,
+            DATABASE_URL="sqlite+aiosqlite:///./app.db",
+        )
+
+
+def test_production_rejects_local_database_url(monkeypatch):
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with pytest.raises(ValueError, match="Supabase"):
+        Settings(
+            _env_file=None,
+            ENVIRONMENT="production",
+            SECRET_KEY="x" * 48,
+            DATABASE_URL="postgresql+asyncpg://postgres:postgres@localhost:5432/reliastra",
+            SUPABASE_S3_ENDPOINT=VALID_ENDPOINT,
+            SUPABASE_S3_REGION="eu-west-3",
+            SUPABASE_S3_ACCESS_KEY_ID="id",
+            SUPABASE_S3_SECRET_ACCESS_KEY="secret",
+            SUPABASE_S3_BUCKET="bucket",
+        )
+
+
+def test_production_accepts_supabase_database_and_s3(monkeypatch):
+    monkeypatch.delenv("DATABASE_SSL_MODE", raising=False)
+    parsed = Settings(
+        _env_file=None,
+        ENVIRONMENT="production",
+        SECRET_KEY="x" * 48,
+        DATABASE_URL=_PROD_DB,
+        SUPABASE_S3_ENDPOINT=VALID_ENDPOINT,
+        SUPABASE_S3_REGION="eu-west-3",
+        SUPABASE_S3_ACCESS_KEY_ID="id",
+        SUPABASE_S3_SECRET_ACCESS_KEY="secret",
+        SUPABASE_S3_BUCKET="bucket",
+    )
+    assert parsed.DATABASE_SSL_MODE == "require"
+    assert parsed.SUPABASE_S3_ENDPOINT == VALID_ENDPOINT

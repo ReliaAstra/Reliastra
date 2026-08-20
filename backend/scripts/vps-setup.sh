@@ -50,14 +50,13 @@ if [ ! -f .env.production ]; then
 # Generate a strong secret: python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 # ── Required ──────────────────────────────────────────────────
-DATABASE_URL=postgresql+asyncpg://reliastra:CHANGE_ME_DB_PASSWORD@postgres:5432/reliastra
+# Supabase Postgres (pooler URI, SSL required). Never a local Postgres container.
+DATABASE_URL=postgresql+asyncpg://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-YOUR_REGION.pooler.supabase.com:6543/postgres
+DATABASE_SSL_MODE=require
 REDIS_URL=redis://redis:6379/0
 SECRET_KEY=CHANGE_ME_GENERATE_A_48_CHAR_SECRET
 ENVIRONMENT=production
 CORS_ORIGINS=["https://yourdomain.com"]
-
-# ── Postgres ───────────────────────────────────────────────────
-POSTGRES_PASSWORD=CHANGE_ME_DB_PASSWORD
 
 # ── Server ─────────────────────────────────────────────────────
 API_PORT=8000
@@ -91,7 +90,7 @@ PAYSTACK_SECRET_KEY=
 PAYSTACK_PUBLIC_KEY=
 EOF
     echo -e "${GREEN}.env.production created — EDIT IT before first deploy!${NC}"
-    echo -e "${RED}IMPORTANT: Change SECRET_KEY, POSTGRES_PASSWORD, and DATABASE_URL${NC}"
+    echo -e "${RED}IMPORTANT: Change SECRET_KEY and set DATABASE_URL to your Supabase Postgres URI${NC}"
 else
     echo -e "${GREEN}.env.production already exists.${NC}"
 fi

@@ -1,5 +1,6 @@
 # Dockerfile for Reliastra-backend
-# Self-contained: PostgreSQL + Redis + Celery worker/beat + API in one container.
+# API + Redis + Celery worker/beat in one container.
+# PostgreSQL lives on Supabase; object storage is Supabase Storage (S3).
 # For single-container PaaS platforms (ZevCloud, Railway, Render, etc.)
 # ---------------------------------------------------------------------------
 
@@ -24,48 +25,37 @@ RUN python -m venv --copies /opt/venv && \
     pip install --upgrade pip setuptools build && \
     pip install .
 
-# ── Stage 2: Runtime image with all services ─────────────────────────────
+# ── Stage 2: Runtime image ───────────────────────────────────────────────
 FROM python:3.12-slim
 
-# Install PostgreSQL, Redis, supervisord, and utilities
-# Debian Trixie ships PostgreSQL 17; gosu replaces Alpine's su-exec
+# Redis (queue/cache) + supervisord. No PostgreSQL — the app uses Supabase.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql \
     redis-server \
     supervisor \
-    gosu \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python venv from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 
-# Copy application code
 COPY . .
 
 # Install Playwright Chromium for evidence generation tasks
 RUN playwright install --with-deps chromium 2>/dev/null || true
 
-# Create required directories
-RUN mkdir -p /app/templates /var/lib/postgresql/data /var/run/postgresql /var/log/supervisor /var/log/postgresql \
-    && chown -R postgres:postgres /var/run/postgresql /var/log/postgresql
+RUN mkdir -p /app/templates /var/log/supervisor /var/log/redis
 
-# Copy supervisord config and entrypoint
 COPY supervisord.conf /app/supervisord.conf
 COPY scripts/entrypoint.sh /app/scripts/entrypoint.sh
 RUN chmod +x /app/scripts/entrypoint.sh
 
-# Expose the API port
 EXPOSE 8000
 
-# Health check for the container orchestrator.
-# start-period must cover initdb + bootstrap Postgres + Alembic + supervisord
-# boot on a cold volume; 60s was too short and caused premature rollbacks.
-HEALTHCHECK --interval=15s --timeout=10s --start-period=180s --retries=8 \
+# start-period covers Alembic against Supabase + supervisord boot.
+HEALTHCHECK --interval=15s --timeout=10s --start-period=90s --retries=8 \
     CMD curl -sf http://localhost:8000/health/live || exit 1
 
-# The entrypoint bootstraps Postgres, runs migrations, then hands off to supervisord
+# The entrypoint runs migrations against DATABASE_URL (Supabase), then supervisord.
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]

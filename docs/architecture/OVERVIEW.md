@@ -9,7 +9,7 @@ Next.js frontend   (frontend/)
   ↓  HTTPS / existing API contract
 Reliastra API      (backend/ FastAPI)
   ↓
-PostgreSQL · Redis · Celery · Supabase Storage (S3)
+Supabase Postgres · Redis · Celery · Supabase Storage (S3)
   ↓
 External vendor APIs, OAuth, Paystack, SMTP
 ```
@@ -19,7 +19,7 @@ External vendor APIs, OAuth, Paystack, SMTP
 | Path | Stack | Role |
 |------|--------|------|
 | `frontend/` | Next.js 16, React 19, Tailwind, Prisma (SQLite) | Marketing site, partner network UI, Next.js API routes |
-| `backend/` | FastAPI, SQLAlchemy, Celery, Redis, PostgreSQL | Product API: monitoring, incidents, evidence, billing, orgs |
+| `backend/` | FastAPI, SQLAlchemy, Celery, Redis, Supabase Postgres + S3 | Product API: monitoring, incidents, evidence, billing, orgs |
 
 They communicate over the existing HTTP API. They do not share a runtime, database, or package manager.
 
@@ -40,6 +40,7 @@ The FastAPI surface remains `/v1/*` (JWT, API keys, public vendor/verify routes)
 - Incident detection, deterministic attribution, cryptographic SLA evidence PDFs
 - Notifications (email, Slack, PagerDuty, webhooks)
 - Billing via Paystack
+- Persistence via Supabase Postgres (not a local or in-container PostgreSQL)
 - Object storage via Supabase Storage S3 (not a local MinIO service)
 
 ## Deployment

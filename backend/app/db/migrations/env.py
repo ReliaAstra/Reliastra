@@ -19,7 +19,7 @@ target_metadata = Base.metadata
 def _build_ssl_connect_args(db_url: str, pooler_compat: bool = False) -> dict:
     """Build asyncpg-compatible SSL connect args from DATABASE_SSL_MODE or URL query.
 
-    Only returns args for PostgreSQL URLs; all other drivers return an empty dict.
+    Only returns args for PostgreSQL URLs.
     When *pooler_compat* is True, also disables statement caching for PgBouncer.
 
     The sslmode → connect_args translation lives in

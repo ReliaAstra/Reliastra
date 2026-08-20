@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL, REDIS_URL, and SECRET_KEY at minimum
+# Edit .env — set DATABASE_URL (Supabase Postgres), REDIS_URL, SECRET_KEY, and SUPABASE_S3_*
 
 # 3. Run database migrations
 alembic upgrade head
@@ -58,8 +58,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL with asyncpg driver (works with Supabase, Neon, RDS, etc.) | `postgresql+asyncpg://user:pass@host:5432/reliastra` |
-| `DATABASE_SSL_MODE` | SSL mode for external databases (`disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`) | empty (`prefer`-like asyncpg default) |
+| `DATABASE_URL` | Supabase Postgres with asyncpg driver (pooler URI preferred) | `postgresql+asyncpg://postgres.<ref>:<pass>@aws-0-<region>.pooler.supabase.com:6543/postgres` |
+| `DATABASE_SSL_MODE` | SSL mode (`disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`). Defaults to `require` for Supabase hosts. | `require` |
 | `REDIS_URL` | Redis for rate limiting, Celery, idempotency | `redis://host:6379/0` |
 | `SECRET_KEY` | JWT signing key (min 32 chars) | Use `python -c "import secrets; print(secrets.token_urlsafe(48))"` |
 | `ENVIRONMENT` | Set to `production` | `production` |
@@ -94,8 +94,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ### Deployment Checklist
 
-1. Set all required environment variables (DATABASE_URL, REDIS_URL, SECRET_KEY, ENVIRONMENT, CORS_ORIGINS)
-2. Ensure PostgreSQL 15+ and Redis 7+ are accessible from the container
+1. Set all required environment variables (`DATABASE_URL` to Supabase Postgres, `REDIS_URL`, `SECRET_KEY`, `ENVIRONMENT`, `CORS_ORIGINS`)
+2. Ensure Redis 7+ is accessible from the container (Postgres lives on Supabase)
 3. Run `alembic upgrade head` to create database tables
 4. Set OAuth variables to enable Google/GitHub sign-in
 5. Set `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY` to enable billing
@@ -108,12 +108,13 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 docker-compose up -d --build
 ```
 
-This starts PostgreSQL, Redis, MailHog, the API server, and Celery workers. The API auto-runs migrations on startup.
+This starts Redis, MailHog, the API server, and Celery workers. The API auto-runs migrations on startup against **Supabase Postgres**.
 
-Object storage is **Supabase Storage (S3) only** — local dev talks to a real
-Supabase bucket. Set `SUPABASE_S3_*` in `.env` (see `.env.example`) before
-`docker-compose up`; compose fails loudly if they are missing. Use a
-**separate dev bucket**, never the production one.
+Postgres and object storage are **Supabase only** — there is no local
+PostgreSQL or MinIO. Set `DATABASE_URL` (Supabase pooler URI) and
+`SUPABASE_S3_*` in `.env` (see `.env.example`) before `docker-compose up`;
+compose fails loudly if they are missing. Use a **separate dev bucket**,
+never the production one.
 
 ### Manual Storage Smoke Test
 
