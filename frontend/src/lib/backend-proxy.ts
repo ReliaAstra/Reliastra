@@ -12,7 +12,8 @@ export async function proxyToBackend(
     noBody?: boolean;
   }
 ): Promise<Response> {
-  const url = `${BACKEND_URL}/v1${path}`;
+  const incoming = new URL(req.url);
+  const url = `${BACKEND_URL}/v1${path}${incoming.search}`;
   const method = options?.method || req.method;
 
   const headers: Record<string, string> = {};
