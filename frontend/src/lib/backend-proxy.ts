@@ -1,4 +1,6 @@
-const BACKEND_URL = 'https://reliastra-backend.zevcloud.app';
+const BACKEND_URL =
+  process.env.RELIASTRA_API_URL?.replace(/\/$/, '') ||
+  'https://api.reliastra.com';
 
 export async function proxyToBackend(
   path: string,

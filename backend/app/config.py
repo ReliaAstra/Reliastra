@@ -134,7 +134,12 @@ class Settings(BaseSettings):
         description="Default sender email address",
     )
     CORS_ORIGINS: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"],
+        default=[
+            "http://localhost:3000",
+            "http://localhost:8000",
+            "https://reliastra.com",
+            "https://www.reliastra.com",
+        ],
         description="Allowed CORS origins (must be explicit when credentials=True)",
     )
     CORS_ALLOW_CREDENTIALS: bool = Field(

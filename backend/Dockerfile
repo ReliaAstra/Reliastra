@@ -1,7 +1,7 @@
 # Dockerfile for Reliastra-backend
 # API + Redis + Celery worker/beat in one container.
 # PostgreSQL lives on Supabase; object storage is Supabase Storage (S3).
-# For single-container PaaS platforms (ZevCloud, Railway, Render, etc.)
+# For single-container PaaS platforms (Railway, Render, etc.)
 # ---------------------------------------------------------------------------
 
 # ── Stage 1: Build Python venv ───────────────────────────────────────────
