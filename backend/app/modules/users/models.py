@@ -1,0 +1,53 @@
+from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+from app.db.base import Base, UUIDMixin, TimestampMixin
+from datetime import datetime, timezone
+
+
+class User(UUIDMixin, TimestampMixin, Base):
+    __tablename__ = "users"
+
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_email_verified: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    is_superuser: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    # OAuth fields
+    google_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )
+    github_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
+    )
+    avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    auth_provider: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )
+    external_auth_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True,
+        comment="External auth provider user ID, e.g. 'supabase:<uuid>'",
+    )  # "google", "github", "email", None
+    # Admin panel fields
+    is_system_admin: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    admin_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )  # "organic", "evidence_gate", "referral", "badge", etc.
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_activity_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    login_count: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )

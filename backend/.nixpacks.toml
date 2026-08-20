@@ -1,0 +1,32 @@
+# .nixpacks.toml
+# Nixpacks configuration for Reliastra-backend (Python FastAPI)
+
+[phases.setup]
+nixPkgs = ["python312", "gcc"]
+nixLibs = ["zlib", "stdenv.cc.cc.lib"]
+
+[phases.install]
+dependsOn = ["setup"]
+onlyIncludeFiles = []
+cmds = [
+    "pip install --no-cache-dir -r requirements.txt",
+    "pip install --no-cache-dir playwright",
+    "playwright install --with-deps chromium || true"
+]
+
+[phases.build]
+dependsOn = ["install"]
+# Run alembic migrations during build (database must be reachable via DATABASE_URL)
+cmds = [
+    ". /opt/venv/bin/activate",
+    "alembic upgrade head"
+]
+
+[start]
+cmd = "sh -c '. /opt/venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'"
+
+[variables]
+NIXPACKS_PATH = "/opt/venv/bin:$PATH"
+
+[build]
+pythonVersion = "3.12"
