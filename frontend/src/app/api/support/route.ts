@@ -1,4 +1,3 @@
-import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -26,6 +25,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Import only when this route is invoked. This keeps route discovery and
+    // production standalone builds independent of Prisma client generation;
+    // deployment still generates Prisma before a support form is served.
+    const { db } = await import('@/lib/db');
     await db.supportTicket.create({
       data: { name: String(name).trim(), email: String(email).trim(), subject: String(subject).trim(), message: String(message).trim() },
     });

@@ -25,6 +25,17 @@ export default function Home() {
   const setPartner = usePartnerStore((s) => s.setPartner);
   const [mounted, setMounted] = useState(false);
 
+  // The existing partner experience is state-routed. Respect a small set of
+  // intentional URL entry points so protected Admin access can send a user to
+  // the shared sign-in screen and return them to `/admin` afterward.
+  useEffect(() => {
+    const requestedPage = new URLSearchParams(window.location.search).get('page');
+    const publicEntryPages: PartnerPage[] = ['home', 'login', 'signup', 'forgot-password'];
+    if (requestedPage && publicEntryPages.includes(requestedPage as PartnerPage)) {
+      navigate(requestedPage as PartnerPage);
+    }
+  }, [navigate]);
+
   // Hydrate auth state from server on mount
   useEffect(() => {
     const checkAuth = async () => {
