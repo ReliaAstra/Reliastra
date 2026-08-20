@@ -60,7 +60,6 @@ def import_all_models() -> None:
     import app.modules.billing.models  # noqa: F401
     import app.modules.observations.models  # noqa: F401
     import app.modules.attribution.models  # noqa: F401
-    import app.modules.ai_integration.models  # noqa: F401
     import app.modules.dashboard.models  # noqa: F401
     import app.modules.referrals.models  # noqa: F401
     import app.modules.evidence_gate.models  # noqa: F401

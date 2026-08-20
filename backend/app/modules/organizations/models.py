@@ -18,6 +18,13 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     has_agency_mode: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    # Opt-out for AI explanations in evidence reports. The LLM itself is
+    # Reliastra-managed (see app.config RELIASTRA_AI_*) — organizations do
+    # not configure providers, models or keys; they only choose whether the
+    # explanation section is generated for them.
+    ai_explanations_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true", nullable=False
+    )
 
     members: Mapped[list["OrganizationMember"]] = relationship(
         "OrganizationMember",

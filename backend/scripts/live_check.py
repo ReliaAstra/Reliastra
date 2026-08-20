@@ -131,7 +131,6 @@ async def test():
             ("evidence", "GET"),
             ("billing/subscription", "GET"),
             ("agencies", "GET"),
-            ("ai-providers", "GET"),
         ]
         if org_id:
             for ep, method in endpoints_to_test:

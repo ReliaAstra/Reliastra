@@ -14,6 +14,9 @@ class OrganizationCreateRequest(BaseModel):
 
 class OrganizationUpdateRequest(BaseModel):
     name: str | None = None
+    # The AI explainer itself is Reliastra-managed: an organization can only
+    # turn the explanation section on or off, never point it at another model.
+    ai_explanations_enabled: bool | None = None
     # NOTE: Plan changes are NOT allowed here. Plan upgrades/downgrades
     # must go through the billing service (verify_transaction / webhook).
     # An org admin setting ``plan: \"professional\"`` via PATCH would bypass
@@ -28,6 +31,7 @@ class OrganizationResponse(BaseModel):
     slug: str
     plan: str
     has_agency_mode: bool = False
+    ai_explanations_enabled: bool = True
     created_at: datetime
     updated_at: datetime
 

@@ -94,6 +94,10 @@ class OrganizationService:
         update_kwargs = {}
         if request.name is not None:
             update_kwargs["name"] = request.name
+        # Tenants may only opt in/out of AI explanations — the model,
+        # endpoint and credential belong to Reliastra.
+        if request.ai_explanations_enabled is not None:
+            update_kwargs["ai_explanations_enabled"] = request.ai_explanations_enabled
         # Plan changes are not allowed via this endpoint (P0-2 security fix).
         # Upgrades/downgrades must go through the billing service.
 

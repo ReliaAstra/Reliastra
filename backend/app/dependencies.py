@@ -42,7 +42,7 @@ def _infer_scope(request: Request) -> str | None:
             # Evidence currently exposes read/regeneration but has no write scope.
             action = "read" if resource == "evidence" else "write" if write else "read"
             return f"{action}:{resource}"
-    if any(marker in path for marker in ("/clients", "/ai-providers")):
+    if "/clients" in path:
         return f"{'write' if write else 'read'}:organizations"
     if "/dashboard/" in path:
         return "read:checks"

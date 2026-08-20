@@ -33,6 +33,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 3. **Extensibility by Design**:
    - Notification routing uses a Strategy pattern with a pluggable `CHANNEL_REGISTRY` supporting Email, Slack, PagerDuty, and Webhooks.
    - Incident correlation uses an extensible `BaseCorrelationStrategy` interface with Temporal Correlation (`±5m` window) implemented as the MVP default.
+   - AI explanations run on the **Reliastra-managed LLM**: the endpoint, model, credential and generation parameters live in platform configuration (`RELIASTRA_AI_*`). Organizations do not bring their own provider or key — they only toggle `ai_explanations_enabled` on their organization. AI output is explanatory and can never change attribution or confidence.
 4. **Scalability Hooks**:
    - High-volume time-series check execution data (`CheckResult`) is partitioned by month using PostgreSQL native range partitioning (`PARTITION BY RANGE (executed_at)`).
    - Redis-backed sliding window rate limiter, idempotency caching (`Idempotency-Key` header with 24h TTL), and Celery task queues.
@@ -91,6 +92,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `SMTP_FROM` | `noreply@reliastra.com` | Sender email address |
 | `FRONTEND_BASE_URL` | `http://localhost:3000` | Frontend base URL for email verification & password reset links |
 | `SMTP_USE_TLS` | `false` | Enable TLS for SMTP (STARTTLS on port 587) |
+| `RELIASTRA_AI_ENABLED` | `true` | Master switch for the Reliastra-managed LLM used in evidence explanations |
+| `RELIASTRA_AI_API_KEY` | _(empty)_ | Reliastra's own LLM credential — the only value required to switch AI on |
+| `RELIASTRA_AI_PROVIDER_TYPE` | `openai_compatible` | Wire format: `openai_compatible`, `anthropic` or `google` |
+| `RELIASTRA_AI_ENDPOINT_URL` | `https://api.openai.com/v1/chat/completions` | Endpoint of the Reliastra-managed LLM |
+| `RELIASTRA_AI_MODEL` | `gpt-4o-mini` | Model served by that endpoint |
+| `RELIASTRA_AI_MAX_TOKENS` | `1024` | Max tokens per explanation |
+| `RELIASTRA_AI_TEMPERATURE` | `0.3` | Sampling temperature |
+| `RELIASTRA_AI_TIMEOUT_SECONDS` | `30` | Per-request LLM timeout |
 
 ### Deployment Checklist
 
@@ -169,7 +178,6 @@ The codebase follows a modular monolith pattern. Each module contains its own ro
 | Billing | `/v1/orgs/{id}/billing` | JWT/API Key | Paystack payment integration |
 | API Keys | `/v1/orgs/{id}/api-keys` | JWT/API Key | Programmatic access keys |
 | Agencies | `/v1/orgs/{id}/agencies` | JWT/API Key | Agency hierarchy management |
-| AI Integration | `/v1/orgs/{id}/ai-providers` | JWT/API Key | Provider-agnostic AI configuration |
 | Verification | `/v1/verify/{id}` | Public | Evidence cryptographic verification |
 
 ### Authentication
