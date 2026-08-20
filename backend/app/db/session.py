@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy import event, pool
+from sqlalchemy import event
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -77,11 +77,8 @@ def _strip_sslmode_from_url(url: str) -> str:
     qs = parse_qs(parsed.query, keep_blank_values=True)
     qs.pop("sslmode", None)
     new_query = urlencode(qs, doseq=True) if qs else ""
-    # Preserve the original URL format: urlunparse may collapse "///" to "/"
-    # for SQLite URLs which breaks parsing. Reconstruct carefully.
     if new_query:
         return urlunparse(parsed._replace(query=new_query))
-    # No query params — return the original URL unchanged (preserves ///)
     if not parsed.query:
         return url
     return urlunparse(parsed._replace(query=""))
@@ -98,8 +95,6 @@ def _build_connect_args(pooler_compat: bool = False) -> dict:
     When *pooler_compat* is True (PgBouncer/Supabase pooler), we also set
     ``statement_cache_size=0`` to prevent asyncpg from using named prepared
     statements, which PgBouncer in transaction mode does not support.
-
-    Only applies to PostgreSQL backends; SQLite and others return no args.
     """
     url = settings.DATABASE_URL
     if not url.startswith("postgresql"):
@@ -140,29 +135,25 @@ def build_engine() -> AsyncEngine:
     pooler_compat = _needs_pooler_compat(clean_url)
     connect_args = _build_connect_args(pooler_compat=pooler_compat)
 
-    # Determine engine kwargs based on backend
-    is_sqlite = clean_url.startswith("sqlite")
+    if not clean_url.startswith("postgresql"):
+        raise ValueError(
+            "DATABASE_URL must be a PostgreSQL URL (Supabase Postgres). "
+            "SQLite and other drivers are not supported."
+        )
+
     engine_kwargs: dict = dict(
         echo=False,
         future=True,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+        pool_timeout=30,
     )
-    if is_sqlite:
-        # SQLite: no connection pooling, no connect_args needed
-        engine_kwargs["poolclass"] = pool.StaticPool
-    else:
-        # PostgreSQL: full connection pool
-        engine_kwargs.update(
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20,
-            pool_timeout=30,
-        )
-        if connect_args:
-            engine_kwargs["connect_args"] = connect_args
+    if connect_args:
+        engine_kwargs["connect_args"] = connect_args
 
     logger.info(
-        "Creating async engine — backend=%s, ssl=%s, pooler_compat=%s",
-        "sqlite" if is_sqlite else "postgresql",
+        "Creating async engine — backend=postgresql, ssl=%s, pooler_compat=%s",
         bool(connect_args and connect_args.get("ssl")) if connect_args else False,
         pooler_compat,
     )

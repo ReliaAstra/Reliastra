@@ -32,7 +32,7 @@ Next.js frontend          frontend/
   ↓  existing HTTP API contract
 Reliastra API             backend/  (FastAPI, /v1/*)
   ↓
-PostgreSQL · Redis · Celery · Supabase Storage (S3)
+Supabase Postgres · Redis · Celery · Supabase Storage (S3)
   ↓
 Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
 ```
@@ -72,7 +72,7 @@ There is no frontend unit-test script in `package.json`.
 
 ## Backend development
 
-Requires Python 3.11+, PostgreSQL 15+, and Redis 7+.
+Requires Python 3.11+ and Redis 7+. Persistence is **Supabase Postgres + Supabase Storage (S3)** — there is no local PostgreSQL or MinIO.
 
 ```bash
 cd backend
@@ -80,7 +80,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Set DATABASE_URL, REDIS_URL, and SECRET_KEY at minimum
+# Set DATABASE_URL (Supabase Postgres), REDIS_URL, SECRET_KEY, and SUPABASE_S3_*
 alembic upgrade head
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -92,7 +92,7 @@ cd backend
 docker-compose up -d --build
 ```
 
-That starts PostgreSQL, Redis, MailHog, the API, and Celery workers. Object storage is **Supabase Storage (S3) only** — set `SUPABASE_S3_*` in `backend/.env` before compose (see `backend/.env.example`).
+That starts Redis, MailHog, the API, and Celery workers. Postgres and object storage are **Supabase only** — set `DATABASE_URL` (Supabase pooler URI) and `SUPABASE_S3_*` in `backend/.env` before compose (see `backend/.env.example`).
 
 Health check: `GET http://localhost:8000/health`
 
@@ -105,9 +105,9 @@ Do not commit `.env` files.
 | App | Template | Purpose |
 |-----|----------|---------|
 | Frontend | `frontend/.env.example` | Prisma `DATABASE_URL` (local SQLite) |
-| Backend | `backend/.env.example` | Postgres, Redis, JWT `SECRET_KEY`, CORS, OAuth, Paystack, Supabase S3, SMTP, partner program |
+| Backend | `backend/.env.example` | Supabase Postgres, Redis, JWT `SECRET_KEY`, CORS, OAuth, Paystack, Supabase S3, SMTP, partner program |
 
-Backend required for a real run: `DATABASE_URL`, `REDIS_URL`, `SECRET_KEY`. Production also needs `ENVIRONMENT=production`, `CORS_ORIGINS`, and the `SUPABASE_S3_*` keys for evidence storage.
+Backend required for a real run: `DATABASE_URL` (Supabase Postgres), `REDIS_URL`, `SECRET_KEY`. Production also needs `ENVIRONMENT=production`, `CORS_ORIGINS`, and the `SUPABASE_S3_*` keys for evidence storage.
 
 ## Testing
 

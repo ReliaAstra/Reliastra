@@ -1,11 +1,9 @@
 """Shared asyncpg SSL connect-arg construction for the engine and Alembic.
 
-Background (ZevCloud deployment incident, 2026-08-20): the standalone Docker
-container overrides ``DATABASE_URL`` to the PostgreSQL it bootstraps inside
-the container.  That cluster is created with ``initdb``, whose default is
-``ssl = off``.  The platform/README instructs ``DATABASE_SSL_MODE=require``,
-and the previous mapping passed an ``ssl.SSLContext`` to asyncpg for *every*
-non-empty mode — including ``disable`` and ``prefer``.
+The API talks to Supabase Postgres (TLS on).  Tests and a handful of
+local tools still speak to plaintext PostgreSQL, so sslmode must keep
+libpq semantics instead of treating every non-empty value as a hard
+SSL requirement.
 
 asyncpg does not read ``sslmode`` from the URL.  When a Python
 ``ssl.SSLContext`` is passed via ``connect_args["ssl"]``, SSL becomes a hard
@@ -13,9 +11,7 @@ requirement: if the server answers the SSLRequest with ``N`` (no SSL
 support), the connection fails with
 ``ConnectionError: PostgreSQL server at ... rejected SSL upgrade``.
 
-That killed Alembic migrations (and therefore the API) at boot, failing the
-container healthcheck and rolling the deployment back.  This module restores
-libpq semantics:
+This module restores libpq semantics:
 
 * ``disable``     -> ``ssl=False`` (never negotiate SSL)
 * ``allow``/``prefer`` -> no ``ssl`` arg (asyncpg default: try SSL, fall back

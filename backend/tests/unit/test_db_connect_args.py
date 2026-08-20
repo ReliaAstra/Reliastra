@@ -1,13 +1,7 @@
-"""Tests for the asyncpg SSL connect-arg translation (deployment regression).
+"""Tests for the asyncpg SSL connect-arg translation.
 
-Regression coverage for the ZevCloud incident where a non-empty
-``DATABASE_SSL_MODE`` forced an ``ssl.SSLContext`` on asyncpg, making SSL a
-hard requirement.  The in-container PostgreSQL (initdb default ``ssl=off``)
-answers the SSLRequest with ``N``, so migrations died with
-``ConnectionError: PostgreSQL server at ... rejected SSL upgrade`` and the
-deployment rolled back.
-
-The fix maps libpq sslmodes correctly:
+Maps libpq sslmodes correctly for Supabase (TLS) and for plaintext
+PostgreSQL used by the test suite:
 * ``disable``  -> ``ssl=False``
 * ``allow``/``prefer`` -> no ``ssl`` arg (asyncpg advisory default: try SSL,
   fall back to plaintext)
