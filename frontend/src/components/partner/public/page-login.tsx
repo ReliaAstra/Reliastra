@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ const fadeUp = {
 
 export function PageLogin() {
   const navigate = usePartnerStore((s) => s.navigate);
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,6 +70,16 @@ export function PageLogin() {
         store.setAuthStatus('authenticated');
       } else {
         store.setAuthStatus('authenticated');
+      }
+
+      // A protected Admin route can hand the shared sign-in screen a return
+      // destination. Do this before partner activation checks: system admins
+      // do not need a partner profile to operate the control plane.
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next === '/admin') {
+        toast.success('Signed in — opening Admin');
+        router.push('/admin');
+        return;
       }
 
       // Step 3: Check if user is already a partner
