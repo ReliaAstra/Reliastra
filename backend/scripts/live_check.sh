@@ -96,7 +96,6 @@ if [ -n "$ORG_ID" ]; then
     t "GET evidence" GET "$BASE/v1/orgs/$ORG_ID/evidence" "" "$AUTH"
     t "GET billing" GET "$BASE/v1/orgs/$ORG_ID/billing/subscription" "" "$AUTH"
     t "GET agencies" GET "$BASE/v1/orgs/$ORG_ID/agencies" "" "$AUTH"
-    t "GET ai-providers" GET "$BASE/v1/orgs/$ORG_ID/ai-providers" "" "$AUTH"
     t "GET dashboard" GET "$BASE/v1/orgs/$ORG_ID/dashboard/summary" "" "$AUTH"
 else
     echo "  [SKIP] Org-scoped endpoints (no org_id found)"

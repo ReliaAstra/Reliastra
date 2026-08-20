@@ -1,28 +1,33 @@
+"""Reliastra-managed LLM integration.
+
+The LLM behind AI explanations belongs to Reliastra. Endpoint, model,
+credential and generation parameters come from platform configuration
+(``app.config.Settings.RELIASTRA_AI_*``) — organizations never register a
+provider, never supply a key, and never choose a model. The only tenant-side
+control is an opt-out flag: ``organizations.ai_explanations_enabled``.
+
+AI output is explanatory only. It restates pre-computed evidence and can
+never create or alter attribution truth.
+"""
+
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 import time
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.audit_log import AuditLogService
-from app.core.exceptions import ResourceNotFoundException, ValidationException
-from app.core.security import decrypt_jsonb, encrypt_jsonb
+from app.config import settings
+from app.core.exceptions import ValidationException
 from app.core.ssrf_protection import (
     pinned_transport_for,
     resolve_pinned_target,
-    validate_outbound_url,
-)
-from app.modules.ai_integration.models import AIProvider
-from app.modules.ai_integration.repository import AIProviderRepository
-from app.modules.ai_integration.schemas import (
-    AIProviderCreateRequest,
-    AIProviderResponse,
-    AIProviderUpdateRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,220 +39,100 @@ MAX_RETRIES = 2
 RETRY_BACKOFF_BASE = 0.5
 
 
+@dataclass(frozen=True)
+class PlatformLLM:
+    """Immutable snapshot of the Reliastra-operated model."""
+
+    provider_type: str
+    endpoint_url: str
+    model_name: str
+    api_key: str
+    max_tokens: int
+    temperature: float
+    timeout_seconds: float
+
+
 class AIService:
-    def __init__(
-        self, repository: AIProviderRepository = AIProviderRepository()
-    ) -> None:
-        self.repository = repository
+    """Explanation generation backed by the Reliastra-managed LLM."""
+
+    # ------------------------------------------------------------------
+    # Platform model resolution
+    # ------------------------------------------------------------------
+    @staticmethod
+    def platform_model() -> PlatformLLM | None:
+        """Return the configured Reliastra LLM, or None when unavailable."""
+        if not settings.ai_available:
+            return None
+        api_key = settings.ai_api_key
+        if not api_key:
+            return None
+        return PlatformLLM(
+            provider_type=settings.RELIASTRA_AI_PROVIDER_TYPE,
+            endpoint_url=settings.RELIASTRA_AI_ENDPOINT_URL,
+            model_name=settings.RELIASTRA_AI_MODEL,
+            api_key=api_key,
+            max_tokens=settings.RELIASTRA_AI_MAX_TOKENS,
+            temperature=settings.RELIASTRA_AI_TEMPERATURE,
+            timeout_seconds=settings.RELIASTRA_AI_TIMEOUT_SECONDS,
+        )
+
+    async def status(
+        self, session: AsyncSession | None = None, org_id: uuid.UUID | None = None
+    ) -> dict[str, Any]:
+        """Non-secret description of the AI capability for an organization."""
+        model = self.platform_model()
+        org_opted_in = True
+        if session is not None and org_id is not None:
+            org_opted_in = await self._org_opted_in(session, org_id)
+        return {
+            "provider": "reliastra",
+            "platform_configured": model is not None,
+            "organization_enabled": org_opted_in,
+            "enabled": model is not None and org_opted_in,
+            "model_name": model.model_name if model else None,
+        }
 
     @staticmethod
-    def _response(provider: AIProvider) -> AIProviderResponse:
-        data = {
-            key: getattr(provider, key)
-            for key in (
-                "id",
-                "organization_id",
-                "name",
-                "provider_type",
-                "endpoint_url",
-                "model_name",
-                "is_default",
-                "max_tokens",
-                "temperature",
-                "enabled",
-                "created_at",
-                "updated_at",
-            )
-        }
-        data["has_api_key"] = bool(provider.encrypted_api_key)
-        return AIProviderResponse.model_validate(data)
-
-    async def list_providers(
-        self, session: AsyncSession, org_id: uuid.UUID
-    ) -> list[AIProviderResponse]:
-        providers = await self.repository.list_for_org(session, org_id)
-        return [self._response(provider) for provider in providers]
-
-    async def create_provider(
-        self,
-        session: AsyncSession,
-        org_id: uuid.UUID,
-        request: AIProviderCreateRequest,
-    ) -> AIProviderResponse:
-        try:
-            validate_outbound_url(request.endpoint_url)
-        except ValueError as exc:
-            raise ValidationException(str(exc)) from exc
-        if request.is_default:
-            await self.repository.clear_defaults(session, org_id)
-        encrypted = (
-            encrypt_jsonb({"api_key": request.api_key.get_secret_value()})
-            if request.api_key
-            else None
-        )
-        try:
-            provider = await self.repository.create(
-                session,
-                organization_id=org_id,
-                name=request.name,
-                provider_type=request.provider_type,
-                endpoint_url=request.endpoint_url,
-                encrypted_api_key=encrypted,
-                model_name=request.model_name,
-                is_default=request.is_default,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
-                enabled=request.enabled,
-            )
-            # Flush will hit the partial unique index; convert race to 409/validation.
-            await session.flush()
-        except IntegrityError as exc:
-            # Concurrent is_default=true race — DB enforces at most one default.
-            await session.rollback()
-            raise ValidationException(
-                "A default AI provider already exists for this organization. "
-                "Unset the existing default before creating another."
-            ) from exc
+    async def _org_opted_in(session: AsyncSession, org_id: uuid.UUID) -> bool:
+        """Respect an organization's opt-out of AI explanations."""
+        from app.modules.organizations.repository import OrganizationRepository
 
         try:
-            await AuditLogService.log_event(
-                session=session,
-                event_type="AI_PROVIDER_CREATED",
-                org_id=org_id,
-                resource_type="ai_provider",
-                resource_id=str(provider.id),
-                payload={
-                    "provider_type": provider.provider_type,
-                    "model_name": provider.model_name,
-                    "is_default": provider.is_default,
-                },
-            )
+            org = await OrganizationRepository.get_by_id(session, org_id)
         except Exception:
-            logger.debug("Failed to write audit log for AI provider create", exc_info=True)
-
-        return self._response(provider)
-
-    async def update_provider(
-        self,
-        session: AsyncSession,
-        org_id: uuid.UUID,
-        provider_id: uuid.UUID,
-        request: AIProviderUpdateRequest,
-    ) -> AIProviderResponse:
-        provider = await self.repository.get_by_id(session, provider_id)
-        if not provider or provider.organization_id != org_id:
-            raise ResourceNotFoundException("AI provider not found")
-        values = request.model_dump(
-            exclude_unset=True, exclude={"api_key"}
-        )
-        if request.endpoint_url is not None:
-            try:
-                validate_outbound_url(request.endpoint_url)
-            except ValueError as exc:
-                raise ValidationException(str(exc)) from exc
-        if "api_key" in request.model_fields_set:
-            values["encrypted_api_key"] = (
-                encrypt_jsonb(
-                    {"api_key": request.api_key.get_secret_value()}
-                )
-                if request.api_key
-                else None
+            logger.debug(
+                "Could not load organization %s for AI opt-out check", org_id,
+                exc_info=True,
             )
-        if request.is_default is True:
-            await self.repository.clear_defaults(
-                session, org_id, exclude_id=provider.id
-            )
-        try:
-            updated = await self.repository.update(session, provider, **values)
-            await session.flush()
-        except IntegrityError as exc:
-            await session.rollback()
-            raise ValidationException(
-                "A default AI provider already exists for this organization."
-            ) from exc
-
-        try:
-            await AuditLogService.log_event(
-                session=session,
-                event_type="AI_PROVIDER_UPDATED",
-                org_id=org_id,
-                resource_type="ai_provider",
-                resource_id=str(updated.id),
-                payload={"updated_fields": list(values.keys())},
-            )
-        except Exception:
-            logger.debug("Failed to write audit log for AI provider update", exc_info=True)
-
-        return self._response(updated)
-
-    async def delete_provider(
-        self,
-        session: AsyncSession,
-        org_id: uuid.UUID,
-        provider_id: uuid.UUID,
-    ) -> None:
-        provider = await self.repository.get_by_id(session, provider_id)
-        if not provider or provider.organization_id != org_id:
-            raise ResourceNotFoundException("AI provider not found")
-        await self.repository.delete(session, provider)
-        try:
-            await AuditLogService.log_event(
-                session=session,
-                event_type="AI_PROVIDER_DELETED",
-                org_id=org_id,
-                resource_type="ai_provider",
-                resource_id=str(provider_id),
-                payload={"name": provider.name},
-            )
-        except Exception:
-            logger.debug("Failed to write audit log for AI provider delete", exc_info=True)
+            return True
+        if org is None:
+            return False
+        return bool(getattr(org, "ai_explanations_enabled", True))
 
     # ------------------------------------------------------------------
-    # Test connectivity — validates endpoint + credentials without
-    # persisting anything. Used by the POST /{id}/test route.
+    # Generation
     # ------------------------------------------------------------------
-    async def test_provider(
-        self,
-        session: AsyncSession,
-        org_id: uuid.UUID,
-        provider_id: uuid.UUID,
-    ) -> dict[str, Any]:
-        provider = await self.repository.get_by_id(session, provider_id)
-        if not provider or provider.organization_id != org_id:
-            raise ResourceNotFoundException("AI provider not found")
-        key_data = decrypt_jsonb(provider.encrypted_api_key)
-        api_key = key_data.get("api_key") if key_data else None
-        if not api_key:
-            raise ValidationException("Provider has no API key configured")
-        # Minimal prompt for connectivity check
-        return await self._call_provider(
-            provider, str(api_key), "Connectivity test — respond with 'ok'."
-        )
-
     async def generate_explanation(
         self,
         context: dict[str, Any],
         instruction: str,
-        session: AsyncSession,
-        org_id: uuid.UUID,
+        session: AsyncSession | None = None,
+        org_id: uuid.UUID | None = None,
     ) -> str | None:
         """Explain pre-computed facts; never create or alter attribution truth."""
-        provider = await self.repository.get_active_default(session, org_id)
-        if not provider:
-            logger.info("No active default AI provider for org %s — skipping AI explanation", org_id)
-            return None
-        key_data = decrypt_jsonb(provider.encrypted_api_key)
-        # decrypt_jsonb returns {} on Fernet failure (rotated SECRET_KEY); treat as missing
-        if key_data is not None and not key_data:
-            logger.warning(
-                "AI provider %s API key decrypt returned empty — likely SECRET_KEY rotation; skipping",
-                provider.id,
+        model = self.platform_model()
+        if model is None:
+            logger.info(
+                "Reliastra-managed LLM is not configured — skipping AI explanation"
             )
             return None
-        api_key = key_data.get("api_key") if key_data else None
-        if not api_key:
-            logger.warning("AI provider %s has no API key — skipping", provider.id)
-            return None
+
+        if session is not None and org_id is not None:
+            if not await self._org_opted_in(session, org_id):
+                logger.info(
+                    "Organization %s has AI explanations disabled — skipping", org_id
+                )
+                return None
 
         # Bound context size — prevent prompt injection / huge payloads
         try:
@@ -266,7 +151,7 @@ class AIService:
         )
 
         try:
-            result = await self._call_provider(provider, str(api_key), prompt)
+            result = await self._call_model(model, prompt)
             text = result.get("text")
             if text:
                 # Bound output — protects PDF size / storage
@@ -275,49 +160,55 @@ class AIService:
                 return text
             return None
         except ValidationException:
-            # SSRF validation errors — don't retry, surface as warning
-            logger.warning("AI provider %s endpoint failed safety check", provider.id)
+            # SSRF validation errors — misconfigured platform endpoint.
+            logger.error(
+                "Reliastra-managed LLM endpoint failed safety validation — "
+                "check RELIASTRA_AI_ENDPOINT_URL"
+            )
             return None
         except Exception as exc:
-            logger.warning("AI generation failed for provider %s: %s", provider.id, exc)
+            logger.warning("AI generation failed on the Reliastra LLM: %s", exc)
             return None
 
-    async def _call_provider(
-        self, provider: AIProvider, api_key: str, prompt: str
+    # ------------------------------------------------------------------
+    # Transport
+    # ------------------------------------------------------------------
+    async def _call_model(
+        self, model: PlatformLLM, prompt: str
     ) -> dict[str, Any]:
-        """Pinned, retrying HTTP call to the provider. Returns {'text': str|None}."""
+        """Pinned, retrying HTTP call to the platform LLM. Returns {'text': str|None}."""
         # Metrics
         from app.core.metrics import ai_generation_latency, ai_generation_total
 
         start = time.monotonic()
         # Resolve + pin DNS once — closes DNS-rebinding TOCTOU
         try:
-            target = resolve_pinned_target(provider.endpoint_url)
+            target = resolve_pinned_target(model.endpoint_url)
         except ValueError as exc:
             raise ValidationException(str(exc)) from exc
 
         transport = pinned_transport_for(target)
-        headers, payload = self._request(provider, api_key, prompt)
+        headers, payload = self._request(model, prompt)
 
         last_exc: Exception | None = None
         for attempt in range(MAX_RETRIES + 1):
             try:
                 async with httpx.AsyncClient(
-                    transport=transport, timeout=30
+                    transport=transport, timeout=model.timeout_seconds
                 ) as client:
                     response = await client.post(
-                        provider.endpoint_url, headers=headers, json=payload
+                        model.endpoint_url, headers=headers, json=payload
                     )
                     response.raise_for_status()
                     data = response.json()
-                    text = self._extract(provider.provider_type, data)
+                    text = self._extract(model.provider_type, data)
                     elapsed = time.monotonic() - start
                     try:
                         ai_generation_total.labels(
-                            provider_type=provider.provider_type, status="success"
+                            provider_type=model.provider_type, status="success"
                         ).inc()
                         ai_generation_latency.labels(
-                            provider_type=provider.provider_type
+                            provider_type=model.provider_type
                         ).observe(elapsed)
                     except Exception:
                         pass
@@ -331,7 +222,7 @@ class AIService:
                     continue
                 try:
                     ai_generation_total.labels(
-                        provider_type=provider.provider_type, status="error"
+                        provider_type=model.provider_type, status="error"
                     ).inc()
                 except Exception:
                     pass
@@ -343,7 +234,7 @@ class AIService:
                     continue
                 try:
                     ai_generation_total.labels(
-                        provider_type=provider.provider_type, status="error"
+                        provider_type=model.provider_type, status="error"
                     ).inc()
                 except Exception:
                     pass
@@ -352,7 +243,7 @@ class AIService:
                 last_exc = exc
                 try:
                     ai_generation_total.labels(
-                        provider_type=provider.provider_type, status="error"
+                        provider_type=model.provider_type, status="error"
                     ).inc()
                 except Exception:
                     pass
@@ -364,34 +255,34 @@ class AIService:
 
     @staticmethod
     def _request(
-        provider: AIProvider, api_key: str, prompt: str
+        model: PlatformLLM, prompt: str
     ) -> tuple[dict[str, str], dict[str, Any]]:
         headers = {"Content-Type": "application/json"}
-        if provider.provider_type == "anthropic":
+        if model.provider_type == "anthropic":
             headers.update(
-                {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
+                {"x-api-key": model.api_key, "anthropic-version": "2023-06-01"}
             )
             payload = {
-                "model": provider.model_name,
-                "max_tokens": provider.max_tokens,
-                "temperature": provider.temperature,
+                "model": model.model_name,
+                "max_tokens": model.max_tokens,
+                "temperature": model.temperature,
                 "messages": [{"role": "user", "content": prompt}],
             }
-        elif provider.provider_type == "google":
-            headers["x-goog-api-key"] = api_key
+        elif model.provider_type == "google":
+            headers["x-goog-api-key"] = model.api_key
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
-                    "maxOutputTokens": provider.max_tokens,
-                    "temperature": provider.temperature,
+                    "maxOutputTokens": model.max_tokens,
+                    "temperature": model.temperature,
                 },
             }
         else:
-            headers["Authorization"] = f"Bearer {api_key}"
+            headers["Authorization"] = f"Bearer {model.api_key}"
             payload = {
-                "model": provider.model_name,
-                "max_tokens": provider.max_tokens,
-                "temperature": provider.temperature,
+                "model": model.model_name,
+                "max_tokens": model.max_tokens,
+                "temperature": model.temperature,
                 "messages": [{"role": "user", "content": prompt}],
             }
         return headers, payload

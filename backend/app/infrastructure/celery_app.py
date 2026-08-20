@@ -47,7 +47,6 @@ from app.modules import (  # noqa: F401
 )
 from app.modules.admin import models as _admin_models  # noqa: F401
 from app.modules.agencies import models as _agency_models  # noqa: F401
-from app.modules.ai_integration import models as _ai_models  # noqa: F401
 from app.modules.api_keys import models as _apikey_models  # noqa: F401
 from app.modules.attribution import models as _attribution_models  # noqa: F401
 from app.modules.auth import models as _auth_models  # noqa: F401

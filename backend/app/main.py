@@ -27,7 +27,6 @@ from app.infrastructure.redis_client import (
     safe_redis_setex,
 )
 from app.modules.agencies.router import router as agencies_router
-from app.modules.ai_integration.router import router as ai_providers_router
 from app.modules.api_keys.router import router as api_keys_router
 from app.modules.auth.router import router as auth_router
 from app.modules.auth.supabase import router as supabase_auth_router
@@ -291,7 +290,6 @@ def create_app() -> FastAPI:
     app.include_router(billing_router)
     app.include_router(api_keys_router)
     app.include_router(agencies_router)
-    app.include_router(ai_providers_router)
     app.include_router(verification_router)
     app.include_router(referrals_router)
     app.include_router(webhooks_router)

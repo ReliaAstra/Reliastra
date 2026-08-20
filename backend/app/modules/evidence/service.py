@@ -228,6 +228,9 @@ class EvidenceService:
 
         ai_explanation = None
         try:
+            # The explainer runs on the Reliastra-managed LLM (see
+            # app.config RELIASTRA_AI_*). org_id is passed only so the
+            # organization's ai_explanations_enabled opt-out is honoured.
             from app.modules.ai_integration.service import ai_service
 
             ai_explanation = await ai_service.generate_explanation(

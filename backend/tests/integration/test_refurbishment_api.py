@@ -50,25 +50,30 @@ async def test_agency_ai_and_dashboard_endpoints(
     assert app_response.status_code == 201, app_response.text
     assert app_response.json()["client_id"] == client_id
 
-    mocker.patch(
-        "app.modules.ai_integration.service.validate_outbound_url",
-        return_value=None,
-    )
-    provider_response = await async_client.post(
+    # The AI explainer is Reliastra-managed: tenants cannot register providers.
+    removed_provider_routes = await async_client.post(
         "/v1/ai-providers",
         headers=headers,
-        json={
-            "name": "Evidence Explainer",
-            "provider_type": "openai_compatible",
-            "endpoint_url": "https://example.com/v1/chat/completions",
-            "api_key": "secret-provider-key",
-            "model_name": "example-model",
-            "is_default": False,
-        },
+        json={"name": "Evidence Explainer", "model_name": "example-model"},
     )
-    assert provider_response.status_code == 201, provider_response.text
-    assert provider_response.json()["has_api_key"] is True
-    assert "api_key" not in provider_response.json()
+    assert removed_provider_routes.status_code == 404
+
+    # They can only opt out of the AI explanation section.
+    opt_out = await async_client.patch(
+        "/v1/orgs/current",
+        headers=headers,
+        json={"ai_explanations_enabled": False},
+    )
+    assert opt_out.status_code == 200, opt_out.text
+    assert opt_out.json()["ai_explanations_enabled"] is False
+
+    opt_in = await async_client.patch(
+        "/v1/orgs/current",
+        headers=headers,
+        json={"ai_explanations_enabled": True},
+    )
+    assert opt_in.status_code == 200, opt_in.text
+    assert opt_in.json()["ai_explanations_enabled"] is True
 
     latency = await async_client.get(
         "/v1/dashboard/latency", headers=headers

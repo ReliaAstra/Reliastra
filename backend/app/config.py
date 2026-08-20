@@ -3,9 +3,10 @@ from __future__ import annotations
 import base64
 import hashlib
 import logging
+from typing import Literal
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -204,6 +205,85 @@ class Settings(BaseSettings):
                     "project settings -> API -> JWT Settings). Used to verify "
                     "RS256 JWTs issued by Supabase Auth.",
     )
+
+    # ── Reliastra-managed LLM ────────────────────────────────────────────
+    # AI explanations are produced by the LLM Reliastra operates. Customers
+    # never bring their own endpoint, model or key: the platform owns the
+    # provider, and an organization may only opt out of AI explanations
+    # (organizations.ai_explanations_enabled).
+    RELIASTRA_AI_ENABLED: bool = Field(
+        default=True,
+        description="Master switch for the Reliastra-managed LLM. When false, "
+                    "evidence reports are generated without AI explanations.",
+    )
+    RELIASTRA_AI_PROVIDER_TYPE: Literal[
+        "openai_compatible", "anthropic", "google"
+    ] = Field(
+        default="openai_compatible",
+        description="Wire format of the Reliastra-managed LLM endpoint.",
+    )
+    RELIASTRA_AI_ENDPOINT_URL: str = Field(
+        default="https://api.openai.com/v1/chat/completions",
+        description="Chat-completions endpoint of the Reliastra-managed LLM. "
+                    "Defaults to OpenAI; override only when Reliastra moves "
+                    "its own inference to another provider.",
+    )
+    RELIASTRA_AI_MODEL: str = Field(
+        default="gpt-4o-mini",
+        description="Model served by the Reliastra-managed LLM endpoint.",
+    )
+    RELIASTRA_AI_API_KEY: SecretStr | None = Field(
+        default=None,
+        description="Reliastra's own LLM credential. The only value that must "
+                    "be supplied to turn AI explanations on — endpoint, model "
+                    "and parameters already have production defaults.",
+    )
+    RELIASTRA_AI_MAX_TOKENS: int = Field(
+        default=1024,
+        ge=1,
+        le=100000,
+        description="Maximum tokens requested from the Reliastra-managed LLM.",
+    )
+    RELIASTRA_AI_TEMPERATURE: float = Field(
+        default=0.3,
+        ge=0,
+        le=2,
+        description="Sampling temperature for the Reliastra-managed LLM. "
+                    "Kept low: explanations restate pre-computed facts.",
+    )
+    RELIASTRA_AI_TIMEOUT_SECONDS: float = Field(
+        default=30.0,
+        ge=1,
+        le=300,
+        description="Per-request timeout (seconds) for LLM calls.",
+    )
+
+    @field_validator("RELIASTRA_AI_ENDPOINT_URL")
+    @classmethod
+    def _validate_ai_endpoint(cls, value: str) -> str:
+        value = (value or "").strip()
+        if value and not value.startswith(("https://", "http://")):
+            raise ValueError(
+                "RELIASTRA_AI_ENDPOINT_URL must be an HTTP(S) URL"
+            )
+        return value
+
+    @property
+    def ai_api_key(self) -> str | None:
+        """Plaintext Reliastra LLM key, or None when unset."""
+        if self.RELIASTRA_AI_API_KEY is None:
+            return None
+        return self.RELIASTRA_AI_API_KEY.get_secret_value() or None
+
+    @property
+    def ai_available(self) -> bool:
+        """True when the Reliastra-managed LLM can actually be called."""
+        return bool(
+            self.RELIASTRA_AI_ENABLED
+            and self.RELIASTRA_AI_ENDPOINT_URL
+            and self.RELIASTRA_AI_MODEL
+            and self.ai_api_key
+        )
 
     @property
     def database_url_with_ssl(self) -> str:

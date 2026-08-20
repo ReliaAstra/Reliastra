@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     slug VARCHAR(150) NOT NULL,
     plan VARCHAR(50) NOT NULL DEFAULT 'free',
     has_agency_mode BOOLEAN NOT NULL DEFAULT FALSE,
+    ai_explanations_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     stripe_customer_id VARCHAR(100),
     stripe_subscription_id VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -508,31 +509,18 @@ DO $$ BEGIN
 END $$;
 
 -- =============================================================================
--- 23. AI PROVIDERS
+-- 23. AI (RELIASTRA-MANAGED LLM)
 -- =============================================================================
+-- There is no ai_providers table. The LLM used for evidence explanations is
+-- operated by Reliastra and configured through platform environment variables
+-- (RELIASTRA_AI_ENABLED / RELIASTRA_AI_PROVIDER_TYPE / RELIASTRA_AI_ENDPOINT_URL
+-- / RELIASTRA_AI_MODEL / RELIASTRA_AI_API_KEY). Organizations only opt in or out
+-- via organizations.ai_explanations_enabled.
 
-CREATE TABLE IF NOT EXISTS ai_providers (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    provider_type VARCHAR(50) NOT NULL,
-    endpoint_url VARCHAR(500) NOT NULL,
-    encrypted_api_key TEXT,
-    model_name VARCHAR(100) NOT NULL,
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    max_tokens INTEGER NOT NULL DEFAULT 4096,
-    temperature FLOAT NOT NULL DEFAULT 0.3,
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+DROP TABLE IF EXISTS ai_providers CASCADE;
 
-CREATE INDEX IF NOT EXISTS ix_ai_providers_organization_id ON ai_providers (organization_id);
-
--- At most one default provider per organization
-CREATE UNIQUE INDEX IF NOT EXISTS uq_ai_providers_default_per_org
-    ON ai_providers (organization_id)
-    WHERE is_default = TRUE;
+ALTER TABLE organizations
+    ADD COLUMN IF NOT EXISTS ai_explanations_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- =============================================================================
 -- 24. TIMELINE INDEXES (vendor time-series performance)
@@ -575,6 +563,6 @@ COMMIT;
 --   20. evidence_snapshots
 --   21. clients
 --   22. applications
---   23. ai_providers
+--   23. Reliastra-managed AI (no table; organizations.ai_explanations_enabled)
 --   24. +3 timeline composite indexes on observations
 -- =============================================================================
