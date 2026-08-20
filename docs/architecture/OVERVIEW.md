@@ -27,9 +27,9 @@ They communicate over the existing HTTP API. They do not share a runtime, databa
 
 The Next.js app proxies selected Partner Network calls to the deployed Reliastra API:
 
-`https://reliastra-backend.zevcloud.app`
+`https://api.reliastra.com` (paths under `/v1/*`)
 
-That deployed URL is preserved. Local frontend development does not require a locally running backend unless you change that client.
+Override with `RELIASTRA_API_URL` when proxying to a local or staging API.
 
 The FastAPI surface remains `/v1/*` (JWT, API keys, public vendor/verify routes). See `backend/docs/FRONTEND_API_INTEGRATION_GUIDE.md`.
 

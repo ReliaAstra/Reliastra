@@ -39,7 +39,7 @@ Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
 
 Details: [`docs/architecture/OVERVIEW.md`](docs/architecture/OVERVIEW.md).
 
-The frontend currently talks to the deployed API at `https://reliastra-backend.zevcloud.app`. Moving the code into this repository does not change API paths, auth, or schemas.
+The frontend proxies Partner Network calls to the production API at `https://api.reliastra.com/v1`. Override with `RELIASTRA_API_URL` for local or staging backends.
 
 ## Frontend development
 

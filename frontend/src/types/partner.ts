@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────
    Types aligned with Reliastra Backend OpenAPI 3.1
-   https://reliastra-backend.zevcloud.app/docs
+   https://api.reliastra.com/docs
    ───────────────────────────────────────────── */
 
 // ── Auth ───────────────────────────────────────

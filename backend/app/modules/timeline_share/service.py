@@ -10,6 +10,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.modules.timeline_share.repository import TimelineShareRepository
 from app.modules.timeline_share.schemas import (
     TimelineShareCreateRequest,
@@ -35,8 +36,8 @@ _AVAIL_UP_COLOR = "#238636"
 _AVAIL_DOWN_COLOR = "#da3633"
 _INCIDENT_COLOR = "#f85149"
 
-# Frontend base URL for QR codes and share links
-_FRONTEND_TRACK_BASE = "https://frontend.zevcloud.app/track"
+def _frontend_origin() -> str:
+    return (settings.FRONTEND_BASE_URL or settings.RELIASTRA_PUBLIC_URL).rstrip("/")
 
 
 class TimelineShareService:
@@ -112,9 +113,10 @@ class TimelineShareService:
         vendor_name: str,
         user_id: uuid.UUID | None,
         request: TimelineShareCreateRequest,
-        base_url: str = "https://frontend.zevcloud.app",
+        base_url: str | None = None,
     ) -> TimelineShareResponse:
         """Create a short-lived share link for a vendor timeline PNG."""
+        origin = (base_url or _frontend_origin()).rstrip("/")
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
 
@@ -132,7 +134,7 @@ class TimelineShareService:
         )
 
         share_url = (
-            f"{base_url}/shared/timeline/{share.vendor_name}"
+            f"{origin}/shared/timeline/{share.vendor_name}"
             f"?token={share.share_token}&window={share.window}&region={share.region}"
         )
 
@@ -384,7 +386,7 @@ class TimelineShareService:
                 import qrcode
 
                 qr_url = (
-                    f"{_FRONTEND_TRACK_BASE}/{vendor_name}"
+                    f"{_frontend_origin()}/track/{vendor_name}"
                     f"?utm_source=share_png"
                 )
                 if utm_source:

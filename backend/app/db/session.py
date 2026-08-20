@@ -57,7 +57,7 @@ def _ensure_asyncpg_driver(url: str) -> str:
     (e.g. ``postgresql://``), SQLAlchemy falls back to ``psycopg2`` which
     is not installed and causes a ``ModuleNotFoundError`` at startup.
 
-    This is a common pitfall on PaaS platforms (Railway, Render, ZevCloud)
+    This is a common pitfall on PaaS platforms (Railway, Render, etc.)
     where the dashboard may auto-generate a bare ``postgresql://`` URL.
     """
     if url.startswith("postgresql://") and not url.startswith("postgresql+"):
