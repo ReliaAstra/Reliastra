@@ -3,14 +3,16 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Check, Loader2 } from 'lucide-react';
+import { Wallet, Check, Loader2, AlertTriangle, Landmark } from 'lucide-react';
 import { usePartnerStore } from '@/stores/partner-store';
 import { partnerApi } from '@/lib/partner-api';
+import { toast } from 'sonner';
 import { formatCurrencyFromMinor, formatDate } from '@/lib/format';
 import { StatusBadge } from '@/components/partner/shared/status-badge';
 import { DashboardPayoutsSkeleton } from '@/components/partner/shared/dashboard-skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -19,41 +21,94 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { PayoutItem, PayoutListResponse } from '@/types/partner';
+import type { PayoutItem, PayoutListResponse, Partner } from '@/types/partner';
 
-// --- Crypto recommendation banner ---
-function CryptoBanner() {
+const METHOD_LABELS: Record<string, string> = {
+  crypto_usdc: 'USD Coin (USDC)',
+  crypto_usdt: 'Tether (USDT)',
+  bank: 'Bank Transfer',
+};
+
+function destinationSummary(partner: Partner | null): string {
+  const method = partner?.payoutMethod;
+  if (!method) return '';
+  if (method === 'bank') {
+    const name = partner?.bankDetails?.bank_name;
+    const acct = partner?.bankDetails?.account_number;
+    return `${name || 'Bank Transfer'}${acct ? ` · ••••${acct.slice(-4)}` : ''}`;
+  }
+  const parts = [METHOD_LABELS[method] || method];
+  if (partner?.payoutNetwork) parts.push(partner.payoutNetwork);
+  if (partner?.walletAddress) parts.push(partner.walletAddress);
+  return parts.join(' · ');
+}
+
+// --- Payout destination banner ---
+function PayoutDestinationBanner({ partner }: { partner: Partner | null }) {
+  const navigate = usePartnerStore((s) => s.navigate);
+  const hasMethod = Boolean(partner?.payoutMethod);
+  const summary = destinationSummary(partner);
+  const isBank = partner?.payoutMethod === 'bank';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 }}
-      className="border border-border/60 rounded-lg bg-background p-5 md:p-6"
+      className={cn(
+        'rounded-lg border p-5 md:p-6',
+        hasMethod ? 'border-border/60 bg-background' : 'border-amber-500/40 bg-amber-500/[0.06]'
+      )}
     >
       <div className="flex items-start gap-3">
-        <div className="flex items-center justify-center size-8 rounded-full bg-muted/80 shrink-0 mt-0.5">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-foreground">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M12 6v12M8 10c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4M8 14c0 2.2 1.8 4 4 4s4-1.8 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+        <div
+          className={cn(
+            'flex items-center justify-center size-8 rounded-full shrink-0 mt-0.5',
+            hasMethod ? 'bg-muted/80 text-foreground' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+          )}
+        >
+          {hasMethod ? (
+            isBank ? <Landmark className="size-4" /> : <Wallet className="size-4" />
+          ) : (
+            <AlertTriangle className="size-4" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <p className="text-sm font-semibold">Crypto Payouts Available</p>
-            <Badge className="bg-foreground text-background border-0 text-[9px] font-mono uppercase tracking-[0.12em] px-2 py-0.5">
-              Most Recommended
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Receive payouts in <span className="font-medium text-foreground">USD Coin (USDC)</span> or <span className="font-medium text-foreground">Tether (USDT)</span> for faster, borderless withdrawals.
-            Set your preferred crypto wallet in{' '}
-            <button
-              onClick={() => usePartnerStore.getState().navigate('settings')}
-              className="font-medium text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors"
-            >
-              Settings → Payout Info
-            </button>.
-          </p>
+          {hasMethod ? (
+            <>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                <p className="text-sm font-semibold">Payout destination</p>
+                <Badge variant="outline" className="text-[9px] font-mono uppercase tracking-[0.12em]">
+                  {METHOD_LABELS[partner?.payoutMethod || ''] || partner?.payoutMethod}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed break-words">
+                <span className="font-mono text-foreground/90">{summary}</span>{' '}
+                <button
+                  onClick={() => navigate('settings')}
+                  className="font-medium text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors"
+                >
+                  Edit in Settings
+                </button>
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                <p className="text-sm font-semibold">Add a payout method</p>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                You haven't configured how you'd like to be paid. Add a crypto
+                wallet or bank account so we know where to send your earnings.{' '}
+                <button
+                  onClick={() => navigate('settings')}
+                  className="font-medium text-foreground underline underline-offset-2 hover:text-foreground/80 transition-colors"
+                >
+                  Set it up in Settings → Payout Info
+                </button>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </motion.div>
@@ -95,8 +150,8 @@ function PayoutConfirmDialog({
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Payout will be processed within 5-7 business days. You will receive
-          USDC to your configured wallet address.
+          Payout will be processed within 5-7 business days to your configured
+          payout destination (Settings → Payout Info).
         </p>
 
         <DialogFooter className="pt-2">
@@ -138,7 +193,7 @@ function PayoutConfirmDialog({
   );
 }
 
-function PayoutsEmpty({ payable, onOpenDialog }: { payable: string; onOpenDialog: () => void }) {
+function PayoutsEmpty({ payable, onOpenDialog, partner }: { payable: string; onOpenDialog: () => void; partner: Partner | null }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -166,7 +221,7 @@ function PayoutsEmpty({ payable, onOpenDialog }: { payable: string; onOpenDialog
         </Button>
       </div>
 
-      <CryptoBanner />
+      <PayoutDestinationBanner partner={partner} />
 
       <div className="py-16 text-center">
         <h3 className="text-lg font-medium tracking-tight mb-2">
@@ -241,6 +296,7 @@ function PayoutRow({ payout, index }: { payout: PayoutItem; index: number }) {
 export function PagePayouts() {
   const queryClient = useQueryClient();
   const dashboardData = usePartnerStore((s) => s.dashboardData);
+  const partner = usePartnerStore((s) => s.partner);
   const [page, setPage] = useState(1);
   const pageSize = 20;
   const [payoutState, setPayoutState] = useState<'idle' | 'processing' | 'requested'>('idle');
@@ -264,6 +320,11 @@ export function PagePayouts() {
 
   const handleRequestPayout = useCallback(async () => {
     if (payoutState !== 'idle') return;
+    if (!partner?.payoutMethod) {
+      toast.error('Add a payout method before requesting a payout');
+      usePartnerStore.getState().navigate('settings');
+      return;
+    }
     setPayoutState('processing');
     try {
       await partnerApi.requestPayout();
@@ -272,10 +333,11 @@ export function PagePayouts() {
       queryClient.invalidateQueries({ queryKey: ['partner-payouts'] });
       queryClient.invalidateQueries({ queryKey: ['partner-dashboard'] });
       setTimeout(() => setPayoutState('idle'), 3000);
-    } catch {
+    } catch (err) {
       setPayoutState('idle');
+      toast.error(err instanceof Error ? err.message : 'Could not request payout');
     }
-  }, [payoutState, queryClient]);
+  }, [payoutState, queryClient, partner]);
 
   const handleConfirmPayout = useCallback(async () => {
     setConfirmOpen(false);
@@ -299,7 +361,7 @@ export function PagePayouts() {
   if (list.length === 0 && page === 1) {
     return (
       <>
-        <PayoutsEmpty payable={payableDisplay} onOpenDialog={() => setConfirmOpen(true)} />
+        <PayoutsEmpty payable={payableDisplay} partner={partner} onOpenDialog={() => setConfirmOpen(true)} />
         <PayoutConfirmDialog
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
@@ -383,8 +445,8 @@ export function PagePayouts() {
         </Button>
       </motion.div>
 
-      {/* Crypto recommendation banner */}
-      <CryptoBanner />
+      {/* Payout destination banner */}
+      <PayoutDestinationBanner partner={partner} />
 
       {/* Payout history */}
       <motion.div

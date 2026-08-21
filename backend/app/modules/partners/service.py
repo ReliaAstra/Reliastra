@@ -36,6 +36,7 @@ from app.modules.partners.repository import (
 from app.modules.partners.schemas import (
     PartnerDashboardResponse,
     PartnerProfileResponse,
+    PayoutSettingsUpdateRequest,
     ReferralItem,
     ReferralListResponse,
 )
@@ -151,6 +152,68 @@ class PartnerService:
         profile = await self.get_partner_for_user(session, user_id)
         return await self._to_profile_response(session, profile)
 
+    async def update_payout_settings(
+        self,
+        session: AsyncSession,
+        user_id: uuid.UUID,
+        body: PayoutSettingsUpdateRequest,
+    ) -> PartnerProfileResponse:
+        """Persist a partner's payout destination.
+
+        Crypto methods require a wallet address (and optionally a network);
+        bank transfers require structured ``bank_details``. Clearing a
+        method is not supported through this endpoint — a partner may switch
+        methods, which replaces the destination wholesale.
+        """
+        profile = await self.get_partner_for_user(session, user_id)
+
+        # Assign directly (rather than via ``profile_repo.update``) because a
+        # method switch must clear the previously configured destination —
+        # e.g. ``bank`` → ``crypto_usdc`` has to null out ``bank_details`` and
+        # vice-versa, and the repo's ``update`` helper skips ``None`` values.
+        if body.payout_method in ("crypto_usdc", "crypto_usdt"):
+            address = (body.wallet_address or "").strip()
+            if not address:
+                raise ValidationException(
+                    "A wallet address is required for crypto payouts"
+                )
+            profile.payout_method = body.payout_method
+            profile.wallet_address = address
+            profile.payout_network = (body.network or "").strip() or None
+            profile.bank_details = None
+        else:  # bank
+            details = body.bank_details or {}
+            if not details.get("account_number") or not details.get("bank_name"):
+                raise ValidationException(
+                    "Bank name and account number are required for bank transfers"
+                )
+            profile.payout_method = "bank"
+            profile.wallet_address = None
+            profile.payout_network = None
+            profile.bank_details = {
+                k: v
+                for k, v in {
+                    "account_name": details.get("account_name"),
+                    "bank_name": details.get("bank_name"),
+                    "account_number": details.get("account_number"),
+                    "routing_number": details.get("routing_number"),
+                    "swift_bic": details.get("swift_bic"),
+                }.items()
+                if v is not None
+            }
+        session.add(profile)
+        await session.flush()
+
+        await AuditLogService.log_event(
+            session=session,
+            event_type="partner_payout_settings_updated",
+            user_id=user_id,
+            resource_type="partner",
+            resource_id=str(profile.id),
+            payload={"payout_method": body.payout_method},
+        )
+        return await self._to_profile_response(session, profile)
+
     async def _to_profile_response(
         self, session: AsyncSession, profile: PartnerProfile
     ) -> PartnerProfileResponse:
@@ -170,6 +233,10 @@ class PartnerService:
             commission_rate=int(settings.PARTNER_COMMISSION_RATE),
             status=profile.status,
             created_at=profile.created_at,
+            payout_method=profile.payout_method,
+            wallet_address=profile.wallet_address,
+            payout_network=profile.payout_network,
+            bank_details=profile.bank_details,
         )
 
     # ── Dashboard ─────────────────────────────────────────────────────────

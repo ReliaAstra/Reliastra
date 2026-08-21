@@ -408,6 +408,91 @@ async def test_payout_flow(async_client, db_session, monkeypatch):
     assert str(commission.payout_id) == str(payout.id)
 
 
+# ── Payout destination ───────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_payout_settings_roundtrip(async_client, db_session):
+    partner = await _register(async_client, "wallet@example.com", "Wallet Kof")
+    await _activate_partner(async_client, partner["headers"])
+
+    # 1. Save a crypto destination.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={
+            "payout_method": "crypto_usdc",
+            "wallet_address": "0xAbC123",
+            "network": "Polygon",
+        },
+        headers=partner["headers"],
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["payout_method"] == "crypto_usdc"
+    assert body["wallet_address"] == "0xAbC123"
+    assert body["payout_network"] == "Polygon"
+
+    # 2. It is reflected in the profile endpoint.
+    me = await async_client.get("/v1/partners/me", headers=partner["headers"])
+    assert me.status_code == 200
+    assert me.json()["wallet_address"] == "0xAbC123"
+
+    # 3. Switching to bank clears the wallet and stores bank details.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={
+            "payout_method": "bank",
+            "bank_details": {
+                "account_name": "Wallet Kof",
+                "bank_name": "First Bank",
+                "account_number": "1234567890",
+                "routing_number": "021000021",
+            },
+        },
+        headers=partner["headers"],
+    )
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["payout_method"] == "bank"
+    assert body["wallet_address"] is None
+    assert body["bank_details"]["account_number"] == "1234567890"
+
+    # 4. Crypto requires a wallet address.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={"payout_method": "crypto_usdt", "wallet_address": ""},
+        headers=partner["headers"],
+    )
+    assert res.status_code == 422, res.text
+
+    # 5. Bank requires account number + bank name.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={"payout_method": "bank", "bank_details": {"account_name": "X"}},
+        headers=partner["headers"],
+    )
+    assert res.status_code == 422, res.text
+
+    # 6. Unauthenticated requests are rejected.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={"payout_method": "crypto_usdc", "wallet_address": "0x1"},
+    )
+    assert res.status_code == 401, res.text
+
+
+@pytest.mark.asyncio
+async def test_payout_request_requires_destination(async_client, db_session):
+    partner = await _register(async_client, "nodest@example.com", "No Dest Kof")
+    await _activate_partner(async_client, partner["headers"])
+
+    res = await async_client.post(
+        "/v1/partners/payouts/request", headers=partner["headers"]
+    )
+    # No destination configured -> forbidden until payout settings are saved.
+    assert res.status_code == 403, res.text
+
+
 # ── Public referral resolver ─────────────────────────────────────────────
 
 

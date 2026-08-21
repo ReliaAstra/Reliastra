@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 import { usePartnerStore } from '@/stores/partner-store';
+import { partnerApi } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { maskEmail } from '@/lib/format';
 import { ReferralLinkCard } from '@/components/partner/shared/referral-link-card';
@@ -11,11 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DashboardSettingsSkeleton } from '@/components/partner/shared/dashboard-skeleton';
 import { useState, useEffect } from 'react';
-
-type PayoutMethod = 'crypto_usdc' | 'crypto_usdt' | 'bank';
+import type { PayoutMethod } from '@/types/partner';
 
 // --- Account tab ---
 function AccountTab() {
@@ -184,8 +186,45 @@ function CryptoOptionCard({
 
 // --- Payout information tab ---
 function PayoutInfoTab() {
-  const [selectedMethod, setSelectedMethod] = useState<PayoutMethod>('crypto_usdc');
-  const [walletAddress, setWalletAddress] = useState('');
+  const partner = usePartnerStore((s) => s.partner);
+  const setPartner = usePartnerStore((s) => s.setPartner);
+
+  const [selectedMethod, setSelectedMethod] = useState<PayoutMethod>(
+    (partner?.payoutMethod as PayoutMethod) || 'crypto_usdc'
+  );
+  const [walletAddress, setWalletAddress] = useState(partner?.walletAddress || '');
+  const [network, setNetwork] = useState<string>(
+    partner?.payoutNetwork || (partner?.payoutMethod === 'crypto_usdt' ? 'Tron' : 'Ethereum')
+  );
+  const [bank, setBank] = useState({
+    account_name: partner?.bankDetails?.account_name || '',
+    bank_name: partner?.bankDetails?.bank_name || '',
+    account_number: partner?.bankDetails?.account_number || '',
+    routing_number: partner?.bankDetails?.routing_number || '',
+    swift_bic: partner?.bankDetails?.swift_bic || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(Boolean(partner?.payoutMethod));
+
+  // Re-sync local form state if the store's partner profile changes.
+  useEffect(() => {
+    if (!partner) return;
+    if (partner.payoutMethod) {
+      setSelectedMethod(partner.payoutMethod as PayoutMethod);
+      setSaved(true);
+    }
+    if (partner.walletAddress) setWalletAddress(partner.walletAddress);
+    if (partner.payoutNetwork) setNetwork(partner.payoutNetwork);
+    if (partner.bankDetails) {
+      setBank((prev) => ({
+        account_name: partner.bankDetails?.account_name ?? prev.account_name,
+        bank_name: partner.bankDetails?.bank_name ?? prev.bank_name,
+        account_number: partner.bankDetails?.account_number ?? prev.account_number,
+        routing_number: partner.bankDetails?.routing_number ?? prev.routing_number,
+        swift_bic: partner.bankDetails?.swift_bic ?? prev.swift_bic,
+      }));
+    }
+  }, [partner]);
 
   const methods: { id: PayoutMethod; name: string; symbol: string; network: string; recommended: boolean }[] = [
     { id: 'crypto_usdc', name: 'USD Coin (USDC)', symbol: 'USDC', network: 'Ethereum / Polygon / Solana', recommended: true },
@@ -194,6 +233,55 @@ function PayoutInfoTab() {
   ];
 
   const selectedMethodInfo = methods.find((m) => m.id === selectedMethod);
+
+  const networkOptions: Record<string, string[]> = {
+    crypto_usdc: ['Ethereum', 'Polygon', 'Solana'],
+    crypto_usdt: ['Ethereum', 'Tron', 'BSC'],
+  };
+
+  const handleSelectMethod = (id: PayoutMethod) => {
+    setSelectedMethod(id);
+    setSaved(false);
+    if (id === 'crypto_usdt') setNetwork('Tron');
+    else if (id === 'crypto_usdc') setNetwork('Ethereum');
+  };
+
+  const setBankField = (key: keyof typeof bank, value: string) => {
+    setBank((prev) => ({ ...prev, [key]: value }));
+    setSaved(false);
+  };
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const payload = {
+        payout_method: selectedMethod,
+        ...(selectedMethod === 'bank'
+          ? { bank_details: bank }
+          : { wallet_address: walletAddress.trim(), network }),
+      };
+      const res = await partnerApi.updatePayoutSettings(payload);
+      setPartner({
+        partnerId: res.partner_id,
+        referralCode: res.referral_code,
+        referralLink: res.referral_link,
+        commissionRate: res.commission_rate,
+        status: res.status,
+        createdAt: res.created_at,
+        payoutMethod: res.payout_method ?? null,
+        walletAddress: res.wallet_address ?? null,
+        payoutNetwork: res.payout_network ?? null,
+        bankDetails: res.bank_details ?? null,
+      });
+      setSaved(true);
+      toast.success('Payout details saved');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save payout details');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -217,7 +305,7 @@ function PayoutInfoTab() {
               network={m.network}
               recommended={m.recommended}
               selected={selectedMethod === m.id}
-              onSelect={() => setSelectedMethod(m.id)}
+              onSelect={() => handleSelectMethod(m.id)}
             />
           ))}
         </div>
@@ -240,7 +328,7 @@ function PayoutInfoTab() {
             <Input
               placeholder={selectedMethod === 'crypto_usdc' ? '0x... or your Solana address' : '0x... or your Tron address'}
               value={walletAddress}
-              onChange={(e) => setWalletAddress(e.target.value)}
+              onChange={(e) => { setWalletAddress(e.target.value); setSaved(false); }}
               className="font-mono text-sm"
             />
             <p className="text-[11px] text-muted-foreground">
@@ -253,32 +341,21 @@ function PayoutInfoTab() {
               Network
             </Label>
             <div className="grid grid-cols-3 gap-2">
-              {selectedMethod === 'crypto_usdc' && (
-                <>
-                  {['Ethereum', 'Polygon', 'Solana'].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className="rounded-md border border-border/60 px-3 py-2 text-xs font-mono text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </>
-              )}
-              {selectedMethod === 'crypto_usdt' && (
-                <>
-                  {['Ethereum', 'Tron', 'BSC'].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      className="rounded-md border border-border/60 px-3 py-2 text-xs font-mono text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </>
-              )}
+              {(networkOptions[selectedMethod] || []).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => { setNetwork(n); setSaved(false); }}
+                  className={cn(
+                    'rounded-md border px-3 py-2 text-xs font-mono transition-colors',
+                    network === n
+                      ? 'border-foreground bg-muted/40 text-foreground'
+                      : 'border-border/60 text-muted-foreground hover:border-foreground/40 hover:text-foreground'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -296,42 +373,85 @@ function PayoutInfoTab() {
             <Label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
               Name on account
             </Label>
-            <Input placeholder="Full legal name" className="font-mono text-sm" />
+            <Input
+              placeholder="Full legal name"
+              className="font-mono text-sm"
+              value={bank.account_name}
+              onChange={(e) => setBankField('account_name', e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
             <Label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
               Bank name
             </Label>
-            <Input placeholder="Bank name" className="font-mono text-sm" />
+            <Input
+              placeholder="Bank name"
+              className="font-mono text-sm"
+              value={bank.bank_name}
+              onChange={(e) => setBankField('bank_name', e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
             <Label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
               Account number
             </Label>
-            <Input placeholder="Account number" className="font-mono text-sm" />
+            <Input
+              placeholder="Account number"
+              className="font-mono text-sm"
+              value={bank.account_number}
+              onChange={(e) => setBankField('account_number', e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
             <Label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
               Routing number
             </Label>
-            <Input placeholder="Routing number" className="font-mono text-sm" />
+            <Input
+              placeholder="Routing number"
+              className="font-mono text-sm"
+              value={bank.routing_number}
+              onChange={(e) => setBankField('routing_number', e.target.value)}
+            />
           </div>
 
           <div className="space-y-2">
             <Label className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
               SWIFT / BIC (international)
             </Label>
-            <Input placeholder="Optional" className="font-mono text-sm" />
+            <Input
+              placeholder="Optional"
+              className="font-mono text-sm"
+              value={bank.swift_bic}
+              onChange={(e) => setBankField('swift_bic', e.target.value)}
+            />
           </div>
         </motion.div>
       )}
 
-      <Badge variant="outline" className="text-[10px] font-mono uppercase tracking-wide">
-        Payout information is not yet saved to your account
-      </Badge>
+      <div className="flex items-center gap-3 pt-1">
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="size-4 animate-spin" />
+              Saving…
+            </span>
+          ) : (
+            'Save payout details'
+          )}
+        </Button>
+        <Badge
+          variant="outline"
+          className={cn(
+            'text-[10px] font-mono uppercase tracking-wide',
+            saved && 'text-emerald-600 dark:text-emerald-400 border-emerald-500/40'
+          )}
+        >
+          {saved ? 'Saved' : 'Unsaved changes'}
+        </Badge>
+      </div>
     </div>
   );
 }
