@@ -47,14 +47,14 @@ async def test_org_members_list_is_cursor_paginated(async_client, auth_data):
             },
         )
         invite = await async_client.post(
-            f"/v1/orgs/{org_id}/members",
+            "/v1/orgs/members",
             headers=headers,
             json={"email": f"member{i}@reliastra.com", "role": "member"},
         )
         assert invite.status_code == 201, invite.text
 
     res = await async_client.get(
-        f"/v1/orgs/{org_id}/members",
+        "/v1/orgs/members",
         headers=headers,
         params={"limit": 2},
     )
@@ -66,7 +66,7 @@ async def test_org_members_list_is_cursor_paginated(async_client, auth_data):
     assert payload["next_cursor"] is not None
 
     page2 = await async_client.get(
-        f"/v1/orgs/{org_id}/members",
+        "/v1/orgs/members",
         headers=headers,
         params={"limit": 2, "cursor": payload["next_cursor"]},
     )

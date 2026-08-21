@@ -39,6 +39,14 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_supabase_user_id(
+        session: AsyncSession, supabase_user_id: str
+    ) -> User | None:
+        query = select(User).where(User.supabase_user_id == supabase_user_id)
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def create(
         session: AsyncSession,
         email: str,
@@ -51,6 +59,7 @@ class UserRepository:
         avatar_url: str | None = None,
         auth_provider: str | None = None,
         external_auth_id: str | None = None,
+        supabase_user_id: str | None = None,
         is_active: bool = True,
     ) -> User:
         user = User(
@@ -64,6 +73,7 @@ class UserRepository:
             avatar_url=avatar_url,
             auth_provider=auth_provider,
             external_auth_id=external_auth_id,
+            supabase_user_id=supabase_user_id,
             is_active=is_active,
         )
         session.add(user)
@@ -74,7 +84,7 @@ class UserRepository:
         "email", "full_name", "password_hash", "is_active",
         "is_email_verified", "is_superuser", "is_system_admin",
         "google_id", "github_id", "avatar_url", "auth_provider",
-        "external_auth_id", "admin_note", "source",
+        "external_auth_id", "supabase_user_id", "admin_note", "source",
         "last_login_at", "last_activity_at", "login_count",
     }
 

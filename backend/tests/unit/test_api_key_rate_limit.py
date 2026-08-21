@@ -11,25 +11,25 @@ async def test_api_key_auth_is_rate_limited(async_client, auth_data):
     org_id = auth_data["org_id"]
 
     create_res = await async_client.post(
-        f"/v1/orgs/{org_id}/api-keys",
+        "/v1/api-keys",
         headers=headers,
         json={"name": "rate-limit-key", "scopes": ["read:checks", "read:dependencies"]},
     )
     assert create_res.status_code == 201, create_res.text
     full_key = create_res.json()["full_key"]
-    api_headers = {"Authorization": f"ApiKey {full_key}"}
+    api_headers = {"Authorization": f"ApiKey {full_key}", "X-Organization-ID": org_id}
 
     original_limit = api_key_limiter.limit
     api_key_limiter.limit = 2
     try:
         first = await async_client.get(
-            f"/v1/orgs/{org_id}/dependencies", headers=api_headers
+            "/v1/dependencies", headers=api_headers
         )
         second = await async_client.get(
-            f"/v1/orgs/{org_id}/dependencies", headers=api_headers
+            "/v1/dependencies", headers=api_headers
         )
         third = await async_client.get(
-            f"/v1/orgs/{org_id}/dependencies", headers=api_headers
+            "/v1/dependencies", headers=api_headers
         )
     finally:
         api_key_limiter.limit = original_limit
