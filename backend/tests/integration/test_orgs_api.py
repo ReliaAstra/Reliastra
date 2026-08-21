@@ -81,7 +81,7 @@ async def test_orgs_endpoints(async_client, auth_data):
     assert del_res.status_code == 204
 
     after_del = await async_client.get(
-        f"/v1/orgs/{org_id}/members", headers=headers
+        "/v1/orgs/members", headers=headers
     )
     assert after_del.status_code == 200
     remaining_ids = {m["id"] for m in after_del.json()["items"]}
@@ -89,7 +89,7 @@ async def test_orgs_endpoints(async_client, auth_data):
 
     # Re-invite restores the soft-deleted membership
     reinvite = await async_client.post(
-        f"/v1/orgs/{org_id}/members",
+        "/v1/orgs/members",
         headers=headers,
         json={"email": "invitee@reliastra.com", "role": "member"},
     )

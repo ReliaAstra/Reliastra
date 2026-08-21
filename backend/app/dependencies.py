@@ -127,21 +127,98 @@ async def get_current_user(
         )
 
     if bearer and bearer.credentials:
-        payload = decode_token(bearer.credentials)
-        if payload.get("type") != "access":
-            raise UnauthorizedException("Invalid token type")
-        user_id_str = payload.get("sub")
-        if not user_id_str:
-            raise UnauthorizedException("Invalid token subject")
+        from app.core.supabase import verify_supabase_token, map_supabase_user
+        from app.config import settings
+        from app.core.permissions import Plan
+        from app.modules.organizations.repository import OrganizationRepository
 
-        user = await UserRepository.get_by_id(db, uuid.UUID(user_id_str))
-        if not user or not user.is_active:
-            raise UnauthorizedException("User not found or disabled")
+        payload = await verify_supabase_token(
+            token=bearer.credentials,
+            supabase_url=settings.SUPABASE_URL,
+            jwt_secret=settings.SUPABASE_JWT_SECRET,
+        )
 
-        request.state.auth_method = "jwt"
-        # FIX 7/36: authenticated principal for idempotency scoping & tracing.
-        request.state.user_id = str(user.id)
-        return user
+        if payload is not None:
+            mapped = map_supabase_user(payload)
+            sub_id = payload.get("sub") or ""
+
+            # Lookup by supabase_user_id first
+            user = await UserRepository.get_by_supabase_user_id(db, sub_id)
+            if not user:
+                # Lookup by external_auth_id for backwards compatibility
+                user = await UserRepository.get_by_external_auth_id(db, f"supabase:{sub_id}")
+                if user:
+                    user = await UserRepository.update(db, user, supabase_user_id=sub_id)
+
+            if not user and mapped["email"]:
+                # Fallback to email
+                user = await UserRepository.get_by_email(db, mapped["email"])
+                if user:
+                    user = await UserRepository.update(
+                        db, user, supabase_user_id=sub_id, external_auth_id=f"supabase:{sub_id}"
+                    )
+
+            if not user:
+                # Provision new user with least privileged role
+                user = await UserRepository.create(
+                    db,
+                    email=mapped["email"] or f"{uuid.uuid4().hex[:8]}@supabase.local",
+                    password_hash="",
+                    full_name=mapped["full_name"],
+                    is_email_verified=mapped["is_email_verified"],
+                    external_auth_id=f"supabase:{sub_id}",
+                    supabase_user_id=sub_id,
+                    is_active=True,
+                )
+
+                slug = f"user-{user.id.hex[:8]}"
+                org = await OrganizationRepository.create(
+                    db,
+                    name=f"{mapped['full_name']}'s Organization",
+                    slug=slug,
+                    plan=Plan.FREE.value,
+                )
+                await OrganizationRepository.add_member(
+                    db,
+                    org_id=org.id,
+                    user_id=user.id,
+                    role="viewer",
+                )
+
+                from app.modules.agencies.repository import AgencyRepository
+                await AgencyRepository.create_application(
+                    db,
+                    org_id=org.id,
+                    name="Default",
+                    description="Default application",
+                )
+                logger.info("Auto-provisioned local account for Supabase user %s", sub_id)
+
+            if not user or not user.is_active:
+                raise UnauthorizedException("User not found or disabled")
+
+            request.state.auth_method = "jwt"
+            request.state.user_id = str(user.id)
+            return user
+
+        # Fallback to native tokens
+        try:
+            payload = decode_token(bearer.credentials)
+            if payload.get("type") != "access":
+                raise UnauthorizedException("Invalid token type")
+            user_id_str = payload.get("sub")
+            if not user_id_str:
+                raise UnauthorizedException("Invalid token subject")
+
+            user = await UserRepository.get_by_id(db, uuid.UUID(user_id_str))
+            if not user or not user.is_active:
+                raise UnauthorizedException("User not found or disabled")
+
+            request.state.auth_method = "jwt"
+            request.state.user_id = str(user.id)
+            return user
+        except Exception as exc:
+            raise UnauthorizedException("Invalid or expired token") from exc
 
     raise UnauthorizedException("Authentication required (Bearer token or X-API-Key header)")
 

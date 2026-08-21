@@ -34,6 +34,10 @@ class User(UUIDMixin, TimestampMixin, Base):
         String(255), nullable=True, index=True,
         comment="External auth provider user ID, e.g. 'supabase:<uuid>'",
     )  # "google", "github", "email", None
+    supabase_user_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True,
+        comment="Immutable Supabase User ID",
+    )
     # Admin panel fields
     is_system_admin: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False

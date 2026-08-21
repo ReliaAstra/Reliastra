@@ -29,7 +29,6 @@ from app.infrastructure.redis_client import (
 from app.modules.agencies.router import router as agencies_router
 from app.modules.api_keys.router import router as api_keys_router
 from app.modules.auth.router import router as auth_router
-from app.modules.auth.supabase import router as supabase_auth_router
 from app.modules.billing.router import router as billing_router
 from app.modules.checks.router import router as checks_router
 from app.modules.dashboard.router import router as dashboard_router
@@ -275,7 +274,6 @@ def create_app() -> FastAPI:
     app.add_middleware(IdempotencyMiddleware)
 
     app.include_router(auth_router)
-    app.include_router(supabase_auth_router)
     app.include_router(users_router)
     app.include_router(organizations_router)
     app.include_router(dependencies_router)
