@@ -36,8 +36,10 @@ export default function Home() {
     }
   }, [navigate]);
 
-  // Hydrate auth state from server on mount
+  // Show the app immediately, then resolve auth state. This guarantees the
+  // landing page can never get stuck behind the async auth hydration.
   useEffect(() => {
+    setMounted(true);
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('partner_access_token');
@@ -111,19 +113,19 @@ export default function Home() {
 
   if (!mounted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]">
         <div className="flex items-center gap-3">
           <svg
             width="20"
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            className="animate-pulse text-foreground"
+            className="animate-pulse text-[#0891B2] dark:text-[#22D3EE]"
           >
             <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
             <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="font-mono text-xs tracking-widest uppercase text-muted-foreground">
+          <span className="font-mono text-xs tracking-widest uppercase text-[#09090B] dark:text-[#FAFAFA]">
             RELIASTRA
           </span>
         </div>
