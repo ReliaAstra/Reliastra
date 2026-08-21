@@ -36,8 +36,10 @@ export default function Home() {
     }
   }, [navigate]);
 
-  // Hydrate auth state from server on mount
+  // Show the app immediately, then resolve auth state. This guarantees the
+  // landing page can never get stuck behind the async auth hydration.
   useEffect(() => {
+    setMounted(true);
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('partner_access_token');
