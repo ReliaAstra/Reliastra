@@ -74,6 +74,10 @@ export default function Home() {
               commissionRate: p.commission_rate,
               status: p.status,
               createdAt: p.created_at,
+              payoutMethod: p.payout_method ?? null,
+              walletAddress: p.wallet_address ?? null,
+              payoutNetwork: p.payout_network ?? null,
+              bankDetails: p.bank_details ?? null,
             });
           }
         } else {

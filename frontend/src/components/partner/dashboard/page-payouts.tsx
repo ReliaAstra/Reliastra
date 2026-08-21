@@ -95,8 +95,8 @@ function PayoutConfirmDialog({
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Payout will be processed within 5-7 business days. You will receive
-          USDC to your configured wallet address.
+          Payout will be processed within 5-7 business days to your configured
+          payout destination (Settings → Payout Info).
         </p>
 
         <DialogFooter className="pt-2">

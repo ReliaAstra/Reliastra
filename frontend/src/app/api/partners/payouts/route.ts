@@ -7,3 +7,7 @@ export async function GET(req: NextRequest) {
   const path = `/partners/payouts${params ? `?${params}` : ''}`;
   return proxyToBackend(path, req);
 }
+
+export async function POST(req: NextRequest) {
+  return proxyToBackend('/partners/payouts/request', req);
+}

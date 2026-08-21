@@ -34,6 +34,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
@@ -69,6 +70,23 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
     #: Simple lifetime counter powering the dashboard "clicks" metric. It is
     #: a counter, not an analytics platform — no per-click rows are stored.
     click_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # ── Payout destination ─────────────────────────────────────────────────
+    # How a partner wants to be paid. ``crypto_usdc`` / ``crypto_usdt`` /
+    # ``bank``. ``None`` means no payout destination has been configured yet.
+    payout_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    #: Destination address. For crypto methods this is the wallet address; for
+    #: ``bank`` it is left ``None`` and the structured account lives in
+    #: ``bank_details``.
+    wallet_address: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    #: Blockchain network for crypto methods (Ethereum, Polygon, Solana, Tron,
+    #: BSC, …). ``None`` for bank transfers.
+    payout_network: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    #: Structured bank-account details when ``payout_method == "bank"``:
+    #: ``{"account_name", "bank_name", "account_number", "routing_number",
+    #: "swift_bic"}``. Kept as JSON so the shape can evolve without a
+    #: migration.
+    bank_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
 
 class PartnerReferral(UUIDMixin, TimestampMixin, Base):

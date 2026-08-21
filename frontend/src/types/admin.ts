@@ -517,6 +517,12 @@ export interface PartnerDetailResponse {
   referral_code: string;
   status: string;
   created_at: string;
+  payout_settings?: {
+    payout_method?: string | null;
+    wallet_address?: string | null;
+    payout_network?: string | null;
+    bank_details?: Record<string, string> | null;
+  };
   commission_summary: {
     total_earned_minor: number;
     total_paid_minor: number;

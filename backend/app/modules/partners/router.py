@@ -29,6 +29,7 @@ from app.modules.partners.schemas import (
     PartnerProfileResponse,
     PayoutItem,
     PayoutListResponse,
+    PayoutSettingsUpdateRequest,
     ReferralListResponse,
 )
 from app.modules.partners.service import partner_service
@@ -81,6 +82,28 @@ async def get_me(
     current_user: User = Depends(require_partner_user),
 ) -> PartnerProfileResponse:
     return await partner_service.get_my_profile(db, current_user.id)
+
+
+@partners_router.put(
+    "/payout-settings",
+    response_model=PartnerProfileResponse,
+    summary="Save payout destination (wallet / bank)",
+)
+async def update_payout_settings(
+    body: PayoutSettingsUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PartnerProfileResponse:
+    """Persist how the partner wants to be paid.
+
+    Crypto methods require ``wallet_address`` (and optionally ``network``);
+    ``bank`` requires ``bank_details`` with at least ``bank_name`` and
+    ``account_number``. The admin panel surfaces this destination when
+    settling payouts.
+    """
+    return await partner_service.update_payout_settings(
+        db, current_user.id, body
+    )
 
 
 @partners_router.get(
@@ -173,3 +196,36 @@ async def list_payouts(
         for p in rows
     ]
     return PayoutListResponse(items=items, page=page, page_size=page_size, total=total)
+
+
+@partners_router.post(
+    "/payouts/request",
+    response_model=PayoutItem,
+    status_code=status.HTTP_201_CREATED,
+    summary="Request a payout of the full payable balance",
+)
+async def request_payout(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PayoutItem:
+    """Create a pending payout for the partner's entire payable balance.
+
+    The request is *administratively settled* in v1 — an admin still marks the
+    payout paid. A payout destination must be configured first (see
+    ``PUT /v1/partners/payout-settings``).
+    """
+    profile = await partner_service.get_partner_for_user(db, current_user.id)
+    if not profile.payout_method:
+        raise ForbiddenException(
+            "Configure a payout method in Settings → Payout Info before requesting a payout"
+        )
+    payout = await payout_service.create_payout(db, profile.id)
+    return PayoutItem(
+        id=payout.id,
+        period=payout.period,
+        amount_minor=payout.amount_minor,
+        currency=payout.currency,
+        status=payout.status,
+        paid_at=payout.paid_at,
+        transaction_reference=payout.transaction_reference,
+    )

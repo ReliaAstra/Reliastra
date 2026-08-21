@@ -7,7 +7,9 @@ import type {
   PartnerDashboardResponse,
   ReferralListResponse,
   CommissionListResponse,
+  PayoutItem,
   PayoutListResponse,
+  PayoutSettingsUpdateRequest,
   ForgotPasswordRequest,
   PartnerApplyRequest,
   Partner,
@@ -120,7 +122,22 @@ export const partnerApi = {
       commissionRate: res.commission_rate,
       status: res.status,
       createdAt: res.created_at,
+      payoutMethod: res.payout_method ?? null,
+      walletAddress: res.wallet_address ?? null,
+      payoutNetwork: res.payout_network ?? null,
+      bankDetails: res.bank_details ?? null,
     };
+  },
+
+  async getPayoutSettings() {
+    return request<PartnerProfileResponse>('/partners/me');
+  },
+
+  async updatePayoutSettings(data: PayoutSettingsUpdateRequest) {
+    return request<PartnerProfileResponse>('/partners/payout-settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 
   async getDashboard() {
@@ -140,7 +157,7 @@ export const partnerApi = {
   },
 
   async requestPayout() {
-    return request<{ success: boolean }>('/partners/payouts/request', {
+    return request<PayoutItem>('/partners/payouts/request', {
       method: 'POST',
     });
   },

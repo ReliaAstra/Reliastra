@@ -71,6 +71,21 @@ export interface PartnerProfileResponse {
   commission_rate: number;
   status: string;
   created_at: string;
+  payout_method?: string | null;
+  wallet_address?: string | null;
+  payout_network?: string | null;
+  bank_details?: Record<string, string> | null;
+}
+
+// ── Payout destination ──────────────────────────
+
+export type PayoutMethod = 'crypto_usdc' | 'crypto_usdt' | 'bank';
+
+export interface PayoutSettingsUpdateRequest {
+  payout_method: PayoutMethod;
+  wallet_address?: string | null;
+  network?: string | null;
+  bank_details?: Record<string, string> | null;
 }
 
 export interface PartnerDashboardResponse {
@@ -186,6 +201,10 @@ export interface Partner {
   commissionRate: number;
   status: string;
   createdAt: string;
+  payoutMethod?: string | null;
+  walletAddress?: string | null;
+  payoutNetwork?: string | null;
+  bankDetails?: Record<string, string> | null;
 }
 
 // ── Tier System (frontend-only for marketing) ──

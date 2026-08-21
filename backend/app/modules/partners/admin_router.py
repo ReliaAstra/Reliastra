@@ -462,6 +462,12 @@ async def get_partner_detail(
         "referral_code": await _referral_code_for(db, profile.referral_code_id),
         "status": profile.status,
         "created_at": profile.created_at,
+        "payout_settings": {
+            "payout_method": profile.payout_method,
+            "wallet_address": profile.wallet_address,
+            "payout_network": profile.payout_network,
+            "bank_details": profile.bank_details,
+        },
         "commission_summary": summary,
         "referred_customers": referred,
         "commission_history": commission_history,

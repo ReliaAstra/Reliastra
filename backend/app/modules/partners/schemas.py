@@ -15,6 +15,26 @@ class PartnerApplyRequest(BaseModel):
     agree_terms: bool = False
 
 
+#: Payout methods a partner may select. Mirrors the frontend ``PayoutMethod``
+#: union so the two sides stay in lockstep.
+PAYOUT_METHODS = ("crypto_usdc", "crypto_usdt", "bank")
+
+
+class PayoutSettingsUpdateRequest(BaseModel):
+    """Request body for saving a partner's payout destination."""
+
+    payout_method: str = Field(pattern="^(crypto_usdc|crypto_usdt|bank)$")
+    wallet_address: str | None = Field(
+        default=None, max_length=200, description="Crypto wallet address"
+    )
+    network: str | None = Field(
+        default=None, max_length=50, description="Blockchain network"
+    )
+    bank_details: dict | None = Field(
+        default=None, description="Structured bank-account details"
+    )
+
+
 class PartnerProfileResponse(BaseModel):
     partner_id: uuid.UUID
     referral_code: str
@@ -22,6 +42,10 @@ class PartnerProfileResponse(BaseModel):
     commission_rate: int
     status: str
     created_at: datetime
+    payout_method: str | None = None
+    wallet_address: str | None = None
+    payout_network: str | None = None
+    bank_details: dict | None = None
 
 
 class PartnerDashboardResponse(BaseModel):
