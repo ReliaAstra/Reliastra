@@ -458,6 +458,9 @@ export interface PartnerStatsResponse {
   monthly_commission_minor: number;
   total_commission_paid_minor: number;
   pending_commission_minor: number;
+  /** Payouts awaiting settlement — the admin's actual to-do list. */
+  pending_payout_count: number;
+  pending_payout_minor: number;
   currency: string;
 }
 
@@ -506,6 +509,12 @@ export interface AdminPayoutItem {
   transaction_reference?: string | null;
   requested_at: string;
   paid_at?: string | null;
+  payout_method?: string | null;
+  /**
+   * Ready-to-use destination for settlement — bank account numbers are masked
+   * to the last four digits by the backend.
+   */
+  payout_destination?: string | null;
 }
 
 export type AdminPayoutListResponse = PaginatedResponse<AdminPayoutItem>;

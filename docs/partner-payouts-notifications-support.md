@@ -18,7 +18,9 @@ method's fields so a stale destination can never be paid.
 
 **Admin** — `/admin/partners/{id}` shows a *Payout destination* card with the
 wallet/network or the bank fields, and the destination is repeated inside the
-"Mark payout paid" confirmation so nobody settles blind.
+"Mark payout paid" confirmation so nobody settles blind. The **payout queue**
+on `/admin/partners` (see below) also carries it, so a settlement never
+requires opening a partner's page.
 
 ## 2. Payout lifecycle
 
@@ -35,6 +37,19 @@ bank API. What the code guarantees is the ledger:
 
 Requesting requires a configured destination and a balance at or above
 `PARTNER_MINIMUM_PAYOUT_MINOR` (default $50).
+
+### Payout queue
+
+Payout requests used to be invisible — the endpoint existed but nothing
+rendered it, so an admin had to open partners one by one to notice someone was
+waiting. `/admin/partners` now leads with:
+
+* an **Awaiting payout** metric (`pending_payout_count` / `pending_payout_minor`
+  on `GET /v1/admin/partners/stats`);
+* a **Payout queue** listing every open request with the partner, the amount,
+  how long it has waited, and the destination to send to — bank numbers masked
+  to the last four digits — with *Mark paid* (requires a transaction reference)
+  and *Mark failed* inline. Refreshes every 30s.
 
 ### Bugs fixed
 
@@ -145,17 +160,15 @@ keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
 * **Payout destinations are stored in plain text** and are not masked in the
   admin API response; changing one does not require re-auth or a cool-down.
   This remains the highest-value hardening left.
-* **No global pending-payout queue screen.** `adminApi.partnerPayouts()` and
-  `GET /v1/admin/partners/payouts?status=pending` exist but the admin still
-  discovers requests per partner.
 * `PartnerTicketItem.unread_admin_messages` is always `0` — per-message read
   receipts are not tracked; the notification feed covers "you have a reply".
 
 ## Tests
 
-`backend/tests/integration/test_partner_notifications.py` (11 tests) covers the
+`backend/tests/integration/test_partner_notifications.py` (12 tests) covers the
 balance split, mark-paid reference enforcement + notification with a masked
 destination, failed-payout release, referral/commission notifications, feed
 privacy between partners, preference persistence, admin broadcast (all and
 selected) with authz, and the full support round trip including internal-note
-leakage and cross-partner access. Full backend suite: 285 passed, 3 skipped.
+leakage and cross-partner access, plus the payout queue's backlog figures and
+masked destination. Full backend suite: 286 passed, 3 skipped.

@@ -225,6 +225,12 @@ class AdminPayoutItem(BaseModel):
     transaction_reference: str | None
     requested_at: datetime
     paid_at: datetime | None
+    #: ``crypto_usdc`` | ``crypto_usdt`` | ``bank`` | ``None`` when the partner
+    #: has not configured a destination yet.
+    payout_method: str | None = None
+    #: Where the money has to be sent, ready to display in the payout queue —
+    #: bank account numbers are masked to the last four digits.
+    payout_destination: str | None = None
 
 
 class AdminPayoutListResponse(BaseModel):
@@ -243,6 +249,9 @@ class PartnerStatsResponse(BaseModel):
     monthly_commission_minor: int
     total_commission_paid_minor: int
     pending_commission_minor: int
+    #: Payouts awaiting settlement — the admin's actual to-do list.
+    pending_payout_count: int = 0
+    pending_payout_minor: int = 0
     currency: str
 
 

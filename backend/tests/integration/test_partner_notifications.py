@@ -575,3 +575,78 @@ async def test_support_ticket_validates_message_length(async_client):
         headers=partner["headers"],
     )
     assert res.status_code == 422, res.text
+
+
+# ── Admin payout queue ───────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_payout_queue_exposes_destination_and_backlog(async_client, db_session):
+    """The admin queue must show what to pay and where, without drilling in."""
+    admin = await _register(async_client, "queueadmin@example.com", "Queue Admin")
+    await _make_admin(db_session, admin["user_id"])
+    admin_headers = {"Authorization": f"Bearer {admin['token']}"}
+
+    partner = await _register(async_client, "queue@example.com", "Queue Kof")
+    profile = await _activate_partner(async_client, partner["headers"])
+    customer = await _register(
+        async_client, "queuecust@example.com", "Queue Cust", ref_code=profile["referral_code"]
+    )
+    await commission_service.record_payment(
+        db_session,
+        organization_id=customer["org_id"],
+        collected_minor=70_000,
+        currency="USD",
+        payment_reference="queue-1",
+        paid_at=datetime.now(timezone.utc),
+    )
+    await db_session.commit()
+    await _release_commissions(db_session, await _partner_id(db_session, partner["user_id"]))
+
+    # Nothing to settle yet.
+    stats = (
+        await async_client.get("/v1/admin/partners/stats", headers=admin_headers)
+    ).json()
+    assert stats["pending_payout_count"] == 0
+    assert stats["pending_payout_minor"] == 0
+
+    await async_client.put(
+        "/v1/partners/payout-settings",
+        json={
+            "payout_method": "bank",
+            "bank_details": {"bank_name": "First Bank", "account_number": "1234567890"},
+        },
+        headers=partner["headers"],
+    )
+    payout = (
+        await async_client.post("/v1/partners/payouts/request", headers=partner["headers"])
+    ).json()
+
+    # The request now shows up as a backlog figure …
+    stats = (
+        await async_client.get("/v1/admin/partners/stats", headers=admin_headers)
+    ).json()
+    assert stats["pending_payout_count"] == 1
+    assert stats["pending_payout_minor"] == payout["amount_minor"]
+
+    # … and as a queue row carrying the masked destination to pay.
+    res = await async_client.get(
+        "/v1/admin/partners/payouts", params={"status": "pending"}, headers=admin_headers
+    )
+    assert res.status_code == 200, res.text
+    row = res.json()["items"][0]
+    assert row["partner_email"] == "queue@example.com"
+    assert row["payout_method"] == "bank"
+    assert row["payout_destination"] == "First Bank ••••7890"
+    assert "1234567890" not in row["payout_destination"]
+
+    # Settling it empties the queue.
+    await async_client.post(
+        f"/v1/admin/partners/payouts/{payout['id']}/process",
+        json={"action": "mark_paid", "transaction_reference": "TX-QUEUE"},
+        headers=admin_headers,
+    )
+    stats = (
+        await async_client.get("/v1/admin/partners/stats", headers=admin_headers)
+    ).json()
+    assert stats["pending_payout_count"] == 0

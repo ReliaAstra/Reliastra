@@ -27,7 +27,7 @@ from app.modules.partners.notifications import (
     PartnerEvent,
     partner_notification_service,
 )
-from app.modules.partners.payouts import payout_service
+from app.modules.partners.payouts import describe_destination, payout_service
 from app.modules.partners.repository import (
     PartnerCommissionRepository,
     PartnerPayoutRepository,
@@ -203,6 +203,24 @@ async def get_stats(
         PartnerCommission.status.in_(["pending", "payable"]),
     )
 
+    from app.modules.partners.models import PartnerPayout
+
+    pending_payout_statuses = ["pending", "processing"]
+    pending_payout_count = int(
+        (
+            await db.execute(
+                select(func.count())
+                .select_from(PartnerPayout)
+                .where(PartnerPayout.status.in_(pending_payout_statuses))
+            )
+        ).scalar()
+        or 0
+    )
+    pending_payout_minor = await _sum(
+        PartnerPayout.amount_minor,
+        PartnerPayout.status.in_(pending_payout_statuses),
+    )
+
     return PartnerStatsResponse(
         total_partners=total_partners,
         active_partners=active_partners,
@@ -212,6 +230,8 @@ async def get_stats(
         monthly_commission_minor=monthly_commission,
         total_commission_paid_minor=total_paid,
         pending_commission_minor=pending,
+        pending_payout_count=pending_payout_count,
+        pending_payout_minor=pending_payout_minor,
         currency="USD",
     )
 
@@ -332,6 +352,13 @@ async def list_payouts(
                 transaction_reference=p.transaction_reference,
                 requested_at=p.created_at,
                 paid_at=p.paid_at,
+                payout_method=(partner.payout_method if partner else None),
+                # Settling a payout means copying this destination into a
+                # wallet or a banking app, so the queue carries it directly
+                # instead of forcing a trip to each partner's detail page.
+                payout_destination=(
+                    describe_destination(partner) if partner else None
+                ),
             )
         )
     return AdminPayoutListResponse(
