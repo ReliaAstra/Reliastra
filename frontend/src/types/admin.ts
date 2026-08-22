@@ -458,6 +458,9 @@ export interface PartnerStatsResponse {
   monthly_commission_minor: number;
   total_commission_paid_minor: number;
   pending_commission_minor: number;
+  /** Payouts awaiting settlement — the admin's actual to-do list. */
+  pending_payout_count: number;
+  pending_payout_minor: number;
   currency: string;
 }
 
@@ -506,9 +509,48 @@ export interface AdminPayoutItem {
   transaction_reference?: string | null;
   requested_at: string;
   paid_at?: string | null;
+  payout_method?: string | null;
+  /**
+   * Ready-to-use destination for settlement — bank account numbers are masked
+   * to the last four digits by the backend.
+   */
+  payout_destination?: string | null;
 }
 
 export type AdminPayoutListResponse = PaginatedResponse<AdminPayoutItem>;
+
+/** Full payout destination, returned only by the audited reveal endpoint. */
+export interface AdminPayoutDestinationReveal {
+  partner_id: string;
+  partner_email?: string | null;
+  payout_method?: string | null;
+  payout_network?: string | null;
+  wallet_address?: string | null;
+  bank_details?: Record<string, string> | null;
+  payout_destination?: string | null;
+  payout_details_updated_at?: string | null;
+  /** True while the post-change hold is still running — do not pay yet. */
+  in_cooldown: boolean;
+}
+
+/** Admin → partner announcement (see `POST /v1/admin/partners/notify`). */
+export interface AdminPartnerNotifyRequest {
+  audience: 'all' | 'selected';
+  partner_ids?: string[];
+  statuses?: string[];
+  title: string;
+  body: string;
+  action_url?: string | null;
+  action_label?: string | null;
+  category?: 'announcement' | 'marketing';
+  send_email?: boolean;
+}
+
+export interface AdminPartnerNotifyResponse {
+  recipients: number;
+  emailed: number;
+  title: string;
+}
 
 export interface PartnerDetailResponse {
   partner_id: string;
@@ -519,9 +561,14 @@ export interface PartnerDetailResponse {
   created_at: string;
   payout_settings?: {
     payout_method?: string | null;
+    /** Masked; use `adminApi.revealPayoutDestination` for the payable value. */
     wallet_address?: string | null;
     payout_network?: string | null;
+    /** Masked: account/routing numbers arrive as `••••1234`. */
     bank_details?: Record<string, string> | null;
+    payout_destination?: string | null;
+    payout_details_updated_at?: string | null;
+    is_masked?: boolean;
   };
   commission_summary: {
     total_earned_minor: number;

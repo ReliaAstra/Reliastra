@@ -10,6 +10,11 @@ import type {
   PayoutItem,
   PayoutListResponse,
   PayoutSettingsUpdateRequest,
+  NotificationListResponse,
+  NotificationPreferences,
+  PartnerTicketDetailResponse,
+  PartnerTicketListResponse,
+  PartnerTicketMessageItem,
   ForgotPasswordRequest,
   PartnerApplyRequest,
   Partner,
@@ -126,6 +131,8 @@ export const partnerApi = {
       walletAddress: res.wallet_address ?? null,
       payoutNetwork: res.payout_network ?? null,
       bankDetails: res.bank_details ?? null,
+      payoutDestination: res.payout_destination ?? null,
+      payoutDetailsUpdatedAt: res.payout_details_updated_at ?? null,
     };
   },
 
@@ -162,12 +169,81 @@ export const partnerApi = {
     });
   },
 
+  // ── Notifications ────────────────────────────
+
+  async getNotifications(page = 1, pageSize = 20, unreadOnly = false) {
+    return request<NotificationListResponse>(
+      `/partners/notifications?page=${page}&page_size=${pageSize}&unread_only=${unreadOnly}`
+    );
+  },
+
+  async getUnreadCount() {
+    return request<{ unread: number }>('/partners/notifications/unread-count');
+  },
+
+  /** Mark specific notifications read, or the whole feed when ids are omitted. */
+  async markNotificationsRead(notificationIds?: string[]) {
+    return request<{ unread: number }>('/partners/notifications/read', {
+      method: 'POST',
+      body: JSON.stringify({ notification_ids: notificationIds ?? null }),
+    });
+  },
+
+  async dismissNotification(id: string) {
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('partner_access_token')
+        : null;
+    await fetch(`/api/partners/notifications/${id}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+  },
+
+  async getNotificationPreferences() {
+    return request<NotificationPreferences>('/partners/notification-preferences');
+  },
+
+  async updateNotificationPreferences(data: Partial<NotificationPreferences>) {
+    return request<NotificationPreferences>('/partners/notification-preferences', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
   // ── Support ──────────────────────────────────
 
+  /** Public (unauthenticated) contact form — kept for the marketing pages. */
   async submitSupport(data: { name: string; email: string; subject: string; message: string }) {
     return request<{ success: boolean }>('/support', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  async getSupportTickets(page = 1, pageSize = 20) {
+    return request<PartnerTicketListResponse>(
+      `/partners/support/tickets?page=${page}&page_size=${pageSize}`
+    );
+  },
+
+  async getSupportThread(ticketId: string) {
+    return request<PartnerTicketDetailResponse>(
+      `/partners/support/tickets/${ticketId}`
+    );
+  },
+
+  async createSupportTicket(data: { subject: string; message: string; priority?: string }) {
+    return request<PartnerTicketDetailResponse>('/partners/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify({ priority: 'normal', ...data }),
+    });
+  },
+
+  async sendSupportMessage(ticketId: string, body: string) {
+    return request<PartnerTicketMessageItem>(
+      `/partners/support/tickets/${ticketId}/messages`,
+      { method: 'POST', body: JSON.stringify({ body }) }
+    );
   },
 };

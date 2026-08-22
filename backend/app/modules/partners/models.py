@@ -27,12 +27,14 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -78,7 +80,11 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
     #: Destination address. For crypto methods this is the wallet address; for
     #: ``bank`` it is left ``None`` and the structured account lives in
     #: ``bank_details``.
-    wallet_address: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    #:
+    #: Stored **Fernet-encrypted** (``enc:v1:`` prefix) — read and written
+    #: through :mod:`app.modules.partners.destination`, never directly. The
+    #: column is widened because ciphertext is longer than the address.
+    wallet_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     #: Blockchain network for crypto methods (Ethereum, Polygon, Solana, Tron,
     #: BSC, …). ``None`` for bank transfers.
     payout_network: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -86,7 +92,16 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
     #: ``{"account_name", "bank_name", "account_number", "routing_number",
     #: "swift_bic"}``. Kept as JSON so the shape can evolve without a
     #: migration.
+    #:
+    #: Stored encrypted as ``{"__enc__": "enc:v1:…"}`` — always read through
+    #: :mod:`app.modules.partners.destination`.
     bank_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    #: When the destination was last changed. Drives the payout cool-down: a
+    #: freshly changed destination cannot be cashed out immediately, which
+    #: turns an account takeover into something the partner can still catch.
+    payout_details_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class PartnerReferral(UUIDMixin, TimestampMixin, Base):
@@ -208,9 +223,53 @@ class PartnerPayout(UUIDMixin, TimestampMixin, Base):
     )
 
 
+class PartnerNotificationPreference(UUIDMixin, TimestampMixin, Base):
+    """Per-partner delivery preferences for program notifications.
+
+    In-app notifications are always delivered (they are the partner's audit
+    trail of what happened); these flags only gate the *email* copy plus the
+    browser-push opt-in. A missing row means "all defaults on" — the service
+    creates one lazily on first read or write.
+    """
+
+    __tablename__ = "partner_notification_preferences"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    email_referral: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_commission: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_payout: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_support: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_announcement: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_marketing: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+    #: Browser (Chrome) notification opt-in. The browser permission itself
+    #: lives in the user agent; this records that the partner asked for them
+    #: so the dashboard knows to raise a Notification when new items arrive.
+    browser_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+
+
 __all__ = [
     "PartnerProfile",
     "PartnerReferral",
     "PartnerCommission",
     "PartnerPayout",
+    "PartnerNotificationPreference",
 ]

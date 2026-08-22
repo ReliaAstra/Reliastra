@@ -17,7 +17,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DashboardSettingsSkeleton } from '@/components/partner/shared/dashboard-skeleton';
 import { useState, useEffect } from 'react';
-import type { PayoutMethod } from '@/types/partner';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  browserNotificationPermission,
+  requestBrowserNotifications,
+} from '@/hooks/use-partner-notifications';
+import type { NotificationPreferences, PayoutMethod } from '@/types/partner';
 
 // --- Account tab ---
 function AccountTab() {
@@ -192,16 +197,22 @@ function PayoutInfoTab() {
   const [selectedMethod, setSelectedMethod] = useState<PayoutMethod>(
     (partner?.payoutMethod as PayoutMethod) || 'crypto_usdc'
   );
-  const [walletAddress, setWalletAddress] = useState(partner?.walletAddress || '');
+  // Deliberately NOT prefilled from the profile: the API only ever returns a
+  // masked destination, so prefilling would either leak nothing useful or
+  // write the mask back. Changing a destination means typing it again.
+  const [walletAddress, setWalletAddress] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [network, setNetwork] = useState<string>(
     partner?.payoutNetwork || (partner?.payoutMethod === 'crypto_usdt' ? 'Tron' : 'Ethereum')
   );
   const [bank, setBank] = useState({
     account_name: partner?.bankDetails?.account_name || '',
     bank_name: partner?.bankDetails?.bank_name || '',
-    account_number: partner?.bankDetails?.account_number || '',
-    routing_number: partner?.bankDetails?.routing_number || '',
-    swift_bic: partner?.bankDetails?.swift_bic || '',
+    // Account and routing numbers come back masked, so they are never
+    // prefilled — the partner re-enters them to change the destination.
+    account_number: '',
+    routing_number: '',
+    swift_bic: '',
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(Boolean(partner?.payoutMethod));
@@ -213,15 +224,13 @@ function PayoutInfoTab() {
       setSelectedMethod(partner.payoutMethod as PayoutMethod);
       setSaved(true);
     }
-    if (partner.walletAddress) setWalletAddress(partner.walletAddress);
     if (partner.payoutNetwork) setNetwork(partner.payoutNetwork);
     if (partner.bankDetails) {
+      // Only the non-secret labels are safe to carry into the form.
       setBank((prev) => ({
+        ...prev,
         account_name: partner.bankDetails?.account_name ?? prev.account_name,
         bank_name: partner.bankDetails?.bank_name ?? prev.bank_name,
-        account_number: partner.bankDetails?.account_number ?? prev.account_number,
-        routing_number: partner.bankDetails?.routing_number ?? prev.routing_number,
-        swift_bic: partner.bankDetails?.swift_bic ?? prev.swift_bic,
       }));
     }
   }, [partner]);
@@ -257,11 +266,15 @@ function PayoutInfoTab() {
     try {
       const payload = {
         payout_method: selectedMethod,
+        // Re-authentication: changing where the money goes is the most
+        // security-sensitive write a partner can make.
+        current_password: currentPassword,
         ...(selectedMethod === 'bank'
           ? { bank_details: bank }
           : { wallet_address: walletAddress.trim(), network }),
       };
       const res = await partnerApi.updatePayoutSettings(payload);
+      setCurrentPassword('');
       setPartner({
         partnerId: res.partner_id,
         referralCode: res.referral_code,
@@ -273,9 +286,13 @@ function PayoutInfoTab() {
         walletAddress: res.wallet_address ?? null,
         payoutNetwork: res.payout_network ?? null,
         bankDetails: res.bank_details ?? null,
+        payoutDestination: res.payout_destination ?? null,
+        payoutDetailsUpdatedAt: res.payout_details_updated_at ?? null,
       });
       setSaved(true);
-      toast.success('Payout details saved');
+      setWalletAddress('');
+      setBank((prev) => ({ ...prev, account_number: '', routing_number: '', swift_bic: '' }));
+      toast.success('Payout details saved — payouts are held briefly for your protection');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save payout details');
     } finally {
@@ -288,6 +305,21 @@ function PayoutInfoTab() {
       <p className="text-sm text-muted-foreground">
         Configure your payout details. These are used when you request a withdrawal.
       </p>
+
+      {partner?.payoutMethod && (
+        <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Current destination
+          </p>
+          <p className="mt-1 break-all font-mono text-sm">
+            {partner.payoutDestination || '—'}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Stored encrypted and shown masked — we never display it in full again.
+            To change it, enter the new details below and confirm your password.
+          </p>
+        </div>
+      )}
 
       <Separator />
 
@@ -431,8 +463,32 @@ function PayoutInfoTab() {
         </motion.div>
       )}
 
+      <Separator />
+
+      <div className="space-y-2">
+        <Label
+          htmlFor="payout-current-password"
+          className="text-xs font-mono uppercase tracking-widest text-muted-foreground"
+        >
+          Confirm your password
+        </Label>
+        <Input
+          id="payout-current-password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Your account password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          Changing where your money goes requires your password. We&apos;ll email
+          you when it changes, and payouts to a new destination are held for 24
+          hours — so if it wasn&apos;t you, there is still time to stop it.
+        </p>
+      </div>
+
       <div className="flex items-center gap-3 pt-1">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving || !currentPassword}>
           {saving ? (
             <span className="flex items-center gap-2">
               <Loader2 className="size-4 animate-spin" />
@@ -554,71 +610,175 @@ function PartnerLinkTab() {
 }
 
 // --- Notifications tab ---
+/**
+ * Notification preferences, persisted server-side.
+ *
+ * In-app notifications are always delivered (they are the partner's record of
+ * what happened and drive the Notifications page), so the switches here govern
+ * the *email* copy of each event plus the browser/Chrome notification opt-in.
+ */
 function NotificationsTab() {
-  const [commissionNotif, setCommissionNotif] = useState(true);
-  const [payoutNotif, setPayoutNotif] = useState(true);
-  const [referralNotif, setReferralNotif] = useState(true);
-  const [marketingNotif, setMarketingNotif] = useState(false);
+  const queryClient = useQueryClient();
+  const setBrowserEnabled = usePartnerStore((s) => s.setBrowserNotificationsEnabled);
+  const [permission, setPermission] = useState<string>('default');
 
-  const items = [
-    {
-      label: 'New commission',
-      description: 'Get notified when a new commission is earned.',
-      checked: commissionNotif,
-      onCheckedChange: setCommissionNotif,
+  useEffect(() => {
+    setPermission(browserNotificationPermission());
+  }, []);
+
+  const { data, isLoading } = useQuery<NotificationPreferences>({
+    queryKey: ['partner-notification-preferences'],
+    queryFn: () => partnerApi.getNotificationPreferences(),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (data) setBrowserEnabled(data.browser_enabled);
+  }, [data, setBrowserEnabled]);
+
+  const mutation = useMutation({
+    mutationFn: (patch: Partial<NotificationPreferences>) =>
+      partnerApi.updateNotificationPreferences(patch),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['partner-notification-preferences'], updated);
+      setBrowserEnabled(updated.browser_enabled);
+      toast.success('Notification preferences saved');
     },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : 'Could not save preferences'),
+  });
+
+  const update = (patch: Partial<NotificationPreferences>) => mutation.mutate(patch);
+
+  const handleBrowserToggle = async (enabled: boolean) => {
+    if (!enabled) {
+      update({ browser_enabled: false });
+      return;
+    }
+    // Chrome only grants permission from a user gesture — this toggle is one.
+    const result = await requestBrowserNotifications();
+    setPermission(result);
+    if (result === 'unsupported') {
+      toast.error('This browser does not support desktop notifications');
+      return;
+    }
+    if (result !== 'granted') {
+      toast.error('Notification permission was blocked in your browser settings');
+      update({ browser_enabled: false });
+      return;
+    }
+    update({ browser_enabled: true });
+  };
+
+  const emailItems: {
+    key: keyof NotificationPreferences;
+    label: string;
+    description: string;
+  }[] = [
     {
-      label: 'Payout updates',
-      description: 'Receive updates about your payout requests.',
-      checked: payoutNotif,
-      onCheckedChange: setPayoutNotif,
-    },
-    {
+      key: 'email_referral',
       label: 'New referrals',
-      description: 'Know when someone signs up through your link.',
-      checked: referralNotif,
-      onCheckedChange: setReferralNotif,
+      description: 'Know when someone signs up through your referral link.',
     },
     {
+      key: 'email_commission',
+      label: 'New commission',
+      description: 'Get an email when a referred customer is billed and you earn.',
+    },
+    {
+      key: 'email_payout',
+      label: 'Payout updates',
+      description:
+        'Payout requested, sent to your wallet or bank, or failed.',
+    },
+    {
+      key: 'email_support',
+      label: 'Support replies',
+      description: 'When the RELIASTRA team replies to your conversation.',
+    },
+    {
+      key: 'email_announcement',
+      label: 'Program announcements',
+      description: 'Updates the RELIASTRA team sends to partners.',
+    },
+    {
+      key: 'email_marketing',
       label: 'Marketing & tips',
-      description: 'Occasional partner program updates and resources.',
-      checked: marketingNotif,
-      onCheckedChange: setMarketingNotif,
+      description: 'Occasional resources for growing your referrals.',
     },
   ];
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" />
+        Loading preferences…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Manage your email notification preferences.
+        Choose how you want to hear about referrals, commissions and payouts.
+        Everything always appears in your{' '}
+        <span className="font-medium text-foreground">Notifications</span> page —
+        these settings control email and desktop alerts.
       </p>
 
       <Separator />
 
-      <div className="space-y-0 divide-y divide-border/40">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
-          >
-            <div className="pr-4">
-              <p className="text-sm font-medium">{item.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {item.description}
-              </p>
-            </div>
-            <Switch
-              checked={item.checked}
-              onCheckedChange={item.onCheckedChange}
-              aria-label={item.label}
-            />
+      <div>
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Browser
+        </p>
+        <div className="flex items-center justify-between py-4">
+          <div className="pr-4">
+            <p className="text-sm font-medium">Desktop (Chrome) notifications</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Get a desktop alert the moment a referral signs up or a payout is
+              sent, while the dashboard is open.
+              {permission === 'denied' &&
+                ' Notifications are blocked for this site — allow them in your browser settings first.'}
+            </p>
           </div>
-        ))}
+          <Switch
+            checked={data.browser_enabled && permission === 'granted'}
+            onCheckedChange={(checked) => void handleBrowserToggle(checked)}
+            disabled={mutation.isPending || permission === 'unsupported'}
+            aria-label="Desktop notifications"
+          />
+        </div>
       </div>
 
-      <Badge variant="outline" className="text-[10px] font-mono uppercase tracking-wide">
-        Notification preferences are not yet saved
-      </Badge>
+      <Separator />
+
+      <div>
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Email
+        </p>
+        <div className="space-y-0 divide-y divide-border/40">
+          {emailItems.map((item) => (
+            <div
+              key={item.key}
+              className="flex items-center justify-between py-4 last:pb-0"
+            >
+              <div className="pr-4">
+                <p className="text-sm font-medium">{item.label}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(data[item.key])}
+                onCheckedChange={(checked) => update({ [item.key]: checked })}
+                disabled={mutation.isPending}
+                aria-label={item.label}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

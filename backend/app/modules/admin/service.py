@@ -585,6 +585,29 @@ class AdminFeedbackService:
             body=request.body,
             is_internal_note=request.is_internal_note,
         )
+
+        # A visible reply is pushed to the requester: in-app (so the partner
+        # dashboard's live thread and notification page pick it up on their
+        # next poll) plus an email copy when their preferences allow it.
+        # Internal notes are staff-only and never notify.
+        if not request.is_internal_note and ticket.user_id:
+            try:
+                from app.modules.partners.notifications import (
+                    partner_notification_service,
+                )
+
+                await partner_notification_service.support_reply(
+                    session,
+                    partner_user_id=ticket.user_id,
+                    ticket_number=ticket.ticket_number,
+                    subject=ticket.subject,
+                    preview=request.body[:200],
+                )
+            except Exception:  # pragma: no cover - never block a reply
+                logger.exception(
+                    "Failed to notify user %s of support reply", ticket.user_id
+                )
+
         return FeedbackMessageResponse.model_validate(msg)
 
     async def bulk_update_tickets(

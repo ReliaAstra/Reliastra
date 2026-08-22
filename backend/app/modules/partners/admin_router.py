@@ -11,18 +11,27 @@ control — and nothing more.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.audit_log import AuditLogService
 from app.core.exceptions import ResourceNotFoundException
 from app.db.session import get_db
 from app.modules.admin.decorators import audit_log
 from app.modules.admin.guards import require_system_admin
 from app.modules.partners.commissions import commission_service
+from app.modules.partners.notifications import (
+    PartnerEvent,
+    partner_notification_service,
+)
+from app.modules.partners.destination import (
+    describe_destination,
+    destination_view,
+)
 from app.modules.partners.payouts import payout_service
 from app.modules.partners.repository import (
     PartnerCommissionRepository,
@@ -32,6 +41,9 @@ from app.modules.partners.repository import (
 )
 from app.modules.partners.schemas import (
     AdminCommissionItem,
+    AdminPayoutDestinationRevealResponse,
+    AdminPartnerNotifyRequest,
+    AdminPartnerNotifyResponse,
     AdminCommissionListResponse,
     AdminPayoutItem,
     AdminPayoutListResponse,
@@ -197,6 +209,24 @@ async def get_stats(
         PartnerCommission.status.in_(["pending", "payable"]),
     )
 
+    from app.modules.partners.models import PartnerPayout
+
+    pending_payout_statuses = ["pending", "processing"]
+    pending_payout_count = int(
+        (
+            await db.execute(
+                select(func.count())
+                .select_from(PartnerPayout)
+                .where(PartnerPayout.status.in_(pending_payout_statuses))
+            )
+        ).scalar()
+        or 0
+    )
+    pending_payout_minor = await _sum(
+        PartnerPayout.amount_minor,
+        PartnerPayout.status.in_(pending_payout_statuses),
+    )
+
     return PartnerStatsResponse(
         total_partners=total_partners,
         active_partners=active_partners,
@@ -206,6 +236,8 @@ async def get_stats(
         monthly_commission_minor=monthly_commission,
         total_commission_paid_minor=total_paid,
         pending_commission_minor=pending,
+        pending_payout_count=pending_payout_count,
+        pending_payout_minor=pending_payout_minor,
         currency="USD",
     )
 
@@ -326,6 +358,13 @@ async def list_payouts(
                 transaction_reference=p.transaction_reference,
                 requested_at=p.created_at,
                 paid_at=p.paid_at,
+                payout_method=(partner.payout_method if partner else None),
+                # Settling a payout means copying this destination into a
+                # wallet or a banking app, so the queue carries it directly
+                # instead of forcing a trip to each partner's detail page.
+                payout_destination=(
+                    describe_destination(partner) if partner else None
+                ),
             )
         )
     return AdminPayoutListResponse(
@@ -462,17 +501,77 @@ async def get_partner_detail(
         "referral_code": await _referral_code_for(db, profile.referral_code_id),
         "status": profile.status,
         "created_at": profile.created_at,
+        # Masked by default. The payable value is behind
+        # GET /{partner_id}/payout-destination, which is audited.
         "payout_settings": {
-            "payout_method": profile.payout_method,
-            "wallet_address": profile.wallet_address,
-            "payout_network": profile.payout_network,
-            "bank_details": profile.bank_details,
+            **destination_view(profile),
+            "payout_destination": (
+                describe_destination(profile) if profile.payout_method else None
+            ),
+            "is_masked": True,
         },
         "commission_summary": summary,
         "referred_customers": referred,
         "commission_history": commission_history,
         "payout_history": payout_history,
     }
+
+
+@admin_partners_router.get(
+    "/{partner_id}/payout-destination",
+    response_model=AdminPayoutDestinationRevealResponse,
+    summary="Reveal a partner's full payout destination (audited)",
+)
+@audit_log(action="reveal_payout_destination", entity_type="partner")
+async def reveal_payout_destination(
+    partner_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> AdminPayoutDestinationRevealResponse:
+    """Return the payable wallet address / bank account in the clear.
+
+    Everything else in the admin API shows a masked destination. This is the
+    one place the real value is handed over — immediately before an admin
+    sends money — and every call is written to both audit trails so a leak has
+    a name and a timestamp attached to it.
+    """
+    profile = await PartnerProfileRepository.get_by_id(db, partner_id)
+    if profile is None:
+        raise ResourceNotFoundException("Partner not found")
+
+    revealed = destination_view(profile, reveal=True)
+
+    cooldown_hours = int(settings.PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS)
+    changed_at = profile.payout_details_updated_at
+    in_cooldown = False
+    if cooldown_hours and changed_at is not None:
+        if changed_at.tzinfo is None:
+            changed_at = changed_at.replace(tzinfo=timezone.utc)
+        in_cooldown = datetime.now(timezone.utc) < changed_at + timedelta(
+            hours=cooldown_hours
+        )
+
+    await AuditLogService.log_event(
+        session=db,
+        event_type="partner_payout_destination_revealed",
+        user_id=admin_user.id,
+        resource_type="partner",
+        resource_id=str(profile.id),
+        payload={"partner_id": str(profile.id), "admin_email": admin_user.email},
+    )
+
+    return AdminPayoutDestinationRevealResponse(
+        partner_id=profile.id,
+        partner_email=await _email_for(db, profile.user_id),
+        payout_destination=(
+            describe_destination(profile, reveal=True)
+            if profile.payout_method
+            else None
+        ),
+        in_cooldown=in_cooldown,
+        **revealed,
+    )
 
 
 @admin_partners_router.patch(
@@ -500,3 +599,93 @@ async def update_partner_status(
         payload={"status": body.status, "reason": body.reason},
     )
     return {"partner_id": str(profile.id), "status": body.status}
+
+
+# ═══════════════════════════ Admin → partner messaging ═══════════════════
+
+
+@admin_partners_router.post(
+    "/notify",
+    response_model=AdminPartnerNotifyResponse,
+    summary="Send a notification to partners (all or selected)",
+)
+@audit_log(action="notify_partners", entity_type="partner")
+async def notify_partners(
+    body: AdminPartnerNotifyRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> AdminPartnerNotifyResponse:
+    """Message partners about an event or update.
+
+    Every recipient always gets the in-app notification (it shows up in their
+    dashboard's notification page). The email copy additionally respects each
+    partner's own preference for this category — a partner who turned
+    announcement emails off still sees the item in-app.
+    """
+    if body.audience == "selected":
+        profiles = []
+        for partner_id in body.partner_ids:
+            profile = await PartnerProfileRepository.get_by_id(db, partner_id)
+            if profile is not None:
+                profiles.append(profile)
+    else:
+        profiles = []
+        for status_value in body.statuses or ["active"]:
+            rows, _ = await PartnerProfileRepository.list_all(
+                db, status=status_value, offset=0, limit=10_000
+            )
+            profiles.extend(rows)
+
+    # De-duplicate in case a partner matched twice.
+    seen: set[uuid.UUID] = set()
+    unique = [p for p in profiles if not (p.id in seen or seen.add(p.id))]
+
+    event = (
+        PartnerEvent.MARKETING
+        if body.category == "marketing"
+        else PartnerEvent.ANNOUNCEMENT
+    )
+    emailed = 0
+    for profile in unique:
+        send_email: bool | None = None if body.send_email else False
+        prefs = await partner_notification_service.get_preferences(
+            db, profile.user_id
+        )
+        will_email = bool(
+            body.send_email
+            and (
+                prefs.email_marketing
+                if body.category == "marketing"
+                else prefs.email_announcement
+            )
+        )
+        await partner_notification_service.notify(
+            db,
+            user_id=profile.user_id,
+            event=event,
+            title=body.title,
+            body=body.body,
+            action_url=body.action_url,
+            action_label=body.action_label,
+            created_by=admin_user.id,
+            send_email=send_email,
+        )
+        if will_email:
+            emailed += 1
+
+    await AuditLogService.log_event(
+        session=db,
+        event_type="partner_notification_broadcast",
+        user_id=admin_user.id,
+        resource_type="partner",
+        resource_id=body.audience,
+        payload={
+            "recipients": len(unique),
+            "category": body.category,
+            "title": body.title,
+        },
+    )
+    return AdminPartnerNotifyResponse(
+        recipients=len(unique), emailed=emailed, title=body.title
+    )

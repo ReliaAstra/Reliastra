@@ -369,6 +369,8 @@ export function ImpactDialog({
   onConfirm,
   destructive = false,
   reasonRequired = false,
+  reasonLabel = 'Reason',
+  reasonPlaceholder = 'Document why this action is necessary',
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -381,6 +383,9 @@ export function ImpactDialog({
   onConfirm: (reason: string) => Promise<unknown> | void;
   destructive?: boolean;
   reasonRequired?: boolean;
+  /** Label for the required free-text field (e.g. "Transaction reference"). */
+  reasonLabel?: string;
+  reasonPlaceholder?: string;
 }) {
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -427,13 +432,13 @@ export function ImpactDialog({
         {reasonRequired && (
           <div className="space-y-2">
             <label htmlFor="admin-action-reason" className="text-xs font-medium text-slate-700 dark:text-slate-200">
-              Reason <span className="text-rose-600">required</span>
+              {reasonLabel} <span className="text-rose-600">required</span>
             </label>
             <Input
               id="admin-action-reason"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Document why this action is necessary"
+              placeholder={reasonPlaceholder}
               autoFocus
             />
           </div>

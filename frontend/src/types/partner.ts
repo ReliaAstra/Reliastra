@@ -72,9 +72,15 @@ export interface PartnerProfileResponse {
   status: string;
   created_at: string;
   payout_method?: string | null;
+  /** Masked (`0x71C7…9F2a`) — the API never returns the full address. */
   wallet_address?: string | null;
   payout_network?: string | null;
+  /** Masked: account/routing numbers arrive as `••••1234`. */
   bank_details?: Record<string, string> | null;
+  /** One-line masked summary, ready to display. */
+  payout_destination?: string | null;
+  /** Last destination change — payouts are held briefly afterwards. */
+  payout_details_updated_at?: string | null;
 }
 
 // ── Payout destination ──────────────────────────
@@ -82,6 +88,8 @@ export interface PartnerProfileResponse {
 export type PayoutMethod = 'crypto_usdc' | 'crypto_usdt' | 'bank';
 
 export interface PayoutSettingsUpdateRequest {
+  /** Re-authentication for this change; required for password accounts. */
+  current_password?: string;
   payout_method: PayoutMethod;
   wallet_address?: string | null;
   network?: string | null;
@@ -94,10 +102,100 @@ export interface PartnerDashboardResponse {
   signups: number;
   active_paid_customers: number;
   monthly_commission_minor: number;
+  /**
+   * Everything earned but not yet paid — includes commissions still inside the
+   * hold period and commissions reserved by an open payout. Informational only:
+   * never show this as the withdrawable amount.
+   */
   pending_commission_minor: number;
+  /** Actually withdrawable right now (released and unreserved). */
+  payable_balance_minor: number;
+  /** Reserved by a payout that has been created but not settled yet. */
+  in_transit_minor: number;
   total_earned_minor: number;
   total_paid_minor: number;
+  /** Minimum payable balance required before a payout can be requested. */
+  minimum_payout_minor: number;
   currency: string;
+}
+
+// ── Notifications ──────────────────────────────
+
+export type PartnerNotificationEvent =
+  | 'partner_referral_signup'
+  | 'partner_commission_earned'
+  | 'partner_payout_requested'
+  | 'partner_payout_paid'
+  | 'partner_payout_failed'
+  | 'partner_support_reply'
+  | 'partner_announcement'
+  | 'partner_marketing'
+  | (string & {});
+
+export interface NotificationItem {
+  id: string;
+  event: PartnerNotificationEvent;
+  title: string;
+  body: string;
+  action_url?: string | null;
+  action_label?: string | null;
+  priority: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  unread: number;
+}
+
+export interface NotificationPreferences {
+  email_referral: boolean;
+  email_commission: boolean;
+  email_payout: boolean;
+  email_support: boolean;
+  email_announcement: boolean;
+  email_marketing: boolean;
+  browser_enabled: boolean;
+}
+
+// ── Support desk ───────────────────────────────
+
+export interface PartnerTicketMessageItem {
+  id: string;
+  sender_type: 'user' | 'admin' | 'system' | (string & {});
+  sender_name: string;
+  body: string;
+  created_at: string;
+}
+
+export interface PartnerTicketItem {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  last_message_preview: string;
+  last_sender_type: string;
+  unread_admin_messages: number;
+}
+
+export interface PartnerTicketListResponse {
+  items: PartnerTicketItem[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface PartnerTicketDetailResponse {
+  ticket: PartnerTicketItem;
+  messages: PartnerTicketMessageItem[];
 }
 
 // ── Referrals ──────────────────────────────────
@@ -202,9 +300,13 @@ export interface Partner {
   status: string;
   createdAt: string;
   payoutMethod?: string | null;
+  /** Masked — never the full address. */
   walletAddress?: string | null;
   payoutNetwork?: string | null;
+  /** Masked — account numbers arrive as `••••1234`. */
   bankDetails?: Record<string, string> | null;
+  payoutDestination?: string | null;
+  payoutDetailsUpdatedAt?: string | null;
 }
 
 // ── Tier System (frontend-only for marketing) ──
@@ -322,6 +424,7 @@ export type PartnerPage =
   | 'forgot-password'
   // Partner dashboard
   | 'dashboard'
+  | 'notifications'
   | 'referrals'
   | 'earnings'
   | 'payouts'

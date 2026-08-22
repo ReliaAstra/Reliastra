@@ -416,26 +416,28 @@ async def test_payout_settings_roundtrip(async_client, db_session):
     partner = await _register(async_client, "wallet@example.com", "Wallet Kof")
     await _activate_partner(async_client, partner["headers"])
 
-    # 1. Save a crypto destination.
+    # 1. Save a crypto destination. The response is masked — the full address
+    #    is stored encrypted and never returned to the browser.
     res = await async_client.put(
         "/v1/partners/payout-settings",
         json={
             "payout_method": "crypto_usdc",
-            "wallet_address": "0xAbC123",
+            "wallet_address": "0xAbC1234567890def",
             "network": "Polygon",
+            "current_password": "SecurePassword123!",
         },
         headers=partner["headers"],
     )
     assert res.status_code == 200, res.text
     body = res.json()
     assert body["payout_method"] == "crypto_usdc"
-    assert body["wallet_address"] == "0xAbC123"
+    assert body["wallet_address"] == "0xAbC1…0def"
     assert body["payout_network"] == "Polygon"
 
-    # 2. It is reflected in the profile endpoint.
+    # 2. It is reflected in the profile endpoint, also masked.
     me = await async_client.get("/v1/partners/me", headers=partner["headers"])
     assert me.status_code == 200
-    assert me.json()["wallet_address"] == "0xAbC123"
+    assert me.json()["wallet_address"] == "0xAbC1…0def"
 
     # 3. Switching to bank clears the wallet and stores bank details.
     res = await async_client.put(
@@ -448,6 +450,7 @@ async def test_payout_settings_roundtrip(async_client, db_session):
                 "account_number": "1234567890",
                 "routing_number": "021000021",
             },
+            "current_password": "SecurePassword123!",
         },
         headers=partner["headers"],
     )
@@ -455,12 +458,16 @@ async def test_payout_settings_roundtrip(async_client, db_session):
     body = res.json()
     assert body["payout_method"] == "bank"
     assert body["wallet_address"] is None
-    assert body["bank_details"]["account_number"] == "1234567890"
+    assert body["bank_details"]["account_number"] == "••••7890"
 
     # 4. Crypto requires a wallet address.
     res = await async_client.put(
         "/v1/partners/payout-settings",
-        json={"payout_method": "crypto_usdt", "wallet_address": ""},
+        json={
+            "payout_method": "crypto_usdt",
+            "wallet_address": "",
+            "current_password": "SecurePassword123!",
+        },
         headers=partner["headers"],
     )
     assert res.status_code == 422, res.text
@@ -468,7 +475,11 @@ async def test_payout_settings_roundtrip(async_client, db_session):
     # 5. Bank requires account number + bank name.
     res = await async_client.put(
         "/v1/partners/payout-settings",
-        json={"payout_method": "bank", "bank_details": {"account_name": "X"}},
+        json={
+            "payout_method": "bank",
+            "bank_details": {"account_name": "X"},
+            "current_password": "SecurePassword123!",
+        },
         headers=partner["headers"],
     )
     assert res.status_code == 422, res.text
