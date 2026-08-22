@@ -23,6 +23,10 @@ from app.db.session import get_db
 from app.modules.admin.decorators import audit_log
 from app.modules.admin.guards import require_system_admin
 from app.modules.partners.commissions import commission_service
+from app.modules.partners.notifications import (
+    PartnerEvent,
+    partner_notification_service,
+)
 from app.modules.partners.payouts import payout_service
 from app.modules.partners.repository import (
     PartnerCommissionRepository,
@@ -32,6 +36,8 @@ from app.modules.partners.repository import (
 )
 from app.modules.partners.schemas import (
     AdminCommissionItem,
+    AdminPartnerNotifyRequest,
+    AdminPartnerNotifyResponse,
     AdminCommissionListResponse,
     AdminPayoutItem,
     AdminPayoutListResponse,
@@ -500,3 +506,93 @@ async def update_partner_status(
         payload={"status": body.status, "reason": body.reason},
     )
     return {"partner_id": str(profile.id), "status": body.status}
+
+
+# ═══════════════════════════ Admin → partner messaging ═══════════════════
+
+
+@admin_partners_router.post(
+    "/notify",
+    response_model=AdminPartnerNotifyResponse,
+    summary="Send a notification to partners (all or selected)",
+)
+@audit_log(action="notify_partners", entity_type="partner")
+async def notify_partners(
+    body: AdminPartnerNotifyRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> AdminPartnerNotifyResponse:
+    """Message partners about an event or update.
+
+    Every recipient always gets the in-app notification (it shows up in their
+    dashboard's notification page). The email copy additionally respects each
+    partner's own preference for this category — a partner who turned
+    announcement emails off still sees the item in-app.
+    """
+    if body.audience == "selected":
+        profiles = []
+        for partner_id in body.partner_ids:
+            profile = await PartnerProfileRepository.get_by_id(db, partner_id)
+            if profile is not None:
+                profiles.append(profile)
+    else:
+        profiles = []
+        for status_value in body.statuses or ["active"]:
+            rows, _ = await PartnerProfileRepository.list_all(
+                db, status=status_value, offset=0, limit=10_000
+            )
+            profiles.extend(rows)
+
+    # De-duplicate in case a partner matched twice.
+    seen: set[uuid.UUID] = set()
+    unique = [p for p in profiles if not (p.id in seen or seen.add(p.id))]
+
+    event = (
+        PartnerEvent.MARKETING
+        if body.category == "marketing"
+        else PartnerEvent.ANNOUNCEMENT
+    )
+    emailed = 0
+    for profile in unique:
+        send_email: bool | None = None if body.send_email else False
+        prefs = await partner_notification_service.get_preferences(
+            db, profile.user_id
+        )
+        will_email = bool(
+            body.send_email
+            and (
+                prefs.email_marketing
+                if body.category == "marketing"
+                else prefs.email_announcement
+            )
+        )
+        await partner_notification_service.notify(
+            db,
+            user_id=profile.user_id,
+            event=event,
+            title=body.title,
+            body=body.body,
+            action_url=body.action_url,
+            action_label=body.action_label,
+            created_by=admin_user.id,
+            send_email=send_email,
+        )
+        if will_email:
+            emailed += 1
+
+    await AuditLogService.log_event(
+        session=db,
+        event_type="partner_notification_broadcast",
+        user_id=admin_user.id,
+        resource_type="partner",
+        resource_id=body.audience,
+        payload={
+            "recipients": len(unique),
+            "category": body.category,
+            "title": body.title,
+        },
+    )
+    return AdminPartnerNotifyResponse(
+        recipients=len(unique), emailed=emailed, title=body.title
+    )

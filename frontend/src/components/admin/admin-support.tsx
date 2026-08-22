@@ -89,7 +89,7 @@ export function SupportPage() {
   }), [page, params, priority, status]);
 
   const overviewQuery = useQuery({ queryKey: ['admin', 'support', 'overview'], queryFn: adminApi.supportOverview, staleTime: 20_000, refetchInterval: 30_000 });
-  const ticketsQuery = useQuery({ queryKey: ['admin', 'support', 'tickets', ticketParams], queryFn: () => adminApi.tickets(ticketParams), staleTime: 20_000, refetchInterval: 30_000 });
+  const ticketsQuery = useQuery({ queryKey: ['admin', 'support', 'tickets', ticketParams], queryFn: () => adminApi.tickets(ticketParams), staleTime: 10_000, refetchInterval: 15_000 });
   const queryClient = useQueryClient();
   const bulkMutation = useMutation({
     mutationFn: () => adminApi.bulkUpdateTickets({ ticket_ids: selected, status: 'resolved' }),
@@ -172,7 +172,10 @@ export function SupportTicketPage({ ticketId }: { ticketId: string }) {
   const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
   const [internalNote, setInternalNote] = useState(false);
-  const workspaceQuery = useQuery({ queryKey: ['admin', 'support', 'ticket', ticketId], queryFn: () => adminApi.ticket(ticketId), staleTime: 15_000, refetchInterval: 30_000 });
+  // Partners reply from their dashboard in real time, so an open ticket
+  // refreshes on a short interval — the conversation reads as live chat on
+  // both sides rather than something you have to reload.
+  const workspaceQuery = useQuery({ queryKey: ['admin', 'support', 'ticket', ticketId], queryFn: () => adminApi.ticket(ticketId), staleTime: 0, refetchInterval: 8_000, refetchOnWindowFocus: true });
   const invalidate = async () => Promise.all([queryClient.invalidateQueries({ queryKey: ['admin', 'support', 'ticket', ticketId] }), queryClient.invalidateQueries({ queryKey: ['admin', 'support', 'tickets'] }), queryClient.invalidateQueries({ queryKey: ['admin', 'support', 'overview'] }), queryClient.invalidateQueries({ queryKey: ['admin', 'overview'] }), queryClient.invalidateQueries({ queryKey: ['admin', 'audit'] })]);
   const updateMutation = useMutation({ mutationFn: (data: { status?: string; priority?: string }) => adminApi.updateTicket(ticketId, data), onSuccess: async () => { toast.success('Ticket updated'); await invalidate(); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'Could not update ticket') });
   const replyMutation = useMutation({ mutationFn: () => adminApi.replyToTicket(ticketId, { body: message.trim(), is_internal_note: internalNote }), onSuccess: async () => { toast.success(internalNote ? 'Internal note added' : 'Reply added'); setMessage(''); await invalidate(); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'Could not add message') });

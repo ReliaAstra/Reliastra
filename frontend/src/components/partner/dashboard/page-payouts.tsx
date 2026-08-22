@@ -193,7 +193,7 @@ function PayoutConfirmDialog({
   );
 }
 
-function PayoutsEmpty({ payable, onOpenDialog, partner }: { payable: string; onOpenDialog: () => void; partner: Partner | null }) {
+function PayoutsEmpty({ payable, onOpenDialog, partner, disabled, hint }: { payable: string; onOpenDialog: () => void; partner: Partner | null; disabled: boolean; hint: string | null }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -214,11 +214,14 @@ function PayoutsEmpty({ payable, onOpenDialog, partner }: { payable: string; onO
         </p>
         <Button
           onClick={onOpenDialog}
-          disabled={payable === '$0.00'}
+          disabled={disabled}
           className="min-w-[200px]"
         >
           REQUEST PAYOUT
         </Button>
+        {hint && (
+          <p className="mt-3 text-xs text-muted-foreground">{hint}</p>
+        )}
       </div>
 
       <PayoutDestinationBanner partner={partner} />
@@ -312,11 +315,41 @@ export function PagePayouts() {
   const total = response?.total ?? 0;
   const totalPages = Math.ceil(total / pageSize);
 
-  // Payable amount from dashboard (pending_commission_minor)
-  const payableDisplay = dashboardData
-    ? formatCurrencyFromMinor(dashboardData.pending_commission_minor, dashboardData.currency || 'USD')
-    : '$0.00';
-  const payableMinor = dashboardData?.pending_commission_minor ?? 0;
+  // "Available to withdraw" is the *payable* balance: commissions whose hold
+  // period has elapsed and that are not already reserved by an open payout.
+  // `pending_commission_minor` is deliberately NOT used here — it also counts
+  // money still on hold and money already inside a pending payout, which would
+  // show the partner a figure they cannot actually withdraw.
+  const currency = dashboardData?.currency || 'USD';
+  const payableMinor = dashboardData?.payable_balance_minor ?? 0;
+  const payableDisplay = formatCurrencyFromMinor(payableMinor, currency);
+  const onHoldMinor = Math.max(
+    (dashboardData?.pending_commission_minor ?? 0) - payableMinor,
+    0
+  );
+  const inTransitMinor = dashboardData?.in_transit_minor ?? 0;
+  const minimumMinor = dashboardData?.minimum_payout_minor ?? 0;
+  const belowMinimum = payableMinor > 0 && payableMinor < minimumMinor;
+
+  // Explain the gap between "earned" and "withdrawable" instead of silently
+  // disabling the button.
+  const balanceHint = (() => {
+    if (belowMinimum) {
+      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)} — keep earning to unlock a withdrawal.`;
+    }
+    const parts: string[] = [];
+    if (onHoldMinor > 0) {
+      parts.push(
+        `${formatCurrencyFromMinor(onHoldMinor, currency)} still in the hold period`
+      );
+    }
+    if (inTransitMinor > 0) {
+      parts.push(
+        `${formatCurrencyFromMinor(inTransitMinor, currency)} reserved by a payout in progress`
+      );
+    }
+    return parts.length ? `Also earned: ${parts.join(' · ')}.` : null;
+  })();
 
   const handleRequestPayout = useCallback(async () => {
     if (payoutState !== 'idle') return;
@@ -361,7 +394,13 @@ export function PagePayouts() {
   if (list.length === 0 && page === 1) {
     return (
       <>
-        <PayoutsEmpty payable={payableDisplay} partner={partner} onOpenDialog={() => setConfirmOpen(true)} />
+        <PayoutsEmpty
+          payable={payableDisplay}
+          partner={partner}
+          disabled={payableMinor <= 0 || belowMinimum}
+          hint={balanceHint}
+          onOpenDialog={() => setConfirmOpen(true)}
+        />
         <PayoutConfirmDialog
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
@@ -401,7 +440,7 @@ export function PagePayouts() {
         </p>
         <Button
           onClick={() => setConfirmOpen(true)}
-          disabled={payoutState !== 'idle' || payableMinor <= 0}
+          disabled={payoutState !== 'idle' || payableMinor <= 0 || belowMinimum}
           className="min-w-[200px]"
         >
           <AnimatePresence mode="wait">
@@ -443,6 +482,10 @@ export function PagePayouts() {
             )}
           </AnimatePresence>
         </Button>
+
+        {balanceHint && (
+          <p className="mt-3 text-xs text-muted-foreground">{balanceHint}</p>
+        )}
       </motion.div>
 
       {/* Payout destination banner */}

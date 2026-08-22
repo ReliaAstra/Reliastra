@@ -27,12 +27,14 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -208,9 +210,53 @@ class PartnerPayout(UUIDMixin, TimestampMixin, Base):
     )
 
 
+class PartnerNotificationPreference(UUIDMixin, TimestampMixin, Base):
+    """Per-partner delivery preferences for program notifications.
+
+    In-app notifications are always delivered (they are the partner's audit
+    trail of what happened); these flags only gate the *email* copy plus the
+    browser-push opt-in. A missing row means "all defaults on" — the service
+    creates one lazily on first read or write.
+    """
+
+    __tablename__ = "partner_notification_preferences"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    email_referral: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_commission: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_payout: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_support: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_announcement: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    email_marketing: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+    #: Browser (Chrome) notification opt-in. The browser permission itself
+    #: lives in the user agent; this records that the partner asked for them
+    #: so the dashboard knows to raise a Notification when new items arrive.
+    browser_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+
+
 __all__ = [
     "PartnerProfile",
     "PartnerReferral",
     "PartnerCommission",
     "PartnerPayout",
+    "PartnerNotificationPreference",
 ]

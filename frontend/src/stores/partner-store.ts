@@ -48,6 +48,14 @@ interface PartnerStore {
   setCommissions: (items: CommissionItem[], total: number) => void;
   setPayouts: (items: PayoutItem[], total: number) => void;
 
+  /**
+   * Mirror of the partner's server-side `browser_enabled` notification
+   * preference. Persisted locally so the dashboard knows, before the first
+   * preferences fetch resolves, whether it may raise Chrome notifications.
+   */
+  browserNotificationsEnabled: boolean;
+  setBrowserNotificationsEnabled: (enabled: boolean) => void;
+
   // UI state
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
@@ -55,6 +63,8 @@ interface PartnerStore {
 
   // Reset
   logout: () => void;
+  /** Alias of {@link logout} — several components call `reset()`. */
+  reset: () => void;
 }
 
 const initialState = {
@@ -73,6 +83,7 @@ const initialState = {
   commissionsTotal: 0,
   payouts: [] as PayoutItem[],
   payoutsTotal: 0,
+  browserNotificationsEnabled: false,
   isSidebarOpen: false,
 };
 
@@ -105,11 +116,24 @@ export const usePartnerStore = create<PartnerStore>()(
       setCommissions: (items, total) => set({ commissions: items, commissionsTotal: total }),
       setPayouts: (items, total) => set({ payouts: items, payoutsTotal: total }),
 
+      setBrowserNotificationsEnabled: (enabled) =>
+        set({ browserNotificationsEnabled: enabled }),
+
       toggleSidebar: () =>
         set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
 
       logout: () => {
+        localStorage.removeItem('partner_access_token');
+        localStorage.removeItem('partner_refresh_token');
+        set({
+          ...initialState,
+          currentPage: 'home',
+          authStatus: 'unauthenticated',
+        });
+      },
+
+      reset: () => {
         localStorage.removeItem('partner_access_token');
         localStorage.removeItem('partner_refresh_token');
         set({
@@ -135,6 +159,7 @@ export const usePartnerStore = create<PartnerStore>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         partner: state.partner,
+        browserNotificationsEnabled: state.browserNotificationsEnabled,
       }),
     }
   )

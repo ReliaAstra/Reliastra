@@ -7,6 +7,8 @@ client-supplied ``partner_id`` ownership claim.
 
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +17,7 @@ from app.core.rate_limit import SlidingWindowRateLimiter, enforce_rate_limit
 from app.db.session import get_db
 from app.dependencies import get_current_user
 from app.modules.partners.commissions import commission_service
+from app.modules.partners.notifications import partner_notification_service
 from app.modules.partners.payouts import payout_service
 from app.modules.partners.repository import (
     PartnerCommissionRepository,
@@ -24,21 +27,39 @@ from app.modules.partners.repository import (
 from app.modules.partners.schemas import (
     CommissionItem,
     CommissionListResponse,
+    NotificationItem,
+    NotificationListResponse,
+    NotificationMarkReadRequest,
+    NotificationPreferencesResponse,
+    NotificationPreferencesUpdateRequest,
+    NotificationUnreadCountResponse,
     PartnerApplyRequest,
     PartnerDashboardResponse,
     PartnerProfileResponse,
+    PartnerTicketCreateRequest,
+    PartnerTicketDetailResponse,
+    PartnerTicketListResponse,
+    PartnerTicketMessageCreateRequest,
+    PartnerTicketMessageItem,
     PayoutItem,
     PayoutListResponse,
     PayoutSettingsUpdateRequest,
     ReferralListResponse,
 )
 from app.modules.partners.service import partner_service
+from app.modules.partners.support import partner_support_service
 from app.modules.users.models import User
 
 partners_router = APIRouter(prefix="/v1/partners", tags=["Partners"])
 
 _apply_limiter = SlidingWindowRateLimiter(
     limit=5, window_seconds=3600, key_prefix="partner_apply"
+)
+_support_limiter = SlidingWindowRateLimiter(
+    limit=10, window_seconds=3600, key_prefix="partner_support_ticket"
+)
+_support_message_limiter = SlidingWindowRateLimiter(
+    limit=60, window_seconds=3600, key_prefix="partner_support_message"
 )
 
 
@@ -228,4 +249,208 @@ async def request_payout(
         status=payout.status,
         paid_at=payout.paid_at,
         transaction_reference=payout.transaction_reference,
+    )
+
+
+# ═══════════════════════════ Notifications ═══════════════════════════════
+
+
+@partners_router.get(
+    "/notifications",
+    response_model=NotificationListResponse,
+    summary="My notification feed",
+)
+async def list_notifications(
+    unread_only: bool = Query(default=False),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> NotificationListResponse:
+    """Every partner-program event that concerns this partner.
+
+    The dashboard polls this endpoint; when a new unread item appears it can
+    also raise a browser (Chrome) notification if the partner opted in via
+    ``PUT /v1/partners/notification-preferences``.
+    """
+    rows, total = await partner_notification_service.list_for_user(
+        db, current_user.id, unread_only=unread_only, page=page, page_size=page_size
+    )
+    unread = await partner_notification_service.unread_count(db, current_user.id)
+    return NotificationListResponse(
+        items=[
+            NotificationItem(
+                id=notification.id,
+                event=notification.notification_type,
+                title=notification.title,
+                body=notification.body,
+                action_url=notification.action_url,
+                action_label=notification.action_label,
+                priority=notification.priority,
+                is_read=delivery.is_read,
+                created_at=notification.created_at,
+            )
+            for notification, delivery in rows
+        ],
+        page=page,
+        page_size=page_size,
+        total=total,
+        unread=unread,
+    )
+
+
+@partners_router.get(
+    "/notifications/unread-count",
+    response_model=NotificationUnreadCountResponse,
+    summary="Unread notification count",
+)
+async def notifications_unread_count(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> NotificationUnreadCountResponse:
+    return NotificationUnreadCountResponse(
+        unread=await partner_notification_service.unread_count(db, current_user.id)
+    )
+
+
+@partners_router.post(
+    "/notifications/read",
+    response_model=NotificationUnreadCountResponse,
+    summary="Mark notifications read",
+)
+async def mark_notifications_read(
+    body: NotificationMarkReadRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> NotificationUnreadCountResponse:
+    await partner_notification_service.mark_read(
+        db, current_user.id, body.notification_ids or None
+    )
+    return NotificationUnreadCountResponse(
+        unread=await partner_notification_service.unread_count(db, current_user.id)
+    )
+
+
+@partners_router.delete(
+    "/notifications/{notification_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Dismiss a notification",
+)
+async def dismiss_notification(
+    notification_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> None:
+    await partner_notification_service.dismiss(db, current_user.id, notification_id)
+
+
+@partners_router.get(
+    "/notification-preferences",
+    response_model=NotificationPreferencesResponse,
+    summary="Get notification preferences",
+)
+async def get_notification_preferences(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> NotificationPreferencesResponse:
+    prefs = await partner_notification_service.get_preferences(db, current_user.id)
+    return NotificationPreferencesResponse.model_validate(prefs, from_attributes=True)
+
+
+@partners_router.put(
+    "/notification-preferences",
+    response_model=NotificationPreferencesResponse,
+    summary="Update notification preferences",
+)
+async def update_notification_preferences(
+    body: NotificationPreferencesUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> NotificationPreferencesResponse:
+    """Persist which events send an email, and the browser-push opt-in.
+
+    In-app notifications are always delivered — they are the partner's record
+    of what happened — so there is no switch to turn them off.
+    """
+    prefs = await partner_notification_service.update_preferences(
+        db, current_user.id, body.model_dump(exclude_none=True)
+    )
+    return NotificationPreferencesResponse.model_validate(prefs, from_attributes=True)
+
+
+# ═══════════════════════════ Support desk ════════════════════════════════
+
+
+@partners_router.get(
+    "/support/tickets",
+    response_model=PartnerTicketListResponse,
+    summary="My support conversations",
+)
+async def list_support_tickets(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PartnerTicketListResponse:
+    return await partner_support_service.list_tickets(
+        db, current_user.id, page=page, page_size=page_size
+    )
+
+
+@partners_router.post(
+    "/support/tickets",
+    response_model=PartnerTicketDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start a support conversation",
+)
+async def create_support_ticket(
+    request: Request,
+    body: PartnerTicketCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PartnerTicketDetailResponse:
+    """Open a ticket that lands directly in the admin support queue.
+
+    The conversation is live in both directions: the admin sees it at
+    ``/admin/support`` and any reply appears in the partner's dashboard.
+    """
+    await enforce_rate_limit(request, _support_limiter)
+    return await partner_support_service.create_ticket(
+        db,
+        current_user,
+        subject=body.subject,
+        message=body.message,
+        priority=body.priority,
+    )
+
+
+@partners_router.get(
+    "/support/tickets/{ticket_id}",
+    response_model=PartnerTicketDetailResponse,
+    summary="Conversation thread",
+)
+async def get_support_thread(
+    ticket_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PartnerTicketDetailResponse:
+    return await partner_support_service.get_thread(db, current_user.id, ticket_id)
+
+
+@partners_router.post(
+    "/support/tickets/{ticket_id}/messages",
+    response_model=PartnerTicketMessageItem,
+    status_code=status.HTTP_201_CREATED,
+    summary="Reply in a conversation",
+)
+async def add_support_message(
+    request: Request,
+    ticket_id: uuid.UUID,
+    body: PartnerTicketMessageCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PartnerTicketMessageItem:
+    await enforce_rate_limit(request, _support_message_limiter)
+    return await partner_support_service.add_message(
+        db, current_user, ticket_id, body.body
     )

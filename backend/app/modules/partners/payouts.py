@@ -8,6 +8,7 @@ and settle to ``paid`` only when the payout itself is marked paid.
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -24,12 +25,53 @@ from app.modules.partners.repository import (
 )
 from app.modules.partners.service import _period_month
 
+logger = logging.getLogger(__name__)
+
+
+def describe_destination(partner) -> str:
+    """Human-readable payout destination for notifications and emails.
+
+    Never leaks a full bank account number — only the last four digits — while
+    a crypto address is shown in full so the partner can verify it on-chain.
+    """
+    method = getattr(partner, "payout_method", None)
+    if not method:
+        return "your configured payout destination"
+    if method == "bank":
+        details = getattr(partner, "bank_details", None) or {}
+        bank = details.get("bank_name") or "your bank account"
+        acct = str(details.get("account_number") or "")
+        return f"{bank} ••••{acct[-4:]}" if acct else bank
+    label = {"crypto_usdc": "USDC", "crypto_usdt": "USDT"}.get(method, method)
+    network = getattr(partner, "payout_network", None)
+    address = getattr(partner, "wallet_address", None)
+    parts = [label]
+    if network:
+        parts.append(f"on {network}")
+    if address:
+        parts.append(f"({address})")
+    return " ".join(parts)
+
 
 class PartnerPayoutService:
     def __init__(self) -> None:
         self.payout_repo = PartnerPayoutRepository()
         self.commission_repo = PartnerCommissionRepository()
         self.profile_repo = PartnerProfileRepository()
+
+    @staticmethod
+    async def _notify(partner, send) -> None:
+        """Run a notification without ever failing the money transaction."""
+        try:
+            from app.modules.partners.notifications import (
+                partner_notification_service,
+            )
+
+            await send(partner_notification_service)
+        except Exception:  # pragma: no cover - defensive
+            logger.exception(
+                "Failed to send payout notification to partner %s", partner.id
+            )
 
     async def payable_balance(
         self, session: AsyncSession, partner_id: uuid.UUID
@@ -88,6 +130,17 @@ class PartnerPayoutService:
                 session, commission, payout_id=payout.id
             )
 
+        await self._notify(
+            partner,
+            lambda svc: svc.payout_requested(
+                session,
+                partner_user_id=partner.user_id,
+                amount_minor=amount,
+                currency=payout.currency,
+                destination=describe_destination(partner),
+            ),
+        )
+
         await AuditLogService.log_event(
             session=session,
             event_type="partner_payout_created",
@@ -108,6 +161,8 @@ class PartnerPayoutService:
         payout = await self.payout_repo.get_by_id(session, payout_id)
         if payout is None:
             raise ResourceNotFoundException("Payout not found")
+
+        partner = await self.profile_repo.get_by_id(session, payout.partner_id)
 
         if action == "mark_paid":
             if not transaction_reference:
@@ -131,16 +186,43 @@ class PartnerPayoutService:
                     status=CommissionStatus.PAID.value,
                     paid_at=now,
                 )
+            if partner is not None:
+                await self._notify(
+                    partner,
+                    lambda svc: svc.payout_paid(
+                        session,
+                        partner_user_id=partner.user_id,
+                        amount_minor=payout.amount_minor,
+                        currency=payout.currency,
+                        destination=describe_destination(partner),
+                        transaction_reference=transaction_reference,
+                    ),
+                )
         elif action == "mark_failed":
             await self.payout_repo.update(
                 session, payout, status=PayoutStatus.FAILED.value
             )
             # Return reserved commissions to the payable pool.
+            #
+            # NOTE: the repository's ``update`` helper skips ``None`` values,
+            # so ``update(..., payout_id=None)`` is a silent no-op and would
+            # strand the money forever — neither payable nor paid. The
+            # reservation is therefore cleared directly on the model.
             for commission in await self.commission_repo.commissions_for_payout(
                 session, payout.id
             ):
-                await self.commission_repo.update(
-                    session, commission, payout_id=None
+                commission.payout_id = None
+                session.add(commission)
+            await session.flush()
+            if partner is not None:
+                await self._notify(
+                    partner,
+                    lambda svc: svc.payout_failed(
+                        session,
+                        partner_user_id=partner.user_id,
+                        amount_minor=payout.amount_minor,
+                        currency=payout.currency,
+                    ),
                 )
         else:
             raise ValidationException(f"Unsupported payout action: {action}")

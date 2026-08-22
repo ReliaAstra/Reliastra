@@ -142,6 +142,23 @@ class CommissionService:
             currency,
         )
 
+        # Notify the partner they earned (in-app always; email per preference).
+        try:
+            from app.modules.partners.notifications import (
+                partner_notification_service,
+            )
+
+            await partner_notification_service.commission_earned(
+                session,
+                partner_user_id=partner.user_id,
+                amount_minor=amount,
+                currency=commission.currency,
+            )
+        except Exception:  # pragma: no cover - never break billing
+            logger.exception(
+                "Failed to notify partner %s of commission", partner.id
+            )
+
     async def reverse_by_reference(
         self,
         session: AsyncSession,

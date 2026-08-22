@@ -270,6 +270,20 @@ class PartnerService:
             session, profile.id, statuses=["paid"]
         )
 
+        # The withdrawable figure is *not* ``pending`` — that sum includes
+        # commissions still inside the hold period and commissions already
+        # reserved by an open payout. Only released, unreserved commissions
+        # can actually be paid out.
+        from app.modules.partners.payouts import payout_service
+
+        payable_balance = await payout_service.payable_balance(session, profile.id)
+        in_transit = await self.commission_repo.sum_amount_by_partner(
+            session,
+            profile.id,
+            statuses=["payable"],
+            exclude_reversed=True,
+        ) - payable_balance
+
         return PartnerDashboardResponse(
             referral_link=referral_link,
             clicks=profile.click_count,
@@ -277,8 +291,11 @@ class PartnerService:
             active_paid_customers=active_paid,
             monthly_commission_minor=monthly,
             pending_commission_minor=pending,
+            payable_balance_minor=payable_balance,
+            in_transit_minor=max(in_transit, 0),
             total_earned_minor=total_earned,
             total_paid_minor=total_paid,
+            minimum_payout_minor=int(settings.PARTNER_MINIMUM_PAYOUT_MINOR),
             currency=settings.PARTNER_DEFAULT_CURRENCY,
         )
 
@@ -401,6 +418,26 @@ class PartnerService:
                 "referral_code": code_obj.code,
             },
         )
+
+        # Tell the partner someone used their link (in-app always, email when
+        # their preferences allow it). Never let a notification failure undo
+        # the referral itself.
+        try:
+            from app.modules.partners.notifications import (
+                partner_notification_service,
+            )
+
+            referred_user = await UserRepository.get_by_id(session, new_user_id)
+            await partner_notification_service.referral_signup(
+                session,
+                partner_user_id=partner.user_id,
+                referred_email=mask_email(referred_user.email)
+                if referred_user and referred_user.email
+                else None,
+            )
+        except Exception:  # pragma: no cover - defensive
+            logger.exception("Failed to notify partner %s of referral", partner.id)
+
         return referral
 
 

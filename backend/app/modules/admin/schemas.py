@@ -539,7 +539,14 @@ class FeedbackTicketResponse(BaseModel):
     source: str | None = None
     assigned_to: uuid.UUID | None = None
     resolution: str | None = None
-    metadata_: dict[str, Any] | None = Field(None, alias="metadata")
+    # The ORM attribute is ``metadata_`` (``metadata`` is reserved by
+    # SQLAlchemy's declarative base). Validating by the plain alias picked up
+    # ``Base.metadata`` — a ``MetaData`` object — and blew up every ticket
+    # response, so validation reads the real attribute while serialization
+    # still emits ``metadata`` for API clients.
+    metadata_: dict[str, Any] | None = Field(
+        default=None, validation_alias="metadata_", serialization_alias="metadata"
+    )
     created_at: datetime
     updated_at: datetime
     resolved_at: datetime | None = None

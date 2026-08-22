@@ -17,7 +17,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DashboardSettingsSkeleton } from '@/components/partner/shared/dashboard-skeleton';
 import { useState, useEffect } from 'react';
-import type { PayoutMethod } from '@/types/partner';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  browserNotificationPermission,
+  requestBrowserNotifications,
+} from '@/hooks/use-partner-notifications';
+import type { NotificationPreferences, PayoutMethod } from '@/types/partner';
 
 // --- Account tab ---
 function AccountTab() {
@@ -554,71 +559,175 @@ function PartnerLinkTab() {
 }
 
 // --- Notifications tab ---
+/**
+ * Notification preferences, persisted server-side.
+ *
+ * In-app notifications are always delivered (they are the partner's record of
+ * what happened and drive the Notifications page), so the switches here govern
+ * the *email* copy of each event plus the browser/Chrome notification opt-in.
+ */
 function NotificationsTab() {
-  const [commissionNotif, setCommissionNotif] = useState(true);
-  const [payoutNotif, setPayoutNotif] = useState(true);
-  const [referralNotif, setReferralNotif] = useState(true);
-  const [marketingNotif, setMarketingNotif] = useState(false);
+  const queryClient = useQueryClient();
+  const setBrowserEnabled = usePartnerStore((s) => s.setBrowserNotificationsEnabled);
+  const [permission, setPermission] = useState<string>('default');
 
-  const items = [
-    {
-      label: 'New commission',
-      description: 'Get notified when a new commission is earned.',
-      checked: commissionNotif,
-      onCheckedChange: setCommissionNotif,
+  useEffect(() => {
+    setPermission(browserNotificationPermission());
+  }, []);
+
+  const { data, isLoading } = useQuery<NotificationPreferences>({
+    queryKey: ['partner-notification-preferences'],
+    queryFn: () => partnerApi.getNotificationPreferences(),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (data) setBrowserEnabled(data.browser_enabled);
+  }, [data, setBrowserEnabled]);
+
+  const mutation = useMutation({
+    mutationFn: (patch: Partial<NotificationPreferences>) =>
+      partnerApi.updateNotificationPreferences(patch),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['partner-notification-preferences'], updated);
+      setBrowserEnabled(updated.browser_enabled);
+      toast.success('Notification preferences saved');
     },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : 'Could not save preferences'),
+  });
+
+  const update = (patch: Partial<NotificationPreferences>) => mutation.mutate(patch);
+
+  const handleBrowserToggle = async (enabled: boolean) => {
+    if (!enabled) {
+      update({ browser_enabled: false });
+      return;
+    }
+    // Chrome only grants permission from a user gesture — this toggle is one.
+    const result = await requestBrowserNotifications();
+    setPermission(result);
+    if (result === 'unsupported') {
+      toast.error('This browser does not support desktop notifications');
+      return;
+    }
+    if (result !== 'granted') {
+      toast.error('Notification permission was blocked in your browser settings');
+      update({ browser_enabled: false });
+      return;
+    }
+    update({ browser_enabled: true });
+  };
+
+  const emailItems: {
+    key: keyof NotificationPreferences;
+    label: string;
+    description: string;
+  }[] = [
     {
-      label: 'Payout updates',
-      description: 'Receive updates about your payout requests.',
-      checked: payoutNotif,
-      onCheckedChange: setPayoutNotif,
-    },
-    {
+      key: 'email_referral',
       label: 'New referrals',
-      description: 'Know when someone signs up through your link.',
-      checked: referralNotif,
-      onCheckedChange: setReferralNotif,
+      description: 'Know when someone signs up through your referral link.',
     },
     {
+      key: 'email_commission',
+      label: 'New commission',
+      description: 'Get an email when a referred customer is billed and you earn.',
+    },
+    {
+      key: 'email_payout',
+      label: 'Payout updates',
+      description:
+        'Payout requested, sent to your wallet or bank, or failed.',
+    },
+    {
+      key: 'email_support',
+      label: 'Support replies',
+      description: 'When the RELIASTRA team replies to your conversation.',
+    },
+    {
+      key: 'email_announcement',
+      label: 'Program announcements',
+      description: 'Updates the RELIASTRA team sends to partners.',
+    },
+    {
+      key: 'email_marketing',
       label: 'Marketing & tips',
-      description: 'Occasional partner program updates and resources.',
-      checked: marketingNotif,
-      onCheckedChange: setMarketingNotif,
+      description: 'Occasional resources for growing your referrals.',
     },
   ];
+
+  if (isLoading || !data) {
+    return (
+      <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" />
+        Loading preferences…
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Manage your email notification preferences.
+        Choose how you want to hear about referrals, commissions and payouts.
+        Everything always appears in your{' '}
+        <span className="font-medium text-foreground">Notifications</span> page —
+        these settings control email and desktop alerts.
       </p>
 
       <Separator />
 
-      <div className="space-y-0 divide-y divide-border/40">
-        {items.map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
-          >
-            <div className="pr-4">
-              <p className="text-sm font-medium">{item.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {item.description}
-              </p>
-            </div>
-            <Switch
-              checked={item.checked}
-              onCheckedChange={item.onCheckedChange}
-              aria-label={item.label}
-            />
+      <div>
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Browser
+        </p>
+        <div className="flex items-center justify-between py-4">
+          <div className="pr-4">
+            <p className="text-sm font-medium">Desktop (Chrome) notifications</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Get a desktop alert the moment a referral signs up or a payout is
+              sent, while the dashboard is open.
+              {permission === 'denied' &&
+                ' Notifications are blocked for this site — allow them in your browser settings first.'}
+            </p>
           </div>
-        ))}
+          <Switch
+            checked={data.browser_enabled && permission === 'granted'}
+            onCheckedChange={(checked) => void handleBrowserToggle(checked)}
+            disabled={mutation.isPending || permission === 'unsupported'}
+            aria-label="Desktop notifications"
+          />
+        </div>
       </div>
 
-      <Badge variant="outline" className="text-[10px] font-mono uppercase tracking-wide">
-        Notification preferences are not yet saved
-      </Badge>
+      <Separator />
+
+      <div>
+        <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          Email
+        </p>
+        <div className="space-y-0 divide-y divide-border/40">
+          {emailItems.map((item) => (
+            <div
+              key={item.key}
+              className="flex items-center justify-between py-4 last:pb-0"
+            >
+              <div className="pr-4">
+                <p className="text-sm font-medium">{item.label}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+              <Switch
+                checked={Boolean(data[item.key])}
+                onCheckedChange={(checked) => update({ [item.key]: checked })}
+                disabled={mutation.isPending}
+                aria-label={item.label}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

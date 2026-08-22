@@ -54,9 +54,20 @@ class PartnerDashboardResponse(BaseModel):
     signups: int
     active_paid_customers: int
     monthly_commission_minor: int
+    #: Everything earned but not yet paid — includes commissions still inside
+    #: the hold period and commissions already reserved by an open payout.
+    #: This is an *informational* figure, never the withdrawable amount.
     pending_commission_minor: int
+    #: The amount that can actually be withdrawn right now: commissions whose
+    #: hold has elapsed (``payable``) and which are not reserved by an
+    #: existing payout. This is what the dashboard must show as
+    #: "Available to withdraw".
+    payable_balance_minor: int = 0
+    #: Amount currently sitting in payouts that are created but not settled.
+    in_transit_minor: int = 0
     total_earned_minor: int
     total_paid_minor: int
+    minimum_payout_minor: int = 0
     currency: str
 
 
@@ -233,3 +244,133 @@ class PartnerStatsResponse(BaseModel):
     total_commission_paid_minor: int
     pending_commission_minor: int
     currency: str
+
+
+# ── Notifications ─────────────────────────────────────────────────────────
+
+
+class NotificationItem(BaseModel):
+    """One entry in the partner's notification feed."""
+
+    id: uuid.UUID
+    event: str
+    title: str
+    body: str
+    action_url: str | None = None
+    action_label: str | None = None
+    priority: str = "normal"
+    is_read: bool = False
+    created_at: datetime
+
+
+class NotificationListResponse(BaseModel):
+    items: list[NotificationItem]
+    page: int
+    page_size: int
+    total: int
+    unread: int
+
+
+class NotificationUnreadCountResponse(BaseModel):
+    unread: int
+
+
+class NotificationMarkReadRequest(BaseModel):
+    #: Omit (or send an empty list) to mark the whole feed read.
+    notification_ids: list[uuid.UUID] | None = None
+
+
+class NotificationPreferencesResponse(BaseModel):
+    email_referral: bool
+    email_commission: bool
+    email_payout: bool
+    email_support: bool
+    email_announcement: bool
+    email_marketing: bool
+    browser_enabled: bool
+
+
+class NotificationPreferencesUpdateRequest(BaseModel):
+    email_referral: bool | None = None
+    email_commission: bool | None = None
+    email_payout: bool | None = None
+    email_support: bool | None = None
+    email_announcement: bool | None = None
+    email_marketing: bool | None = None
+    browser_enabled: bool | None = None
+
+
+# ── Partner support desk ──────────────────────────────────────────────────
+
+
+class PartnerTicketCreateRequest(BaseModel):
+    subject: str = Field(min_length=1, max_length=500)
+    message: str = Field(min_length=10)
+    priority: str = Field(default="normal", pattern="^(low|normal|high|urgent)$")
+
+
+class PartnerTicketMessageCreateRequest(BaseModel):
+    body: str = Field(min_length=1)
+
+
+class PartnerTicketMessageItem(BaseModel):
+    id: uuid.UUID
+    #: "user" (the partner), "admin" (RELIASTRA support) or "system".
+    sender_type: str
+    sender_name: str
+    body: str
+    created_at: datetime
+
+
+class PartnerTicketItem(BaseModel):
+    id: uuid.UUID
+    ticket_number: str
+    subject: str
+    status: str
+    priority: str
+    created_at: datetime
+    updated_at: datetime
+    last_message_at: datetime
+    last_message_preview: str
+    last_sender_type: str
+    unread_admin_messages: int = 0
+
+
+class PartnerTicketListResponse(BaseModel):
+    items: list[PartnerTicketItem]
+    page: int
+    page_size: int
+    total: int
+
+
+class PartnerTicketDetailResponse(BaseModel):
+    ticket: PartnerTicketItem
+    messages: list[PartnerTicketMessageItem]
+
+
+# ── Admin → partner messaging ─────────────────────────────────────────────
+
+
+class AdminPartnerNotifyRequest(BaseModel):
+    """Send an announcement to one, several, or every partner."""
+
+    #: "all" broadcasts to every partner in ``statuses``; "selected" uses
+    #: ``partner_ids``.
+    audience: str = Field(default="all", pattern="^(all|selected)$")
+    partner_ids: list[uuid.UUID] = Field(default_factory=list)
+    #: Only used when ``audience="all"``.
+    statuses: list[str] = Field(default_factory=lambda: ["active"])
+    title: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=5000)
+    action_url: str | None = Field(default=None, max_length=500)
+    action_label: str | None = Field(default=None, max_length=100)
+    #: "announcement" respects the partner's announcement preference;
+    #: "marketing" respects the (default-off) marketing preference.
+    category: str = Field(default="announcement", pattern="^(announcement|marketing)$")
+    send_email: bool = True
+
+
+class AdminPartnerNotifyResponse(BaseModel):
+    recipients: int
+    emailed: int
+    title: str

@@ -510,6 +510,25 @@ export interface AdminPayoutItem {
 
 export type AdminPayoutListResponse = PaginatedResponse<AdminPayoutItem>;
 
+/** Admin → partner announcement (see `POST /v1/admin/partners/notify`). */
+export interface AdminPartnerNotifyRequest {
+  audience: 'all' | 'selected';
+  partner_ids?: string[];
+  statuses?: string[];
+  title: string;
+  body: string;
+  action_url?: string | null;
+  action_label?: string | null;
+  category?: 'announcement' | 'marketing';
+  send_email?: boolean;
+}
+
+export interface AdminPartnerNotifyResponse {
+  recipients: number;
+  emailed: number;
+  title: string;
+}
+
 export interface PartnerDetailResponse {
   partner_id: string;
   user_id: string;

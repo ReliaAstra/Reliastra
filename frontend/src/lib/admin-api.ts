@@ -4,6 +4,8 @@ import type {
   AdminCommissionListResponse,
   AdminCurrentUser,
   AdminOverviewResponse,
+  AdminPartnerNotifyRequest,
+  AdminPartnerNotifyResponse,
   AdminPayoutListResponse,
   AdminPeriod,
   AdminSearchResponse,
@@ -388,6 +390,16 @@ export const adminApi = {
       `/partners/payouts/${payoutId}/process`,
       { method: 'POST', body: data }
     ),
+  /**
+   * Send an in-app notification (and, unless suppressed, an email) to one,
+   * several, or every partner. Each recipient's own email preferences are
+   * still respected; the in-app copy is always delivered.
+   */
+  notifyPartners: (data: AdminPartnerNotifyRequest) =>
+    request<AdminPartnerNotifyResponse>('/partners/notify', {
+      method: 'POST',
+      body: data,
+    }),
   updatePartnerStatus: (partnerId: string, data: { status: 'active' | 'suspended' | 'banned'; reason?: string }) =>
     request<{ partner_id: string; status: string }>(`/partners/${partnerId}`, {
       method: 'PATCH',

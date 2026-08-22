@@ -11,6 +11,8 @@ import {
   Settings,
   LogOut,
   Menu,
+  Bell,
+  CheckCheck,
   ChevronRight,
   ExternalLink,
   MessageSquare,
@@ -45,6 +47,14 @@ import { PageReferrals } from './page-referrals';
 import { PageEarnings } from './page-earnings';
 import { PagePayouts } from './page-payouts';
 import { PageSettings } from './page-settings';
+import { PageNotifications } from './page-notifications';
+import { PageSupportDesk } from './page-support';
+import { usePartnerNotifications } from '@/hooks/use-partner-notifications';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ThemeToggle } from '../shared/theme-toggle';
 import { CommandPalette } from '../shared/command-palette';
 import { TierBadge } from '../shared/tier-badge';
@@ -73,6 +83,7 @@ const sidebarNav: NavItem[] = [
   { page: 'referrals', label: 'Referrals', icon: Users },
   { page: 'earnings', label: 'Earnings', icon: DollarSign },
   { page: 'payouts', label: 'Payouts', icon: Wallet },
+  { page: 'notifications', label: 'Notifications', icon: Bell },
   { page: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -327,6 +338,96 @@ function MoreSheet({
   );
 }
 
+// --- Notification bell ---
+function NotificationBell() {
+  const navigate = usePartnerStore((s) => s.navigate);
+  const browserEnabled = usePartnerStore((s) => s.browserNotificationsEnabled);
+  const [open, setOpen] = useState(false);
+  const { items, unread, markAllRead, markRead } = usePartnerNotifications({
+    browserEnabled,
+  });
+
+  const recent = items.slice(0, 6);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="relative rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
+        >
+          <Bell className="size-4" />
+          {unread > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex min-w-[16px] items-center justify-center rounded-full bg-foreground px-1 text-[9px] font-medium leading-4 text-background">
+              {unread > 9 ? '9+' : unread}
+            </span>
+          )}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[340px] p-0">
+        <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            Notifications
+          </p>
+          {unread > 0 && (
+            <button
+              onClick={() => void markAllRead()}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <CheckCheck className="size-3" />
+              Mark all read
+            </button>
+          )}
+        </div>
+
+        <div className="max-h-[320px] overflow-y-auto">
+          {recent.length === 0 && (
+            <p className="px-4 py-8 text-center text-xs text-muted-foreground">
+              No notifications yet.
+            </p>
+          )}
+          {recent.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                void markRead([item.id]);
+                setOpen(false);
+                navigate('notifications');
+              }}
+              className={cn(
+                'block w-full border-b border-border/40 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/40',
+                !item.is_read && 'bg-muted/30'
+              )}
+            >
+              <div className="flex items-start gap-2">
+                {!item.is_read && (
+                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground" />
+                )}
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium">{item.title}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">
+                    {item.body}
+                  </p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => {
+            setOpen(false);
+            navigate('notifications');
+          }}
+          className="w-full border-t border-border/60 px-4 py-2.5 text-center text-[11px] font-medium transition-colors hover:bg-muted/40"
+        >
+          View all notifications
+        </button>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // --- Top bar ---
 function TopBar({ onMoreOpen }: { onMoreOpen: () => void }) {
   const user = usePartnerStore((s) => s.user);
@@ -368,6 +469,7 @@ function TopBar({ onMoreOpen }: { onMoreOpen: () => void }) {
 
       {/* Right side */}
       <div className="flex items-center gap-2">
+        <NotificationBell />
         <ThemeToggle />
         <div className="hidden sm:inline-flex items-center gap-1.5">
           <TierBadge tier={currentTier} size="sm" />
@@ -495,6 +597,30 @@ function DashboardPages() {
           transition={pageTransition}
         >
           <PagePayouts />
+        </motion.div>
+      )}
+      {currentPage === 'notifications' && (
+        <motion.div
+          key="notifications"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={pageTransition}
+        >
+          <PageNotifications />
+        </motion.div>
+      )}
+      {currentPage === 'support' && (
+        <motion.div
+          key="support"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={pageTransition}
+        >
+          <PageSupportDesk />
         </motion.div>
       )}
       {currentPage === 'settings' && (

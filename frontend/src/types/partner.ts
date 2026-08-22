@@ -94,10 +94,100 @@ export interface PartnerDashboardResponse {
   signups: number;
   active_paid_customers: number;
   monthly_commission_minor: number;
+  /**
+   * Everything earned but not yet paid — includes commissions still inside the
+   * hold period and commissions reserved by an open payout. Informational only:
+   * never show this as the withdrawable amount.
+   */
   pending_commission_minor: number;
+  /** Actually withdrawable right now (released and unreserved). */
+  payable_balance_minor: number;
+  /** Reserved by a payout that has been created but not settled yet. */
+  in_transit_minor: number;
   total_earned_minor: number;
   total_paid_minor: number;
+  /** Minimum payable balance required before a payout can be requested. */
+  minimum_payout_minor: number;
   currency: string;
+}
+
+// ── Notifications ──────────────────────────────
+
+export type PartnerNotificationEvent =
+  | 'partner_referral_signup'
+  | 'partner_commission_earned'
+  | 'partner_payout_requested'
+  | 'partner_payout_paid'
+  | 'partner_payout_failed'
+  | 'partner_support_reply'
+  | 'partner_announcement'
+  | 'partner_marketing'
+  | (string & {});
+
+export interface NotificationItem {
+  id: string;
+  event: PartnerNotificationEvent;
+  title: string;
+  body: string;
+  action_url?: string | null;
+  action_label?: string | null;
+  priority: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  page: number;
+  page_size: number;
+  total: number;
+  unread: number;
+}
+
+export interface NotificationPreferences {
+  email_referral: boolean;
+  email_commission: boolean;
+  email_payout: boolean;
+  email_support: boolean;
+  email_announcement: boolean;
+  email_marketing: boolean;
+  browser_enabled: boolean;
+}
+
+// ── Support desk ───────────────────────────────
+
+export interface PartnerTicketMessageItem {
+  id: string;
+  sender_type: 'user' | 'admin' | 'system' | (string & {});
+  sender_name: string;
+  body: string;
+  created_at: string;
+}
+
+export interface PartnerTicketItem {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  last_message_preview: string;
+  last_sender_type: string;
+  unread_admin_messages: number;
+}
+
+export interface PartnerTicketListResponse {
+  items: PartnerTicketItem[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface PartnerTicketDetailResponse {
+  ticket: PartnerTicketItem;
+  messages: PartnerTicketMessageItem[];
 }
 
 // ── Referrals ──────────────────────────────────
@@ -322,6 +412,7 @@ export type PartnerPage =
   | 'forgot-password'
   // Partner dashboard
   | 'dashboard'
+  | 'notifications'
   | 'referrals'
   | 'earnings'
   | 'payouts'

@@ -12,8 +12,18 @@ const dashboardPages: PartnerPage[] = [
   'referrals',
   'earnings',
   'payouts',
+  'notifications',
   'settings',
 ];
+
+/**
+ * `support` is dual-mode: a public contact form for visitors, and the live
+ * conversation desk (backed by the admin support queue) once signed in.
+ */
+function isDashboardRoute(page: PartnerPage, authenticated: boolean): boolean {
+  if (page === 'support') return authenticated;
+  return dashboardPages.includes(page);
+}
 
 export default function Home() {
   const currentPage = usePartnerStore((s) => s.currentPage);
@@ -100,7 +110,10 @@ export default function Home() {
   // Redirect to home if authenticated user tries a non-existent dashboard page
   useEffect(() => {
     if (!mounted) return;
-    const isDashboardPage = dashboardPages.includes(currentPage);
+    const isDashboardPage = isDashboardRoute(
+      currentPage,
+      authStatus === 'authenticated'
+    );
     if (isDashboardPage && authStatus === 'unauthenticated') {
       navigate('login');
       return;
@@ -133,7 +146,10 @@ export default function Home() {
     );
   }
 
-  const isPublicPage = !dashboardPages.includes(currentPage);
+  const isPublicPage = !isDashboardRoute(
+    currentPage,
+    authStatus === 'authenticated'
+  );
 
   if (currentPage === 'landing') {
     return <PageLanding />;
@@ -149,7 +165,7 @@ export default function Home() {
   }
 
   // For dashboard pages that aren't yet authenticated, show nothing (useEffect handles redirect)
-  if (dashboardPages.includes(currentPage)) {
+  if (isDashboardRoute(currentPage, authStatus === 'authenticated')) {
     return null;
   }
 
