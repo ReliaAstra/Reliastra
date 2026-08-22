@@ -17,6 +17,7 @@ import {
   StatusPill,
 } from '@/components/admin/admin-primitives';
 import { Button } from '@/components/ui/button';
+import { RevealDestinationButton } from '@/components/admin/admin-reveal-destination';
 import type { AdminPayoutItem } from '@/types/admin';
 
 /** Payout states that still need a human to move money. */
@@ -139,6 +140,11 @@ export function PartnerPayoutQueue() {
                       <p className="mt-1 break-all font-mono text-[11px] text-slate-600 dark:text-slate-300">
                         {payout.payout_destination || 'No payout destination configured'}
                       </p>
+                      {payout.payout_method && (
+                        <div className="mt-2 max-w-sm">
+                          <RevealDestinationButton partnerId={payout.partner_id} />
+                        </div>
+                      )}
                     </div>
                   </div>
 

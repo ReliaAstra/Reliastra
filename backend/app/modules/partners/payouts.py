@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,34 +23,10 @@ from app.modules.partners.repository import (
     PartnerPayoutRepository,
     PartnerProfileRepository,
 )
+from app.modules.partners.destination import describe_destination
 from app.modules.partners.service import _period_month
 
 logger = logging.getLogger(__name__)
-
-
-def describe_destination(partner) -> str:
-    """Human-readable payout destination for notifications and emails.
-
-    Never leaks a full bank account number — only the last four digits — while
-    a crypto address is shown in full so the partner can verify it on-chain.
-    """
-    method = getattr(partner, "payout_method", None)
-    if not method:
-        return "your configured payout destination"
-    if method == "bank":
-        details = getattr(partner, "bank_details", None) or {}
-        bank = details.get("bank_name") or "your bank account"
-        acct = str(details.get("account_number") or "")
-        return f"{bank} ••••{acct[-4:]}" if acct else bank
-    label = {"crypto_usdc": "USDC", "crypto_usdt": "USDT"}.get(method, method)
-    network = getattr(partner, "payout_network", None)
-    address = getattr(partner, "wallet_address", None)
-    parts = [label]
-    if network:
-        parts.append(f"on {network}")
-    if address:
-        parts.append(f"({address})")
-    return " ".join(parts)
 
 
 class PartnerPayoutService:
@@ -92,6 +68,22 @@ class PartnerPayoutService:
         partner = await self.profile_repo.get_by_id(session, partner_id)
         if partner is None:
             raise ResourceNotFoundException("Partner not found")
+
+        cooldown_hours = int(settings.PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS)
+        changed_at = partner.payout_details_updated_at
+        if cooldown_hours and changed_at is not None:
+            if changed_at.tzinfo is None:
+                changed_at = changed_at.replace(tzinfo=timezone.utc)
+            unlocks_at = changed_at + timedelta(hours=cooldown_hours)
+            if datetime.now(timezone.utc) < unlocks_at:
+                # A destination changed minutes ago is the signature of an
+                # account takeover. Hold the money until the partner has had a
+                # chance to see the change notification.
+                raise ValidationException(
+                    "Your payout destination was changed recently. Payouts to a "
+                    f"new destination unlock {cooldown_hours} hour(s) after the "
+                    "change — this protects you if someone else made it."
+                )
 
         payable = await self.commission_repo.payable_by_partner(session, partner_id)
         available = sum(c.commission_amount_minor for c in payable)

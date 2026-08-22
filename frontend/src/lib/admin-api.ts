@@ -5,6 +5,7 @@ import type {
   AdminCurrentUser,
   AdminOverviewResponse,
   AdminPartnerNotifyRequest,
+  AdminPayoutDestinationReveal,
   AdminPartnerNotifyResponse,
   AdminPayoutListResponse,
   AdminPeriod,
@@ -390,6 +391,14 @@ export const adminApi = {
       `/partners/payouts/${payoutId}/process`,
       { method: 'POST', body: data }
     ),
+  /**
+   * Reveal a partner's full payout destination.
+   *
+   * Everything else in the admin API is masked; this call is audited
+   * server-side, so only make it when an admin is actually about to pay.
+   */
+  revealPayoutDestination: (partnerId: string) =>
+    request<AdminPayoutDestinationReveal>(`/partners/${partnerId}/payout-destination`),
   /**
    * Send an in-app notification (and, unless suppressed, an email) to one,
    * several, or every partner. Each recipient's own email preferences are

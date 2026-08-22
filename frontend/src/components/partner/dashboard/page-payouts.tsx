@@ -32,6 +32,9 @@ const METHOD_LABELS: Record<string, string> = {
 function destinationSummary(partner: Partner | null): string {
   const method = partner?.payoutMethod;
   if (!method) return '';
+  // The server already builds a masked one-line summary; prefer it so the
+  // dashboard and the notification emails read identically.
+  if (partner?.payoutDestination) return partner.payoutDestination;
   if (method === 'bank') {
     const name = partner?.bankDetails?.bank_name;
     const acct = partner?.bankDetails?.account_number;

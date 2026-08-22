@@ -72,9 +72,15 @@ export interface PartnerProfileResponse {
   status: string;
   created_at: string;
   payout_method?: string | null;
+  /** Masked (`0x71C7…9F2a`) — the API never returns the full address. */
   wallet_address?: string | null;
   payout_network?: string | null;
+  /** Masked: account/routing numbers arrive as `••••1234`. */
   bank_details?: Record<string, string> | null;
+  /** One-line masked summary, ready to display. */
+  payout_destination?: string | null;
+  /** Last destination change — payouts are held briefly afterwards. */
+  payout_details_updated_at?: string | null;
 }
 
 // ── Payout destination ──────────────────────────
@@ -82,6 +88,8 @@ export interface PartnerProfileResponse {
 export type PayoutMethod = 'crypto_usdc' | 'crypto_usdt' | 'bank';
 
 export interface PayoutSettingsUpdateRequest {
+  /** Re-authentication for this change; required for password accounts. */
+  current_password?: string;
   payout_method: PayoutMethod;
   wallet_address?: string | null;
   network?: string | null;
@@ -292,9 +300,13 @@ export interface Partner {
   status: string;
   createdAt: string;
   payoutMethod?: string | null;
+  /** Masked — never the full address. */
   walletAddress?: string | null;
   payoutNetwork?: string | null;
+  /** Masked — account numbers arrive as `••••1234`. */
   bankDetails?: Record<string, string> | null;
+  payoutDestination?: string | null;
+  payoutDetailsUpdatedAt?: string | null;
 }
 
 // ── Tier System (frontend-only for marketing) ──

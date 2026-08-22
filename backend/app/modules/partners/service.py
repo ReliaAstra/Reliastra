@@ -21,7 +21,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.audit_log import AuditLogService
-from app.core.exceptions import ResourceNotFoundException, ValidationException
+from app.core.exceptions import (
+    ForbiddenException,
+    ResourceNotFoundException,
+    ValidationException,
+)
+from app.core.security import verify_password
+from app.modules.partners.destination import (
+    decrypt_bank_details,
+    decrypt_text,
+    describe_destination,
+    encrypt_bank_details,
+    encrypt_text,
+    mask_bank_details,
+    mask_wallet,
+)
 from app.modules.partners.constants import PartnerStatus, ReferralStatus
 from app.modules.partners.models import (
     PartnerCommission,
@@ -164,8 +178,31 @@ class PartnerService:
         bank transfers require structured ``bank_details``. Clearing a
         method is not supported through this endpoint — a partner may switch
         methods, which replaces the destination wholesale.
+
+        This is the highest-risk write in the program: whoever controls the
+        destination receives the money. So the change is (a) re-authenticated
+        with the account password, (b) stored encrypted, (c) announced to the
+        partner out-of-band, and (d) subject to a cool-down before it can be
+        paid out.
         """
         profile = await self.get_partner_for_user(session, user_id)
+        user = await UserRepository.get_by_id(session, user_id)
+        if user is None:
+            raise ResourceNotFoundException("User not found")
+
+        # Re-authenticate password-based accounts. Federated accounts (Supabase
+        # / OAuth) have no local password to check — their identity provider
+        # already gates the session — so they are exempt rather than locked out.
+        if user.password_hash:
+            if not body.current_password:
+                raise ValidationException(
+                    "Confirm your account password to change your payout destination"
+                )
+            if not verify_password(body.current_password, user.password_hash):
+                raise ForbiddenException("Incorrect account password")
+
+        previous_summary = describe_destination(profile)
+        had_destination = bool(profile.payout_method)
 
         # Assign directly (rather than via ``profile_repo.update``) because a
         # method switch must clear the previously configured destination —
@@ -178,7 +215,7 @@ class PartnerService:
                     "A wallet address is required for crypto payouts"
                 )
             profile.payout_method = body.payout_method
-            profile.wallet_address = address
+            profile.wallet_address = encrypt_text(address)
             profile.payout_network = (body.network or "").strip() or None
             profile.bank_details = None
         else:  # bank
@@ -190,17 +227,21 @@ class PartnerService:
             profile.payout_method = "bank"
             profile.wallet_address = None
             profile.payout_network = None
-            profile.bank_details = {
-                k: v
-                for k, v in {
-                    "account_name": details.get("account_name"),
-                    "bank_name": details.get("bank_name"),
-                    "account_number": details.get("account_number"),
-                    "routing_number": details.get("routing_number"),
-                    "swift_bic": details.get("swift_bic"),
-                }.items()
-                if v is not None
-            }
+            profile.bank_details = encrypt_bank_details(
+                {
+                    k: v
+                    for k, v in {
+                        "account_name": details.get("account_name"),
+                        "bank_name": details.get("bank_name"),
+                        "account_number": details.get("account_number"),
+                        "routing_number": details.get("routing_number"),
+                        "swift_bic": details.get("swift_bic"),
+                    }.items()
+                    if v is not None
+                }
+            )
+
+        profile.payout_details_updated_at = datetime.now(timezone.utc)
         session.add(profile)
         await session.flush()
 
@@ -210,8 +251,36 @@ class PartnerService:
             user_id=user_id,
             resource_type="partner",
             resource_id=str(profile.id),
-            payload={"payout_method": body.payout_method},
+            # Never write the destination itself into the audit payload — the
+            # masked summary is enough to reconstruct what happened.
+            payload={
+                "payout_method": body.payout_method,
+                "previous_destination": previous_summary if had_destination else None,
+                "new_destination": describe_destination(profile),
+            },
         )
+
+        # Tell the partner out-of-band. If this change was not theirs, this
+        # notification (plus the cool-down) is their chance to catch it.
+        try:
+            from app.modules.partners.notifications import (
+                partner_notification_service,
+            )
+
+            await partner_notification_service.payout_destination_changed(
+                session,
+                partner_user_id=user_id,
+                destination=describe_destination(profile),
+                cooldown_hours=int(
+                    settings.PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS
+                ),
+            )
+        except Exception:  # pragma: no cover - defensive
+            logger.exception(
+                "Failed to notify partner %s of payout destination change",
+                profile.id,
+            )
+
         return await self._to_profile_response(session, profile)
 
     async def _to_profile_response(
@@ -234,9 +303,17 @@ class PartnerService:
             status=profile.status,
             created_at=profile.created_at,
             payout_method=profile.payout_method,
-            wallet_address=profile.wallet_address,
+            # Masked: the partner already knows their own address, and a
+            # hijacked session should not be able to read it back out.
+            wallet_address=mask_wallet(decrypt_text(profile.wallet_address)),
             payout_network=profile.payout_network,
-            bank_details=profile.bank_details,
+            bank_details=mask_bank_details(
+                decrypt_bank_details(profile.bank_details)
+            ),
+            payout_details_updated_at=profile.payout_details_updated_at,
+            payout_destination=(
+                describe_destination(profile) if profile.payout_method else None
+            ),
         )
 
     # ── Dashboard ─────────────────────────────────────────────────────────

@@ -42,6 +42,7 @@ class PartnerEvent:
     PAYOUT_REQUESTED = "partner_payout_requested"
     PAYOUT_PAID = "partner_payout_paid"
     PAYOUT_FAILED = "partner_payout_failed"
+    DESTINATION_CHANGED = "partner_payout_destination_changed"
     SUPPORT_REPLY = "partner_support_reply"
     ANNOUNCEMENT = "partner_announcement"
     MARKETING = "partner_marketing"
@@ -54,6 +55,7 @@ _EMAIL_PREFERENCE_FIELD: dict[str, str] = {
     PartnerEvent.PAYOUT_REQUESTED: "email_payout",
     PartnerEvent.PAYOUT_PAID: "email_payout",
     PartnerEvent.PAYOUT_FAILED: "email_payout",
+    PartnerEvent.DESTINATION_CHANGED: "email_payout",
     PartnerEvent.SUPPORT_REPLY: "email_support",
     PartnerEvent.ANNOUNCEMENT: "email_announcement",
     PartnerEvent.MARKETING: "email_marketing",
@@ -312,6 +314,41 @@ class PartnerNotificationService:
             action_url="/?page=settings",
             action_label="Check payout details",
             priority="high",
+        )
+
+    async def payout_destination_changed(
+        self,
+        session: AsyncSession,
+        *,
+        partner_user_id: uuid.UUID,
+        destination: str,
+        cooldown_hours: int,
+    ) -> None:
+        """Security notice — always emailed, regardless of preferences.
+
+        This is the one notification a partner cannot switch off: it is their
+        only out-of-band signal that someone changed where their money goes.
+        """
+        wait = (
+            f" For your protection, payouts to it are held for {cooldown_hours} "
+            "hour(s)."
+            if cooldown_hours > 0
+            else ""
+        )
+        await self.notify(
+            session,
+            user_id=partner_user_id,
+            event=PartnerEvent.DESTINATION_CHANGED,
+            title="Your payout destination was changed",
+            body=(
+                f"Payouts will now be sent to {destination}.{wait} "
+                "If this wasn't you, contact support immediately and change "
+                "your password."
+            ),
+            action_url="/?page=settings",
+            action_label="Review payout settings",
+            priority="high",
+            send_email=True,
         )
 
     async def support_reply(

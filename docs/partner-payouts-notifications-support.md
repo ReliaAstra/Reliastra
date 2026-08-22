@@ -16,6 +16,34 @@ Stored on `partner_profiles` (`payout_method`, `wallet_address`,
 bank requires bank name + account number. Switching method wipes the other
 method's fields so a stale destination can never be paid.
 
+### Hardening
+
+Whoever controls the destination receives the money, so it is treated as
+secret material (`app/modules/partners/destination.py`):
+
+* **Encrypted at rest.** `wallet_address` is Fernet ciphertext with an
+  `enc:v1:` prefix; `bank_details` holds `{"__enc__": "enc:v1:…"}` inside the
+  same JSONB column. Rows written before this change are plaintext and are
+  read transparently, then encrypted on the partner's next save — migration
+  `0023` only widens the column and adds `payout_details_updated_at`, so no
+  live payout data is rewritten in place.
+* **Masked by default.** Partner responses and the admin list / detail / queue
+  only ever carry `0x71C7…9F2a` or `••••7890`. The settings form does not
+  prefill the destination: changing it means typing it again.
+* **Re-authenticated.** Saving requires the account password
+  (`current_password`). Federated accounts, which have no local password, are
+  exempt rather than locked out.
+* **Announced.** A change always emails the partner and raises a high-priority
+  in-app notice — the one notification that ignores preferences, because it is
+  their only out-of-band signal that someone moved their money.
+* **Cool-down.** Payouts to a freshly changed destination are refused for
+  `PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS` (default 24, `0` disables), so a
+  takeover cannot be cashed out before the partner sees the notice.
+* **Audited reveal.** `GET /v1/admin/partners/{id}/payout-destination` is the
+  only route returning payable values. It writes to both audit trails, and the
+  admin UI exposes it as a *Reveal to pay* button (with copy-to-clipboard and a
+  warning when the destination is still inside its cool-down).
+
 **Admin** — `/admin/partners/{id}` shows a *Payout destination* card with the
 wallet/network or the bank fields, and the destination is repeated inside the
 "Mark payout paid" confirmation so nobody settles blind. The **payout queue**
@@ -157,18 +185,22 @@ keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
   not Web Push with a service worker, so no VAPID keys or push subscriptions
   are required — but nothing is delivered while the dashboard is closed. Email
   covers that case.
-* **Payout destinations are stored in plain text** and are not masked in the
-  admin API response; changing one does not require re-auth or a cool-down.
-  This remains the highest-value hardening left.
+* **Encryption is only as good as `SECRET_KEY`.** The Fernet key is derived
+  from it, so rotating `SECRET_KEY` without re-encrypting makes existing
+  destinations unreadable (they fail closed — masked as empty — rather than
+  leaking). A rotation routine is not implemented.
 * `PartnerTicketItem.unread_admin_messages` is always `0` — per-message read
   receipts are not tracked; the notification feed covers "you have a reply".
 
 ## Tests
 
-`backend/tests/integration/test_partner_notifications.py` (12 tests) covers the
+`backend/tests/integration/test_partner_notifications.py` (17 tests) covers the
 balance split, mark-paid reference enforcement + notification with a masked
 destination, failed-payout release, referral/commission notifications, feed
 privacy between partners, preference persistence, admin broadcast (all and
 selected) with authz, and the full support round trip including internal-note
 leakage and cross-partner access, plus the payout queue's backlog figures and
-masked destination. Full backend suite: 286 passed, 3 skipped.
+masked destination, and the destination hardening: ciphertext at rest,
+password re-auth, the change notice, the payout cool-down, masked-vs-revealed
+admin views with the audit entry, and backwards compatibility with legacy
+plaintext rows. Full backend suite: 291 passed, 3 skipped.

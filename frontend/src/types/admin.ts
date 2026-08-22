@@ -519,6 +519,20 @@ export interface AdminPayoutItem {
 
 export type AdminPayoutListResponse = PaginatedResponse<AdminPayoutItem>;
 
+/** Full payout destination, returned only by the audited reveal endpoint. */
+export interface AdminPayoutDestinationReveal {
+  partner_id: string;
+  partner_email?: string | null;
+  payout_method?: string | null;
+  payout_network?: string | null;
+  wallet_address?: string | null;
+  bank_details?: Record<string, string> | null;
+  payout_destination?: string | null;
+  payout_details_updated_at?: string | null;
+  /** True while the post-change hold is still running — do not pay yet. */
+  in_cooldown: boolean;
+}
+
 /** Admin → partner announcement (see `POST /v1/admin/partners/notify`). */
 export interface AdminPartnerNotifyRequest {
   audience: 'all' | 'selected';
@@ -547,9 +561,14 @@ export interface PartnerDetailResponse {
   created_at: string;
   payout_settings?: {
     payout_method?: string | null;
+    /** Masked; use `adminApi.revealPayoutDestination` for the payable value. */
     wallet_address?: string | null;
     payout_network?: string | null;
+    /** Masked: account/routing numbers arrive as `••••1234`. */
     bank_details?: Record<string, string> | null;
+    payout_destination?: string | null;
+    payout_details_updated_at?: string | null;
+    is_masked?: boolean;
   };
   commission_summary: {
     total_earned_minor: number;

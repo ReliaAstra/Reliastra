@@ -12,6 +12,7 @@ Covers the behaviour added on top of the v1 referral program:
   replies flow back to the partner.
 """
 
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -19,6 +20,7 @@ import pytest
 from sqlalchemy import select
 
 from app.config import settings
+from app.core.audit_log import AuditLog
 from app.modules.partners.commissions import commission_service
 from app.modules.partners.constants import CommissionStatus
 from app.modules.partners.models import PartnerCommission, PartnerProfile
@@ -80,6 +82,33 @@ async def _release_commissions(db_session, partner_id):
     await db_session.commit()
 
 
+async def _set_destination(async_client, db_session, partner, payload, *, cooldown=False):
+    """Save a payout destination, re-authenticating like a real client would.
+
+    Unless a test is specifically exercising the cool-down, the change is
+    backdated so the post-change hold does not block the payout under test.
+    """
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={**payload, "current_password": "SecurePassword123!"},
+        headers=partner["headers"],
+    )
+    assert res.status_code == 200, res.text
+    if not cooldown:
+        profile = (
+            await db_session.execute(
+                select(PartnerProfile).where(
+                    PartnerProfile.user_id == uuid.UUID(partner["user_id"])
+                )
+            )
+        ).scalar_one()
+        profile.payout_details_updated_at = datetime.now(timezone.utc) - timedelta(
+            days=30
+        )
+        await db_session.commit()
+    return res.json()
+
+
 async def _partner_id(db_session, user_id) -> uuid.UUID:
     return (
         await db_session.execute(
@@ -124,10 +153,11 @@ async def test_dashboard_separates_payable_from_pending(async_client, db_session
     assert body["payable_balance_minor"] == body["pending_commission_minor"] > 0
 
     # Reserving it in a payout removes it from the withdrawable balance.
-    await async_client.put(
-        "/v1/partners/payout-settings",
-        json={"payout_method": "crypto_usdc", "wallet_address": "0xabc", "network": "Ethereum"},
-        headers=partner["headers"],
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {"payout_method": "crypto_usdc", "wallet_address": "0xabc", "network": "Ethereum"},
     )
     res = await async_client.post(
         "/v1/partners/payouts/request", headers=partner["headers"]
@@ -167,13 +197,14 @@ async def test_mark_paid_requires_reference_and_notifies_partner(
     await db_session.commit()
     await _release_commissions(db_session, await _partner_id(db_session, partner["user_id"]))
 
-    await async_client.put(
-        "/v1/partners/payout-settings",
-        json={
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {
             "payout_method": "bank",
             "bank_details": {"bank_name": "First Bank", "account_number": "1234567890"},
         },
-        headers=partner["headers"],
     )
     payout = (
         await async_client.post("/v1/partners/payouts/request", headers=partner["headers"])
@@ -238,10 +269,11 @@ async def test_failed_payout_returns_balance_and_notifies(async_client, db_sessi
     await db_session.commit()
     await _release_commissions(db_session, await _partner_id(db_session, partner["user_id"]))
 
-    await async_client.put(
-        "/v1/partners/payout-settings",
-        json={"payout_method": "crypto_usdt", "wallet_address": "TXyz", "network": "Tron"},
-        headers=partner["headers"],
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {"payout_method": "crypto_usdt", "wallet_address": "TXyz", "network": "Tron"},
     )
     payout = (
         await async_client.post("/v1/partners/payouts/request", headers=partner["headers"])
@@ -610,13 +642,14 @@ async def test_payout_queue_exposes_destination_and_backlog(async_client, db_ses
     assert stats["pending_payout_count"] == 0
     assert stats["pending_payout_minor"] == 0
 
-    await async_client.put(
-        "/v1/partners/payout-settings",
-        json={
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {
             "payout_method": "bank",
             "bank_details": {"bank_name": "First Bank", "account_number": "1234567890"},
         },
-        headers=partner["headers"],
     )
     payout = (
         await async_client.post("/v1/partners/payouts/request", headers=partner["headers"])
@@ -650,3 +683,234 @@ async def test_payout_queue_exposes_destination_and_backlog(async_client, db_ses
         await async_client.get("/v1/admin/partners/stats", headers=admin_headers)
     ).json()
     assert stats["pending_payout_count"] == 0
+
+
+# ── Payout destination hardening ─────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_destination_is_encrypted_at_rest(async_client, db_session):
+    """A database dump must not be a list of payable wallets."""
+    partner = await _register(async_client, "enc@example.com", "Enc Kof")
+    await _activate_partner(async_client, partner["headers"])
+
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {
+            "payout_method": "crypto_usdc",
+            "wallet_address": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+            "network": "Ethereum",
+        },
+    )
+
+    profile = (
+        await db_session.execute(
+            select(PartnerProfile).where(
+                PartnerProfile.user_id == uuid.UUID(partner["user_id"])
+            )
+        )
+    ).scalar_one()
+    await db_session.refresh(profile)
+    assert profile.wallet_address.startswith("enc:v1:")
+    assert "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" not in profile.wallet_address
+
+    # Bank details are ciphertext inside the JSONB column too.
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {
+            "payout_method": "bank",
+            "bank_details": {"bank_name": "First Bank", "account_number": "1234567890"},
+        },
+    )
+    await db_session.refresh(profile)
+    assert set(profile.bank_details.keys()) == {"__enc__"}
+    assert "1234567890" not in json.dumps(profile.bank_details)
+
+
+@pytest.mark.asyncio
+async def test_changing_destination_requires_password(async_client, db_session):
+    partner = await _register(async_client, "reauth@example.com", "Reauth Kof")
+    await _activate_partner(async_client, partner["headers"])
+
+    # No password at all.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={"payout_method": "crypto_usdc", "wallet_address": "0xdeadbeef00"},
+        headers=partner["headers"],
+    )
+    assert res.status_code == 422, res.text
+
+    # Wrong password.
+    res = await async_client.put(
+        "/v1/partners/payout-settings",
+        json={
+            "payout_method": "crypto_usdc",
+            "wallet_address": "0xdeadbeef00",
+            "current_password": "NotMyPassword1!",
+        },
+        headers=partner["headers"],
+    )
+    assert res.status_code == 403, res.text
+
+    # Nothing was written.
+    me = (await async_client.get("/v1/partners/me", headers=partner["headers"])).json()
+    assert me["payout_method"] is None
+
+
+@pytest.mark.asyncio
+async def test_destination_change_notifies_and_holds_payouts(async_client, db_session):
+    """A swapped destination is announced and cannot be cashed out at once."""
+    partner = await _register(async_client, "hold@example.com", "Hold Kof")
+    profile = await _activate_partner(async_client, partner["headers"])
+    customer = await _register(
+        async_client, "holdcust@example.com", "Hold Cust", ref_code=profile["referral_code"]
+    )
+    await commission_service.record_payment(
+        db_session,
+        organization_id=customer["org_id"],
+        collected_minor=90_000,
+        currency="USD",
+        payment_reference="hold-1",
+        paid_at=datetime.now(timezone.utc),
+    )
+    await db_session.commit()
+    await _release_commissions(db_session, await _partner_id(db_session, partner["user_id"]))
+
+    # Cool-down left in place this time.
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {"payout_method": "crypto_usdt", "wallet_address": "TAttacker9999", "network": "Tron"},
+        cooldown=True,
+    )
+
+    # The partner is told, with the full weight of a security notice.
+    feed = (
+        await async_client.get("/v1/partners/notifications", headers=partner["headers"])
+    ).json()["items"]
+    changed = [n for n in feed if n["event"] == "partner_payout_destination_changed"]
+    assert changed, feed
+    assert changed[0]["priority"] == "high"
+    assert "wasn't you" in changed[0]["body"]
+    # Masked even in the partner's own notification.
+    assert "TAttacker9999" not in changed[0]["body"]
+
+    # And the money is held.
+    res = await async_client.post(
+        "/v1/partners/payouts/request", headers=partner["headers"]
+    )
+    assert res.status_code == 422, res.text
+    assert "unlock" in res.text
+
+    # Once the hold elapses the payout goes through.
+    row = (
+        await db_session.execute(
+            select(PartnerProfile).where(
+                PartnerProfile.user_id == uuid.UUID(partner["user_id"])
+            )
+        )
+    ).scalar_one()
+    row.payout_details_updated_at = datetime.now(timezone.utc) - timedelta(days=2)
+    await db_session.commit()
+
+    res = await async_client.post(
+        "/v1/partners/payouts/request", headers=partner["headers"]
+    )
+    assert res.status_code == 201, res.text
+
+
+@pytest.mark.asyncio
+async def test_admin_sees_masked_destination_until_revealed(async_client, db_session):
+    admin = await _register(async_client, "revealadmin@example.com", "Reveal Admin")
+    await _make_admin(db_session, admin["user_id"])
+    admin_headers = {"Authorization": f"Bearer {admin['token']}"}
+
+    partner = await _register(async_client, "reveal@example.com", "Reveal Kof")
+    await _activate_partner(async_client, partner["headers"])
+    await _set_destination(
+        async_client,
+        db_session,
+        partner,
+        {
+            "payout_method": "bank",
+            "bank_details": {
+                "account_name": "Reveal Kof",
+                "bank_name": "First Bank",
+                "account_number": "1234567890",
+                "routing_number": "021000021",
+            },
+        },
+    )
+    partner_id = str(await _partner_id(db_session, partner["user_id"]))
+
+    # Detail view is masked.
+    detail = (
+        await async_client.get(
+            f"/v1/admin/partners/{partner_id}", headers=admin_headers
+        )
+    ).json()
+    settings_block = detail["payout_settings"]
+    assert settings_block["is_masked"] is True
+    assert settings_block["bank_details"]["account_number"] == "••••7890"
+    assert "1234567890" not in json.dumps(settings_block)
+
+    # Reveal hands over the payable value …
+    res = await async_client.get(
+        f"/v1/admin/partners/{partner_id}/payout-destination", headers=admin_headers
+    )
+    assert res.status_code == 200, res.text
+    revealed = res.json()
+    assert revealed["bank_details"]["account_number"] == "1234567890"
+    assert revealed["bank_details"]["routing_number"] == "021000021"
+    assert revealed["in_cooldown"] is False
+
+    # … and is recorded in the domain audit trail, naming the admin.
+    events = (
+        (
+            await db_session.execute(
+                select(AuditLog).where(
+                    AuditLog.event_type == "partner_payout_destination_revealed"
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert len(events) == 1
+    assert events[0].payload["admin_email"] == "revealadmin@example.com"
+    assert events[0].resource_id == partner_id
+
+    # A partner cannot reveal anything, including their own record.
+    res = await async_client.get(
+        f"/v1/admin/partners/{partner_id}/payout-destination",
+        headers=partner["headers"],
+    )
+    assert res.status_code == 403, res.text
+
+
+@pytest.mark.asyncio
+async def test_legacy_plaintext_destination_still_readable(async_client, db_session):
+    """Rows written before encryption must keep working, and stay masked."""
+    partner = await _register(async_client, "legacy@example.com", "Legacy Kof")
+    await _activate_partner(async_client, partner["headers"])
+
+    profile = (
+        await db_session.execute(
+            select(PartnerProfile).where(
+                PartnerProfile.user_id == uuid.UUID(partner["user_id"])
+            )
+        )
+    ).scalar_one()
+    profile.payout_method = "bank"
+    profile.bank_details = {"bank_name": "Legacy Bank", "account_number": "9998887777"}
+    await db_session.commit()
+
+    me = (await async_client.get("/v1/partners/me", headers=partner["headers"])).json()
+    assert me["bank_details"]["bank_name"] == "Legacy Bank"
+    assert me["bank_details"]["account_number"] == "••••7777"
+    assert me["payout_destination"] == "Legacy Bank ••••7777"

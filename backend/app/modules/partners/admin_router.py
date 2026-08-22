@@ -11,12 +11,13 @@ control — and nothing more.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.audit_log import AuditLogService
 from app.core.exceptions import ResourceNotFoundException
 from app.db.session import get_db
@@ -27,7 +28,11 @@ from app.modules.partners.notifications import (
     PartnerEvent,
     partner_notification_service,
 )
-from app.modules.partners.payouts import describe_destination, payout_service
+from app.modules.partners.destination import (
+    describe_destination,
+    destination_view,
+)
+from app.modules.partners.payouts import payout_service
 from app.modules.partners.repository import (
     PartnerCommissionRepository,
     PartnerPayoutRepository,
@@ -36,6 +41,7 @@ from app.modules.partners.repository import (
 )
 from app.modules.partners.schemas import (
     AdminCommissionItem,
+    AdminPayoutDestinationRevealResponse,
     AdminPartnerNotifyRequest,
     AdminPartnerNotifyResponse,
     AdminCommissionListResponse,
@@ -495,17 +501,77 @@ async def get_partner_detail(
         "referral_code": await _referral_code_for(db, profile.referral_code_id),
         "status": profile.status,
         "created_at": profile.created_at,
+        # Masked by default. The payable value is behind
+        # GET /{partner_id}/payout-destination, which is audited.
         "payout_settings": {
-            "payout_method": profile.payout_method,
-            "wallet_address": profile.wallet_address,
-            "payout_network": profile.payout_network,
-            "bank_details": profile.bank_details,
+            **destination_view(profile),
+            "payout_destination": (
+                describe_destination(profile) if profile.payout_method else None
+            ),
+            "is_masked": True,
         },
         "commission_summary": summary,
         "referred_customers": referred,
         "commission_history": commission_history,
         "payout_history": payout_history,
     }
+
+
+@admin_partners_router.get(
+    "/{partner_id}/payout-destination",
+    response_model=AdminPayoutDestinationRevealResponse,
+    summary="Reveal a partner's full payout destination (audited)",
+)
+@audit_log(action="reveal_payout_destination", entity_type="partner")
+async def reveal_payout_destination(
+    partner_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> AdminPayoutDestinationRevealResponse:
+    """Return the payable wallet address / bank account in the clear.
+
+    Everything else in the admin API shows a masked destination. This is the
+    one place the real value is handed over — immediately before an admin
+    sends money — and every call is written to both audit trails so a leak has
+    a name and a timestamp attached to it.
+    """
+    profile = await PartnerProfileRepository.get_by_id(db, partner_id)
+    if profile is None:
+        raise ResourceNotFoundException("Partner not found")
+
+    revealed = destination_view(profile, reveal=True)
+
+    cooldown_hours = int(settings.PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS)
+    changed_at = profile.payout_details_updated_at
+    in_cooldown = False
+    if cooldown_hours and changed_at is not None:
+        if changed_at.tzinfo is None:
+            changed_at = changed_at.replace(tzinfo=timezone.utc)
+        in_cooldown = datetime.now(timezone.utc) < changed_at + timedelta(
+            hours=cooldown_hours
+        )
+
+    await AuditLogService.log_event(
+        session=db,
+        event_type="partner_payout_destination_revealed",
+        user_id=admin_user.id,
+        resource_type="partner",
+        resource_id=str(profile.id),
+        payload={"partner_id": str(profile.id), "admin_email": admin_user.email},
+    )
+
+    return AdminPayoutDestinationRevealResponse(
+        partner_id=profile.id,
+        partner_email=await _email_for(db, profile.user_id),
+        payout_destination=(
+            describe_destination(profile, reveal=True)
+            if profile.payout_method
+            else None
+        ),
+        in_cooldown=in_cooldown,
+        **revealed,
+    )
 
 
 @admin_partners_router.patch(

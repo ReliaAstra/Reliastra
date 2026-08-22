@@ -24,6 +24,10 @@ class PayoutSettingsUpdateRequest(BaseModel):
     """Request body for saving a partner's payout destination."""
 
     payout_method: str = Field(pattern="^(crypto_usdc|crypto_usdt|bank)$")
+    #: Account password, re-checked before the destination changes. Required
+    #: for password-based accounts; federated (Supabase/OAuth) accounts have
+    #: no local password and are exempt.
+    current_password: str | None = Field(default=None, max_length=200)
     wallet_address: str | None = Field(
         default=None, max_length=200, description="Crypto wallet address"
     )
@@ -43,9 +47,17 @@ class PartnerProfileResponse(BaseModel):
     status: str
     created_at: datetime
     payout_method: str | None = None
+    #: Masked (``0x71C7…9F2a``). The full address is never returned to the
+    #: browser — it is stored encrypted and only revealed to a system admin
+    #: through an audited endpoint at settlement time.
     wallet_address: str | None = None
     payout_network: str | None = None
+    #: Masked: account and routing numbers are reduced to ``••••1234``.
     bank_details: dict | None = None
+    #: One-line masked summary, ready to display.
+    payout_destination: str | None = None
+    #: Last destination change — drives the payout cool-down.
+    payout_details_updated_at: datetime | None = None
 
 
 class PartnerDashboardResponse(BaseModel):
@@ -358,6 +370,21 @@ class PartnerTicketDetailResponse(BaseModel):
 
 
 # ── Admin → partner messaging ─────────────────────────────────────────────
+
+
+class AdminPayoutDestinationRevealResponse(BaseModel):
+    """Full, payable destination — returned only to a system admin, audited."""
+
+    partner_id: uuid.UUID
+    partner_email: str | None = None
+    payout_method: str | None = None
+    payout_network: str | None = None
+    wallet_address: str | None = None
+    bank_details: dict | None = None
+    payout_destination: str | None = None
+    payout_details_updated_at: datetime | None = None
+    #: True while the post-change cool-down is still running.
+    in_cooldown: bool = False
 
 
 class AdminPartnerNotifyRequest(BaseModel):

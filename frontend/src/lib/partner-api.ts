@@ -131,6 +131,8 @@ export const partnerApi = {
       walletAddress: res.wallet_address ?? null,
       payoutNetwork: res.payout_network ?? null,
       bankDetails: res.bank_details ?? null,
+      payoutDestination: res.payout_destination ?? null,
+      payoutDetailsUpdatedAt: res.payout_details_updated_at ?? null,
     };
   },
 

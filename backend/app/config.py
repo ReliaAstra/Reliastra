@@ -490,6 +490,15 @@ class Settings(BaseSettings):
         description="Minimum payable balance (integer minor units) required "
                     "before a partner's balance can be settled as a payout.",
     )
+    PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS: int = Field(
+        default=24,
+        ge=0,
+        le=168,
+        description="Hours a partner must wait after changing their payout "
+                    "destination before a payout can be requested to it. Turns "
+                    "an account takeover into something the partner can still "
+                    "catch before money moves. Set to 0 to disable.",
+    )
     PARTNER_DEFAULT_CURRENCY: str = Field(
         default="USD",
         description="Default ISO-4217 currency for partner money amounts. "
