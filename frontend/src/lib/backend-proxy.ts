@@ -2,6 +2,13 @@ const BACKEND_URL =
   process.env.RELIASTRA_API_URL?.replace(/\/$/, '') ||
   'https://api.reliastra.com';
 
+const CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Organization-ID, Reliastra-Organization, X-Request-ID, Idempotency-Key, X-Requested-With',
+  'Access-Control-Allow-Credentials': 'true',
+};
+
 export async function proxyToBackend(
   path: string,
   req: Request,
@@ -12,6 +19,14 @@ export async function proxyToBackend(
     noBody?: boolean;
   }
 ): Promise<Response> {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: CORS_HEADERS,
+    });
+  }
+
   const incoming = new URL(req.url);
   const url = `${BACKEND_URL}/v1${path}${incoming.search}`;
   const method = options?.method || req.method;
@@ -64,16 +79,23 @@ export async function proxyToBackend(
       }),
       {
         status: 502,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...CORS_HEADERS,
+        },
       }
     );
   }
 
-  // Return the response as-is to the client
+  // Return the response as-is to the client with CORS headers
   const responseHeaders = new Headers();
   responseHeaders.set('Content-Type', res.headers.get('Content-Type') || 'application/json');
   const responseRequestId = res.headers.get('X-Request-ID');
   if (responseRequestId) responseHeaders.set('X-Request-ID', responseRequestId);
+  // Add CORS headers for outbound verification
+  for (const [k, v] of Object.entries(CORS_HEADERS)) {
+    responseHeaders.set(k, v);
+  }
 
   return new Response(res.body, {
     status: res.status,
