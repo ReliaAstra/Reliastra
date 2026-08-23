@@ -443,6 +443,173 @@ class PartnerService:
             subscribed_at=ref.subscribed_at,
         )
 
+    # ── Analytics & detail ────────────────────────────────────────────────
+
+    async def get_analytics(
+        self, session: AsyncSession, user_id: uuid.UUID, days: int = 30
+    ):
+        from app.modules.partners.analytics import (
+            attribution_breakdown,
+            funnel,
+            time_series,
+            top_campaigns,
+        )
+        from app.modules.partners.schemas import PartnerAnalyticsResponse
+
+        profile = await self.get_partner_for_user(session, user_id)
+        total = await self.referral_repo.count_by_partner(session, profile.id)
+        active = await self.referral_repo.count_by_partner(
+            session, profile.id, status=ReferralStatus.PAID.value
+        )
+        conversion = round((active / total * 100) if total else 0, 1)
+
+        attribution = await attribution_breakdown(session, profile.id)
+        series = await time_series(session, profile.id, days=days)
+        funnel_data = await funnel(session, profile.id)
+        campaigns = await top_campaigns(session, profile.id)
+
+        insights: list[str] = []
+        if attribution:
+            top_bucket = attribution[0]
+            if top_bucket["pct"] >= 40 and total >= 5:
+                insights.append(
+                    f"Most of your referred users come from {top_bucket['bucket']} ({top_bucket['pct']}%)."
+                )
+        if campaigns:
+            insights.append(f"Top campaign: {campaigns[0]['campaign']} ({campaigns[0]['count']} signups).")
+        pending_activation = total - active
+        # churned count lives in funnel; approximate inactive signups
+        signed_up_cnt = next((f["count"] for f in funnel_data if f["status"] == "signed_up"), 0)
+        if signed_up_cnt > 2:
+            insights.append(f"{signed_up_cnt} referred signups have not yet activated.")
+        if not insights and total == 0:
+            insights.append("Share your referral link to get your first signup.")
+        elif not insights:
+            insights.append(f"{total} total referrals · {active} active customers.")
+
+        return PartnerAnalyticsResponse(
+            total_referrals=total,
+            active_customers=active,
+            conversion_rate=conversion,
+            attribution=[a for a in attribution],
+            timeseries=[s for s in series],
+            funnel=[f for f in funnel_data],
+            top_campaigns=[c for c in campaigns],
+            insights=insights,
+        )
+
+    async def get_referral_detail(
+        self, session: AsyncSession, user_id: uuid.UUID, referral_id: uuid.UUID
+    ):
+        from app.modules.acquisition.models import AcquisitionFirstTouch
+        from app.modules.partners.analytics import _bucket_source
+        from app.modules.partners.schemas import (
+            ReferralDetailResponse,
+            ReferralTimelineEvent,
+        )
+
+        profile = await self.get_partner_for_user(session, user_id)
+        ref = await self.referral_repo.get_by_id(session, referral_id)
+        if ref is None or ref.partner_id != profile.id:
+            raise ResourceNotFoundException("Referral not found")
+
+        # Base fields via existing helper
+        item = await self._referral_item(session, ref)
+
+        # Acquisition (marketing first-touch) for this referred user
+        acq = (
+            await session.execute(
+                select(AcquisitionFirstTouch).where(
+                    AcquisitionFirstTouch.user_id == ref.referred_user_id
+                )
+            )
+        ).scalar_one_or_none()
+
+        # Partner referral code for display
+        code_str: str | None = None
+        if profile.referral_code_id:
+            from app.modules.referrals.models import ReferralCode
+
+            rc = (
+                await session.execute(
+                    select(ReferralCode).where(ReferralCode.id == profile.referral_code_id)
+                )
+            ).scalar_one_or_none()
+            code_str = rc.code if rc else None
+
+        # Commission timeline helpers: look up earliest payable/paid
+        commissions = (
+            await session.execute(
+                select(PartnerCommission)
+                .where(
+                    PartnerCommission.partner_id == profile.id,
+                    PartnerCommission.referral_id == ref.id,
+                )
+                .order_by(PartnerCommission.created_at.asc())
+            )
+        ).scalars().all()
+
+        timeline: list[ReferralTimelineEvent] = []
+        timeline.append(
+            ReferralTimelineEvent(
+                kind="referred",
+                label="Referred",
+                at=ref.created_at,
+                detail=f"Via {code_str}" if code_str else None,
+            )
+        )
+        timeline.append(
+            ReferralTimelineEvent(
+                kind="signed_up",
+                label="Signed up",
+                at=ref.created_at,
+                detail=item.masked_email,
+            )
+        )
+        if ref.subscribed_at:
+            timeline.append(
+                ReferralTimelineEvent(
+                    kind="subscribed",
+                    label="Subscribed",
+                    at=ref.subscribed_at,
+                    detail=item.plan,
+                )
+            )
+        for c in commissions:
+            if c.status in ("payable", "paid"):
+                timeline.append(
+                    ReferralTimelineEvent(
+                        kind="commission",
+                        label="Commission earned" if c.status == "pending" else "Commission " + c.status,
+                        at=c.created_at,
+                        detail=f"{c.currency} {c.commission_amount_minor/100:.2f}",
+                    )
+                )
+                break
+        # Sort by time; keep referred first
+        timeline.sort(key=lambda e: (e.at or datetime.min.replace(tzinfo=timezone.utc)))
+
+        bucket = _bucket_source(acq) if acq else None
+
+        return ReferralDetailResponse(
+            referral_id=ref.id,
+            status=ref.status,
+            plan=item.plan,
+            organization_name=item.organization_name,
+            masked_email=item.masked_email,
+            created_at=ref.created_at,
+            subscribed_at=ref.subscribed_at,
+            commission_rate=item.commission_rate,
+            subscription_amount_minor=item.subscription_amount_minor,
+            monthly_commission_minor=item.monthly_commission_minor,
+            acquisition_channel=acq.channel if acq else None,
+            acquisition_source=acq.source if acq else None,
+            acquisition_campaign=acq.campaign if acq else None,
+            acquisition_bucket=bucket,
+            partner_referral_code=code_str,
+            timeline=timeline,
+        )
+
     # ── Attribution binding (called at registration) ──────────────────────
 
     async def bind_referral(

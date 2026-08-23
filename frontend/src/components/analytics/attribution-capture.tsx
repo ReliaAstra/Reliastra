@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { captureAttribution } from '@/lib/attribution';
 
 /**
@@ -9,17 +9,19 @@ import { captureAttribution } from '@/lib/attribution';
  * Silent, synchronous (localStorage), zero network - failure can never
  * affect rendering. Mounted once in the root layout.
  *
- * Suspense note: useSearchParams requires a Suspense boundary during
- * prerendering; the root layout wraps children in dynamic rendering via
- * ThemeProvider already, and this component renders null so it is safe.
+ * NOTE: deliberately reads window.location.search inside the effect rather
+ * than calling useSearchParams() - that hook requires a Suspense boundary
+ * during static prerendering and would break `next build` for every
+ * statically generated route. A pathname-keyed effect covers every entry
+ * point (direct hit, refresh, campaign link) because UTMs arrive on fresh
+ * document loads.
  */
 export function AttributionCapture() {
   const pathname = usePathname();
-  const search = useSearchParams()?.toString() ?? '';
 
   useEffect(() => {
-    captureAttribution(search ? `?${search}` : window.location.search, pathname || '/');
-  }, [pathname, search]);
+    captureAttribution(window.location.search, pathname || '/');
+  }, [pathname]);
 
   return null;
 }

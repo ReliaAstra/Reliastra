@@ -288,8 +288,11 @@ export interface PartnerUser {
   id: string;
   email: string;
   fullName?: string;
+  /** Alias for fullName – some code paths use `name` */
+  name?: string;
   isVerified?: boolean;
   createdAt?: string;
+  partner?: { referralCode?: string; status?: string } | null;
 }
 
 export interface Partner {
@@ -402,6 +405,66 @@ export function getNextTier(activeReferrals: number): TierInfo | null {
     return PARTNER_TIERS[currentIndex + 1];
   }
   return null;
+}
+
+// ── Analytics ─────────────────────────────────
+
+export interface AttributionBucket {
+  bucket: string;
+  count: number;
+  pct: number;
+}
+
+export interface TimeseriesPoint {
+  date: string;
+  signups: number;
+}
+
+export interface FunnelStage {
+  status: string;
+  count: number;
+}
+
+export interface CampaignBucket {
+  campaign: string;
+  count: number;
+}
+
+export interface PartnerAnalyticsResponse {
+  total_referrals: number;
+  active_customers: number;
+  conversion_rate: number;
+  attribution: AttributionBucket[];
+  timeseries: TimeseriesPoint[];
+  funnel: FunnelStage[];
+  top_campaigns: CampaignBucket[];
+  insights: string[];
+}
+
+export interface ReferralTimelineEvent {
+  kind: string;
+  label: string;
+  at: string | null;
+  detail: string | null;
+}
+
+export interface ReferralDetailResponse {
+  referral_id: string;
+  status: string;
+  plan: string | null;
+  organization_name: string | null;
+  masked_email: string | null;
+  created_at: string;
+  subscribed_at: string | null;
+  commission_rate: number;
+  subscription_amount_minor: number;
+  monthly_commission_minor: number;
+  acquisition_channel: string | null;
+  acquisition_source: string | null;
+  acquisition_campaign: string | null;
+  acquisition_bucket: string | null;
+  partner_referral_code: string | null;
+  timeline: ReferralTimelineEvent[];
 }
 
 // ── Page Routes ────────────────────────────────

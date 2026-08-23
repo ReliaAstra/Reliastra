@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { Copy, ArrowLeft, ArrowRight } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Copy, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { usePartnerStore } from '@/stores/partner-store';
 import { partnerApi } from '@/lib/partner-api';
 import { formatCurrencyFromMinor, formatDate } from '@/lib/format';
 import { StatusBadge } from '@/components/partner/shared/status-badge';
 import { ReferralLinkCard } from '@/components/partner/shared/referral-link-card';
 import { DashboardReferralsSkeleton } from '@/components/partner/shared/dashboard-skeleton';
+import { ReferralDetailDrawer } from './referral-detail';
 import { Button } from '@/components/ui/button';
 import type { ReferralItem, ReferralListResponse } from '@/types/partner';
 
@@ -49,6 +50,7 @@ function ReferralsEmpty({ referralLink }: { referralLink: string }) {
 export function PageReferrals() {
   const dashboardData = usePartnerStore((s) => s.dashboardData);
   const [page, setPage] = useState(1);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const pageSize = 20;
 
   const { data: response, isLoading, isError } = useQuery<ReferralListResponse>({
@@ -164,7 +166,8 @@ export function PageReferrals() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.03 * i }}
-                  className="border-b border-border/30 last:border-b-0 hover:bg-muted/30 transition-colors"
+                  onClick={() => setSelectedId(ref.referral_id)}
+                  className="border-b border-border/30 last:border-b-0 hover:bg-muted/40 transition-colors cursor-pointer"
                 >
                   <td className="px-5 py-3.5">
                     <span className="font-mono text-xs">
@@ -184,7 +187,10 @@ export function PageReferrals() {
                     {formatCurrencyFromMinor(ref.monthly_commission_minor)}/mo
                   </td>
                   <td className="px-5 py-3.5 text-right font-mono text-xs text-muted-foreground">
-                    {formatDate(ref.created_at)}
+                    <span className="inline-flex items-center gap-1">
+                      {formatDate(ref.created_at)}
+                      <ChevronRight className="size-3 text-muted-foreground/60" />
+                    </span>
                   </td>
                 </motion.tr>
               ))}
@@ -200,7 +206,8 @@ export function PageReferrals() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.03 * i }}
-              className="px-5 py-4"
+              onClick={() => setSelectedId(ref.referral_id)}
+              className="px-5 py-4 active:bg-muted/40 cursor-pointer"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-mono text-xs">
@@ -215,8 +222,9 @@ export function PageReferrals() {
                     {formatDate(ref.created_at)}
                   </span>
                 </div>
-                <span className="font-mono text-xs tabular-nums">
+                <span className="font-mono text-xs tabular-nums inline-flex items-center gap-1">
                   {formatCurrencyFromMinor(ref.monthly_commission_minor)}/mo
+                  <ChevronRight className="size-3 text-muted-foreground/50" />
                 </span>
               </div>
             </motion.div>
@@ -252,6 +260,12 @@ export function PageReferrals() {
           </Button>
         </div>
       )}
+
+      <AnimatePresence>
+        {selectedId && (
+          <ReferralDetailDrawer referralId={selectedId} onClose={() => setSelectedId(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

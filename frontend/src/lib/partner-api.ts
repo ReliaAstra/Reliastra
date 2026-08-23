@@ -169,6 +169,15 @@ export const partnerApi = {
     });
   },
 
+  async getAnalytics(days = 30) {
+    const mod = await import('@/types/partner');
+    return request<import('@/types/partner').PartnerAnalyticsResponse>(`/partners/analytics?days=${days}`);
+  },
+
+  async getReferralDetail(referralId: string) {
+    return request<import('@/types/partner').ReferralDetailResponse>(`/partners/referrals/${referralId}`);
+  },
+
   // ── Notifications ────────────────────────────
 
   async getNotifications(page = 1, pageSize = 20, unreadOnly = false) {

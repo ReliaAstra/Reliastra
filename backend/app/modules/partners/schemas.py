@@ -410,3 +410,66 @@ class AdminPartnerNotifyResponse(BaseModel):
     recipients: int
     emailed: int
     title: str
+
+
+# ── Analytics & referral detail ───────────────────────────────────────────
+
+
+class AttributionBucket(BaseModel):
+    bucket: str
+    count: int
+    pct: float
+
+
+class TimeseriesPoint(BaseModel):
+    date: str
+    signups: int
+
+
+class FunnelStage(BaseModel):
+    status: str
+    count: int
+
+
+class CampaignBucket(BaseModel):
+    campaign: str
+    count: int
+
+
+class PartnerAnalyticsResponse(BaseModel):
+    total_referrals: int
+    active_customers: int
+    conversion_rate: float
+    attribution: list[AttributionBucket]
+    timeseries: list[TimeseriesPoint]
+    funnel: list[FunnelStage]
+    top_campaigns: list[CampaignBucket]
+    insights: list[str]
+
+
+class ReferralTimelineEvent(BaseModel):
+    kind: str
+    label: str
+    at: datetime | None
+    detail: str | None = None
+
+
+class ReferralDetailResponse(BaseModel):
+    referral_id: uuid.UUID
+    status: str
+    plan: str | None
+    organization_name: str | None
+    masked_email: str | None
+    created_at: datetime
+    subscribed_at: datetime | None
+    commission_rate: int
+    subscription_amount_minor: int
+    monthly_commission_minor: int
+    # Acquisition (marketing first-touch) – privacy-safe aggregate labels
+    acquisition_channel: str | None = None
+    acquisition_source: str | None = None
+    acquisition_campaign: str | None = None
+    acquisition_bucket: str | None = None
+    # Partner attribution anchor
+    partner_referral_code: str | None = None
+    timeline: list[ReferralTimelineEvent]

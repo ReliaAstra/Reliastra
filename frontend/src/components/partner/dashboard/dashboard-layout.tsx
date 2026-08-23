@@ -435,7 +435,7 @@ function TopBar({ onMoreOpen }: { onMoreOpen: () => void }) {
   const reset = usePartnerStore((s) => s.reset);
   const dashboardData = usePartnerStore((s) => s.dashboardData);
 
-  const currentTier: TierInfo = getPartnerTier(dashboardData?.referrals?.length ?? 0);
+  const currentTier: TierInfo = getPartnerTier(dashboardData?.active_paid_customers ?? 0);
 
   const handleSignOut = useCallback(async () => {
     try {

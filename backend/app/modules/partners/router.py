@@ -33,6 +33,7 @@ from app.modules.partners.schemas import (
     NotificationPreferencesResponse,
     NotificationPreferencesUpdateRequest,
     NotificationUnreadCountResponse,
+    PartnerAnalyticsResponse,
     PartnerApplyRequest,
     PartnerDashboardResponse,
     PartnerProfileResponse,
@@ -44,6 +45,7 @@ from app.modules.partners.schemas import (
     PayoutItem,
     PayoutListResponse,
     PayoutSettingsUpdateRequest,
+    ReferralDetailResponse,
     ReferralListResponse,
 )
 from app.modules.partners.service import partner_service
@@ -151,6 +153,34 @@ async def list_referrals(
     return await partner_service.list_referrals(
         db, current_user.id, page=page, page_size=page_size
     )
+
+
+@partners_router.get(
+    "/referrals/{referral_id}",
+    response_model=ReferralDetailResponse,
+    summary="Referral detail with timeline",
+)
+async def get_referral_detail(
+    referral_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> ReferralDetailResponse:
+    return await partner_service.get_referral_detail(
+        db, current_user.id, referral_id
+    )
+
+
+@partners_router.get(
+    "/analytics",
+    response_model=PartnerAnalyticsResponse,
+    summary="Partner analytics (attribution, funnel, trend)",
+)
+async def get_analytics(
+    days: int = Query(default=30, ge=7, le=90),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_partner_user),
+) -> PartnerAnalyticsResponse:
+    return await partner_service.get_analytics(db, current_user.id, days=days)
 
 
 @partners_router.get(
