@@ -116,6 +116,26 @@ class AuthService:
                     user.id,
                 )
 
+        # Attach first-party acquisition attribution (FIRST TOUCH). Same
+        # failure-isolation contract as the referral binding above: a broken
+        # attribution layer can never block account creation. The service
+        # enforces first-touch immutability internally.
+        try:
+            from app.modules.acquisition.service import acquisition_service
+
+            attribution = request.acquisition
+            await acquisition_service.record_signup_attribution(
+                session=session,
+                user_id=user.id,
+                first=attribution.first if attribution else None,
+                last=attribution.last if attribution else None,
+            )
+        except Exception:
+            logger.exception(
+                "Acquisition attribution recording failed during registration for user %s",
+                user.id,
+            )
+
         tokens = self._generate_token_pair(user.id)
         expires_at = datetime.now(timezone.utc) + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS

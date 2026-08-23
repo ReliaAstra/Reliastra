@@ -14,6 +14,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.modules.acquisition.schemas import AcquisitionRead
+
 
 # =============================================================================
 # Shared building blocks
@@ -210,6 +212,10 @@ class CustomerDetailResponse(BaseModel):
     open_incidents: int = 0
     support_tickets: int = 0
     open_support_tickets: int = 0
+
+    #: First-party acquisition attribution (FIRST TOUCH). None when the
+    #: account has no recorded acquisition row (e.g. pre-feature signups).
+    acquisition: "AcquisitionRead | None" = None
 
     recent_activity: list[dict[str, Any]] = Field(default_factory=list)
     recent_tickets: list[dict[str, Any]] = Field(default_factory=list)

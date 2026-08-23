@@ -855,6 +855,45 @@ class AdminControlPlaneService:
             plan=plan,
         )
 
+        # First-party acquisition attribution (FIRST TOUCH). One extra
+        # query; None for accounts created before the feature existed.
+        from app.modules.acquisition.models import AcquisitionFirstTouch
+
+        acquisition_row = (
+            await session.execute(
+                select(AcquisitionFirstTouch).where(
+                    AcquisitionFirstTouch.user_id == customer_id
+                )
+            )
+        ).scalar_one_or_none()
+        acquisition_payload = None
+        if acquisition_row is not None:
+            from app.modules.acquisition.schemas import AcquisitionRead
+
+            acquisition_payload = AcquisitionRead(
+                channel=acquisition_row.channel,
+                source=acquisition_row.source,
+                medium=acquisition_row.medium,
+                campaign=acquisition_row.campaign,
+                content=acquisition_row.content,
+                term=acquisition_row.term,
+                landing_path=acquisition_row.landing_path,
+                referrer_host=acquisition_row.referrer_host,
+                first_touch_at=(
+                    acquisition_row.first_touch_at.isoformat()
+                    if acquisition_row.first_touch_at
+                    else None
+                ),
+                last_channel=acquisition_row.last_channel,
+                last_source=acquisition_row.last_source,
+                last_campaign=acquisition_row.last_campaign,
+                last_touch_at=(
+                    acquisition_row.last_touch_at.isoformat()
+                    if acquisition_row.last_touch_at
+                    else None
+                ),
+            )
+
         return CustomerDetailResponse(
             customer_id=user.id,
             email=user.email,
@@ -872,6 +911,7 @@ class AdminControlPlaneService:
             login_count=int(getattr(user, "login_count", 0) or 0),
             created_at=user.created_at,
             updated_at=getattr(user, "updated_at", None),
+            acquisition=acquisition_payload,
             organizations=org_snapshots,
             primary_org=primary,
             plan=plan,

@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { VisitBeacon } from "@/components/analytics/visit-beacon";
+import { AttributionCapture } from "@/components/analytics/attribution-capture";
 
 export const metadata: Metadata = {
   title: {
@@ -56,6 +57,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <AttributionCapture />
           <VisitBeacon />
           {children}
           <Toaster />

@@ -1,6 +1,7 @@
 import uuid
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from app.modules.acquisition.schemas import AcquisitionAttributionInput
 from app.modules.auth.constants import TOKEN_TYPE_BEARER
 
 
@@ -14,6 +15,10 @@ class RegisterRequest(BaseModel):
     #: Referral code captured from ``https://reliastra.com/r/{code}`` and
     #: replayed at signup. Links the new account to the referring partner.
     ref_code: str | None = Field(default=None, max_length=32)
+    #: First-party marketing attribution captured from the visitor's
+    #: arriving URL (UTM parameters). Optional - signup must succeed
+    #: without it, and every value is normalized server-side before use.
+    acquisition: AcquisitionAttributionInput | None = None
 
 
 class LoginRequest(BaseModel):

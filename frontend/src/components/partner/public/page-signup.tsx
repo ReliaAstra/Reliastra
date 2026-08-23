@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
 import { toast } from 'sonner';
 import { getStoredReferralCode } from './referral-banner';
+import { getSignupAttribution } from '@/lib/attribution';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -51,6 +52,10 @@ export function PageSignup() {
     setLoading(true);
     const store = usePartnerStore.getState();
 
+    // First-party acquisition attribution (FIRST TOUCH). Read-only here:
+    // absent/failed storage simply omits the field and signup proceeds.
+    const attribution = getSignupAttribution();
+
     try {
       // Call real register endpoint with snake_case fields
       const res = await fetch('/api/auth/register', {
@@ -61,6 +66,7 @@ export function PageSignup() {
           password,
           full_name: name,
           ref_code: referralCode || undefined,
+          acquisition: attribution,
         }),
       });
 
