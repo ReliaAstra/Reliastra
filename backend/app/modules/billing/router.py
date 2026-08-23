@@ -1,15 +1,10 @@
 import json
-import uuid
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.core.exceptions import (
-    ForbiddenException,
-    ResourceNotFoundException,
-    UnauthorizedException,
     ValidationException,
 )
 from app.core.permissions import (
@@ -21,10 +16,9 @@ from app.core.permissions import (
     PLAN_TAGS,
     Plan,
     get_min_check_interval,
-    get_plan_price_usd,
 )
-from app.dependencies import get_current_org, require_admin, require_member
 from app.db.session import get_db
+from app.dependencies import get_current_org, require_admin, require_member
 from app.modules.billing.schemas import (
     InitializePaymentRequest,
     InitializePaymentResponse,
@@ -68,17 +62,19 @@ async def get_pricing_plans() -> PricingPlansResponse:
     plans = []
     for plan_enum in Plan:
         p = plan_enum.value
-        plans.append(PricingPlanResponse(
-            plan=p,
-            display_name=p.capitalize(),
-            description=PLAN_DESCRIPTIONS.get(p, ""),
-            tag=PLAN_TAGS.get(p),
-            price_usd=PLAN_PRICES_USD.get(p, 0),
-            max_dependencies=PLAN_DEPENDENCY_LIMITS.get(p, 0),
-            min_check_interval_seconds=get_min_check_interval(p),
-            data_retention_days=PLAN_RETENTION_DAYS.get(p, 1),
-            features=PLAN_FEATURES.get(p, {}),
-        ))
+        plans.append(
+            PricingPlanResponse(
+                plan=p,
+                display_name=p.capitalize(),
+                description=PLAN_DESCRIPTIONS.get(p, ""),
+                tag=PLAN_TAGS.get(p),
+                price_usd=PLAN_PRICES_USD.get(p, 0),
+                max_dependencies=PLAN_DEPENDENCY_LIMITS.get(p, 0),
+                min_check_interval_seconds=get_min_check_interval(p),
+                data_retention_days=PLAN_RETENTION_DAYS.get(p, 1),
+                features=PLAN_FEATURES.get(p, {}),
+            )
+        )
     return PricingPlansResponse(plans=plans)
 
 
@@ -119,12 +115,11 @@ async def verify_transaction(
     current_org: Organization = Depends(get_current_org),
     service: BillingService = Depends(get_bill_service),
 ) -> VerifyTransactionResponse:
-    try:
-        return await service.verify_transaction(db, reference)
-    except Exception as exc:
-        raise ValidationException(
-            f"Transaction verification failed: {exc}"
-        ) from exc
+    # Scoped to the caller's organization and replay-protected inside the
+    # service. Domain exceptions propagate through the global handlers —
+    # wrapping them here used to leak upstream error details (Paystack
+    # bodies, DB messages) to clients.
+    return await service.verify_transaction(db, reference, caller_org_id=current_org.id)
 
 
 @router.post("/billing/webhook", response_model=PaystackWebhookResponse)

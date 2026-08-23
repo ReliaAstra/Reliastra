@@ -4,7 +4,7 @@ import base64
 import hashlib
 import logging
 from typing import Literal
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -63,18 +63,18 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/reliastra",
         description="Supabase Postgres connection URL with the asyncpg driver. "
-                    "SQLite and in-cluster PostgreSQL are not supported. "
-                    "Use the URI from Supabase → Project Settings → Database "
-                    "(pooler on port 6543 is preferred for the API). "
-                    "For SSL databases, set DATABASE_SSL_MODE=require.",
+        "SQLite and in-cluster PostgreSQL are not supported. "
+        "Use the URI from Supabase → Project Settings → Database "
+        "(pooler on port 6543 is preferred for the API). "
+        "For SSL databases, set DATABASE_SSL_MODE=require.",
     )
     DATABASE_SSL_MODE: str = Field(
         default="",
         description="PostgreSQL SSL mode: disable | allow | prefer | require | "
-                    "verify-ca | verify-full. Appended to DATABASE_URL if set. "
-                    "Empty defaults to 'require' when DATABASE_URL points at "
-                    "Supabase. 'prefer' negotiates TLS opportunistically "
-                    "(asyncpg default); 'disable' forces plaintext.",
+        "verify-ca | verify-full. Appended to DATABASE_URL if set. "
+        "Empty defaults to 'require' when DATABASE_URL points at "
+        "Supabase. 'prefer' negotiates TLS opportunistically "
+        "(asyncpg default); 'disable' forces plaintext.",
     )
     REDIS_URL: str = Field(
         default="redis://localhost:6379/0",
@@ -97,29 +97,29 @@ class Settings(BaseSettings):
     SUPABASE_S3_ENDPOINT: str = Field(
         default="",
         description="Supabase Storage S3 endpoint URL, e.g. "
-                    "'https://<project-ref>.supabase.co/storage/v1/s3'. "
-                    "Copy the full endpoint from the Supabase dashboard "
-                    "(Storage → S3 Access Keys).",
+        "'https://<project-ref>.supabase.co/storage/v1/s3'. "
+        "Copy the full endpoint from the Supabase dashboard "
+        "(Storage → S3 Access Keys).",
     )
     SUPABASE_S3_REGION: str = Field(
         default="",
         description="Supabase project region (e.g. 'eu-west-3', 'us-east-1'). "
-                    "Required — there is no default region.",
+        "Required — there is no default region.",
     )
     SUPABASE_S3_ACCESS_KEY_ID: str | None = Field(
         default=None,
         description="Supabase Storage S3 access key id (Storage → S3 Access "
-                    "Keys). NOT the anon/service-role API keys.",
+        "Keys). NOT the anon/service-role API keys.",
     )
     SUPABASE_S3_SECRET_ACCESS_KEY: str | None = Field(
         default=None,
         description="Supabase Storage S3 secret access key (Storage → S3 "
-                    "Access Keys). NOT the anon/service-role API keys.",
+        "Access Keys). NOT the anon/service-role API keys.",
     )
     SUPABASE_S3_BUCKET: str = Field(
         default="",
         description="Supabase Storage bucket name. Buckets are created in the "
-                    "Supabase dashboard — the app never creates them.",
+        "Supabase dashboard — the app never creates them.",
     )
     SMTP_HOST: str = Field(
         default="localhost",
@@ -158,6 +158,13 @@ class Settings(BaseSettings):
         default="https://api.paystack.co",
         description="Paystack API base URL",
     )
+    PAYSTACK_CURRENCY: str = Field(
+        default="USD",
+        description="ISO currency code sent with Paystack transaction "
+        "initialization. Without it Paystack charges in the "
+        "merchant account's default currency, which silently "
+        "reprices USD-denominated plans.",
+    )
     SMTP_USE_TLS: bool = Field(
         default=False,
         description="Whether to negotiate SMTP TLS when supported",
@@ -169,7 +176,7 @@ class Settings(BaseSettings):
     LOG_JSON: bool = Field(
         default=False,
         description="Emit structured JSON logs. Production always uses JSON "
-                    "(see app.core.logging); set this to force JSON in other environments.",
+        "(see app.core.logging); set this to force JSON in other environments.",
     )
     CHECK_SCHEDULE_SECONDS: float = Field(
         default=30.0,
@@ -190,25 +197,25 @@ class Settings(BaseSettings):
     RUN_IN_PROCESS_SCHEDULER: bool = Field(
         default=False,
         description="When true, the API process also polls due checks. "
-                    "Keep false when Celery Beat + workers own scheduling.",
+        "Keep false when Celery Beat + workers own scheduling.",
     )
     TRUSTED_PROXY_HOPS: int = Field(
         default=1,
         description="Number of trusted reverse-proxy hops used when parsing "
-                    "X-Forwarded-For for rate limiting",
+        "X-Forwarded-For for rate limiting",
     )
     # ── Supabase Authentication ──────────────────────────────────────────
     SUPABASE_URL: str = Field(
         default="",
         description="Supabase project URL (e.g. https://xyz.supabase.co). "
-                    "When set, the API accepts Supabase JWTs in addition to "
-                    "native Reliastra tokens.",
+        "When set, the API accepts Supabase JWTs in addition to "
+        "native Reliastra tokens.",
     )
     SUPABASE_JWT_SECRET: str = Field(
         default="",
         description="Supabase JWT secret (the `SUPABASE_JWT_SECRET` from "
-                    "project settings -> API -> JWT Settings). Used to verify "
-                    "RS256 JWTs issued by Supabase Auth.",
+        "project settings -> API -> JWT Settings). Used to verify "
+        "RS256 JWTs issued by Supabase Auth.",
     )
 
     # ── Reliastra-managed LLM ────────────────────────────────────────────
@@ -219,19 +226,19 @@ class Settings(BaseSettings):
     RELIASTRA_AI_ENABLED: bool = Field(
         default=True,
         description="Master switch for the Reliastra-managed LLM. When false, "
-                    "evidence reports are generated without AI explanations.",
+        "evidence reports are generated without AI explanations.",
     )
-    RELIASTRA_AI_PROVIDER_TYPE: Literal[
-        "openai_compatible", "anthropic", "google"
-    ] = Field(
-        default="openai_compatible",
-        description="Wire format of the Reliastra-managed LLM endpoint.",
+    RELIASTRA_AI_PROVIDER_TYPE: Literal["openai_compatible", "anthropic", "google"] = (
+        Field(
+            default="openai_compatible",
+            description="Wire format of the Reliastra-managed LLM endpoint.",
+        )
     )
     RELIASTRA_AI_ENDPOINT_URL: str = Field(
         default="https://api.openai.com/v1/chat/completions",
         description="Chat-completions endpoint of the Reliastra-managed LLM. "
-                    "Defaults to OpenAI; override only when Reliastra moves "
-                    "its own inference to another provider.",
+        "Defaults to OpenAI; override only when Reliastra moves "
+        "its own inference to another provider.",
     )
     RELIASTRA_AI_MODEL: str = Field(
         default="gpt-4o-mini",
@@ -240,8 +247,8 @@ class Settings(BaseSettings):
     RELIASTRA_AI_API_KEY: SecretStr | None = Field(
         default=None,
         description="Reliastra's own LLM credential. The only value that must "
-                    "be supplied to turn AI explanations on — endpoint, model "
-                    "and parameters already have production defaults.",
+        "be supplied to turn AI explanations on — endpoint, model "
+        "and parameters already have production defaults.",
     )
     RELIASTRA_AI_MAX_TOKENS: int = Field(
         default=1024,
@@ -254,7 +261,7 @@ class Settings(BaseSettings):
         ge=0,
         le=2,
         description="Sampling temperature for the Reliastra-managed LLM. "
-                    "Kept low: explanations restate pre-computed facts.",
+        "Kept low: explanations restate pre-computed facts.",
     )
     RELIASTRA_AI_TIMEOUT_SECONDS: float = Field(
         default=30.0,
@@ -268,9 +275,7 @@ class Settings(BaseSettings):
     def _validate_ai_endpoint(cls, value: str) -> str:
         value = (value or "").strip()
         if value and not value.startswith(("https://", "http://")):
-            raise ValueError(
-                "RELIASTRA_AI_ENDPOINT_URL must be an HTTP(S) URL"
-            )
+            raise ValueError("RELIASTRA_AI_ENDPOINT_URL must be an HTTP(S) URL")
         return value
 
     @property
@@ -463,7 +468,7 @@ class Settings(BaseSettings):
     RELIASTRA_PUBLIC_URL: str = Field(
         default="https://reliastra.com",
         description="Canonical public website origin used to build partner "
-                    "referral links (https://<origin>/r/{code}).",
+        "referral links (https://<origin>/r/{code}).",
     )
     PARTNER_REFERRAL_PATH_PREFIX: str = Field(
         default="/r",
@@ -474,35 +479,35 @@ class Settings(BaseSettings):
         ge=0,
         le=100,
         description="Recurring partner commission rate, as an integer "
-                    "percentage of the customer's eligible subscription "
-                    "revenue. 30 == 30%.",
+        "percentage of the customer's eligible subscription "
+        "revenue. 30 == 30%.",
     )
     PARTNER_COMMISSION_HOLD_DAYS: int = Field(
         default=30,
         ge=0,
         le=365,
         description="Holding period (days) between a commission being earned "
-                    "and becoming payable, covering refunds and chargebacks.",
+        "and becoming payable, covering refunds and chargebacks.",
     )
     PARTNER_MINIMUM_PAYOUT_MINOR: int = Field(
         default=5000,
         ge=0,
         description="Minimum payable balance (integer minor units) required "
-                    "before a partner's balance can be settled as a payout.",
+        "before a partner's balance can be settled as a payout.",
     )
     PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS: int = Field(
         default=24,
         ge=0,
         le=168,
         description="Hours a partner must wait after changing their payout "
-                    "destination before a payout can be requested to it. Turns "
-                    "an account takeover into something the partner can still "
-                    "catch before money moves. Set to 0 to disable.",
+        "destination before a payout can be requested to it. Turns "
+        "an account takeover into something the partner can still "
+        "catch before money moves. Set to 0 to disable.",
     )
     PARTNER_DEFAULT_CURRENCY: str = Field(
         default="USD",
         description="Default ISO-4217 currency for partner money amounts. "
-                    "All amounts are stored as integer minor units.",
+        "All amounts are stored as integer minor units.",
     )
 
     @property

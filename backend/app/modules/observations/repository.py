@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import case, delete, func, Integer, select, text
+from sqlalchemy import Integer, case, delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.observations.models import Observation
@@ -183,9 +183,7 @@ class ObservationRepository:
         return {
             "total": total,
             "uptime_percentage": (
-                round(((total - failures) / total) * 100, 2)
-                if total
-                else 100.0
+                round(((total - failures) / total) * 100, 2) if total else 100.0
             ),
             "avg_latency_ms": round(float(row.avg_latency or 0), 2),
             "p95_latency_ms": (
@@ -224,23 +222,17 @@ class ObservationRepository:
             )
         ).all()
         degradations = [
-            (int(row.failures or 0) / int(row.total)) * 100
-            for row in rows
-            if row.total
+            (int(row.failures or 0) / int(row.total)) * 100 for row in rows if row.total
         ]
         return {
-            "total_degradation_pct": round(
-                sum(degradations) / len(degradations), 2
-            )
+            "total_degradation_pct": round(sum(degradations) / len(degradations), 2)
             if degradations
             else 0.0,
             "affected_services": sum(1 for value in degradations if value > 0),
         }
 
     @staticmethod
-    async def delete_before(
-        session: AsyncSession, cutoff: datetime
-    ) -> int:
+    async def delete_before(session: AsyncSession, cutoff: datetime) -> int:
         result = await session.execute(
             delete(Observation).where(Observation.timestamp < cutoff)
         )
@@ -266,8 +258,11 @@ class ObservationRepository:
     def _bucket_expr(resolution_seconds: int):
         """Return a PostgreSQL ``date_bin`` expression for the given
         resolution, using epoch-based bucket alignment.
+
+        The interval is built with ``make_interval(secs => ...)`` so the
+        value is passed as a bound parameter — never interpolated into SQL.
         """
-        interval = text(f"'{resolution_seconds} seconds'::interval")
+        interval = func.make_interval(0, 0, 0, 0, 0, 0, resolution_seconds)
         origin = text("'2000-01-01T00:00:00Z'::timestamptz")
         return func.date_bin(interval, Observation.timestamp, origin)
 

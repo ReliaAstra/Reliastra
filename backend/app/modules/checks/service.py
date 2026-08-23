@@ -1,16 +1,18 @@
-import time
 import logging
+import time
 import urllib.parse
 import uuid
 from datetime import datetime, timedelta, timezone
+
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.circuit_breaker import circuit_breaker
 from app.core.metrics import check_latency, checks_total
 from app.core.ssrf_protection import (
     pinned_transport_for,
-    resolve_pinned_target,
+    resolve_pinned_target_async,
 )
 from app.modules.checks.constants import (
     CONSECUTIVE_RECOVERY_CHECKS,
@@ -40,9 +42,7 @@ def get_http_client() -> httpx.AsyncClient:
     global _http_client
     if _http_client is None:
         _http_client = httpx.AsyncClient(
-            limits=httpx.Limits(
-                max_connections=100, max_keepalive_connections=20
-            ),
+            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
             timeout=httpx.Timeout(30.0),
         )
     return _http_client
@@ -150,13 +150,15 @@ class CheckService:
             regions = dep.regions or ["us-east", "eu-west"]
             for region in regions:
                 from app.modules.checks.tasks import execute_check as execute_check_task
+
                 execute_check_task.delay(str(dep.id), region)
                 dispatched += 1
         await session.flush()
 
         logger.info(
             "Dispatched %s checks across %s due dependencies",
-            dispatched, len(due_deps),
+            dispatched,
+            len(due_deps),
         )
         return dispatched
 
@@ -203,12 +205,9 @@ class CheckService:
         headers = dep_dto.headers or {}
         timeout = float(dep_dto.timeout_seconds or 10.0)
         expected_codes = (
-            dep_dto.expected_status_codes
-            if dep_dto.expected_status_codes
-            else [200]
+            dep_dto.expected_status_codes if dep_dto.expected_status_codes else [200]
         )
 
-        start_time = time.time()
         latency_ms = 0.0
         status_code: int | None = None
         is_up = False
@@ -217,7 +216,7 @@ class CheckService:
         # SSRF protection: block requests to private/internal IPs and pin the
         # connection to a validated public IP (FIX 26 — DNS-rebinding safe).
         try:
-            pinned_target = resolve_pinned_target(url)
+            pinned_target = await resolve_pinned_target_async(url)
         except ValueError as exc:
             logger.warning("SSRF check blocked URL for dep %s: %s", dependency_id, exc)
             result = await self._record_blocked_result(
@@ -237,9 +236,22 @@ class CheckService:
             # would silently send cross-host requests to the wrong IP. The
             # hop cap makes a redirect loop a failed check, not an unbounded
             # request.
+            #
+            # Security: credentials configured for the ORIGINAL host
+            # (Authorization / X-API-Key / Cookie headers) are stripped when
+            # a redirect crosses to a different host, so an open redirect or
+            # third-party error page can never capture org credentials.
+            _SENSITIVE_HEADERS = {
+                "authorization",
+                "x-api-key",
+                "cookie",
+                "proxy-authorization",
+            }
             redirects_followed = 0
             current_url = url
             current_target = pinned_target
+            current_headers = dict(headers)
+            current_method = method
             redirect_error: str | None = None
             while True:
                 transport = pinned_transport_for(current_target)
@@ -247,11 +259,17 @@ class CheckService:
                     transport=transport, timeout=timeout
                 ) as client:
                     response = await client.request(
-                        method=method,
+                        method=current_method,
                         url=current_url,
-                        headers=headers,
+                        headers=current_headers,
                     )
-                if response.status_code in {301, 302, 303, 307, 308} and response.headers.get("location"):
+                if response.status_code in {
+                    301,
+                    302,
+                    303,
+                    307,
+                    308,
+                } and response.headers.get("location"):
                     if redirects_followed >= _MAX_REDIRECTS:
                         redirect_error = f"Too many redirects (> {_MAX_REDIRECTS})"
                         break
@@ -259,10 +277,33 @@ class CheckService:
                         current_url, response.headers["location"]
                     )
                     try:
-                        current_target = resolve_pinned_target(next_url)
+                        current_target = await resolve_pinned_target_async(next_url)
                     except ValueError as exc:
                         redirect_error = f"Redirect blocked by security policy: {exc}"
                         break
+                    # RFC 7231 §6.4.4: 303 switches the next request to GET.
+                    if response.status_code == 303 and current_method in {
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                    }:
+                        current_method = "GET"
+                        current_headers = {
+                            k: v
+                            for k, v in current_headers.items()
+                            if k.lower() != "content-type"
+                        }
+                    # Cross-host redirect: drop credential headers.
+                    if (
+                        urllib.parse.urlsplit(next_url).netloc
+                        != urllib.parse.urlsplit(current_url).netloc
+                    ):
+                        current_headers = {
+                            k: v
+                            for k, v in current_headers.items()
+                            if k.lower() not in _SENSITIVE_HEADERS
+                        }
                     current_url = next_url
                     redirects_followed += 1
                     continue
@@ -282,7 +323,9 @@ class CheckService:
             latency_ms = (time.time() - start_time) * 1000.0
             is_up = False
             error_message = str(exc)
-            logger.warning("Check HTTP request failed for dep %s: %s", dependency_id, exc)
+            logger.warning(
+                "Check HTTP request failed for dep %s: %s", dependency_id, exc
+            )
 
         result = await self.repository.create(
             session=session,
@@ -300,9 +343,7 @@ class CheckService:
         # concurrent checks for the same dependency serialize here and cannot
         # interleave "read recent results" with "write quorum status".
         lock_stmt = (
-            select(Dependency)
-            .where(Dependency.id == dependency_id)
-            .with_for_update()
+            select(Dependency).where(Dependency.id == dependency_id).with_for_update()
         )
         await session.execute(lock_stmt)
 
@@ -313,11 +354,7 @@ class CheckService:
 
         if not is_up:
             # Failure quorum: >= 2 distinct regions report failure in 60s
-            failing_regions = {
-                r.region
-                for r in recent_results
-                if not r.is_up
-            }
+            failing_regions = {r.region for r in recent_results if not r.is_up}
             failing_regions.add(region)
             if len(failing_regions) >= QUORUM_MIN_REGIONS:
                 result.quorum_confirmed = True
@@ -340,18 +377,28 @@ class CheckService:
         else:
             # Success: check if open incident exists and evaluate recovery quorum
             from app.modules.incidents.repository import IncidentRepository
+
             open_incident = await IncidentRepository.get_open_for_dependency(
                 session, dependency_id
             )
             if open_incident:
-                # Check if >= 2 regions report success for 2 consecutive checks
-                succeeding_regions = {
-                    r.region
-                    for r in recent_results[: CONSECUTIVE_RECOVERY_CHECKS * 2]
-                    if r.is_up
-                }
-                succeeding_regions.add(region)
-                if len(succeeding_regions) >= QUORUM_MIN_REGIONS:
+                # Recovery quorum: the most recent N results must ALL be
+                # successful and span at least QUORUM_MIN_REGIONS distinct
+                # regions (N = consecutive checks per region x min regions).
+                # This is a genuine consecutiveness requirement — flapping
+                # successes inside the window keep the incident open. The N
+                # last results are read regardless of the 60s quorum window:
+                # slow check intervals must still be able to recover.
+                recovery_window_size = CONSECUTIVE_RECOVERY_CHECKS * QUORUM_MIN_REGIONS
+                recovery_window = await self.repository.list_for_dependency(
+                    session, dependency_id, limit=recovery_window_size
+                )
+                succeeding_regions = {r.region for r in recovery_window if r.is_up}
+                if (
+                    len(recovery_window) >= recovery_window_size
+                    and all(r.is_up for r in recovery_window)
+                    and len(succeeding_regions) >= QUORUM_MIN_REGIONS
+                ):
                     from app.modules.incidents.service import incident_service
 
                     await incident_service.resolve_incident(
@@ -370,9 +417,7 @@ class CheckService:
             await circuit_breaker.record_failure(dependency_id)
 
         # FIX 12: Prometheus instrumentation.
-        checks_total.labels(
-            region=region, status="up" if is_up else "down"
-        ).inc()
+        checks_total.labels(region=region, status="up" if is_up else "down").inc()
         check_latency.labels(region=region).observe(latency_ms / 1000.0)
 
         return result

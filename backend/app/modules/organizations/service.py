@@ -1,6 +1,8 @@
 import re
 import uuid
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.exceptions import (
     ConflictException,
     ForbiddenException,
@@ -131,8 +133,11 @@ class OrganizationService:
     ) -> OrganizationMemberResponse:
         user = await self.user_repository.get_by_email(session, request.email)
         if not user:
+            # Neutral message: echoing the email back confirms to an admin
+            # whether an address is registered on the platform.
             raise ResourceNotFoundException(
-                f"User with email '{request.email}' not found"
+                "No registered user exists with that email address. "
+                "Ask them to sign up first, then invite them."
             )
 
         existing_member = await self.org_repository.get_member(
@@ -164,6 +169,18 @@ class OrganizationService:
         member = await self.org_repository.get_member_by_id(session, member_id)
         if not member or member.org_id != org_id:
             raise ResourceNotFoundException("Organization member not found")
+
+        # Prevent demoting the last owner — removal is guarded the same way
+        # below. Without this check an org could end up with zero owners,
+        # bricking every require_owner gate (billing, keys, member mgmt).
+        if member.role == Role.OWNER.value and request.role.value != Role.OWNER.value:
+            members = await self.org_repository.list_members(session, org_id)
+            owners = [m for m in members if m.role == Role.OWNER.value]
+            if len(owners) <= 1:
+                raise ForbiddenException(
+                    "Cannot demote the last owner of the organization. "
+                    "Transfer ownership to another member first."
+                )
 
         updated_member = await self.org_repository.update_member_role(
             session, member, request.role.value

@@ -114,7 +114,30 @@ jobs:
               print(f'PASS: No HIGH severity issues. Scanned {report.get(\"metrics\", {}).get(\"loc\", 0)} lines.')
           "
 
-  # ── Job 4: Full Test Suite ────────────────────────────────────────
+  # ── Job 4: Frontend Checks ────────────────────────────────────────
+  frontend:
+    name: Frontend (Lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: TypeScript check
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+  # ── Job 5: Full Test Suite ────────────────────────────────────────
   test:
     name: Test Suite (pytest)
     runs-on: ubuntu-latest

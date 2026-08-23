@@ -12,8 +12,12 @@ from typing import Any
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ResourceNotFoundException, ValidationException
-from app.core.ssrf_protection import validate_outbound_url
+from app.core.exceptions import ResourceNotFoundException
+from app.core.ssrf_protection import (
+    pinned_transport_for,
+    resolve_pinned_target_async,
+    validate_outbound_url,
+)
 from app.modules.webhooks.models import Webhook, WebhookDelivery
 from app.modules.webhooks.repository import (
     WebhookDeliveryRepository,
@@ -71,6 +75,28 @@ class WebhookService:
     # ------------------------------------------------------------------
 
     @staticmethod
+    async def _post_signed(
+        url: str, body: bytes, headers: dict[str, str]
+    ) -> httpx.Response:
+        """POST *body* to *url* through an SSRF-pinned transport.
+
+        The URL is re-validated and re-pinned AT SEND TIME — validating only
+        at creation leaves a DNS-rebinding window where a hostname that was
+        public when saved resolves to an internal IP when delivered. The
+        connection is pinned to a freshly validated public IP (TLS/SNI still
+        use the hostname). Redirects are NOT followed: a 3xx counts as a
+        non-2xx delivery outcome instead of a chance to bypass the pin.
+        """
+        target = await resolve_pinned_target_async(url)
+        transport = pinned_transport_for(target)
+        async with httpx.AsyncClient(
+            transport=transport,
+            timeout=_WEBHOOK_TIMEOUT_SECONDS,
+            follow_redirects=False,
+        ) as client:
+            return await client.post(url, content=body, headers=headers)
+
+    @staticmethod
     def _sign_payload(secret: str, body: bytes) -> str:
         """HMAC-SHA256 signature for payload verification."""
         return hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
@@ -85,6 +111,7 @@ class WebhookService:
         at delivery time and used as the HMAC key that the consumer expects.
         """
         from app.core.security import get_fernet
+
         fernet = get_fernet()
         return fernet.encrypt(secret.encode()).decode()
 
@@ -92,6 +119,7 @@ class WebhookService:
     def _decrypt_secret(encrypted: str) -> str:
         """Recover the plaintext signing secret from its Fernet-encrypted form."""
         from app.core.security import get_fernet
+
         fernet = get_fernet()
         return fernet.decrypt(encrypted.encode()).decode()
 
@@ -129,17 +157,6 @@ class WebhookService:
                 secret_preview = _secret_preview(webhook.secret_hash)
         else:
             secret_preview = None
-        return WebhookResponse(
-            id=webhook.id,
-            name=webhook.name,
-            url_masked=_mask_url(webhook.url),
-            events=list(webhook.events or []),
-            is_active=webhook.is_active,
-            secret_preview=secret_preview,
-            failure_count=webhook.failure_count or 0,
-            last_delivery_at=webhook.last_delivery_at,
-            created_at=webhook.created_at,
-        )
         return WebhookResponse(
             id=webhook.id,
             name=webhook.name,
@@ -288,8 +305,7 @@ class WebhookService:
 
         start = datetime.now(timezone.utc)
         try:
-            async with httpx.AsyncClient(timeout=_WEBHOOK_TIMEOUT_SECONDS) as client:
-                resp = await client.post(webhook.url, content=body_bytes, headers=headers)
+            resp = await self._post_signed(webhook.url, body_bytes, headers)
             latency_ms = (datetime.now(timezone.utc) - start).total_seconds() * 1000
             return WebhookTestResponse(
                 success=200 <= resp.status_code < 300,
@@ -297,7 +313,7 @@ class WebhookService:
                 response_body=resp.text[:2000] if resp.text else None,
                 latency_ms=round(latency_ms, 2),
             )
-        except httpx.HTTPError as exc:
+        except (httpx.HTTPError, ValueError) as exc:
             latency_ms = (datetime.now(timezone.utc) - start).total_seconds() * 1000
             return WebhookTestResponse(
                 success=False,
@@ -325,9 +341,7 @@ class WebhookService:
         deliveries = await self.delivery_repo.list_for_webhook(
             session, webhook_id, status=status, limit=limit
         )
-        return [
-            WebhookDeliveryResponse.model_validate(d) for d in deliveries
-        ]
+        return [WebhookDeliveryResponse.model_validate(d) for d in deliveries]
 
     # ------------------------------------------------------------------
     # Core delivery engine
@@ -379,8 +393,7 @@ class WebhookService:
                 headers[k] = v
 
         try:
-            async with httpx.AsyncClient(timeout=_WEBHOOK_TIMEOUT_SECONDS) as client:
-                resp = await client.post(webhook.url, content=body_bytes, headers=headers)
+            resp = await self._post_signed(webhook.url, body_bytes, headers)
 
             if 200 <= resp.status_code < 300:
                 await self.delivery_repo.mark_success(
@@ -394,9 +407,19 @@ class WebhookService:
                     session, webhook, delivery.delivered_at
                 )
             else:
-                await self._handle_delivery_failure(session, webhook, delivery, resp.status_code, resp.text[:5000] if resp.text else None)
-        except httpx.HTTPError as exc:
-            await self._handle_delivery_failure(session, webhook, delivery, None, str(exc)[:5000])
+                await self._handle_delivery_failure(
+                    session,
+                    webhook,
+                    delivery,
+                    resp.status_code,
+                    resp.text[:5000] if resp.text else None,
+                )
+        except (httpx.HTTPError, ValueError) as exc:
+            # ValueError = SSRF policy violation at send time; treat like any
+            # other delivery failure so one bad webhook can't break the loop.
+            await self._handle_delivery_failure(
+                session, webhook, delivery, None, str(exc)[:5000]
+            )
 
     async def _handle_delivery_failure(
         self,
@@ -478,12 +501,13 @@ class WebhookService:
                     headers[k] = v
 
             try:
-                async with httpx.AsyncClient(timeout=_WEBHOOK_TIMEOUT_SECONDS) as client:
-                    resp = await client.post(webhook.url, content=body_bytes, headers=headers)
+                resp = await self._post_signed(webhook.url, body_bytes, headers)
 
                 if 200 <= resp.status_code < 300:
                     await self.delivery_repo.mark_success(
-                        session, delivery, status_code=resp.status_code,
+                        session,
+                        delivery,
+                        status_code=resp.status_code,
                         response_body=resp.text[:5000] if resp.text else None,
                     )
                     await self.repo.reset_failure_count(session, webhook)
@@ -492,12 +516,27 @@ class WebhookService:
                     )
                 else:
                     await self._handle_delivery_failure(
-                        session, webhook, delivery, resp.status_code,
+                        session,
+                        webhook,
+                        delivery,
+                        resp.status_code,
                         resp.text[:5000] if resp.text else None,
                     )
             except httpx.HTTPError as exc:
                 await self._handle_delivery_failure(
-                    session, webhook, delivery, None, str(exc)[:5000],
+                    session,
+                    webhook,
+                    delivery,
+                    None,
+                    str(exc)[:5000],
+                )
+            except ValueError as exc:
+                await self._handle_delivery_failure(
+                    session,
+                    webhook,
+                    delivery,
+                    None,
+                    str(exc)[:5000],
                 )
 
             retried += 1

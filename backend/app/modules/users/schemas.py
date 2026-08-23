@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
@@ -21,6 +22,9 @@ class UserUpdateRequest(BaseModel):
     full_name: str | None = None
     email: EmailStr | None = None
     password: str | None = None
+    # Required whenever `password` or `email` is being changed: a stolen
+    # access token alone must not be enough to take over the account.
+    current_password: str | None = None
 
     @field_validator("password")
     @classmethod

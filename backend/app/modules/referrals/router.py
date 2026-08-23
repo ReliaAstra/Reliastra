@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_token
 from app.db.session import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_jwt_auth
 from app.modules.referrals.schemas import (
     ClaimRewardRequest,
     ClaimRewardResponse,
@@ -17,7 +17,11 @@ from app.modules.referrals.schemas import (
 from app.modules.referrals.service import ReferralService, referral_service
 from app.modules.users.models import User
 
-referrals_router = APIRouter(prefix="/v1/referrals", tags=["Referrals"])
+referrals_router = APIRouter(
+    prefix="/v1/referrals",
+    tags=["Referrals"],
+    dependencies=[Depends(require_jwt_auth())],
+)
 
 
 def get_referral_service() -> ReferralService:
@@ -90,7 +94,11 @@ async def get_leaderboard(
     entry will be flagged with ``is_self=True`` and show their referral code.
     """
     entries, total = await service.get_leaderboard(
-        db, period=period, page=page, page_size=page_size, current_user_id=current_user_id
+        db,
+        period=period,
+        page=page,
+        page_size=page_size,
+        current_user_id=current_user_id,
     )
     return LeaderboardResponse(
         entries=entries,

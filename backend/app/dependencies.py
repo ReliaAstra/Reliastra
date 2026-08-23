@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 from fastapi import Depends, Request
-from fastapi.security import APIKeyHeader, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.exceptions import ForbiddenException, ResourceNotFoundException, UnauthorizedException
+
+from app.core.exceptions import (
+    ForbiddenException,
+    ResourceNotFoundException,
+    UnauthorizedException,
+)
 from app.core.permissions import Role, has_permission
 from app.core.security import decode_token
 from app.db.session import get_db
@@ -25,7 +31,13 @@ security_api_key = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def _infer_scope(request: Request) -> str | None:
-    """Map organization API routes to their programmatic access scope."""
+    """Map organization API routes to their programmatic access scope.
+
+    Returns ``None`` when the path is NOT mapped to any API-key scope. A
+    ``None`` result is a hard DENY for API keys (deny-by-default): unmapped
+    surfaces (identity, partners, admin, webhooks, ...) must never be
+    reachable with a programmatic key.
+    """
     path = request.url.path
     write = request.method not in {"GET", "HEAD", "OPTIONS"}
     mappings = (
@@ -66,8 +78,8 @@ async def get_current_user(
 ) -> User:
     from app.modules.api_keys.service import api_key_service
     from app.modules.organizations.repository import OrganizationRepository
-    from app.modules.users.repository import UserRepository
     from app.modules.users.models import User
+    from app.modules.users.repository import UserRepository
 
     auth_header = request.headers.get("authorization", "").strip()
     api_key_header = request.headers.get("x-api-key", "").strip()
@@ -105,14 +117,19 @@ async def get_current_user(
 
         required_scope = getattr(request.state, "required_scope", None)
         required_scope = required_scope or _infer_scope(request)
-        if required_scope and not _has_scope(api_key.scopes, required_scope):
-            raise ForbiddenException(
-                f"API key lacks required scope: {required_scope}"
-            )
+        # Deny-by-default: an unmapped path can never be accessed with an
+        # API key, regardless of the key's scopes.
+        if not required_scope:
+            raise ForbiddenException("API keys cannot access this resource")
+        if not _has_scope(api_key.scopes, required_scope):
+            raise ForbiddenException(f"API key lacks required scope: {required_scope}")
 
         org_repo = OrganizationRepository()
         members = await org_repo.list_members(db, api_key.org_id)
-        owner_member = next((m for m in members if m.role == Role.OWNER.value), members[0] if members else None)
+        owner_member = next(
+            (m for m in members if m.role == Role.OWNER.value),
+            members[0] if members else None,
+        )
         if owner_member:
             user = await UserRepository.get_by_id(db, owner_member.user_id)
             if user:
@@ -127,9 +144,9 @@ async def get_current_user(
         )
 
     if bearer and bearer.credentials:
-        from app.core.supabase import verify_supabase_token, map_supabase_user
         from app.config import settings
         from app.core.permissions import Plan
+        from app.core.supabase import map_supabase_user, verify_supabase_token
         from app.modules.organizations.repository import OrganizationRepository
 
         payload = await verify_supabase_token(
@@ -146,16 +163,23 @@ async def get_current_user(
             user = await UserRepository.get_by_supabase_user_id(db, sub_id)
             if not user:
                 # Lookup by external_auth_id for backwards compatibility
-                user = await UserRepository.get_by_external_auth_id(db, f"supabase:{sub_id}")
+                user = await UserRepository.get_by_external_auth_id(
+                    db, f"supabase:{sub_id}"
+                )
                 if user:
-                    user = await UserRepository.update(db, user, supabase_user_id=sub_id)
+                    user = await UserRepository.update(
+                        db, user, supabase_user_id=sub_id
+                    )
 
             if not user and mapped["email"]:
                 # Fallback to email
                 user = await UserRepository.get_by_email(db, mapped["email"])
                 if user:
                     user = await UserRepository.update(
-                        db, user, supabase_user_id=sub_id, external_auth_id=f"supabase:{sub_id}"
+                        db,
+                        user,
+                        supabase_user_id=sub_id,
+                        external_auth_id=f"supabase:{sub_id}",
                     )
 
             if not user:
@@ -182,17 +206,24 @@ async def get_current_user(
                     db,
                     org_id=org.id,
                     user_id=user.id,
-                    role="viewer",
+                    # The provisioned user owns this fresh organization.
+                    # A "viewer" here locked them out of every management
+                    # action (invite/billing/api-keys all require >= admin),
+                    # with no one able to elevate them.
+                    role=Role.OWNER.value,
                 )
 
                 from app.modules.agencies.repository import AgencyRepository
+
                 await AgencyRepository.create_application(
                     db,
                     org_id=org.id,
                     name="Default",
                     description="Default application",
                 )
-                logger.info("Auto-provisioned local account for Supabase user %s", sub_id)
+                logger.info(
+                    "Auto-provisioned local account for Supabase user %s", sub_id
+                )
 
             if not user or not user.is_active:
                 raise UnauthorizedException("User not found or disabled")
@@ -220,7 +251,26 @@ async def get_current_user(
         except Exception as exc:
             raise UnauthorizedException("Invalid or expired token") from exc
 
-    raise UnauthorizedException("Authentication required (Bearer token or X-API-Key header)")
+    raise UnauthorizedException(
+        "Authentication required (Bearer token or X-API-Key header)"
+    )
+
+
+def require_jwt_auth() -> Any:
+    """Restrict an endpoint to interactive JWT sessions.
+
+    API keys are programmatic credentials scoped to a single organization;
+    they must never act as (or for) a human user on identity, partner,
+    referral or admin surfaces.
+    """
+
+    async def jwt_only(request: Request) -> None:
+        if getattr(request.state, "auth_method", "") == "apikey":
+            raise ForbiddenException(
+                "This endpoint requires user authentication (JWT), not an API key"
+            )
+
+    return jwt_only
 
 
 async def get_current_org(
@@ -277,9 +327,7 @@ def require_scope(scope: str) -> Any:
         if getattr(request.state, "auth_method", "") == "apikey":
             scopes = getattr(request.state, "api_key_scopes", [])
             if not _has_scope(scopes, scope):
-                raise ForbiddenException(
-                    f"API key lacks required scope: {scope}"
-                )
+                raise ForbiddenException(f"API key lacks required scope: {scope}")
         return current_org
 
     return scope_checker
@@ -304,4 +352,3 @@ require_owner = require_role(Role.OWNER)
 require_admin = require_role(Role.ADMIN)
 require_member = require_role(Role.MEMBER)
 require_viewer = require_role(Role.VIEWER)
-

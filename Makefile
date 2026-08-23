@@ -24,4 +24,4 @@ test:
 
 lint:
 	cd frontend && npm run lint
-	cd backend && python -c "import app.main; print('backend imports ok')"
+	cd backend && python -m ruff check app/ tests/

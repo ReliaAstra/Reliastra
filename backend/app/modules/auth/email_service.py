@@ -7,8 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.exceptions import (
-    AppException,
-    UnauthorizedException,
     ValidationException,
 )
 from app.core.security import get_password_hash
@@ -44,7 +42,9 @@ class EmailAuthService:
         base_url = settings.FRONTEND_BASE_URL or "http://localhost:3000"
         return f"{base_url}/reset-password?token={token}"
 
-    def _render_verification_email(self, user_name: str, verification_url: str) -> tuple[str, str]:
+    def _render_verification_email(
+        self, user_name: str, verification_url: str
+    ) -> tuple[str, str]:
         """Returns (plain_text, html_body) for verification email."""
         plain = f"""
 Hello {user_name},
@@ -165,17 +165,22 @@ The Reliastra Team
     async def send_verification_email(
         self, session: AsyncSession, email: str
     ) -> dict[str, Any]:
-        """Generate a verification token and send the email."""
+        """Generate a verification token and send the email.
+
+        The response is deliberately uniform for unknown addresses, already
+        verified addresses and real sends — this is an unauthenticated
+        endpoint and must not leak which emails are registered or verified.
+        """
         user = await self.user_repository.get_by_email(session, email)
         if not user:
-            raise ValidationException("No account found with this email address")
+            logger.info("Verification requested for unknown email (no action taken)")
+            return self._neutral_verification_response()
 
         if user.is_email_verified:
-            raise AppException(
-                "Email is already verified",
-                status_code=400,
-                code="EMAIL_ALREADY_VERIFIED",
+            logger.info(
+                "Verification requested for already-verified email (no action taken)"
             )
+            return self._neutral_verification_response()
 
         # Invalidate any existing verification tokens
         await self.auth_repository.revoke_all_email_verification_tokens(
@@ -193,9 +198,7 @@ The Reliastra Team
 
         # Send email
         verification_url = self._build_verification_url(token)
-        plain, html = self._render_verification_email(
-            user.full_name, verification_url
-        )
+        plain, html = self._render_verification_email(user.full_name, verification_url)
         email_client.send_email(
             to_email=email,
             subject="Verify your Reliastra email",
@@ -205,18 +208,19 @@ The Reliastra Team
 
         logger.info("Verification email sent to %s", email)
 
+        return self._neutral_verification_response()
+
+    @staticmethod
+    def _neutral_verification_response() -> dict[str, Any]:
+        """Identical response for all send-verification outcomes."""
         return {
-            "message": "Verification email sent. Check your inbox.",
-            "email": email,
+            "message": "If that email address needs verification, a "
+            "verification email has been sent. Check your inbox.",
         }
 
-    async def verify_email(
-        self, session: AsyncSession, token: str
-    ) -> dict[str, Any]:
+    async def verify_email(self, session: AsyncSession, token: str) -> dict[str, Any]:
         """Verify a user's email using the token."""
-        stored = await self.auth_repository.get_email_verification_token(
-            session, token
-        )
+        stored = await self.auth_repository.get_email_verification_token(session, token)
 
         if not stored:
             raise ValidationException(
@@ -242,9 +246,7 @@ The Reliastra Team
         # Mark user's email as verified
         user = await self.user_repository.get_by_id(session, stored.user_id)
         if user:
-            await self.user_repository.update(
-                session, user, is_email_verified=True
-            )
+            await self.user_repository.update(session, user, is_email_verified=True)
             logger.info("Email verified for user %s", user.id)
 
         return {
@@ -267,9 +269,7 @@ The Reliastra Team
             }
 
         # Invalidate any existing reset tokens
-        await self.auth_repository.revoke_all_password_reset_tokens(
-            session, user.id
-        )
+        await self.auth_repository.revoke_all_password_reset_tokens(session, user.id)
 
         # Generate new token
         token = secrets.token_urlsafe(48)
@@ -300,9 +300,7 @@ The Reliastra Team
         self, session: AsyncSession, token: str, new_password: str
     ) -> dict[str, Any]:
         """Reset a user's password using the token."""
-        stored = await self.auth_repository.get_password_reset_token(
-            session, token
-        )
+        stored = await self.auth_repository.get_password_reset_token(session, token)
 
         if not stored:
             raise ValidationException(
@@ -332,8 +330,14 @@ The Reliastra Team
             await self.user_repository.update(
                 session, user, password_hash=password_hash
             )
-            # Revoke all refresh tokens (force re-login on all devices)
-            logger.info("Password reset completed for user %s", user.id)
+            # Revoke all refresh tokens (force re-login on all devices) so a
+            # refresh token copied before the reset cannot outlive it.
+            revoked = await self.auth_repository.revoke_all_for_user(session, user.id)
+            logger.info(
+                "Password reset completed for user %s — revoked %s refresh session(s)",
+                user.id,
+                revoked,
+            )
 
         return {
             "message": "Password has been reset successfully. You can now log in with your new password.",

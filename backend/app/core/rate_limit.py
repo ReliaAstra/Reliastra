@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 import ipaddress
-import time
 import logging
+import time
+
 from fastapi import Request
+
 from app.config import settings
 from app.core.exceptions import RateLimitExceededException
 
@@ -30,10 +31,14 @@ def client_ip_from_request(request: Request) -> str:
     address.
     """
     forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
+    if forwarded and _TRUSTED_PROXY_HOPS > 0:
         hops = [part.strip() for part in forwarded.split(",") if part.strip()]
         if hops:
-            candidate = hops[-1] if len(hops) <= _TRUSTED_PROXY_HOPS else hops[-_TRUSTED_PROXY_HOPS]
+            candidate = (
+                hops[-1]
+                if len(hops) <= _TRUSTED_PROXY_HOPS
+                else hops[-_TRUSTED_PROXY_HOPS]
+            )
             try:
                 ipaddress.ip_address(candidate)
                 return candidate
@@ -58,6 +63,7 @@ class SlidingWindowRateLimiter:
         """Check if Redis is reachable without raising."""
         try:
             from app.infrastructure.redis_client import safe_redis_ping
+
             return await safe_redis_ping()
         except Exception:
             return False
@@ -72,7 +78,9 @@ class SlidingWindowRateLimiter:
         """
         try:
             import asyncio
+
             from app.infrastructure.redis_client import get_redis
+
             redis = get_redis()
             now = time.time()
             window_start = now - self.window_seconds
@@ -107,12 +115,18 @@ class SlidingWindowRateLimiter:
 
 
 # Pre-configured rate limiters
-api_key_limiter = SlidingWindowRateLimiter(limit=1000, window_seconds=60, key_prefix="rl_apikey")
+api_key_limiter = SlidingWindowRateLimiter(
+    limit=1000, window_seconds=60, key_prefix="rl_apikey"
+)
 ip_limiter = SlidingWindowRateLimiter(limit=100, window_seconds=60, key_prefix="rl_ip")
-public_vendor_limiter = SlidingWindowRateLimiter(limit=60, window_seconds=60, key_prefix="rl_vendor")
+public_vendor_limiter = SlidingWindowRateLimiter(
+    limit=60, window_seconds=60, key_prefix="rl_vendor"
+)
 
 
-async def enforce_rate_limit(request: Request, limiter: SlidingWindowRateLimiter, identifier: str | None = None) -> None:
+async def enforce_rate_limit(
+    request: Request, limiter: SlidingWindowRateLimiter, identifier: str | None = None
+) -> None:
     if identifier is None:
         identifier = client_ip_from_request(request)
     await limiter.check(identifier)

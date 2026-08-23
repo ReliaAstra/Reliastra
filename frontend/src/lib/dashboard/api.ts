@@ -108,14 +108,20 @@ async function request<T>(
 
 async function withFallback<T>(fn: () => Promise<T>, fallback: T | (() => T)): Promise<T> {
   const demo = useAppStore.getState().isDemo || !useAppStore.getState().accessToken;
+  // Demo mode always uses mock data.
   if (demo) return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
   try {
     return await fn();
   } catch (err) {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       useAppStore.getState().setOnline(false);
+      // Offline: fall back so cached/demo content keeps the UI usable.
+      return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
     }
-    return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
+    // Online failure against the real backend must NOT be masked with mock
+    // data — silently rendering fabricated uptime/incident figures in a
+    // monitoring product is worse than an explicit error state.
+    throw err;
   }
 }
 

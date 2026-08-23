@@ -142,8 +142,10 @@ class PartnerReferralRepository:
     async def count_by_partner(
         session: AsyncSession, partner_id: uuid.UUID, status: str | None = None
     ) -> int:
-        q = select(func.count()).select_from(PartnerReferral).where(
-            PartnerReferral.partner_id == partner_id
+        q = (
+            select(func.count())
+            .select_from(PartnerReferral)
+            .where(PartnerReferral.partner_id == partner_id)
         )
         if status:
             q = q.where(PartnerReferral.status == status)
@@ -297,10 +299,9 @@ class PartnerCommissionRepository:
         exclude_reserved: bool = False,
         period: str | None = None,
     ) -> int:
-        q = (
-            select(func.coalesce(func.sum(PartnerCommission.commission_amount_minor), 0))
-            .where(PartnerCommission.partner_id == partner_id)
-        )
+        q = select(
+            func.coalesce(func.sum(PartnerCommission.commission_amount_minor), 0)
+        ).where(PartnerCommission.partner_id == partner_id)
         if statuses:
             q = q.where(PartnerCommission.status.in_(statuses))
         if exclude_reversed:
@@ -327,6 +328,27 @@ class PartnerCommissionRepository:
         return list(rows.scalars().all())
 
     @staticmethod
+    async def payable_by_partner_for_update(
+        session: AsyncSession, partner_id: uuid.UUID
+    ) -> list[PartnerCommission]:
+        """Payable commissions with row locks (SELECT ... FOR UPDATE).
+
+        Used by payout creation so two concurrent payouts cannot both read
+        the same unreserved balance and double-spend it.
+        """
+        rows = await session.execute(
+            select(PartnerCommission)
+            .where(
+                PartnerCommission.partner_id == partner_id,
+                PartnerCommission.status == "payable",
+                PartnerCommission.payout_id.is_(None),
+            )
+            .order_by(PartnerCommission.created_at.asc())
+            .with_for_update()
+        )
+        return list(rows.scalars().all())
+
+    @staticmethod
     async def pending_past_hold(
         session: AsyncSession, now: datetime | None = None
     ) -> list[PartnerCommission]:
@@ -345,9 +367,7 @@ class PartnerCommissionRepository:
         session: AsyncSession, payout_id: uuid.UUID
     ) -> list[PartnerCommission]:
         rows = await session.execute(
-            select(PartnerCommission).where(
-                PartnerCommission.payout_id == payout_id
-            )
+            select(PartnerCommission).where(PartnerCommission.payout_id == payout_id)
         )
         return list(rows.scalars().all())
 

@@ -1,7 +1,9 @@
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.config import settings
 from app.core.exceptions import ConflictException, UnauthorizedException
 from app.core.security import (
@@ -167,8 +169,28 @@ class AuthService:
         )
         if not stored_rt:
             raise UnauthorizedException("Refresh token not found or invalid")
-        if stored_rt.is_revoked:
-            raise UnauthorizedException("Refresh token has been revoked")
+
+        # FIX 28 (corrected): reuse detection must run BEFORE the revoked
+        # short-circuit. Rotation marks the previous token ``is_revoked``,
+        # so a replayed rotated token used to die on that early exit without
+        # ever reaching the family-revocation branch — the exact theft
+        # signal this exists for. Now ANY already-revoked token, or any
+        # token whose sequence is below the family's latest, is treated as
+        # replay: the entire family is revoked.
+        family = stored_rt.token_family if stored_rt.token_family else uuid.uuid4()
+        sequence = stored_rt.token_sequence if stored_rt.token_sequence else 1
+        latest_sequence = await self.auth_repository.get_latest_sequence(
+            session, family
+        )
+        if stored_rt.is_revoked or latest_sequence > sequence:
+            await self.auth_repository.revoke_family(session, family)
+            logger.warning(
+                "Refresh token reuse detected for family %s — family revoked",
+                family,
+            )
+            raise UnauthorizedException(
+                "Refresh token reuse detected; session has been revoked"
+            )
 
         user_id_str = payload.get("sub")
         if not user_id_str:
@@ -178,24 +200,6 @@ class AuthService:
         user = await self.user_repository.get_by_id(session, user_id)
         if not user or not user.is_active:
             raise UnauthorizedException("User account not found or disabled")
-
-        # FIX 28: token family reuse detection. When a token is presented
-        # whose sequence is below the family's latest, it was already rotated
-        # (or is a stolen copy of one) — revoke the entire family.
-        family = stored_rt.token_family if stored_rt else uuid.uuid4()
-        sequence = stored_rt.token_sequence if stored_rt else 1
-        latest_sequence = await self.auth_repository.get_latest_sequence(
-            session, family
-        )
-        if latest_sequence > sequence:
-            await self.auth_repository.revoke_family(session, family)
-            logger.warning(
-                "Refresh token reuse detected for family %s — family revoked",
-                family,
-            )
-            raise UnauthorizedException(
-                "Refresh token reuse detected; session has been revoked"
-            )
 
         tokens = self._generate_token_pair(user.id)
         expires_at = datetime.now(timezone.utc) + timedelta(
@@ -210,17 +214,11 @@ class AuthService:
             token_sequence=sequence + 1,
         )
         if stored_rt:
-            await self.auth_repository.revoke_refresh_token(
-                session, refresh_token_str
-            )
+            await self.auth_repository.revoke_refresh_token(session, refresh_token_str)
         return tokens
 
-    async def logout(
-        self, session: AsyncSession, refresh_token_str: str
-    ) -> None:
-        await self.auth_repository.revoke_refresh_token(
-            session, refresh_token_str
-        )
+    async def logout(self, session: AsyncSession, refresh_token_str: str) -> None:
+        await self.auth_repository.revoke_refresh_token(session, refresh_token_str)
 
 
 auth_service = AuthService()

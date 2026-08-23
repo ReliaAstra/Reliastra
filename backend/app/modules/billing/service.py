@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.core.exceptions import (
+    ForbiddenException,
     ResourceNotFoundException,
     UnauthorizedException,
     ValidationException,
@@ -62,6 +63,10 @@ class PaystackClient:
                 json={
                     "email": email,
                     "amount": amount,
+                    # Without an explicit currency Paystack charges in the
+                    # merchant account's default currency (typically NGN),
+                    # turning a $19 checkout into ~$0.01.
+                    "currency": settings.PAYSTACK_CURRENCY,
                     "plan": plan,
                     "metadata": metadata or {},
                 },
@@ -92,16 +97,17 @@ class PaystackClient:
 
 paystack_client = PaystackClient()
 
-# Amounts in kobo (1 USD = 100 kobo).  All self-serve paid plans:
-#   Starter:     $19/mo  ->  1,900 kobo
-#   Standard:    $49/mo  ->  4,900 kobo
-#   Professional: $99/mo ->  9,900 kobo
-# Agency ($199) and Free ($0) are not self-serve.
+# Amounts in minor units of PAYSTACK_CURRENCY (default USD cents).
+# All self-serve paid plans:
+#   Starter:     $19/mo  ->  1,900
+#   Standard:    $49/mo  ->  4,900
+#   Professional: $99/mo ->  9,900
+# Agency ($199) and Free ($0) are NOT self-serve: agency is deliberately
+# absent here so the self-serve guards below reject it ("contact sales").
 PLAN_AMOUNTS: dict[str, int] = {
     Plan.STARTER.value: 1900,
     Plan.STANDARD.value: 4900,
     Plan.PROFESSIONAL.value: 9900,
-    Plan.AGENCY.value: 0,
 }
 
 
@@ -214,7 +220,9 @@ class BillingService:
             )
         except httpx.HTTPError as exc:
             logger.warning("Paystack initialization failed: %s", exc)
-            raise ValidationException("Paystack transaction initialization failed") from exc
+            raise ValidationException(
+                "Paystack transaction initialization failed"
+            ) from exc
 
         data = result.get("data") if isinstance(result.get("data"), dict) else {}
         if not result.get("status") or not data:
@@ -226,10 +234,15 @@ class BillingService:
                 access_code=data["access_code"],
             )
         except KeyError as exc:
-            raise ValidationException("Paystack returned an incomplete response") from exc
+            raise ValidationException(
+                "Paystack returned an incomplete response"
+            ) from exc
 
     async def verify_transaction(
-        self, session: AsyncSession, reference: str
+        self,
+        session: AsyncSession,
+        reference: str,
+        caller_org_id: uuid.UUID | None = None,
     ) -> VerifyTransactionResponse:
         try:
             result = await self.client.verify_transaction(reference)
@@ -247,42 +260,90 @@ class BillingService:
         metadata = metadata if isinstance(metadata, dict) else {}
         org_id_raw = metadata.get("org_id")
         if not org_id_raw:
-            logger.warning("Verified transaction %s has no organization metadata", reference)
+            logger.warning(
+                "Verified transaction %s has no organization metadata", reference
+            )
             return VerifyTransactionResponse(
                 verified=False, plan=Plan.FREE.value, reference=reference
             )
         try:
             org_id = uuid.UUID(str(org_id_raw))
         except ValueError as exc:
-            raise ValidationException("Invalid organization metadata from Paystack") from exc
+            raise ValidationException(
+                "Invalid organization metadata from Paystack"
+            ) from exc
+
+        # A member of organization B must not be able to trigger
+        # provisioning for organization A's payment reference.
+        if caller_org_id is not None and org_id != caller_org_id:
+            raise ForbiddenException(
+                "This transaction does not belong to your organization"
+            )
+
+        plan = _normalized_plan(data)
+
+        # Integrity check: the collected amount must cover the price of the
+        # plan the transaction claims to buy. Prevents a tampered/undersized
+        # charge from unlocking a higher tier.
+        expected_amount = PLAN_AMOUNTS.get(plan)
+        collected = data.get("amount")
+        if expected_amount is None:
+            raise ValidationException(
+                f"Plan '{plan}' is not available for self-serve checkout"
+            )
+        if collected is None or int(collected) < expected_amount:
+            raise ValidationException(
+                "Collected payment does not cover the selected plan price"
+            )
+
+        paid_at = _parse_datetime(data.get("paid_at"))
 
         org = await self.repository.get_org(session, org_id)
         if not org:
             raise ResourceNotFoundException("Organization not found")
 
-        plan = _normalized_plan(data)
         customer = data.get("customer")
         customer = customer if isinstance(customer, dict) else {}
         customer_code = customer.get("customer_code")
         subscription = await self.repository.get_subscription(session, org_id)
+
+        # Replay protection. The subscription row persists which reference
+        # provisioned it (provider_subscription_id) and when that payment
+        # was made (current_period_start). Re-verifying the SAME reference
+        # stays idempotent; presenting any OTHER reference whose payment is
+        # not newer than the already-applied one is a replay — e.g. re-using
+        # an old reference after cancellation to restore the paid plan for
+        # free.
+        if (
+            subscription is not None
+            and subscription.current_period_start is not None
+            and paid_at is not None
+            and str(subscription.provider_subscription_id or "") != reference
+            and paid_at <= subscription.current_period_start
+        ):
+            logger.warning(
+                "Rejected replayed billing verification for reference %s (org %s)",
+                reference,
+                org_id,
+            )
+            return VerifyTransactionResponse(
+                verified=False,
+                plan=subscription.plan or Plan.FREE.value,
+                reference=reference,
+            )
+
         values = {
             "plan": plan,
             "status": "active",
             "provider_customer_id": customer_code,
-            "provider_subscription_id": str(
-                data.get("subscription_code") or reference
-            ),
-            "current_period_start": _parse_datetime(data.get("paid_at")),
+            "provider_subscription_id": str(data.get("subscription_code") or reference),
+            "current_period_start": paid_at,
             "current_period_end": _parse_datetime(data.get("next_payment_date")),
         }
         if subscription:
-            await self.repository.update_subscription(
-                session, subscription, **values
-            )
+            await self.repository.update_subscription(session, subscription, **values)
         else:
-            await self.repository.create_subscription(
-                session, org_id, **values
-            )
+            await self.repository.create_subscription(session, org_id, **values)
 
         from app.modules.organizations.repository import OrganizationRepository
 
@@ -296,9 +357,7 @@ class BillingService:
         # duplicate delivery cannot pay a partner twice.
         await self._record_partner_commission(session, org_id, data, reference)
 
-        return VerifyTransactionResponse(
-            verified=True, plan=plan, reference=reference
-        )
+        return VerifyTransactionResponse(verified=True, plan=plan, reference=reference)
 
     @staticmethod
     async def _record_partner_commission(
@@ -414,8 +473,13 @@ class BillingService:
             await self._handle_partner_churn(session, data)
         elif event_type in {"refund.processed", "charge.refunded"}:
             await self._reverse_partner_commissions(session, data, "refund")
+            # A refunded payment must not keep the paid plan active. Mirror
+            # the churn behaviour: mark the subscription inactive and drop
+            # the organization back to the free plan.
+            await self._disable_webhook_subscription(session, data)
         elif event_type in {"charge.dispute.create", "charge.dispute.remind"}:
             await self._reverse_partner_commissions(session, data, "chargeback")
+            await self._disable_webhook_subscription(session, data)
 
         return PaystackWebhookResponse(received=True, event_type=event_type)
 
@@ -476,9 +540,7 @@ class BillingService:
             )
             if org is None:
                 return
-            await commission_service.handle_churn(
-                session, organization_id=org.id
-            )
+            await commission_service.handle_churn(session, organization_id=org.id)
         except Exception:
             logger.exception("Partner churn handling failed")
 
@@ -513,13 +575,9 @@ class BillingService:
         }
         subscription = await self.repository.get_subscription(session, org_id)
         if subscription:
-            await self.repository.update_subscription(
-                session, subscription, **values
-            )
+            await self.repository.update_subscription(session, subscription, **values)
         else:
-            await self.repository.create_subscription(
-                session, org_id, **values
-            )
+            await self.repository.create_subscription(session, org_id, **values)
 
         from app.modules.organizations.repository import OrganizationRepository
 
@@ -546,9 +604,7 @@ class BillingService:
 
         from app.modules.organizations.repository import OrganizationRepository
 
-        await OrganizationRepository.update(
-            session, org, plan=Plan.FREE.value
-        )
+        await OrganizationRepository.update(session, org, plan=Plan.FREE.value)
 
 
 billing_service = BillingService()

@@ -26,12 +26,19 @@ export async function proxyToBackend(
   const idempotencyKey = req.headers.get('idempotency-key');
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
 
+  // Tenant context must be forwarded on EVERY method: the backend resolves
+  // the organization exclusively via these headers, and org-scoped GETs
+  // (dependencies, incidents, dashboard, ...) fail without them.
+  for (const name of ['x-organization-id', 'reliastra-organization']) {
+    const value = req.headers.get(name);
+    if (value) {
+      headers[name.toLowerCase() === 'x-organization-id' ? 'X-Organization-ID' : 'Reliastra-Organization'] = value;
+    }
+  }
+
   // Forward content-type for requests with body
   if (!options?.noBody && method !== 'GET' && method !== 'HEAD') {
     headers['Content-Type'] = 'application/json';
-    // Also forward the org header if present
-    const orgHeader = req.headers.get('x-organization-id');
-    if (orgHeader) headers['X-Organization-ID'] = orgHeader;
   }
 
   const fetchOptions: RequestInit = { method, headers };

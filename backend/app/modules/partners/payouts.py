@@ -18,12 +18,12 @@ from app.config import settings
 from app.core.audit_log import AuditLogService
 from app.core.exceptions import ResourceNotFoundException, ValidationException
 from app.modules.partners.constants import CommissionStatus, PayoutStatus
+from app.modules.partners.destination import describe_destination
 from app.modules.partners.repository import (
     PartnerCommissionRepository,
     PartnerPayoutRepository,
     PartnerProfileRepository,
 )
-from app.modules.partners.destination import describe_destination
 from app.modules.partners.service import _period_month
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,11 @@ class PartnerPayoutService:
                     "change — this protects you if someone else made it."
                 )
 
-        payable = await self.commission_repo.payable_by_partner(session, partner_id)
+        # Row-locked read: two concurrent create_payout calls serialize here
+        # instead of both reserving the same commissions (double-spend).
+        payable = await self.commission_repo.payable_by_partner_for_update(
+            session, partner_id
+        )
         available = sum(c.commission_amount_minor for c in payable)
         amount = available if amount_minor is None else int(amount_minor)
         if amount <= 0 or amount > available:
@@ -95,7 +99,9 @@ class PartnerPayoutService:
 
         # Apply the minimum payout threshold when the full balance is being
         # settled and it is below the configured minimum.
-        if amount_minor is None and available < int(settings.PARTNER_MINIMUM_PAYOUT_MINOR):
+        if amount_minor is None and available < int(
+            settings.PARTNER_MINIMUM_PAYOUT_MINOR
+        ):
             raise ValidationException(
                 "Partner's payable balance is below the minimum payout threshold"
             )
@@ -118,9 +124,7 @@ class PartnerPayoutService:
                 break
             take = min(commission.commission_amount_minor, remaining)
             remaining -= take
-            await self.commission_repo.update(
-                session, commission, payout_id=payout.id
-            )
+            await self.commission_repo.update(session, commission, payout_id=payout.id)
 
         await self._notify(
             partner,
@@ -155,6 +159,17 @@ class PartnerPayoutService:
             raise ResourceNotFoundException("Payout not found")
 
         partner = await self.profile_repo.get_by_id(session, payout.partner_id)
+
+        # State machine: transitions are only valid from the PENDING state.
+        # Without this guard an already-PAID payout could be marked failed
+        # (returning its commissions to the payable pool) and then paid out
+        # AGAIN — a double payout. A FAILED payout must be recreated, not
+        # silently revived.
+        if payout.status != PayoutStatus.PENDING.value:
+            raise ValidationException(
+                f"Payout is already {payout.status}; only pending payouts "
+                "can be marked paid or failed"
+            )
 
         if action == "mark_paid":
             if not transaction_reference:

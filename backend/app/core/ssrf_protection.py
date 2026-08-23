@@ -25,7 +25,6 @@ import logging
 import socket
 import ssl
 import urllib.parse
-from typing import Any
 
 import httpcore
 import httpx
@@ -34,38 +33,89 @@ logger = logging.getLogger(__name__)
 
 # RFC 1918 / RFC 3927 / link-local / loopback ranges that must never be hit
 _BLOCKED_NETWORKS = [
+    ipaddress.ip_network("0.0.0.0/8"),  # "this network" / unspecified v4
     ipaddress.ip_network("10.0.0.0/8"),
-    ipaddress.ip_network("172.16.0.0/12"),
-    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("100.64.0.0/10"),  # CGNAT (cloud internal)
     ipaddress.ip_network("127.0.0.0/8"),
     ipaddress.ip_network("169.254.0.0/16"),  # link-local / cloud metadata
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
     ipaddress.ip_network("::1/128"),
-    ipaddress.ip_network("fc00::/7"),         # unique local
-    ipaddress.ip_network("fe80::/10"),         # link-local
+    ipaddress.ip_network("::/128"),  # unspecified v6
+    ipaddress.ip_network("fc00::/7"),  # unique local
+    ipaddress.ip_network("fe80::/10"),  # link-local
 ]
 
-_ALLOWED_SCHEMES = {"http", "https"}
+# NAT64 prefix (RFC 6052): the final 32 bits embed an IPv4 address.
+_NAT64_NETWORK = ipaddress.ip_network("64:ff9b::/96")
+
+
+def _normalize_ip(ip_str: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
+    """Parse an address and unwrap IPv4-embedded IPv6 forms.
+
+    ``::ffff:169.254.169.254`` parses as IPv6Address, which does NOT match the
+    IPv4 blocked networks — a classic SSRF bypass. Unwrap:
+
+    * IPv4-mapped (::ffff:a.b.c.d)  → the embedded IPv4 address
+    * NAT64 (64:ff9b::a.b.c.d)      → the embedded IPv4 address
+    """
+    ip = ipaddress.ip_address(ip_str)
+    if isinstance(ip, ipaddress.IPv6Address):
+        mapped = ip.ipv4_mapped
+        if mapped is not None:
+            return mapped
+        if ip in _NAT64_NETWORK:
+            return ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
+    return ip
+
+
+def _is_blocked_ip(ip_str: str) -> bool:
+    try:
+        ip = _normalize_ip(ip_str)
+    except ValueError:
+        # Unparseable addresses are treated as hostile.
+        return True
+    return any(ip in net for net in _BLOCKED_NETWORKS)
 
 
 def _resolve_hostname(hostname: str) -> list[str]:
-    """Resolve a hostname to all its IP addresses."""
+    """Resolve a hostname to all its IP addresses.
+
+    NOTE: blocking (socket.getaddrinfo). Async callers should use
+    :func:`_resolve_hostname_async` so a slow resolver cannot stall the
+    event loop.
+    """
     try:
-        results = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        results = socket.getaddrinfo(
+            hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM
+        )
         return [r[4][0] for r in results]
     except socket.gaierror:
         return []
 
 
+async def _resolve_hostname_async(hostname: str) -> list[str]:
+    """Threaded variant of :func:`_resolve_hostname` for async contexts."""
+    import asyncio
+
+    return await asyncio.to_thread(_resolve_hostname, hostname)
+
+
 def _is_public_ip(ip_str: str) -> bool:
-    ip = ipaddress.ip_address(ip_str)
-    return not any(ip in net for net in _BLOCKED_NETWORKS)
+    return not _is_blocked_ip(ip_str)
 
 
-def is_url_safe(url: str, *, allowed_schemes: set[str] | None = None) -> tuple[bool, str]:
+_ALLOWED_SCHEMES = {"http", "https"}
+
+
+def is_url_safe(
+    url: str, *, allowed_schemes: set[str] | None = None
+) -> tuple[bool, str]:
     """
     Validate that *url* does not point to a private / internal IP range.
 
     Returns (is_safe, reason).  When *is_safe* is False, *reason* explains why.
+    NOTE: performs blocking DNS — prefer :func:`is_url_safe_async` in async code.
     """
     allowed = allowed_schemes or _ALLOWED_SCHEMES
 
@@ -81,14 +131,10 @@ def is_url_safe(url: str, *, allowed_schemes: set[str] | None = None) -> tuple[b
     if not hostname:
         return False, "URL has no hostname"
 
-    # Check if the hostname itself is a numeric IP
-    try:
-        ip = ipaddress.ip_address(hostname)
-        for net in _BLOCKED_NETWORKS:
-            if ip in net:
-                return False, f"IP {hostname} points to a private/blocked network"
-    except ValueError:
-        pass  # not a numeric IP, proceed with DNS resolution
+    # Check if the hostname itself is a numeric IP (covers IPv4-mapped IPv6
+    # and NAT64 forms via normalization)
+    if _is_blocked_ip(hostname):
+        return False, f"IP {hostname} points to a private/blocked network"
 
     # Resolve the hostname and check every resolved IP
     resolved_ips = _resolve_hostname(hostname)
@@ -96,17 +142,52 @@ def is_url_safe(url: str, *, allowed_schemes: set[str] | None = None) -> tuple[b
         return False, f"Cannot resolve hostname '{hostname}'"
 
     for resolved in resolved_ips:
-        try:
-            ip = ipaddress.ip_address(resolved)
-            for net in _BLOCKED_NETWORKS:
-                if ip in net:
-                    return (
-                        False,
-                        f"Hostname '{hostname}' resolves to {resolved}, "
-                        f"which is in a private/blocked network",
-                    )
-        except ValueError:
-            continue
+        if _is_blocked_ip(resolved):
+            return (
+                False,
+                (
+                    f"Hostname '{hostname}' resolves to {resolved}, "
+                    f"which is in a private/blocked network"
+                ),
+            )
+
+    return True, ""
+
+
+async def is_url_safe_async(
+    url: str, *, allowed_schemes: set[str] | None = None
+) -> tuple[bool, str]:
+    """Non-blocking variant of :func:`is_url_safe` (DNS runs in a thread)."""
+    allowed = allowed_schemes or _ALLOWED_SCHEMES
+
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception as exc:
+        return False, f"Cannot parse URL: {exc}"
+
+    if parsed.scheme.lower() not in allowed:
+        return False, f"Scheme '{parsed.scheme}' is not allowed"
+
+    hostname = parsed.hostname
+    if not hostname:
+        return False, "URL has no hostname"
+
+    if _is_blocked_ip(hostname):
+        return False, f"IP {hostname} points to a private/blocked network"
+
+    resolved_ips = await _resolve_hostname_async(hostname)
+    if not resolved_ips:
+        return False, f"Cannot resolve hostname '{hostname}'"
+
+    for resolved in resolved_ips:
+        if _is_blocked_ip(resolved):
+            return (
+                False,
+                (
+                    f"Hostname '{hostname}' resolves to {resolved}, "
+                    f"which is in a private/blocked network"
+                ),
+            )
 
     return True, ""
 
@@ -125,6 +206,7 @@ def validate_outbound_url(url: str, *, allowed_schemes: set[str] | None = None) 
 # Pinned (DNS-rebinding-safe) transport
 # ---------------------------------------------------------------------------
 
+
 class PinnedTarget:
     """A validated URL together with the exact IPs the connection may use."""
 
@@ -139,11 +221,37 @@ def resolve_pinned_target(url: str) -> PinnedTarget:
     """Validate *url* and pin it to its currently-resolved public IPs.
 
     Raises ``ValueError`` when the URL is unsafe or unresolvable.
+    NOTE: blocking DNS — prefer :func:`resolve_pinned_target_async` in async code.
     """
     validate_outbound_url(url)
     parsed = urllib.parse.urlparse(url)
     hostname = parsed.hostname or ""
     resolved = _resolve_hostname(hostname)
+    if not resolved:
+        raise ValueError(f"Cannot resolve hostname '{hostname}'")
+    for ip in resolved:
+        if not _is_public_ip(ip):
+            raise ValueError(
+                f"Hostname '{hostname}' resolves to {ip}, "
+                f"which is in a private/blocked network"
+            )
+    use_ssl = parsed.scheme.lower() == "https"
+    port = parsed.port or (443 if use_ssl else 80)
+    return PinnedTarget(url=url, hostname=hostname, port=port, ips=resolved)
+
+
+async def resolve_pinned_target_async(url: str) -> PinnedTarget:
+    """Non-blocking variant of :func:`resolve_pinned_target`.
+
+    DNS resolution runs in a worker thread so a slow resolver cannot stall
+    the event loop while probes are executing.
+    """
+    safe, reason = await is_url_safe_async(url)
+    if not safe:
+        raise ValueError(f"URL safety check failed: {reason}")
+    parsed = urllib.parse.urlparse(url)
+    hostname = parsed.hostname or ""
+    resolved = await _resolve_hostname_async(hostname)
     if not resolved:
         raise ValueError(f"Cannot resolve hostname '{hostname}'")
     for ip in resolved:
@@ -202,7 +310,10 @@ class _PinnedIPTransport(httpx.AsyncBaseTransport):
                 port=self._origin.port,
                 target=request.url.raw_path,
             ),
-            headers=[(k.encode("latin-1"), v.encode("latin-1")) for k, v in request.headers.items()],
+            headers=[
+                (k.encode("latin-1"), v.encode("latin-1"))
+                for k, v in request.headers.items()
+            ],
             content=body,
             extensions={"sni_hostname": self._hostname},
         )
@@ -210,10 +321,15 @@ class _PinnedIPTransport(httpx.AsyncBaseTransport):
         try:
             from httpx._transports.default import AsyncResponseStream
         except ImportError:  # pragma: no cover - httpx version drift
-            from httpx._transports.default import ResponseStream as AsyncResponseStream  # type: ignore[no-redef]
+            from httpx._transports.default import (
+                ResponseStream as AsyncResponseStream,  # type: ignore[no-redef]
+            )
         return httpx.Response(
             status_code=core_response.status,
-            headers=[(k.decode("latin-1"), v.decode("latin-1")) for k, v in core_response.headers],
+            headers=[
+                (k.decode("latin-1"), v.decode("latin-1"))
+                for k, v in core_response.headers
+            ],
             stream=AsyncResponseStream(core_response.stream),
             extensions=core_response.extensions,
         )
@@ -226,7 +342,9 @@ class _PinnedIPTransport(httpx.AsyncBaseTransport):
 _pinned_transport_cache: dict[tuple[str, int, bool, str], _PinnedIPTransport] = {}
 
 
-def pinned_transport_for(target: PinnedTarget, ip: str | None = None) -> httpx.AsyncBaseTransport:
+def pinned_transport_for(
+    target: PinnedTarget, ip: str | None = None
+) -> httpx.AsyncBaseTransport:
     """Return a cached, pinned transport for *target*.
 
     Connections are keyed to a single validated IP, eliminating the

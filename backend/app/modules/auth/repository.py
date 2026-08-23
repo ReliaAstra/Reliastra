@@ -1,12 +1,14 @@
 import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.modules.auth.models import (
-    RefreshToken,
     EmailVerificationToken,
     PasswordResetToken,
+    RefreshToken,
 )
 
 
@@ -59,13 +61,9 @@ class AuthRepository:
         return int(result.scalar() or 0)
 
     @staticmethod
-    async def revoke_family(
-        session: AsyncSession, token_family: uuid.UUID
-    ) -> int:
+    async def revoke_family(session: AsyncSession, token_family: uuid.UUID) -> int:
         """Revoke every token in a family (FIX 28 reuse detection)."""
-        query = select(RefreshToken).where(
-            RefreshToken.token_family == token_family
-        )
+        query = select(RefreshToken).where(RefreshToken.token_family == token_family)
         result = await session.execute(query)
         count = 0
         for rt in result.scalars():
@@ -76,9 +74,7 @@ class AuthRepository:
         return count
 
     @staticmethod
-    async def revoke_refresh_token(
-        session: AsyncSession, token_str: str
-    ) -> bool:
+    async def revoke_refresh_token(session: AsyncSession, token_str: str) -> bool:
         rt = await AuthRepository.get_refresh_token(session, token_str)
         if rt:
             rt.is_revoked = True
@@ -86,6 +82,27 @@ class AuthRepository:
             await session.flush()
             return True
         return False
+
+    @staticmethod
+    async def revoke_all_for_user(session: AsyncSession, user_id: uuid.UUID) -> int:
+        """Revoke every active refresh token for *user_id*.
+
+        Called on password reset / password change so that stolen sessions
+        (refresh tokens copied before the credential change) are killed
+        instead of surviving until natural expiry.
+        """
+        query = select(RefreshToken).where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.is_revoked == False,  # noqa: E712
+        )
+        result = await session.execute(query)
+        count = 0
+        for rt in result.scalars():
+            rt.is_revoked = True
+            session.add(rt)
+            count += 1
+        await session.flush()
+        return count
 
     # ── Email Verification Token Methods ────────────────────────────
 
@@ -177,9 +194,7 @@ class AuthRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    async def mark_password_reset_used(
-        session: AsyncSession, token_str: str
-    ) -> bool:
+    async def mark_password_reset_used(session: AsyncSession, token_str: str) -> bool:
         prt = await AuthRepository.get_password_reset_token(session, token_str)
         if prt:
             prt.is_used = True
