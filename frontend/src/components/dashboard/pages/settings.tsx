@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Lock } from 'lucide-react';
 
 const field =
-  'w-full rounded-lg border border-rs-border bg-rs-input px-3.5 py-2.5 text-sm text-rs-text outline-none focus:border-rs-brand focus:shadow-[0_0_0_2px_rgba(37,99,235,0.2)]';
+  'flex h-9 w-full rounded-[10px] border border-rs-border-subtle bg-rs-input px-3 text-sm text-rs-text placeholder:text-rs-text-tertiary outline-none transition-[border-color,box-shadow] duration-150 focus:border-rs-brand focus:ring-[3px] focus:ring-[rgb(37_99_235_/_0.20)] dark:focus:ring-[rgb(59_130_246_/_0.20)]';
 
 export function SettingsPage() {
   const user = useAppStore((s) => s.user);
@@ -24,18 +24,18 @@ export function SettingsPage() {
   return (
     <div className="max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-rs-text">Settings</h1>
+        <h1 className="rs-page-title text-2xl font-semibold tracking-[-0.02em]">Settings</h1>
         <p className="mt-1.5 text-sm text-rs-text-tertiary">Profile, organization, and notification channels.</p>
       </div>
 
       <section className="mb-8 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
-        <h2 className="mb-4 text-lg font-semibold text-rs-text">Profile</h2>
+        <h2 className="rs-section-title mb-4 text-base font-semibold">Profile</h2>
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-sm text-rs-text-secondary">Full name</span>
+          <span className="rs-label mb-1.5 block text-[11px]">Full name</span>
           <input className={field} value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-sm text-rs-text-secondary">Email</span>
+          <span className="rs-label mb-1.5 block text-[11px]">Email</span>
           <input className={field} value={user?.email ?? ''} readOnly />
         </label>
         <RsButton
@@ -46,13 +46,13 @@ export function SettingsPage() {
       </section>
 
       <section className="mb-8 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
-        <h2 className="mb-4 text-lg font-semibold text-rs-text">Organization</h2>
+        <h2 className="rs-section-title mb-4 text-base font-semibold">Organization</h2>
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-sm text-rs-text-secondary">Name</span>
+          <span className="rs-label mb-1.5 block text-[11px]">Name</span>
           <input className={field} value={orgName} onChange={(e) => setOrgName(e.target.value)} />
         </label>
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-sm text-rs-text-secondary">Slug</span>
+          <span className="rs-label mb-1.5 block text-[11px]">Slug</span>
           <input className={`${field} font-mono`} value={org?.slug ?? ''} readOnly />
         </label>
         <p className="text-sm text-rs-text-tertiary">Current plan: {current.name}</p>
@@ -62,7 +62,7 @@ export function SettingsPage() {
       </section>
 
       <section className="mb-8 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
-        <h2 className="mb-4 text-lg font-semibold text-rs-text">Notifications</h2>
+        <h2 className="rs-section-title mb-4 text-base font-semibold">Notifications</h2>
         <div className="divide-y divide-rs-border-subtle">
           {['email', 'slack', 'pagerduty'].map((ch) => {
             const locked = (ch === 'slack' || ch === 'pagerduty') && !hasSlackAlerts(plan?.plan);
@@ -74,7 +74,7 @@ export function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => openUpgrade('alerts')}
-                    className="text-sm text-rs-text-accent"
+                    className="text-sm text-rs-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
                   >
                     {ch === 'slack' ? 'Slack' : 'PagerDuty'} alerts are available on Standard. Start trial →
                   </button>
@@ -88,7 +88,7 @@ export function SettingsPage() {
       </section>
 
       <section className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
-        <h2 className="mb-4 text-lg font-semibold text-rs-text">API access</h2>
+        <h2 className="rs-section-title mb-4 text-base font-semibold">API access</h2>
         {!hasApiAccess(plan?.plan) ? (
           <div className="rounded-xl border border-dashed border-rs-border px-6 py-10 text-center">
             <Lock size={32} className="mx-auto text-rs-text-tertiary" />

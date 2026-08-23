@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Sidebar />
         <MobileSidebar />
         <main className="min-h-[calc(100vh-56px)] bg-rs-base p-4 pt-[72px] md:ml-16 md:p-8 md:pt-[88px] lg:ml-60">
-          <div className="rs-fade-in">{children}</div>
+          <div className="rs-content max-w-6xl rs-fade-in">{children}</div>
         </main>
         <HelpButton />
         <CommandPalette />

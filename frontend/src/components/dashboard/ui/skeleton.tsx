@@ -3,7 +3,12 @@ import { cn } from '@/lib/utils';
 export function RsSkeleton({ className }: { className?: string }) {
   return (
     <div
-      className={cn('animate-pulse rounded-lg bg-rs-hover', className)}
+      className={cn(
+        // Spec: skeleton fill --rs-hover, shaped like content, shimmer via ::after
+        'rs-skeleton rounded-lg bg-rs-hover',
+        className
+      )}
+      aria-hidden
     />
   );
 }
@@ -11,7 +16,9 @@ export function RsSkeleton({ className }: { className?: string }) {
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated">
-      <div className="h-11 border-b border-rs-border-subtle bg-rs-elevated" />
+      <div className="flex h-11 items-center border-b border-rs-border-subtle bg-rs-elevated px-4">
+        <RsSkeleton className="h-3 w-20" />
+      </div>
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}

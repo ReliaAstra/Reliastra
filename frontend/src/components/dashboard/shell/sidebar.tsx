@@ -30,7 +30,7 @@ const NAV = [
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
-    <nav className="flex flex-1 flex-col">
+    <nav className="flex flex-1 flex-col" aria-label="Main">
       {NAV.map((item) => {
         const active =
           item.href === '/dashboard'
@@ -43,11 +43,14 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              'relative mb-0.5 flex h-12 items-center gap-3 rounded-lg px-3 text-sm lg:h-10',
+              // Hit targets ≥40×40 — h-12 mobile (48px) per spec, lg:h-10 (40px)
+              'relative mb-0.5 flex h-12 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150 lg:h-10',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2',
               active
                 ? 'bg-rs-elevated font-medium text-rs-text'
                 : 'text-rs-text-secondary hover:bg-rs-elevated hover:text-rs-text'
             )}
+            aria-current={active ? 'page' : undefined}
           >
             {active && (
               <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-[2px] bg-rs-brand" />
@@ -83,7 +86,7 @@ function PlanFooter() {
         <button
           type="button"
           onClick={() => openUpgrade()}
-          className="rounded-md bg-rs-brand px-2.5 py-1 text-xs text-white"
+          className="rounded-md bg-rs-brand px-2.5 py-1 text-xs text-white hover:bg-rs-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
         >
           Upgrade
         </button>
@@ -93,7 +96,7 @@ function PlanFooter() {
   return (
     <div className="mt-auto hidden items-center justify-between px-2 pt-4 lg:flex">
       <span className="text-xs text-rs-text-secondary">{current.name}</span>
-      <Link href="/settings/billing" className="text-xs text-rs-text-accent hover:underline">
+      <Link href="/settings/billing" className="text-xs text-rs-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
         Manage
       </Link>
     </div>
@@ -108,7 +111,7 @@ export function Sidebar() {
   const agency = current.id === 'agency';
 
   return (
-    <aside className="fixed bottom-0 left-0 top-14 z-40 hidden w-16 flex-col border-r border-rs-border-subtle bg-rs-base px-2 py-4 md:flex lg:w-60 lg:px-3">
+    <aside className="rs-sidebar fixed bottom-0 left-0 top-14 z-40 hidden w-16 flex-col border-r border-rs-border-subtle bg-rs-base px-2 py-4 md:flex lg:w-60 lg:px-3">
       {agency && (
         <div className="mb-4 hidden lg:block">
           <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">
@@ -117,7 +120,7 @@ export function Sidebar() {
           <select
             value={clientId ?? ''}
             onChange={(e) => setClient(e.target.value)}
-            className="w-full rounded-lg border border-rs-border-subtle bg-rs-elevated px-3 py-2 text-sm font-medium text-rs-text"
+            className="w-full rounded-lg border border-rs-border-subtle bg-rs-elevated px-3 py-2 text-sm font-medium text-rs-text focus-visible:outline-none focus-visible:border-rs-brand focus-visible:ring-[3px] focus-visible:ring-[rgb(37_99_235_/_0.20)]"
           >
             {mockClients.map((c) => (
               <option key={c.id} value={c.id}>
@@ -142,14 +145,15 @@ export function MobileSidebar() {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 md:hidden">
-      <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+      <div className="absolute inset-0 bg-[rgb(11_15_25_/_0.5)]" onClick={() => setOpen(false)} aria-hidden />
       <aside
-        className="absolute bottom-0 left-0 top-0 flex w-[260px] flex-col bg-rs-base p-4"
-        style={{ boxShadow: '4px 0 24px rgba(0,0,0,0.5)' }}
+        className="absolute bottom-0 left-0 top-0 flex w-[260px] flex-col bg-rs-base p-4 shadow-rs-modal"
+        role="dialog"
+        aria-label="Navigation"
       >
         <div className="mb-4 flex items-center justify-between">
           <span className="text-lg font-semibold tracking-[-0.02em] text-rs-text">Reliastra</span>
-          <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="h-12 w-12 text-rs-text-secondary">
+          <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="flex h-12 w-12 items-center justify-center text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
             <X size={18} />
           </button>
         </div>
@@ -158,11 +162,11 @@ export function MobileSidebar() {
           <ThemeToggle className="w-full justify-center" />
         </div>
         {!isPaid(current.id) ? (
-          <RsButton className="mt-4" onClick={() => { setOpen(false); openUpgrade(); }}>
+          <RsButton className="mt-4 w-full" onClick={() => { setOpen(false); openUpgrade(); }}>
             Upgrade
           </RsButton>
         ) : (
-          <Link href="/settings/billing" onClick={() => setOpen(false)} className="mt-4 text-sm text-rs-text-accent">
+          <Link href="/settings/billing" onClick={() => setOpen(false)} className="mt-4 text-sm text-rs-text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
             Manage {current.name}
           </Link>
         )}

@@ -63,36 +63,32 @@ function TrialBanner() {
   if (trial.active) {
     const urgent = trial.daysLeft <= 3;
     return (
-      <div className="relative mb-6 overflow-hidden rounded-xl border border-rs-brand/25 bg-gradient-to-br from-rs-brand-subtle via-transparent to-transparent p-5">
+      <div className="rs-trial-banner relative mb-8 overflow-hidden rounded-xl border border-rs-brand/25 p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="shrink-0 text-rs-brand" />
-              <p className="text-sm font-semibold text-rs-text">
+              <p className="rs-trial-title text-sm font-semibold">
                 Professional Trial — {TRIAL_LENGTH_DAYS} days, every feature unlocked
               </p>
             </div>
-            <p className="mt-1 text-[13px] leading-relaxed text-rs-text-secondary">
-              You are on day {TRIAL_LENGTH_DAYS - trial.daysLeft} of {TRIAL_LENGTH_DAYS}.
-              {' '}Upgrade before it ends and your 100 dependencies, 5-second checks,
+            <p className="rs-trial-support mt-1 text-[13px] leading-relaxed">
+              You are on day {TRIAL_LENGTH_DAYS - trial.daysLeft} of {TRIAL_LENGTH_DAYS}.{' '}
+              Upgrade before it ends and your 100 dependencies, 5-second checks,
               branded evidence reports and API access carry over — nothing to reconfigure.
             </p>
-            <div className="mt-3 h-1.5 max-w-md overflow-hidden rounded-full bg-rs-hover">
+            <div className="rs-trial-progress-track mt-3 h-1.5 max-w-md">
               <div
-                className={cn(
-                  'h-full rounded-full transition-[width] duration-500',
-                  urgent ? 'bg-rs-down' : 'bg-rs-brand'
-                )}
+                className="rs-trial-progress-fill h-full rounded-full transition-[width] duration-500"
+                data-urgent={urgent}
                 style={{ width: `${Math.round(trial.elapsedPct * 100)}%` }}
               />
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
             <span
-              className={cn(
-                'font-mono text-2xl font-bold leading-none',
-                urgent ? 'text-rs-down' : 'text-rs-text'
-              )}
+              className="rs-trial-days font-mono text-2xl font-bold leading-none"
+              data-urgent={urgent}
             >
               {trial.daysLeft}
               <span className="ml-1 text-xs font-medium uppercase tracking-wide text-rs-text-tertiary">
@@ -106,8 +102,8 @@ function TrialBanner() {
         </div>
         <button
           type="button"
-          aria-label="Dismiss"
-          className="absolute right-3 top-3 text-rs-text-tertiary transition-colors hover:text-rs-text"
+          aria-label="Dismiss trial banner"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-rs-text-tertiary transition-colors hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
           onClick={() => {
             localStorage.setItem('reliastra_dismiss_trial_banner', '1');
             setHidden(true);
@@ -146,7 +142,7 @@ function TrialBanner() {
       <button
         type="button"
         aria-label="Dismiss"
-        className="absolute right-3 top-3 text-rs-text-tertiary"
+        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg text-rs-text-tertiary hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
         onClick={() => {
           localStorage.setItem('reliastra_dismiss_limit_banner', '1');
           setHidden(true);
@@ -178,10 +174,11 @@ function HealthTable() {
 
   return (
     <>
-      <div className="mt-4 hidden overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated md:block">
-        <table className="w-full border-separate border-spacing-0">
+      {/* Desktop table — ≥1024px per spec */}
+      <div className="rs-table-wrap mt-4 hidden overflow-hidden lg:block">
+        <table className="rs-table w-full border-separate border-spacing-0">
           <thead>
-            <tr className="h-11 border-b border-rs-border-subtle">
+            <tr className="rs-table-header h-11 border-b border-rs-border-subtle">
               {['Name', 'Status', 'Uptime 24h', 'Latency', 'Last check', ''].map((h) => (
                 <th
                   key={h}
@@ -202,9 +199,10 @@ function HealthTable() {
                 key={row.dependency_id}
                 onClick={() => router.push(`/dependencies/${row.dependency_id}`)}
                 className={cn(
-                  'h-14 cursor-pointer transition-colors duration-150 hover:bg-rs-hover',
+                  'rs-table-row h-14 cursor-pointer transition-colors duration-150 hover:bg-rs-hover',
                   i !== data.length - 1 && 'border-b border-rs-border-subtle'
                 )}
+                data-clickable="true"
               >
                 <td className="px-4">
                   <div className="text-sm font-medium text-rs-text">{row.name}</div>
@@ -224,19 +222,20 @@ function HealthTable() {
                   {timeAgo(row.last_check_at)}
                 </td>
                 <td className="px-4 text-right">
-                  <ChevronRight size={16} className="ml-auto text-rs-border hover:text-rs-text-secondary" />
+                  <ChevronRight size={16} className="rs-table-chevron ml-auto text-rs-text-tertiary" />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="mt-4 space-y-3 md:hidden">
+      {/* Mobile cards — <1024px stacked */}
+      <div className="mt-4 space-y-3 lg:hidden">
         {data.map((row) => (
           <Link
             key={row.dependency_id}
             href={`/dependencies/${row.dependency_id}`}
-            className="block rounded-xl border border-rs-border-subtle bg-rs-elevated p-4"
+            className="block rounded-xl border border-rs-border-subtle bg-rs-elevated p-4 transition-[border-color] duration-150 hover:border-rs-border"
           >
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium text-rs-text">{row.name}</div>
@@ -321,6 +320,7 @@ export function OverviewPage() {
       },
       context: `${Math.max(0, current.dependencies - (summary?.active_dependencies_count ?? 0))} remaining of ${current.dependencies}`,
       valueClass: 'text-rs-text',
+      iconClass: 'rs-stat-icon-brand',
     },
     {
       label: 'Open incidents',
@@ -329,6 +329,7 @@ export function OverviewPage() {
       bg: 'rgba(239,68,68,0.1)',
       color: '#EF4444',
       valueClass: (summary?.open_incidents_count ?? 0) > 0 ? 'text-rs-down' : 'text-rs-text',
+      iconClass: 'rs-stat-icon-down',
     },
     {
       label: 'Overall uptime',
@@ -337,6 +338,7 @@ export function OverviewPage() {
       bg: 'rgba(16,185,129,0.1)',
       color: '#10B981',
       valueClass: uptimeColor(summary?.overall_uptime_percentage ?? 100),
+      iconClass: 'rs-stat-icon-up',
     },
     {
       label: 'Alerts today',
@@ -345,6 +347,7 @@ export function OverviewPage() {
       bg: 'rgba(245,158,11,0.1)',
       color: '#F59E0B',
       valueClass: (summary?.alerts_today_count ?? 0) > 0 ? 'text-rs-degraded' : 'text-rs-text',
+      iconClass: 'rs-stat-icon-degraded',
     },
   ];
 
@@ -352,7 +355,7 @@ export function OverviewPage() {
     <div>
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-rs-text">Dashboard</h1>
+          <h1 className="rs-page-title text-2xl font-semibold tracking-[-0.02em]">Dashboard</h1>
           <p className="mt-1.5 text-sm text-rs-text-tertiary">
             Monitor your external dependencies and incident correlation.
           </p>
@@ -377,28 +380,29 @@ export function OverviewPage() {
               return (
                 <div
                   key={s.label}
-                  className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5 transition-[border-color] duration-150 hover:border-rs-border"
+                  className="rs-stat-card rounded-xl border border-rs-border-subtle bg-rs-elevated p-5 transition-[border-color] duration-150 hover:border-rs-border"
                 >
                   <div
-                    className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg"
+                    className={cn('rs-stat-icon-tile mb-4 flex h-9 w-9 items-center justify-center rounded-lg', s.iconClass)}
                     style={{ background: s.bg }}
                   >
                     <Icon size={18} color={s.color} />
                   </div>
-                  <div className="mb-2 text-xs font-medium uppercase tracking-[0.05em] text-rs-text-tertiary">
+                  <div className="rs-stat-label mb-2 text-xs font-medium uppercase tracking-[0.05em] text-rs-text-tertiary">
                     {s.label}
                   </div>
-                  <div className={cn('font-mono text-[32px] font-bold leading-none tracking-[-0.02em]', s.valueClass)}>
+                  <div className={cn('rs-stat-value font-mono text-[32px] font-bold leading-none tracking-[-0.02em]', s.valueClass)}>
                     {s.value}
                   </div>
                   {'usage' in s && s.usage ? (
                     <div className="mt-3">
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-rs-hover">
+                      <div className="rs-usage-meter h-1 w-full overflow-hidden rounded-full bg-rs-hover">
                         <div
                           className={cn(
-                            'h-full rounded-full',
+                            'rs-usage-meter-fill h-full rounded-full',
                             s.usage.used / s.usage.total >= 0.8 ? 'bg-rs-degraded' : 'bg-rs-brand'
                           )}
+                          data-level={s.usage.used / s.usage.total >= 0.8 ? 'warn' : 'ok'}
                           style={{
                             width: `${Math.min(100, Math.round((s.usage.used / s.usage.total) * 100))}%`,
                           }}
@@ -408,7 +412,7 @@ export function OverviewPage() {
                         <button
                           type="button"
                           onClick={() => useAppStore.getState().openUpgrade('limit')}
-                          className="mt-1.5 text-[11px] font-medium text-rs-brand hover:underline"
+                          className="rs-usage-meter-link mt-1.5 text-[11px] font-medium text-rs-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
                         >
                           Need more? See paid tiers →
                         </button>
@@ -416,7 +420,7 @@ export function OverviewPage() {
                     </div>
                   ) : (
                     'context' in s &&
-                    s.context && <div className="mt-2 text-xs text-rs-text-tertiary">{s.context}</div>
+                    s.context && <div className="rs-stat-context mt-2 text-xs text-rs-text-tertiary">{s.context}</div>
                   )}
                 </div>
               );
@@ -467,10 +471,10 @@ export function OverviewPage() {
           <div className="mt-4"><TableSkeleton rows={4} /></div>
         ) : (
           <>
-            <div className="mt-4 hidden overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated md:block">
-              <table className="w-full border-separate border-spacing-0">
+            <div className="rs-table-wrap mt-4 hidden overflow-hidden lg:block">
+              <table className="rs-table w-full border-separate border-spacing-0">
                 <thead>
-                  <tr className="h-11">
+                  <tr className="rs-table-header h-11">
                     {['Vendor', 'Status', 'Uptime 24h', 'Latency', 'Last check'].map((h) => (
                       <th key={h} className="px-4 text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-rs-text-tertiary">
                         {h}
@@ -480,9 +484,9 @@ export function OverviewPage() {
                 </thead>
                 <tbody>
                   {(vendors ?? []).slice(0, 6).map((v, i, arr) => (
-                    <tr key={v.id} className={cn('h-14', i !== arr.length - 1 && 'border-b border-rs-border-subtle')}>
+                    <tr key={v.id} className={cn('rs-table-row h-14', i !== arr.length - 1 && 'border-b border-rs-border-subtle')}>
                       <td className="px-4 text-sm font-medium text-rs-text">{v.display_name}</td>
-                      <td className="px-4"><StatusBadge status={v.recent_status} /></td>
+                      <td className="px-4"><StatusBadge status={v.recent_status} disablePulse /></td>
                       <td className="px-4 font-mono text-sm text-rs-text">
                         {formatUptime(v.uptime_percentage_24h ?? 99.9)}
                       </td>
@@ -496,14 +500,14 @@ export function OverviewPage() {
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:hidden">
+            <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 lg:hidden">
               {(vendors ?? []).slice(0, 6).map((v) => (
                 <div
                   key={v.id}
                   className="min-w-[200px] snap-start rounded-xl border border-rs-border-subtle bg-rs-elevated p-4"
                 >
                   <div className="text-sm font-medium text-rs-text">{v.display_name}</div>
-                  <div className="mt-2"><StatusBadge status={v.recent_status} /></div>
+                  <div className="mt-2"><StatusBadge status={v.recent_status} disablePulse /></div>
                   <div className="mt-3 font-mono text-sm text-rs-text">
                     {formatUptime(v.uptime_percentage_24h ?? 99.9)}
                   </div>
