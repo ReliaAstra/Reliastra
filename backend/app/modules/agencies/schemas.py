@@ -35,3 +35,41 @@ class ApplicationResponse(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
+
+
+# ── Agency portfolio (client-facing SLA portal) ──────────────────────────────
+
+PortfolioStatus = str  # "operational" | "degraded" | "critical"
+
+
+class PortfolioClient(BaseModel):
+    """One agency customer's rolled-up SLA posture."""
+
+    id: uuid.UUID
+    name: str
+    description: str | None = None
+    application_count: int = 0
+    dependency_count: int = 0
+    uptime_24h: float = 100.0
+    avg_latency_ms: float = 0.0
+    open_incidents: int = 0
+    critical_incidents: int = 0
+    last_incident_at: datetime | None = None
+    status: PortfolioStatus = "operational"
+
+
+class PortfolioTotals(BaseModel):
+    clients: int = 0
+    dependencies: int = 0
+    avg_uptime_24h: float = 100.0
+    open_incidents: int = 0
+    clients_needing_attention: int = 0
+
+
+class PortfolioResponse(BaseModel):
+    org_name: str
+    generated_at: datetime
+    share_token: str
+    clients: list[PortfolioClient]
+    totals: PortfolioTotals
+    unassigned_monitors: int = 0

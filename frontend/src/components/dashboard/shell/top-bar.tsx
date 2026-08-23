@@ -18,6 +18,7 @@ function crumbs(pathname: string): { label: string; href?: string }[] {
     dependencies: 'Dependencies',
     incidents: 'Incidents',
     evidence: 'Evidence',
+    clients: 'Clients',
     settings: 'Settings',
     billing: 'Billing',
   };

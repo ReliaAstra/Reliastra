@@ -36,6 +36,10 @@ export interface Organization {
 export interface PlanDetails {
   org_id: string;
   plan: PlanId | string;
+  effective_plan?: PlanId | string;
+  is_trial_active?: boolean;
+  trial_days_remaining?: number;
+  trial_length_days?: number;
   max_dependencies: number;
   min_check_interval_seconds: number;
   subscription_status: string | null;
@@ -274,4 +278,37 @@ export interface AgencyClient {
 export function unwrapList<T>(payload: Paginated<T> | T[]): T[] {
   if (Array.isArray(payload)) return payload;
   return payload.data ?? payload.items ?? [];
+}
+
+// -- Agency portfolio (client-facing SLA portal) -----------------------------
+
+export interface PortfolioClient {
+  id: string;
+  name: string;
+  description: string | null;
+  application_count: number;
+  dependency_count: number;
+  uptime_24h: number;
+  avg_latency_ms: number;
+  open_incidents: number;
+  critical_incidents: number;
+  last_incident_at: string | null;
+  status: 'operational' | 'degraded' | 'critical';
+}
+
+export interface PortfolioTotals {
+  clients: number;
+  dependencies: number;
+  avg_uptime_24h: number;
+  open_incidents: number;
+  clients_needing_attention: number;
+}
+
+export interface AgencyPortfolio {
+  org_name: string;
+  generated_at: string;
+  share_token: string;
+  clients: PortfolioClient[];
+  totals: PortfolioTotals;
+  unassigned_monitors: number;
 }

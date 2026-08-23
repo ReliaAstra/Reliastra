@@ -38,6 +38,7 @@ import type {
   PricingPlan,
   UserMe,
   VendorStatus,
+  AgencyPortfolio,
 } from './types';
 import { unwrapList } from './types';
 
@@ -300,6 +301,18 @@ export const api = {
         updated_at: new Date().toISOString(),
       })
     ),
+
+  // ── Agency portfolio ──────────────────────────────────────────────────────
+  // No mock fallback on purpose: the gate renders before this fires for
+  // non-Agency plans, and a failure here must show a real error state.
+
+  portfolio: () => request<AgencyPortfolio>('/agency/portfolio'),
+
+  createClient: (body: { name: string; description?: string }) =>
+    request<{ id: string; name: string }>('/clients', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 };
 
 export { ApiError, paginate };

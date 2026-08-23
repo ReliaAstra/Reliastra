@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  Users,
   Activity,
   Bell,
   FileText,
@@ -66,6 +67,7 @@ export function CommandPalette() {
       { id: 'deps', group: 'Navigate', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
       { id: 'inc', group: 'Navigate', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
       { id: 'evi', group: 'Navigate', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
+      { id: 'cli', group: 'Navigate', label: 'Clients (Agency portal)', href: '/clients', icon: Users, shortcut: 'G C' },
       { id: 'set', group: 'Navigate', label: 'Settings', href: '/settings', icon: Settings, shortcut: 'G S' },
     ];
     const actions: Item[] = [

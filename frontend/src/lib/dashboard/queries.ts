@@ -24,6 +24,7 @@ export const keys = {
   plan: ['plan'] as const,
   pricing: ['pricing'] as const,
   alerts: ['alerts'] as const,
+  portfolio: ['agency', 'portfolio'] as const,
 };
 
 export function useSummary() {
@@ -157,5 +158,13 @@ export function useDeleteDependency() {
         description: 'Please try again or contact support if this persists.',
       });
     },
+  });
+}
+
+export function usePortfolio(enabled = true) {
+  return useQuery({
+    queryKey: keys.portfolio,
+    queryFn: api.portfolio,
+    enabled,
   });
 }

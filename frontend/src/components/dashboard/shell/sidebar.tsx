@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  Building2,
   FileText,
   LayoutDashboard,
   Link2,
@@ -22,6 +23,7 @@ const NAV = [
   { href: '/dependencies', label: 'Dependencies', icon: Link2 },
   { href: '/incidents', label: 'Incidents', icon: TriangleAlert },
   { href: '/evidence', label: 'Evidence', icon: FileText },
+  { href: '/clients', label: 'Clients', icon: Building2, badge: 'AGENCY' },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -57,6 +59,11 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
                 active ? 'text-rs-brand' : 'text-rs-text-tertiary group-hover:text-rs-text-secondary'
               )}
             />
+            {'badge' in item && item.badge && !active && (
+              <span className="ml-auto rounded-full border border-rs-brand/25 bg-rs-brand-subtle px-1.5 py-px text-[9px] font-semibold tracking-wide text-rs-brand">
+                {item.badge}
+              </span>
+            )}
             <span className="md:hidden lg:inline">{item.label}</span>
           </Link>
         );
