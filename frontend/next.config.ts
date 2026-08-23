@@ -6,8 +6,14 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
-  // Allow preview host for Arena live preview (https://{port}-{sandboxId}.e2b.app)
-  // and any origin during development for outbound verification.
+  // Allow Arena live preview host (e2b) to fetch dev resources — fixes "stuck at loading UI"
+  // Next.js 15+ blocks cross-origin dev asset requests by default.
+  allowedDevOrigins: [
+    "*.e2b.app",
+    "*.e2b.dev",
+    "3000-*.e2b.app",
+    "*.e2b-preview.com",
+  ],
   async headers() {
     return [
       {
@@ -22,7 +28,6 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Allow embedding in preview iframe
           { key: "X-Frame-Options", value: "ALLOWALL" },
         ],
       },
