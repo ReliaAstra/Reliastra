@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { PLANS, annualSavings, getPlan } from '@/lib/dashboard/plans';
 import { cn } from '@/lib/utils';
@@ -32,29 +32,41 @@ export function UpgradeModal() {
     []
   );
 
+  // Close on Esc + focus trap basics per spec
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, close]);
+
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4"
+      className="rs-modal-backdrop fixed inset-0 z-[80] flex items-center justify-center bg-[rgb(11_15_25_/_0.5)] p-4"
       onClick={close}
+      aria-modal="true"
+      role="dialog"
     >
       <div
-        className="rs-modal-in max-h-[90vh] w-full max-w-[900px] overflow-hidden rounded-2xl border border-rs-border-subtle bg-rs-elevated"
+        className="rs-modal-panel-xl rs-modal-in max-h-[90vh] w-full max-w-[900px] overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated shadow-rs-modal"
         onClick={(e) => e.stopPropagation()}
-        role="dialog"
+        role="document"
         aria-labelledby="pricing-title"
       >
         <div className="relative px-8 pb-4 pt-8">
           <button
             type="button"
             onClick={close}
-            className="absolute right-5 top-5 text-rs-text-tertiary hover:text-rs-text"
+            className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary transition-colors hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
             aria-label="Close"
           >
             <X size={18} />
           </button>
-          <h2 id="pricing-title" className="text-xl font-semibold tracking-[-0.02em] text-rs-text">
+          <h2 id="pricing-title" className="rs-page-title text-xl">
             Choose your plan
           </h2>
           <p className="mt-1 text-sm text-rs-text-tertiary">
@@ -65,7 +77,7 @@ export function UpgradeModal() {
               type="button"
               onClick={() => setAnnual(false)}
               className={cn(
-                'rounded-md px-3 py-1.5 text-sm',
+                'rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
                 !annual ? 'bg-rs-hover text-rs-text' : 'text-rs-text-secondary'
               )}
             >
@@ -75,7 +87,7 @@ export function UpgradeModal() {
               type="button"
               onClick={() => setAnnual(true)}
               className={cn(
-                'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm',
+                'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
                 annual ? 'bg-rs-hover text-rs-text' : 'text-rs-text-secondary'
               )}
             >
@@ -189,13 +201,23 @@ export function EvidenceGateModal() {
   const open = useAppStore((s) => s.evidenceGateOpen);
   const setOpen = useAppStore((s) => s.setEvidenceGateOpen);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, setOpen]);
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onClick={() => setOpen(false)}>
+    <div className="rs-modal-backdrop fixed inset-0 z-[80] flex items-center justify-center bg-[rgb(11_15_25_/_0.5)] p-4" onClick={() => setOpen(false)} role="dialog" aria-modal="true">
       <div
-        className="rs-modal-in w-full max-w-md rounded-2xl border border-rs-border-subtle bg-rs-elevated p-8"
+        className="rs-modal-panel rs-modal-in w-full max-w-md rounded-xl border border-rs-border-subtle bg-rs-elevated p-8 shadow-rs-modal"
         onClick={(e) => e.stopPropagation()}
-        role="dialog"
+        role="document"
       >
         <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Standard feature</h2>
         <p className="mt-2 text-sm text-rs-text-secondary">

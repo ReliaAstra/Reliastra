@@ -16,7 +16,7 @@ export function SectionHeader({ title, subtitle, href, action, help }: Props) {
     <div className="flex items-start justify-between gap-4">
       <div>
         <div className="flex items-center gap-1">
-          <h2 className="text-lg font-semibold text-rs-text">{title}</h2>
+          <h2 className="rs-section-title text-base font-semibold tracking-[-0.01em] text-rs-text">{title}</h2>
           {help}
         </div>
         {subtitle && (
@@ -26,7 +26,7 @@ export function SectionHeader({ title, subtitle, href, action, help }: Props) {
       {href ? (
         <Link
           href={href}
-          className="text-sm font-medium text-rs-text-accent hover:underline"
+          className="text-sm font-medium text-rs-brand hover:text-rs-brand-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
         >
           View all
         </Link>

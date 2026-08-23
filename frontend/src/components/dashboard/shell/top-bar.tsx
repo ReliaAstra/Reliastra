@@ -56,13 +56,13 @@ export function TopBar() {
   const [userOpen, setUserOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-rs-border-subtle bg-rs-base px-6">
+    <header className="rs-topbar fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-rs-border-subtle bg-rs-base px-6">
       <div className="flex items-center gap-3">
         <button
           type="button"
           aria-label="Open menu"
           onClick={() => setSidebar(true)}
-          className="flex h-12 w-12 items-center justify-center text-rs-text-secondary md:hidden"
+          className="flex h-12 w-12 items-center justify-center text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2 md:hidden"
         >
           <Menu size={20} />
         </button>
@@ -76,7 +76,7 @@ export function TopBar() {
           <span key={`${c.label}-${i}`}>
             {i > 0 && <span className="mx-1 text-rs-border"> / </span>}
             {c.href ? (
-              <Link href={c.href} className="hover:text-rs-text-secondary">
+              <Link href={c.href} className="hover:text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
                 {c.label}
               </Link>
             ) : (
@@ -92,14 +92,12 @@ export function TopBar() {
             type="button"
             onClick={() => openUpgrade('trial')}
             title="Your 14-day Professional trial — all features unlocked"
-            className="group hidden items-center gap-1.5 rounded-full border border-rs-brand/25 bg-rs-brand-subtle py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium tracking-[0.02em] text-rs-brand sm:inline-flex"
+            className="rs-trial-pill group hidden items-center gap-1.5 py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium tracking-[0.02em] sm:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
           >
             PRO TRIAL
             <span
-              className={cn(
-                'rounded-full px-1.5 py-px font-mono text-[10px]',
-                trial.daysLeft <= 3 ? 'bg-rs-down/15 text-rs-down' : 'bg-rs-brand/15'
-              )}
+              className="rs-countdown-chip"
+              data-urgent={trial.daysLeft <= 3}
             >
               {trial.daysLeft}d left
             </span>
@@ -109,7 +107,7 @@ export function TopBar() {
           <button
             type="button"
             onClick={() => openUpgrade()}
-            className="rounded-full border border-[rgba(37,99,235,0.2)] bg-rs-brand-subtle px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.05em] text-rs-brand"
+            className="rounded-full border border-[rgba(37,99,235,0.2)] bg-rs-brand-subtle px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.05em] text-rs-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
           >
             Free
           </button>
@@ -118,7 +116,7 @@ export function TopBar() {
         <button
           type="button"
           onClick={() => setCommand(true)}
-          className="hidden items-center md:inline-flex"
+          className="hidden items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus md:inline-flex"
           aria-label="Open command palette"
         >
           <span className="rounded border border-rs-border px-1.5 py-0.5 font-mono text-[11px] text-rs-text-tertiary">
@@ -135,7 +133,7 @@ export function TopBar() {
               setUserOpen(false);
               setUnread(0);
             }}
-            className="relative flex h-12 w-12 items-center justify-center text-rs-text-secondary"
+            className="relative flex h-12 w-12 items-center justify-center text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
           >
             <Bell size={20} />
             {unread > 0 && (
@@ -148,7 +146,7 @@ export function TopBar() {
             )}
           </button>
           {bellOpen && (
-            <div className="absolute right-0 top-12 w-80 overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated">
+            <div className="absolute right-0 top-12 w-80 overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated shadow-rs-popover">
               <div className="border-b border-rs-border-subtle px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-rs-text-tertiary">
                 Notifications
               </div>
@@ -160,7 +158,7 @@ export function TopBar() {
                     setBellOpen(false);
                     if (n.href) router.push(n.href);
                   }}
-                  className="block w-full border-b border-rs-border-subtle px-4 py-3 text-left last:border-0 hover:bg-rs-hover"
+                  className="block w-full border-b border-rs-border-subtle px-4 py-3 text-left last:border-0 hover:bg-rs-hover transition-colors duration-150"
                 >
                   <div className="text-sm text-rs-text">{n.title}</div>
                   <div className="mt-1 text-xs text-rs-text-tertiary">{n.body}</div>
@@ -179,12 +177,12 @@ export function TopBar() {
               setUserOpen((v) => !v);
               setBellOpen(false);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-rs-border bg-rs-hover text-xs font-medium text-rs-text"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-rs-border bg-rs-hover text-xs font-medium text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
           >
             {initials(user?.full_name, user?.email)}
           </button>
           {userOpen && (
-            <div className="absolute right-0 top-10 w-48 overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated py-1">
+            <div className="absolute right-0 top-10 w-48 overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated py-1 shadow-rs-popover">
               {[
                 { label: 'Profile', href: '/settings' },
                 { label: 'Organization', href: '/settings' },
@@ -194,7 +192,7 @@ export function TopBar() {
                   key={item.label}
                   href={item.href}
                   onClick={() => setUserOpen(false)}
-                  className="block px-3 py-2.5 text-sm text-rs-text hover:bg-rs-hover"
+                  className="block px-3 py-2.5 text-sm text-rs-text hover:bg-rs-hover transition-colors duration-150"
                 >
                   {item.label}
                 </Link>
@@ -206,7 +204,7 @@ export function TopBar() {
                   signOut();
                   router.push('/dashboard');
                 }}
-                className="block w-full px-3 py-2.5 text-left text-sm text-rs-text hover:bg-rs-hover"
+                className="block w-full px-3 py-2.5 text-left text-sm text-rs-text hover:bg-rs-hover transition-colors duration-150"
               >
                 Sign out
               </button>

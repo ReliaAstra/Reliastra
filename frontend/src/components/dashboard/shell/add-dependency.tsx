@@ -19,7 +19,7 @@ const REGIONS = [
 ];
 
 const field =
-  'w-full rounded-lg border border-rs-border bg-rs-input px-3.5 py-2.5 text-sm text-rs-text placeholder:text-rs-text-tertiary outline-none focus:border-rs-brand focus:shadow-[0_0_0_2px_rgba(37,99,235,0.2)]';
+  'flex h-9 w-full rounded-[10px] border border-rs-border-subtle bg-rs-input px-3 text-sm text-rs-text placeholder:text-rs-text-tertiary outline-none transition-[border-color,box-shadow] duration-150 focus:border-rs-brand focus:ring-[3px] focus:ring-[rgb(37_99_235_/_0.20)] dark:focus:ring-[rgb(59_130_246_/_0.20)]';
 
 export function AddDependencyPanel() {
   const open = useAppStore((s) => s.addDependencyOpen);
@@ -69,6 +69,15 @@ export function AddDependencyPanel() {
     }
   }, [open, editingId, deps]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, setOpen]);
+
   if (!open) return null;
 
   const atLimit = !editingId && (deps?.length ?? 0) >= current.dependencies;
@@ -103,13 +112,13 @@ export function AddDependencyPanel() {
 
   return (
     <div className="fixed inset-0 z-[60]">
-      <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-      <aside className="absolute bottom-0 right-0 top-0 flex w-full max-w-[480px] flex-col border-l border-rs-border-subtle bg-rs-base">
-        <div className="flex items-center justify-between border-b border-rs-border-subtle px-6 py-4">
-          <h2 className="text-lg font-semibold text-rs-text">
+      <div className="absolute inset-0 bg-[rgb(11_15_25_/_0.5)]" onClick={() => setOpen(false)} />
+      <aside className="absolute bottom-0 right-0 top-0 flex w-full max-w-[480px] flex-col border-l border-rs-border-subtle bg-rs-elevated shadow-rs-modal">
+        <div className="flex h-14 items-center justify-between border-b border-rs-border-subtle px-6">
+          <h2 className="rs-section-title text-base font-semibold">
             {editingId ? 'Edit dependency' : 'Add dependency'}
           </h2>
-          <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="text-rs-text-tertiary">
+          <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
             <X size={18} />
           </button>
         </div>
@@ -126,11 +135,11 @@ export function AddDependencyPanel() {
           )}
 
           <label className="mb-4 block">
-            <span className="mb-1.5 block text-sm text-rs-text-secondary">Name</span>
+            <span className="rs-label mb-1.5 block">Name</span>
             <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Stripe API" />
           </label>
           <label className="mb-4 block">
-            <span className="mb-1.5 block text-sm text-rs-text-secondary">Endpoint URL</span>
+            <span className="rs-label mb-1.5 block">Endpoint URL</span>
             <input
               className={cn(field, 'font-mono')}
               value={url}
@@ -139,16 +148,16 @@ export function AddDependencyPanel() {
             />
           </label>
           <div className="mb-4">
-            <span className="mb-1.5 block text-sm text-rs-text-secondary">Method</span>
-            <div className="inline-flex rounded-lg border border-rs-border p-0.5">
+            <span className="rs-label mb-1.5 block">Method</span>
+            <div className="inline-flex rounded-lg border border-rs-border-subtle p-0.5">
               {METHODS.map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMethod(m)}
                   className={cn(
-                    'rounded-md px-3 py-1.5 font-mono text-sm',
-                    method === m ? 'bg-rs-hover text-rs-text' : 'text-rs-text-secondary'
+                    'rounded-md px-3 py-1.5 font-mono text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
+                    method === m ? 'bg-rs-active text-rs-text' : 'text-rs-text-secondary hover:text-rs-text'
                   )}
                 >
                   {m}
@@ -157,7 +166,7 @@ export function AddDependencyPanel() {
             </div>
           </div>
           <div className="mb-4">
-            <span className="mb-1.5 block text-sm text-rs-text-secondary">Expected status codes</span>
+            <span className="rs-label mb-1.5 block">Expected status codes</span>
             <div className="flex flex-wrap gap-2">
               {CODES.map((c) => (
                 <button
@@ -165,10 +174,10 @@ export function AddDependencyPanel() {
                   type="button"
                   onClick={() => toggleCode(c)}
                   className={cn(
-                    'rounded-full border px-3 py-1 font-mono text-xs',
+                    'rounded-full border px-3 py-1 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
                     codes.includes(c)
                       ? 'border-rs-brand bg-rs-brand-subtle text-rs-brand'
-                      : 'border-rs-border text-rs-text-secondary'
+                      : 'border-rs-border-subtle text-rs-text-secondary hover:border-rs-border'
                   )}
                 >
                   {c}
@@ -177,11 +186,11 @@ export function AddDependencyPanel() {
             </div>
           </div>
           <label className="mb-4 block">
-            <span className="mb-1.5 block text-sm text-rs-text-secondary">Timeout (seconds)</span>
+            <span className="rs-label mb-1.5 block">Timeout (seconds)</span>
             <input className={cn(field, 'font-mono')} type="number" value={timeout} onChange={(e) => setTimeoutSec(Number(e.target.value))} />
           </label>
           <label className="mb-4 block">
-            <span className="mb-1.5 flex items-center gap-1 text-sm text-rs-text-secondary">
+            <span className="rs-label mb-1.5 flex items-center gap-1">
               Check interval (seconds)
               <HelpTooltip
                 title="Check interval"
@@ -191,7 +200,7 @@ export function AddDependencyPanel() {
             <input className={cn(field, 'font-mono')} type="number" value={interval} onChange={(e) => setInterval(Number(e.target.value))} />
           </label>
           <div className="mb-4">
-            <span className="mb-1.5 block text-sm text-rs-text-secondary">Regions</span>
+            <span className="rs-label mb-1.5 block">Regions</span>
             <div className="space-y-2">
               {REGIONS.map((r) => (
                 <label key={r.id} className="flex h-12 items-center gap-2 text-sm text-rs-text">
@@ -199,7 +208,7 @@ export function AddDependencyPanel() {
                     type="checkbox"
                     checked={regions.includes(r.id)}
                     onChange={() => toggleRegion(r.id)}
-                    className="h-4 w-4 accent-[#2563EB]"
+                    className="h-4 w-4 accent-[var(--rs-brand)]"
                   />
                   {r.label}
                 </label>
@@ -207,7 +216,7 @@ export function AddDependencyPanel() {
             </div>
           </div>
           <label className="mb-4 block">
-            <span className="mb-1.5 flex items-center gap-1 text-sm text-rs-text-secondary">
+            <span className="rs-label mb-1.5 flex items-center gap-1">
               Alert threshold (ms)
               <HelpTooltip
                 title="Alert threshold"
@@ -224,7 +233,7 @@ export function AddDependencyPanel() {
               aria-checked={active}
               onClick={() => setActive((v) => !v)}
               className={cn(
-                'h-6 w-10 rounded-full transition-colors',
+                'h-6 w-10 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2',
                 active ? 'bg-rs-brand' : 'bg-rs-border'
               )}
             >

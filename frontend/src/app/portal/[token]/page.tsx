@@ -15,11 +15,11 @@ type LoadState =
 function statusStyle(status: PortfolioClient['status']) {
   switch (status) {
     case 'critical':
-      return { label: 'Critical', dot: 'bg-[#DC2626]', text: 'text-[#DC2626]' };
+      return { label: 'Critical', dot: 'bg-[#DC2626]', text: 'text-[#DC2626]', bg: 'bg-[#DC2626]/10' };
     case 'degraded':
-      return { label: 'Degraded', dot: 'bg-[#D97706]', text: 'text-[#D97706]' };
+      return { label: 'Degraded', dot: 'bg-[#D97706]', text: 'text-[#D97706]', bg: 'bg-[#D97706]/10' };
     default:
-      return { label: 'Operational', dot: 'bg-[#059669]', text: 'text-[#059669]' };
+      return { label: 'Operational', dot: 'bg-[#059669]', text: 'text-[#059669]', bg: 'bg-[#059669]/10' };
   }
 }
 
@@ -32,7 +32,9 @@ function uptimeColor(v: number) {
 /**
  * Public client-facing SLA portal — the artifact agencies hand to their
  * customers. Unauthenticated by design (HMAC-signed share link), white-label,
- * print-friendly.
+ * print-friendly. Spec: light-first, print-safe (borders only, no shadows/animations),
+ * header 72px with logo tile 40px #2563EB, generated timestamp top-right mono 12px,
+ * client cards grid sm:2 lg:3, footer signed-data line + "Powered by Reliastra" (hidden in print).
  */
 export default function PortalPage() {
   const params = useParams<{ token: string }>();
@@ -56,12 +58,12 @@ export default function PortalPage() {
   }, [token]);
 
   return (
-    <main className="min-h-screen bg-[#F7F8FA] text-[#0B1220] antialiased dark:bg-[#0B0F19] dark:text-[#F8FAFC]">
-      {/* Header */}
-      <header className="border-b border-[#E8EBF0] bg-white/90 backdrop-blur dark:border-[#1E293B] dark:bg-[#111726]/80 print:border-0">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+    <main className="min-h-screen bg-[#F7F8FA] text-[#0B1220] antialiased dark:bg-[#0B0F19] dark:text-[#F8FAFC] print:bg-white print:text-black">
+      {/* Header — 72px per spec, logo tile 40px #2563EB, timestamp mono 12px top-right */}
+      <header className="h-[72px] border-b border-[#E8EBF0] bg-white dark:border-[#1E293B] dark:bg-[#111726] print:border-0 print:bg-white">
+        <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2563EB]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2563EB] print:bg-[#2563EB]">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-white">
                 <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5" />
                 <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -71,12 +73,12 @@ export default function PortalPage() {
               <div className="text-sm font-semibold tracking-[-0.01em]">
                 {state.kind === 'ready' ? state.data.org_name : 'Client SLA Reports'}
               </div>
-              <div className="text-xs text-[#69748A] dark:text-[#6B7893]">
+              <div className="text-xs text-[#69748A] dark:text-[#6B7893] print:text-[#69748A]">
                 Service reliability portal
               </div>
             </div>
           </div>
-          <span className="hidden rounded-full border border-[#E8EBF0] px-3 py-1 font-mono text-xs text-[#69748A] sm:block dark:border-[#313F58] dark:text-[#6B7893]">
+          <span className="hidden rounded-full border border-[#E8EBF0] px-3 py-1 font-mono text-[12px] text-[#69748A] sm:block dark:border-[#313F58] dark:text-[#6B7893] print:border-[#E8EBF0]">
             {state.kind === 'ready'
               ? `Generated ${new Date(state.data.generated_at).toLocaleString()}`
               : '\u00A0'}
@@ -84,9 +86,9 @@ export default function PortalPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="mx-auto max-w-5xl px-6 py-10 print:px-0">
         {state.kind === 'error' && (
-          <div className="rounded-xl border border-[#E8EBF0] bg-white p-10 text-center dark:border-[#1E293B] dark:bg-[#111726]">
+          <div className="rounded-xl border border-[#E8EBF0] bg-white p-10 text-center dark:border-[#1E293B] dark:bg-[#111726] print:border-[#E8EBF0] print:bg-white print:shadow-none">
             <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#69748A]">Link error</p>
             <h1 className="mt-3 text-2xl font-semibold tracking-[-0.02em]">
               This report link is not valid
@@ -105,7 +107,7 @@ export default function PortalPage() {
               {[0, 1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-[#E8EBF0] bg-white p-5 dark:border-[#1E293B] dark:bg-[#111726]"
+                  className="rounded-xl border border-[#E8EBF0] bg-white p-5 dark:border-[#1E293B] dark:bg-[#111726] print:shadow-none"
                 >
                   <div className="rs-skeleton mb-3 h-4 w-28 rounded" />
                   <div className="rs-skeleton h-8 w-20 rounded" />
@@ -118,7 +120,7 @@ export default function PortalPage() {
 
         {state.kind === 'ready' && (
           <>
-            {/* Totals */}
+            {/* Totals — print 4-col */}
             <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4 print:grid-cols-4">
               {[
                 {
@@ -147,7 +149,7 @@ export default function PortalPage() {
               ].map((c) => (
                 <div
                   key={c.label}
-                  className="rounded-xl border border-[#E8EBF0] bg-white p-5 shadow-sm dark:border-[#1E293B] dark:bg-[#111726]"
+                  className="rounded-xl border border-[#E8EBF0] bg-white p-5 dark:border-[#1E293B] dark:bg-[#111726] print:border-[#E8EBF0] print:bg-white print:shadow-none"
                 >
                   <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[#69748A] dark:text-[#6B7893]">
                     {c.label}
@@ -159,7 +161,7 @@ export default function PortalPage() {
               ))}
             </div>
 
-            {/* Client cards */}
+            {/* Client cards — grid sm:2 lg:3 per spec, borders only no shadows/animations in print */}
             {!state.data.clients.length ? (
               <div className="rounded-xl border border-dashed border-[#D5DAE2] p-12 text-center text-sm text-[#69748A] dark:border-[#313F58] dark:text-[#6B7893]">
                 No clients are published on this portal yet.
@@ -171,7 +173,7 @@ export default function PortalPage() {
                   return (
                     <section
                       key={client.id}
-                      className="flex flex-col rounded-xl border border-[#E8EBF0] bg-white p-6 shadow-sm transition-shadow hover:shadow-md dark:border-[#1E293B] dark:bg-[#111726]"
+                      className="flex flex-col rounded-xl border border-[#E8EBF0] bg-white p-6 dark:border-[#1E293B] dark:bg-[#111726] print:border-[#E8EBF0] print:bg-white print:shadow-none"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <h2 className="text-base font-semibold tracking-[-0.01em]">
@@ -181,7 +183,7 @@ export default function PortalPage() {
                           className={cn(
                             'inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium',
                             s.text,
-                            'bg-current/10'
+                            s.bg
                           )}
                         >
                           <span className={cn('h-1.5 w-1.5 rounded-full', s.dot)} />
@@ -209,7 +211,7 @@ export default function PortalPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-[#F1F3F7] dark:bg-[#182136]">
+                      <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-[#F1F3F7] dark:bg-[#182136] print:bg-[#F1F3F7]">
                         <div
                           className={cn(
                             'h-full rounded-full',
@@ -223,7 +225,7 @@ export default function PortalPage() {
                         />
                       </div>
 
-                      <dl className="mt-5 grid grid-cols-3 gap-2 border-t border-[#E8EBF0] pt-4 text-center dark:border-[#1E293B]">
+                      <dl className="mt-5 grid grid-cols-3 gap-2 border-t border-[#E8EBF0] pt-4 text-center dark:border-[#1E293B] print:border-[#E8EBF0]">
                         {[
                           ['Services', String(client.dependency_count)],
                           ['Open incidents', String(client.open_incidents)],
@@ -248,15 +250,15 @@ export default function PortalPage() {
               </div>
             )}
 
-            {/* Footer */}
-            <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[#E8EBF0] pt-6 text-xs text-[#69748A] sm:flex-row dark:border-[#1E293B] dark:text-[#6B7893] print:flex-row">
-              <span>
+            {/* Footer — signed-data line + Powered by hidden in print */}
+            <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[#E8EBF0] pt-6 text-xs text-[#69748A] sm:flex-row dark:border-[#1E293B] dark:text-[#6B7893] print:flex-row print:border-[#E8EBF0]">
+              <span className="font-mono text-[12px]">
                 Signed data · generated{' '}
                 {new Date(state.data.generated_at).toLocaleString()}
               </span>
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 hover:text-[#2563EB] print:hidden"
+                className="inline-flex items-center gap-1.5 hover:text-[#2563EB] print:hidden rs-no-print"
               >
                 Powered by
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-[#2563EB]">
