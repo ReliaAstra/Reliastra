@@ -7,7 +7,11 @@ from app.core.exceptions import (
     ResourceNotFoundException,
     ValidationException,
 )
-from app.core.permissions import get_dependency_limit, get_min_check_interval
+from app.core.permissions import (
+    get_dependency_limit,
+    get_effective_plan,
+    get_min_check_interval,
+)
 from app.core.security import decrypt_jsonb, encrypt_jsonb
 from app.modules.dependencies.models import Dependency
 from app.modules.dependencies.repository import DependencyRepository
@@ -78,17 +82,21 @@ class DependencyService:
         if not org:
             raise ResourceNotFoundException("Organization not found")
 
-        min_interval = get_min_check_interval(org.plan)
+        # Limits are enforced against the EFFECTIVE plan: new organizations
+        # run on Professional limits during their 14-day trial.
+        effective = get_effective_plan(org.plan, org.created_at)
+
+        min_interval = get_min_check_interval(effective)
         if request.check_interval_seconds < min_interval:
             raise ValidationException(
-                f"Minimum check interval for plan '{org.plan}' is {min_interval} seconds."
+                f"Minimum check interval for the current plan is {min_interval} seconds."
             )
 
-        max_deps = get_dependency_limit(org.plan)
+        max_deps = get_dependency_limit(effective)
         current_count = await self.repository.count_for_org(session, org_id)
         if current_count >= max_deps:
             raise ConflictException(
-                f"Dependency limit reached for plan '{org.plan}' ({max_deps})."
+                f"Dependency limit reached for your current plan ({max_deps})."
             )
 
         from app.modules.agencies.repository import AgencyRepository
@@ -154,10 +162,11 @@ class DependencyService:
 
         org = await self.org_repository.get_by_id(session, org_id)
         if org and request.check_interval_seconds is not None:
-            min_interval = get_min_check_interval(org.plan)
+            effective = get_effective_plan(org.plan, org.created_at)
+            min_interval = get_min_check_interval(effective)
             if request.check_interval_seconds < min_interval:
                 raise ValidationException(
-                    f"Minimum check interval for plan '{org.plan}' is {min_interval} seconds."
+                    f"Minimum check interval for the current plan is {min_interval} seconds."
                 )
 
         update_kwargs: dict[str, Any] = {}

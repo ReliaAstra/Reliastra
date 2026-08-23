@@ -15,7 +15,7 @@ const FEATURES = [
 
 export function EvidenceSection() {
   return (
-    <section className="bg-white py-32 dark:bg-[#0A0A0F]">
+    <section id="evidence" className="bg-white py-32 dark:bg-[#0A0A0F]">
       <div className="mx-auto max-w-[1200px] px-6 md:px-12">
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <motion.div

@@ -19,17 +19,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pushRecent = useAppStore((s) => s.pushRecent);
 
   useEffect(() => {
-    document.documentElement.style.background = '#0B0F19';
-    document.body.style.background = '#0B0F19';
-    document.body.style.color = '#F8FAFC';
-    return () => {
-      document.documentElement.style.background = '';
-      document.body.style.background = '';
-      document.body.style.color = '';
-    };
-  }, []);
-
-  useEffect(() => {
     const labels: Record<string, string> = {
       '/dashboard': 'Dashboard',
       '/dependencies': 'Dependencies',
@@ -46,7 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <AppErrorBoundary>
       <div className="rs-app min-h-screen bg-rs-base text-rs-text">
         {!online && (
-          <div className="fixed inset-x-0 top-14 z-[45] border-b border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.1)] px-6 py-2 text-center text-sm text-rs-degraded">
+          <div className="fixed inset-x-0 top-14 z-[45] border-b border-rs-degraded/30 bg-rs-degraded/10 px-6 py-2 text-center text-sm text-rs-degraded">
             You are offline. Actions will retry when the connection returns.
           </div>
         )}

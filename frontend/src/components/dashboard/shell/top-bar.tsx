@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Menu } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
-import { getPlan, isPaid } from '@/lib/dashboard/plans';
+import { getPlan, isPaid, trialInfo } from '@/lib/dashboard/plans';
 import { initials } from '@/lib/dashboard/format';
 import { mockNotifications } from '@/lib/dashboard/mock';
 import { useMemo, useState } from 'react';
 import { timeAgo } from '@/lib/dashboard/format';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from './theme-toggle';
 
 function crumbs(pathname: string): { label: string; href?: string }[] {
   const map: Record<string, string> = {
@@ -46,7 +47,9 @@ export function TopBar() {
   const unread = useAppStore((s) => s.unreadCount);
   const setUnread = useAppStore((s) => s.setUnreadCount);
   const signOut = useAppStore((s) => s.signOut);
+  const org = useAppStore((s) => s.org);
   const current = getPlan(plan?.plan);
+  const trial = trialInfo(org?.created_at);
   const trail = useMemo(() => crumbs(pathname), [pathname]);
   const [bellOpen, setBellOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
@@ -82,8 +85,26 @@ export function TopBar() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-3">
-        {!isPaid(current.id) && (
+      <div className="flex items-center gap-2 sm:gap-3">
+        {trial.active && (
+          <button
+            type="button"
+            onClick={() => openUpgrade('trial')}
+            title="Your 14-day Professional trial — all features unlocked"
+            className="group hidden items-center gap-1.5 rounded-full border border-rs-brand/25 bg-rs-brand-subtle py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium tracking-[0.02em] text-rs-brand sm:inline-flex"
+          >
+            PRO TRIAL
+            <span
+              className={cn(
+                'rounded-full px-1.5 py-px font-mono text-[10px]',
+                trial.daysLeft <= 3 ? 'bg-rs-down/15 text-rs-down' : 'bg-rs-brand/15'
+              )}
+            >
+              {trial.daysLeft}d left
+            </span>
+          </button>
+        )}
+        {!isPaid(current.id) && !trial.active && (
           <button
             type="button"
             onClick={() => openUpgrade()}
@@ -92,6 +113,7 @@ export function TopBar() {
             Free
           </button>
         )}
+        <ThemeToggle className="hidden sm:inline-flex" />
         <button
           type="button"
           onClick={() => setCommand(true)}

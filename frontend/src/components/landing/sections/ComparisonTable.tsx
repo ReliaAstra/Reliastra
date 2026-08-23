@@ -41,7 +41,7 @@ function CellIcon({ value }: { value: CellValue }) {
 
 export function ComparisonTable() {
   return (
-    <section className="bg-white py-32 dark:bg-[#0A0A0F]">
+    <section id="comparison" className="bg-white py-32 dark:bg-[#0A0A0F]">
       <div className="mx-auto max-w-[1200px] px-6 md:px-12">
         <motion.div
           className="mx-auto mb-16 max-w-2xl text-center"

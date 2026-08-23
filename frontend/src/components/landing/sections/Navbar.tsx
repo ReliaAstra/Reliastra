@@ -15,10 +15,10 @@ import { ThemeToggle } from '@/components/partner/shared/theme-toggle';
 import { goTo, scrollToId } from '@/components/landing/theme';
 
 const NAV_LINKS = [
-  { label: 'Features', action: () => scrollToId('solution') },
-  { label: 'Pricing', action: () => scrollToId('pricing') },
-  { label: 'Partners', action: () => scrollToId('partners') },
+  { label: 'Product', action: () => scrollToId('evidence') },
   { label: 'Live Data', action: () => scrollToId('live') },
+  { label: 'Compare', action: () => scrollToId('comparison') },
+  { label: 'Pricing', action: () => scrollToId('pricing') },
 ];
 
 export function Navbar() {

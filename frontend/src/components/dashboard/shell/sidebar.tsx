@@ -15,6 +15,7 @@ import { getPlan, isPaid } from '@/lib/dashboard/plans';
 import { mockClients } from '@/lib/dashboard/mock';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
+import { ThemeToggle } from './theme-toggle';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -146,6 +147,9 @@ export function MobileSidebar() {
           </button>
         </div>
         <NavItems onNavigate={() => setOpen(false)} />
+        <div className="mt-auto pt-4">
+          <ThemeToggle className="w-full justify-center" />
+        </div>
         {!isPaid(current.id) ? (
           <RsButton className="mt-4" onClick={() => { setOpen(false); openUpgrade(); }}>
             Upgrade

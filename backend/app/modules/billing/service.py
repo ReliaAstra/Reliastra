@@ -16,11 +16,15 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.core.permissions import (
+    TRIAL_DAYS,
     Plan,
     get_dependency_limit,
+    get_effective_plan,
     get_min_check_interval,
     get_plan_price_usd,
     is_paid_plan,
+    is_trial_active,
+    trial_days_remaining,
 )
 from app.modules.billing.repository import BillingRepository
 from app.modules.billing.schemas import (
@@ -155,12 +159,21 @@ class BillingService:
         if not org:
             raise ResourceNotFoundException("Organization not found")
         subscription = await self.repository.get_subscription(session, org_id)
-        base_price = get_plan_price_usd(org.plan)
+
+        # 14-day trial: Free organizations operate on Professional limits
+        # until the window closes, then revert automatically.
+        effective_plan = get_effective_plan(org.plan, org.created_at)
+        trial_active = is_trial_active(org.created_at)
+        base_price = get_plan_price_usd(effective_plan)
         return PlanDetailsResponse(
             org_id=org.id,
             plan=org.plan,
-            max_dependencies=get_dependency_limit(org.plan),
-            min_check_interval_seconds=get_min_check_interval(org.plan),
+            effective_plan=effective_plan,
+            is_trial_active=trial_active,
+            trial_days_remaining=trial_days_remaining(org.created_at),
+            trial_length_days=TRIAL_DAYS,
+            max_dependencies=get_dependency_limit(effective_plan),
+            min_check_interval_seconds=get_min_check_interval(effective_plan),
             subscription_status=subscription.status if subscription else None,
             current_period_end=(
                 subscription.current_period_end if subscription else None

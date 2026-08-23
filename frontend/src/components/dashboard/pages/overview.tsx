@@ -10,11 +10,12 @@ import {
   Info,
   Link2,
   Plus,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
-import { getPlan, nextPlan } from '@/lib/dashboard/plans';
+import { getPlan, nextPlan, trialInfo, TRIAL_LENGTH_DAYS } from '@/lib/dashboard/plans';
 import {
   useHealth,
   useIncidents,
@@ -42,23 +43,86 @@ function uptimeColor(v: number) {
   return 'text-rs-down';
 }
 
-function LimitBanner() {
+function TrialBanner() {
+  const org = useAppStore((s) => s.org);
   const plan = useAppStore((s) => s.plan);
   const { data: summary } = useSummary();
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const current = getPlan(plan?.plan);
-  const nxt = nextPlan(plan?.plan);
-  const [hidden, setHidden] = useState(true);
+  const trial = trialInfo(org?.created_at);
+  const [hidden, setHidden] = useState(false);
   const count = summary?.active_dependencies_count ?? 0;
 
   useEffect(() => {
-    const dismissed = localStorage.getItem('reliastra_dismiss_limit_banner');
-    setHidden(Boolean(dismissed));
+    setHidden(localStorage.getItem('reliastra_dismiss_trial_banner') === '1');
   }, []);
 
   if (hidden) return null;
+
+  // ── Active trial: countdown + what you keep when you upgrade ──
+  if (trial.active) {
+    const urgent = trial.daysLeft <= 3;
+    return (
+      <div className="relative mb-6 overflow-hidden rounded-xl border border-rs-brand/25 bg-gradient-to-br from-rs-brand-subtle via-transparent to-transparent p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="shrink-0 text-rs-brand" />
+              <p className="text-sm font-semibold text-rs-text">
+                Professional Trial — {TRIAL_LENGTH_DAYS} days, every feature unlocked
+              </p>
+            </div>
+            <p className="mt-1 text-[13px] leading-relaxed text-rs-text-secondary">
+              You are on day {TRIAL_LENGTH_DAYS - trial.daysLeft} of {TRIAL_LENGTH_DAYS}.
+              {' '}Upgrade before it ends and your 100 dependencies, 5-second checks,
+              branded evidence reports and API access carry over — nothing to reconfigure.
+            </p>
+            <div className="mt-3 h-1.5 max-w-md overflow-hidden rounded-full bg-rs-hover">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-[width] duration-500',
+                  urgent ? 'bg-rs-down' : 'bg-rs-brand'
+                )}
+                style={{ width: `${Math.round(trial.elapsedPct * 100)}%` }}
+              />
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end">
+            <span
+              className={cn(
+                'font-mono text-2xl font-bold leading-none',
+                urgent ? 'text-rs-down' : 'text-rs-text'
+              )}
+            >
+              {trial.daysLeft}
+              <span className="ml-1 text-xs font-medium uppercase tracking-wide text-rs-text-tertiary">
+                day{trial.daysLeft === 1 ? '' : 's'} left
+              </span>
+            </span>
+            <RsButton onClick={() => openUpgrade('trial')} className="whitespace-nowrap px-4 py-2 text-[13px]">
+              Keep Professional
+            </RsButton>
+          </div>
+        </div>
+        <button
+          type="button"
+          aria-label="Dismiss"
+          className="absolute right-3 top-3 text-rs-text-tertiary transition-colors hover:text-rs-text"
+          onClick={() => {
+            localStorage.setItem('reliastra_dismiss_trial_banner', '1');
+            setHidden(true);
+          }}
+        >
+          <X size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  // ── Post-trial free plan: usage nudge ──
   if (current.id !== 'free') return null;
   if (count < 2) return null;
+  const nxt = nextPlan(current.id);
 
   return (
     <div className="relative mb-6 flex items-center justify-between rounded-[10px] border border-[rgba(37,99,235,0.2)] bg-rs-brand-subtle px-[18px] py-3.5">
@@ -69,7 +133,7 @@ function LimitBanner() {
             You are monitoring {count} of {current.dependencies} dependencies on the Free plan.
           </p>
           <p className="mt-0.5 text-[13px] text-rs-text-secondary">
-            Upgrade to Starter to monitor 10 dependencies and unlock 7-day retention.
+            Upgrade to {nxt.name} for {nxt.dependencies} dependencies and {nxt.retention} of history.
           </p>
         </div>
       </div>
@@ -77,7 +141,7 @@ function LimitBanner() {
         className="hidden shrink-0 px-3.5 py-1.5 text-[13px] sm:inline-flex"
         onClick={() => openUpgrade('limit')}
       >
-        Upgrade to Starter
+        Upgrade to {nxt.name}
       </RsButton>
       <button
         type="button"
@@ -251,6 +315,10 @@ export function OverviewPage() {
       icon: Link2,
       bg: 'rgba(37,99,235,0.1)',
       color: '#2563EB',
+      usage: {
+        used: summary?.active_dependencies_count ?? 0,
+        total: current.dependencies,
+      },
       context: `${Math.max(0, current.dependencies - (summary?.active_dependencies_count ?? 0))} remaining of ${current.dependencies}`,
       valueClass: 'text-rs-text',
     },
@@ -323,15 +391,39 @@ export function OverviewPage() {
                   <div className={cn('font-mono text-[32px] font-bold leading-none tracking-[-0.02em]', s.valueClass)}>
                     {s.value}
                   </div>
-                  {'context' in s && s.context && (
-                    <div className="mt-2 text-xs text-rs-text-tertiary">{s.context}</div>
+                  {'usage' in s && s.usage ? (
+                    <div className="mt-3">
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-rs-hover">
+                        <div
+                          className={cn(
+                            'h-full rounded-full',
+                            s.usage.used / s.usage.total >= 0.8 ? 'bg-rs-degraded' : 'bg-rs-brand'
+                          )}
+                          style={{
+                            width: `${Math.min(100, Math.round((s.usage.used / s.usage.total) * 100))}%`,
+                          }}
+                        />
+                      </div>
+                      {s.usage.used / s.usage.total >= 0.6 && (
+                        <button
+                          type="button"
+                          onClick={() => useAppStore.getState().openUpgrade('limit')}
+                          className="mt-1.5 text-[11px] font-medium text-rs-brand hover:underline"
+                        >
+                          Need more? See paid tiers →
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    'context' in s &&
+                    s.context && <div className="mt-2 text-xs text-rs-text-tertiary">{s.context}</div>
                   )}
                 </div>
               );
             })}
       </div>
 
-      <LimitBanner />
+      <TrialBanner />
 
       <SectionHeader
         title="Dependency health"

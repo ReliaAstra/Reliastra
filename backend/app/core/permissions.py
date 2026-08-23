@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta, timezone
 from enum import Enum
+
 from app.core.exceptions import ForbiddenException
 
 
@@ -182,6 +184,66 @@ PLAN_DESCRIPTIONS: dict[str, str] = {
 
 # Backward-compatible alias
 PLAN_AMOUNTS = PLAN_PRICES_USD
+
+
+# ── 14-Day Free Trial ─────────────────────────────────────────────────────────
+# Every new organization gets full Professional-tier capabilities free for 14
+# days from creation. No migration needed: eligibility is derived from the
+# organization's ``created_at`` timestamp. After expiry, organizations fall
+# back to their stored plan (Free unless they upgraded).
+
+TRIAL_DAYS = 14
+TRIAL_PLAN = Plan.PROFESSIONAL.value
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _as_aware(value: datetime) -> datetime:
+    """Treat naive timestamps as UTC (Postgres tz-aware columns pass through)."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def is_trial_active(org_created_at: datetime | None, now: datetime | None = None) -> bool:
+    """True while the organization is inside its 14-day trial window."""
+    if org_created_at is None:
+        return False
+    now = _as_aware(now or _utcnow())
+    created = _as_aware(org_created_at)
+    return now < created + timedelta(days=TRIAL_DAYS)
+
+
+def trial_days_remaining(org_created_at: datetime | None, now: datetime | None = None) -> int:
+    """Whole days of trial left, rounded UP (the final partial day counts).
+
+    Returns 0 once expired or when no timestamp is available.
+    """
+    if org_created_at is None:
+        return 0
+    now = _as_aware(now or _utcnow())
+    created = _as_aware(org_created_at)
+    remaining = (created + timedelta(days=TRIAL_DAYS)) - now
+    if remaining <= timedelta(0):
+        return 0
+    return int(-(-remaining.total_seconds() // 86_400))
+
+
+def get_effective_plan(org_plan: str, org_created_at: datetime | None) -> str:
+    """The plan whose LIMITS apply right now.
+
+    During the trial window a Free-tier organization operates with
+    Professional limits so teams can evaluate the full product. Enforcement
+    points MUST use this instead of the raw stored plan.
+    """
+    plan = (org_plan or Plan.FREE.value).lower()
+    if not is_valid_plan(plan):
+        plan = Plan.FREE.value
+    if plan == Plan.FREE.value and is_trial_active(org_created_at):
+        return TRIAL_PLAN
+    return plan
 
 
 # ── Helper Functions ──────────────────────────────────────────────────────────

@@ -141,3 +141,30 @@ export function retentionDays(plan: string | undefined | null): number {
   };
   return map[getPlan(plan).id];
 }
+
+// ── 14-Day Free Trial ────────────────────────────────────────────────────────
+// Mirrors backend permissions.py: Free organizations run on Professional
+// limits for 14 days from organization creation, then revert to Free.
+
+export const TRIAL_LENGTH_DAYS = 14;
+/** The tier whose limits apply during the trial window. */
+export const TRIAL_PLAN_ID: PlanId = 'professional';
+
+export interface TrialInfo {
+  active: boolean;
+  daysLeft: number;
+  /** 0..1 progress through the trial window (for countdown bars). */
+  elapsedPct: number;
+}
+
+export function trialInfo(orgCreatedAt?: string | null): TrialInfo {
+  if (!orgCreatedAt) return { active: false, daysLeft: 0, elapsedPct: 0 };
+  const created = new Date(orgCreatedAt).getTime();
+  if (Number.isNaN(created)) return { active: false, daysLeft: 0, elapsedPct: 0 };
+  const endsAt = created + TRIAL_LENGTH_DAYS * 86_400_000;
+  const now = Date.now();
+  if (now >= endsAt) return { active: false, daysLeft: 0, elapsedPct: 1 };
+  const daysLeft = Math.max(1, Math.ceil((endsAt - now) / 86_400_000));
+  const elapsedPct = Math.min(1, Math.max(0, (now - created) / (endsAt - created)));
+  return { active: true, daysLeft, elapsedPct };
+}

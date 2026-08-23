@@ -8,6 +8,12 @@ from pydantic import BaseModel, EmailStr, Field
 class PlanDetailsResponse(BaseModel):
     org_id: uuid.UUID
     plan: str
+    # Effective plan = the plan whose limits currently apply (Professional
+    # while a Free organization is inside its 14-day trial).
+    effective_plan: str
+    is_trial_active: bool = False
+    trial_days_remaining: int = 0
+    trial_length_days: int
     max_dependencies: int
     min_check_interval_seconds: int
     subscription_status: str | None = None
