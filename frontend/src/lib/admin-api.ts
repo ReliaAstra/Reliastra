@@ -40,6 +40,8 @@ import type {
   SupportOverviewResponse,
   SupportTicketWorkspaceResponse,
   SystemMetrics,
+  AdminAnalyticsOverview,
+  AbandonedCheckoutLead,
 } from '@/types/admin';
 
 export class AdminApiError extends Error {
@@ -266,6 +268,12 @@ export const adminApi = {
     }),
 
   revenueSummary: () => request<RevenueSummaryResponse>('/revenue/summary'),
+  analytics: (days = 14) =>
+    request<AdminAnalyticsOverview>('/analytics/overview', { params: { days } }),
+  abandonedCheckouts: (limit = 100) =>
+    request<{ items: AbandonedCheckoutLead[]; total: number }>('/analytics/abandoned-checkouts', {
+      params: { limit },
+    }),
   revenueTimeseries: (period: AdminPeriod, granularity: 'day' | 'week' | 'month' = 'day') =>
     request<RevenueTimeseriesResponse>('/revenue/timeseries', {
       params: { period, granularity },

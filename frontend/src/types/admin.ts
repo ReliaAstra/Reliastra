@@ -675,3 +675,54 @@ export interface AdminCurrentUser {
   created_at: string;
   updated_at: string;
 }
+
+// -- Traffic & funnel analytics ----------------------------------------------
+
+export interface AnalyticsSeriesPoint {
+  date: string;
+  visitors: number;
+  pageviews: number;
+  signups: number;
+  checkouts_started: number;
+  checkouts_converted: number;
+}
+
+export interface CountrySlice {
+  country: string;
+  views: number;
+}
+
+export interface AbandonedCheckoutLead {
+  org_id: string;
+  email: string;
+  plan: string;
+  amount_minor: number;
+  reference: string;
+  user_id?: string | null;
+  started_at: string;
+}
+
+export interface AdminAnalyticsOverview {
+  generated_at: string;
+  window_days: number;
+  visitors: {
+    unique_total: number;
+    unique_today: number;
+    pageviews_total: number;
+  };
+  signups: {
+    total: number;
+    last_7d: number;
+    conversion_rate: number;
+  };
+  checkout: {
+    started_total: number;
+    converted_total: number;
+    abandoned_total: number;
+    start_rate_from_signups: number;
+    abandonment_rate: number;
+    abandoned_leads: AbandonedCheckoutLead[];
+  };
+  countries_top: CountrySlice[];
+  series: AnalyticsSeriesPoint[];
+}

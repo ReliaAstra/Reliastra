@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowRight, CircleDollarSign, TrendingDown, TrendingUp, 
 import { adminApi } from '@/lib/admin-api';
 import { attentionHref, formatAdminCurrency, formatAdminDate, formatCompactNumber, formatPercent, formatRelativeTime } from '@/lib/admin-utils';
 import { cn } from '@/lib/utils';
+import { useChartTheme } from '@/components/admin/analytics-panel';
 import {
   AdminCard,
   AdminEmptyState,
@@ -65,6 +66,7 @@ export function RevenuePage() {
 }
 
 function RevenuePerformanceChart({ data, currency }: { data: Array<{ date: string; mrr: number; paying_customers?: number | null }>; currency: string }) {
+  const chartTheme = useChartTheme();
   if (!data.length) return <AdminEmptyState title="No revenue history yet." description="MRR history will appear after subscription activity is available." icon={CircleDollarSign} />;
   const latest = data[data.length - 1];
   return (
@@ -77,11 +79,11 @@ function RevenuePerformanceChart({ data, currency }: { data: Array<{ date: strin
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 12, right: 5, left: -18, bottom: 0 }}>
             <defs><linearGradient id="revenuePageGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#1d4ed8" stopOpacity={0.18} /><stop offset="1" stopColor="#1d4ed8" stopOpacity={0.01} /></linearGradient></defs>
-            <CartesianGrid vertical={false} stroke="#e7edf5" strokeDasharray="3 4" />
-            <XAxis dataKey="date" axisLine={false} tickLine={false} tickMargin={10} minTickGap={30} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={chartDate} />
-            <YAxis axisLine={false} tickLine={false} width={42} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={(value) => formatAdminCurrency(Number(value), currency, true)} />
-            <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 10px 24px rgba(15,23,42,.08)', fontSize: 12 }} labelFormatter={(value) => formatAdminDate(String(value))} formatter={(value) => [formatAdminCurrency(Number(value), currency), 'MRR']} />
-            <Area type="monotone" dataKey="mrr" stroke="#1d4ed8" strokeWidth={2.35} fill="url(#revenuePageGradient)" activeDot={{ r: 4, stroke: '#1d4ed8', strokeWidth: 2, fill: '#fff' }} />
+            <CartesianGrid vertical={false} stroke={chartTheme.grid} strokeDasharray="3 4" />
+            <XAxis dataKey="date" axisLine={false} tickLine={false} tickMargin={10} minTickGap={30} tick={{ fill: chartTheme.tick, fontSize: 10 }} tickFormatter={chartDate} />
+            <YAxis axisLine={false} tickLine={false} width={42} tick={{ fill: chartTheme.tick, fontSize: 10 }} tickFormatter={(value) => formatAdminCurrency(Number(value), currency, true)} />
+            <Tooltip contentStyle={{ borderRadius: 10, border: `1px solid ${chartTheme.tooltipBorder}`, background: chartTheme.tooltipBg, boxShadow: '0 10px 24px rgba(15,23,42,.08)', fontSize: 12 }} labelFormatter={(value) => formatAdminDate(String(value))} formatter={(value) => [formatAdminCurrency(Number(value), currency), 'MRR']} />
+            <Area type="monotone" dataKey="mrr" stroke="#1d4ed8" strokeWidth={2.35} fill="url(#revenuePageGradient)" activeDot={{ r: 4, stroke: '#1d4ed8', strokeWidth: 2, fill: chartTheme.dotFill }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

@@ -54,6 +54,7 @@ from app.modules.feed.router import feed_router
 from app.modules.status_pages.router import status_router, status_page_router
 from app.modules.admin.router import admin_router, public_announcements_router
 from app.modules.admin.seed import seed_first_admin
+from app.modules.analytics.router import public_analytics_router
 
 logger = logging.getLogger(__name__)
 
@@ -303,6 +304,7 @@ def create_app() -> FastAPI:
     app.include_router(partners_router)
     app.include_router(public_partners_router)
     app.include_router(admin_partners_router)
+    app.include_router(public_analytics_router)
 
     async def _run_health_checks() -> tuple[dict[str, Any], int]:
         checks: dict[str, Any] = {}

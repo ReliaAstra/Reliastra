@@ -233,13 +233,23 @@ class BillingService:
             )
         except httpx.HTTPError as exc:
             logger.warning("Paystack initialization failed: %s", exc)
-            raise ValidationException(
-                "Paystack transaction initialization failed"
-            ) from exc
+            raise ValidationException("Paystack transaction initialization failed") from exc
 
         data = result.get("data") if isinstance(result.get("data"), dict) else {}
         if not result.get("status") or not data:
             raise ValidationException("Paystack transaction initialization failed")
+
+        # Funnel analytics: this organization reached checkout with a
+        # reachable email. If they never pay, sales can follow up manually.
+        from app.modules.analytics.service import analytics_service
+
+        await analytics_service.record_checkout_started(
+            str(org_id),
+            email=email,
+            plan=plan,
+            amount_minor=base_amount,
+            reference=str(data.get("reference") or ""),
+        )
         try:
             return InitializePaymentResponse(
                 authorization_url=data["authorization_url"],
@@ -361,6 +371,12 @@ class BillingService:
         from app.modules.organizations.repository import OrganizationRepository
 
         await OrganizationRepository.update(session, org, plan=plan)
+
+        # Funnel analytics: this checkout lead converted. Single choke point
+        # covers both the frontend verify call and the charge.success webhook.
+        from app.modules.analytics.service import analytics_service
+
+        await analytics_service.record_checkout_converted(str(org_id))
 
         # Partner network: a verified, collected payment is the only thing
         # that creates commission. We pass the amount Paystack reports as

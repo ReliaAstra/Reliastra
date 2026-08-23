@@ -149,6 +149,50 @@ async def admin_search(
 
 
 # =============================================================================
+# Traffic & funnel analytics (visitors, countries, signup conversion,
+# checkout starts/abandonment with reachable leads)
+# =============================================================================
+
+
+@overview_router.get(
+    "/analytics/overview",
+    summary="Traffic, geography and conversion funnel",
+    description=(
+        "Unique visitors and pageviews (HyperLogLog), country breakdown from "
+        "CDN headers / ipinfo with Redis caching, signup counts from the "
+        "database, and the checkout funnel including abandoned-checkout leads "
+        "with org id + email for manual outreach."
+    ),
+)
+async def get_admin_analytics_overview(
+    request: Request,
+    days: int = Query(default=14, ge=7, le=60),
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> dict:
+    from app.modules.analytics.service import analytics_service
+
+    return await analytics_service.overview(days=days)
+
+
+@overview_router.get(
+    "/analytics/abandoned-checkouts",
+    summary="Abandoned checkout leads (org id + email)",
+    description="Organizations that reached Paystack checkout but never completed payment.",
+)
+async def get_admin_abandoned_checkouts(
+    request: Request,
+    limit: int = Query(default=100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> dict:
+    from app.modules.analytics.service import analytics_service
+
+    leads = await analytics_service.abandoned_checkouts(limit=limit)
+    return {"items": leads, "total": len(leads)}
+
+
+# =============================================================================
 # Customers — operational customer control plane
 # =============================================================================
 

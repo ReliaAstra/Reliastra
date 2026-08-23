@@ -161,9 +161,16 @@ class Settings(BaseSettings):
     PAYSTACK_CURRENCY: str = Field(
         default="USD",
         description="ISO currency code sent with Paystack transaction "
-        "initialization. Without it Paystack charges in the "
-        "merchant account's default currency, which silently "
-        "reprices USD-denominated plans.",
+                    "initialization. Without it Paystack charges in the "
+                    "merchant account's default currency, which silently "
+                    "reprices USD-denominated plans.",
+    )
+    IPINFO_TOKEN: str = Field(
+        default="",
+        description="ipinfo.io token for visitor country resolution. "
+                    "Optional: Cloudflare/Vercel edge headers take priority "
+                    "when present, and a free ipapi.co fallback is used "
+                    "without a token (rate-limited). Results cached 7 days.",
     )
     SMTP_USE_TLS: bool = Field(
         default=False,

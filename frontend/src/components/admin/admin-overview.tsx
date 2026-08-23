@@ -27,6 +27,7 @@ import {
   YAxis,
 } from 'recharts';
 import { adminApi } from '@/lib/admin-api';
+import { AdminAnalyticsPanel } from '@/components/admin/analytics-panel';
 import {
   attentionHref,
   formatAdminCurrency,
@@ -52,6 +53,7 @@ import {
   StatusPill,
   useAdminPeriod,
 } from '@/components/admin/admin-primitives';
+import { useChartTheme } from '@/components/admin/analytics-panel';
 import { cn } from '@/lib/utils';
 
 export function AdminOverview() {
@@ -140,6 +142,8 @@ export function AdminOverview() {
       </section>
 
       <RevenueSection period={period} />
+
+      <AdminAnalyticsPanel />
 
       <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
         <CustomerSignals overview={overview} attention={attention} />
@@ -297,6 +301,7 @@ function RevenueChart({
   data: Array<{ date: string; mrr: number }>;
   currency: string;
 }) {
+  const chartTheme = useChartTheme();
   if (data.length === 0) {
     return <AdminEmptyState title="No revenue history yet." description="MRR history will appear here as active subscription data accumulates." icon={CircleDollarSign} />;
   }
@@ -319,30 +324,30 @@ function RevenueChart({
                 <stop offset="100%" stopColor="#2563eb" stopOpacity={0.01} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#e9edf3" strokeDasharray="3 4" />
+            <CartesianGrid vertical={false} stroke={chartTheme.grid} strokeDasharray="3 4" />
             <XAxis
               dataKey="date"
               axisLine={false}
               tickLine={false}
               tickMargin={10}
               minTickGap={28}
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: chartTheme.tick, fontSize: 10 }}
               tickFormatter={(value) => formatChartDate(value)}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               width={40}
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: chartTheme.tick, fontSize: 10 }}
               tickFormatter={(value) => formatAdminCurrency(Number(value), currency, true)}
             />
             <Tooltip
-              cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-              contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 10px 24px rgba(15,23,42,.08)', fontSize: 12 }}
+              cursor={{ stroke: chartTheme.cursor, strokeWidth: 1 }}
+              contentStyle={{ borderRadius: 10, border: `1px solid ${chartTheme.tooltipBorder}`, background: chartTheme.tooltipBg, boxShadow: '0 10px 24px rgba(15,23,42,.08)', fontSize: 12 }}
               labelFormatter={(label) => formatAdminDate(String(label))}
               formatter={(value) => [formatAdminCurrency(Number(value), currency), 'MRR']}
             />
-            <Area type="monotone" dataKey="mrr" stroke="#2563eb" strokeWidth={2.2} fill="url(#adminMrrArea)" activeDot={{ r: 4, strokeWidth: 2, fill: '#fff', stroke: '#2563eb' }} />
+            <Area type="monotone" dataKey="mrr" stroke="#2563eb" strokeWidth={2.2} fill="url(#adminMrrArea)" activeDot={{ r: 4, strokeWidth: 2, fill: chartTheme.dotFill, stroke: '#2563eb' }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
