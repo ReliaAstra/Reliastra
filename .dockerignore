@@ -1,0 +1,36 @@
+# Keep the all-in-one build context small and secret-free.
+
+**/.git
+**/.github
+**/.venv
+**/node_modules
+**/.next
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+
+# Local data / artifacts that must never ship in an image
+frontend/db/
+frontend/download/
+frontend/tool-results/
+frontend/public/screenshots/
+*.db
+*.sqlite3
+*.png
+
+# Environment files — secrets never enter the build context
+**/.env
+**/.env.*
+!**/.env.example
+
+# Docs and editor noise
+docs/
+*.md
+!README.md
+.vscode/
+.idea/
+
+# Deploy tooling not needed inside the image
+backend/docker-compose*.yml
+backend/celery_worker.dockerfile

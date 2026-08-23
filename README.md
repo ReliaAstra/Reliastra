@@ -129,6 +129,38 @@ npm run lint
 
 Or from the repo root: `make test` (backend pytest) and `make lint`.
 
+## All-in-one container
+
+A single production image runs the entire stack — frontend (:3000), API (:8000), Redis, and Celery worker/beat under `supervisord`:
+
+```bash
+docker build -t reliastra-allinone .
+
+docker run -d --name reliastra \
+  -p 3000:3000 -p 8000:8000 \
+  -e DATABASE_URL="postgresql+asyncpg://postgres.<ref>:<pw>@aws-0-<region>.pooler.supabase.com:6543/postgres" \
+  -e SECRET_KEY="$(openssl rand -hex 32)" \
+  -e ENVIRONMENT=production \
+  -e SUPABASE_S3_ENDPOINT="https://<ref>.supabase.co/storage/v1/s3" \
+  -e SUPABASE_S3_REGION="eu-west-3" \
+  -e SUPABASE_S3_ACCESS_KEY_ID="..." \
+  -e SUPABASE_S3_SECRET_ACCESS_KEY="..." \
+  -e SUPABASE_S3_BUCKET="reliastra-evidence" \
+  reliastra-allinone
+```
+
+The entrypoint validates configuration, runs `alembic upgrade head`, then supervisord starts everything. The frontend proxies `/api/*` to this container's API by default (`RELIASTRA_API_URL=http://127.0.0.1:8000`); override for split deployments.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DATABASE_URL` | required | Supabase Postgres (asyncpg URI) |
+| `SECRET_KEY` | dev default | JWT/encryption secret (required in production) |
+| `ENVIRONMENT` | `development` | Set to `production` to enable strict validation |
+| `REDIS_URL` | in-container redis | External broker/cache override |
+| `RELIASTRA_API_URL` | `http://127.0.0.1:8000` | Where the frontend proxies API calls |
+| `ENABLE_CELERY` | `true` | Set `false` when a dedicated worker deployment owns scheduling |
+| `API_WORKERS` | `2` | Uvicorn worker processes |
+
 ## Production architecture
 
 Frontend and backend deploy independently. This monorepo does not force a combined release.
