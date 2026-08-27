@@ -326,16 +326,22 @@ class NotificationService:
             ex=60,
         )
         if claimed is None:
-            # Redis is unreachable. Treat the alert as new: a duplicate
-            # notification is noise, but a suppressed one means the customer
-            # never hears about an outage.
+            # Redis is unreachable, so duplication is unknown. Deliberate
+            # fail-open: dedupe is a noise optimisation, but suppression is
+            # data loss — a missed alert means the customer never learns
+            # their service is down, during the exact window when our own
+            # infrastructure is degraded. Bounded risk: the worst case is
+            # repeated notifications for 60s, and the WARNING makes it
+            # attributable rather than mysterious.
             logger.warning(
                 "Alert dedupe store unavailable — dispatching '%s' without "
                 "deduplication",
                 alert.title,
             )
             return False
-        return not claimed
+        if claimed is True:
+            return False  # we own the window; this alert is new
+        return True  # claimed is False -> genuine duplicate inside the window
 
     async def dispatch_alert(
         self, session: AsyncSession, alert: AlertPayload

@@ -155,10 +155,15 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             lock_key = f"{cache_key}:lock"
             acquired = await safe_redis_claim(lock_key, ex=60)
             if acquired is None:
-                # Redis is unreachable. Without it there is no single-flight
-                # lock to take, but answering 409 would turn a Redis outage
-                # into a total outage of every idempotent POST/PATCH. Degrade
-                # to executing the request unguarded.
+                # Redis is unreachable, so no single-flight lock can be taken.
+                # Deliberate fail-open for availability: answering 409 would
+                # misreport an infrastructure failure as a client duplicate
+                # and turn a Redis outage into a total outage of every
+                # idempotent POST/PATCH. Requests proceed unguarded, so the
+                # tradeoff is that genuinely concurrent retries may both
+                # execute; handlers that must not double-apply enforce that
+                # durably in the database (e.g. commissions are unique on
+                # payment_reference), which is the real correctness boundary.
                 logger.warning(
                     "Idempotency lock store unavailable — processing %s %s "
                     "without single-flight protection",
@@ -166,7 +171,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                     request.url.path,
                 )
                 return await call_next(request)
-            if not acquired:
+            if acquired is False:
                 return Response(
                     status_code=status.HTTP_409_CONFLICT,
                     media_type="application/json",

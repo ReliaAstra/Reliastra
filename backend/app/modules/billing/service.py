@@ -14,6 +14,7 @@ from app.core.exceptions import (
     ResourceNotFoundException,
     UnauthorizedException,
     ValidationException,
+    ServiceUnavailableException,
 )
 from app.core.permissions import (
     TRIAL_DAYS,
@@ -314,19 +315,39 @@ class BillingService:
             raise ValidationException(
                 f"Plan '{plan}' is not available for self-serve checkout"
             )
-        # PLAN_AMOUNTS is denominated in minor units of PAYSTACK_CURRENCY, so
-        # comparing a raw integer is only meaningful once the currency matches.
-        # A multi-currency Paystack account can settle the same nominal amount
-        # in a far weaker currency (9900 NGN is ~$6, not $99), which would
-        # clear this check and unlock the tier. Checkout always initializes
-        # with settings.PAYSTACK_CURRENCY, so anything else is not ours.
-        expected_currency = (settings.PAYSTACK_CURRENCY or "USD").upper()
-        collected_currency = str(data.get("currency") or expected_currency).upper()
+        # Step 1 — CURRENCY. PLAN_AMOUNTS is denominated in minor units of
+        # PAYSTACK_CURRENCY, so the integer comparison below is meaningless
+        # until the denomination is known to match. A multi-currency Paystack
+        # account can settle the same nominal amount in a far weaker currency
+        # (9900 NGN is about $6, not $99) and clear an amount-only check.
+        # Checkout always initializes with settings.PAYSTACK_CURRENCY, so
+        # anything else did not come from our checkout.
+        #
+        # A MISSING currency is rejected too: defaulting it to the expected
+        # value would let an omitted field pass the very check it must face.
+        expected_currency = (settings.PAYSTACK_CURRENCY or "USD").strip().upper()
+        raw_currency = data.get("currency")
+        collected_currency = str(raw_currency).strip().upper() if raw_currency else ""
         if collected_currency != expected_currency:
+            logger.warning(
+                "Rejected transaction %s: currency %r != expected %r",
+                reference,
+                collected_currency or None,
+                expected_currency,
+            )
             raise ValidationException(
                 "Payment currency does not match the billing currency"
             )
-        if collected is None or int(collected) < expected_amount:
+
+        # Step 2 — AMOUNT, now that both sides are in the same minor units.
+        # Integer comparison only; never floats for money.
+        if collected is None:
+            raise ValidationException("Transaction is missing a collected amount")
+        try:
+            collected_minor = int(collected)
+        except (TypeError, ValueError) as exc:
+            raise ValidationException("Transaction amount is not an integer") from exc
+        if collected_minor < expected_amount:
             raise ValidationException(
                 "Collected payment does not cover the selected plan price"
             )
@@ -452,32 +473,25 @@ class BillingService:
             return None
         return f"{event_type}:{event_id}"
 
-    async def _claim_webhook_event(self, event_id: str) -> bool:
-        """Return True when this process should process *event_id*.
+    async def _claim_webhook_event(self, event_id: str) -> bool | None:
+        """Claim *event_id* for processing. Tri-state — see the return values.
 
         Uses a Redis SET-NX with a 24h TTL so Paystack retries (which resend
-        the same event) never double-process ``charge.success``. Redis
-        failures fail open (the webhook is processed) rather than dropping
-        payments.
+        the same event) never double-process ``charge.success``.
+
+        Returns:
+            True  — claimed; this delivery should be processed.
+            False — the event was already processed; skip it.
+            None  — the idempotency store is unreachable, so we cannot tell.
+
+        ``None`` is deliberately NOT collapsed into either bool. The caller
+        must decide, because both defaults are wrong: treating it as a
+        duplicate drops the payment, and treating it as claimed processes a
+        money event with no duplicate protection at all.
         """
         from app.infrastructure.redis_client import safe_redis_claim
 
-        claimed = await safe_redis_claim(
-            f"paystack:event:{event_id}", ex=24 * 3600
-        )
-        if claimed is None:
-            # Redis is unreachable, so we cannot tell whether this is a
-            # retry. Process it: `verify_transaction` is itself idempotent,
-            # whereas skipping means the payment is never provisioned AND
-            # we return 200, so Paystack never retries. Losing money is far
-            # worse than doing the work twice.
-            logger.warning(
-                "Idempotency store unavailable for Paystack event %s — "
-                "processing anyway to avoid dropping the payment",
-                event_id,
-            )
-            return True
-        return claimed
+        return await safe_redis_claim(f"paystack:event:{event_id}", ex=24 * 3600)
 
     async def handle_webhook(
         self,
@@ -508,9 +522,32 @@ class BillingService:
 
         # FIX 31: idempotency — skip events already processed in the last 24h.
         event_id = self._webhook_event_id(payload)
-        if event_id and not await self._claim_webhook_event(event_id):
-            logger.info("Skipping duplicate Paystack webhook event %s", event_id)
-            return PaystackWebhookResponse(received=True, event_type=event_type)
+        if event_id:
+            claimed = await self._claim_webhook_event(event_id)
+            if claimed is False:
+                logger.info("Skipping duplicate Paystack webhook event %s", event_id)
+                return PaystackWebhookResponse(received=True, event_type=event_type)
+            if claimed is None:
+                # The idempotency store is down, so this delivery cannot be
+                # de-duplicated. Refuse it instead of guessing.
+                #
+                # Answering 200 would permanently tell Paystack the event was
+                # accepted, and every unprocessed payment, refund and
+                # chargeback would be lost with no way to replay it. A 503
+                # keeps the event in Paystack's retry queue until the store
+                # recovers. The customer-facing /billing/verify path also
+                # provisions independently, so this defers work rather than
+                # losing it.
+                logger.error(
+                    "Paystack webhook idempotency store unavailable — refusing "
+                    "event %s (type=%s) so Paystack retries it",
+                    event_id,
+                    event_type,
+                    extra={"event_id": event_id, "event_type": event_type},
+                )
+                raise ServiceUnavailableException(
+                    "Webhook idempotency store unavailable; please retry"
+                )
 
         if event_type == "charge.success" and data.get("reference"):
             await self.verify_transaction(session, str(data["reference"]))
