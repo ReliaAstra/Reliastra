@@ -321,6 +321,27 @@ class EmailOTPService:
         )
         await self.user_repository.update(session, user, is_email_verified=True)
         logger.info("Email verified via OTP for user %s", user.id)
+
+        # Welcome email: verification is the moment a signup becomes a real
+        # account — greet them. Failure-isolated, same contract as issue_code:
+        # a broken SMTP layer must never fail verification.
+        try:
+            from app.modules.auth.email_service import email_auth_service
+            from app.modules.organizations.repository import OrganizationRepository
+
+            orgs = await OrganizationRepository.list_for_user(session, user.id)
+            org_name = orgs[0].name if orgs else None
+            await email_auth_service.send_welcome_email(
+                email=user.email,
+                full_name=user.full_name,
+                org_name=org_name,
+            )
+        except Exception:
+            logger.exception(
+                "Welcome email failed after OTP verification for user %s",
+                user.id,
+            )
+
         return user
 
 

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -160,6 +161,131 @@ The Reliastra Team
 
         return plain, html
 
+    # ── Welcome Email ───────────────────────────────────────────────
+
+    @staticmethod
+    async def _first_org_name(session: AsyncSession, user_id) -> str | None:
+        """Name of the user's first (ownership) workspace, for the greeting."""
+        try:
+            from app.modules.organizations.repository import OrganizationRepository
+
+            orgs = await OrganizationRepository.list_for_user(session, user_id)
+            return orgs[0].name if orgs else None
+        except Exception:
+            logger.debug("welcome email: org lookup failed", exc_info=True)
+            return None
+
+    def _render_welcome_email(
+        self, user_name: str, org_name: str | None, dashboard_url: str
+    ) -> tuple[str, str]:
+        """Returns (plain_text, html_body) for the post-signup welcome email."""
+        if org_name:
+            workspace_line = f'Your workspace "{org_name}" has been created on the free plan.'
+            workspace_html = f"Your workspace <strong>{org_name}</strong> has been created on the free plan."
+        else:
+            workspace_line = "Your workspace has been created on the free plan."
+            workspace_html = "Your workspace has been created on the free plan."
+        plain = f"""
+Hello {user_name},
+
+Welcome to Reliastra — your account is ready.
+
+{workspace_line} Reliastra watches the third-party APIs and vendors your product depends on, correlates outages with your incidents, and generates verifiable SLA evidence.
+
+Get started in two minutes:
+1. Open your dashboard: {dashboard_url}
+2. Add your first dependency (Stripe, AWS, OpenAI, ...).
+3. Reliastra starts monitoring and attributing blame automatically.
+
+If you did not create this account, please ignore this email.
+
+Best regards,
+The Reliastra Team
+        """.strip()
+
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }}
+    .container {{ max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
+    .header {{ background: #1a1a2e; color: white; padding: 24px; text-align: center; }}
+    .header h1 {{ margin: 0; font-size: 22px; }}
+    .body {{ padding: 32px; }}
+    .body p {{ color: #333; line-height: 1.6; margin: 0 0 16px; }}
+    .steps {{ background: #f6f8ff; border: 1px solid #e3e9ff; border-radius: 8px; padding: 16px 20px; margin: 0 0 16px; }}
+    .steps li {{ color: #333; line-height: 1.6; margin: 6px 0; }}
+    .button {{ display: inline-block; background: #4361ee; color: white !important; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; margin: 16px 0; }}
+    .footer {{ padding: 20px 32px; background: #f9f9f9; text-align: center; font-size: 13px; color: #888; }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to Reliastra</h1>
+    </div>
+    <div class="body">
+      <p>Hello <strong>{user_name}</strong>,</p>
+      <p>Your account is ready. {workspace_html}</p>
+      <p>Reliastra watches the third-party APIs and vendors your product depends on, correlates outages with your incidents, and generates verifiable SLA evidence.</p>
+      <div class="steps">
+        <strong>Get started in two minutes:</strong>
+        <ol style="margin: 8px 0 0; padding-left: 18px;">
+          <li>Open your dashboard</li>
+          <li>Add your first dependency (Stripe, AWS, OpenAI, ...)</li>
+          <li>We start monitoring and attributing blame automatically</li>
+        </ol>
+      </div>
+      <p style="text-align: center;">
+        <a href="{dashboard_url}" class="button">Open your dashboard</a>
+      </p>
+      <p style="font-size: 13px; color: #888;">
+        If you did not create this account, you can safely ignore this email.
+      </p>
+    </div>
+    <div class="footer">
+      <p>Reliastra — External Dependency Intelligence</p>
+    </div>
+  </div>
+</body>
+</html>
+        """.strip()
+
+        return plain, html
+
+    async def send_welcome_email(
+        self, email: str, full_name: str | None, org_name: str | None = None
+    ) -> bool:
+        """Send the post-signup welcome email. Returns True if delivered.
+
+        Never raises: SMTP failures are logged and reported as False so the
+        caller (registration / verification) is never blocked by email delivery.
+        """
+        display_name = (full_name or "").strip() or email.split("@")[0]
+        base_url = settings.FRONTEND_BASE_URL or "http://localhost:3000"
+        dashboard_url = f"{base_url}/dashboard"
+        plain, html = self._render_welcome_email(display_name, org_name, dashboard_url)
+        try:
+            # EmailClient.send_email is sync SMTP — run it off the event loop
+            # exactly as its docstring instructs.
+            sent = await asyncio.to_thread(
+                email_client.send_email,
+                to_email=email,
+                subject="Welcome to Reliastra — your workspace is ready",
+                body=plain,
+                html_body=html,
+            )
+        except Exception:
+            logger.warning("Welcome email to %s failed to send", email, exc_info=True)
+            return False
+        if not sent:
+            logger.warning("Welcome email to %s was not delivered (SMTP error)", email)
+        else:
+            logger.info("Welcome email sent to %s", email)
+        return bool(sent)
+
     # ── Email Verification ──────────────────────────────────────────
 
     async def send_verification_email(
@@ -246,8 +372,25 @@ The Reliastra Team
         # Mark user's email as verified
         user = await self.user_repository.get_by_id(session, stored.user_id)
         if user:
+            was_unverified = not user.is_email_verified
             await self.user_repository.update(session, user, is_email_verified=True)
             logger.info("Email verified for user %s", user.id)
+            if was_unverified:
+                # Magic-link verification is an alternate completion of the
+                # same signup — welcome exactly once, only on the transition.
+                # Failure-isolated: email must never fail verification.
+                try:
+                    org_name = await self._first_org_name(session, user.id)
+                    await self.send_welcome_email(
+                        email=user.email,
+                        full_name=user.full_name,
+                        org_name=org_name,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Welcome email failed after link verification for user %s",
+                        user.id,
+                    )
 
         return {
             "message": "Email verified successfully.",
