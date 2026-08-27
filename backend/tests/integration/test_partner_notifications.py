@@ -25,6 +25,7 @@ from app.modules.partners.commissions import commission_service
 from app.modules.partners.constants import CommissionStatus
 from app.modules.partners.models import PartnerCommission, PartnerProfile
 from app.modules.users.models import User
+from tests.helpers import register_and_verify
 
 
 async def _register(async_client, email, full_name, ref_code=None):
@@ -36,9 +37,8 @@ async def _register(async_client, email, full_name, ref_code=None):
     }
     if ref_code:
         payload["ref_code"] = ref_code
-    res = await async_client.post("/v1/auth/register", json=payload)
-    assert res.status_code == 201, res.text
-    body = res.json()
+    # Registration is gated on email verification — walk the OTP flow.
+    body = await register_and_verify(async_client, payload)
     return {
         "token": body["tokens"]["access_token"],
         "headers": {"Authorization": f"Bearer {body['tokens']['access_token']}"},

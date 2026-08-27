@@ -42,7 +42,33 @@ export interface OrganizationLite {
 export interface RegisterResponse {
   user: UserResponseLite;
   organization: OrganizationLite;
+  /**
+   * ALWAYS null. Email verification is a hard gate: registration creates the
+   * account but issues no session. Tokens come from `POST /auth/verify-otp`
+   * once the emailed 6-digit code is submitted.
+   */
+  tokens: TokenResponse | null;
+  verification_required: boolean;
+  message: string;
+}
+
+export interface VerifyOtpRequest {
+  email: string;
+  /** Exactly 6 digits. */
+  code: string;
+}
+
+export interface VerifyOtpResponse {
+  message: string;
+  is_email_verified: boolean;
+  user: UserResponseLite;
+  organization: OrganizationLite | null;
   tokens: TokenResponse;
+}
+
+export interface ResendOtpResponse {
+  message: string;
+  expires_in_minutes: number;
 }
 
 export interface ForgotPasswordRequest {

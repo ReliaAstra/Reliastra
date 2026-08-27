@@ -7,6 +7,7 @@ from app.modules.checks.service import check_service
 
 
 from app.infrastructure.email import email_client
+from tests.helpers import register_and_verify
 
 class Handler500(http.server.BaseHTTPRequestHandler):
     def do_GET(self) -> None:
@@ -68,17 +69,15 @@ async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker)
     send_email_spy = mocker.spy(email_client, "send_email")
 
     # 1. Create org + user
-    reg_res = await async_client.post(
-        "/v1/auth/register",
-        json={
+    body = await register_and_verify(
+        async_client,
+        {
             "email": "e2e-owner@reliastra.com",
             "password": "SuperSecret123!",
             "full_name": "E2E Owner",
             "org_name": "E2E Test Organization",
         },
     )
-    assert reg_res.status_code == 201, reg_res.text
-    body = reg_res.json()
     token_data = body["tokens"]
     org_id = body["organization"]["id"]
     headers = {

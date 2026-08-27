@@ -16,6 +16,9 @@ import type {
   PartnerTicketListResponse,
   PartnerTicketMessageItem,
   ForgotPasswordRequest,
+  ResendOtpResponse,
+  VerifyOtpRequest,
+  VerifyOtpResponse,
   PartnerApplyRequest,
   Partner,
 } from '@/types/partner';
@@ -74,9 +77,27 @@ export const partnerApi = {
   },
 
   async signup(data: RegisterRequest) {
-    return request<RegisterResponse>('/auth/signup', {
+    // Returns `tokens: null` — the account is inert until the emailed code
+    // is submitted via `verifyOtp`.
+    return request<RegisterResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  /** Clear the signup email-verification gate. Issues the session. */
+  async verifyOtp(data: VerifyOtpRequest) {
+    return request<VerifyOtpResponse>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /** Request a fresh signup code (throttled per IP and per account). */
+  async resendOtp(email: string) {
+    return request<ResendOtpResponse>('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
     });
   },
 

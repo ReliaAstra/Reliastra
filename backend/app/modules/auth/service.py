@@ -5,7 +5,12 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.core.exceptions import ConflictException, UnauthorizedException
+from app.core.exceptions import (
+    ConflictException,
+    ForbiddenException,
+    RateLimitExceededException,
+    UnauthorizedException,
+)
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -13,7 +18,12 @@ from app.core.security import (
     get_password_hash,
     verify_password,
 )
-from app.modules.auth.constants import TOKEN_CLAIM_TYPE_REFRESH, TOKEN_TYPE_BEARER
+from app.modules.auth.constants import (
+    EMAIL_NOT_VERIFIED_CODE,
+    TOKEN_CLAIM_TYPE_REFRESH,
+    TOKEN_TYPE_BEARER,
+)
+from app.modules.auth.otp_service import email_otp_service
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.schemas import (
     LoginRequest,
@@ -136,19 +146,27 @@ class AuthService:
                 user.id,
             )
 
-        tokens = self._generate_token_pair(user.id)
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-        )
-        await self.auth_repository.create_refresh_token(
-            session, user.id, tokens.refresh_token, expires_at
-        )
+        # HARD GATE: no tokens are issued at registration. The account exists
+        # but is inert until the emailed 6-digit code is submitted to
+        # /v1/auth/verify-otp. Issuing the code is best-effort — a dead SMTP
+        # server must not roll back a successful signup, and the user can
+        # always hit "Resend code".
+        try:
+            await email_otp_service.issue_code(session, user, enforce_cooldown=False)
+        except Exception:
+            logger.exception(
+                "Failed to issue email verification code during registration "
+                "for user %s",
+                user.id,
+            )
+
         return RegisterResponse(
             user=UserResponseLite(
                 id=user.id,
                 email=user.email,
                 full_name=user.full_name,
                 is_active=user.is_active,
+                is_email_verified=user.is_email_verified,
             ),
             organization=OrganizationLite(
                 id=org.id,
@@ -156,9 +174,22 @@ class AuthService:
                 slug=org.slug,
                 plan=org.plan,
             ),
-            tokens=tokens,
+            tokens=None,
+            verification_required=True,
         )
 
+    async def issue_session(
+        self, session: AsyncSession, user_id: uuid.UUID
+    ) -> TokenResponse:
+        """Mint and persist a token pair for *user_id*."""
+        tokens = self._generate_token_pair(user_id)
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
+        await self.auth_repository.create_refresh_token(
+            session, user_id, tokens.refresh_token, expires_at
+        )
+        return tokens
     async def login(
         self, session: AsyncSession, request: LoginRequest
     ) -> TokenResponse:
@@ -167,6 +198,31 @@ class AuthService:
             raise UnauthorizedException("Invalid email or password")
         if not user.is_active:
             raise UnauthorizedException("User account is disabled")
+
+        # HARD GATE: correct credentials are not enough — the address must be
+        # proven. Runs *after* the password check so the response cannot be
+        # used to enumerate which addresses are registered.
+        if not user.is_email_verified:
+            # Send a fresh code so the client can go straight to the code
+            # screen. Cooldown breaches are swallowed: the user still has a
+            # live code, and the 403 below tells them what to do with it.
+            try:
+                await email_otp_service.issue_code(session, user)
+            except RateLimitExceededException:
+                logger.info(
+                    "Verification code resend suppressed by cooldown for user %s",
+                    user.id,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to reissue verification code at login for user %s",
+                    user.id,
+                )
+            raise ForbiddenException(
+                "Verify your email address to sign in. We've sent a 6-digit "
+                "code to your inbox.",
+                details={"code": EMAIL_NOT_VERIFIED_CODE, "email": user.email},
+            )
 
         tokens = self._generate_token_pair(user.id)
         expires_at = datetime.now(timezone.utc) + timedelta(
@@ -220,6 +276,14 @@ class AuthService:
         user = await self.user_repository.get_by_id(session, user_id)
         if not user or not user.is_active:
             raise UnauthorizedException("User account not found or disabled")
+        # A session can only be extended while the gate is still satisfied —
+        # e.g. an admin un-verifying an account kills its refresh chain.
+        if not user.is_email_verified:
+            await self.auth_repository.revoke_family(session, family)
+            raise ForbiddenException(
+                "Email address is not verified.",
+                details={"code": EMAIL_NOT_VERIFIED_CODE},
+            )
 
         tokens = self._generate_token_pair(user.id)
         expires_at = datetime.now(timezone.utc) + timedelta(
