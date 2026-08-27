@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,9 +19,7 @@ async def test_get_plan_details():
     fake_org = MagicMock(
         id=org_id,
         plan=Plan.STANDARD.value,
-        # is_trial_active() compares created_at against a datetime, so an
-        # auto-generated MagicMock attribute raises TypeError.
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc) - timedelta(days=365),
     )
     fake_subscription = MagicMock(
         status="active", current_period_end=datetime.now(timezone.utc)

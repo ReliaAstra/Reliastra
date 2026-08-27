@@ -38,7 +38,6 @@ import type {
   PricingPlan,
   UserMe,
   VendorStatus,
-  AgencyClient,
   AgencyPortfolio,
   InboxListResponse,
   InboxUnreadCountResponse,
@@ -313,10 +312,6 @@ export const api = {
   // non-Agency plans, and a failure here must show a real error state.
 
   portfolio: () => request<AgencyPortfolio>('/agency/portfolio'),
-
-  // The agency client switcher used to list three hardcoded companies, so an
-  // agency operator was choosing between clients that were not theirs.
-  clients: () => request<AgencyClient[]>('/clients'),
 
   createClient: (body: { name: string; description?: string }) =>
     request<{ id: string; name: string }>('/clients', {

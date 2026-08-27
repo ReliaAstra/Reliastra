@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerStore } from '@/stores/partner-store';
+import { partnerApi } from '@/lib/partner-api';
 import { toast } from 'sonner';
 
 const fadeUp = {
@@ -27,55 +28,32 @@ export function PageApply() {
     const store = usePartnerStore.getState();
 
     try {
-      const token = localStorage.getItem('partner_access_token');
-      const res = await fetch('/api/partners/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ agree_terms: true }),
-      });
+      // `partnerApi` attaches the bearer token and unwraps the
+      // `{ error: { code, message } }` envelope, so failures surface a real
+      // message instead of "[object Object]".
+      //
+      // Activation is idempotent server-side (an existing partner gets their
+      // profile back), so there is no "already a partner" case to special-case
+      // any more — the branch that used to do that was mock-era dead code.
+      const profile = await partnerApi.apply({ agree_terms: true });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data.detail === 'Already a partner' || data.error === 'Already a partner') {
-          // Already applied — fetch partner profile and go to dashboard
-          try {
-            const partnerRes = await fetch('/api/partners/me', {
-              headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-            });
-            if (partnerRes.ok) {
-              const p = await partnerRes.json();
-              store.setPartner({
-                partnerId: p.partner_id,
-                referralCode: p.referral_code,
-                referralLink: p.referral_link,
-                commissionRate: p.commission_rate,
-                status: p.status,
-                createdAt: p.created_at,
-              });
-            }
-          } catch { /* ignore */ }
-          navigate('dashboard');
-          return;
-        }
-        throw new Error(data.detail || data.error || 'Activation failed');
-      }
-
-      // Success — response is PartnerProfileResponse
-      const data = await res.json();
       store.setPartner({
-        partnerId: data.partner_id,
-        referralCode: data.referral_code,
-        referralLink: data.referral_link,
-        commissionRate: data.commission_rate,
-        status: data.status,
-        createdAt: data.created_at,
+        partnerId: profile.partner_id,
+        referralCode: profile.referral_code,
+        referralLink: profile.referral_link,
+        commissionRate: profile.commission_rate,
+        status: profile.status,
+        createdAt: profile.created_at,
       });
       toast.success('Partner account activated');
       navigate('dashboard');
     } catch (err) {
+      if (err instanceof Error && err.message === 'UNAUTHORIZED') {
+        // Session expired mid-flow — sign in again rather than dead-ending.
+        setError('Your session expired. Please sign in again.');
+        navigate('login');
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);

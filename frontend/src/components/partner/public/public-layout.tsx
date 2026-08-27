@@ -16,7 +16,6 @@ import { PageResources } from './page-resources';
 import { PageApply } from './page-apply';
 import { PageLogin } from './page-login';
 import { PageSignup } from './page-signup';
-import { PageActivation } from './page-activation';
 import { PageSupport } from './page-support';
 import { PageForgotPassword } from './page-forgot-password';
 import { PagePrivacy } from './page-privacy';
@@ -38,7 +37,6 @@ const publicPages: PartnerPage[] = [
   'apply',
   'login',
   'signup',
-  'activation',
   'support',
   'forgot-password',
   'privacy',
@@ -81,8 +79,6 @@ function PageContent({ page }: { page: PartnerPage }) {
       return <PageLogin />;
     case 'signup':
       return <PageSignup />;
-    case 'activation':
-      return <PageActivation />;
     case 'support':
       return <PageSupport />;
     case 'forgot-password':
@@ -111,7 +107,7 @@ export function PublicLayout() {
     return null;
   }
 
-  const isCenteredPage = currentPage === 'login' || currentPage === 'signup' || currentPage === 'activation' || currentPage === 'forgot-password';
+  const isCenteredPage = currentPage === 'login' || currentPage === 'signup' || currentPage === 'forgot-password';
   const isFooterHidden = currentPage === 'support' || isCenteredPage;
 
   return (

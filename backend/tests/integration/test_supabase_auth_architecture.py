@@ -85,6 +85,9 @@ async def test_tenant_isolation_bola_protection(async_client, db_session):
         password_hash="",
         full_name="User A",
         is_active=True,
+        # Email verification is a hard gate; fixtures that bypass signup
+        # must mark the address verified or every request 403s.
+        is_email_verified=True,
     )
     org_a = await OrganizationRepository.create(
         db_session, name="Org A", slug="org-a", plan=Plan.FREE.value
@@ -114,6 +117,9 @@ async def test_tenant_isolation_bola_protection(async_client, db_session):
         password_hash="",
         full_name="User B",
         is_active=True,
+        # Email verification is a hard gate; fixtures that bypass signup
+        # must mark the address verified or every request 403s.
+        is_email_verified=True,
     )
     org_b = await OrganizationRepository.create(
         db_session, name="Org B", slug="org-b", plan=Plan.FREE.value
@@ -179,6 +185,9 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
         password_hash="",
         full_name="Normal User",
         is_active=True,
+        # Email verification is a hard gate; fixtures that bypass signup
+        # must mark the address verified or every request 403s.
+        is_email_verified=True,
     )
 
     # Create an admin user
@@ -188,6 +197,9 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
         password_hash="",
         full_name="System Admin",
         is_active=True,
+        # Email verification is a hard gate; fixtures that bypass signup
+        # must mark the address verified or every request 403s.
+        is_email_verified=True,
     )
     # Explicitly set system admin
     admin_user.is_system_admin = True
@@ -229,6 +241,9 @@ async def test_partner_authorization_self_service(async_client, db_session):
         password_hash="",
         full_name="Potential Partner",
         is_active=True,
+        # Email verification is a hard gate; fixtures that bypass signup
+        # must mark the address verified or every request 403s.
+        is_email_verified=True,
     )
     await db_session.commit()
 

@@ -23,6 +23,25 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+def _require_verified_email(user: "User") -> None:
+    """Hard gate: an unverified address cannot hold an authenticated session.
+
+    Defence in depth. ``/auth/login`` already refuses to mint tokens for an
+    unverified account, but a token minted before verification was enforced —
+    or by any future code path that forgets the check — dies here too.
+    """
+    # Imported lazily: ``app.modules.auth`` imports this module transitively,
+    # so a top-level import would be circular.
+    from app.modules.auth.constants import EMAIL_NOT_VERIFIED_CODE
+
+    if not getattr(user, "is_email_verified", False):
+        raise ForbiddenException(
+            "Verify your email address to continue.",
+            details={"code": EMAIL_NOT_VERIFIED_CODE, "email": user.email},
+        )
+
+
 security_bearer = HTTPBearer(auto_error=False)
 # Use a custom header name to avoid conflict with HTTPBearer which also
 # reads the "Authorization" header. Using "X-API-Key" allows both auth
@@ -227,6 +246,7 @@ async def get_current_user(
 
             if not user or not user.is_active:
                 raise UnauthorizedException("User not found or disabled")
+            _require_verified_email(user)
 
             request.state.auth_method = "jwt"
             request.state.user_id = str(user.id)
@@ -244,12 +264,15 @@ async def get_current_user(
             user = await UserRepository.get_by_id(db, uuid.UUID(user_id_str))
             if not user or not user.is_active:
                 raise UnauthorizedException("User not found or disabled")
-
-            request.state.auth_method = "jwt"
-            request.state.user_id = str(user.id)
-            return user
         except Exception as exc:
             raise UnauthorizedException("Invalid or expired token") from exc
+
+        # Outside the try: the gate must surface its own 403 EMAIL_NOT_VERIFIED
+        # instead of being flattened into "Invalid or expired token".
+        _require_verified_email(user)
+        request.state.auth_method = "jwt"
+        request.state.user_id = str(user.id)
+        return user
 
     raise UnauthorizedException(
         "Authentication required (Bearer token or X-API-Key header)"

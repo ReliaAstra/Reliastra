@@ -16,6 +16,9 @@ import type {
   PartnerTicketListResponse,
   PartnerTicketMessageItem,
   ForgotPasswordRequest,
+  ResendOtpResponse,
+  VerifyOtpRequest,
+  VerifyOtpResponse,
   PartnerApplyRequest,
   Partner,
 } from '@/types/partner';
@@ -60,10 +63,6 @@ async function request<T>(
     throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
   }
 
-  // 204 No Content (e.g. POST /auth/logout) has an empty body — res.json()
-  // would throw on it.
-  if (res.status === 204) return undefined as T;
-
   return res.json();
 }
 
@@ -78,38 +77,54 @@ export const partnerApi = {
   },
 
   async signup(data: RegisterRequest) {
-    return request<RegisterResponse>('/auth/signup', {
+    // Returns `tokens: null` — the account is inert until the emailed code
+    // is submitted via `verifyOtp`.
+    return request<RegisterResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
+  /** Clear the signup email-verification gate. Issues the session. */
+  async verifyOtp(data: VerifyOtpRequest) {
+    return request<VerifyOtpResponse>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /** Request a fresh signup code (throttled per IP and per account). */
+  async resendOtp(email: string) {
+    return request<ResendOtpResponse>('/auth/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
   /**
-   * Revoke the refresh token server-side and drop both local tokens.
+   * Revoke the current refresh token server-side.
    *
-   * The dashboard called `partnerApi.logout()` from three sign-out handlers,
-   * but the method did not exist — so signing out threw and the session
-   * survived. Local tokens are cleared even if the backend call fails, so a
-   * user can always get out of a session.
+   * `dashboard-layout` called `partnerApi.logout()` at three sign-out sites,
+   * but the method did not exist. The resulting TypeError was swallowed by
+   * the surrounding try/catch, so sign-out *looked* fine while the refresh
+   * token stayed valid on the server for its full lifetime — a stolen or
+   * shared-machine token survived "Sign out" entirely.
    */
   async logout() {
     const refreshToken =
       typeof window !== 'undefined'
         ? localStorage.getItem('partner_refresh_token')
         : null;
-    try {
-      if (refreshToken) {
-        await request<void>('/auth/logout', {
-          method: 'POST',
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      }
-    } finally {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('partner_access_token');
-        localStorage.removeItem('partner_refresh_token');
-      }
-    }
+
+    // Nothing to revoke — the local reset by the caller is sufficient.
+    if (!refreshToken) return;
+
+    // The backend answers 204 No Content, so don't try to parse a body.
+    await fetch(`${API_BASE}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
   },
 
   async me() {

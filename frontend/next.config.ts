@@ -14,6 +14,31 @@ const nextConfig: NextConfig = {
     "3000-*.e2b.app",
     "*.e2b-preview.com",
   ],
+  // The console lives at top-level routes (`/settings/billing`, `/incidents`, …)
+  // under the `(console)` route group, which contributes no URL segment. Links
+  // shared or bookmarked as `/dashboard/<section>` therefore 404. Redirect the
+  // `/dashboard/*` shape onto the canonical routes instead of dead-ending.
+  async redirects() {
+    const consoleSections = [
+      "settings",
+      "dependencies",
+      "incidents",
+      "evidence",
+      "clients",
+    ];
+    return consoleSections.flatMap((section) => [
+      {
+        source: `/dashboard/${section}`,
+        destination: `/${section}`,
+        permanent: false,
+      },
+      {
+        source: `/dashboard/${section}/:path*`,
+        destination: `/${section}/:path*`,
+        permanent: false,
+      },
+    ]);
+  },
   async headers() {
     return [
       {

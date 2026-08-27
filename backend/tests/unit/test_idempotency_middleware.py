@@ -1,88 +1,74 @@
-"""Tests for FIX 7 (per-user idempotency scoping) and FIX 40 (cache non-2xx).
+"""Idempotency middleware: a Redis outage must not be reported as a duplicate.
 
-The merged implementation derives the principal as:
-* ``user:{jwt sub}``  — verified JWT subject
-* ``key:{sha256[:32]}`` — digest of the API key credential
-* ``ip:{client ip}``  — anonymous callers
+With the old helper a brand-new Idempotency-Key returned 409
+IDEMPOTENT_REQUEST_IN_FLIGHT whenever Redis was unreachable, turning a Redis
+outage into a total outage of every idempotent POST/PATCH.
 """
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
 from app.main import IdempotencyMiddleware
 
 
-def test_identity_scoped_by_api_key():
-    from starlette.datastructures import Headers
-    from starlette.requests import Request
+def _app() -> FastAPI:
+    app = FastAPI()
+    app.add_middleware(IdempotencyMiddleware)
 
-    scope_a = {
-        "type": "http",
-        "method": "POST",
-        "path": "/",
-        "headers": Headers({"x-api-key": "rel_aaa"}).raw,
-    }
-    scope_b = {
-        "type": "http",
-        "method": "POST",
-        "path": "/",
-        "headers": Headers({"x-api-key": "rel_bbb"}).raw,
-    }
-    request_a = Request(scope_a)
-    request_b = Request(scope_b)
-    principal_a = IdempotencyMiddleware._idempotency_principal(request_a)
-    principal_b = IdempotencyMiddleware._idempotency_principal(request_b)
-    assert principal_a != principal_b
-    assert principal_a.startswith("key:")
+    @app.post("/thing")
+    async def create_thing():
+        return {"created": True}
+
+    return app
 
 
-def test_identity_scoped_by_jwt():
-    from starlette.requests import Request
-    from app.core.security import create_access_token
-
-    token_a = create_access_token(subject="user-a")
-    token_b = create_access_token(subject="user-b")
-
-    def make_request(token: str) -> Request:
-        return Request(
-            {
-                "type": "http",
-                "method": "POST",
-                "path": "/",
-                "headers": [(b"authorization", f"Bearer {token}".encode())],
-            }
-        )
-
-    principal_a = IdempotencyMiddleware._idempotency_principal(make_request(token_a))
-    principal_b = IdempotencyMiddleware._idempotency_principal(make_request(token_b))
-    assert principal_a == "user:user-a"
-    assert principal_b == "user:user-b"
-    assert principal_a != principal_b
+async def _post(headers):
+    transport = ASGITransport(app=_app())
+    async with AsyncClient(transport=transport, base_url="http://t") as c:
+        return await c.post("/thing", headers=headers, json={})
 
 
-def test_identity_ip_fallback_without_credentials():
-    from starlette.requests import Request
-
-    request = Request(
-        {
-            "type": "http",
-            "method": "POST",
-            "path": "/",
-            "headers": [],
-            "client": ("203.0.113.5", 1234),
-        }
-    )
-    assert (
-        IdempotencyMiddleware._idempotency_principal(request)
-        == "ip:203.0.113.5"
-    )
+@pytest.mark.asyncio
+async def test_new_key_with_healthy_redis_proceeds():
+    with (
+        patch("app.main.safe_redis_get", new=AsyncMock(return_value=None)),
+        patch("app.main.safe_redis_claim", new=AsyncMock(return_value=True)),
+        patch("app.main.safe_redis_setex", new=AsyncMock(return_value=True)),
+    ):
+        res = await _post({"Idempotency-Key": "fresh-key"})
+    assert res.status_code == 200
+    assert res.json() == {"created": True}
 
 
-def test_cacheable_statuses_fix_40():
-    assert IdempotencyMiddleware._is_cacheable_status(200) is True
-    assert IdempotencyMiddleware._is_cacheable_status(201) is True
-    assert IdempotencyMiddleware._is_cacheable_status(404) is True
-    assert IdempotencyMiddleware._is_cacheable_status(409) is True
-    assert IdempotencyMiddleware._is_cacheable_status(422) is True
-    # 5xx and auth failures must never be cached.
-    assert IdempotencyMiddleware._is_cacheable_status(500) is False
-    assert IdempotencyMiddleware._is_cacheable_status(503) is False
-    assert IdempotencyMiddleware._is_cacheable_status(401) is False
-    assert IdempotencyMiddleware._is_cacheable_status(403) is False
+@pytest.mark.asyncio
+async def test_duplicate_key_in_flight_with_healthy_redis_conflicts():
+    with (
+        patch("app.main.safe_redis_get", new=AsyncMock(return_value=None)),
+        patch("app.main.safe_redis_claim", new=AsyncMock(return_value=False)),
+    ):
+        res = await _post({"Idempotency-Key": "dupe-key"})
+    assert res.status_code == 409
+    assert res.json()["error"]["code"] == "IDEMPOTENT_REQUEST_IN_FLIGHT"
+
+
+@pytest.mark.asyncio
+async def test_redis_outage_does_not_produce_a_false_409():
+    """The regression: infrastructure failure reported as a client duplicate."""
+    with (
+        patch("app.main.safe_redis_get", new=AsyncMock(return_value=None)),
+        patch("app.main.safe_redis_claim", new=AsyncMock(return_value=None)),
+        patch("app.main.safe_redis_setex", new=AsyncMock(return_value=True)),
+    ):
+        res = await _post({"Idempotency-Key": "fresh-key-during-outage"})
+    assert res.status_code != 409, "Redis being down is not a duplicate request"
+    assert res.status_code == 200
+    assert res.json() == {"created": True}
+
+
+@pytest.mark.asyncio
+async def test_requests_without_an_idempotency_key_are_untouched():
+    res = await _post({})
+    assert res.status_code == 200

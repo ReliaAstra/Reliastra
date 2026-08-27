@@ -28,7 +28,6 @@ export const keys = {
   inbox: ['notifications', 'inbox'] as const,
   supportTickets: ['support', 'tickets'] as const,
   supportThread: (id: string) => ['support', 'tickets', id] as const,
-  clients: ['agency', 'clients'] as const,
 };
 
 export function useSummary() {
@@ -267,10 +266,3 @@ export function useAddSupportMessage() {
   });
 }
 
-export function useClients(enabled = true) {
-  return useQuery({
-    queryKey: keys.clients,
-    queryFn: api.clients,
-    enabled,
-  });
-}

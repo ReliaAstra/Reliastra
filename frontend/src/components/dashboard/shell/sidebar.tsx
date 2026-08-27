@@ -11,20 +11,28 @@ import {
   Settings,
   TriangleAlert,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
-import { useClients } from '@/lib/dashboard/queries';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { ThemeToggle } from './theme-toggle';
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Optional pill rendered on the right of the row. No entry uses it today. */
+  badge?: string;
+};
+
+const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dependencies', label: 'Dependencies', icon: Link2 },
   { href: '/incidents', label: 'Incidents', icon: TriangleAlert },
   { href: '/evidence', label: 'Evidence', icon: FileText },
-  { href: '/clients', label: 'Clients', icon: Building2, badge: 'AGENCY' },
+  { href: '/clients', label: 'Clients', icon: Building2 },
   { href: '/support', label: 'Support', icon: LifeBuoy },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -106,35 +114,8 @@ function PlanFooter() {
 }
 
 export function Sidebar() {
-  const plan = useAppStore((s) => s.plan);
-  const clientId = useAppStore((s) => s.selectedClientId);
-  const setClient = useAppStore((s) => s.setSelectedClient);
-  const current = getPlan(plan?.plan);
-  const agency = current.id === 'agency';
-  // Real clients for this agency — the switcher used to offer three hardcoded
-  // companies that belonged to nobody.
-  const { data: clients = [] } = useClients(agency);
-
   return (
     <aside className="rs-sidebar fixed bottom-0 left-0 top-14 z-40 hidden w-16 flex-col border-r border-rs-border-subtle bg-rs-base px-2 py-4 md:flex lg:w-60 lg:px-3">
-      {agency && (
-        <div className="mb-4 hidden lg:block">
-          <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">
-            Client
-          </div>
-          <select
-            value={clientId ?? ''}
-            onChange={(e) => setClient(e.target.value)}
-            className="w-full rounded-lg border border-rs-border-subtle bg-rs-elevated px-3 py-2 text-sm font-medium text-rs-text focus-visible:outline-none focus-visible:border-rs-brand focus-visible:ring-[3px] focus-visible:ring-[rgb(37_99_235_/_0.20)]"
-          >
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
       <NavItems />
       <PlanFooter />
     </aside>

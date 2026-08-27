@@ -21,20 +21,24 @@ from sqlalchemy import select
 from app.modules.admin.models import FeedbackTicket
 from app.modules.dependencies.models import Dependency
 from app.modules.incidents.service import incident_service
+from tests.helpers import register_and_verify
 
 
 async def _register(async_client, email, full_name):
-    res = await async_client.post(
-        "/v1/auth/register",
-        json={
+    """Create an account and clear the email-verification hard gate.
+
+    ``POST /v1/auth/register`` issues no tokens any more — the session only
+    exists after the OTP step — so this goes through the shared helper.
+    """
+    body = await register_and_verify(
+        async_client,
+        {
             "email": email,
             "password": "SecurePassword123!",
             "full_name": full_name,
             "org_name": f"{full_name} Org",
         },
     )
-    assert res.status_code == 201, res.text
-    body = res.json()
     return {
         "headers": {"Authorization": f"Bearer {body['tokens']['access_token']}"},
         "user_id": body["user"]["id"],

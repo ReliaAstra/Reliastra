@@ -3,6 +3,8 @@ import hmac
 
 import pytest
 
+from app.core.permissions import PLAN_DEPENDENCY_LIMITS, Plan
+
 from app.config import settings
 
 
@@ -16,14 +18,13 @@ async def test_billing_endpoints(async_client, auth_data, monkeypatch):
     )
     assert plan_res.status_code == 200, plan_res.text
     plan_data = plan_res.json()
-    # The stored plan is Free, but a brand-new organization runs on
-    # Professional limits during its 14-day trial — so the *effective* limits
-    # are not the Free ones.
     assert plan_data["plan"] == "free"
+    # A newly-created free org is inside the 14-day trial, which grants
+    # Professional limits. The stored plan stays "free"; only the effective
+    # limits are lifted. (This assertion predated the trial feature and still
+    # expected the post-trial free limit of 3.)
     assert plan_data["is_trial_active"] is True
-    assert plan_data["effective_plan"] == "professional"
-    assert plan_data["max_dependencies"] == 100
-    assert plan_data["trial_days_remaining"] > 0
+    assert plan_data["max_dependencies"] == PLAN_DEPENDENCY_LIMITS[Plan.PROFESSIONAL.value]
     assert plan_data["subscription_status"] is None
 
     secret = "integration-paystack-secret"

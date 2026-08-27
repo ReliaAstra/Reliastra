@@ -96,6 +96,28 @@ class RateLimitExceededException(AppException):
         )
 
 
+class ServiceUnavailableException(AppException):
+    """A dependency the request needs is unavailable; the caller should retry.
+
+    Distinct from a 5xx bug: the request was well-formed and may well succeed
+    later. Used where degrading silently would be worse than refusing — e.g.
+    a payment webhook whose idempotency store is unreachable, which must not
+    be acknowledged as processed.
+    """
+
+    def __init__(
+        self,
+        message: str = "Service temporarily unavailable",
+        details: dict[str, Any] | list[dict[str, Any]] | None = None,
+    ) -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="SERVICE_UNAVAILABLE",
+            details=details,
+        )
+
+
 class ValidationException(AppException):
     def __init__(
         self,

@@ -1,11 +1,14 @@
 import hashlib
+import hmac
 import uuid
 from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.modules.auth.models import (
+    EmailVerificationCode,
     EmailVerificationToken,
     PasswordResetToken,
     RefreshToken,
@@ -162,8 +165,117 @@ class AuthRepository:
             session.add(token)
         await session.flush()
 
-    # ── Password Reset Token Methods ─────────────────────────────────
+    # ── Email Verification OTP Methods ──────────────────────────────
 
+    @staticmethod
+    def _hash_code(user_id: uuid.UUID, code: str) -> str:
+        """HMAC a verification code, salted by user id and SECRET_KEY.
+
+        Salting by user id means an attacker who obtains the table cannot
+        build one rainbow table for all 10^6 codes and match it against
+        every row at once.
+        """
+        return hmac.new(
+            settings.SECRET_KEY.encode("utf-8"),
+            f"{user_id}:{code}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+    @staticmethod
+    async def create_email_verification_code(
+        session: AsyncSession,
+        user_id: uuid.UUID,
+        code: str,
+        expires_at: datetime,
+    ) -> EmailVerificationCode:
+        evc = EmailVerificationCode(
+            user_id=user_id,
+            code_hash=AuthRepository._hash_code(user_id, code),
+            expires_at=expires_at,
+            attempts=0,
+            is_used=False,
+        )
+        session.add(evc)
+        await session.flush()
+        return evc
+
+    @staticmethod
+    async def get_active_email_verification_code(
+        session: AsyncSession, user_id: uuid.UUID
+    ) -> EmailVerificationCode | None:
+        """Most recent unused code for a user, regardless of expiry.
+
+        Expiry is checked by the caller so it can return a distinct
+        "code expired" message instead of a generic "invalid code".
+        """
+        query = (
+            select(EmailVerificationCode)
+            .where(
+                EmailVerificationCode.user_id == user_id,
+                EmailVerificationCode.is_used == False,  # noqa: E712
+            )
+            .order_by(EmailVerificationCode.created_at.desc())
+            .limit(1)
+        )
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_last_email_verification_code(
+        session: AsyncSession, user_id: uuid.UUID
+    ) -> EmailVerificationCode | None:
+        """Most recent code of any state — used for the resend cooldown."""
+        query = (
+            select(EmailVerificationCode)
+            .where(EmailVerificationCode.user_id == user_id)
+            .order_by(EmailVerificationCode.created_at.desc())
+            .limit(1)
+        )
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    def verify_code_hash(
+        record: EmailVerificationCode, user_id: uuid.UUID, code: str
+    ) -> bool:
+        """Constant-time comparison of a submitted code against its hash."""
+        return hmac.compare_digest(
+            record.code_hash, AuthRepository._hash_code(user_id, code)
+        )
+
+    @staticmethod
+    async def record_email_verification_attempt(
+        session: AsyncSession, record: EmailVerificationCode
+    ) -> EmailVerificationCode:
+        record.attempts += 1
+        session.add(record)
+        await session.flush()
+        return record
+
+    @staticmethod
+    async def mark_email_verification_code_used(
+        session: AsyncSession, record: EmailVerificationCode
+    ) -> None:
+        record.is_used = True
+        session.add(record)
+        await session.flush()
+
+    @staticmethod
+    async def revoke_all_email_verification_codes(
+        session: AsyncSession, user_id: uuid.UUID
+    ) -> None:
+        """Burn every outstanding code for a user (issue-one-at-a-time)."""
+        query = select(EmailVerificationCode).where(
+            EmailVerificationCode.user_id == user_id,
+            EmailVerificationCode.is_used == False,  # noqa: E712
+        )
+        result = await session.execute(query)
+        for record in result.scalars():
+            record.is_used = True
+            session.add(record)
+        await session.flush()
+
+    # ── Password Reset Token Methods ─────────────────────────────────
     @staticmethod
     async def create_password_reset_token(
         session: AsyncSession,

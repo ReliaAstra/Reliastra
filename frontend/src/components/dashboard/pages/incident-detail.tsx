@@ -252,7 +252,7 @@ export function IncidentDetailPage({ id }: { id: string }) {
               Start Standard trial
             </RsButton>
             <div>
-              <a href="https://docs.reliastra.com/evidence" className="mt-3 inline-block text-sm text-rs-text-accent">
+              <a href="mailto:support@reliastra.com?subject=Evidence%20report%20question" className="mt-3 inline-block text-sm text-rs-text-accent">
                 Learn more
               </a>
             </div>

@@ -12,8 +12,8 @@ import {
   Plus,
   Sparkles,
   X,
-  type LucideIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, nextPlan, trialInfo, TRIAL_LENGTH_DAYS } from '@/lib/dashboard/plans';
@@ -37,6 +37,21 @@ import { SectionHeader } from '../ui/section-header';
 import { StatSkeleton, TableSkeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { Incident } from '@/lib/dashboard/types';
+
+/** A single KPI tile on the overview grid. */
+type OverviewStat = {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  bg: string;
+  color: string;
+  /** Present only on tiles that render a plan-limit meter. */
+  usage?: { used: number; total: number };
+  /** Present only on tiles that render a sub-label. */
+  context?: string;
+  valueClass: string;
+  iconClass: string;
+};
 
 function uptimeColor(v: number) {
   if (v >= 99.9) return 'text-rs-text';
@@ -168,7 +183,7 @@ function HealthTable() {
         actionLabel="Add dependency"
         onAction={() => useAppStore.getState().setAddDependencyOpen(true)}
         helpLabel="How do dependencies work?"
-        onHelp={() => window.open('https://docs.reliastra.com/dependencies', '_blank')}
+          onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20do%20dependencies%20work%3F')}
       />
     );
   }
@@ -308,21 +323,10 @@ export function OverviewPage() {
   const current = getPlan(plan?.plan);
   const router = useRouter();
 
-  // Explicit element type: the array mixes cards that carry a usage meter with
-  // cards that only carry a caption. Left to inference TypeScript produced a
-  // union and narrowed the caption branch to `never`, so `s.context` never
-  // rendered.
-  const stats: Array<{
-    label: string;
-    value: string | number;
-    icon: LucideIcon;
-    bg: string;
-    color: string;
-    valueClass: string;
-    iconClass: string;
-    usage?: { used: number; total: number };
-    context?: string;
-  }> = [
+  // Explicit element type: inferred from the literals, `usage` and
+  // `context` exist on only one member, so narrowing on `'usage' in s`
+  // collapsed the else-branch to `never` and the build failed.
+  const stats: OverviewStat[] = [
     {
       label: 'Dependencies',
       value: summary?.active_dependencies_count ?? 0,
@@ -467,7 +471,7 @@ export function OverviewPage() {
               actionLabel="View dependencies"
               onAction={() => router.push('/dependencies')}
               helpLabel="How does correlation work?"
-              onHelp={() => window.open('https://docs.reliastra.com/incidents', '_blank')}
+              onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20does%20correlation%20work%3F')}
             />
           ) : (
             incidents.slice(0, 5).map((inc) => <IncidentCard key={inc.id} incident={inc} />)

@@ -73,6 +73,35 @@ class EmailVerificationToken(UUIDMixin, Base):
     )
 
 
+class EmailVerificationCode(UUIDMixin, Base):
+    """A one-time numeric OTP proving control of a signup email address.
+
+    Only the HMAC of the code is persisted, so a database leak cannot be
+    replayed against the verification endpoint. ``attempts`` bounds online
+    guessing of the 6-digit keyspace; the code is burned once
+    ``OTP_MAX_ATTEMPTS`` wrong submissions are made.
+    """
+
+    __tablename__ = "email_verification_codes"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    code_hash: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+
 class PasswordResetToken(UUIDMixin, Base):
     """Stores one-time password reset tokens with expiry."""
 

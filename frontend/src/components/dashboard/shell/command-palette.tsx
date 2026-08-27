@@ -67,7 +67,7 @@ export function CommandPalette() {
       { id: 'deps', group: 'Navigate', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
       { id: 'inc', group: 'Navigate', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
       { id: 'evi', group: 'Navigate', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
-      { id: 'cli', group: 'Navigate', label: 'Clients (Agency portal)', href: '/clients', icon: Users, shortcut: 'G C' },
+      { id: 'cli', group: 'Navigate', label: 'Clients', href: '/clients', icon: Users, shortcut: 'G C' },
       { id: 'set', group: 'Navigate', label: 'Settings', href: '/settings', icon: Settings, shortcut: 'G S' },
     ];
     const actions: Item[] = [
@@ -164,13 +164,6 @@ export function CommandPalette() {
 
   const flat = items;
 
-  // Keyboard navigation indexes one flat list, but the palette renders
-  // grouped. Mapping each item to its flat position keeps the highlighted row
-  // and the arrow-key handler in agreement. (This used to be a `running += 1`
-  // counter that was never declared, and whose `onMouseEnter` closure would
-  // have captured the final count for every row.)
-  const flatIndex = new Map(flat.map((item, i) => [item.id, i]));
-
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/50 pt-[12vh]" onClick={() => setOpen(false)}>
       <div
@@ -201,14 +194,17 @@ export function CommandPalette() {
                 {q ? 'Search results' : group}
               </div>
               {list.map((item) => {
-                const position = flatIndex.get(item.id) ?? 0;
-                const selected = position === idx;
+                // Keyboard selection (`idx`) indexes the FLAT `items` array,
+                // while rendering walks the grouped one. The counter this
+                // replaces was never declared, so it threw a ReferenceError.
+                const flatIndex = items.indexOf(item);
+                const selected = flatIndex === idx;
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onMouseEnter={() => setIdx(position)}
+                    onMouseEnter={() => setIdx(flatIndex)}
                     onClick={() => run(item)}
                     className={cn(
                       'flex w-full items-center px-5 py-2.5 text-left',

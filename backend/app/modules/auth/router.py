@@ -7,21 +7,29 @@ from app.modules.auth.schemas import (
     ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
+    OrganizationLite,
     RefreshRequest,
     RegisterRequest,
     ResetPasswordRequest,
     ResetPasswordResponse,
+    SendOtpRequest,
+    SendOtpResponse,
     SendVerificationRequest,
     RegisterResponse,
     TokenResponse,
+    UserResponseLite,
     VerifyEmailRequest,
     VerifyEmailResponse,
+    VerifyOtpRequest,
+    VerifyOtpResponse,
 )
 from app.modules.auth.service import AuthService, auth_service
 from app.modules.auth.email_service import (
     EmailAuthService,
     email_auth_service,
 )
+from app.modules.auth.otp_service import EmailOTPService, email_otp_service
+from app.modules.organizations.repository import OrganizationRepository
 from app.modules.users.repository import UserRepository
 
 router = APIRouter(prefix="/v1/auth", tags=["Authentication"])
@@ -33,6 +41,10 @@ def get_auth_service() -> AuthService:
 
 def get_email_auth_service() -> EmailAuthService:
     return email_auth_service
+
+
+def get_otp_service() -> EmailOTPService:
+    return email_otp_service
 
 
 # ── Email Auth ──────────────────────────────────────────────
@@ -81,7 +93,71 @@ async def logout(
     await service.logout(db, body.refresh_token)
 
 
-# ── Email Verification ────────────────────────────────────────
+# ── Email Verification (OTP — signup hard gate) ───────────────────
+
+
+@router.post("/verify-otp", response_model=VerifyOtpResponse)
+async def verify_otp(
+    request: Request,
+    body: VerifyOtpRequest,
+    db: AsyncSession = Depends(get_db),
+    otp: EmailOTPService = Depends(get_otp_service),
+    service: AuthService = Depends(get_auth_service),
+) -> VerifyOtpResponse:
+    """Submit the 6-digit signup code.
+
+    This is the only way an account created via ``/register`` becomes
+    usable. On success the session is issued here, so the client does not
+    need a second round trip to ``/login``.
+    """
+    await enforce_rate_limit(request, ip_limiter)
+    user = await otp.verify_code(db, body.email, body.code)
+    tokens = await service.issue_session(db, user.id)
+
+    orgs = await OrganizationRepository.list_for_user(db, user.id)
+    organization = (
+        OrganizationLite(
+            id=orgs[0].id,
+            name=orgs[0].name,
+            slug=orgs[0].slug,
+            plan=orgs[0].plan,
+        )
+        if orgs
+        else None
+    )
+
+    return VerifyOtpResponse(
+        user=UserResponseLite(
+            id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            is_active=user.is_active,
+            is_email_verified=True,
+        ),
+        organization=organization,
+        tokens=tokens,
+    )
+
+
+@router.post("/resend-otp", response_model=SendOtpResponse)
+async def resend_otp(
+    request: Request,
+    body: SendOtpRequest,
+    db: AsyncSession = Depends(get_db),
+    otp: EmailOTPService = Depends(get_otp_service),
+) -> SendOtpResponse:
+    """Issue a fresh signup code.
+
+    Throttled per IP (router) and per account (60s cooldown). The response is
+    identical for unknown, already-verified and real addresses so it cannot
+    be used to enumerate accounts.
+    """
+    await enforce_rate_limit(request, ip_limiter)
+    result = await otp.send_code_for_email(db, body.email)
+    return SendOtpResponse(**result)
+
+
+# ── Email Verification (magic link — legacy/alternative) ──────────
 
 
 @router.post("/send-verification", status_code=status.HTTP_200_OK)

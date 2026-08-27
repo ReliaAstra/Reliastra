@@ -10,6 +10,8 @@ import { usePartnerStore } from '@/stores/partner-store';
 import { toast } from 'sonner';
 import { getStoredReferralCode } from './referral-banner';
 import { getSignupAttribution } from '@/lib/attribution';
+import { readApiError } from '@/lib/api-error';
+import { VerifyOtpStep, type VerifiedSession } from './verify-otp-step';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -28,6 +30,9 @@ export function PageSignup() {
   const [password, setPassword] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  // Email verification is a hard gate: registration returns no tokens, so the
+  // form advances to the code step instead of straight into the dashboard.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   // Check for referral cookie on mount
   useEffect(() => {
@@ -50,7 +55,6 @@ export function PageSignup() {
     }
 
     setLoading(true);
-    const store = usePartnerStore.getState();
 
     // First-party acquisition attribution (FIRST TOUCH). Read-only here:
     // absent/failed storage simply omits the field and signup proceeds.
@@ -71,34 +75,39 @@ export function PageSignup() {
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Signup failed');
+        const apiError = await readApiError(res, 'Signup failed. Please try again.');
+        setFieldError(
+          apiError.status === 409
+            ? 'An account with this email already exists. Sign in instead.'
+            : apiError.message
+        );
+        return;
       }
 
-      // Response: { user: UserResponseLite, organization: OrganizationLite, tokens: TokenResponse }
-      const data = await res.json();
-      store.setTokens(data.tokens.access_token, data.tokens.refresh_token);
-      store.setUser({
-        id: data.user.id,
-        email: data.user.email,
-        fullName: data.user.full_name,
-      });
-      store.setAuthStatus('authenticated');
-
-      toast.success('Account created — welcome to RELIASTRA');
-      navigate('apply');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      if (message.includes('already exists')) {
-        setFieldError('An account with this email already exists.');
-      } else if (message.includes('reach') || message.includes('fetch')) {
-        setFieldError("We couldn't reach RELIASTRA. Check your connection and try again.");
-      } else {
-        setFieldError('Something went wrong. Please try again.');
-      }
+      // Response: { user, organization, tokens: null, verification_required }
+      // No session is issued here — the emailed code is the next step.
+      await res.json();
+      toast.success('Account created — check your email for the code');
+      setPendingEmail(email);
+    } catch {
+      setFieldError("We couldn't reach RELIASTRA. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  /** Called once the OTP step exchanges the code for a real session. */
+  const handleVerified = async (session: VerifiedSession) => {
+    const store = usePartnerStore.getState();
+    store.setTokens(session.tokens.access_token, session.tokens.refresh_token);
+    store.setUser({
+      id: session.user.id,
+      email: session.user.email,
+      fullName: session.user.full_name,
+    });
+    store.setAuthStatus('authenticated');
+    toast.success('Email verified — welcome to RELIASTRA');
+    navigate('apply');
   };
 
   return (
@@ -169,6 +178,15 @@ export function PageSignup() {
             </button>
           </motion.div>
 
+          {pendingEmail ? (
+            <VerifyOtpStep
+              email={pendingEmail}
+              onVerified={handleVerified}
+              onBack={() => setPendingEmail(null)}
+              backLabel="Use a different email"
+            />
+          ) : (
+            <>
           <motion.div variants={fadeUp} custom={1} className="mb-8">
             <h1 className="text-xl font-semibold text-foreground">Start earning with RELIASTRA.</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -278,6 +296,8 @@ export function PageSignup() {
               Back to Partner Network
             </button>
           </motion.div>
+            </>
+          )}
         </motion.div>
       </div>
     </div>

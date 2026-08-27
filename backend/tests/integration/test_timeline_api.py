@@ -16,6 +16,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+from tests.helpers import register_and_verify
 
 
 # ---------------------------------------------------------------------------
@@ -114,9 +115,7 @@ async def _create_org_and_user(async_client):
         "full_name": "Timeline Tester",
         "org_name": "Timeline Test Org",
     }
-    res = await async_client.post("/v1/auth/register", json=payload)
-    assert res.status_code == 201, res.text
-    body = res.json()
+    body = await register_and_verify(async_client, payload)
     return body["tokens"]["access_token"], body["organization"]["id"]
 
 

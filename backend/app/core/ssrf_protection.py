@@ -70,6 +70,11 @@ def _normalize_ip(ip_str: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
 
 
 def _is_blocked_ip(ip_str: str) -> bool:
+    """True when *ip_str* is a literal address inside a blocked range.
+
+    Used for addresses that are already known to be IPs (i.e. DNS answers), so
+    an unparseable value is a resolver anomaly and is treated as hostile.
+    """
     try:
         ip = _normalize_ip(ip_str)
     except ValueError:
@@ -78,20 +83,21 @@ def _is_blocked_ip(ip_str: str) -> bool:
     return any(ip in net for net in _BLOCKED_NETWORKS)
 
 
-def _ip_literal_or_none(ip_str: str):
-    """Return the normalized IP when *ip_str* is an IP literal, else ``None``.
+def _is_blocked_ip_literal(host: str) -> bool:
+    """True only when *host* is written as a literal IP **and** it is blocked.
 
-    ``_is_blocked_ip`` deliberately treats anything unparseable as hostile, so
-    it must never be handed a hostname — doing so rejected *every* name-based
-    URL (``https://hooks.slack.com/...`` failed with "IP hooks.slack.com
-    points to a private/blocked network"), which silently killed Slack
-    alerts, customer webhooks, and vendor URL validation. Callers that accept
-    either form must distinguish the two with this helper first.
+    A URL host is either a literal IP or a DNS name. `_is_blocked_ip` answers
+    "hostile" for anything it cannot parse, which is right for resolver output
+    but wrong here: every ordinary hostname ("example.com") is unparseable as
+    an IP, so using it to pre-screen the host rejected *all* hostname-based
+    URLs before DNS resolution ever ran. Names return False here and are
+    validated by the resolve-then-check step that follows.
     """
     try:
-        return _normalize_ip(ip_str)
+        ip = _normalize_ip(host)
     except ValueError:
-        return None
+        return False
+    return any(ip in net for net in _BLOCKED_NETWORKS)
 
 
 def _resolve_hostname(hostname: str) -> list[str]:
@@ -147,11 +153,9 @@ def is_url_safe(
     if not hostname:
         return False, "URL has no hostname"
 
-    # A hostname that IS an IP literal is checked directly (covering
-    # IPv4-mapped IPv6 and NAT64 forms via normalization). A plain name is
-    # validated after DNS resolution below — _is_blocked_ip treats anything
-    # unparseable as hostile, so it must never be handed a name.
-    if _ip_literal_or_none(hostname) is not None and _is_blocked_ip(hostname):
+    # Check if the hostname itself is a numeric IP (covers IPv4-mapped IPv6
+    # and NAT64 forms via normalization)
+    if _is_blocked_ip_literal(hostname):
         return False, f"IP {hostname} points to a private/blocked network"
 
     # Resolve the hostname and check every resolved IP
@@ -190,7 +194,7 @@ async def is_url_safe_async(
     if not hostname:
         return False, "URL has no hostname"
 
-    if _ip_literal_or_none(hostname) is not None and _is_blocked_ip(hostname):
+    if _is_blocked_ip_literal(hostname):
         return False, f"IP {hostname} points to a private/blocked network"
 
     resolved_ips = await _resolve_hostname_async(hostname)

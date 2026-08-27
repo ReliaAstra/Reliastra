@@ -516,8 +516,8 @@ function PayoutInfoTab() {
 function PartnerLinkTab() {
   const dashboardData = usePartnerStore((s) => s.dashboardData);
   const user = usePartnerStore((s) => s.user);
-  // The API returns snake_case; reading `referralLink` yielded undefined and
-  // rendered an empty share link.
+  // PartnerDashboardResponse is snake_case straight off the API — the
+  // camelCase read here always produced '' and the share links were dead.
   const referralLink = dashboardData?.referral_link || '';
 
   const shareChannels = [

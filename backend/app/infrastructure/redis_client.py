@@ -69,12 +69,25 @@ async def safe_redis_setex(key: str, seconds: int, value: str, timeout: float = 
         return False
 
 
-async def safe_redis_set_nx(key: str, value: str, ex: int | None = None, timeout: float = 2.0) -> bool:
-    """SET NX wrapper — returns True when the key was newly created.
+async def safe_redis_claim(
+    key: str, value: str = "1", ex: int | None = None, timeout: float = 2.0
+) -> bool | None:
+    """SET NX that distinguishes "already claimed" from "Redis unavailable".
 
-    Used for idempotent claims (webhook event dedupe, half-open probes,
-    alert dedupe). Returns False on Redis failure (callers decide whether to
-    fail open).
+    Returns:
+        True  — the key was newly created; the caller owns the claim.
+        False — the key already existed; this is a genuine duplicate.
+        None  — Redis could not be reached, so duplication is UNKNOWN.
+
+    This is the ONLY SET-NX primitive. Its predecessor ``safe_redis_set_nx``
+    returned a plain ``bool``, collapsing "duplicate" and "Redis down" into
+    ``False`` — which silently turned a Redis outage into "everything is a
+    duplicate" and dropped Paystack payments and outage alerts on the floor.
+    It was deleted rather than deprecated so the ambiguity cannot come back.
+
+    Callers MUST branch on all three states explicitly (``is True`` /
+    ``is False`` / ``is None``); ``if not claimed`` is a bug here, because it
+    treats an unreachable Redis as a duplicate.
     """
     try:
         redis = get_redis()
@@ -83,8 +96,13 @@ async def safe_redis_set_nx(key: str, value: str, ex: int | None = None, timeout
         )
         return bool(result)
     except Exception:
-        logger.debug("safe_redis_set_nx failed for key=%s", key, exc_info=True)
-        return False
+        logger.warning(
+            "safe_redis_claim could not reach Redis for key=%s; "
+            "caller must decide whether to fail open",
+            key,
+            exc_info=True,
+        )
+        return None
 
 
 async def safe_redis_incr(key: str, timeout: float = 2.0) -> int | None:
