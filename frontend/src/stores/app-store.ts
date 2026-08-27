@@ -59,7 +59,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   org: mockOrg,
   plan: mockPlan,
   demoPlanOverride: null,
-  selectedClientId: 'c1',
+  selectedClientId: null,
   upgradeOpen: false,
   upgradeReason: null,
   commandOpen: false,

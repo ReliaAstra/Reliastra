@@ -167,7 +167,7 @@ function HealthTable() {
         actionLabel="Add dependency"
         onAction={() => useAppStore.getState().setAddDependencyOpen(true)}
         helpLabel="How do dependencies work?"
-        onHelp={() => window.open('https://docs.reliastra.com/dependencies', '_blank')}
+          onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20do%20dependencies%20work%3F')}
       />
     );
   }
@@ -453,7 +453,7 @@ export function OverviewPage() {
               actionLabel="View dependencies"
               onAction={() => router.push('/dependencies')}
               helpLabel="How does correlation work?"
-              onHelp={() => window.open('https://docs.reliastra.com/incidents', '_blank')}
+              onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20does%20correlation%20work%3F')}
             />
           ) : (
             incidents.slice(0, 5).map((inc) => <IncidentCard key={inc.id} incident={inc} />)

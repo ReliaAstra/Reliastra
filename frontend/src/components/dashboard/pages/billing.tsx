@@ -92,7 +92,7 @@ export function BillingPage() {
             actionLabel="View plans"
             onAction={() => openUpgrade()}
             helpLabel="How does billing work?"
-            onHelp={() => window.open('https://docs.reliastra.com/billing', '_blank')}
+            onHelp={() => window.open('mailto:support@reliastra.com?subject=Billing%20question')}
           />
         ) : (
           <div className="overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated">

@@ -63,7 +63,7 @@ export function EvidenceLibraryPage() {
           actionLabel="View incidents"
           onAction={() => router.push('/incidents')}
           helpLabel="What is an evidence report?"
-          onHelp={() => window.open('https://docs.reliastra.com/evidence', '_blank')}
+          onHelp={() => window.open('mailto:support@reliastra.com?subject=What%20is%20an%20evidence%20report%3F')}
         />
       ) : (
         <>
