@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { scrollToId } from '@/components/landing/theme';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 

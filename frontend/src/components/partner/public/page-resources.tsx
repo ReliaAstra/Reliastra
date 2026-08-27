@@ -470,7 +470,7 @@ const staggerChild = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] as const },
   },
 };
 
@@ -748,7 +748,7 @@ function ResourceCard({
             </span>
             <motion.div
               animate={{ rotate: expanded ? 180 : 0 }}
-              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] as const }}
               className="text-muted-foreground/50"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -766,7 +766,7 @@ function ResourceCard({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const }}
             className="overflow-hidden"
           >
             <div className="border-t border-border/40 px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
@@ -860,7 +860,7 @@ export function PageResources() {
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const }}
           >
             <p className="mb-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               RESOURCES
@@ -996,7 +996,7 @@ export function PageResources() {
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const }}
           className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>

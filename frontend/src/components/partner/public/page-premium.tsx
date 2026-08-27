@@ -10,7 +10,7 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
   }),
 };
 
@@ -143,7 +143,7 @@ export function PagePremium() {
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const }}
             className="grid grid-cols-3 divide-x divide-border/40"
           >
             <div className="px-4 text-center first:pl-0 last:pr-0 sm:px-8">

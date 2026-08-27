@@ -147,7 +147,6 @@ export function usePublicVendorLive(limit = 6) {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [limit]);
 
   const refetch = useCallback(() => {

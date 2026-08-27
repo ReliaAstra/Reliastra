@@ -13,6 +13,7 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, nextPlan, trialInfo, TRIAL_LENGTH_DAYS } from '@/lib/dashboard/plans';
@@ -36,6 +37,21 @@ import { SectionHeader } from '../ui/section-header';
 import { StatSkeleton, TableSkeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { Incident } from '@/lib/dashboard/types';
+
+/** A single KPI tile on the overview grid. */
+type OverviewStat = {
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  bg: string;
+  color: string;
+  /** Present only on tiles that render a plan-limit meter. */
+  usage?: { used: number; total: number };
+  /** Present only on tiles that render a sub-label. */
+  context?: string;
+  valueClass: string;
+  iconClass: string;
+};
 
 function uptimeColor(v: number) {
   if (v >= 99.9) return 'text-rs-text';
@@ -307,7 +323,10 @@ export function OverviewPage() {
   const current = getPlan(plan?.plan);
   const router = useRouter();
 
-  const stats = [
+  // Explicit element type: inferred from the literals, `usage` and
+  // `context` exist on only one member, so narrowing on `'usage' in s`
+  // collapsed the else-branch to `never` and the build failed.
+  const stats: OverviewStat[] = [
     {
       label: 'Dependencies',
       value: summary?.active_dependencies_count ?? 0,
@@ -394,7 +413,7 @@ export function OverviewPage() {
                   <div className={cn('rs-stat-value font-mono text-[32px] font-bold leading-none tracking-[-0.02em]', s.valueClass)}>
                     {s.value}
                   </div>
-                  {'usage' in s && s.usage ? (
+                  {s.usage ? (
                     <div className="mt-3">
                       <div className="rs-usage-meter h-1 w-full overflow-hidden rounded-full bg-rs-hover">
                         <div
@@ -419,7 +438,6 @@ export function OverviewPage() {
                       )}
                     </div>
                   ) : (
-                    'context' in s &&
                     s.context && <div className="rs-stat-context mt-2 text-xs text-rs-text-tertiary">{s.context}</div>
                   )}
                 </div>

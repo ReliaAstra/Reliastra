@@ -6,6 +6,7 @@ import { ArrowRight, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerStore } from '@/stores/partner-store';
 import { getReferralLink } from '@/lib/format';
+import { partnerApi } from '@/lib/partner-api';
 
 const stages = ['ACTIVATING...', 'CREATING YOUR REFERRAL LINK...', 'READY'];
 
@@ -16,6 +17,7 @@ export function PageActivation() {
   const [stage, setStage] = useState<ActivationStage>('idle');
   const [stageIndex, setStageIndex] = useState(0);
   const [referralCode, setReferralCode] = useState('');
+  const setPartner = usePartnerStore((s) => s.setPartner);
 
   useEffect(() => {
     let cancelled = false;
@@ -24,48 +26,54 @@ export function PageActivation() {
       setStage('activating');
       setStageIndex(0);
 
-      // Simulate staged activation
+      // Staged copy while the request is in flight.
       const t1 = setTimeout(() => { if (!cancelled) setStageIndex(1); }, 800);
       const t2 = setTimeout(() => { if (!cancelled) setStageIndex(2); }, 1600);
 
       try {
-        const res = await fetch('/api/partners/apply', { method: 'POST' });
+        // `partnerApi` attaches the bearer token from localStorage. The raw
+        // fetch this replaces sent no Authorization header at all, so every
+        // activation 401'd; the 401 was then misread as "already a partner"
+        // and the screen rendered the literal string 'PARTNER' as the user's
+        // referral code.
+        //
+        // Server-side activation is idempotent: an existing partner gets
+        // their profile back rather than a duplicate or an error.
+        const profile = await partnerApi.apply({ agree_terms: true });
         if (cancelled) return;
-        clearTimeout(t1);
-        clearTimeout(t2);
 
-        if (!res.ok) {
-          const data = await res.json();
-          // Handle 409 (already a partner) or 401 (demo API double-call) gracefully
-          if (data.error === 'Already a partner' || res.status === 401) {
-            setStage('ready');
-            setStageIndex(2);
-            const meRes = await fetch('/api/partners/me');
-            if (cancelled) return;
-            if (meRes.ok) {
-              const meData = await meRes.json();
-              setReferralCode(meData.partner.referralCode);
-            } else {
-              setReferralCode('PARTNER');
-            }
-            return;
-          }
-          throw new Error(data.error || 'Activation failed');
-        }
-
-        const data = await res.json();
-        if (cancelled) return;
-        setReferralCode(data.partner.referralCode);
+        // The API returns a flat snake_case PartnerProfileResponse — the old
+        // `data.partner.referralCode` read was a mock-era shape and always
+        // produced undefined.
+        setReferralCode(profile.referral_code);
+        setPartner({
+          partnerId: profile.partner_id,
+          referralCode: profile.referral_code,
+          referralLink: profile.referral_link,
+          commissionRate: profile.commission_rate,
+          status: profile.status,
+          createdAt: profile.created_at,
+        });
         setStage('ready');
         setStageIndex(2);
-      } catch {
-        if (!cancelled) setStage('error');
+      } catch (err) {
+        if (cancelled) return;
+        // An expired session is not an activation failure — send them to
+        // sign in rather than showing a dead-end error.
+        if (err instanceof Error && err.message === 'UNAUTHORIZED') {
+          navigate('login');
+          return;
+        }
+        setStage('error');
+      } finally {
+        clearTimeout(t1);
+        clearTimeout(t2);
       }
     };
 
     activate();
     return () => { cancelled = true; };
-  }, []);
+  }, [navigate, setPartner]);
 
   const referralLink = referralCode ? getReferralLink(referralCode) : '';
 
@@ -129,7 +137,7 @@ export function PageActivation() {
               key="ready"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const }}
             >
               <div className="mb-6 flex justify-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-emerald-500/40 bg-emerald-50">

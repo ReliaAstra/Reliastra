@@ -1,6 +1,7 @@
 import http.server
 import threading
 import uuid
+from unittest.mock import AsyncMock
 import httpx
 import pytest
 from app.modules.checks.service import check_service
@@ -41,13 +42,13 @@ async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker)
 
     loopback_url = test_http_server
     mocker.patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        return_value=PinnedTarget(
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(return_value=PinnedTarget(
             url=loopback_url,
             hostname="127.0.0.1",
             port=int(loopback_url.rsplit(":", 1)[1]),
             ips=["127.0.0.1"],
-        ),
+        )),
     )
     mocker.patch(
         "app.modules.checks.service.pinned_transport_for",

@@ -11,7 +11,7 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
   }),
 };
 
@@ -105,7 +105,7 @@ export function PageHome() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ delay: 0.3, duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const }}
               className="hidden lg:block"
             >
               <NetworkVisualization />
@@ -178,7 +178,7 @@ export function PageHome() {
                 viewport={{ once: true }}
                 transition={{
                   duration: 0.8,
-                  ease: [0.25, 0.1, 0.25, 1],
+                  ease: [0.25, 0.1, 0.25, 1] as const,
                 }}
               >
                 30
@@ -190,7 +190,7 @@ export function PageHome() {
                 viewport={{ once: true }}
                 transition={{
                   duration: 0.8,
-                  ease: [0.25, 0.1, 0.25, 1],
+                  ease: [0.25, 0.1, 0.25, 1] as const,
                 }}
               >
                 %
@@ -277,7 +277,7 @@ export function PageHome() {
                 <motion.div
                   key={role.name}
                   whileHover={{ boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.15)' }}
-                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
                   className="bg-background p-6 transition-all duration-200 hover:bg-muted/30 hover:-translate-y-px"
                 >
                   <h3 className="mb-2 text-sm font-semibold text-foreground">
@@ -528,7 +528,7 @@ function CounterSection() {
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const }}
           className="grid grid-cols-2 divide-x divide-border/40 lg:grid-cols-4"
         >
           <CounterItem target={30} prefix="" suffix="%" label="Recurring commission" active={started} />
@@ -597,7 +597,7 @@ function CounterItem({
           className="font-mono tabular-nums text-3xl font-bold text-foreground sm:text-4xl"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={active ? { scale: [1, 1.05, 1], opacity: 1 } : {}}
-          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1], delay }}
+          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const, delay }}
         >
           {prefix}0{suffix}
         </motion.span>
