@@ -58,6 +58,16 @@ model Commission {
   partner  Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 }
 
+/// DEPRECATED — write path retired, kept only so existing rows are not dropped.
+///
+/// `POST /api/support` used to write here and nothing ever read it, so every
+/// web-form message went unanswered. Submissions now go to the backend
+/// `feedback_tickets` queue via `POST /v1/support/tickets`, which the admin
+/// support workspace serves.
+///
+/// Before removing this model, replay any surviving rows with
+/// `scripts/backfill-support-tickets.mjs`; dropping it via `prisma db push`
+/// destroys the only copy of those customer messages.
 model SupportTicket {
   id        String   @id @default(cuid())
   name      String

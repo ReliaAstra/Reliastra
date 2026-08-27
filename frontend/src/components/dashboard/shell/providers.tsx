@@ -24,7 +24,7 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
   const setSession = useAppStore((s) => s.setSession);
   const setAccessToken = useAppStore((s) => s.setAccessToken);
   const setOnline = useAppStore((s) => s.setOnline);
-  const enterDemoMode = useAppStore((s) => s.useDemo);
+  const enterDemoMode = useAppStore((s) => s.enterDemoMode);
 
   useEffect(() => {
     const refresh = getRefreshToken();

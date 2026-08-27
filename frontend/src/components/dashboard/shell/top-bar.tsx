@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isPaid, trialInfo } from '@/lib/dashboard/plans';
 import { initials } from '@/lib/dashboard/format';
-import { mockNotifications } from '@/lib/dashboard/mock';
 import { useMemo, useState } from 'react';
-import { timeAgo } from '@/lib/dashboard/format';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from './notification-bell';
 import { ThemeToggle } from './theme-toggle';
 
 function crumbs(pathname: string): { label: string; href?: string }[] {
@@ -45,8 +44,6 @@ export function TopBar() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const setCommand = useAppStore((s) => s.setCommandOpen);
   const setSidebar = useAppStore((s) => s.setSidebarOpen);
-  const unread = useAppStore((s) => s.unreadCount);
-  const setUnread = useAppStore((s) => s.setUnreadCount);
   const signOut = useAppStore((s) => s.signOut);
   const org = useAppStore((s) => s.org);
   const current = getPlan(plan?.plan);
@@ -124,50 +121,13 @@ export function TopBar() {
           </span>
         </button>
 
-        <div className="relative">
-          <button
-            type="button"
-            aria-label="Notifications"
-            onClick={() => {
-              setBellOpen((v) => !v);
-              setUserOpen(false);
-              setUnread(0);
-            }}
-            className="relative flex h-12 w-12 items-center justify-center text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
-          >
-            <Bell size={20} />
-            {unread > 0 && (
-              <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-rs-down" />
-            )}
-            {unread > 9 && (
-              <span className="absolute right-2 top-2 rounded-full bg-rs-down px-1 text-[9px] text-white">
-                {unread}
-              </span>
-            )}
-          </button>
-          {bellOpen && (
-            <div className="absolute right-0 top-12 w-80 overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated shadow-rs-popover">
-              <div className="border-b border-rs-border-subtle px-4 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-rs-text-tertiary">
-                Notifications
-              </div>
-              {mockNotifications.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => {
-                    setBellOpen(false);
-                    if (n.href) router.push(n.href);
-                  }}
-                  className="block w-full border-b border-rs-border-subtle px-4 py-3 text-left last:border-0 hover:bg-rs-hover transition-colors duration-150"
-                >
-                  <div className="text-sm text-rs-text">{n.title}</div>
-                  <div className="mt-1 text-xs text-rs-text-tertiary">{n.body}</div>
-                  <div className="mt-1 text-xs text-rs-text-tertiary">{timeAgo(n.created_at)}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <NotificationBell
+          open={bellOpen}
+          onOpenChange={(next) => {
+            setBellOpen(next);
+            if (next) setUserOpen(false);
+          }}
+        />
 
         <div className="relative">
           <button

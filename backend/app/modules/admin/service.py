@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ResourceNotFoundException, ValidationException
@@ -477,6 +477,23 @@ class AdminFeedbackService:
         source: str | None = None,
         user_id: uuid.UUID | None = None,
     ) -> FeedbackTicketResponse:
+        # A ticket created from an address only (admin "new ticket" sheet, the
+        # public web form) must still be tied to an account when one exists.
+        # Without this link ``reply_to_ticket`` has nobody to notify and the
+        # requester can never see the answer in-product.
+        if user_id is None and email:
+            from app.modules.users.models import User
+
+            matched = (
+                await session.execute(
+                    select(User.id).where(
+                        func.lower(User.email) == email.strip().lower()
+                    )
+                )
+            ).scalar_one_or_none()
+            if matched is not None:
+                user_id = matched
+
         ticket_number = f"FB-{secrets.token_hex(4).upper()}"
         ticket = await self.repository.create_ticket(
             session,
@@ -586,10 +603,10 @@ class AdminFeedbackService:
             is_internal_note=request.is_internal_note,
         )
 
-        # A visible reply is pushed to the requester: in-app (so the partner
-        # dashboard's live thread and notification page pick it up on their
-        # next poll) plus an email copy when their preferences allow it.
-        # Internal notes are staff-only and never notify.
+        # A visible reply is pushed to the requester: in-app (so the console's
+        # live thread and notification bell pick it up on their next poll) plus
+        # an email copy when their preferences allow it.  Internal notes are
+        # staff-only and never notify.
         if not request.is_internal_note and ticket.user_id:
             try:
                 from app.modules.partners.notifications import (
@@ -606,6 +623,28 @@ class AdminFeedbackService:
             except Exception:  # pragma: no cover - never block a reply
                 logger.exception(
                     "Failed to notify user %s of support reply", ticket.user_id
+                )
+        elif not request.is_internal_note and ticket.email:
+            # Unlinked ticket (submitted from an address with no account, or
+            # created by an admin on someone's behalf).  There is no in-app
+            # feed to write to, so email is the only way the requester learns
+            # they were answered — without this the reply silently vanished.
+            try:
+                import asyncio
+
+                await asyncio.to_thread(
+                    email_client.send_email,
+                    to_email=ticket.email,
+                    subject=f"[{ticket.ticket_number}] Re: {ticket.subject}",
+                    body=(
+                        f"{request.body}\n\n"
+                        f"— RELIASTRA Support\n"
+                        f"Ticket {ticket.ticket_number}"
+                    ),
+                )
+            except Exception:  # pragma: no cover - never block a reply
+                logger.exception(
+                    "Failed to email support reply to %s", ticket.email
                 )
 
         return FeedbackMessageResponse.model_validate(msg)

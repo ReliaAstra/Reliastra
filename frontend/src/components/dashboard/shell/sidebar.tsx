@@ -6,10 +6,12 @@ import {
   Building2,
   FileText,
   LayoutDashboard,
+  LifeBuoy,
   Link2,
   Settings,
   TriangleAlert,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
@@ -17,12 +19,21 @@ import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { ThemeToggle } from './theme-toggle';
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** Optional pill rendered on the right of the row. No entry uses it today. */
+  badge?: string;
+};
+
+const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dependencies', label: 'Dependencies', icon: Link2 },
   { href: '/incidents', label: 'Incidents', icon: TriangleAlert },
   { href: '/evidence', label: 'Evidence', icon: FileText },
   { href: '/clients', label: 'Clients', icon: Building2 },
+  { href: '/support', label: 'Support', icon: LifeBuoy },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

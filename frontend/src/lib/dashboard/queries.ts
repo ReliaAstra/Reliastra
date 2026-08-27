@@ -25,6 +25,9 @@ export const keys = {
   pricing: ['pricing'] as const,
   alerts: ['alerts'] as const,
   portfolio: ['agency', 'portfolio'] as const,
+  inbox: ['notifications', 'inbox'] as const,
+  supportTickets: ['support', 'tickets'] as const,
+  supportThread: (id: string) => ['support', 'tickets', id] as const,
 };
 
 export function useSummary() {
@@ -168,3 +171,98 @@ export function usePortfolio(enabled = true) {
     enabled,
   });
 }
+
+// ── In-dashboard notification inbox ────────────────────────────────────────
+//
+// The bell polls for a real unread count rather than trusting a hardcoded
+// number, so a dependency alert raised by the backend surfaces without a
+// reload. The interval is short enough to feel live and long enough to keep
+// the request volume sane.
+
+export const INBOX_POLL_MS = 30_000;
+export const SUPPORT_THREAD_POLL_MS = 5_000;
+export const SUPPORT_LIST_POLL_MS = 20_000;
+
+export function useInbox(enabled = true) {
+  return useQuery({
+    queryKey: keys.inbox,
+    queryFn: () => api.inbox({ page_size: 20 }),
+    enabled,
+    refetchInterval: INBOX_POLL_MS,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useMarkInboxRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationIds?: string[]) => api.markInboxRead(notificationIds),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.inbox });
+    },
+  });
+}
+
+export function useDismissInboxItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationId: string) => api.dismissInboxItem(notificationId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.inbox });
+    },
+  });
+}
+
+// ── Support desk ───────────────────────────────────────────────────────────
+
+export function useSupportTickets() {
+  return useQuery({
+    queryKey: keys.supportTickets,
+    queryFn: () => api.supportTickets({ page_size: 50 }),
+    refetchInterval: SUPPORT_LIST_POLL_MS,
+  });
+}
+
+export function useSupportThread(ticketId: string | null) {
+  return useQuery({
+    queryKey: keys.supportThread(ticketId ?? ''),
+    queryFn: () => api.supportThread(ticketId as string),
+    enabled: Boolean(ticketId),
+    // Live-chat feel: an admin reply appears without the customer reloading.
+    refetchInterval: SUPPORT_THREAD_POLL_MS,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useCreateSupportTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { subject: string; message: string }) =>
+      api.createSupportTicket(body),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: keys.supportTickets });
+      toast.success(`Conversation ${data.ticket.ticket_number} opened`);
+    },
+    onError: () => {
+      toast.error('Could not open the conversation', {
+        description: 'Please try again or email support@reliastra.com.',
+      });
+    },
+  });
+}
+
+export function useAddSupportMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ticketId, body }: { ticketId: string; body: string }) =>
+      api.addSupportMessage(ticketId, body),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: keys.supportThread(variables.ticketId) });
+      qc.invalidateQueries({ queryKey: keys.supportTickets });
+    },
+    onError: () => {
+      toast.error('Message not sent', { description: 'Please try again.' });
+    },
+  });
+}
+

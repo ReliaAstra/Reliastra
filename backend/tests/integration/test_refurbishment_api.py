@@ -34,21 +34,23 @@ async def test_agency_ai_and_dashboard_endpoints(
     await vendor_service.seed_vendors(db_session)
     await db_session.commit()
 
+    # The agency API is currently unmounted: ``agencies_router`` is commented
+    # out in ``app/main.py``. The module (and these routes) is preserved and
+    # comes back by uncommenting one line, at which point these two become
+    # 201 assertions again — see commit 9199e5b.
     client_response = await async_client.post(
         "/v1/clients",
         headers=headers,
         json={"name": "Customer One"},
     )
-    assert client_response.status_code == 201, client_response.text
-    client_id = client_response.json()["id"]
+    assert client_response.status_code == 404
 
     app_response = await async_client.post(
-        f"/v1/clients/{client_id}/applications",
+        "/v1/clients/00000000-0000-0000-0000-000000000000/applications",
         headers=headers,
         json={"name": "Production"},
     )
-    assert app_response.status_code == 201, app_response.text
-    assert app_response.json()["client_id"] == client_id
+    assert app_response.status_code == 404
 
     # The AI explainer is Reliastra-managed: tenants cannot register providers.
     removed_provider_routes = await async_client.post(
