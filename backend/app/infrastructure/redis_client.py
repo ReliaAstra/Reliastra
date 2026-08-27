@@ -87,6 +87,37 @@ async def safe_redis_set_nx(key: str, value: str, ex: int | None = None, timeout
         return False
 
 
+async def safe_redis_claim(
+    key: str, value: str = "1", ex: int | None = None, timeout: float = 2.0
+) -> bool | None:
+    """SET NX that distinguishes "already claimed" from "Redis unavailable".
+
+    Returns:
+        True  — the key was newly created; the caller owns the claim.
+        False — the key already existed; this is a genuine duplicate.
+        None  — Redis could not be reached, so duplication is UNKNOWN.
+
+    :func:`safe_redis_set_nx` collapses the last two into ``False``, which
+    silently turns a Redis outage into "everything is a duplicate". Callers
+    that must fail open (webhook processing, alert dispatch) have to be able
+    to tell the difference, so they use this instead.
+    """
+    try:
+        redis = get_redis()
+        result = await asyncio.wait_for(
+            redis.set(key, value, nx=True, ex=ex), timeout=timeout
+        )
+        return bool(result)
+    except Exception:
+        logger.warning(
+            "safe_redis_claim could not reach Redis for key=%s; "
+            "caller must decide whether to fail open",
+            key,
+            exc_info=True,
+        )
+        return None
+
+
 async def safe_redis_incr(key: str, timeout: float = 2.0) -> int | None:
     """INCR wrapper — returns the new value, or None on Redis failure."""
     try:

@@ -23,7 +23,7 @@ from app.infrastructure.redis_client import (
     close_redis,
     safe_redis_get,
     safe_redis_ping,
-    safe_redis_set_nx,
+    safe_redis_claim,
     safe_redis_setex,
 )
 from app.modules.agencies.router import router as agencies_router
@@ -153,7 +153,19 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             # requests get a 409 Conflict instead of both executing and
             # causing duplicate side effects (e.g. two orgs created).
             lock_key = f"{cache_key}:lock"
-            acquired = await safe_redis_set_nx(lock_key, "1", ex=60)
+            acquired = await safe_redis_claim(lock_key, ex=60)
+            if acquired is None:
+                # Redis is unreachable. Without it there is no single-flight
+                # lock to take, but answering 409 would turn a Redis outage
+                # into a total outage of every idempotent POST/PATCH. Degrade
+                # to executing the request unguarded.
+                logger.warning(
+                    "Idempotency lock store unavailable — processing %s %s "
+                    "without single-flight protection",
+                    request.method,
+                    request.url.path,
+                )
+                return await call_next(request)
             if not acquired:
                 return Response(
                     status_code=status.HTTP_409_CONFLICT,

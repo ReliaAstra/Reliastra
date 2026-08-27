@@ -314,6 +314,18 @@ class BillingService:
             raise ValidationException(
                 f"Plan '{plan}' is not available for self-serve checkout"
             )
+        # PLAN_AMOUNTS is denominated in minor units of PAYSTACK_CURRENCY, so
+        # comparing a raw integer is only meaningful once the currency matches.
+        # A multi-currency Paystack account can settle the same nominal amount
+        # in a far weaker currency (9900 NGN is ~$6, not $99), which would
+        # clear this check and unlock the tier. Checkout always initializes
+        # with settings.PAYSTACK_CURRENCY, so anything else is not ours.
+        expected_currency = (settings.PAYSTACK_CURRENCY or "USD").upper()
+        collected_currency = str(data.get("currency") or expected_currency).upper()
+        if collected_currency != expected_currency:
+            raise ValidationException(
+                "Payment currency does not match the billing currency"
+            )
         if collected is None or int(collected) < expected_amount:
             raise ValidationException(
                 "Collected payment does not cover the selected plan price"
@@ -448,15 +460,24 @@ class BillingService:
         failures fail open (the webhook is processed) rather than dropping
         payments.
         """
-        try:
-            from app.infrastructure.redis_client import safe_redis_set_nx
+        from app.infrastructure.redis_client import safe_redis_claim
 
-            claimed = await safe_redis_set_nx(
-                f"paystack:event:{event_id}", "1", ex=24 * 3600
+        claimed = await safe_redis_claim(
+            f"paystack:event:{event_id}", ex=24 * 3600
+        )
+        if claimed is None:
+            # Redis is unreachable, so we cannot tell whether this is a
+            # retry. Process it: `verify_transaction` is itself idempotent,
+            # whereas skipping means the payment is never provisioned AND
+            # we return 200, so Paystack never retries. Losing money is far
+            # worse than doing the work twice.
+            logger.warning(
+                "Idempotency store unavailable for Paystack event %s — "
+                "processing anyway to avoid dropping the payment",
+                event_id,
             )
-            return bool(claimed)
-        except Exception:
             return True
+        return claimed
 
     async def handle_webhook(
         self,

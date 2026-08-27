@@ -319,17 +319,23 @@ class NotificationService:
         incidents × N channels). Redis SET-NX claims the window; Redis
         failures fail open so alerts are never silently dropped.
         """
-        try:
-            from app.infrastructure.redis_client import safe_redis_set_nx
+        from app.infrastructure.redis_client import safe_redis_claim
 
-            claimed = await safe_redis_set_nx(
-                f"alert:dedup:{self._alert_fingerprint(alert)}",
-                "1",
-                ex=60,
+        claimed = await safe_redis_claim(
+            f"alert:dedup:{self._alert_fingerprint(alert)}",
+            ex=60,
+        )
+        if claimed is None:
+            # Redis is unreachable. Treat the alert as new: a duplicate
+            # notification is noise, but a suppressed one means the customer
+            # never hears about an outage.
+            logger.warning(
+                "Alert dedupe store unavailable — dispatching '%s' without "
+                "deduplication",
+                alert.title,
             )
-            return not claimed
-        except Exception:
             return False
+        return not claimed
 
     async def dispatch_alert(
         self, session: AsyncSession, alert: AlertPayload
