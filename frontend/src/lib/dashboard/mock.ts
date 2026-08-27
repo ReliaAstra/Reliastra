@@ -1,5 +1,4 @@
 import type {
-  AgencyClient,
   AlertConfig,
   CheckResult,
   DashboardSummary,
@@ -10,7 +9,6 @@ import type {
   Incident,
   IncidentDetail,
   Invoice,
-  NotificationItem,
   Organization,
   PaymentMethod,
   PlanDetails,
@@ -465,33 +463,6 @@ export function mockLatency(depId?: string) {
   }));
 }
 
-export const mockNotifications: NotificationItem[] = [
-  {
-    id: 'n1',
-    title: 'Twilio Messaging degraded',
-    body: 'Independent checks in US East and EU West confirm elevated latency.',
-    created_at: minutes(18),
-    read: false,
-    href: `/incidents/${IDS.incidentOpen}`,
-  },
-  {
-    id: 'n2',
-    title: 'Quorum confirmed',
-    body: 'Incident INC-1842 reached multi-region confirmation.',
-    created_at: minutes(18),
-    read: false,
-    href: `/incidents/${IDS.incidentOpen}`,
-  },
-  {
-    id: 'n3',
-    title: 'Stripe recovered',
-    body: 'Latency returned to baseline after 23 minutes.',
-    created_at: hours(17),
-    read: true,
-    href: `/incidents/${IDS.incidentResolved}`,
-  },
-];
-
 export const mockAlertConfigs: AlertConfig[] = [
   {
     id: 'cfg-email',
@@ -507,11 +478,6 @@ export const mockInvoices: Invoice[] = [];
 
 export const mockPayment: PaymentMethod | null = null;
 
-export const mockClients: AgencyClient[] = [
-  { id: 'c1', name: 'Northwind Logistics' },
-  { id: 'c2', name: 'Helios Payments' },
-  { id: 'c3', name: 'Cedar Health' },
-];
 
 export function paginate<T>(data: T[]) {
   return {

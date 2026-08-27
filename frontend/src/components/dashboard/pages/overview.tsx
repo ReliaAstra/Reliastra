@@ -12,6 +12,7 @@ import {
   Plus,
   Sparkles,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
@@ -307,7 +308,21 @@ export function OverviewPage() {
   const current = getPlan(plan?.plan);
   const router = useRouter();
 
-  const stats = [
+  // Explicit element type: the array mixes cards that carry a usage meter with
+  // cards that only carry a caption. Left to inference TypeScript produced a
+  // union and narrowed the caption branch to `never`, so `s.context` never
+  // rendered.
+  const stats: Array<{
+    label: string;
+    value: string | number;
+    icon: LucideIcon;
+    bg: string;
+    color: string;
+    valueClass: string;
+    iconClass: string;
+    usage?: { used: number; total: number };
+    context?: string;
+  }> = [
     {
       label: 'Dependencies',
       value: summary?.active_dependencies_count ?? 0,
@@ -394,7 +409,7 @@ export function OverviewPage() {
                   <div className={cn('rs-stat-value font-mono text-[32px] font-bold leading-none tracking-[-0.02em]', s.valueClass)}>
                     {s.value}
                   </div>
-                  {'usage' in s && s.usage ? (
+                  {s.usage ? (
                     <div className="mt-3">
                       <div className="rs-usage-meter h-1 w-full overflow-hidden rounded-full bg-rs-hover">
                         <div
@@ -419,7 +434,6 @@ export function OverviewPage() {
                       )}
                     </div>
                   ) : (
-                    'context' in s &&
                     s.context && <div className="rs-stat-context mt-2 text-xs text-rs-text-tertiary">{s.context}</div>
                   )}
                 </div>

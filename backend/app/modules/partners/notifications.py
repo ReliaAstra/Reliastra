@@ -454,9 +454,15 @@ class PartnerNotificationService:
 
     async def dismiss(
         self, session: AsyncSession, user_id: uuid.UUID, notification_id: uuid.UUID
-    ) -> None:
+    ) -> int:
+        """Dismiss one notification for one person.
+
+        Returns the number of delivery rows touched. The update is scoped by
+        ``user_id``, so a caller acting on someone else's notification matches
+        zero rows — callers turn that into a 404 rather than a misleading 204.
+        """
         now = datetime.now(timezone.utc)
-        await session.execute(
+        result = await session.execute(
             update(InAppNotificationDelivery)
             .where(
                 InAppNotificationDelivery.user_id == user_id,
@@ -464,6 +470,7 @@ class PartnerNotificationService:
             )
             .values(is_dismissed=True, dismissed_at=now, is_read=True, read_at=now)
         )
+        return int(result.rowcount or 0)
 
 
 partner_notification_service = PartnerNotificationService()

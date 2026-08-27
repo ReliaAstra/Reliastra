@@ -53,6 +53,7 @@ from app.modules.growth.router import growth_router
 from app.modules.feed.router import feed_router
 from app.modules.status_pages.router import status_router, status_page_router
 from app.modules.admin.router import admin_router, public_announcements_router
+from app.modules.admin.public_support_router import public_support_router
 from app.modules.admin.seed import seed_first_admin
 from app.modules.analytics.router import public_analytics_router
 
@@ -301,6 +302,7 @@ def create_app() -> FastAPI:
     app.include_router(status_page_router)
     app.include_router(admin_router)
     app.include_router(public_announcements_router)
+    app.include_router(public_support_router)
     app.include_router(partners_router)
     app.include_router(public_partners_router)
     app.include_router(admin_partners_router)

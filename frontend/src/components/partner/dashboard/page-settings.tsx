@@ -516,7 +516,9 @@ function PayoutInfoTab() {
 function PartnerLinkTab() {
   const dashboardData = usePartnerStore((s) => s.dashboardData);
   const user = usePartnerStore((s) => s.user);
-  const referralLink = dashboardData?.referralLink || '';
+  // The API returns snake_case; reading `referralLink` yielded undefined and
+  // rendered an empty share link.
+  const referralLink = dashboardData?.referral_link || '';
 
   const shareChannels = [
     {

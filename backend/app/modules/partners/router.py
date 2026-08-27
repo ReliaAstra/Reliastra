@@ -12,7 +12,7 @@ import uuid
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenException
+from app.core.exceptions import ForbiddenException, ResourceNotFoundException
 from app.core.rate_limit import SlidingWindowRateLimiter, enforce_rate_limit
 from app.db.session import get_db
 from app.dependencies import get_current_user
@@ -371,7 +371,11 @@ async def dismiss_notification(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_partner_user),
 ) -> None:
-    await partner_notification_service.dismiss(db, current_user.id, notification_id)
+    dismissed = await partner_notification_service.dismiss(
+        db, current_user.id, notification_id
+    )
+    if dismissed == 0:
+        raise ResourceNotFoundException("Notification not found")
 
 
 @partners_router.get(

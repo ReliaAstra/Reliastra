@@ -7,6 +7,7 @@ import pytest
 
 from app.core.ssrf_protection import (
     PinnedTarget,
+    is_url_safe,
     pinned_transport_for,
     resolve_pinned_target,
     validate_outbound_url,
@@ -77,3 +78,50 @@ def test_pinned_transport_cache_is_reused():
     first = pinned_transport_for(target)
     second = pinned_transport_for(target)
     assert first is second
+
+
+# ── Regression: hostname URLs must not be rejected as IP literals ─────────
+#
+# is_url_safe() used to pass the *hostname* to _is_blocked_ip(), which treats
+# anything unparseable as hostile. Every name-based URL was therefore
+# rejected, silently killing Slack alerts, customer webhooks, and vendor URL
+# validation in production while the suite stayed green (the SSRF tests only
+# exercised IP literals and mocked DNS).
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://hooks.slack.com/services/T00/B00/xyz",
+        "https://example.com/health",
+        "https://api.pagerduty.com/v2/enqueue",
+    ],
+)
+def test_public_hostname_urls_are_allowed(url):
+    safe, reason = is_url_safe(url)
+    assert safe, reason
+    # Must not raise either — this is what the channels actually call.
+    validate_outbound_url(url)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://127.0.0.1:8080/admin",
+        "http://169.254.169.254/latest/meta-data",
+        "http://10.0.0.5/secret",
+        "http://[::ffff:169.254.169.254]/x",  # IPv4-mapped IPv6
+        "http://[64:ff9b::a9fe:a9fe]/x",  # NAT64
+    ],
+)
+def test_ip_literal_bypasses_are_still_blocked(url):
+    """The fix must not loosen any SSRF protection."""
+    safe, reason = is_url_safe(url)
+    assert not safe
+    assert "private/blocked" in reason
+
+
+def test_scheme_is_still_enforced():
+    safe, reason = is_url_safe("ftp://example.com/x")
+    assert not safe
+    assert "not allowed" in reason

@@ -78,6 +78,22 @@ def _is_blocked_ip(ip_str: str) -> bool:
     return any(ip in net for net in _BLOCKED_NETWORKS)
 
 
+def _ip_literal_or_none(ip_str: str):
+    """Return the normalized IP when *ip_str* is an IP literal, else ``None``.
+
+    ``_is_blocked_ip`` deliberately treats anything unparseable as hostile, so
+    it must never be handed a hostname — doing so rejected *every* name-based
+    URL (``https://hooks.slack.com/...`` failed with "IP hooks.slack.com
+    points to a private/blocked network"), which silently killed Slack
+    alerts, customer webhooks, and vendor URL validation. Callers that accept
+    either form must distinguish the two with this helper first.
+    """
+    try:
+        return _normalize_ip(ip_str)
+    except ValueError:
+        return None
+
+
 def _resolve_hostname(hostname: str) -> list[str]:
     """Resolve a hostname to all its IP addresses.
 
@@ -131,9 +147,11 @@ def is_url_safe(
     if not hostname:
         return False, "URL has no hostname"
 
-    # Check if the hostname itself is a numeric IP (covers IPv4-mapped IPv6
-    # and NAT64 forms via normalization)
-    if _is_blocked_ip(hostname):
+    # A hostname that IS an IP literal is checked directly (covering
+    # IPv4-mapped IPv6 and NAT64 forms via normalization). A plain name is
+    # validated after DNS resolution below — _is_blocked_ip treats anything
+    # unparseable as hostile, so it must never be handed a name.
+    if _ip_literal_or_none(hostname) is not None and _is_blocked_ip(hostname):
         return False, f"IP {hostname} points to a private/blocked network"
 
     # Resolve the hostname and check every resolved IP
@@ -172,7 +190,7 @@ async def is_url_safe_async(
     if not hostname:
         return False, "URL has no hostname"
 
-    if _is_blocked_ip(hostname):
+    if _ip_literal_or_none(hostname) is not None and _is_blocked_ip(hostname):
         return False, f"IP {hostname} points to a private/blocked network"
 
     resolved_ips = await _resolve_hostname_async(hostname)

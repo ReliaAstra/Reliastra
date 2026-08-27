@@ -247,15 +247,6 @@ export interface AlertConfig {
   updated_at: string;
 }
 
-export interface NotificationItem {
-  id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  read: boolean;
-  href?: string;
-}
-
 export interface Invoice {
   id: string;
   date: string;
@@ -311,4 +302,73 @@ export interface AgencyPortfolio {
   clients: PortfolioClient[];
   totals: PortfolioTotals;
   unassigned_monitors: number;
+}
+
+// -- In-dashboard notification inbox ----------------------------------------
+//
+// Every persona (customer, agency operator, partner) reads the same feed.
+// There is deliberately no mock fallback for these: rendering fabricated
+// alerts in a monitoring product is the failure this type exists to prevent.
+
+export interface InboxNotification {
+  id: string;
+  event: string;
+  title: string;
+  body: string;
+  action_url: string | null;
+  action_label: string | null;
+  priority: 'urgent' | 'high' | 'normal' | 'low' | string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface InboxListResponse {
+  items: InboxNotification[];
+  page: number;
+  page_size: number;
+  total: number;
+  unread: number;
+}
+
+export interface InboxUnreadCountResponse {
+  unread: number;
+}
+
+// -- Support desk -----------------------------------------------------------
+//
+// Same `feedback_tickets` rows the admin support workspace works on, so a
+// conversation opened here is the one an admin replies to.
+
+export interface SupportTicketSummary {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+  last_message_preview: string;
+  last_sender_type: 'user' | 'admin' | 'system' | string;
+  unread_admin_messages: number;
+}
+
+export interface SupportMessage {
+  id: string;
+  sender_type: 'user' | 'admin' | 'system' | string;
+  sender_name: string;
+  body: string;
+  created_at: string;
+}
+
+export interface SupportTicketDetail {
+  ticket: SupportTicketSummary;
+  messages: SupportMessage[];
+}
+
+export interface SupportTicketListResponse {
+  items: SupportTicketSummary[];
+  page: number;
+  page_size: number;
+  total: number;
 }

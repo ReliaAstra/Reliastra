@@ -164,6 +164,13 @@ export function CommandPalette() {
 
   const flat = items;
 
+  // Keyboard navigation indexes one flat list, but the palette renders
+  // grouped. Mapping each item to its flat position keeps the highlighted row
+  // and the arrow-key handler in agreement. (This used to be a `running += 1`
+  // counter that was never declared, and whose `onMouseEnter` closure would
+  // have captured the final count for every row.)
+  const flatIndex = new Map(flat.map((item, i) => [item.id, i]));
+
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/50 pt-[12vh]" onClick={() => setOpen(false)}>
       <div
@@ -194,14 +201,14 @@ export function CommandPalette() {
                 {q ? 'Search results' : group}
               </div>
               {list.map((item) => {
-                running += 1;
-                const selected = running === idx;
+                const position = flatIndex.get(item.id) ?? 0;
+                const selected = position === idx;
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onMouseEnter={() => setIdx(running)}
+                    onMouseEnter={() => setIdx(position)}
                     onClick={() => run(item)}
                     className={cn(
                       'flex w-full items-center px-5 py-2.5 text-left',

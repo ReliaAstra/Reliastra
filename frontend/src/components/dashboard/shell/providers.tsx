@@ -24,12 +24,12 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
   const setSession = useAppStore((s) => s.setSession);
   const setAccessToken = useAppStore((s) => s.setAccessToken);
   const setOnline = useAppStore((s) => s.setOnline);
-  const useDemo = useAppStore((s) => s.useDemo);
+  const enterDemoMode = useAppStore((s) => s.enterDemoMode);
 
   useEffect(() => {
     const refresh = getRefreshToken();
     if (!refresh) {
-      useDemo();
+      enterDemoMode();
       setHydrated(true);
       return;
     }
@@ -46,12 +46,12 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
         const [user, org, plan] = await Promise.all([api.me(), api.org(), api.plan()]);
         setSession(user, org, plan);
       } catch {
-        useDemo();
+        enterDemoMode();
       } finally {
         setHydrated(true);
       }
     })();
-  }, [setHydrated, setSession, setAccessToken, useDemo]);
+  }, [setHydrated, setSession, setAccessToken, enterDemoMode]);
 
   useEffect(() => {
     const on = () => setOnline(true);

@@ -60,6 +60,10 @@ async function request<T>(
     throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
   }
 
+  // 204 No Content (e.g. POST /auth/logout) has an empty body — res.json()
+  // would throw on it.
+  if (res.status === 204) return undefined as T;
+
   return res.json();
 }
 
@@ -78,6 +82,34 @@ export const partnerApi = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  /**
+   * Revoke the refresh token server-side and drop both local tokens.
+   *
+   * The dashboard called `partnerApi.logout()` from three sign-out handlers,
+   * but the method did not exist — so signing out threw and the session
+   * survived. Local tokens are cleared even if the backend call fails, so a
+   * user can always get out of a session.
+   */
+  async logout() {
+    const refreshToken =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('partner_refresh_token')
+        : null;
+    try {
+      if (refreshToken) {
+        await request<void>('/auth/logout', {
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      }
+    } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('partner_access_token');
+        localStorage.removeItem('partner_refresh_token');
+      }
+    }
   },
 
   async me() {

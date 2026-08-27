@@ -128,13 +128,13 @@ async def test_observation_attribution_snapshot_and_verification(
     dependency_id = uuid.UUID(dependency_response.json()["id"])
 
     mocker.patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        return_value=MagicMock(
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(return_value=MagicMock(
             url="https://example.com/health",
             hostname="example.com",
             port=443,
             ips=["93.184.216.34"],
-        ),
+        )),
     )
 
     class _FakePinnedTransport(httpx.AsyncBaseTransport):

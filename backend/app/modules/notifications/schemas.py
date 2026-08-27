@@ -67,3 +67,41 @@ class AlertTestRequest(BaseModel):
 class AlertTestResponse(BaseModel):
     success: bool
     message: str
+
+
+# ---------------------------------------------------------------------------
+# In-dashboard inbox
+#
+# Every authenticated human — normal customer, agency operator, partner —
+# reads the same ``in_app_notifications`` fan-out through these endpoints.
+# They are deliberately NOT org-scoped: a notification belongs to a person.
+# ---------------------------------------------------------------------------
+
+
+class InboxItem(BaseModel):
+    id: uuid.UUID
+    event: str
+    title: str
+    body: str
+    action_url: str | None = None
+    action_label: str | None = None
+    priority: str
+    is_read: bool
+    created_at: datetime
+
+
+class InboxListResponse(BaseModel):
+    items: list[InboxItem]
+    page: int
+    page_size: int
+    total: int
+    unread: int
+
+
+class InboxUnreadCountResponse(BaseModel):
+    unread: int
+
+
+class InboxMarkReadRequest(BaseModel):
+    #: Omit (or send an empty list) to mark the whole feed read.
+    notification_ids: list[uuid.UUID] | None = None

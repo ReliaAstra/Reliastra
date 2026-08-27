@@ -102,7 +102,7 @@ export function MetricCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
-      transition={{ duration: 0.4, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 0.4, delay, ease: [0.25, 0.1, 0.25, 1] as const }}
       className={cn(
         'border border-border/60 rounded-lg p-5 md:p-6 bg-background transition-colors duration-200 hover:border-border hover:bg-muted/20',
         className

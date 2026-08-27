@@ -57,11 +57,15 @@ export function SkeletonPulse({
 // A div with shimmer gradient animation
 export function SkeletonShimmer({
   className,
+  style,
 }: {
   className?: string;
+  /** Inline styles for dynamic dimensions (e.g. randomised bar heights). */
+  style?: React.CSSProperties;
 }) {
   return (
     <div
+      style={style}
       className={cn(
         'rounded-md bg-muted/40 relative overflow-hidden skeleton-shimmer',
         'bg-[length:200%_100%] bg-[linear-gradient(90deg,theme(colors.muted/40)_25%,theme(colors.background/60)_50%,theme(colors.muted/40)_75%)]',

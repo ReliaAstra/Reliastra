@@ -16,7 +16,13 @@ from app.modules.billing.service import BillingService
 async def test_get_plan_details():
     repo = MagicMock()
     org_id = uuid.uuid4()
-    fake_org = MagicMock(id=org_id, plan=Plan.STANDARD.value)
+    fake_org = MagicMock(
+        id=org_id,
+        plan=Plan.STANDARD.value,
+        # is_trial_active() compares created_at against a datetime, so an
+        # auto-generated MagicMock attribute raises TypeError.
+        created_at=datetime.now(timezone.utc),
+    )
     fake_subscription = MagicMock(
         status="active", current_period_end=datetime.now(timezone.utc)
     )

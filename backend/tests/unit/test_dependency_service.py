@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 import pytest
 from app.core.exceptions import ConflictException, ValidationException
@@ -19,6 +19,7 @@ async def test_create_dependency_success(mocker):
     fake_org = MagicMock()
     fake_org.id = org_id
     fake_org.plan = "standard"
+    fake_org.created_at = datetime.now(timezone.utc)
     org_repo.get_by_id = AsyncMock(return_value=fake_org)
     dep_repo.count_for_org = AsyncMock(return_value=2)
 
@@ -70,6 +71,9 @@ async def test_create_dependency_interval_too_low():
     fake_org = MagicMock()
     fake_org.id = org_id
     fake_org.plan = "free"
+    # Past the 14-day trial: get_effective_plan() would otherwise apply
+    # Professional limits and these free-plan assertions would not fire.
+    fake_org.created_at = datetime.now(timezone.utc) - timedelta(days=30)
     org_repo.get_by_id = AsyncMock(return_value=fake_org)
 
     service = DependencyService(repository=dep_repo, org_repository=org_repo)
@@ -93,6 +97,9 @@ async def test_create_dependency_limit_reached():
     fake_org = MagicMock()
     fake_org.id = org_id
     fake_org.plan = "free"
+    # Past the 14-day trial: get_effective_plan() would otherwise apply
+    # Professional limits and these free-plan assertions would not fire.
+    fake_org.created_at = datetime.now(timezone.utc) - timedelta(days=30)
     org_repo.get_by_id = AsyncMock(return_value=fake_org)
     dep_repo.count_for_org = AsyncMock(return_value=5)  # Limit for free is 5
 

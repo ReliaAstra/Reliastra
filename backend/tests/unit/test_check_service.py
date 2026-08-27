@@ -87,13 +87,13 @@ async def test_execute_check_success(mocker):
         "app.modules.dependencies.service.dependency_service.get_dependency_config_internal",
         new=AsyncMock(return_value=fake_dto),
     ), patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        return_value=MagicMock(
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(return_value=MagicMock(
             url="https://example.com/api",
             hostname="example.com",
             port=443,
             ips=["93.184.216.34"],
-        ),
+        )),
     ), patch(
         "app.modules.checks.service.pinned_transport_for",
         return_value=_FakePinnedTransport(status_code=200),
@@ -130,13 +130,13 @@ async def test_execute_check_locks_dependency_row_for_update(mocker):
         "app.modules.dependencies.service.dependency_service.get_dependency_config_internal",
         new=AsyncMock(return_value=fake_dto),
     ), patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        return_value=MagicMock(
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(return_value=MagicMock(
             url="https://example.com/api",
             hostname="example.com",
             port=443,
             ips=["93.184.216.34"],
-        ),
+        )),
     ), patch(
         "app.modules.checks.service.pinned_transport_for",
         return_value=_FakePinnedTransport(status_code=200),
@@ -170,8 +170,8 @@ async def test_execute_check_blocked_url_records_failure_without_http():
         "app.modules.dependencies.service.dependency_service.get_dependency_config_internal",
         new=AsyncMock(return_value=fake_dto),
     ), patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        side_effect=ValueError("URL safety check failed: private network"),
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(side_effect=ValueError("URL safety check failed: private network")),
     ), patch(
         "app.modules.checks.service.pinned_transport_for"
     ) as transport_mock:
@@ -213,13 +213,13 @@ async def test_execute_check_records_circuit_breaker(mocker):
         "app.modules.dependencies.service.dependency_service.get_dependency_config_internal",
         new=AsyncMock(return_value=fake_dto),
     ), patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        return_value=MagicMock(
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(return_value=MagicMock(
             url="https://example.com/api",
             hostname="example.com",
             port=443,
             ips=["93.184.216.34"],
-        ),
+        )),
     ), patch(
         "app.modules.checks.service.pinned_transport_for",
         return_value=_FakePinnedTransport(status_code=200),
@@ -329,8 +329,8 @@ async def test_execute_check_follows_redirects_with_revalidation(mocker):
         "app.modules.dependencies.service.dependency_service.get_dependency_config_internal",
         new=AsyncMock(return_value=fake_dto),
     ), patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        side_effect=fake_resolve,
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(side_effect=fake_resolve),
     ), patch(
         "app.modules.checks.service.pinned_transport_for",
         return_value=FakeTransport(),
@@ -378,8 +378,8 @@ async def test_execute_check_blocks_redirect_to_private_target():
         "app.modules.dependencies.service.dependency_service.get_dependency_config_internal",
         new=AsyncMock(return_value=fake_dto),
     ), patch(
-        "app.modules.checks.service.resolve_pinned_target",
-        side_effect=fake_resolve,
+        "app.modules.checks.service.resolve_pinned_target_async",
+        new=AsyncMock(side_effect=fake_resolve),
     ), patch(
         "app.modules.checks.service.pinned_transport_for",
         return_value=FakeTransport(),

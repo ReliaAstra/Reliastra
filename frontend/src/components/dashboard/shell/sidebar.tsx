@@ -6,6 +6,7 @@ import {
   Building2,
   FileText,
   LayoutDashboard,
+  LifeBuoy,
   Link2,
   Settings,
   TriangleAlert,
@@ -13,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
-import { mockClients } from '@/lib/dashboard/mock';
+import { useClients } from '@/lib/dashboard/queries';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { ThemeToggle } from './theme-toggle';
@@ -24,6 +25,7 @@ const NAV = [
   { href: '/incidents', label: 'Incidents', icon: TriangleAlert },
   { href: '/evidence', label: 'Evidence', icon: FileText },
   { href: '/clients', label: 'Clients', icon: Building2, badge: 'AGENCY' },
+  { href: '/support', label: 'Support', icon: LifeBuoy },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -109,6 +111,9 @@ export function Sidebar() {
   const setClient = useAppStore((s) => s.setSelectedClient);
   const current = getPlan(plan?.plan);
   const agency = current.id === 'agency';
+  // Real clients for this agency — the switcher used to offer three hardcoded
+  // companies that belonged to nobody.
+  const { data: clients = [] } = useClients(agency);
 
   return (
     <aside className="rs-sidebar fixed bottom-0 left-0 top-14 z-40 hidden w-16 flex-col border-r border-rs-border-subtle bg-rs-base px-2 py-4 md:flex lg:w-60 lg:px-3">
@@ -122,7 +127,7 @@ export function Sidebar() {
             onChange={(e) => setClient(e.target.value)}
             className="w-full rounded-lg border border-rs-border-subtle bg-rs-elevated px-3 py-2 text-sm font-medium text-rs-text focus-visible:outline-none focus-visible:border-rs-brand focus-visible:ring-[3px] focus-visible:ring-[rgb(37_99_235_/_0.20)]"
           >
-            {mockClients.map((c) => (
+            {clients.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>

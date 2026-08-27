@@ -53,7 +53,7 @@ export function PartnerNav() {
         <motion.button
           onClick={() => handleNav('home')}
           whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
           className="flex items-center transition-opacity hover:opacity-70"
         >
           <ReliastraLogo size="lg" />
@@ -175,7 +175,7 @@ export function PartnerNav() {
                   key={link.page}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.2, delay: i * 0.03, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ duration: 0.2, delay: i * 0.03, ease: [0.25, 0.1, 0.25, 1] as const }}
                   onClick={() => handleNav(link.page)}
                   className={cn(
                     'rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors',

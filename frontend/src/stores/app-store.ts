@@ -35,7 +35,7 @@ interface AppState {
   setAccessToken: (token: string | null) => void;
   setHydrated: (v: boolean) => void;
   setSession: (user: UserMe | null, org: Organization | null, plan: PlanDetails | null) => void;
-  useDemo: () => void;
+  enterDemoMode: () => void;
   setDemoPlan: (plan: PlanId) => void;
   setSelectedClient: (id: string | null) => void;
   openUpgrade: (reason?: string) => void;
@@ -73,7 +73,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     { href: '/incidents/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbb842', label: 'INC-1842' },
     { href: '/dependencies', label: 'Dependencies' },
   ],
-  unreadCount: 2,
+  // Seeded at zero and driven by GET /v1/notifications/inbox. This used to be
+  // a hardcoded 2 that nothing ever updated, so the bell badge was fiction.
+  unreadCount: 0,
   online: true,
 
   setAccessToken: (token) => set({ accessToken: token, isDemo: !token }),
@@ -84,7 +86,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       org: org ?? get().org,
       plan: plan ?? get().plan,
     }),
-  useDemo: () =>
+  enterDemoMode: () =>
     set({
       isDemo: true,
       accessToken: null,

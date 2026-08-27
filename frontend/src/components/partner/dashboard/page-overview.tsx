@@ -449,11 +449,11 @@ export function PageOverview() {
       </motion.div>
 
       {/* Top campaigns */}
-      {analytics?.top_campaigns?.length > 0 && (
+      {(analytics?.top_campaigns?.length ?? 0) > 0 && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.22 }} className="rounded-xl border border-border/60 bg-background p-5">
           <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-3">Top campaigns</p>
           <div className="flex flex-wrap gap-2">
-            {analytics.top_campaigns.map((c: any) => (
+            {analytics?.top_campaigns?.map((c: any) => (
               <span key={c.campaign} className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs">
                 <TrendingUp className="size-3 text-muted-foreground" />
                 {c.campaign}

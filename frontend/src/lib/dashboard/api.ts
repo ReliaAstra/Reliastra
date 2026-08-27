@@ -38,7 +38,13 @@ import type {
   PricingPlan,
   UserMe,
   VendorStatus,
+  AgencyClient,
   AgencyPortfolio,
+  InboxListResponse,
+  InboxUnreadCountResponse,
+  SupportTicketDetail,
+  SupportMessage,
+  SupportTicketListResponse,
 } from './types';
 import { unwrapList } from './types';
 
@@ -308,11 +314,72 @@ export const api = {
 
   portfolio: () => request<AgencyPortfolio>('/agency/portfolio'),
 
+  // The agency client switcher used to list three hardcoded companies, so an
+  // agency operator was choosing between clients that were not theirs.
+  clients: () => request<AgencyClient[]>('/clients'),
+
   createClient: (body: { name: string; description?: string }) =>
     request<{ id: string; name: string }>('/clients', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+
+  // ── In-dashboard notification inbox ───────────────────────────────────────
+  // No mock fallback, ever. The bell previously rendered three hardcoded
+  // strings, so a customer mid-outage saw static fiction instead of their own
+  // degraded dependency. A failed request must surface as an empty/error
+  // state, never as invented alerts.
+
+  inbox: (params?: { page?: number; page_size?: number; unread_only?: boolean }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.page_size) q.set('page_size', String(params.page_size));
+    if (params?.unread_only) q.set('unread_only', 'true');
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return request<InboxListResponse>(`/notifications/inbox${suffix}`);
+  },
+
+  inboxUnreadCount: () =>
+    request<InboxUnreadCountResponse>('/notifications/inbox/unread-count'),
+
+  markInboxRead: (notificationIds?: string[]) =>
+    request<InboxUnreadCountResponse>('/notifications/inbox/read', {
+      method: 'POST',
+      body: JSON.stringify({ notification_ids: notificationIds ?? null }),
+    }),
+
+  dismissInboxItem: (notificationId: string) =>
+    request<void>(`/notifications/inbox/${notificationId}`, { method: 'DELETE' }),
+
+  // ── Support desk ──────────────────────────────────────────────────────────
+  // The same conversation surface the admin support workspace answers.
+
+  supportTickets: (params?: { page?: number; page_size?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.page_size) q.set('page_size', String(params.page_size));
+    const suffix = q.toString() ? `?${q.toString()}` : '';
+    return request<SupportTicketListResponse>(`/partners/support/tickets${suffix}`);
+  },
+
+  supportThread: (ticketId: string) =>
+    request<SupportTicketDetail>(`/partners/support/tickets/${ticketId}`),
+
+  createSupportTicket: (body: {
+    subject: string;
+    message: string;
+    priority?: string;
+  }) =>
+    request<SupportTicketDetail>('/partners/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  addSupportMessage: (ticketId: string, body: string) =>
+    request<SupportMessage>(
+      `/partners/support/tickets/${ticketId}/messages`,
+      { method: 'POST', body: JSON.stringify({ body }) }
+    ),
 };
 
 export { ApiError, paginate };

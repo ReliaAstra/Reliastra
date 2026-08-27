@@ -32,8 +32,12 @@ import {
 import { formatAdminDate, formatRelativeTime } from '@/lib/admin-utils';
 import { cn } from '@/lib/utils';
 
-/** Theme-aware recharts palette (fixes hardcoded light-only chart colors). */
-function useChartTheme() {
+/** Theme-aware recharts palette (fixes hardcoded light-only chart colors).
+ *
+ * Exported because the revenue and overview panels build their own charts on
+ * the same palette; it was previously module-private, which broke the build.
+ */
+export function useChartTheme() {
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === 'dark';
   return useMemo(

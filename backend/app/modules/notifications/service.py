@@ -7,6 +7,7 @@ import time
 import uuid
 from typing import Any
 import httpx
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.core.exceptions import ResourceNotFoundException
@@ -340,6 +341,19 @@ class NotificationService:
                 alert.title,
             )
             return 0
+
+        # In-dashboard delivery is a platform guarantee, not a configurable
+        # channel: a customer whose dependency is degrading must see it in the
+        # product even when they have configured no email/Slack/PagerDuty
+        # targets.  It never fails the external dispatch and never changes the
+        # returned external-channel count.
+        in_app_count = await self._deliver_in_app(session, alert)
+        logger.info(
+            "Delivered in-app alert to %d member(s) of org %s",
+            in_app_count,
+            alert.org_id,
+        )
+
         configs = await self.repository.list_for_org(
             session, alert.org_id, active_only=True
         )
@@ -354,6 +368,85 @@ class NotificationService:
             except Exception as exc:
                 logger.warning("Alert send failed for config %s: %s", cfg.id, exc)
         return sent_count
+
+    # -- In-dashboard delivery ---------------------------------------------
+
+    # Maps incident severity onto the notification priority vocabulary used by
+    # the in-app feed so the UI can rank/colour alerts consistently.
+    _SEVERITY_TO_PRIORITY = {
+        "critical": "urgent",
+        "major": "high",
+        "minor": "normal",
+        "info": "low",
+    }
+
+    async def _deliver_in_app(
+        self, session: AsyncSession, alert: AlertPayload
+    ) -> int:
+        """Fan an alert out to every active member of the organization.
+
+        Writes one ``in_app_notifications`` row plus one delivery row per
+        member, which is exactly what ``GET /v1/notifications/inbox`` reads.
+        Any failure is contained: alerting the dashboard must never break the
+        incident pipeline that called us.
+        """
+        try:
+            # Imported lazily: admin owns the notification tables, and the
+            # notifications module must not create an import cycle at startup.
+            from app.modules.admin.models import (
+                InAppNotification,
+                InAppNotificationDelivery,
+            )
+            from app.modules.organizations.models import OrganizationMember
+            from app.modules.users.models import User
+
+            member_ids = (
+                (
+                    await session.execute(
+                        select(OrganizationMember.user_id)
+                        .join(User, User.id == OrganizationMember.user_id)
+                        .where(
+                            OrganizationMember.org_id == alert.org_id,
+                            OrganizationMember.is_deleted.is_(False),
+                            User.is_active.is_(True),
+                        )
+                    )
+                )
+                .scalars()
+                .unique()
+                .all()
+            )
+            if not member_ids:
+                return 0
+
+            action_url = None
+            if alert.incident_id is not None:
+                action_url = f"/incidents/{alert.incident_id}"
+
+            notification = InAppNotification(
+                title=alert.title,
+                body=alert.body,
+                notification_type="dependency_alert",
+                action_url=action_url,
+                action_label="View incident" if action_url else None,
+                priority=self._SEVERITY_TO_PRIORITY.get(
+                    str(alert.severity).lower(), "normal"
+                ),
+            )
+            session.add(notification)
+            await session.flush()
+
+            for user_id in member_ids:
+                session.add(
+                    InAppNotificationDelivery(
+                        notification_id=notification.id, user_id=user_id
+                    )
+                )
+            await session.flush()
+            return len(member_ids)
+        except Exception as exc:  # pragma: no cover - alerting is best effort
+            logger.warning("In-app alert delivery failed for org %s: %s", alert.org_id, exc)
+            return 0
 
 
 notification_service = NotificationService()
