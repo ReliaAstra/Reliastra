@@ -509,7 +509,6 @@ export type PartnerPage =
   | 'apply'
   | 'login'
   | 'signup'
-  | 'activation'
   | 'forgot-password'
   // Partner dashboard
   | 'dashboard'
