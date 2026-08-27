@@ -1,21 +1,15 @@
 'use client';
 
 import {
-  BookOpen,
   Bug,
   MessageCircle,
-  Newspaper,
-  Radio,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '@/stores/app-store';
 
 const ITEMS = [
-  { icon: BookOpen, label: 'Search docs', href: 'https://docs.reliastra.com' },
   { icon: MessageCircle, label: 'Contact support', href: 'mailto:support@reliastra.com' },
   { icon: Bug, label: 'Report a bug', href: 'mailto:support@reliastra.com?subject=Bug%20report' },
-  { icon: Radio, label: 'Status page', href: 'https://status.reliastra.com' },
-  { icon: Newspaper, label: "What's new", href: 'https://docs.reliastra.com/changelog' },
 ];
 
 export function HelpButton() {

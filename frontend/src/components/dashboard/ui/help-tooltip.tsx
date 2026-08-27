@@ -9,7 +9,7 @@ interface Props {
   href?: string;
 }
 
-export function HelpTooltip({ title, body, href = 'https://docs.reliastra.com' }: Props) {
+export function HelpTooltip({ title, body, href = 'mailto:support@reliastra.com' }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-flex">

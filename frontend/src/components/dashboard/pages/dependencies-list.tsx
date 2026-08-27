@@ -58,7 +58,7 @@ export function DependenciesListPage() {
           actionLabel="Add dependency"
           onAction={onAdd}
           helpLabel="How do dependencies work?"
-          onHelp={() => window.open('https://docs.reliastra.com/dependencies', '_blank')}
+          onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20do%20dependencies%20work%3F')}
         />
       ) : (
         <>

@@ -31,7 +31,7 @@ export function IncidentsListPage() {
           actionLabel="View dependencies"
           onAction={() => router.push('/dependencies')}
           helpLabel="How are incidents detected?"
-          onHelp={() => window.open('https://docs.reliastra.com/incidents', '_blank')}
+          onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20are%20incidents%20detected%3F')}
         />
       ) : (
         <div className="flex flex-col gap-3">
