@@ -11,7 +11,7 @@ const fadeUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
   }),
 };
 
@@ -31,7 +31,7 @@ const staggerChild = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
   },
 };
 
@@ -192,7 +192,7 @@ export function PageHowItWorks() {
                 <motion.div
                   variants={staggerChild}
                   whileHover={{ y: -2 }}
-                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
                   className={cn(
                     'flex-1 rounded-lg border bg-background p-8 xl:p-10 transition-colors duration-200',
                     step.accent
@@ -225,7 +225,7 @@ export function PageHowItWorks() {
                 <motion.div
                   variants={staggerChild}
                   whileHover={{ y: -2 }}
-                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
                   className={cn(
                     'rounded-lg border bg-background p-6 sm:p-8 transition-colors duration-200',
                     step.accent

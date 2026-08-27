@@ -53,15 +53,26 @@ export function SkeletonPulse({
   );
 }
 
+/**
+ * Fixed bar profile for the chart placeholder. Randomising these at render
+ * time produced different markup on the server and the client, which React
+ * flags as a hydration mismatch.
+ */
+const BAR_HEIGHTS = [42, 68, 35, 84, 57, 73, 46, 62] as const;
+
 // --- SkeletonShimmer ---
 // A div with shimmer gradient animation
 export function SkeletonShimmer({
   className,
+  style,
 }: {
   className?: string;
+  /** Inline sizing (e.g. per-bar heights in the chart placeholder). */
+  style?: React.CSSProperties;
 }) {
   return (
     <div
+      style={style}
       className={cn(
         'rounded-md bg-muted/40 relative overflow-hidden skeleton-shimmer',
         'bg-[length:200%_100%] bg-[linear-gradient(90deg,theme(colors.muted/40)_25%,theme(colors.background/60)_50%,theme(colors.muted/40)_75%)]',
@@ -325,12 +336,12 @@ export function DashboardEarningsSkeleton({ className }: { className?: string })
           <SkeletonShimmer className="h-3 w-40 mb-5" />
           {/* Bar chart placeholder */}
           <div className="flex items-end justify-around gap-2" style={{ height: 160 }}>
-            {[...Array(8)].map((_, i) => (
+            {BAR_HEIGHTS.map((height, i) => (
               <div key={i} className="flex flex-col items-center flex-1 gap-1.5">
                 <SkeletonShimmer className="h-3 w-10" />
                 <SkeletonShimmer
                   className="w-full max-w-[32px] rounded-t-sm"
-                  style={{ height: `${30 + Math.random() * 70}%` } as React.CSSProperties}
+                  style={{ height: `${height}%` }}
                 />
               </div>
             ))}

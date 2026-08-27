@@ -50,7 +50,7 @@ function ProgressBar({
           className="h-full rounded-full bg-foreground/80"
           initial={{ width: 0 }}
           animate={{ width: `${Math.max(progress * 100, 2)}%` }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          transition={{ duration: 0.8, delay: 0.3, ease: [0.25, 0.1, 0.25, 1] as const }}
         />
       </div>
 
@@ -135,7 +135,7 @@ export function TierProgressCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 0.4, delay, ease: [0.25, 0.1, 0.25, 1] as const }}
       className={cn(
         'border border-border/60 rounded-lg p-5 md:p-6 bg-background',
         className

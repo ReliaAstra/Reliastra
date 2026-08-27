@@ -65,7 +65,7 @@ function EarningsEmpty() {
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${barWidth}%` }}
-                      transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+                      transition={{ duration: 0.8, delay: 0.3 + i * 0.08, ease: [0.25, 0.1, 0.25, 1] as const }}
                       className="h-full bg-foreground/80 rounded-full"
                     />
                   </div>
@@ -333,7 +333,7 @@ export function PageEarnings() {
                         transition={{
                           duration: 0.6,
                           delay: 0.35 + i * 0.05,
-                          ease: [0.25, 0.1, 0.25, 1],
+                          ease: [0.25, 0.1, 0.25, 1] as const,
                         }}
                         className="w-full max-w-[32px] bg-foreground/80 rounded-t-sm hover:bg-foreground transition-colors cursor-default"
                         style={{ minHeight: 2 }}

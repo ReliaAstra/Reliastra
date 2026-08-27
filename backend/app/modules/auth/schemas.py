@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.modules.acquisition.schemas import AcquisitionAttributionInput
-from app.modules.auth.constants import TOKEN_TYPE_BEARER
+from app.modules.auth.constants import OTP_LENGTH, TOKEN_TYPE_BEARER
 
 
 class RegisterRequest(BaseModel):
@@ -42,11 +42,21 @@ class TokenResponse(BaseModel):
 
 
 class RegisterResponse(BaseModel):
-    """Single-step signup payload: user + default org + tokens."""
+    """Signup payload.
+
+    Email verification is a **hard gate**: registration creates the account
+    and its default organization but issues NO tokens. ``tokens`` stays
+    ``null`` until the 6-digit code emailed to the address is submitted to
+    ``POST /v1/auth/verify-otp``.
+    """
 
     user: "UserResponseLite"
     organization: "OrganizationLite"
-    tokens: TokenResponse
+    tokens: TokenResponse | None = None
+    verification_required: bool = True
+    message: str = (
+        "Account created. Enter the 6-digit code we emailed you to activate it."
+    )
 
 
 class UserResponseLite(BaseModel):
@@ -54,6 +64,7 @@ class UserResponseLite(BaseModel):
     email: EmailStr
     full_name: str
     is_active: bool = True
+    is_email_verified: bool = False
 
 
 class OrganizationLite(BaseModel):
@@ -111,6 +122,43 @@ class VerifyEmailRequest(BaseModel):
 class VerifyEmailResponse(BaseModel):
     message: str
     is_email_verified: bool
+
+
+# ── Email Verification OTP (signup hard gate) ──────────────────────
+
+
+class SendOtpRequest(BaseModel):
+    email: EmailStr
+
+
+class SendOtpResponse(BaseModel):
+    message: str
+    expires_in_minutes: int
+
+
+class VerifyOtpRequest(BaseModel):
+    email: EmailStr
+    #: Exactly ``OTP_LENGTH`` digits. Validated here so malformed input never
+    #: consumes one of the account's attempt budget.
+    code: str = Field(min_length=OTP_LENGTH, max_length=OTP_LENGTH)
+
+    @field_validator("code")
+    @classmethod
+    def _digits_only(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped.isdigit():
+            raise ValueError("Verification code must be numeric")
+        return stripped
+
+
+class VerifyOtpResponse(BaseModel):
+    """Successful verification logs the user in — tokens are issued here."""
+
+    message: str = "Email verified. Welcome to Reliastra."
+    is_email_verified: bool = True
+    user: "UserResponseLite"
+    organization: "OrganizationLite | None" = None
+    tokens: TokenResponse
 
 
 # ── Password Reset ─────────────────────────────────────────────────

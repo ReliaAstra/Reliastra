@@ -212,6 +212,65 @@ Owner (40) > Admin (30) > Member (20) > Viewer (10)
 | Auth | JWT + SHA-256 API Keys + OAuth 2.0 (Google, GitHub) |
 | Encryption | Fernet (derived from SECRET_KEY) |
 
+## Email Verification (signup hard gate)
+
+Email verification is **enforced**. An account cannot be used until the
+address behind it is proven with a 6-digit one-time passcode.
+
+```
+POST /v1/auth/register     → 201  { user, organization, tokens: null,
+                                    verification_required: true }
+                              ...and a 6-digit code is emailed.
+POST /v1/auth/login        → 403  EMAIL_NOT_VERIFIED  (a fresh code is sent)
+POST /v1/auth/verify-otp   → 200  { user, organization, tokens }   ← session starts here
+POST /v1/auth/resend-otp   → 200  neutral body, throttled
+```
+
+What the gate covers:
+
+| Surface | Behaviour when unverified |
+|---------|---------------------------|
+| `POST /auth/register` | Account + org created, **no tokens issued** |
+| `POST /auth/login` | `403 EMAIL_NOT_VERIFIED`, never returns tokens |
+| `POST /auth/refresh` | `403`, and the token family is revoked |
+| Any authenticated route | `403 EMAIL_NOT_VERIFIED` via `get_current_user` |
+
+The last row is defence in depth: even a token minted by some future code
+path that forgets the check dies at the dependency.
+
+### Code handling
+
+Implemented in [`app/modules/auth/otp_service.py`](app/modules/auth/otp_service.py).
+
+* Generated with `secrets` (CSPRNG); leading zeros preserved, so the full
+  10^6 keyspace is used.
+* Stored as an **HMAC-SHA256 salted by user id + `SECRET_KEY`** — the
+  `email_verification_codes` table cannot be replayed if it leaks, and one
+  rainbow table cannot cover all users.
+* Compared with `hmac.compare_digest` (constant time).
+* **One live code per user** — issuing a new one burns the previous.
+* **5 wrong attempts** burn the code (attempt writes are committed even
+  though the request fails, so the budget really does decrease).
+* **60s per-account resend cooldown**, on top of the per-IP rate limiter.
+* Codes expire after **10 minutes**.
+* `resend-otp` returns an identical body for unknown, verified and real
+  addresses — it cannot be used to enumerate accounts.
+* Verifying an already-verified address is an **error**, not a no-op:
+  returning early there would hand a session to anyone who knows the email.
+
+Tuning constants live in `app/modules/auth/constants.py`.
+
+The older magic-link endpoints (`/auth/send-verification`, `/auth/verify-email`)
+still work and are wired to the frontend's `/verify-email` page.
+
+### Testing against the gate
+
+Fixtures that create users straight through `UserRepository.create` must pass
+`is_email_verified=True` or every request they make will 403. Tests that go
+through the API should use `tests/helpers.register_and_verify()`; the
+autouse `otp_test_harness` fixture pins the code to a known value and
+captures outbound mail instead of opening an SMTP socket.
+
 ## OAuth Configuration (Google & GitHub)
 
 OAuth providers are disabled by default. To enable, set the following environment variables:

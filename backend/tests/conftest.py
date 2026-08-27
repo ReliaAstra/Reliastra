@@ -25,6 +25,7 @@ from app.config import settings
 from app.db.session import get_db, set_test_engine
 from app.infrastructure.redis_client import set_test_redis
 from app.main import app
+from tests.helpers import TEST_OTP_CODE, register_and_verify
 
 # Tests run like docker-compose: the standalone scheduler owns the queue, so
 # the in-process (PaaS) scheduler must stay off — otherwise background ticks
@@ -70,6 +71,7 @@ async def test_engine(setup_test_db_server: str) -> AsyncGenerator[AsyncEngine, 
             "partner_profiles",
             "audit_logs",
             "observation_outbox",
+            "email_verification_codes",
             "refresh_tokens",
             "api_keys",
             "alert_configs",
@@ -128,6 +130,43 @@ def client() -> TestClient:
     return TestClient(app)
 
 
+@pytest.fixture(scope="function", autouse=True)
+def otp_test_harness(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
+    """Make the signup OTP deterministic and keep SMTP out of the test run.
+
+    Codes are CSPRNG-generated in production; tests pin them to
+    ``TEST_OTP_CODE`` so the hard gate can be walked end to end. Outbound mail
+    is captured in the returned list instead of hitting a real SMTP socket
+    (which would otherwise block for the client's 3s timeout on every signup).
+    """
+    from app.modules.auth import otp_service as otp_module
+
+    monkeypatch.setattr(
+        otp_module, "generate_otp_code", lambda *args, **kwargs: TEST_OTP_CODE
+    )
+
+    sent: list[dict[str, Any]] = []
+
+    def _capture(
+        to_email: str,
+        subject: str,
+        body: str,
+        html_body: str | None = None,
+    ) -> bool:
+        sent.append(
+            {
+                "to_email": to_email,
+                "subject": subject,
+                "body": body,
+                "html_body": html_body,
+            }
+        )
+        return True
+
+    monkeypatch.setattr(otp_module.email_client, "send_email", _capture)
+    return sent
+
+
 @pytest_asyncio.fixture(scope="function")
 async def auth_data(async_client: AsyncClient) -> dict[str, Any]:
     register_payload = {
@@ -136,9 +175,8 @@ async def auth_data(async_client: AsyncClient) -> dict[str, Any]:
         "full_name": "Test Owner",
         "org_name": "Reliastra Test Org",
     }
-    res = await async_client.post("/v1/auth/register", json=register_payload)
-    assert res.status_code == 201, res.text
-    body = res.json()
+    # Registration alone yields no session — the OTP gate must be cleared.
+    body = await register_and_verify(async_client, register_payload)
     token_data = body["tokens"]
     user_data = body["user"]
     org = body["organization"]

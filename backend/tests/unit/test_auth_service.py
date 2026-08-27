@@ -18,6 +18,7 @@ async def test_register_success(mocker):
         email="new@reliastra.com",
         password_hash="hash",
         is_active=True,
+        is_email_verified=False,
         full_name="New User",
     )
     user_repo.create = AsyncMock(return_value=fake_user)
@@ -46,9 +47,12 @@ async def test_register_success(mocker):
     session = AsyncMock()
     result = await service.register(session, req)
 
-    assert result.tokens.access_token is not None
-    assert result.tokens.refresh_token is not None
-    assert result.tokens.token_type == "bearer"
+    # HARD GATE: registration creates the account but issues no session.
+    # Tokens only exist after the emailed OTP is verified.
+    assert result.tokens is None
+    assert result.verification_required is True
+    assert result.user.is_email_verified is False
+    auth_repo.create_refresh_token.assert_not_called()
     assert result.organization.id == fake_org.id
     assert result.user.email == "new@reliastra.com"
     user_repo.create.assert_called_once()

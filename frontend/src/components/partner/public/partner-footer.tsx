@@ -47,7 +47,7 @@ function FooterLink({ label, page }: { label: string; page: PartnerPage }) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }}
       whileHover={{ x: 2 }}
-      transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+      transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
       className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
     >
       {label}
@@ -86,7 +86,7 @@ export function PartnerFooter() {
             <motion.button
               onClick={() => handleLinkClick('resources')}
               whileHover={{ x: 2 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
               className="mt-4 inline-block text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
               Resources →

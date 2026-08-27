@@ -9,13 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
 import { toast } from 'sonner';
+import { isEmailNotVerified, readApiError } from '@/lib/api-error';
+import { VerifyOtpStep, type VerifiedSession } from './verify-otp-step';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const },
   }),
 };
 
@@ -26,6 +28,74 @@ export function PageLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fieldError, setFieldError] = useState<string | null>(null);
+  // Set when the backend refuses the sign-in because the address has never
+  // been verified (403 EMAIL_NOT_VERIFIED). Swaps the form for the code step.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+
+  /**
+   * Everything that happens once a session exists, regardless of whether it
+   * came from `/login` or from clearing the verification gate via `/verify-otp`.
+   */
+  const completeSignIn = async (accessToken: string, refreshToken: string) => {
+    const store = usePartnerStore.getState();
+    store.setTokens(accessToken, refreshToken);
+
+    // Get current user info — UserResponse (snake_case, not wrapped)
+    const meRes = await fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (meRes.ok) {
+      const user = await meRes.json();
+      store.setUser({
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+      });
+    }
+    store.setAuthStatus('authenticated');
+
+    // A protected Admin route can hand the shared sign-in screen a return
+    // destination. Do this before partner activation checks: system admins
+    // do not need a partner profile to operate the control plane.
+    const next = new URLSearchParams(window.location.search).get('next');
+    if (next === '/admin') {
+      toast.success('Signed in — opening Admin');
+      router.push('/admin');
+      return;
+    }
+
+    // Check if the user is already a partner
+    const partnerRes = await fetch('/api/partners/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (partnerRes.ok) {
+      const partnerData = await partnerRes.json();
+      store.setPartner({
+        partnerId: partnerData.partner_id,
+        referralCode: partnerData.referral_code,
+        referralLink: partnerData.referral_link,
+        commissionRate: partnerData.commission_rate,
+        status: partnerData.status,
+        createdAt: partnerData.created_at,
+      });
+      toast.success('Welcome back');
+      navigate('dashboard');
+    } else {
+      // Not a partner yet (404 or other)
+      toast.success('Signed in — activate your partner account');
+      navigate('apply');
+    }
+  };
+
+  const handleVerified = async (session: VerifiedSession) => {
+    toast.success('Email verified');
+    await completeSignIn(
+      session.tokens.access_token,
+      session.tokens.refresh_token
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,10 +107,9 @@ export function PageLogin() {
     }
 
     setLoading(true);
-    const store = usePartnerStore.getState();
 
     try {
-      // Step 1: Login — returns { access_token, refresh_token, token_type, expires_in }
+      // Login — returns { access_token, refresh_token, token_type, expires_in }
       const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,71 +117,30 @@ export function PageLogin() {
       });
 
       if (!loginRes.ok) {
-        const data = await loginRes.json().catch(() => ({}));
-        throw new Error(data.error || 'Login failed');
-      }
+        const apiError = await readApiError(
+          loginRes,
+          "We couldn't sign you in. Check your email and password and try again."
+        );
 
-      const tokens = await loginRes.json();
-      store.setTokens(tokens.access_token, tokens.refresh_token);
+        // The email-verification hard gate: credentials were correct but the
+        // address was never proven. The backend has already sent a fresh
+        // code, so go straight to the code step rather than showing an error.
+        if (isEmailNotVerified(apiError)) {
+          setPendingEmail(email);
+          toast.info('Verify your email to continue — we sent you a code');
+          return;
+        }
 
-      // Step 2: Get current user info — UserResponse (snake_case, not wrapped)
-      const meRes = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${tokens.access_token}` },
-      });
-
-      if (meRes.ok) {
-        const user = await meRes.json();
-        store.setUser({
-          id: user.id,
-          email: user.email,
-          fullName: user.full_name,
-        });
-        store.setAuthStatus('authenticated');
-      } else {
-        store.setAuthStatus('authenticated');
-      }
-
-      // A protected Admin route can hand the shared sign-in screen a return
-      // destination. Do this before partner activation checks: system admins
-      // do not need a partner profile to operate the control plane.
-      const next = new URLSearchParams(window.location.search).get('next');
-      if (next === '/admin') {
-        toast.success('Signed in — opening Admin');
-        router.push('/admin');
+        setFieldError(apiError.message);
+        toast.error('Invalid credentials — try again');
         return;
       }
 
-      // Step 3: Check if user is already a partner
-      const partnerRes = await fetch('/api/partners/me', {
-        headers: { Authorization: `Bearer ${tokens.access_token}` },
-      });
-
-      if (partnerRes.ok) {
-        const partnerData = await partnerRes.json();
-        store.setPartner({
-          partnerId: partnerData.partner_id,
-          referralCode: partnerData.referral_code,
-          referralLink: partnerData.referral_link,
-          commissionRate: partnerData.commission_rate,
-          status: partnerData.status,
-          createdAt: partnerData.created_at,
-        });
-        toast.success('Welcome back');
-        navigate('dashboard');
-      } else {
-        // Not a partner yet (404 or other)
-        toast.success('Signed in — activate your partner account');
-        navigate('apply');
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      if (message.includes('reach') || message.includes('fetch')) {
-        setFieldError("We couldn't reach RELIASTRA. Check your connection and try again.");
-        toast.error('Connection failed — check your network');
-      } else {
-        setFieldError("We couldn't sign you in. Check your email and password and try again.");
-        toast.error('Invalid credentials — try again');
-      }
+      const tokens = await loginRes.json();
+      await completeSignIn(tokens.access_token, tokens.refresh_token);
+    } catch {
+      setFieldError("We couldn't reach RELIASTRA. Check your connection and try again.");
+      toast.error('Connection failed — check your network');
     } finally {
       setLoading(false);
     }
@@ -126,6 +154,16 @@ export function PageLogin() {
           animate="visible"
           className="rounded-lg border border-border/60 bg-background p-6 sm:p-8"
         >
+          {pendingEmail ? (
+            <VerifyOtpStep
+              email={pendingEmail}
+              onVerified={handleVerified}
+              onBack={() => setPendingEmail(null)}
+              backLabel="Back to sign in"
+              title="Verify your email"
+            />
+          ) : (
+            <>
           {/* Logo */}
           <motion.div variants={fadeUp} custom={0} className="mb-8 text-center">
             <button
@@ -230,6 +268,8 @@ export function PageLogin() {
               Back to Partner Network
             </button>
           </motion.div>
+            </>
+          )}
         </motion.div>
       </div>
     </div>

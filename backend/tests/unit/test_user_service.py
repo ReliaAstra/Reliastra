@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 import pytest
+from app.core.security import get_password_hash
 from app.core.exceptions import ConflictException, ResourceNotFoundException
 from app.modules.users.schemas import UserUpdateRequest
 from app.modules.users.service import UserService
@@ -61,6 +62,9 @@ async def test_update_profile_success():
         created_at=now,
         updated_at=now,
     )
+    # Changing the email is a credential change: the service now requires the
+    # current password to be re-proven, so give the fake user a real hash.
+    fake_user.password_hash = get_password_hash("CurrentPassw0rd!")
     repo.get_by_id = AsyncMock(return_value=fake_user)
     repo.get_by_email = AsyncMock(return_value=None)
     updated_user = MagicMock(
@@ -78,7 +82,11 @@ async def test_update_profile_success():
 
     service = UserService(repository=repo)
     session = AsyncMock()
-    req = UserUpdateRequest(full_name="New Name", email="newemail@reliastra.com")
+    req = UserUpdateRequest(
+        full_name="New Name",
+        email="newemail@reliastra.com",
+        current_password="CurrentPassw0rd!",
+    )
     result = await service.update_profile(session, user_id, req)
 
     assert result.full_name == "New Name"

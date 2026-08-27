@@ -194,14 +194,17 @@ export function CommandPalette() {
                 {q ? 'Search results' : group}
               </div>
               {list.map((item) => {
-                running += 1;
-                const selected = running === idx;
+                // Keyboard selection (`idx`) indexes the FLAT `items` array,
+                // while rendering walks the grouped one. The counter this
+                // replaces was never declared, so it threw a ReferenceError.
+                const flatIndex = items.indexOf(item);
+                const selected = flatIndex === idx;
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onMouseEnter={() => setIdx(running)}
+                    onMouseEnter={() => setIdx(flatIndex)}
                     onClick={() => run(item)}
                     className={cn(
                       'flex w-full items-center px-5 py-2.5 text-left',
