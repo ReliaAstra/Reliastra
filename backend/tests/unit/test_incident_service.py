@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 import pytest
+from app.modules.evidence.schemas import EvidenceReportResponse
 from app.modules.incidents.service import IncidentService, TemporalCorrelationStrategy
 from app.modules.incidents.constants import IncidentStatus
 
@@ -92,3 +93,41 @@ async def test_temporal_correlation_strategy():
 
     assert len(corrs) == 1
     assert corrs[0].correlated_dependency_id == dep_id2
+
+
+@pytest.mark.asyncio
+async def test_get_or_trigger_evidence_no_history_does_not_crash(mocker):
+    """Incidents evidence path must tolerate a dependency with no check history."""
+    inc_repo = MagicMock()
+    org_id = uuid.uuid4()
+    inc_id = uuid.uuid4()
+    now = datetime.now(timezone.utc)
+    fake_inc = MagicMock()
+    fake_inc.id = inc_id
+    fake_inc.org_id = org_id
+    inc_repo.get_by_id = AsyncMock(return_value=fake_inc)
+
+    mocker.patch(
+        "app.modules.evidence.repository.EvidenceRepository.get_by_incident",
+        new=AsyncMock(return_value=None),
+    )
+    report = EvidenceReportResponse(
+        id=uuid.uuid4(),
+        org_id=org_id,
+        incident_id=inc_id,
+        file_size_bytes=13,
+        checksum="abcd123456",
+        generated_at=now,
+        created_at=now,
+        updated_at=now,
+    )
+    generate = mocker.patch(
+        "app.modules.evidence.service.evidence_service.generate_for_incident",
+        new=AsyncMock(return_value=report),
+    )
+
+    service = IncidentService(repository=inc_repo)
+    result = await service.get_or_trigger_evidence(AsyncMock(), org_id, inc_id)
+
+    generate.assert_awaited_once()
+    assert result.checksum == "abcd123456"

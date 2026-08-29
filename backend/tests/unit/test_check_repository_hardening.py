@@ -135,3 +135,21 @@ async def test_get_aggregated_stats_bulk_single_query(db_session):
 @pytest.mark.asyncio
 async def test_get_aggregated_stats_bulk_empty_input(db_session):
     assert await CheckRepository.get_aggregated_stats_bulk(db_session, []) == {}
+
+
+def test_resolved_uptime_percentage_treats_none_as_no_downtime():
+    """No check history must not flow None into float API contracts."""
+    assert CheckRepository.resolved_uptime_percentage({"uptime_percentage": None}) == 100.0
+    assert CheckRepository.resolved_uptime_percentage({}) == 100.0
+    assert CheckRepository.resolved_uptime_percentage(None) == 100.0
+    assert CheckRepository.resolved_uptime_percentage({"uptime_percentage": 95.5}) == 95.5
+
+
+@pytest.mark.asyncio
+async def test_get_aggregated_stats_no_history_is_unknown(db_session):
+    """Repository keeps None for unknown; services coerce at the API boundary."""
+    org, deps = await _make_org_and_deps(db_session, count=1)
+    stats = await CheckRepository.get_aggregated_stats(db_session, deps[0].id)
+    assert stats["total_checks"] == 0
+    assert stats["uptime_percentage"] is None
+    assert CheckRepository.resolved_uptime_percentage(stats) == 100.0

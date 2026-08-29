@@ -110,3 +110,34 @@ async def test_create_dependency_limit_reached():
 
     with pytest.raises(ConflictException):
         await service.create_dependency(session, org_id, req)
+
+
+@pytest.mark.asyncio
+async def test_get_dependency_history_no_checks_defaults_uptime(mocker):
+    dep_repo = MagicMock()
+    org_id = uuid.uuid4()
+    dep_id = uuid.uuid4()
+    fake_dep = MagicMock()
+    fake_dep.id = dep_id
+    fake_dep.org_id = org_id
+    dep_repo.get_by_id = AsyncMock(return_value=fake_dep)
+
+    mocker.patch(
+        "app.modules.checks.repository.CheckRepository.get_aggregated_stats",
+        new=AsyncMock(
+            return_value={
+                "uptime_percentage": None,
+                "avg_latency_ms": 0.0,
+                "total_checks": 0,
+                "total_up": 0,
+                "total_down": 0,
+            }
+        ),
+    )
+
+    service = DependencyService(repository=dep_repo)
+    result = await service.get_dependency_history(AsyncMock(), org_id, dep_id)
+
+    assert result.uptime_percentage == 100.0
+    assert result.avg_latency_ms == 0.0
+    assert result.total_checks == 0

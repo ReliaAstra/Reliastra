@@ -227,11 +227,11 @@ class DependencyService:
         stats = await CheckRepository.get_aggregated_stats(session, dep_id)
         return DependencyHistoryResponse(
             dependency_id=dep_id,
-            uptime_percentage=stats.get("uptime_percentage", 100.0),
-            avg_latency_ms=stats.get("avg_latency_ms", 0.0),
-            total_checks=stats.get("total_checks", 0),
-            total_up=stats.get("total_up", 0),
-            total_down=stats.get("total_down", 0),
+            uptime_percentage=CheckRepository.resolved_uptime_percentage(stats),
+            avg_latency_ms=float(stats.get("avg_latency_ms") or 0.0),
+            total_checks=int(stats.get("total_checks") or 0),
+            total_up=int(stats.get("total_up") or 0),
+            total_down=int(stats.get("total_down") or 0),
         )
 
     async def get_dependency_config_internal(

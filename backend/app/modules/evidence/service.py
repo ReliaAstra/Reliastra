@@ -195,7 +195,9 @@ class EvidenceService:
         stats = await CheckRepository.get_aggregated_stats(
             session, dependency.id, window_hours=24
         )
-        uptime_pct = stats.get("uptime_percentage", 100.0)
+        # Brand-new dependencies have no check history; treat as 100% uptime
+        # so SLA impact is 0% rather than crashing on None arithmetic.
+        uptime_pct = CheckRepository.resolved_uptime_percentage(stats)
         sla_impact_pct = round(max(0.0, 100.0 - uptime_pct), 2)
 
         generated_at = datetime.now(timezone.utc)

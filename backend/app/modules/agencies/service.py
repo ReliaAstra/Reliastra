@@ -178,8 +178,10 @@ class AgencyService:
             bucket = app_stats.setdefault(
                 application_id or uuid.UUID(int=0), {"uptime": [], "latency": []}
             )
-            bucket["uptime"].append(float(stats.get("uptime_percentage", 100.0)))
-            bucket["latency"].append(float(stats.get("avg_latency_ms", 0.0)))
+            bucket["uptime"].append(
+                CheckRepository.resolved_uptime_percentage(stats)
+            )
+            bucket["latency"].append(float(stats.get("avg_latency_ms") or 0.0))
             if application_id is None:
                 unassigned_monitors += 1
 
