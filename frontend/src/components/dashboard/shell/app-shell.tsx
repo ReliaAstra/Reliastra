@@ -9,7 +9,6 @@ import { MobileSidebar, Sidebar } from './sidebar';
 import { CommandPalette } from './command-palette';
 import { HelpButton } from './help-button';
 import { EvidenceGateModal, UpgradeModal } from './upgrade-modal';
-import { OnboardingChecklist } from './onboarding';
 import { AddDependencyPanel } from './add-dependency';
 import { AppErrorBoundary } from './error-boundary';
 
@@ -50,7 +49,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <UpgradeModal />
         <EvidenceGateModal />
         <AddDependencyPanel />
-        <OnboardingChecklist />
       </div>
     </AppErrorBoundary>
   );

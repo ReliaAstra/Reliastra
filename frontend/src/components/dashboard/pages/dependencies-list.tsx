@@ -20,7 +20,7 @@ export function DependenciesListPage() {
   const setAdd = useAppStore((s) => s.setAddDependencyOpen);
   const plan = useAppStore((s) => s.plan);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
-  const current = getPlan(plan?.plan);
+  const current = getPlan(plan?.effective_plan ?? plan?.plan);
   const router = useRouter();
 
   const rows = (deps ?? []).map((d) => ({
@@ -53,12 +53,12 @@ export function DependenciesListPage() {
       ) : !rows.length ? (
         <EmptyState
           icon={<Link2 size={32} />}
-          title="No dependencies monitored"
-          body="Add your first vendor to start tracking external health."
-          actionLabel="Add dependency"
+          title="No dependencies yet"
+          body="Reliastra is ready to start observing your critical external services. Add your first endpoint — checks begin on the next tick and history appears within minutes. Your 14-day full-access evaluation is active."
+          actionLabel="Add your first dependency"
           onAction={onAdd}
-          helpLabel="How do dependencies work?"
-          onHelp={() => window.open('mailto:support@reliastra.com?subject=How%20do%20dependencies%20work%3F')}
+          helpLabel="How does monitoring work?"
+          onHelp={() => window.open('/onboarding')}
         />
       ) : (
         <>

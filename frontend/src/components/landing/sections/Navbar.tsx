@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Menu, ArrowRight } from 'lucide-react';
+import { Menu, ArrowRight, Activity } from 'lucide-react';
 import {
   Sheet,
   SheetTrigger,
@@ -62,6 +63,19 @@ export function Navbar() {
               {link.label}
             </button>
           ))}
+          <Link
+            href="/research"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
+          >
+            Research
+          </Link>
+          <Link
+            href="/track"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
+          >
+            <Activity className="h-3.5 w-3.5" />
+            Track
+          </Link>
         </div>
 
         {/* Right Side */}
@@ -113,6 +127,13 @@ export function Navbar() {
                     {link.label}
                   </button>
                 ))}
+                <Link
+                  href="/research"
+                  onClick={() => setMobileOpen(false)}
+                  className="block w-full rounded-lg px-3 py-3 text-left text-sm font-medium text-[#52525B] transition-colors hover:bg-[#F8F9FA] hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:bg-white/5 dark:hover:text-white"
+                >
+                  Research
+                </Link>
               </div>
               <div className="mt-6 space-y-3 border-t border-[#E4E4E7] pt-6 dark:border-white/10">
                 <ThemeToggle />

@@ -4,11 +4,20 @@ import type { PartnerPage } from '@/types/partner';
 /**
  * Navigation helpers for the marketing landing page.
  *
- * The Reliastra app routes through the partner store (`navigate`), so in-page
- * links either scroll to an anchored section or push a known partner page.
+ * Customer auth is a first-class surface with its own routes; everything
+ * else (partner network pages) routes through the partner store.
  */
-
 export function goTo(page: PartnerPage) {
+  if (typeof window !== 'undefined') {
+    if (page === 'login') {
+      window.location.assign('/login');
+      return;
+    }
+    if (page === 'signup') {
+      window.location.assign('/signup');
+      return;
+    }
+  }
   usePartnerStore.getState().navigate(page);
   if (typeof window !== 'undefined') {
     window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -1,12 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { VendorSparkline } from '@/components/landing/shared/VendorSparkline';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { usePublicVendorLive } from '@/components/landing/hooks/usePublicVendorLive';
-import { scrollToId } from '@/components/landing/theme';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
@@ -91,13 +91,28 @@ export function LiveVendorGrid() {
 
         {!loading && error && (
           <div className="py-16 text-center">
-            <p className="text-sm text-white/50">{error}</p>
+            <p className="text-sm text-white/50">
+              Live measurements are temporarily unavailable.
+            </p>
+            <p className="mx-auto mt-1 max-w-md text-xs text-white/30">
+              We only show real probe data — never placeholders. Please retry in a moment.
+            </p>
             <button
               onClick={() => refetch()}
               className="mt-4 text-xs font-medium text-[#0891B2] transition-colors hover:text-[#22D3EE] dark:text-[#22D3EE]"
             >
               Retry
             </button>
+          </div>
+        )}
+
+        {!loading && !error && vendors.length === 0 && (
+          <div className="rounded-2xl border border-white/5 bg-[#131318] px-6 py-16 text-center">
+            <p className="text-sm font-medium text-white">Public monitoring fleet initializing</p>
+            <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/40">
+              Independent probes are warming up. Vendor cards appear as soon as the first regional checks complete —
+              typically within a minute of deployment.
+            </p>
           </div>
         )}
 
@@ -111,16 +126,18 @@ export function LiveVendorGrid() {
               const isDown = ['down', 'major_outage'].includes(vendor.recent_status);
 
               return (
-                <motion.button
+                <motion.div
                   key={vendor.id}
-                  onClick={() => scrollToId('live')}
-                  className="block rounded-2xl border border-white/5 bg-[#131318] p-6 text-left transition-all duration-300 hover:-translate-y-4 hover:border-[#0891B2]/20 hover:shadow-[0_0_0_1px_#0891B2,0_0_60px_rgba(8,145,178,0.12)]"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-100px' }}
                   transition={{ duration: 0.6, delay: i * 0.08, ease }}
-                  aria-label={`${vendor.display_name} status: ${sCfg.label}`}
                 >
+                  <Link
+                    href={`/track/${vendor.vendor_name}`}
+                    aria-label={`${vendor.display_name} status: ${sCfg.label} — open Track page`}
+                    className="block rounded-2xl border border-white/5 bg-[#131318] p-6 transition-all duration-300 hover:-translate-y-4 hover:border-[#0891B2]/20 hover:shadow-[0_0_0_1px_#0891B2,0_0_60px_rgba(8,145,178,0.12)]"
+                  >
                   <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <span
@@ -191,7 +208,8 @@ export function LiveVendorGrid() {
                       {sCfg.label}
                     </span>
                   </div>
-                </motion.button>
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
@@ -209,12 +227,12 @@ export function LiveVendorGrid() {
               Last updated: {formatLastCheck(lastUpdated)} &middot; Refreshes every 15s
             </span>
           )}
-          <button
-            onClick={() => scrollToId('live')}
+          <Link
+            href="/track"
             className="rounded-[10px] border border-white/20 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/5"
           >
             Explore Public Tracking
-          </button>
+          </Link>
         </motion.div>
       </div>
     </section>

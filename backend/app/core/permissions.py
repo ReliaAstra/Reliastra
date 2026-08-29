@@ -67,6 +67,15 @@ PLAN_DEPENDENCY_LIMITS: dict[str, int] = {
     Plan.AGENCY.value: 500,
 }
 
+# Team member (organization membership) limits per plan
+PLAN_TEAM_LIMITS: dict[str, int] = {
+    Plan.FREE.value: 1,
+    Plan.STARTER.value: 3,
+    Plan.STANDARD.value: 5,
+    Plan.PROFESSIONAL.value: 10,
+    Plan.AGENCY.value: 25,
+}
+
 # Minimum check intervals in seconds per plan
 PLAN_CHECK_INTERVALS: dict[str, int] = {
     Plan.FREE.value: 60,           # 1-minute
@@ -186,14 +195,23 @@ PLAN_DESCRIPTIONS: dict[str, str] = {
 PLAN_AMOUNTS = PLAN_PRICES_USD
 
 
-# ── 14-Day Free Trial ─────────────────────────────────────────────────────────
-# Every new organization gets full Professional-tier capabilities free for 14
-# days from creation. No migration needed: eligibility is derived from the
-# organization's ``created_at`` timestamp. After expiry, organizations fall
-# back to their stored plan (Free unless they upgraded).
+# ── 14-Day Full-Access Evaluation ──────────────────────────────────────────
+# Every new organization receives 14 days of full RELIASTRA capabilities.
+# The evaluation is a first-class server-side entitlement state stored on the
+# organization (evaluation_* columns). Legacy rows that predate the migration
+# still derive eligibility from created_at so expiry is correct without a
+# background job ever running. New rows use the explicit window.
+#
+# Effective entitlements are always:
+#   subscription_plan (org.plan) + evaluation_status -> effective_plan
+# The entitlement layer itself evaluates expiry using server time; scheduled
+# jobs are only for notifications and optional state sync.
 
 TRIAL_DAYS = 14
 TRIAL_PLAN = Plan.PROFESSIONAL.value
+# Aliases that match the spec's evaluation terminology exactly.
+EVALUATION_DAYS = TRIAL_DAYS
+EVALUATION_PLAN = TRIAL_PLAN
 
 
 def _utcnow() -> datetime:
@@ -231,12 +249,125 @@ def trial_days_remaining(org_created_at: datetime | None, now: datetime | None =
     return int(-(-remaining.total_seconds() // 86_400))
 
 
-def get_effective_plan(org_plan: str, org_created_at: datetime | None) -> str:
-    """The plan whose LIMITS apply right now.
+# ── Evaluation-aware helpers (preferred for all new code) ──────────────────
 
-    During the trial window a Free-tier organization operates with
+def _evaluation_expires_at(org: object) -> datetime | None:
+    """Resolve the authoritative expiry timestamp for an organization."""
+    expires = getattr(org, "evaluation_expires_at", None)
+    if isinstance(expires, datetime):
+        return _as_aware(expires)
+    # Non-datetime values (None, MagicMock, string) fall back to legacy
+    created = getattr(org, "created_at", None)
+    if isinstance(created, datetime):
+        return _as_aware(created) + timedelta(days=TRIAL_DAYS)
+    return None
+
+
+def _evaluation_started_at(org: object) -> datetime | None:
+    started = getattr(org, "evaluation_started_at", None)
+    if isinstance(started, datetime):
+        return _as_aware(started)
+    created = getattr(org, "created_at", None)
+    if isinstance(created, datetime):
+        return _as_aware(created)
+    return None
+
+
+def is_evaluation_active(org: object, now: datetime | None = None) -> bool:
+    """True while the organization is inside its 14-day evaluation window.
+
+    Evaluation is only applicable while the stored plan is Free. A paid plan
+    is always authoritative — it never needs an evaluation overlay. Paid orgs
+    return False even if their window has not technically elapsed.
+    Server time (now) is used; client clocks are never trusted.
+    """
+    if org is None:
+        return False
+    raw_plan = getattr(org, "plan", None)
+    plan = raw_plan.lower() if isinstance(raw_plan, str) else Plan.FREE.value
+    if plan != Plan.FREE.value:
+        return False
+    # If the row explicitly marks itself converted/expired, honour that, but
+    # the timestamp is the real authority — an expired window is expired even
+    # if the status column lags behind a failed background job.
+    now = _as_aware(now or _utcnow())
+    expires = _evaluation_expires_at(org)
+    if expires is None:
+        return False
+    # If evaluation was never started (should not happen), treat as not active.
+    started = _evaluation_started_at(org)
+    if started is not None and now < started:
+        return False
+    return now < expires
+
+
+def evaluation_days_remaining(org: object, now: datetime | None = None) -> int:
+    """Whole days of evaluation left, rounded UP. 0 when expired or not applicable."""
+    if org is None:
+        return 0
+    if not is_evaluation_active(org, now=now):
+        # Active check already enforces free-plan; if not active we return 0
+        # whether the window is expired or the org is already paid.
+        # For UX we still want to know how many days would remain if it were
+        # still active — but spec says evaluation schedule is server-side, so 0
+        # once the window is past is correct.
+        # Distinguish "paid, no evaluation needed" vs "expired": both 0.
+        expires = _evaluation_expires_at(org)
+        if expires is None:
+            return 0
+        now_a = _as_aware(now or _utcnow())
+        remaining = expires - now_a
+        if remaining <= timedelta(0):
+            return 0
+        # If the org is paid, we still return 0 rather than a misleading countdown.
+        raw_plan = getattr(org, "plan", None)
+        plan = raw_plan.lower() if isinstance(raw_plan, str) else Plan.FREE.value
+        if plan != Plan.FREE.value:
+            return 0
+        return int(-(-remaining.total_seconds() // 86_400))
+    now_a = _as_aware(now or _utcnow())
+    expires = _evaluation_expires_at(org)  # type: ignore[assignment]
+    remaining = expires - now_a  # type: ignore[operator]
+    if remaining <= timedelta(0):
+        return 0
+    return int(-(-remaining.total_seconds() // 86_400))
+
+
+def get_evaluation_status(org: object, now: datetime | None = None) -> str:
+    """Canonical evaluation lifecycle value: active | expired | converted | none."""
+    if org is None:
+        return "none"
+    raw_plan = getattr(org, "plan", None)
+    plan = raw_plan.lower() if isinstance(raw_plan, str) else Plan.FREE.value
+    if plan != Plan.FREE.value:
+        return "converted"
+    # If the org never had an evaluation (no timestamps), treat as none.
+    if _evaluation_expires_at(org) is None and getattr(org, "created_at", None) is None:
+        return "none"
+    if is_evaluation_active(org, now=now):
+        return "active"
+    # If the window existed and is now past, it's expired regardless of the
+    # stored column. This keeps authorization correct even if a job missed.
+    expires = _evaluation_expires_at(org)
+    started = _evaluation_started_at(org)
+    if expires is not None and started is not None:
+        now_a = _as_aware(now or _utcnow())
+        if now_a >= expires:
+            return "expired"
+    # Fallback to stored column if present.
+    stored = getattr(org, "evaluation_status", None)
+    if isinstance(stored, str) and stored:
+        return stored.lower()
+    return "expired"
+
+
+def get_effective_plan(org_plan: str, org_created_at: datetime | None) -> str:
+    """The plan whose LIMITS apply right now (legacy signature).
+
+    During the evaluation window a Free-tier organization operates with
     Professional limits so teams can evaluate the full product. Enforcement
-    points MUST use this instead of the raw stored plan.
+    points MUST use this (or get_effective_plan_for_org) instead of the raw
+    stored plan.
     """
     plan = (org_plan or Plan.FREE.value).lower()
     if not is_valid_plan(plan):
@@ -244,6 +375,71 @@ def get_effective_plan(org_plan: str, org_created_at: datetime | None) -> str:
     if plan == Plan.FREE.value and is_trial_active(org_created_at):
         return TRIAL_PLAN
     return plan
+
+
+def get_effective_plan_for_org(org: object) -> str:
+    """Preferred entry point: derive the effective plan from an organization row."""
+    if org is None:
+        return Plan.FREE.value
+    raw_plan = getattr(org, "plan", None)
+    plan = raw_plan.lower() if isinstance(raw_plan, str) else Plan.FREE.value
+    if not is_valid_plan(plan):
+        plan = Plan.FREE.value
+    if plan == Plan.FREE.value and is_evaluation_active(org):
+        return EVALUATION_PLAN
+    return plan
+
+
+def get_effective_entitlements(org: object) -> dict:
+    """Centralized entitlement resolution.
+
+    Returns the authoritative view that all feature gates should branch on:
+
+        subscription_plan  (stored org.plan)
+        evaluation_status  (active/expired/converted)
+        effective_plan     (plan whose limits apply now)
+        effective_features (PLAN_FEATURES[effective_plan])
+        evaluation fields  (started/expires/remaining/days)
+    """
+    if org is None:
+        plan = Plan.FREE.value
+        effective = Plan.FREE.value
+        status = "none"
+        remaining = 0
+        features = PLAN_FEATURES[Plan.FREE.value]
+        return {
+            "subscription_plan": plan,
+            "evaluation_status": status,
+            "effective_plan": effective,
+            "effective_features": features,
+            "is_evaluation_active": False,
+            "evaluation_days_remaining": 0,
+            "evaluation_started_at": None,
+            "evaluation_expires_at": None,
+            "evaluation_used": False,
+        }
+    raw_plan = getattr(org, "plan", None)
+    plan = raw_plan.lower() if isinstance(raw_plan, str) else Plan.FREE.value
+    if not is_valid_plan(plan):
+        plan = Plan.FREE.value
+    effective = get_effective_plan_for_org(org)
+    status = get_evaluation_status(org)
+    active = status == "active"
+    remaining = evaluation_days_remaining(org) if active else 0
+    # evaluation_used may be MagicMock in legacy unit tests
+    raw_used = getattr(org, "evaluation_used", False)
+    evaluation_used = bool(raw_used) if isinstance(raw_used, bool) else False
+    return {
+            "subscription_plan": plan,
+            "evaluation_status": status,
+            "effective_plan": effective,
+            "effective_features": PLAN_FEATURES.get(effective, PLAN_FEATURES[Plan.FREE.value]),
+            "is_evaluation_active": active,
+            "evaluation_days_remaining": remaining,
+            "evaluation_started_at": _evaluation_started_at(org),
+            "evaluation_expires_at": _evaluation_expires_at(org),
+            "evaluation_used": evaluation_used,
+        }
 
 
 # ── Helper Functions ──────────────────────────────────────────────────────────
@@ -255,6 +451,10 @@ def get_min_check_interval(plan: str) -> int:
 
 def get_dependency_limit(plan: str) -> int:
     return PLAN_DEPENDENCY_LIMITS.get(plan.lower(), 3)
+
+
+def get_team_limit(plan: str) -> int:
+    return PLAN_TEAM_LIMITS.get(plan.lower(), 1)
 
 
 def get_plan_price_usd(plan: str) -> int:

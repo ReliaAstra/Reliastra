@@ -6,13 +6,10 @@ import { useCallback, useEffect, useState } from 'react';
  * Live public vendor data for the marketing landing page.
  *
  * Connects to the Reliastra backend through the Next.js API proxy
- * (`/api/v1/vendors` → `https://api.reliastra.com/v1/vendors`). Public
- * endpoints require no auth. The snapshot shape mirrors the production
- * OpenAPI schema (VendorResponse / VendorDetailResponse / VendorHistoryResponse
- * / VendorTimelineResponse).
- *
- * If the backend is unreachable (e.g. offline preview), the hook falls back to
- * a small mock dataset so the landing page always renders live-looking data.
+ * (`/api/v1/vendors` → backend `/v1/vendors`). Public endpoints require no
+ * auth. If the backend is unreachable the section renders an explicit
+ * "unavailable" state — fabricated status on a monitoring product's own
+ * landing page would undermine exactly what it sells.
  */
 
 export interface VendorSnapshot {
@@ -88,28 +85,6 @@ async function loadSnapshot(vendor: RawVendor): Promise<VendorSnapshot> {
   };
 }
 
-function makeMockPoints(base: number) {
-  const now = Date.now();
-  return Array.from({ length: 24 }).map((_, i) => {
-    const jitter = (Math.sin(i / 2) * base) / 6 + (Math.random() - 0.5) * (base / 4);
-    const lm = Math.max(20, Math.round(base + jitter));
-    return {
-      timestamp: new Date(now - (24 - i) * 60_000).toISOString(),
-      latency_ms: lm,
-      is_up: true,
-    };
-  });
-}
-
-const MOCK: VendorSnapshot[] = [
-  { vendor_name: 'stripe', display_name: 'Stripe', category: 'payments', status: 'operational', latency_ms: 124, uptime_24h: 99.98, last_check_at: new Date().toISOString(), status_code: 200, points: makeMockPoints(124) },
-  { vendor_name: 'auth0', display_name: 'Auth0', category: 'identity', status: 'degraded', latency_ms: 342, uptime_24h: 99.91, last_check_at: new Date().toISOString(), status_code: 200, points: makeMockPoints(342) },
-  { vendor_name: 'vercel', display_name: 'Vercel', category: 'hosting', status: 'operational', latency_ms: 48, uptime_24h: 99.99, last_check_at: new Date().toISOString(), status_code: 200, points: makeMockPoints(48) },
-  { vendor_name: 'twilio', display_name: 'Twilio', category: 'communications', status: 'operational', latency_ms: 187, uptime_24h: 99.95, last_check_at: new Date().toISOString(), status_code: 200, points: makeMockPoints(187) },
-  { vendor_name: 'sendgrid', display_name: 'SendGrid', category: 'communications', status: 'operational', latency_ms: 96, uptime_24h: 99.96, last_check_at: new Date().toISOString(), status_code: 200, points: makeMockPoints(96) },
-  { vendor_name: 'openai', display_name: 'OpenAI', category: 'ai', status: 'operational', latency_ms: 210, uptime_24h: 99.93, last_check_at: new Date().toISOString(), status_code: 200, points: makeMockPoints(210) },
-];
-
 async function loadLive(limit: number): Promise<VendorSnapshot[]> {
   const res = await fetch(`${API}/vendors?limit=${Math.max(limit, 12)}&public=true`, {
     cache: 'no-store',
@@ -132,18 +107,13 @@ export function usePublicVendorLive(limit = 6) {
   const load = useCallback(async () => {
     try {
       const live = await loadLive(limit);
-      if (live.length > 0) {
-        setData(live);
-        setIsError(false);
-        setUpdatedAt(Date.now());
-        return;
-      }
-      throw new Error('empty');
-    } catch {
-      // Graceful fallback so the landing page always shows live-looking data.
-      setData(MOCK.slice(0, limit));
+      if (live.length === 0) throw new Error('empty');
+      setData(live);
       setIsError(false);
       setUpdatedAt(Date.now());
+    } catch {
+      setData([]);
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }

@@ -80,6 +80,7 @@ celery_app = Celery(
         "app.modules.notifications.tasks",
         "app.modules.observations.tasks",
         "app.modules.api_keys.tasks",
+        "app.modules.billing.tasks",
         "app.modules.partners.tasks",
     ],
 )
@@ -128,6 +129,13 @@ celery_app.conf.update(
         "partner-commission-hold-release": {
             "task": "app.modules.partners.tasks.commission_hold_release",
             "schedule": crontab(minute=15, hour=1),
+        },
+        # ── Trial lifecycle ─────────────────────────────────────────
+        # One email per organization whose 14-day trial has ended
+        # (idempotent via Redis SET NX; see billing.tasks).
+        "trial-expiration-notify": {
+            "task": "app.modules.billing.tasks.notify_trial_expirations",
+            "schedule": crontab(minute=30, hour=2),
         },
     },
 )

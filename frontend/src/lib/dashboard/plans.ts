@@ -1,16 +1,24 @@
 import type { PlanId } from './types';
 
+/**
+ * Plan metadata — mirrors backend ``app.core.permissions`` exactly.
+ *
+ * The BACKEND is the single source of truth for enforcement (dependency
+ * limits, check intervals, retention, team limits, feature flags). This
+ * file exists only so the UI can render copy that always agrees with it.
+ * Any disagreement between the two is a bug: fix both sides together.
+ */
 export interface PlanMeta {
   id: PlanId;
   name: string;
   tagline: string;
   priceMonthly: number;
-  priceAnnual: number;
   dependencies: number;
-  retention: string;
+  teamMembers: number;
+  minIntervalSeconds: number;
+  retentionDays: number;
   alerts: string;
   evidence: boolean;
-  seats: string;
   clientGroups: boolean;
   whiteLabel: boolean;
   badge?: string;
@@ -22,40 +30,40 @@ export const PLANS: PlanMeta[] = [
     name: 'Free',
     tagline: 'Start measuring',
     priceMonthly: 0,
-    priceAnnual: 0,
     dependencies: 3,
-    retention: '24h',
+    teamMembers: 1,
+    minIntervalSeconds: 60,
+    retentionDays: 1,
     alerts: 'Email',
     evidence: false,
-    seats: '1',
     clientGroups: false,
     whiteLabel: false,
   },
   {
     id: 'starter',
     name: 'Starter',
-    tagline: 'Track more',
+    tagline: 'Track more of your stack',
     priceMonthly: 19,
-    priceAnnual: 190,
     dependencies: 10,
-    retention: '7 days',
+    teamMembers: 3,
+    minIntervalSeconds: 60,
+    retentionDays: 7,
     alerts: 'Email',
     evidence: false,
-    seats: '1',
     clientGroups: false,
     whiteLabel: false,
   },
   {
     id: 'standard',
     name: 'Standard',
-    tagline: 'Investigate + Prove',
+    tagline: 'Investigate and prove failures',
     priceMonthly: 49,
-    priceAnnual: 490,
     dependencies: 30,
-    retention: '30 days',
-    alerts: 'Email, Slack, PagerDuty',
+    teamMembers: 5,
+    minIntervalSeconds: 15,
+    retentionDays: 30,
+    alerts: 'Email + Slack',
     evidence: true,
-    seats: '1',
     clientGroups: false,
     whiteLabel: false,
     badge: 'Most popular',
@@ -63,31 +71,31 @@ export const PLANS: PlanMeta[] = [
   {
     id: 'professional',
     name: 'Professional',
-    tagline: 'Operate at scale',
+    tagline: 'Operate at team scale',
     priceMonthly: 99,
-    priceAnnual: 990,
     dependencies: 100,
-    retention: '90 days',
-    alerts: 'All channels',
+    teamMembers: 10,
+    minIntervalSeconds: 5,
+    retentionDays: 90,
+    alerts: 'Email + Slack',
     evidence: true,
-    seats: '5',
     clientGroups: false,
     whiteLabel: false,
   },
   {
     id: 'agency',
     name: 'Agency',
-    tagline: 'Built for Agencies',
+    tagline: 'Reliability across your client portfolio',
     priceMonthly: 199,
-    priceAnnual: 1990,
     dependencies: 500,
-    retention: '90 days',
-    alerts: 'All channels',
+    teamMembers: 25,
+    minIntervalSeconds: 5,
+    retentionDays: 90,
+    alerts: 'Email + Slack',
     evidence: true,
-    seats: 'Unlimited',
     clientGroups: true,
     whiteLabel: true,
-    badge: 'BUILT FOR AGENCIES',
+    badge: 'Built for agencies',
   },
 ];
 
@@ -98,14 +106,21 @@ export function getPlan(id: string | undefined | null): PlanMeta {
   return found ?? PLANS[0];
 }
 
+export function effectivePlan(plan: { plan?: string | null; effective_plan?: string | null } | null | undefined): PlanMeta {
+  const id = plan?.effective_plan ?? plan?.plan ?? 'free';
+  return getPlan(id);
+}
+
+export function effectivePlanId(
+  plan: { plan?: string | null; effective_plan?: string | null } | null | undefined
+): PlanId {
+  return effectivePlan(plan).id;
+}
+
 export function nextPlan(id: string | undefined | null): PlanMeta {
   const current = getPlan(id);
   const idx = ORDER.indexOf(current.id);
   return PLANS[Math.min(idx + 1, ORDER.length - 1)];
-}
-
-export function annualSavings(plan: PlanMeta): number {
-  return plan.priceMonthly * 12 - plan.priceAnnual;
 }
 
 export function hasEvidence(plan: string | undefined | null): boolean {
@@ -121,40 +136,20 @@ export function isPaid(plan: string | undefined | null): boolean {
   return getPlan(plan).id !== 'free';
 }
 
-export function retentionDays(plan: string | undefined | null): number {
-  const map: Record<PlanId, number> = {
-    free: 1,
-    starter: 7,
-    standard: 30,
-    professional: 90,
-    agency: 90,
-  };
-  return map[getPlan(plan).id];
+export function hasEvidenceForOrg(
+  plan: { plan?: string | null; effective_plan?: string | null } | null | undefined
+): boolean {
+  return effectivePlan(plan).evidence;
 }
 
-// ── 14-Day Free Trial ────────────────────────────────────────────────────────
-// Mirrors backend permissions.py: Free organizations run on Professional
-// limits for 14 days from organization creation, then revert to Free.
-
-export const TRIAL_LENGTH_DAYS = 14;
-/** The tier whose limits apply during the trial window. */
-export const TRIAL_PLAN_ID: PlanId = 'professional';
-
-export interface TrialInfo {
-  active: boolean;
-  daysLeft: number;
-  /** 0..1 progress through the trial window (for countdown bars). */
-  elapsedPct: number;
+export function retentionLabel(days: number): string {
+  if (days <= 1) return '24 hours';
+  if (days % 30 === 0 && days > 28) return `${days / 30} months`;
+  if (days % 7 === 0 && days > 7) return `${days / 7} weeks`;
+  return `${days} days`;
 }
 
-export function trialInfo(orgCreatedAt?: string | null): TrialInfo {
-  if (!orgCreatedAt) return { active: false, daysLeft: 0, elapsedPct: 0 };
-  const created = new Date(orgCreatedAt).getTime();
-  if (Number.isNaN(created)) return { active: false, daysLeft: 0, elapsedPct: 0 };
-  const endsAt = created + TRIAL_LENGTH_DAYS * 86_400_000;
-  const now = Date.now();
-  if (now >= endsAt) return { active: false, daysLeft: 0, elapsedPct: 1 };
-  const daysLeft = Math.max(1, Math.ceil((endsAt - now) / 86_400_000));
-  const elapsedPct = Math.min(1, Math.max(0, (now - created) / (endsAt - created)));
-  return { active: true, daysLeft, elapsedPct };
+export function intervalLabel(seconds: number): string {
+  if (seconds >= 60) return `${Math.round(seconds / 60)}-minute checks`;
+  return `${seconds}-second checks`;
 }

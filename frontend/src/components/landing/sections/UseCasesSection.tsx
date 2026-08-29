@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { scrollToId } from '@/components/landing/theme';
@@ -23,12 +24,12 @@ const TAB_CONTENT: Record<TabKey, { headline: string; body: string; visual: Reac
           Independent check times, HTTP results, and latency from Reliastra probes — not a credit estimate.
           The vendor still decides whether to pay.
         </p>
-        <button
-          onClick={() => scrollToId('live')}
+        <Link
+          href="/track"
           className="inline-block text-sm font-semibold text-[#0891B2] hover:underline dark:text-[#22D3EE]"
         >
           See live public checks
-        </button>
+        </Link>
       </div>
     ),
   },

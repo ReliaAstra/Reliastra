@@ -38,9 +38,9 @@ export function formatDate(iso: string | null | undefined): string {
   }
 }
 
-export function formatUptime(value: number): string {
-  if (!Number.isFinite(value)) return '-';
-  return `${value.toFixed(value >= 99.9 ? 2 : 2)}%`;
+export function formatUptime(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  return `${value.toFixed(2)}%`;
 }
 
 export function formatLatency(ms: number | null | undefined): string {

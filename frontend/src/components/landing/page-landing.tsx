@@ -4,6 +4,7 @@ import { Navbar } from '@/components/landing/sections/Navbar';
 import { HeroSection } from '@/components/landing/sections/HeroSection';
 import { EvidenceSection } from '@/components/landing/sections/EvidenceSection';
 import { LiveVendorGrid } from '@/components/landing/sections/LiveVendorGrid';
+import { ResearchSection } from '@/components/landing/sections/ResearchSection';
 import { ComparisonTable } from '@/components/landing/sections/ComparisonTable';
 import { PricingSection } from '@/components/landing/sections/PricingSection';
 import { FAQSection } from '@/components/landing/sections/FAQSection';
@@ -11,10 +12,10 @@ import { FinalCTA } from '@/components/landing/sections/FinalCTA';
 import { Footer } from '@/components/landing/sections/Footer';
 
 /**
- * Marketing landing — deliberately tight (8 sections).
- * Narrative: promise → proof (evidence engine) → live data → differentiation
- * → pricing → objections → CTA. Every removed section moved its one
- * essential idea into Hero or Evidence.
+ * Marketing landing — deliberately tight (9 sections).
+ * Narrative: promise → proof (evidence engine) → live data → research
+ * → differentiation → pricing → objections → CTA. Every removed section
+ * moved its one essential idea into Hero or Evidence.
  */
 export function PageLanding() {
   return (
@@ -23,6 +24,7 @@ export function PageLanding() {
       <HeroSection />
       <EvidenceSection />
       <LiveVendorGrid />
+      <ResearchSection />
       <ComparisonTable />
       <PricingSection />
       <FAQSection />

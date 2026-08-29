@@ -49,10 +49,29 @@ class OrganizationRepository:
         slug: str,
         plan: str = "free",
     ) -> Organization:
+        now = datetime.now(timezone.utc)
+        # Every new organization starts a 14-day full-access evaluation unless
+        # it is being created as a paid org (agency enterprise). The window is
+        # server-time authoritative and tied to this org id so clearing cookies
+        # or changing clocks can never re-create it.
+        if plan.lower() == "free":
+            evaluation_started_at = now
+            evaluation_expires_at = now + __import__("datetime").timedelta(days=14)
+            evaluation_status = "active"
+            evaluation_used = True
+        else:
+            evaluation_started_at = None
+            evaluation_expires_at = None
+            evaluation_status = "converted"
+            evaluation_used = False
         org = Organization(
             name=name,
             slug=slug.lower(),
             plan=plan,
+            evaluation_started_at=evaluation_started_at,
+            evaluation_expires_at=evaluation_expires_at,
+            evaluation_status=evaluation_status,
+            evaluation_used=evaluation_used,
         )
         session.add(org)
         await session.flush()

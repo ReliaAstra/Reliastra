@@ -6,7 +6,10 @@ import uuid
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 import fakeredis.aioredis
-import pgserver
+try:
+    import pgserver  # type: ignore
+except ImportError:  # pragma: no cover - missing in CI python 3.13 win
+    pgserver = None  # type: ignore
 import pytest
 import pytest_asyncio
 from alembic import command
@@ -38,6 +41,13 @@ logger = logging.getLogger(__name__)
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db_server() -> Generator[str, None, None]:
     """Start embedded PostgreSQL server for session and apply migrations."""
+    if pgserver is None:
+        # No pgserver wheel for this Python/platform (e.g. cp313 win). Unit
+        # tests that don't need Postgres still need to import conftest, so we
+        # yield a dummy URI and skip migrations. Integration tests will be
+        # skipped automatically because they require a real engine.
+        yield "postgresql+asyncpg://dummy:dummy@localhost/dummy"
+        return
     tmpdir = tempfile.mkdtemp(prefix="reliastra_test_pg_")
     srv = pgserver.get_server(pgdata=tmpdir, cleanup_mode="delete")
     pg_uri = srv.get_uri("postgres").replace("postgresql://", "postgresql+asyncpg://")
@@ -58,6 +68,11 @@ def setup_test_db_server() -> Generator[str, None, None]:
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def test_engine(setup_test_db_server: str) -> AsyncGenerator[AsyncEngine, None]:
+    if setup_test_db_server.startswith("postgresql+asyncpg://dummy"):
+        # No real DB — provide a dummy engine that unit tests won't use.
+        # Integration tests that need a real DB should be skipped.
+        yield None  # type: ignore
+        return
     engine = create_async_engine(setup_test_db_server, echo=False, future=True)
     set_test_engine(engine)
 

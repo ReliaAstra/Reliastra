@@ -56,7 +56,13 @@ export async function proxyToBackend(
     headers['Content-Type'] = 'application/json';
   }
 
-  const fetchOptions: RequestInit = { method, headers };
+  const fetchOptions: RequestInit = {
+    method,
+    headers,
+    // 30s hard timeout so a hung upstream never leaves the UI in a
+    // skeleton forever; the proxy returns a structured 502 the UI can retry.
+    signal: AbortSignal.timeout(30_000),
+  };
 
   if (!options?.noBody && method !== 'GET' && method !== 'HEAD') {
     fetchOptions.body = await req.text();

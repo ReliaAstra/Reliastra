@@ -9,7 +9,7 @@ from app.core.exceptions import (
 )
 from app.core.permissions import (
     get_dependency_limit,
-    get_effective_plan,
+    get_effective_plan_for_org,
     get_min_check_interval,
 )
 from app.core.security import decrypt_jsonb, encrypt_jsonb
@@ -83,8 +83,8 @@ class DependencyService:
             raise ResourceNotFoundException("Organization not found")
 
         # Limits are enforced against the EFFECTIVE plan: new organizations
-        # run on Professional limits during their 14-day trial.
-        effective = get_effective_plan(org.plan, org.created_at)
+        # run on Professional limits during their 14-day evaluation.
+        effective = get_effective_plan_for_org(org)
 
         min_interval = get_min_check_interval(effective)
         if request.check_interval_seconds < min_interval:
@@ -162,7 +162,7 @@ class DependencyService:
 
         org = await self.org_repository.get_by_id(session, org_id)
         if org and request.check_interval_seconds is not None:
-            effective = get_effective_plan(org.plan, org.created_at)
+            effective = get_effective_plan_for_org(org)
             min_interval = get_min_check_interval(effective)
             if request.check_interval_seconds < min_interval:
                 raise ValidationException(

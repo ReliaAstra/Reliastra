@@ -38,7 +38,8 @@ class DashboardRepository:
         today_res = await session.execute(inc_today_query)
         alerts_today = int(today_res.scalar() or 0)
 
-        # Compute actual uptime from check results in the last 24 hours
+        # Compute actual uptime from check results in the last 24 hours.
+        # No checks in the window means uptime is UNKNOWN — never claim 100%.
         uptime_window = datetime.now(timezone.utc) - timedelta(hours=24)
         uptime_query = select(
             func.count(CheckResult.id).label("total"),
@@ -49,12 +50,11 @@ class DashboardRepository:
         )
         uptime_res = await session.execute(uptime_query)
         uptime_row = uptime_res.one_or_none()
-        if uptime_row and uptime_row.total and uptime_row.total > 0:
+        overall_uptime: float | None = None
+        if uptime_row and uptime_row.total and int(uptime_row.total) > 0:
             total = int(uptime_row.total)
             up_count = int(uptime_row.up_count or 0)
             overall_uptime = round((up_count / total) * 100, 2)
-        else:
-            overall_uptime = 100.0
 
         return {
             "active_dependencies_count": active_deps,

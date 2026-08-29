@@ -119,7 +119,11 @@ def _needs_pooler_compat(url: str) -> bool:
     Setting ``prepare_statement_cache_size=0`` tells asyncpg to avoid
     using named prepared statements.
     """
-    return "pooler.supabase" in url or "pgbouncer" in url
+    if "pooler.supabase" in url or "pgbouncer" in url:
+        return True
+    # Supabase transaction pooler pinned by IP (DNS-flaky dev environments):
+    # port 6543 is unambiguously the transaction pooler.
+    return ":6543" in url
 
 
 def build_engine() -> AsyncEngine:

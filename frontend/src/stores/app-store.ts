@@ -15,6 +15,7 @@ interface AppState {
   accessToken: string | null;
   isDemo: boolean;
   hydrated: boolean;
+  sessionState: 'loading' | 'authenticated' | 'unauthenticated' | 'expired';
   user: UserMe | null;
   org: Organization | null;
   plan: PlanDetails | null;
@@ -34,6 +35,7 @@ interface AppState {
 
   setAccessToken: (token: string | null) => void;
   setHydrated: (v: boolean) => void;
+  setSessionState: (s: AppState['sessionState']) => void;
   setSession: (user: UserMe | null, org: Organization | null, plan: PlanDetails | null) => void;
   enterDemoMode: () => void;
   setDemoPlan: (plan: PlanId) => void;
@@ -48,16 +50,19 @@ interface AppState {
   pushRecent: (item: RecentItem) => void;
   setUnreadCount: (n: number) => void;
   setOnline: (v: boolean) => void;
+  /** 401 after refresh — clear everything and route to sign-in. */
+  sessionExpired: () => void;
   signOut: () => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   accessToken: null,
-  isDemo: true,
+  isDemo: false,
   hydrated: false,
-  user: mockUser,
-  org: mockOrg,
-  plan: mockPlan,
+  sessionState: 'loading',
+  user: null,
+  org: null,
+  plan: null,
   demoPlanOverride: null,
   selectedClientId: null,
   upgradeOpen: false,
@@ -68,11 +73,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   sidebarOpen: false,
   helpOpen: false,
   evidenceGateOpen: false,
-  recent: [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/incidents/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbb842', label: 'INC-1842' },
-    { href: '/dependencies', label: 'Dependencies' },
-  ],
+  recent: [],
   // Seeded at zero and driven by GET /v1/notifications/inbox. This used to be
   // a hardcoded 2 that nothing ever updated, so the bell badge was fiction.
   unreadCount: 0,
@@ -80,15 +81,19 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setAccessToken: (token) => set({ accessToken: token, isDemo: !token }),
   setHydrated: (v) => set({ hydrated: v }),
+  setSessionState: (sessionState) => set({ sessionState }),
   setSession: (user, org, plan) =>
     set({
-      user: user ?? get().user,
-      org: org ?? get().org,
-      plan: plan ?? get().plan,
+      sessionState: 'authenticated',
+      isDemo: false,
+      user,
+      org,
+      plan,
     }),
   enterDemoMode: () =>
     set({
       isDemo: true,
+      sessionState: 'authenticated',
       accessToken: null,
       user: mockUser,
       org: mockOrg,
@@ -135,16 +140,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     })),
   setUnreadCount: (n) => set({ unreadCount: n }),
   setOnline: (v) => set({ online: v }),
+  sessionExpired: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(REFRESH_KEY);
+    }
+    set({
+      accessToken: null,
+      sessionState: 'expired',
+      isDemo: false,
+      user: null,
+      org: null,
+      plan: null,
+    });
+  },
   signOut: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(REFRESH_KEY);
     }
     set({
       accessToken: null,
-      isDemo: true,
-      user: mockUser,
-      org: mockOrg,
-      plan: mockPlan,
+      sessionState: 'unauthenticated',
+      isDemo: false,
+      user: null,
+      org: null,
+      plan: null,
+      recent: [],
     });
   },
 }));

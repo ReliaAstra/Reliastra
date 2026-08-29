@@ -6,6 +6,9 @@ import { VisitBeacon } from "@/components/analytics/visit-beacon";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com'
+  ),
   title: {
     default: "Reliastra — External Dependency Intelligence",
     template: "%s | Reliastra",

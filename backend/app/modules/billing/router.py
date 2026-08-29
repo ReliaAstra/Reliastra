@@ -47,6 +47,7 @@ class PricingPlanResponse(BaseModel):
     tag: str | None = None
     price_usd: int
     max_dependencies: int
+    max_team_members: int
     min_check_interval_seconds: int
     data_retention_days: int
     features: dict
@@ -59,6 +60,8 @@ class PricingPlansResponse(BaseModel):
 @router.get("/pricing", response_model=PricingPlansResponse)
 async def get_pricing_plans() -> PricingPlansResponse:
     """Public endpoint returning all plan details for the pricing page."""
+    from app.core.permissions import PLAN_TEAM_LIMITS
+
     plans = []
     for plan_enum in Plan:
         p = plan_enum.value
@@ -70,6 +73,7 @@ async def get_pricing_plans() -> PricingPlansResponse:
                 tag=PLAN_TAGS.get(p),
                 price_usd=PLAN_PRICES_USD.get(p, 0),
                 max_dependencies=PLAN_DEPENDENCY_LIMITS.get(p, 0),
+                max_team_members=PLAN_TEAM_LIMITS.get(p, 1),
                 min_check_interval_seconds=get_min_check_interval(p),
                 data_retention_days=PLAN_RETENTION_DAYS.get(p, 1),
                 features=PLAN_FEATURES.get(p, {}),

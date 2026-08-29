@@ -35,25 +35,50 @@ async def get_dashboard_summary(
 @router.get("/latency", response_model=list[LatencyPointResponse])
 async def get_latency_timeseries(
     hours: int = Query(default=24, ge=1, le=2160),
+    dependency_id: uuid.UUID | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_org: Organization = Depends(get_current_org),
 ) -> list[LatencyPointResponse]:
-    """Return organization-scoped latency observations for charting."""
-    from app.modules.observations.repository import ObservationRepository
+    """Customer latency series for charting.
+
+    Reads ``check_results`` — the authoritative, synchronously-written record
+    of every customer check. (Observations feed the public vendor network and
+    are drained asynchronously; they must never be the source for a customer's
+    own latency chart.)
+    """
+    from sqlalchemy import select
+
+    from app.modules.checks.models import CheckResult
+    from app.modules.dependencies.models import Dependency
 
     since = datetime.now(timezone.utc) - timedelta(hours=hours)
-    observations = await ObservationRepository.list_for_org(
-        db, current_org.id, since=since, limit=500
+    query = (
+        select(
+            CheckResult.executed_at,
+            CheckResult.region,
+            CheckResult.latency_ms,
+            CheckResult.dependency_id,
+        )
+        .join(Dependency, CheckResult.dependency_id == Dependency.id)
+        .where(
+            CheckResult.org_id == current_org.id,
+            CheckResult.executed_at >= since,
+            Dependency.is_deleted == False,  # noqa: E712
+        )
+        .order_by(CheckResult.executed_at.asc())
+        .limit(2000)
     )
+    if dependency_id is not None:
+        query = query.where(CheckResult.dependency_id == dependency_id)
+    res = await db.execute(query)
     return [
         LatencyPointResponse(
-            timestamp=item.timestamp,
-            region=item.region,
-            latency_ms=item.latency_ms,
-            dependency_id=item.source_id,
+            timestamp=row.executed_at,
+            region=row.region,
+            latency_ms=float(row.latency_ms),
+            dependency_id=row.dependency_id,
         )
-        for item in reversed(observations)
-        if item.source_type == "customer_check"
+        for row in res
     ]
 
 

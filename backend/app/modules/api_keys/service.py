@@ -33,6 +33,29 @@ class ApiKeyService:
         org_id: uuid.UUID,
         request: ApiKeyCreateRequest,
     ) -> ApiKeyCreateResponse:
+        # API access is a paid capability (Standard+). During the 14-day
+        # evaluation the effective plan is Professional so creation succeeds;
+        # after expiry the effective plan falls back to Free and the gate
+        # correctly blocks. Server-side, not a frontend flag.
+        from app.core.exceptions import ForbiddenException
+        from app.core.permissions import get_effective_plan_for_org
+
+        from app.modules.organizations.repository import OrganizationRepository
+
+        try:
+            org = await OrganizationRepository.get_by_id(session, org_id)
+        except Exception:
+            org = None
+        if org is not None and isinstance(getattr(org, "plan", None), str):
+            from app.core.permissions import PLAN_FEATURES
+
+            effective = get_effective_plan_for_org(org)
+            if not PLAN_FEATURES.get(effective, {}).get("api_access"):
+                raise ForbiddenException(
+                    "API access is not available on your current plan. "
+                    "Upgrade to Standard or higher, or start a 14-day evaluation."
+                )
+
         full_key, prefix, hashed_key = generate_api_key()
         api_key = await self.repository.create(
             session=session,

@@ -1,10 +1,11 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { getRefreshToken, useAppStore } from '@/stores/app-store';
-import { api } from '@/lib/dashboard/api';
+import { api, bootstrapSession } from '@/lib/dashboard/api';
 
 function makeClient() {
   return new QueryClient({
@@ -18,40 +19,76 @@ function makeClient() {
   });
 }
 
+/**
+ * Session bootstrap for the console.
+ *
+ * The refresh token in localStorage is only a convenience to obtain a fresh
+ * access token — every entitlement decision (plan, trial, admin) is made by
+ * the backend from the resulting JWT. Without a session the console routes
+ * to the shared sign-in screen instead of rendering fabricated demo data.
+ *
+ * The bootstrap effect is guarded by a ref so React StrictMode's double
+ * invocation cannot race the single-use refresh token against itself.
+ */
 export function DashboardProviders({ children }: { children: ReactNode }) {
   const [client] = useState(makeClient);
+  const router = useRouter();
   const setHydrated = useAppStore((s) => s.setHydrated);
+  const setSessionState = useAppStore((s) => s.setSessionState);
   const setSession = useAppStore((s) => s.setSession);
-  const setAccessToken = useAppStore((s) => s.setAccessToken);
   const setOnline = useAppStore((s) => s.setOnline);
+  const sessionState = useAppStore((s) => s.sessionState);
+  const bootstrapped = useRef(false);
   const enterDemoMode = useAppStore((s) => s.enterDemoMode);
 
   useEffect(() => {
-    const refresh = getRefreshToken();
+    if (bootstrapped.current) return;
+    bootstrapped.current = true;
+
+    let cancelled = false;
+
+    const redirectToSignIn = () => {
+      if (cancelled) return;
+      setSessionState('unauthenticated');
+      router.replace('/login');
+    };
+
+    const refresh =
+      getRefreshToken() ??
+      (typeof window !== 'undefined'
+        ? window.localStorage.getItem('partner_refresh_token')
+        : null);
+
     if (!refresh) {
-      enterDemoMode();
       setHydrated(true);
+      setSessionState('unauthenticated');
+      router.replace('/login');
       return;
     }
+
     (async () => {
       try {
-        const res = await fetch('/api/v1/auth/refresh', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: refresh }),
-        });
-        if (!res.ok) throw new Error('refresh');
-        const data = await res.json();
-        if (data.access_token) setAccessToken(data.access_token);
-        const [user, org, plan] = await Promise.all([api.me(), api.org(), api.plan()]);
-        setSession(user, org, plan);
+        const session = await bootstrapSession();
+        if (!session) throw new Error('session rejected');
+        if (!cancelled) setSession(session.user, session.org, session.plan);
       } catch {
-        enterDemoMode();
+        redirectToSignIn();
       } finally {
-        setHydrated(true);
+        if (!cancelled) setHydrated(true);
       }
     })();
-  }, [setHydrated, setSession, setAccessToken, enterDemoMode]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, setHydrated, setSessionState, setSession]);
+
+  // Route away the moment the backend rejects an expired session.
+  useEffect(() => {
+    if (sessionState === 'expired') {
+      router.replace('/login?expired=1');
+    }
+  }, [sessionState, router]);
 
   useEffect(() => {
     const on = () => setOnline(true);

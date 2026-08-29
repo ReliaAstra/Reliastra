@@ -3,7 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from './api';
+import { useAppStore } from '@/stores/app-store';
 import type { DependencyCreate } from './types';
+
+/**
+ * Every console query is gated on an authenticated session: firing them
+ * pre-auth produces 401s that the api client interprets as session expiry.
+ */
+export function useSessionReady() {
+  return useAppStore((s) => s.sessionState === 'authenticated');
+}
 
 export const keys = {
   summary: ['dashboard', 'summary'] as const,
@@ -24,6 +33,7 @@ export const keys = {
   plan: ['plan'] as const,
   pricing: ['pricing'] as const,
   alerts: ['alerts'] as const,
+  clients: ['agency', 'clients'] as const,
   portfolio: ['agency', 'portfolio'] as const,
   inbox: ['notifications', 'inbox'] as const,
   supportTickets: ['support', 'tickets'] as const,
@@ -31,66 +41,80 @@ export const keys = {
 };
 
 export function useSummary() {
-  return useQuery({ queryKey: keys.summary, queryFn: api.summary });
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.summary, queryFn: api.summary, enabled: ready });
 }
 export function useHealth() {
-  return useQuery({ queryKey: keys.health, queryFn: api.health });
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.health, queryFn: api.health, enabled: ready });
 }
 export function useVendors() {
-  return useQuery({ queryKey: keys.vendors, queryFn: api.vendors });
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.vendors, queryFn: api.vendors, enabled: ready });
 }
 export function useIncidents(status?: string, limit = 20) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.incidents(status),
     queryFn: () => api.incidents({ status, limit }),
+    enabled: ready,
   });
 }
 export function useIncident(id: string) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.incident(id),
     queryFn: () => api.incident(id),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && ready,
   });
 }
 export function useIncidentEvidence(id: string, enabled = false) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.incidentEvidence(id),
     queryFn: () => api.incidentEvidence(id),
-    enabled: Boolean(id) && enabled,
+    enabled: Boolean(id) && enabled && ready,
   });
 }
 export function useDependencies() {
-  return useQuery({ queryKey: keys.dependencies, queryFn: api.dependencies });
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.dependencies, queryFn: api.dependencies, enabled: ready });
 }
 export function useDependency(id: string) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.dependency(id),
     queryFn: () => api.dependency(id),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && ready,
   });
 }
 export function useDependencyHistory(id: string) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.history(id),
     queryFn: () => api.dependencyHistory(id),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && ready,
   });
 }
 export function useDependencyResults(id: string) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.results(id),
     queryFn: () => api.dependencyResults(id),
-    enabled: Boolean(id),
+    enabled: Boolean(id) && ready,
   });
 }
 export function useLatency(id?: string) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.latency(id),
     queryFn: () => api.latency(24, id),
+    enabled: ready,
   });
 }
 export function useEvidence() {
-  return useQuery({ queryKey: keys.evidence, queryFn: api.evidence });
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.evidence, queryFn: api.evidence, enabled: ready });
 }
 export function useMe() {
   return useQuery({ queryKey: keys.me, queryFn: api.me });
@@ -105,7 +129,13 @@ export function usePricing() {
   return useQuery({ queryKey: keys.pricing, queryFn: api.pricing });
 }
 export function useAlertConfigs() {
-  return useQuery({ queryKey: keys.alerts, queryFn: api.alertConfigs });
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.alerts, queryFn: api.alertConfigs, enabled: ready });
+}
+
+export function useClients(enabled = true) {
+  const ready = useSessionReady();
+  return useQuery({ queryKey: keys.clients, queryFn: api.clients, enabled: enabled && ready });
 }
 
 export function useCreateDependency() {
@@ -165,19 +195,20 @@ export function useDeleteDependency() {
 }
 
 export function usePortfolio(enabled = true) {
+  const ready = useSessionReady();
   return useQuery({
     queryKey: keys.portfolio,
     queryFn: api.portfolio,
-    enabled,
+    enabled: enabled && ready,
   });
 }
 
-// ── In-dashboard notification inbox ────────────────────────────────────────
-//
-// The bell polls for a real unread count rather than trusting a hardcoded
-// number, so a dependency alert raised by the backend surfaces without a
-// reload. The interval is short enough to feel live and long enough to keep
-// the request volume sane.
+ // ── In-dashboard notification inbox ────────────────────────────────────────
+ //
+ // The bell polls for a real unread count rather than trusting a hardcoded
+ // number, so a dependency alert raised by the backend surfaces without a
+ // reload. The interval is short enough to feel live and long enough to keep
+ // the request volume sane.
 
 export const INBOX_POLL_MS = 30_000;
 export const SUPPORT_THREAD_POLL_MS = 5_000;

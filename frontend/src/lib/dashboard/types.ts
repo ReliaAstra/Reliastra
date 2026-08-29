@@ -40,8 +40,33 @@ export interface PlanDetails {
   is_trial_active?: boolean;
   trial_days_remaining?: number;
   trial_length_days?: number;
+  // Canonical evaluation fields (trial aliases kept for compat)
+  is_evaluation_active?: boolean;
+  evaluation_status?: string;
+  evaluation_started_at?: string | null;
+  evaluation_expires_at?: string | null;
+  evaluation_days_remaining?: number;
+  evaluation_used?: boolean;
+  effective_features?: Record<string, unknown> | null;
+  fallback_info?: {
+    dependencies_configured: number;
+    dependencies_active: number;
+    dependencies_paused_if_expired: number;
+    free_dependency_limit: number;
+    current_dependency_limit: number;
+    team_members: number;
+    team_free_limit: number;
+    team_current_limit: number;
+    evidence_available: boolean;
+    evidence_free_available: boolean;
+    api_available: boolean;
+    retention_days_current: number;
+    retention_days_free: number;
+  } | null;
   max_dependencies: number;
+  max_team_members?: number;
   min_check_interval_seconds: number;
+  data_retention_days?: number;
   subscription_status: string | null;
   current_period_end: string | null;
   price_usd: number;
@@ -62,7 +87,7 @@ export interface PricingPlan {
 export interface DashboardSummary {
   active_dependencies_count: number;
   open_incidents_count: number;
-  overall_uptime_percentage: number;
+  overall_uptime_percentage: number | null;
   alerts_today_count: number;
 }
 
@@ -71,9 +96,10 @@ export interface DependencyHealth {
   name: string;
   endpoint_url: string;
   current_status: HealthStatus | string;
-  uptime_percentage_24h: number;
+  uptime_percentage_24h: number | null;
   avg_latency_ms_24h: number;
   last_check_at?: string | null;
+  total_checks_24h?: number;
 }
 
 export interface Dependency {
@@ -264,6 +290,23 @@ export interface PaymentMethod {
 export interface AgencyClient {
   id: string;
   name: string;
+  description?: string | null;
+}
+
+export interface ApiKeyItem {
+  id: string;
+  org_id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface ApiKeyCreateResponse extends ApiKeyItem {
+  /** Shown exactly once at creation; the backend stores only a hash. */
+  full_key: string;
 }
 
 export function unwrapList<T>(payload: Paginated<T> | T[]): T[] {

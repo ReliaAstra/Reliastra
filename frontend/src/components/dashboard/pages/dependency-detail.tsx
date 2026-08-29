@@ -26,7 +26,7 @@ import { RsButton } from '../ui/button';
 import { RsSkeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { retentionDays } from '@/lib/dashboard/plans';
+import { retentionLabel } from '@/lib/dashboard/plans';
 
 export function DependencyDetailPage({ id }: { id: string }) {
   const { data: dep, isLoading } = useDependency(id);
@@ -96,7 +96,8 @@ export function DependencyDetailPage({ id }: { id: string }) {
       </div>
 
       <div className="mb-3 rounded-[10px] border border-rs-border-subtle bg-rs-elevated px-4 py-3 text-sm text-rs-text-secondary">
-        Data older than {retentionDays(plan?.plan)} day{retentionDays(plan?.plan) === 1 ? '' : 's'} is available on the next plan.
+        Check history is retained for {retentionLabel(plan?.data_retention_days ?? 1)} on your
+        current plan.
       </div>
 
       <div className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">

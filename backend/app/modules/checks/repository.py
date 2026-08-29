@@ -106,23 +106,26 @@ class CheckRepository:
     def _stats_from_row(row: Any) -> dict[str, Any]:
         if not row or not row.total_checks:
             return {
-                "uptime_percentage": 100.0,
+                "uptime_percentage": None,
                 "avg_latency_ms": 0.0,
                 "total_checks": 0,
                 "total_up": 0,
                 "total_down": 0,
+                "last_check_at": None,
             }
         total_checks = int(row.total_checks or 0)
         total_up = int(row.total_up or 0)
         total_down = total_checks - total_up
-        uptime_pct = (total_up / total_checks) * 100.0 if total_checks > 0 else 100.0
+        uptime_pct = (total_up / total_checks) * 100.0 if total_checks > 0 else None
         avg_latency = float(row.avg_latency or 0.0)
+        last_check_at = getattr(row, "last_check_at", None)
         return {
-            "uptime_percentage": round(uptime_pct, 2),
+            "uptime_percentage": round(uptime_pct, 2) if uptime_pct is not None else None,
             "avg_latency_ms": round(avg_latency, 2),
             "total_checks": total_checks,
             "total_up": total_up,
             "total_down": total_down,
+            "last_check_at": last_check_at,
         }
 
     @staticmethod
@@ -137,6 +140,7 @@ class CheckRepository:
                 func.count(CheckResult.id).label("total_checks"),
                 func.avg(CheckResult.latency_ms).label("avg_latency"),
                 func.sum(func.cast(CheckResult.is_up, Integer)).label("total_up"),
+                func.max(CheckResult.executed_at).label("last_check_at"),
             )
             .join(Dependency, CheckResult.dependency_id == Dependency.id)
             .where(
@@ -164,6 +168,7 @@ class CheckRepository:
                 func.count(CheckResult.id).label("total_checks"),
                 func.avg(CheckResult.latency_ms).label("avg_latency"),
                 func.sum(func.cast(CheckResult.is_up, Integer)).label("total_up"),
+                func.max(CheckResult.executed_at).label("last_check_at"),
             )
             .join(Dependency, CheckResult.dependency_id == Dependency.id)
             .where(
@@ -179,16 +184,17 @@ class CheckRepository:
             stats_map[uuid.UUID(str(row.dependency_id))] = (
                 CheckRepository._stats_from_row(row)
             )
-        # Dependencies with no rows in the window are implicitly 100% up.
+        # Dependencies with no rows in the window are UNKNOWN — never claim 100%.
         for dep_id in dependency_ids:
             stats_map.setdefault(
                 dep_id,
                 {
-                    "uptime_percentage": 100.0,
+                    "uptime_percentage": None,
                     "avg_latency_ms": 0.0,
                     "total_checks": 0,
                     "total_up": 0,
                     "total_down": 0,
+                    "last_check_at": None,
                 },
             )
         return stats_map

@@ -43,10 +43,17 @@ class DashboardService:
         result: list[DependencyHealthResponse] = []
         for dep in deps:
             stats = stats_map.get(dep.id, {})
-            up_pct = stats.get("uptime_percentage", 100.0)
-            status = "operational" if up_pct >= 99.0 else "degraded"
+            up_pct = stats.get("uptime_percentage")
+            total_checks = int(stats.get("total_checks") or 0)
             if not dep.is_active:
                 status = "paused"
+            elif total_checks == 0 or up_pct is None:
+                # No check data in the window — never present stale silence as
+                # "operational". The UI renders this as an explicit unknown state.
+                status = "unknown"
+                up_pct = None
+            else:
+                status = "operational" if up_pct >= 99.0 else "degraded"
             result.append(
                 DependencyHealthResponse(
                     dependency_id=dep.id,
@@ -55,6 +62,8 @@ class DashboardService:
                     current_status=status,
                     uptime_percentage_24h=up_pct,
                     avg_latency_ms_24h=stats.get("avg_latency_ms", 0.0),
+                    last_check_at=stats.get("last_check_at"),
+                    total_checks_24h=total_checks,
                 )
             )
         return result

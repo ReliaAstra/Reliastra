@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
   FileText,
   LayoutDashboard,
-  LifeBuoy,
   Link2,
+  MessageCircle,
   Settings,
   TriangleAlert,
   X,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
+import { api } from '@/lib/dashboard/api';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { ThemeToggle } from './theme-toggle';
@@ -33,8 +35,8 @@ const NAV: NavItem[] = [
   { href: '/incidents', label: 'Incidents', icon: TriangleAlert },
   { href: '/evidence', label: 'Evidence', icon: FileText },
   { href: '/clients', label: 'Clients', icon: Building2 },
-  { href: '/support', label: 'Support', icon: LifeBuoy },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/support', label: 'Support', icon: MessageCircle },
 ];
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
@@ -88,7 +90,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
 function PlanFooter() {
   const plan = useAppStore((s) => s.plan);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
-  const current = getPlan(plan?.plan);
+  const current = getPlan(plan?.effective_plan ?? plan?.plan);
   if (!isPaid(current.id)) {
     return (
       <div className="mt-auto hidden items-center justify-between px-2 pt-4 lg:flex">
@@ -104,9 +106,12 @@ function PlanFooter() {
     );
   }
   return (
-    <div className="mt-auto hidden items-center justify-between px-2 pt-4 lg:flex">
-      <span className="text-xs text-rs-text-secondary">{current.name}</span>
-      <Link href="/settings/billing" className="text-xs text-rs-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
+    <div className="mt-auto hidden items-center justify-between gap-2 px-2 pt-4 lg:flex">
+      <span className="min-w-0 truncate text-xs text-rs-text-secondary">{current.name}</span>
+      <Link
+        href="/settings/billing"
+        className="shrink-0 text-xs text-rs-text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+      >
         Manage
       </Link>
     </div>
@@ -114,8 +119,43 @@ function PlanFooter() {
 }
 
 export function Sidebar() {
+  const plan = useAppStore((s) => s.plan);
+  const clientId = useAppStore((s) => s.selectedClientId);
+  const setClient = useAppStore((s) => s.setSelectedClient);
+  const current = getPlan(plan?.effective_plan ?? plan?.plan);
+  const agency = current.id === 'agency';
+
+  // Real client workspaces from the backend. Agency only; the query stays
+  // disabled otherwise so no extra request fires for non-agency plans.
+  const { data: clients } = useQuery({
+    queryKey: ['agency', 'clients'],
+    queryFn: api.clients,
+    enabled: agency,
+    staleTime: 60_000,
+  });
+
   return (
     <aside className="rs-sidebar fixed bottom-0 left-0 top-14 z-40 hidden w-16 flex-col border-r border-rs-border-subtle bg-rs-base px-2 py-4 md:flex lg:w-60 lg:px-3">
+      {agency && (
+        <div className="mb-4 hidden lg:block">
+          <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">
+            Client
+          </div>
+          <select
+            value={clientId ?? ''}
+            onChange={(e) => setClient(e.target.value || null)}
+            aria-label="Active client workspace"
+            className="w-full rounded-lg border border-rs-border-subtle bg-rs-elevated px-3 py-2 text-sm font-medium text-rs-text focus-visible:outline-none focus-visible:border-rs-brand focus-visible:ring-[3px] focus-visible:ring-[rgb(37_99_235_/_0.20)]"
+          >
+            <option value="">All workspaces</option>
+            {(clients ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <NavItems />
       <PlanFooter />
     </aside>
@@ -127,7 +167,7 @@ export function MobileSidebar() {
   const setOpen = useAppStore((s) => s.setSidebarOpen);
   const plan = useAppStore((s) => s.plan);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
-  const current = getPlan(plan?.plan);
+  const current = getPlan(plan?.effective_plan ?? plan?.plan);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 md:hidden">

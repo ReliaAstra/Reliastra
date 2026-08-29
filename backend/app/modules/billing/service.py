@@ -17,15 +17,20 @@ from app.core.exceptions import (
     ServiceUnavailableException,
 )
 from app.core.permissions import (
+    EVALUATION_DAYS,
+    PLAN_FEATURES,
     TRIAL_DAYS,
     Plan,
+    evaluation_days_remaining,
     get_dependency_limit,
-    get_effective_plan,
+    get_effective_entitlements,
+    get_effective_plan_for_org,
     get_min_check_interval,
     get_plan_price_usd,
+    get_retention_days,
+    get_team_limit,
+    is_evaluation_active,
     is_paid_plan,
-    is_trial_active,
-    trial_days_remaining,
 )
 from app.modules.billing.repository import BillingRepository
 from app.modules.billing.schemas import (
@@ -161,26 +166,79 @@ class BillingService:
             raise ResourceNotFoundException("Organization not found")
         subscription = await self.repository.get_subscription(session, org_id)
 
-        # 14-day trial: Free organizations operate on Professional limits
-        # until the window closes, then revert automatically.
-        effective_plan = get_effective_plan(org.plan, org.created_at)
-        trial_active = is_trial_active(org.created_at)
+        # Centralized evaluation-aware entitlement resolution. Server time only.
+        ent = get_effective_entitlements(org)
+        effective_plan = ent["effective_plan"]
         base_price = get_plan_price_usd(effective_plan)
+        # Real account consequences for the fallback message (never fabricated).
+        fallback_info = await self._build_fallback_info(session, org, ent)
         return PlanDetailsResponse(
             org_id=org.id,
-            plan=org.plan,
+            plan=ent["subscription_plan"],
             effective_plan=effective_plan,
-            is_trial_active=trial_active,
-            trial_days_remaining=trial_days_remaining(org.created_at),
+            is_trial_active=ent["is_evaluation_active"],
+            trial_days_remaining=ent["evaluation_days_remaining"],
             trial_length_days=TRIAL_DAYS,
+            is_evaluation_active=ent["is_evaluation_active"],
+            evaluation_status=ent["evaluation_status"],
+            evaluation_started_at=ent["evaluation_started_at"],
+            evaluation_expires_at=ent["evaluation_expires_at"],
+            evaluation_days_remaining=ent["evaluation_days_remaining"],
+            evaluation_used=ent["evaluation_used"],
             max_dependencies=get_dependency_limit(effective_plan),
+            max_team_members=get_team_limit(effective_plan),
             min_check_interval_seconds=get_min_check_interval(effective_plan),
+            data_retention_days=get_retention_days(effective_plan),
+            effective_features=ent["effective_features"],
+            fallback_info=fallback_info,
             subscription_status=subscription.status if subscription else None,
             current_period_end=(
                 subscription.current_period_end if subscription else None
             ),
             price_usd=base_price,
         )
+
+    async def _build_fallback_info(
+        self, session: AsyncSession, org, ent: dict
+    ) -> dict | None:
+        """Build the account-specific post-evaluation consequences.
+
+        e.g.  17 dependencies configured, 1 active on Free, 16 paused.
+        Uses real counts, never invented numbers, so the fallback message is
+        commercially meaningful and explainable.
+        """
+        try:
+            from app.modules.dependencies.repository import DependencyRepository
+            from app.modules.organizations.repository import OrganizationRepository
+
+            total_deps = await DependencyRepository.count_for_org(session, org.id)
+            effective = ent["effective_plan"]
+            free_limit = get_dependency_limit(Plan.FREE.value)
+            current_limit = get_dependency_limit(effective)
+            active_count = total_deps  # we have no paused state yet; count is authoritative
+            # Estimate paused if they were to fall back now
+            would_pause = max(0, total_deps - free_limit) if ent["is_evaluation_active"] else 0
+            members = await OrganizationRepository.list_members(session, org.id)
+            team_count = len(members)
+            team_free = get_team_limit(Plan.FREE.value)
+            team_current = get_team_limit(effective)
+            return {
+                "dependencies_configured": total_deps,
+                "dependencies_active": min(total_deps, current_limit),
+                "dependencies_paused_if_expired": would_pause,
+                "free_dependency_limit": free_limit,
+                "current_dependency_limit": current_limit,
+                "team_members": team_count,
+                "team_free_limit": team_free,
+                "team_current_limit": team_current,
+                "evidence_available": bool(ent["effective_features"].get("evidence_generation")),
+                "evidence_free_available": bool(PLAN_FEATURES[Plan.FREE.value].get("evidence_generation")),
+                "api_available": bool(ent["effective_features"].get("api_access")),
+                "retention_days_current": get_retention_days(effective),
+                "retention_days_free": get_retention_days(Plan.FREE.value),
+            }
+        except Exception:
+            return None
 
     async def initialize_payment(
         self,
@@ -403,7 +461,12 @@ class BillingService:
 
         from app.modules.organizations.repository import OrganizationRepository
 
-        await OrganizationRepository.update(session, org, plan=plan)
+        # Evaluation -> paid transition: paid plan becomes authoritative and the
+        # evaluation is marked converted so it never re-activates. No conflicting
+        # evaluation state: effective entitlements now follow the paid plan.
+        await OrganizationRepository.update(
+            session, org, plan=plan, evaluation_status="converted"
+        )
 
         # Funnel analytics: this checkout lead converted. Single choke point
         # covers both the frontend verify call and the charge.success webhook.
@@ -668,7 +731,9 @@ class BillingService:
 
         from app.modules.organizations.repository import OrganizationRepository
 
-        await OrganizationRepository.update(session, org, plan=values["plan"])
+        await OrganizationRepository.update(
+            session, org, plan=values["plan"], evaluation_status="converted"
+        )
 
     async def _disable_webhook_subscription(
         self, session: AsyncSession, data: dict[str, Any]
@@ -691,7 +756,11 @@ class BillingService:
 
         from app.modules.organizations.repository import OrganizationRepository
 
-        await OrganizationRepository.update(session, org, plan=Plan.FREE.value)
+        # Refund/churn/disable returns to Free; evaluation is expired and will
+        # not re-activate. Data is preserved, limits fall back.
+        await OrganizationRepository.update(
+            session, org, plan=Plan.FREE.value, evaluation_status="expired"
+        )
 
 
 billing_service = BillingService()

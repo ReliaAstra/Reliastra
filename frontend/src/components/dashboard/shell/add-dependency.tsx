@@ -30,8 +30,8 @@ export function AddDependencyPanel() {
   const { data: deps } = useDependencies();
   const create = useCreateDependency();
   const update = useUpdateDependency();
-  const current = getPlan(plan?.plan);
-  const nxt = nextPlan(plan?.plan);
+  const current = getPlan(plan?.effective_plan ?? plan?.plan);
+  const nxt = nextPlan(plan?.effective_plan ?? plan?.plan);
 
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
@@ -129,7 +129,7 @@ export function AddDependencyPanel() {
                 You are monitoring {deps?.length} of {current.dependencies} dependencies on the {current.name} plan. Upgrade to {nxt.name} to monitor {nxt.dependencies} dependencies.
               </p>
               <RsButton className="ml-3 shrink-0 px-3 py-1.5 text-[13px]" onClick={() => openUpgrade('limit')}>
-                Start {nxt.name} trial
+                Upgrade to {nxt.name}
               </RsButton>
             </div>
           )}

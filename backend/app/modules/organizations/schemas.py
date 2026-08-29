@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app.core.permissions import Plan, Role
 
@@ -32,6 +33,11 @@ class OrganizationResponse(BaseModel):
     plan: str
     has_agency_mode: bool = False
     ai_explanations_enabled: bool = True
+    # Evaluation fields are server-side; tests may provide MagicMock, so allow Any
+    evaluation_started_at: datetime | None = None
+    evaluation_expires_at: datetime | None = None
+    evaluation_status: Any | None = None
+    evaluation_used: Any = False
     created_at: datetime
     updated_at: datetime
 

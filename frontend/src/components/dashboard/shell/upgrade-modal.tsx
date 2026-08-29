@@ -1,9 +1,10 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
-import { PLANS, annualSavings, getPlan } from '@/lib/dashboard/plans';
+import { PLANS, effectivePlan, intervalLabel, retentionLabel } from '@/lib/dashboard/plans';
+import { api } from '@/lib/dashboard/api';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { toast } from 'sonner';
@@ -13,26 +14,30 @@ function Feature({ ok, children }: { ok: boolean | string; children: string }) {
     <div className="flex items-center justify-between py-1.5 text-[13px]">
       <span className="text-rs-text-secondary">{children}</span>
       <span className={cn('font-mono text-xs', ok ? 'text-rs-text' : 'text-rs-text-tertiary')}>
-        {typeof ok === 'string' ? ok : ok ? 'Yes' : '-'}
+        {typeof ok === 'string' ? ok : ok ? 'Yes' : '—'}
       </span>
     </div>
   );
 }
 
+/**
+ * Upgrade flow — the REAL billing path.
+ *
+ * Choosing a plan calls ``POST /v1/billing/initialize`` (backend creates a
+ * Paystack transaction scoped to the caller's organization) and redirects to
+ * the provider's authorization page. The backend's webhook + verify endpoint
+ * flip the subscription; the frontend never mutates entitlement state.
+ */
 export function UpgradeModal() {
   const open = useAppStore((s) => s.upgradeOpen);
   const close = useAppStore((s) => s.closeUpgrade);
   const plan = useAppStore((s) => s.plan);
-  const setDemoPlan = useAppStore((s) => s.setDemoPlan);
-  const current = getPlan(plan?.plan);
-  const [annual, setAnnual] = useState(false);
+  const user = useAppStore((s) => s.user);
+  // Effective plan during trial is Professional; the *underlying* plan is
+  // what a purchase would replace.
+  const current = effectivePlan(plan);
+  const [pending, setPending] = useState<string | null>(null);
 
-  const maxSave = useMemo(
-    () => Math.max(...PLANS.map(annualSavings)),
-    []
-  );
-
-  // Close on Esc + focus trap basics per spec
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -43,6 +48,20 @@ export function UpgradeModal() {
   }, [open, close]);
 
   if (!open) return null;
+
+  const startCheckout = async (targetId: string) => {
+    setPending(targetId);
+    try {
+      const res = await api.initializePayment(targetId);
+      // Hand off to Paystack; entitlement flips server-side after payment.
+      window.open(res.authorization_url, '_self', 'noopener');
+    } catch (err) {
+      setPending(null);
+      toast.error(err instanceof Error ? err.message : 'Could not start checkout', {
+        description: 'If this persists, contact support@reliastra.com.',
+      });
+    }
+  };
 
   return (
     <div
@@ -57,11 +76,11 @@ export function UpgradeModal() {
         role="document"
         aria-labelledby="pricing-title"
       >
-        <div className="relative px-8 pb-4 pt-8">
+        <div className="relative px-6 pb-4 pt-7 md:px-8 md:pt-8">
           <button
             type="button"
             onClick={close}
-            className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary transition-colors hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary transition-colors hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
             aria-label="Close"
           >
             <X size={18} />
@@ -71,52 +90,30 @@ export function UpgradeModal() {
           </h2>
           <p className="mt-1 text-sm text-rs-text-tertiary">
             Monitor more dependencies. Generate evidence. Protect your SLAs.
+            {user?.email ? (
+              <span className="hidden sm:inline"> Billing as {user.email}.</span>
+            ) : null}
           </p>
-          <div className="mt-5 inline-flex rounded-lg border border-rs-border p-0.5">
-            <button
-              type="button"
-              onClick={() => setAnnual(false)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
-                !annual ? 'bg-rs-hover text-rs-text' : 'text-rs-text-secondary'
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => setAnnual(true)}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
-                annual ? 'bg-rs-hover text-rs-text' : 'text-rs-text-secondary'
-              )}
-            >
-              Annual
-              <span className="rounded-full bg-rs-brand-subtle px-2 py-0.5 text-2xs font-medium text-rs-brand">
-                Save ${maxSave}
-              </span>
-            </button>
-          </div>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto px-6 pb-6 rs-scrollbar">
+        <div className="flex gap-3 overflow-x-auto px-5 pb-6 rs-scrollbar md:px-6">
           {PLANS.map((p) => {
             const isCurrent = p.id === current.id;
             const isStandard = p.id === 'standard';
             const isAgency = p.id === 'agency';
-            const price = annual ? Math.round(p.priceAnnual / 12) : p.priceMonthly;
+            const isFree = p.id === 'free';
             return (
               <div
                 key={p.id}
                 className={cn(
-                  'relative flex min-w-[168px] flex-1 flex-col rounded-xl border p-4',
+                  'relative flex min-w-[172px] flex-1 flex-col rounded-xl border p-4',
                   isStandard
                     ? 'border-2 border-rs-brand bg-[rgba(37,99,235,0.03)]'
                     : 'border-rs-border-subtle bg-rs-elevated'
                 )}
               >
                 {isStandard && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-rs-brand px-2.5 py-1 text-[11px] font-semibold text-white">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-rs-brand px-2.5 py-1 text-[11px] font-semibold text-white">
                     Most popular
                   </span>
                 )}
@@ -126,22 +123,18 @@ export function UpgradeModal() {
                   </span>
                 )}
                 <div className="text-sm font-medium text-rs-text">{p.name}</div>
-                <div className="mt-1 text-xs text-rs-text-tertiary">{p.tagline}</div>
+                <div className="mt-1 min-h-[32px] text-xs leading-snug text-rs-text-tertiary">{p.tagline}</div>
                 <div className="mt-3 font-mono text-2xl font-bold tracking-[-0.02em] text-rs-text">
-                  ${price}
+                  ${p.priceMonthly}
                   <span className="text-xs font-normal text-rs-text-tertiary">/mo</span>
                 </div>
-                {annual && p.priceMonthly > 0 && (
-                  <div className="mt-1 text-2xs text-rs-text-tertiary">
-                    Billed ${p.priceAnnual}/yr
-                  </div>
-                )}
                 <div className="mt-4 border-t border-rs-border-subtle pt-2">
                   <Feature ok={String(p.dependencies)}>Dependencies</Feature>
-                  <Feature ok={p.retention}>Retention</Feature>
+                  <Feature ok={`${p.teamMembers} seat${p.teamMembers === 1 ? '' : 's'}`}>Team</Feature>
+                  <Feature ok={intervalLabel(p.minIntervalSeconds).replace(' checks', '')}>Check interval</Feature>
+                  <Feature ok={retentionLabel(p.retentionDays)}>Retention</Feature>
                   <Feature ok={p.alerts}>Alerts</Feature>
                   <Feature ok={p.evidence}>Evidence</Feature>
-                  <Feature ok={p.seats}>Team seats</Feature>
                   <Feature ok={p.clientGroups}>Client groups</Feature>
                   <Feature ok={p.whiteLabel}>White-label</Feature>
                 </div>
@@ -149,35 +142,31 @@ export function UpgradeModal() {
                   {isCurrent ? (
                     <button
                       disabled
-                      className="w-full rounded-lg py-2 text-sm text-rs-text-tertiary"
+                      className="w-full cursor-default rounded-lg py-2 text-sm text-rs-text-tertiary"
                     >
                       Current plan
                     </button>
-                  ) : isAgency ? (
-                    <RsButton
-                      variant="secondary"
-                      className="w-full"
-                      onClick={() => {
-                        toast.message('Talk to us about Agency', {
-                          description: 'We will follow up about client groups and white-label reports.',
-                        });
-                        close();
-                      }}
+                  ) : isFree ? (
+                    <button
+                      disabled
+                      className="w-full cursor-default rounded-lg py-2 text-sm text-rs-text-tertiary"
                     >
-                      Learn more
-                    </RsButton>
+                      Default tier
+                    </button>
+                  ) : isAgency ? (
+                    <a
+                      href="mailto:support@reliastra.com?subject=Agency%20plan"
+                      className="block w-full rounded-lg border border-rs-border bg-transparent py-2 text-center text-sm font-medium text-rs-text transition-colors hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+                    >
+                      Talk to us
+                    </a>
                   ) : (
                     <RsButton
                       className="w-full"
-                      onClick={() => {
-                        setDemoPlan(p.id);
-                        toast.success(`${p.name} trial started`, {
-                          description: 'No credit card required for trial.',
-                        });
-                        close();
-                      }}
+                      disabled={pending !== null}
+                      onClick={() => void startCheckout(p.id)}
                     >
-                      Start trial
+                      {pending === p.id ? 'Redirecting…' : `Upgrade to ${p.name}`}
                     </RsButton>
                   )}
                 </div>
@@ -186,10 +175,10 @@ export function UpgradeModal() {
           })}
         </div>
 
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 border-t border-rs-border-subtle px-6 py-4 text-xs text-rs-text-tertiary">
-          <span>No credit card required for trial</span>
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-t border-rs-border-subtle px-6 py-4 text-xs text-rs-text-tertiary">
+          <span>Secure checkout via Paystack</span>
           <span>Cancel anytime</span>
-          <span>SOC 2 Type II in progress</span>
+          <span>Questions? support@reliastra.com</span>
         </div>
       </div>
     </div>
@@ -219,8 +208,9 @@ export function EvidenceGateModal() {
         role="document"
       >
         <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Standard feature</h2>
-        <p className="mt-2 text-sm text-rs-text-secondary">
-          Generate court-ready reports with multi-region verification. Start your free trial, no credit card required.
+        <p className="mt-2 text-sm leading-relaxed text-rs-text-secondary">
+          Generate verifiable SLA evidence backed by multi-region checks — the artifact you attach
+          to a refund request or executive postmortem.
         </p>
         <div className="mt-6 flex items-center gap-3">
           <RsButton
@@ -229,7 +219,7 @@ export function EvidenceGateModal() {
               openUpgrade('evidence');
             }}
           >
-            Start Standard trial
+            View plans
           </RsButton>
           <RsButton variant="ghost" onClick={() => setOpen(false)}>
             Maybe later

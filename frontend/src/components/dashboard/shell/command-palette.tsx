@@ -83,7 +83,7 @@ export function CommandPalette() {
         label: 'Generate report',
         icon: FileText,
         action: () => {
-          if (!hasEvidence(plan?.plan)) useAppStore.getState().setEvidenceGateOpen(true);
+          if (!hasEvidence(plan?.effective_plan ?? plan?.plan)) useAppStore.getState().setEvidenceGateOpen(true);
           else router.push('/evidence');
         },
       },
@@ -153,8 +153,6 @@ export function CommandPalette() {
   }
 
   if (!open) return null;
-
-  const flat = items;
 
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/50 pt-[12vh]" onClick={() => setOpen(false)}>

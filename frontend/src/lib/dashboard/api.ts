@@ -1,28 +1,12 @@
 'use client';
 
 import { getRefreshToken, setRefreshToken, useAppStore } from '@/stores/app-store';
-import {
-  mockAlertConfigs,
-  mockDependencies,
-  mockEvidence,
-  mockHealth,
-  mockHistory,
-  mockIncidentDetail,
-  mockIncidentResolvedDetail,
-  mockIncidents,
-  mockLatency,
-  mockOrg,
-  mockPlan,
-  mockPricing,
-  mockResults,
-  mockSummary,
-  mockUser,
-  mockVendors,
-  paginate,
-  IDS,
-} from './mock';
 import type {
   AlertConfig,
+  AgencyPortfolio,
+  AgencyClient,
+  ApiKeyCreateResponse,
+  ApiKeyItem,
   CheckResult,
   DashboardSummary,
   Dependency,
@@ -32,27 +16,28 @@ import type {
   EvidenceReport,
   Incident,
   IncidentDetail,
+  InboxListResponse,
+  InboxUnreadCountResponse,
   Organization,
   Paginated,
   PlanDetails,
+  PlanId,
   PricingPlan,
+  SupportMessage,
+  SupportTicketDetail,
+  SupportTicketListResponse,
   UserMe,
   VendorStatus,
-  AgencyPortfolio,
-  InboxListResponse,
-  InboxUnreadCountResponse,
-  SupportTicketDetail,
-  SupportMessage,
-  SupportTicketListResponse,
 } from './types';
 import { unwrapList } from './types';
 
 const BASE = '/api/v1';
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
     super(message);
+    this.name = 'ApiError';
     this.status = status;
   }
 }
@@ -80,6 +65,11 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Single authenticated request path. No fabricated fallbacks: a monitoring
+ * product must never render made-up uptime or incidents, so failures
+ * surface as typed errors that pages turn into explicit error states.
+ */
 async function request<T>(
   path: string,
   init: RequestInit = {},
@@ -102,219 +92,94 @@ async function request<T>(
     if (next) return request<T>(path, init, false);
   }
 
+  // Session is unrecoverable — clear and let the shell route to sign-in.
+  if (res.status === 401) {
+    useAppStore.getState().sessionExpired();
+    throw new ApiError('Your session has expired. Please sign in again.', 401);
+  }
+
   if (res.status === 204) return undefined as T;
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new ApiError(`Malformed response (${res.status})`, res.status);
+  }
   if (!res.ok) {
-    const message = data?.detail || data?.message || `Request failed (${res.status})`;
+    const message =
+      (data as { detail?: string; message?: string })?.detail ||
+      (data as { message?: string })?.message ||
+      `Request failed (${res.status})`;
     throw new ApiError(typeof message === 'string' ? message : JSON.stringify(message), res.status);
   }
   return data as T;
 }
 
-async function withFallback<T>(fn: () => Promise<T>, fallback: T | (() => T)): Promise<T> {
-  const demo = useAppStore.getState().isDemo || !useAppStore.getState().accessToken;
-  // Demo mode always uses mock data.
-  if (demo) return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
-  try {
-    return await fn();
-  } catch (err) {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      useAppStore.getState().setOnline(false);
-      // Offline: fall back so cached/demo content keeps the UI usable.
-      return typeof fallback === 'function' ? (fallback as () => T)() : fallback;
-    }
-    // Online failure against the real backend must NOT be masked with mock
-    // data — silently rendering fabricated uptime/incident figures in a
-    // monitoring product is worse than an explicit error state.
-    throw err;
-  }
-}
-
 export const api = {
-  me: () => withFallback(() => request<UserMe>('/users/me'), mockUser),
-  org: () => withFallback(() => request<Organization>('/orgs/current'), mockOrg),
-  plan: () => withFallback(() => request<PlanDetails>('/billing/plan'), mockPlan),
-  pricing: () =>
-    withFallback(
-      () => request<{ plans: PricingPlan[] }>('/pricing'),
-      mockPricing
-    ),
+  me: () => request<UserMe>('/users/me'),
+  org: () => request<Organization>('/orgs/current'),
+  orgs: () => request<Organization[] | { data: Organization[] }>('/orgs').then(unwrapList),
+  plan: () => request<PlanDetails>('/billing/plan'),
+  pricing: () => request<{ plans: PricingPlan[] }>('/pricing'),
 
-  summary: () =>
-    withFallback(() => request<DashboardSummary>('/dashboard/summary'), mockSummary),
+  summary: () => request<DashboardSummary>('/dashboard/summary'),
   health: () =>
-    withFallback(
-      () => request<DependencyHealth[]>('/dashboard/dependency-health'),
-      mockHealth
-    ),
+    request<Paginated<DependencyHealth> | DependencyHealth[]>('/dashboard/dependency-health').then(unwrapList),
   vendors: () =>
-    withFallback(
-      () => request<VendorStatus[]>('/dashboard/vendor-status'),
-      mockVendors
-    ),
+    request<Paginated<VendorStatus> | VendorStatus[]>('/dashboard/vendor-status').then(unwrapList),
   latency: (hours = 24, depId?: string) =>
-    withFallback(
-      () =>
-        request(`/dashboard/latency?hours=${hours}`),
-      () => mockLatency(depId)
+    request<{ points: Array<{ t: string; v: number }> }>(
+      `/dashboard/latency?hours=${hours}${depId ? `&dependency_id=${depId}` : ''}`
     ),
 
-  incidents: (params?: { limit?: number; status?: string }) =>
-    withFallback(
-      async () => {
-        const q = new URLSearchParams();
-        if (params?.limit) q.set('limit', String(params.limit));
-        if (params?.status) q.set('status', params.status);
-        const data = await request<Paginated<Incident> | Incident[]>(
-          `/incidents?${q.toString()}`
-        );
-        return unwrapList(data);
-      },
-      () =>
-        mockIncidents.filter((i) =>
-          params?.status ? i.status === params.status : true
-        ).slice(0, params?.limit ?? 50)
-    ),
+  incidents: (params?: { limit?: number; status?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.limit) q.set('limit', String(params.limit));
+    if (params?.status) q.set('status', params.status);
+    return request<Paginated<Incident> | Incident[]>(`/incidents?${q.toString()}`).then(unwrapList);
+  },
 
-  incident: (id: string) =>
-    withFallback(
-      () => request<IncidentDetail>(`/incidents/${id}`),
-      () =>
-        id === IDS.incidentResolved
-          ? mockIncidentResolvedDetail
-          : { ...mockIncidentDetail, id }
-    ),
+  incident: (id: string) => request<IncidentDetail>(`/incidents/${id}`),
 
-  incidentEvidence: (id: string) =>
-    withFallback(
-      () => request<EvidenceReport>(`/incidents/${id}/evidence`),
-      () => mockEvidence.find((e) => e.incident_id === id) ?? mockEvidence[0]
-    ),
+  incidentEvidence: (id: string) => request<EvidenceReport>(`/incidents/${id}/evidence`),
 
   dependencies: () =>
-    withFallback(
-      async () => {
-        const data = await request<Paginated<Dependency> | Dependency[]>('/dependencies');
-        return unwrapList(data);
-      },
-      mockDependencies
-    ),
+    request<Paginated<Dependency> | Dependency[]>('/dependencies').then(unwrapList),
 
-  dependency: (id: string) =>
-    withFallback(
-      () => request<Dependency>(`/dependencies/${id}`),
-      () => mockDependencies.find((d) => d.id === id) ?? mockDependencies[0]
-    ),
+  dependency: (id: string) => request<Dependency>(`/dependencies/${id}`),
 
-  dependencyHistory: (id: string) =>
-    withFallback(
-      () => request<DependencyHistory>(`/dependencies/${id}/history`),
-      () => mockHistory(id)
-    ),
+  dependencyHistory: (id: string) => request<DependencyHistory>(`/dependencies/${id}/history`),
 
   dependencyResults: (id: string) =>
-    withFallback(
-      async () => {
-        const data = await request<Paginated<CheckResult> | CheckResult[]>(
-          `/dependencies/${id}/results`
-        );
-        return unwrapList(data);
-      },
-      () => mockResults(id)
-    ),
+    request<Paginated<CheckResult> | CheckResult[]>(`/dependencies/${id}/results`).then(unwrapList),
 
   createDependency: (body: DependencyCreate) =>
-    withFallback(
-      () =>
-        request<Dependency>('/dependencies', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        }),
-      () => ({
-        ...mockDependencies[0],
-        id: crypto.randomUUID(),
-        name: body.name,
-        endpoint_url: body.endpoint_url,
-        method: body.method,
-        expected_status_codes: body.expected_status_codes,
-        timeout_seconds: body.timeout_seconds,
-        check_interval_seconds: body.check_interval_seconds,
-        regions: body.regions,
-        alert_threshold_ms: body.alert_threshold_ms,
-        is_active: body.is_active,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-    ),
+    request<Dependency>('/dependencies', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   updateDependency: (id: string, body: Partial<DependencyCreate>) =>
-    withFallback(
-      () =>
-        request<Dependency>(`/dependencies/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        }),
-      () => ({
-        ...(mockDependencies.find((d) => d.id === id) ?? mockDependencies[0]),
-        ...body,
-        method: body.method ?? 'GET',
-        updated_at: new Date().toISOString(),
-      }) as Dependency
-    ),
+    request<Dependency>(`/dependencies/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
 
   deleteDependency: (id: string) =>
-    withFallback(
-      () => request<void>(`/dependencies/${id}`, { method: 'DELETE' }),
-      undefined as unknown as void
-    ),
+    request<void>(`/dependencies/${id}`, { method: 'DELETE' }),
 
-  evidence: () =>
-    withFallback(() => request<EvidenceReport[]>('/evidence'), mockEvidence),
+  evidence: () => request<EvidenceReport[]>('/evidence'),
 
-  evidenceById: (id: string) =>
-    withFallback(
-      () => request<EvidenceReport>(`/evidence/${id}`),
-      () => mockEvidence.find((e) => e.id === id) ?? mockEvidence[0]
-    ),
+  evidenceById: (id: string) => request<EvidenceReport>(`/evidence/${id}`),
 
   regenerateEvidence: (id: string) =>
-    withFallback(
-      () => request<EvidenceReport>(`/evidence/${id}/regenerate`, { method: 'POST' }),
-      () => mockEvidence.find((e) => e.id === id) ?? mockEvidence[0]
-    ),
+    request<EvidenceReport>(`/evidence/${id}/regenerate`, { method: 'POST' }),
 
-  alertConfigs: () =>
-    withFallback(
-      () => request<AlertConfig[]>('/notifications/configs'),
-      mockAlertConfigs
-    ),
+  alertConfigs: () => request<AlertConfig[]>('/notifications/configs'),
 
   createAlertConfig: (body: { channel_type: string; config: Record<string, string>; is_active: boolean }) =>
-    withFallback(
-      () =>
-        request<AlertConfig>('/notifications/configs', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        }),
-      () => ({
-        id: crypto.randomUUID(),
-        org_id: IDS.org,
-        channel_type: body.channel_type,
-        is_active: body.is_active,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-    ),
-
-  // ── Agency portfolio ──────────────────────────────────────────────────────
-  // No mock fallback on purpose: the gate renders before this fires for
-  // non-Agency plans, and a failure here must show a real error state.
-
-  portfolio: () => request<AgencyPortfolio>('/agency/portfolio'),
-
-  createClient: (body: { name: string; description?: string }) =>
-    request<{ id: string; name: string }>('/clients', {
+    request<AlertConfig>('/notifications/configs', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
@@ -375,6 +240,93 @@ export const api = {
       `/partners/support/tickets/${ticketId}/messages`,
       { method: 'POST', body: JSON.stringify({ body }) }
     ),
+
+  // ── Organization ─────────────────────────────────────────────────────────
+
+  updateOrg: (body: { name?: string }) =>
+    request<Organization>('/orgs/current', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  // ── API keys ─────────────────────────────────────────────────────────────
+
+  apiKeys: () => request<ApiKeyItem[]>('/api-keys'),
+
+  createApiKey: (body: { name: string; scopes?: string[] }) =>
+    request<ApiKeyCreateResponse>('/api-keys', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  deleteApiKey: (id: string) => request<void>(`/api-keys/${id}`, { method: 'DELETE' }),
+
+  // ── Billing (real Paystack flow) ────────────────────────────────────────
+
+  initializePayment: (plan: PlanId | string) =>
+    request<{ authorization_url: string; reference: string; access_code: string }>(
+      '/billing/initialize',
+      { method: 'POST', body: JSON.stringify({ plan }) }
+    ),
+
+  verifyTransaction: (reference: string) =>
+    request<{ verified: boolean; plan: string; reference: string }>(
+      `/billing/verify?reference=${encodeURIComponent(reference)}`
+    ),
+
+  // ── Agency ────────────────────────────────────────────────────────────────
+
+  clients: () => request<AgencyClient[]>('/clients'),
+
+  createClient: (body: { name: string; description?: string }) =>
+    request<AgencyClient>('/clients', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  portfolio: () => request<AgencyPortfolio>('/agency/portfolio'),
 };
 
-export { ApiError, paginate };
+/**
+ * Session bootstrap.
+ *
+ * The backend resolves the organization exclusively from the
+ * `X-Organization-ID` header, which the store cannot know until the org is
+ * loaded. So bootstrap must: refresh (mutexed) → list orgs (no header
+ * required) → fetch me/org/plan WITH the org header. Every later request
+ * then carries the header from the store automatically.
+ */
+export async function bootstrapSession(): Promise<{
+  user: UserMe;
+  org: Organization;
+  plan: PlanDetails;
+} | null> {
+  const access = await refreshAccessToken();
+  if (!access) return null;
+
+  const orgList = await api.orgs();
+  const org = orgList[0];
+  if (!org) return null;
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${useAppStore.getState().accessToken ?? ''}`,
+    'X-Organization-ID': org.id,
+  };
+  const [userRes, orgRes, planRes] = await Promise.all([
+    fetch(`${BASE}/users/me`, { headers }),
+    fetch(`${BASE}/orgs/current`, { headers }),
+    fetch(`${BASE}/billing/plan`, { headers }),
+  ]);
+  if (!userRes.ok || !orgRes.ok || !planRes.ok) {
+    if (userRes.status === 401 || orgRes.status === 401 || planRes.status === 401) {
+      useAppStore.getState().sessionExpired();
+    }
+    throw new ApiError('Failed to load session', 502);
+  }
+  const [user, orgFull, plan] = await Promise.all([
+    userRes.json() as Promise<UserMe>,
+    orgRes.json() as Promise<Organization>,
+    planRes.json() as Promise<PlanDetails>,
+  ]);
+  return { user, org: orgFull, plan };
+}

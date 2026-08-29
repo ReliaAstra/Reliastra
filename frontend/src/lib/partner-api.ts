@@ -101,32 +101,6 @@ export const partnerApi = {
     });
   },
 
-  /**
-   * Revoke the current refresh token server-side.
-   *
-   * `dashboard-layout` called `partnerApi.logout()` at three sign-out sites,
-   * but the method did not exist. The resulting TypeError was swallowed by
-   * the surrounding try/catch, so sign-out *looked* fine while the refresh
-   * token stayed valid on the server for its full lifetime — a stolen or
-   * shared-machine token survived "Sign out" entirely.
-   */
-  async logout() {
-    const refreshToken =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('partner_refresh_token')
-        : null;
-
-    // Nothing to revoke — the local reset by the caller is sufficient.
-    if (!refreshToken) return;
-
-    // The backend answers 204 No Content, so don't try to parse a body.
-    await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-  },
-
   async me() {
     // Real backend returns UserResponse (snake_case) directly, not wrapped
     return request<{
@@ -154,6 +128,33 @@ export const partnerApi = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  /**
+   * Best-effort server-side revocation of the current refresh token.
+   *
+   * Uses a raw fetch because the backend answers 204 No Content — the
+   * shared `request()` helper would try to parse an empty body.
+   * `dashboard-layout` called `partnerApi.logout()` at three sign-out sites,
+   * but the method did not exist, so the refresh token survived sign-out;
+   * this fix ensures it is revoked and cleared locally.
+   */
+  async logout() {
+    const refreshToken =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('partner_refresh_token')
+        : null;
+    if (!refreshToken) return;
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+    } finally {
+      if (typeof window !== 'undefined')
+        localStorage.removeItem('partner_refresh_token');
+    }
   },
 
   // ── Partner ──────────────────────────────────

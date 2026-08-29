@@ -1189,6 +1189,16 @@
   to { transform: translateX(100%); opacity: 0; }
 }
 
+/* ── Research figures — restrained data motion (reduced-motion collapses
+   durations globally, see @media rule above) ───────────────────────────── */
+@keyframes rs-figure-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.rs-figure-pulse {
+  animation: rs-figure-pulse 2.4s ease-in-out infinite;
+}
+
 /* ── Scrollbar ──────────────────────────────────────────────────────────── */
 .rs-scrollbar::-webkit-scrollbar {
   width: 6px;

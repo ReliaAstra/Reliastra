@@ -20,7 +20,7 @@ export function EvidenceLibraryPage() {
   const router = useRouter();
   const [q, setQ] = useState('');
   const [vendor, setVendor] = useState('all');
-  const allowed = hasEvidence(plan?.plan);
+  const allowed = hasEvidence(plan?.effective_plan ?? plan?.plan);
 
   const vendors = useMemo(
     () => Array.from(new Set((data ?? []).map((r) => r.vendor).filter(Boolean))) as string[],

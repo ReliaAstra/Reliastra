@@ -25,6 +25,22 @@ class Organization(UUIDMixin, TimestampMixin, Base):
     ai_explanations_enabled: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true", nullable=False
     )
+    # 14-day full-access evaluation — first-class server-side entitlement state.
+    # Every new organization receives Professional limits for 14 days; after
+    # expiry it falls back to Free automatically. Stored on the organization so
+    # no client state, cookie, or clock manipulation can extend or re-create it.
+    evaluation_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=False
+    )
+    evaluation_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    evaluation_status: Mapped[str | None] = mapped_column(
+        String(20), nullable=True, index=True
+    )
+    evaluation_used: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
 
     members: Mapped[list["OrganizationMember"]] = relationship(
         "OrganizationMember",
