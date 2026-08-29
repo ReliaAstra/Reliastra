@@ -126,6 +126,7 @@ export interface Dependency {
 
 export interface DependencyCreate {
   name: string;
+  application_id?: string | null;
   endpoint_url: string;
   method: 'GET' | 'HEAD' | 'POST';
   expected_status_codes: number[];
@@ -293,6 +294,16 @@ export interface AgencyClient {
   id: string;
   name: string;
   description?: string | null;
+}
+
+export interface AgencyApplication {
+  id: string;
+  org_id: string;
+  client_id: string | null;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApiKeyItem {

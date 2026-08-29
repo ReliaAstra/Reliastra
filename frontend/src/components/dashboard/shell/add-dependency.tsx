@@ -1,10 +1,16 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { Building2, Layers, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
-import { getPlan, nextPlan } from '@/lib/dashboard/plans';
-import { useCreateDependency, useDependencies, useUpdateDependency } from '@/lib/dashboard/queries';
+import { effectivePlan, getPlan, nextPlan } from '@/lib/dashboard/plans';
+import {
+  useApplications,
+  useClients,
+  useCreateDependency,
+  useDependencies,
+  useUpdateDependency,
+} from '@/lib/dashboard/queries';
 import { HelpTooltip } from '../ui/help-tooltip';
 import { RsButton } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -26,14 +32,23 @@ export function AddDependencyPanel() {
   const editingId = useAppStore((s) => s.editingDependencyId);
   const setOpen = useAppStore((s) => s.setAddDependencyOpen);
   const plan = useAppStore((s) => s.plan);
+  const selectedClientId = useAppStore((s) => s.selectedClientId);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const { data: deps } = useDependencies();
   const create = useCreateDependency();
   const update = useUpdateDependency();
-  const current = getPlan(plan?.effective_plan ?? plan?.plan);
-  const nxt = nextPlan(plan?.effective_plan ?? plan?.plan);
+  const currentPlan = effectivePlan(plan);
+  const agencyEnabled = currentPlan.id === 'enterprise';
+
+  const { data: clients } = useClients(agencyEnabled);
+  const [selectedClientForDep, setSelectedClientForDep] = useState<string>('');
+  const { data: applications } = useApplications(
+    selectedClientForDep || undefined,
+    Boolean(selectedClientForDep) && agencyEnabled
+  );
 
   const [name, setName] = useState('');
+  const [applicationId, setApplicationId] = useState<string>('');
   const [url, setUrl] = useState('');
   const [method, setMethod] = useState<(typeof METHODS)[number]>('GET');
   const [codes, setCodes] = useState<number[]>([200]);
@@ -42,6 +57,9 @@ export function AddDependencyPanel() {
   const [regions, setRegions] = useState<string[]>(['us-east']);
   const [threshold, setThreshold] = useState(500);
   const [active, setActive] = useState(true);
+
+  const current = getPlan(plan?.effective_plan ?? plan?.plan);
+  const nxt = nextPlan(plan?.effective_plan ?? plan?.plan);
 
   useEffect(() => {
     if (!open) return;
@@ -56,6 +74,7 @@ export function AddDependencyPanel() {
       setRegions(existing.regions);
       setThreshold(existing.alert_threshold_ms ?? 500);
       setActive(existing.is_active);
+      setApplicationId(existing.application_id ?? '');
     } else {
       setName('');
       setUrl('');
@@ -66,8 +85,14 @@ export function AddDependencyPanel() {
       setRegions(['us-east']);
       setThreshold(500);
       setActive(true);
+      setApplicationId('');
+      if (selectedClientId) {
+        setSelectedClientForDep(selectedClientId);
+      } else {
+        setSelectedClientForDep('');
+      }
     }
-  }, [open, editingId, deps]);
+  }, [open, editingId, deps, selectedClientId]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,9 +119,9 @@ export function AddDependencyPanel() {
       openUpgrade('limit');
       return;
     }
-    const body = {
-      name,
-      endpoint_url: url,
+    const body: any = {
+      name: name.trim(),
+      endpoint_url: url.trim(),
       method,
       expected_status_codes: codes,
       timeout_seconds: timeout,
@@ -105,6 +130,12 @@ export function AddDependencyPanel() {
       alert_threshold_ms: threshold,
       is_active: active,
     };
+    if (applicationId) {
+      body.application_id = applicationId;
+    } else if (editingId) {
+      body.application_id = null;
+    }
+
     if (editingId) await update.mutateAsync({ id: editingId, body });
     else await create.mutateAsync(body);
     setOpen(false);
@@ -118,7 +149,12 @@ export function AddDependencyPanel() {
           <h2 className="rs-section-title text-base font-semibold">
             {editingId ? 'Edit dependency' : 'Add dependency'}
           </h2>
-          <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setOpen(false)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+          >
             <X size={18} />
           </button>
         </div>
@@ -131,6 +167,62 @@ export function AddDependencyPanel() {
               <RsButton className="ml-3 shrink-0 px-3 py-1.5 text-[13px]" onClick={() => openUpgrade('limit')}>
                 Upgrade to {nxt.name}
               </RsButton>
+            </div>
+          )}
+
+          {agencyEnabled && (clients?.length ?? 0) > 0 && (
+            <div className="mb-5 rounded-xl border border-rs-border-subtle bg-rs-base p-4">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-rs-text-tertiary">
+                <Building2 size={13} className="text-rs-brand" />
+                <span>Agency Hierarchy Assignment</span>
+              </div>
+              <p className="mb-3 text-xs leading-relaxed text-rs-text-secondary">
+                Assign this dependency to an application so uptime rolls up accurately to your client&apos;s SLA posture.
+              </p>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="rs-label mb-1 block text-xs">Client</label>
+                  <select
+                    value={selectedClientForDep}
+                    onChange={(e) => {
+                      setSelectedClientForDep(e.target.value);
+                      setApplicationId('');
+                    }}
+                    className={field}
+                  >
+                    <option value="">Select a client workspace…</option>
+                    {(clients ?? []).map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedClientForDep && (
+                  <div>
+                    <label className="rs-label mb-1 block text-xs">Application</label>
+                    <select
+                      value={applicationId}
+                      onChange={(e) => setApplicationId(e.target.value)}
+                      className={field}
+                    >
+                      <option value="">Select an application…</option>
+                      {(applications ?? []).map((app) => (
+                        <option key={app.id} value={app.id}>
+                          {app.name}
+                        </option>
+                      ))}
+                    </select>
+                    {(applications?.length ?? 0) === 0 && (
+                      <p className="mt-1 text-[11px] text-rs-text-tertiary">
+                        This client has no applications yet. Create an application from the client workspace.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

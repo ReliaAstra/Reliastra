@@ -5,6 +5,7 @@ import type {
   AlertConfig,
   AgencyPortfolio,
   AgencyClient,
+  AgencyApplication,
   ApiKeyCreateResponse,
   ApiKeyItem,
   CheckResult,
@@ -280,6 +281,15 @@ export const api = {
 
   createClient: (body: { name: string; description?: string }) =>
     request<AgencyClient>('/clients', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  applications: (clientId: string) =>
+    request<AgencyApplication[]>(`/clients/${clientId}/applications`),
+
+  createApplication: (clientId: string, body: { name: string; description?: string }) =>
+    request<AgencyApplication>(`/clients/${clientId}/applications`, {
       method: 'POST',
       body: JSON.stringify(body),
     }),
