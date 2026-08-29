@@ -8,6 +8,29 @@ from app.modules.dependencies.models import Dependency
 
 
 class CheckRepository:
+    # API contracts that require a float treat "no checks yet" as 100% uptime
+    # (no observed downtime). Dashboard health keeps the raw None so the UI
+    # can render an explicit unknown state instead of claiming 100%.
+    NO_HISTORY_UPTIME_PERCENTAGE = 100.0
+
+    @staticmethod
+    def resolved_uptime_percentage(
+        stats: dict[str, Any] | None,
+        default: float = NO_HISTORY_UPTIME_PERCENTAGE,
+    ) -> float:
+        """Coerce aggregated uptime to a float for numeric API responses.
+
+        ``get_aggregated_stats`` stores ``uptime_percentage: None`` when a
+        dependency has no check history. ``dict.get(key, default)`` does not
+        apply a default in that case because the key exists with value None.
+        """
+        if not stats:
+            return default
+        value = stats.get("uptime_percentage")
+        if value is None:
+            return default
+        return float(value)
+
     @staticmethod
     async def create(
         session: AsyncSession,

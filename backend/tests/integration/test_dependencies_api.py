@@ -60,7 +60,9 @@ async def test_dependencies_endpoints(async_client, auth_data):
         f"/v1/dependencies/{dep_id}/history", headers=headers
     )
     assert hist_res.status_code == 200
-    assert "uptime_percentage" in hist_res.json()
+    history = hist_res.json()
+    assert history["uptime_percentage"] == 100.0
+    assert history["total_checks"] == 0
 
     # DELETE /v1/orgs/{org_id}/dependencies/{dep_id}
     del_res = await async_client.delete(
