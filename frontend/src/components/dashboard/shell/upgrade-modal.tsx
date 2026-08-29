@@ -141,7 +141,6 @@ export function UpgradeModal() {
                   <Feature ok={p.retention}>Retention</Feature>
                   <Feature ok={p.alerts}>Alerts</Feature>
                   <Feature ok={p.evidence}>Evidence</Feature>
-                  <Feature ok={p.api}>API</Feature>
                   <Feature ok={p.seats}>Team seats</Feature>
                   <Feature ok={p.clientGroups}>Client groups</Feature>
                   <Feature ok={p.whiteLabel}>White-label</Feature>

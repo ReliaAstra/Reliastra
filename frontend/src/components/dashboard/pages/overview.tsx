@@ -91,7 +91,7 @@ function TrialBanner() {
             <p className="rs-trial-support mt-1 text-[13px] leading-relaxed">
               You are on day {TRIAL_LENGTH_DAYS - trial.daysLeft} of {TRIAL_LENGTH_DAYS}.{' '}
               Upgrade before it ends and your 100 dependencies, 5-second checks,
-              branded evidence reports and API access carry over — nothing to reconfigure.
+              and branded evidence reports carry over — nothing to reconfigure.
             </p>
             <div className="rs-trial-progress-track mt-3 h-1.5 max-w-md">
               <div
