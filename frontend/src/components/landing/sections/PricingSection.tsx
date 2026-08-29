@@ -15,6 +15,12 @@ import {
   retentionLabel,
   seatLabel,
 } from '@/lib/dashboard/plans';
+import { isCheckoutReady } from '@/lib/billing/currency';
+import {
+  PaymentCurrencyNotice,
+  PlanPaymentSummary,
+} from '@/components/billing/PaymentCurrencyNotice';
+import { usePaymentCurrency } from '@/lib/billing/use-payment-currency';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
@@ -33,6 +39,10 @@ function FeatureRow({ label, ok }: { label: string; ok: boolean }) {
 
 export function PricingSection() {
   const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly');
+  // "What currency will I actually be charged in?" — resolved by the same
+  // backend source of truth that prices the Paystack transaction, so this
+  // section can never advertise a currency checkout does not use.
+  const { currency } = usePaymentCurrency();
 
   return (
     <section id="pricing" className="bg-white py-32 dark:bg-[#0A0A0F]">
@@ -91,6 +101,7 @@ export function PricingSection() {
           {ALL_PLANS.map((planId, i) => {
             const p = getPlan(planId);
             const price = interval === 'annual' ? annualPrice(p) : monthlyPrice(p);
+            const paidPlan = p.id !== 'free' && !p.isEnterprise;
             const features = [
               { label: 'Custom endpoint URLs', ok: true },
               { label: 'Email alerts', ok: true },
@@ -108,8 +119,9 @@ export function PricingSection() {
             return (
               <motion.div
                 key={p.id}
+                data-testid={`pricing-card-${p.id}`}
                 className={cn(
-                  'relative rounded-xl p-7',
+                  'relative flex flex-col rounded-xl p-7',
                   p.badge
                     ? 'border-2 border-[#0891B2] bg-white shadow-[0_0_0_1px_#0891B2,0_0_60px_rgba(8,145,178,0.1)] dark:border-[#22D3EE] dark:bg-[#131318] dark:shadow-[0_0_0_1px_#22D3EE,0_0_60px_rgba(34,211,238,0.12)]'
                     : 'border border-[#E4E4E7] bg-white shadow-card dark:border-white/10 dark:bg-[#131318]'
@@ -127,7 +139,10 @@ export function PricingSection() {
 
                 <p className="text-sm font-semibold text-[#52525B] dark:text-[#A1A1AA]">{p.name}</p>
 
-                <div className="mt-2 flex items-baseline gap-0.5">
+                <div
+                  className="mt-2 flex items-baseline gap-0.5"
+                  data-testid={`pricing-price-${p.id}`}
+                >
                   <span className="text-[40px] font-bold leading-none tracking-tight text-[#09090B] dark:text-[#FAFAFA]">
                     {price}
                   </span>
@@ -148,6 +163,19 @@ export function PricingSection() {
                   </span>
                 )}
 
+                {/* The USD figure above is the list price; this is the
+                    currency and amount the card is actually charged in. The
+                    wording lives in one shared component (billing/
+                    PaymentCurrencyNotice) so no surface can drift. */}
+                {paidPlan && (
+                  <PlanPaymentSummary
+                    info={currency}
+                    plan={p.id}
+                    interval={interval}
+                    className="mt-2"
+                  />
+                )}
+
                 <p className="mt-2 text-[13px] leading-relaxed text-[#71717A] dark:text-[#71717A]">
                   {p.tagline}
                 </p>
@@ -164,30 +192,38 @@ export function PricingSection() {
                   ))}
                 </ul>
 
-                {p.isEnterprise ? (
-                  <a
-                    href="mailto:sales@reliastra.com?subject=Enterprise%20plan"
-                    className="mt-6 block w-full rounded-[10px] bg-[#0A0A0F] py-3 text-center text-[13px] font-semibold leading-[44px] text-white transition-colors hover:bg-[#1A1A2F] dark:bg-white dark:text-[#0A0A0F] dark:hover:bg-[#E4E4E7]"
-                  >
-                    Contact Sales
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => goTo('signup')}
-                    className={cn(
-                      'mt-6 block w-full rounded-[10px] py-3 text-center text-[13px] font-semibold leading-[44px] transition-colors',
-                      p.badge
-                        ? 'bg-[#0891B2] text-white hover:bg-[#0E7490] dark:bg-[#0891B2] dark:hover:bg-[#0E7490]'
-                        : 'bg-white border border-[#E4E4E7] text-[#09090B] hover:bg-[#F8F9FA] dark:bg-white/5 dark:border-white/15 dark:text-white dark:hover:bg-white/10'
-                    )}
-                  >
-                    {p.id === 'free' ? 'Start free' : `Upgrade to ${p.name}`}
-                  </button>
-                )}
+                <div className="mt-auto" data-testid={`pricing-cta-${p.id}`}>
+                  {p.isEnterprise ? (
+                    <a
+                      href="mailto:sales@reliastra.com?subject=Enterprise%20plan"
+                      className="mt-6 block w-full rounded-[10px] bg-[#0A0A0F] py-3 text-center text-[13px] font-semibold leading-[44px] text-white transition-colors hover:bg-[#1A1A2F] dark:bg-white dark:text-[#0A0A0F] dark:hover:bg-[#E4E4E7]"
+                    >
+                      Contact Sales
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => goTo('signup')}
+                      className={cn(
+                        'mt-6 block w-full rounded-[10px] py-3 text-center text-[13px] font-semibold leading-[44px] transition-colors',
+                        p.badge
+                          ? 'bg-[#0891B2] text-white hover:bg-[#0E7490] dark:bg-[#0891B2] dark:hover:bg-[#0E7490]'
+                          : 'bg-white border border-[#E4E4E7] text-[#09090B] hover:bg-[#F8F9FA] dark:bg-white/5 dark:border-white/15 dark:text-white dark:hover:bg-white/10'
+                      )}
+                    >
+                      {p.id === 'free' ? 'Start free' : `Upgrade to ${p.name}`}
+                    </button>
+                  )}
+                </div>
               </motion.div>
             );
           })}
+        </div>
+
+        {/* Plan information → currency disclosure → next step. One instance of
+            the canonical paragraph for the whole pricing view. */}
+        <div className="mx-auto mt-10 max-w-3xl" data-testid="pricing-currency-notice">
+          <PaymentCurrencyNotice info={currency} heading="Billing currency" />
         </div>
 
         <p className="mt-10 text-center text-sm text-[#52525B] dark:text-[#A1A1AA]">
@@ -200,6 +236,19 @@ export function PricingSection() {
           </a>{' '}
           for custom requirements, client isolation and white-label reporting.
         </p>
+        {!isCheckoutReady(currency) && (
+          <p className="mx-auto mt-6 max-w-3xl text-center text-[13px] leading-relaxed text-[#52525B] dark:text-[#A1A1AA]">
+            Self-serve checkout opens as soon as our {currency.payment_currency_name} price list is
+            published. Write to{' '}
+            <a
+              href="mailto:billing@reliastra.com?subject=Pro%20plan%20pricing"
+              className="font-medium text-[#0891B2] underline-offset-2 hover:underline dark:text-[#22D3EE]"
+            >
+              billing@reliastra.com
+            </a>{' '}
+            and we will set your subscription up directly.
+          </p>
+        )}
       </div>
     </section>
   );

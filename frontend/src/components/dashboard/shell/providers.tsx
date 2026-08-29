@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { getRefreshToken, useAppStore } from '@/stores/app-store';
-import { api, bootstrapSession } from '@/lib/dashboard/api';
+import { api, restoreSession } from '@/lib/dashboard/api';
 
 function makeClient() {
   return new QueryClient({
@@ -68,7 +68,7 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
 
     (async () => {
       try {
-        const session = await bootstrapSession();
+        const session = await restoreSession();
         if (!session) throw new Error('session rejected');
         if (!cancelled) setSession(session.user, session.org, session.plan);
       } catch {

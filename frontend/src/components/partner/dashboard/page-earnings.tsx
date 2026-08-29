@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/partner/shared/status-badge';
 import { MetricCard } from '@/components/partner/shared/metric-card';
 import { DashboardEarningsSkeleton } from '@/components/partner/shared/dashboard-skeleton';
 import type { CommissionItem, CommissionListResponse } from '@/types/partner';
+import { CommissionBasisNote } from '../commission-basis-note';
 
 // --- Empty state with projected earnings ---
 function EarningsEmpty() {
@@ -82,10 +83,11 @@ function EarningsEmpty() {
             );
           })}
         </div>
-        <div className="px-5 py-3 border-t border-border/60 bg-muted/20">
+        <div className="space-y-2 px-5 py-3 border-t border-border/60 bg-muted/20">
           <p className="text-[11px] text-muted-foreground">
             Projections based on 30% commission of $39/mo subscription. Actual earnings depend on referral plan and retention.
           </p>
+          <CommissionBasisNote />
         </div>
       </motion.div>
 

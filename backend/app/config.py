@@ -159,11 +159,24 @@ class Settings(BaseSettings):
         description="Paystack API base URL",
     )
     PAYSTACK_CURRENCY: str = Field(
-        default="USD",
+        default="NGN",
         description="ISO currency code sent with Paystack transaction "
-                    "initialization. Without it Paystack charges in the "
-                    "merchant account's default currency, which silently "
-                    "reprices USD-denominated plans.",
+                    "initialization, and the currency every payment decision "
+                    "surface discloses to the customer. The current merchant "
+                    "account processes in Nigerian Naira (NGN); USD settlement "
+                    "is pending legal/regulatory enablement. Without an "
+                    "explicit currency Paystack charges in the account default, "
+                    "which silently reprices USD-denominated plans.",
+    )
+    PAYSTACK_NGN_PLAN_PRICES: dict[str, int | dict[str, int]] | None = Field(
+        default=None,
+        description="Business-published PAYMENT prices in NGN kobo (minor "
+        "units), separate from the USD product price list. Example: "
+        '{"pro": {"monthly": 6000000, "annual": 60000000}}. These are '
+        "explicit operator decisions \u2014 the application never derives them "
+        "from an exchange rate. When PAYSTACK_CURRENCY is NGN and a plan is "
+        "absent here, self-serve checkout for that plan is disabled rather "
+        "than charging the USD minor-unit amount as Naira.",
     )
     IPINFO_TOKEN: str = Field(
         default="",

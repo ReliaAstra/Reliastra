@@ -298,7 +298,42 @@ def test_enterprise_plan_not_self_serve():
 def test_paystack_currency_setting_exists():
     from app.config import settings
 
-    assert getattr(settings, "PAYSTACK_CURRENCY", "") == "USD"
+    # The merchant account processes in Nigerian Naira. This one setting is
+    # what checkout sends, what the verify gate expects and what every
+    # customer-facing disclosure renders — so it must never drift.
+    assert getattr(settings, "PAYSTACK_CURRENCY", "").strip().upper() == "NGN"
+
+
+def test_payment_price_is_published_not_converted():
+    """No FX math may exist between the USD list price and the NGN charge.
+
+    ``resolve_payment_price`` reads an operator-published catalog. With no
+    catalog entry it refuses rather than reusing the USD minor units, which
+    would bill 3900 (i.e. ₦39.00) for a $39 plan.
+    """
+    from app.config import settings
+    from app.core import payment_pricing
+
+    monkey = payment_pricing.resolve_payment_price("pro", "monthly")
+    assert monkey.product_amount == 3900  # USD list price, untouched
+    assert monkey.payment_currency == "NGN"
+
+    original = settings.PAYSTACK_NGN_PLAN_PRICES
+    try:
+        settings.PAYSTACK_NGN_PLAN_PRICES = None
+        unpriced = payment_pricing.resolve_payment_price("pro", "monthly")
+        assert unpriced.payment_amount is None
+        assert unpriced.is_configured is False
+        with pytest.raises(payment_pricing.PaymentPriceNotConfigured):
+            payment_pricing.checkout_amount("pro", "monthly")
+
+        settings.PAYSTACK_NGN_PLAN_PRICES = {"pro": {"monthly": 1234500}}
+        priced = payment_pricing.resolve_payment_price("pro", "monthly")
+        assert priced.payment_amount == 1234500
+        # Still not derived: the USD price is unchanged by publishing NGN.
+        assert priced.product_amount == 3900
+    finally:
+        settings.PAYSTACK_NGN_PLAN_PRICES = original
 
 
 # ---------------------------------------------------------------------------

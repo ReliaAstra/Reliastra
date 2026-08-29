@@ -71,7 +71,7 @@ class EmailClient:
                     pass
 
 
-async def send_async(
+    async def send_async(
         self,
         to_email: str,
         subject: str,
@@ -80,7 +80,11 @@ async def send_async(
     ) -> bool:
         """Async wrapper — runs the blocking SMTP call in a thread pool."""
         return await asyncio.to_thread(
-            self.send, to_email, subject, body, html_body,
+            self.send_email,
+            to_email,
+            subject,
+            body,
+            html_body,
         )
 
 

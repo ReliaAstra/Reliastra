@@ -156,6 +156,33 @@ Backdrop `rgb(11 15 25 / 50%)`. Panel `rounded-xl bg elevated w-full max-w-md`
 (upgrade modal `max-w-lg`). Entry animation `rs-modal-in` 200ms ease-out
 (scale .98→1). Close on Esc + backdrop click. Focus trap required.
 
+### Payment-currency disclosure (`PaymentCurrencyNotice`)
+
+Shown on every RELIASTRA-owned surface where a customer chooses a plan or starts
+a payment: the marketing pricing grid, the plan cards in the upgrade modal, the
+pre-payment confirmation step, and the billing page.
+
+- **Copy is canonical, not authored per screen.** The paragraph comes from the
+  one constant in `frontend/src/lib/billing/currency.ts`, which a backend test
+  compares byte-for-byte against `app/core/payment_pricing.NGN_CURRENCY_NOTICE`.
+  Transactional mail renders the same sentence from the same backend constant.
+- **Informational, never an alarm.** `role="note"`, info glyph, muted tinted
+  container (`bg-rs-brand-subtle` / `border-rs-brand/20`). Never red, never a
+  destructive banner, never conveyed by colour or symbol alone: the currency is
+  spelled as text ("Nigerian Naira (NGN)"), and the ISO code travels with every
+  amount.
+- **Placement.** Between the pricing information and the payment CTA. In a plan
+  card, the short per-plan line (`PlanPaymentSummary`: what it is billed in, and
+  the published amount) sits under the price and above the card's action.
+- **Amounts are never composed locally.** A card shows a Naira figure only when
+  the API published one for that plan and interval; if it did not, the surface
+  states the currency and omits the number rather than estimating.
+- **Constraints.** Must not dominate the CTA or push it off-screen at 320px,
+  must not introduce horizontal scroll, and must stay inside the modal's own
+  scroll area (the panel caps at `90vh`).
+- The copy describes the **current state** and makes no promise about a future
+  USD switch beyond "we are actively working towards it".
+
 ### Toasts (Sonner)
 Bottom-right, `rounded-lg bg elevated border subtle shadow-popover`;
 success icon `--rs-up`, error `--rs-down`; 4s auto-dismiss; max 3 stacked.

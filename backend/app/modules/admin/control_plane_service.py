@@ -18,6 +18,7 @@ from app.core.exceptions import ResourceNotFoundException, ValidationException
 from app.core.permissions import get_plan_price_usd
 from app.core.security import create_access_token
 from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import ensure_transactional_footer
 from app.modules.admin.control_plane_schemas import (
     AdminOverviewResponse,
     AdminSearchResponse,
@@ -1123,11 +1124,14 @@ class AdminControlPlaneService:
         if not user:
             raise ResourceNotFoundException("Customer not found")
 
+        body_text, html_rendered = ensure_transactional_footer(
+            body_text=body, html_body=html_body
+        )
         success = email_client.send_email(
             to_email=user.email,
             subject=subject,
-            body=body,
-            html_body=html_body,
+            body=body_text,
+            html_body=html_rendered,
         )
         await admin_audit_service.log_action(
             session,

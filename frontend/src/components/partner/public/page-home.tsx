@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerStore } from '@/stores/partner-store';
+import { CommissionBasisNote } from '../commission-basis-note';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -207,6 +208,9 @@ export function PageHome() {
             {/* Visual arithmetic flow with connecting line */}
             <motion.div variants={fadeUp} custom={3} className="mt-10 inline-block">
               <div className="rounded-lg border border-border/60 bg-background p-6 sm:p-8">
+                {/* "Customer pays" is a statement about a real charge, so it
+                    carries the same shared basis note as the commission pages. */}
+                <CommissionBasisNote className="mb-5 justify-center text-center" />
                 {/* Row 1: Customer pays → You earn */}
                 <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-0 sm:justify-center">
                   <div className="text-center sm:text-right">

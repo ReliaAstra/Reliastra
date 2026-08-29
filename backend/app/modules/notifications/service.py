@@ -13,6 +13,7 @@ from app.config import settings
 from app.core.exceptions import ResourceNotFoundException
 from app.core.ssrf_protection import validate_outbound_url
 from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import escape, render_email
 from app.modules.notifications.constants import ChannelType
 from app.modules.notifications.models import AlertConfig
 from app.modules.notifications.repository import AlertConfigRepository
@@ -89,11 +90,35 @@ class EmailChannel(BaseNotificationChannel):
         if not recipient:
             logger.warning("EmailChannel config missing 'email' or 'recipient'")
             return False
+        subject = f"[{alert.severity.upper()}] {alert.title}"
+        body_text = (
+            f"{alert.body}\n\nIncident ID: {alert.incident_id or 'N/A'}\n"
+            f"Metadata: {alert.metadata}"
+        )
+        # System notification: rendered through the shared transactional layout
+        # so it carries the same separated support footer as every other
+        # automated email. Alert content stays in the body.
+        body_html = (
+            f"<p><strong>{escape(alert.title)}</strong> "
+            f"[{escape(alert.severity.upper())}]</p>"
+            f"<p>{escape(alert.body)}</p>"
+            '<div class="panel"><p class="note" style="margin:0">'
+            f"Incident ID: {escape(alert.incident_id or 'N/A')}<br>"
+            f"Metadata: {escape(alert.metadata)}"
+            "</p></div>"
+        )
+        plain, html = render_email(
+            heading="Reliastra dependency alert",
+            body_html=body_html,
+            body_text=body_text,
+            preheader=alert.title,
+        )
         result = await asyncio.to_thread(
             email_client.send_email,
             to_email=recipient,
-            subject=f"[{alert.severity.upper()}] {alert.title}",
-            body=f"{alert.body}\n\nIncident ID: {alert.incident_id or 'N/A'}\nMetadata: {alert.metadata}",
+            subject=subject,
+            body=plain,
+            html_body=html,
         )
         return result
 

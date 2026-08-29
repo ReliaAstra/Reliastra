@@ -5,6 +5,9 @@ import { getPlan, isEnterprise, nextPlan, retentionLabel } from '@/lib/dashboard
 import { useDependencies, usePlan } from '@/lib/dashboard/queries';
 import { formatDate } from '@/lib/dashboard/format';
 import { RsButton } from '../ui/button';
+import { PaymentCurrencyNotice } from '@/components/billing/PaymentCurrencyNotice';
+import { billedInLabel, currencyLabel, paymentAmountFor } from '@/lib/billing/currency';
+import { usePaymentCurrency } from '@/lib/billing/use-payment-currency';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '../ui/empty-state';
 import {
@@ -25,6 +28,10 @@ import {
 export function BillingPage() {
   const { data: plan } = usePlan();
   const storePlan = useAppStore((s) => s.plan);
+  // Authoritative processing currency + canonical disclosure. The plan payload
+  // carries it too (`plan.payment`), so the API answer wins when both exist.
+  const { currency: fallbackCurrency } = usePaymentCurrency();
+  const currency = plan?.payment ?? fallbackCurrency;
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const { data: deps } = useDependencies();
   const p = plan ?? storePlan;
@@ -71,7 +78,17 @@ export function BillingPage() {
               {underlying.name}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-rs-text-secondary">
-              <span>{underlying.priceMonthly == null ? 'Custom pricing' : `$${underlying.priceMonthly}/mo`}</span>
+              {/* List price is USD; the figure that recurs is the payment
+                  amount in the processing currency. Shown together so this
+                  page can never imply the card is charged USD. */}
+              <span>
+                {underlying.priceMonthly == null
+                  ? 'Custom pricing'
+                  : `$${underlying.priceMonthly}/mo list price`}
+              </span>
+              {underlying.priceMonthly != null && (
+                <span className="text-rs-text-tertiary">· {billedInLabel(currency)}</span>
+              )}
               {p.subscription_status && (
                 <span className="rounded-full border border-rs-border-subtle px-2 py-0.5 text-[11px] capitalize">
                   {p.subscription_status}
@@ -81,6 +98,16 @@ export function BillingPage() {
                 <span>· Renews {formatDate(p.current_period_end)}</span>
               )}
             </div>
+            {(p.next_charge_amount_display || (underlying.priceMonthly ?? 0) > 0) && (
+              <p className="mt-1 text-[12px] text-rs-text-tertiary" data-testid="billing-next-charge">
+                Next charge:{' '}
+                <span className="font-mono text-rs-text">
+                  {p.next_charge_amount_display ??
+                    paymentAmountFor(currency, underlying.id, p.billing_interval === 'annual' ? 'annual' : 'monthly') ??
+                    currencyLabel(currency)}
+                </span>
+              </p>
+            )}
           </div>
           {isEnterprise(underlying.id) ? (
             <a
@@ -94,6 +121,12 @@ export function BillingPage() {
               {underlying.id === 'free' ? 'Upgrade' : 'Change plan'}
             </RsButton>
           )}
+        </div>
+
+        {/* Currency disclosure sits with the plan it describes, before the
+            button that would start a payment. */}
+        <div className="mt-5" data-testid="billing-currency-notice">
+          <PaymentCurrencyNotice info={currency} heading="Payment currency" />
         </div>
 
         {/* Evaluation entitlement overlay — full product, not a cheap tier */}

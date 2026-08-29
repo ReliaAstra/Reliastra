@@ -43,26 +43,98 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Single-flight refresh.
+ *
+ * A refresh token is rotated by the backend and can be spent once. Bootstrap
+ * and any number of requests can hit a 401 in the same tick (a hard
+ * navigation fires several panel requests at once, and React's dev-mode double
+ * mount does the same), so without dedup the losers replay the spent token,
+ * the backend rejects it, and the user is bounced to "session ended" while
+ * holding a perfectly valid session. One in-flight promise is shared instead.
+ */
 let refreshing: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
-  const refresh = getRefreshToken();
-  if (!refresh) return null;
-  try {
-    const res = await fetch(`${BASE}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refresh }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.access_token) {
-      useAppStore.getState().setAccessToken(data.access_token);
+  if (refreshing) return refreshing;
+  refreshing = (async () => {
+    const refresh = getRefreshToken();
+    if (!refresh) return null;
+    try {
+      const res = await fetch(`${BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.access_token) {
+        useAppStore.getState().setAccessToken(data.access_token);
+      }
+      if (data.refresh_token) setRefreshToken(data.refresh_token);
+      return data.access_token ?? null;
+    } catch {
+      return null;
     }
-    if (data.refresh_token) setRefreshToken(data.refresh_token);
-    return data.access_token ?? null;
+  })();
+  try {
+    return await refreshing;
+  } finally {
+    refreshing = null;
+  }
+}
+
+/**
+ * One shared session restoration.
+ *
+ * A hard page load — a refresh, a deep link to `/settings/billing`, an email
+ * link — starts with a refresh token in localStorage and nothing else: the
+ * access token and the active organization live only in the store. Every panel
+ * mounts in the same tick, so each one used to fire its first request while the
+ * session was still being restored: 401 without a token, then 403 on any
+ * organization-scoped endpoint because the org header was still missing. The
+ * customer saw an empty or failed screen with a perfectly valid account.
+ *
+ * Requests now await the same restoration promise the shell uses, so the
+ * session is established once and no surface has to know about it. Calls made
+ * *by* the restoration itself skip the gate — otherwise `api.orgs()` would
+ * wait on the promise it is resolving.
+ */
+let restorePromise: ReturnType<typeof bootstrapSession> | null = null;
+
+/**
+ * Restore the session once, however many callers notice it is missing.
+ *
+ * The store is written *inside* this promise, so "resolved" and "the app knows
+ * its organization" are the same moment. A caller that awaits restoration and
+ * then reads the store must never be able to observe a half-applied session —
+ * that gap is what made organization-scoped requests 403 right after a reload.
+ */
+export function restoreSession() {
+  if (!restorePromise) {
+    restorePromise = bootstrapSession()
+      .then((session) => {
+        if (session) {
+          useAppStore.getState().setSession(session.user, session.org, session.plan);
+        }
+        return session;
+      })
+      .finally(() => {
+        restorePromise = null;
+      });
+  }
+  return restorePromise;
+}
+
+async function waitForSession(): Promise<void> {
+  const state = useAppStore.getState();
+  if (state.accessToken && state.org) return;
+  if (!getRefreshToken()) return; // signed out: nothing to wait for
+  try {
+    await restoreSession();
   } catch {
-    return null;
+    // The request proceeds and fails the way an unauthenticated one does; the
+    // 401 path below owns clearing the session.
   }
 }
 
@@ -74,8 +146,12 @@ async function refreshAccessToken(): Promise<string | null> {
 async function request<T>(
   path: string,
   init: RequestInit = {},
-  retry = true
+  retry = true,
+  /** Set only by the session restore itself: its own calls must not wait on
+   * the promise they are resolving. */
+  opts: { skipSessionGate?: boolean } = {}
 ): Promise<T> {
+  if (!opts.skipSessionGate) await waitForSession();
   const token = useAppStore.getState().accessToken;
   const headers: Record<string, string> = {
     ...(init.body ? { 'Content-Type': 'application/json' } : {}),
@@ -90,7 +166,9 @@ async function request<T>(
   if (res.status === 401 && retry) {
     if (!refreshing) refreshing = refreshAccessToken().finally(() => { refreshing = null; });
     const next = await refreshing;
-    if (next) return request<T>(path, init, false);
+    // Carry the caller's options through the retry: an exempt call must stay
+    // exempt, or the restore would wait on a promise only it can settle.
+    if (next) return request<T>(path, init, false, opts);
   }
 
   // Session is unrecoverable — clear and let the shell route to sign-in.
@@ -117,10 +195,25 @@ async function request<T>(
   return data as T;
 }
 
+/** What Paystack will be told to charge, echoed back by the backend. */
+export interface InitializePaymentResult {
+  authorization_url: string;
+  reference: string;
+  access_code: string;
+  /** Minor units of `currency` — the exact amount handed to Paystack. */
+  amount_minor?: number | null;
+  currency?: string | null;
+  amount_display?: string | null;
+}
+
 export const api = {
   me: () => request<UserMe>('/users/me'),
   org: () => request<Organization>('/orgs/current'),
-  orgs: () => request<Organization[] | { data: Organization[] }>('/orgs').then(unwrapList),
+  // Skips the session gate: this call *is* how the organization is resolved.
+  orgs: () =>
+    request<Organization[] | { data: Organization[] }>('/orgs', {}, true, {
+      skipSessionGate: true,
+    }).then(unwrapList),
   plan: () => request<PlanDetails>('/billing/plan'),
   pricing: () => request<{ plans: PricingPlan[] }>('/pricing'),
 
@@ -265,15 +358,33 @@ export const api = {
   // ── Billing (real Paystack flow) ────────────────────────────────────────
 
   initializePayment: (plan: PlanId | string, billingInterval: 'monthly' | 'annual' = 'monthly') =>
-    request<{ authorization_url: string; reference: string; access_code: string }>(
-      '/billing/initialize',
-      { method: 'POST', body: JSON.stringify({ plan, billing_interval: billingInterval }) }
-    ),
+    request<InitializePaymentResult>('/billing/initialize', {
+      method: 'POST',
+      body: JSON.stringify({ plan, billing_interval: billingInterval }),
+    }),
 
+  /**
+   * Authoritative payment currency + canonical disclosure. Public and cheap;
+   * every payment surface reads this so none of them can state a different
+   * currency than the one checkout will charge.
+   */
+  paymentCurrency: () =>
+    request<import('@/lib/billing/currency').PaymentCurrencyInfo>('/billing/currency'),
+
+  /**
+   * Confirm a transaction with Paystack. The response also echoes what was
+   * collected (amount and currency), so any post-payment screen restates the
+   * gateway's own figure instead of recomputing a price that could have moved.
+   */
   verifyTransaction: (reference: string) =>
-    request<{ verified: boolean; plan: string; reference: string }>(
-      `/billing/verify?reference=${encodeURIComponent(reference)}`
-    ),
+    request<{
+      verified: boolean;
+      plan: string;
+      reference: string;
+      currency?: string | null;
+      amount_minor?: number | null;
+      amount_display?: string | null;
+    }>(`/billing/verify?reference=${encodeURIComponent(reference)}`),
 
   // ── Agency ────────────────────────────────────────────────────────────────
 

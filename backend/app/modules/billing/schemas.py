@@ -11,6 +11,36 @@ class BillingInterval(str, Enum):
     ANNUAL = "annual"
 
 
+class PaymentCurrencyResponse(BaseModel):
+    """How Paystack will actually charge, and the canonical disclosure.
+
+    One payload, consumed by every RELIASTRA-owned payment surface (pricing,
+    upgrade modal, billing page, pre-payment confirmation). The notice text is
+    served from the backend so web and email can never show different wording.
+    """
+
+    product_currency: str
+    """Currency RELIASTRA's price list is denominated in (USD)."""
+    payment_currency: str
+    """ISO code Paystack charges in (NGN today)."""
+    payment_currency_name: str
+    """Plain-language name, e.g. ``Nigerian Naira (NGN)``."""
+    payment_symbol: str
+    differs_from_product_currency: bool
+    """True when the charged currency is not the list-price currency."""
+    notice: str | None = None
+    """Canonical pre-payment disclosure. ``None`` when there is nothing to
+    disclose (processing currency == product currency)."""
+    checkout_ready: bool = True
+    """False when the business has not published payment prices for the
+    processing currency, so self-serve checkout must not be offered."""
+    plan_payment_amounts: dict[str, dict[str, str]] = {}
+    """``plan -> interval -> formatted amount`` for published payment prices.
+    Absent means unpublished — the UI then states the currency without showing
+    a figure, because no figure may be derived client-side."""
+
+
+
 class PlanDetailsResponse(BaseModel):
     org_id: uuid.UUID
     plan: str
@@ -46,6 +76,14 @@ class PlanDetailsResponse(BaseModel):
     # True when the effective plan uses custom/contact-sales pricing and the
     # UI must never display a numeric price.
     effective_is_custom: bool = False
+    # ── Payment currency (what the card is actually charged in) ──────────
+    # The billing page renders its disclosure from this, never from a literal
+    # copied into the component, so it can never drift from checkout.
+    payment: PaymentCurrencyResponse | None = None
+    # Next renewal charge, resolved from the payment price catalog: minor
+    # units + display string in the payment currency.
+    next_charge_amount_minor: int | None = None
+    next_charge_amount_display: str | None = None
 
 
 class PaystackWebhookPayload(BaseModel):
@@ -70,9 +108,22 @@ class InitializePaymentResponse(BaseModel):
     authorization_url: str
     reference: str
     access_code: str
+    # Echo of what is about to be charged, so the confirmation screen and any
+    # post-redirect page can state the real currency/amount instead of
+    # re-deriving (and possibly mis-deriving) it.
+    amount_minor: int | None = None
+    currency: str | None = None
+    amount_display: str | None = None
 
 
 class VerifyTransactionResponse(BaseModel):
     verified: bool
     plan: str
     reference: str
+    # What was actually collected, taken from Paystack's own figures rather
+    # than recomputed from config: a confirmation surface can restate the
+    # charge in the currency it was charged in, and cannot drift from the
+    # amount the gateway settled. Null when nothing was verified.
+    currency: str | None = None
+    amount_minor: int | None = None
+    amount_display: str | None = None

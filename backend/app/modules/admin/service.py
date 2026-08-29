@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import ResourceNotFoundException, ValidationException
 from app.core.security import create_access_token
 from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import ensure_transactional_footer
 from app.modules.admin.repository import (
     AdminAnalyticsRepository,
     AdminAuditRepository,
@@ -322,11 +323,16 @@ class AdminUserService:
         if not user:
             raise ResourceNotFoundException("User not found")
 
+        # Account/security notices authored by staff still carry the canonical
+        # transactional footer (idempotent, so it can never be added twice).
+        body_text, html_body = ensure_transactional_footer(
+            body_text=request.body, html_body=request.html_body
+        )
         success = email_client.send_email(
             to_email=user.email,
             subject=request.subject,
-            body=request.body,
-            html_body=request.html_body,
+            body=body_text,
+            html_body=html_body,
         )
 
         await self.audit_svc.log_action(

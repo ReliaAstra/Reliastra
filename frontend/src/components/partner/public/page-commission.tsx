@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerStore } from '@/stores/partner-store';
+import { CommissionBasisNote } from '../commission-basis-note';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -117,6 +118,7 @@ export function PageCommission() {
 
             <motion.div variants={fadeUp} custom={1}>
               <div className="mx-auto max-w-2xl rounded-lg border border-border/60 bg-background p-8 sm:p-10">
+                <CommissionBasisNote className="mb-6 justify-center text-center" />
                 {/* Row 1: Customer pays -> You earn */}
                 <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:justify-center sm:gap-0">
                   <div className="text-center sm:text-right">

@@ -6,7 +6,13 @@ entitlement layer itself correctly evaluates an expired window as Free,
 even if this job never runs. This module adds the *synchronization* layer:
 * state column sync (evaluation_status),
 * pausing of excess resources (data preserved, monitoring paused),
-* and exactly-once expiration emails.
+* exactly-once expiration emails, and
+* advance reminders (trial ending soon, upcoming renewal).
+
+All copy is rendered by :mod:`app.modules.billing.notifications` through the
+shared transactional email layout, so the canonical support footer is present
+exactly once in every one of these messages and no price string is hardcoded
+here.
 
 Idempotency: a Redis ``SET NX`` marker per organization guarantees the
 notice is sent once even if beat fires repeatedly, a worker restarts
@@ -22,13 +28,25 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, update
 
-from app.config import settings
 from app.core.audit_log import AuditLogService
-from app.core.permissions import PLAN_DEPENDENCY_LIMITS, Plan, TRIAL_DAYS
+from app.core.payment_pricing import payment_currency, resolve_payment_price
+from app.core.permissions import (
+    PLAN_DEPENDENCY_LIMITS,
+    Plan,
+    TRIAL_DAYS,
+    evaluation_days_remaining,
+    is_evaluation_active,
+)
 from app.db.session import get_session_maker
 from app.infrastructure.celery_app import celery_app
-from app.infrastructure.email import email_client
-from app.infrastructure.redis_client import safe_redis_delete, safe_redis_set_nx
+from app.infrastructure.redis_client import safe_redis_claim, safe_redis_delete
+from app.modules.billing.models import Subscription
+from app.modules.billing.notifications import (
+    PaymentSummary,
+    render_trial_expired_email,
+    send_renewal_reminder_email,
+    send_trial_ending_email,
+)
 from app.modules.organizations.models import Organization, OrganizationMember
 from app.modules.users.models import User
 
@@ -36,6 +54,13 @@ logger = logging.getLogger(__name__)
 
 #: How long the "already notified" marker lives per organization (90 days).
 _TRIAL_NOTIFIED_TTL_SECONDS = 90 * 24 * 3600
+
+#: Days before expiry/expiration when the advance reminder fires.
+_REMINDER_DAYS_BEFORE = 3
+
+#: The reminder must not re-fire on the following beat runs, and must not be
+#: suppressed for the whole window, so the marker lives just under it.
+_REMINDER_MARKER_TTL_SECONDS = 20 * 3600
 
 
 def _trial_marker_key(org_id: str) -> str:
@@ -76,8 +101,6 @@ async def _run() -> int:
             .all()
         )
         # Filter in Python where we need the effective expiry logic (handles legacy fallback).
-        from app.core.permissions import is_evaluation_active
-
         orgs = [o for o in orgs if not is_evaluation_active(o, now=now) and getattr(o, "evaluation_expires_at", None) is not None or o.created_at <= now - timedelta(days=TRIAL_DAYS)]
         # Narrow further: only orgs whose window has elapsed (server time) and that are still marked free
         # Re-query to ensure we respect evaluation_expires_at correctly
@@ -98,12 +121,20 @@ async def _run() -> int:
 
     sent = 0
     for org in orgs:
-        # SET NX = exactly-once across workers, beats, and retries.
-        claimed = await safe_redis_set_nx(
+        # SET NX = exactly-once across workers, beats, and retries. Tri-state:
+        # an unreachable Redis must not be mistaken for "already notified",
+        # or the expiration email is silently dropped for every organization.
+        claimed = await safe_redis_claim(
             _trial_marker_key(str(org.id)), "1", ex=_TRIAL_NOTIFIED_TTL_SECONDS
         )
-        if not claimed:
+        if claimed is False:
             continue
+        if claimed is None:
+            logger.warning(
+                "Idempotency store unavailable — sending trial expiry notice for "
+                "org %s without duplicate protection",
+                org.id,
+            )
 
         async with session_maker() as session:
             owner = (
@@ -196,55 +227,178 @@ async def _org_owner(session, org_id) -> User | None:
     return row
 
 
-async def _send_trial_expired_email(org: Organization, owner: User) -> bool:
-    origin = settings.RELIASTRA_PUBLIC_URL.rstrip("/")
-    name = owner.full_name or "there"
-    subject = "Your RELIASTRA trial has ended"
-    text = (
-        f"Hi {name},\n\n"
-        f"Your {TRIAL_DAYS}-day RELIASTRA trial for {org.name} has ended.\n\n"
-        "What this means:\n"
-        "- Your account stays active and your data is preserved.\n"
-        "- Monitoring now follows Free plan limits: 3 dependencies, "
-        "24-hour data retention and 60-second checks.\n"
-        "- Evidence generation, attribution, API access and extended "
-        "history are paused until you upgrade.\n\n"
-        f"Upgrade to keep full visibility: {origin}/settings/billing\n\n"
-        "Pro ($39/mo) unlocks evidence reports, deterministic "
-        "attribution, Slack alerts and API access.\n\n"
-        "Need help choosing? Reply to this email or contact "
-        "support@reliastra.com - we are happy to help.\n\n"
-        "- RELIASTRA"
-    )
-    html = (
-        f"<p>Hi {name},</p>"
-        f"<p>Your <strong>{TRIAL_DAYS}-day RELIASTRA trial</strong> for "
-        f"<strong>{org.name}</strong> has ended.</p>"
-        "<h3 style=\"font-size:14px;margin-bottom:4px\">What this means</h3>"
-        "<ul>"
-        "<li>Your account stays active and your data is preserved.</li>"
-        "<li>Monitoring now follows Free plan limits: 3 dependencies, "
-        "24-hour retention, 60-second checks.</li>"
-        "<li>Evidence generation, attribution, API access and extended "
-        "history are paused until you upgrade.</li>"
-        "</ul>"
-        f"<p><a href=\"{origin}/settings/billing\">Upgrade to keep full visibility</a></p>"
-        "<p style=\"color:#64748b;font-size:12px\">Pro ($39/mo) unlocks evidence reports, "
-        "deterministic attribution, Slack alerts and API access.<br>"
-        "Questions? support@reliastra.com</p>"
-    )
-    try:
-        await asyncio.to_thread(
-            email_client.send_email,
-            to_email=owner.email,
-            subject=subject,
-            body=text,
-            html_body=html,
+def _fallback_lines(org, dependencies_total: int | None) -> list[str]:
+    """Expiry consequences — same numbers the dashboard shows, never invented."""
+    free_limit = PLAN_DEPENDENCY_LIMITS[Plan.FREE.value]
+    lines = [
+        "Your account stays active and your data is preserved.",
+        f"Monitoring now follows Free plan limits: {free_limit} dependencies, "
+        "24-hour data retention and 60-second checks.",
+        "Evidence generation, attribution, API access and extended history "
+        "are paused until you upgrade.",
+    ]
+    if dependencies_total and free_limit and dependencies_total > free_limit:
+        lines.insert(
+            1,
+            f"{dependencies_total} dependencies are configured; the oldest "
+            f"{free_limit} stay active and {dependencies_total - free_limit} are "
+            "paused (configuration and history preserved).",
         )
-        return True
+    return lines
+
+
+async def _send_trial_expired_email(org: Organization, owner: User) -> bool:
+    from app.modules.dependencies.repository import DependencyRepository
+
+    total: int | None = None
+    try:
+        async with get_session_maker()() as session:
+            total = await DependencyRepository.count_for_org(session, org.id)
+    except Exception:  # pragma: no cover - copy must survive a count failure
+        logger.debug("trial expiry: dependency count failed", exc_info=True)
+
+    plain, html = render_trial_expired_email(
+        user_name=owner.full_name or owner.email.split("@")[0],
+        org_name=org.name,
+        trial_days=TRIAL_DAYS,
+        fallback_lines=_fallback_lines(org, total),
+    )
+    from app.infrastructure.email import email_client
+    import asyncio
+
+    try:
+        return bool(
+            await asyncio.to_thread(
+                email_client.send_email,
+                to_email=owner.email,
+                subject="Your RELIASTRA trial has ended",
+                body=plain,
+                html_body=html,
+            )
+        )
     except Exception:  # pragma: no cover - SMTP failure
         logger.warning("Trial expiry email failed for org %s", org.id)
         return False
+
+
+# ── Advance reminders ───────────────────────────────────────────────────────
+
+
+@celery_app.task(name="app.modules.billing.tasks.notify_trial_ending_soon")
+def notify_trial_ending_soon() -> int:
+    """Remind owners whose full-access evaluation ends in ``_REMINDER_DAYS_BEFORE`` days."""
+    return asyncio.run(_run_trial_reminders())
+
+
+async def _run_trial_reminders() -> int:
+    now = datetime.now(timezone.utc)
+    session_maker = get_session_maker()
+    sent = 0
+    async with session_maker() as session:
+        orgs = (
+            (
+                await session.execute(
+                    select(Organization)
+                    .where(Organization.plan == Plan.FREE.value)
+                    .order_by(Organization.created_at.asc())
+                    .limit(500)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for org in orgs:
+            if not is_evaluation_active(org, now=now):
+                continue
+            remaining = evaluation_days_remaining(org, now=now)
+            if remaining != _REMINDER_DAYS_BEFORE:
+                continue
+            key = f"trial_ending_notified:{org.id}:{remaining}"
+            if await safe_redis_claim(key, "1", ex=_REMINDER_MARKER_TTL_SECONDS) is False:
+                continue
+            owner = await _org_owner(session, org.id)
+            if owner is None or not owner.email:
+                continue
+            ok = await send_trial_ending_email(
+                to_email=owner.email,
+                user_name=owner.full_name or owner.email.split("@")[0],
+                org_name=org.name,
+                days_left=remaining,
+            )
+            if ok:
+                sent += 1
+            else:
+                await safe_redis_delete(key)
+    if sent:
+        logger.info("Trial-ending reminders sent: %s", sent)
+    return sent
+
+
+@celery_app.task(name="app.modules.billing.tasks.notify_upcoming_renewals")
+def notify_upcoming_renewals() -> int:
+    """Tell owners with an active paid subscription when it renews and how much."""
+    return asyncio.run(_run_renewal_reminders())
+
+
+async def _run_renewal_reminders() -> int:
+    now = datetime.now(timezone.utc)
+    window_end = now + timedelta(days=_REMINDER_DAYS_BEFORE + 1)
+    session_maker = get_session_maker()
+    sent = 0
+    async with session_maker() as session:
+        subs = (
+            (
+                await session.execute(
+                    select(Subscription)
+                    .where(
+                        Subscription.status == "active",
+                        Subscription.plan != Plan.FREE.value,
+                        Subscription.current_period_end.is_not(None),
+                    )
+                    .limit(500)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for sub in subs:
+            period_end = sub.current_period_end
+            if period_end.tzinfo is None:
+                period_end = period_end.replace(tzinfo=timezone.utc)
+            if not (now < period_end <= window_end):
+                continue
+            days_left = max(1, (period_end - now).days)
+            key = f"renewal_notified:{sub.id}:{period_end.date().isoformat()}"
+            if await safe_redis_claim(key, "1", ex=_REMINDER_MARKER_TTL_SECONDS) is False:
+                continue
+            org = await session.get(Organization, sub.organization_id)
+            if org is None:
+                continue
+            owner = await _org_owner(session, org.id)
+            if owner is None or not owner.email:
+                continue
+            price = resolve_payment_price(sub.plan, sub.billing_interval)
+            payment = PaymentSummary(
+                plan=sub.plan,
+                billing_interval=sub.billing_interval,
+                amount_minor=price.payment_amount,
+                currency=payment_currency(),
+                period_end=period_end,
+            )
+            ok = await send_renewal_reminder_email(
+                to_email=owner.email,
+                user_name=owner.full_name or owner.email.split("@")[0],
+                org_name=org.name,
+                payment=payment,
+                days_left=days_left,
+            )
+            if ok:
+                sent += 1
+            else:
+                await safe_redis_delete(key)
+    if sent:
+        logger.info("Renewal reminders sent: %s", sent)
+    return sent
 
 
 async def _audit_notified(session_maker, org_id, user_id) -> None:

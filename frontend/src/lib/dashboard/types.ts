@@ -67,6 +67,10 @@ export interface PlanDetails {
   price_usd: number;
   billing_interval?: string | null;
   effective_is_custom?: boolean;
+  /** Currency Paystack actually charges + canonical disclosure (from the API). */
+  payment?: import('@/lib/billing/currency').PaymentCurrencyInfo | null;
+  next_charge_amount_minor?: number | null;
+  next_charge_amount_display?: string | null;
 }
 
 export interface PricingPlan {
@@ -84,6 +88,11 @@ export interface PricingPlan {
   billing_availability: string;
   is_enterprise: boolean;
   is_custom_pricing: boolean;
+  /** Published payment amount for this plan (processing currency), if any. */
+  payment_amount_display?: string | null;
+  payment_annual_amount_display?: string | null;
+  /** False when self-serve checkout cannot be priced in this currency. */
+  checkout_ready?: boolean;
 }
 
 export interface DashboardSummary {
@@ -279,7 +288,14 @@ export interface AlertConfig {
 export interface Invoice {
   id: string;
   date: string;
-  amount_usd: number;
+  /**
+   * Amount actually billed, in minor units of `currency`. Deliberately not
+   * `amount_usd`: the product list price is USD but a payment is collected in
+   * the processing currency (NGN today), and an invoice must report the
+   * currency it was really settled in.
+   */
+  amount_minor: number;
+  currency: string;
   status: 'paid' | 'open' | 'failed';
 }
 

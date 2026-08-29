@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   // Allow Arena live preview host (e2b) to fetch dev resources — fixes "stuck at loading UI"
   // Next.js 15+ blocks cross-origin dev asset requests by default.
   allowedDevOrigins: [
+    // Local tooling (a headless browser, curl, a second container) commonly
+    // reaches the dev server by IP; without this, /_next/* is blocked and the
+    // page never hydrates.
+    "127.0.0.1",
     "*.e2b.app",
     "*.e2b.dev",
     "3000-*.e2b.app",

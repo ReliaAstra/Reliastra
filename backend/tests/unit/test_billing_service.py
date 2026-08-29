@@ -40,7 +40,7 @@ async def test_get_plan_details():
 
 
 @pytest.mark.asyncio
-async def test_initialize_payment():
+async def test_initialize_payment(monkeypatch):
     org_id = uuid.uuid4()
     repository = MagicMock()
     repository.get_org = AsyncMock(
@@ -57,6 +57,12 @@ async def test_initialize_payment():
             },
         }
     )
+    # The NGN charge amount is operator-published. Tests pin a value so the
+    # assertion proves checkout sends *that* number in *that* currency, not a
+    # converted (or leftover USD) one.
+    monkeypatch.setattr(
+        settings, "PAYSTACK_NGN_PLAN_PRICES", {"pro": {"monthly": 6000000}}
+    )
     service = BillingService(repository=repository, client=client)
     response = await service.initialize_payment(
         AsyncMock(),
@@ -66,7 +72,38 @@ async def test_initialize_payment():
         ),
     )
     assert response.reference == "ref_test"
+    assert response.currency == "NGN"
+    assert response.amount_minor == 6000000
     client.initialize_transaction.assert_awaited_once()
+    sent = client.initialize_transaction.await_args.kwargs
+    assert sent["amount"] == 6000000
+    assert sent["currency"] == "NGN"
+
+
+@pytest.mark.asyncio
+async def test_initialize_payment_refuses_without_published_price(monkeypatch):
+    """Unpublished payment price => no Paystack transaction, ever."""
+    import pytest
+
+    from app.core.exceptions import ValidationException
+
+    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", None)
+    org_id = uuid.uuid4()
+    repository = MagicMock()
+    repository.get_org = AsyncMock(
+        return_value=MagicMock(id=org_id, plan=Plan.FREE.value)
+    )
+    client = MagicMock()
+    client.initialize_transaction = AsyncMock()
+
+    service = BillingService(repository=repository, client=client)
+    with pytest.raises(ValidationException, match="being finalized"):
+        await service.initialize_payment(
+            AsyncMock(),
+            org_id,
+            InitializePaymentRequest(plan="pro", email="owner@example.com"),
+        )
+    client.initialize_transaction.assert_not_awaited()
 
 
 @pytest.mark.asyncio

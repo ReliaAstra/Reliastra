@@ -137,6 +137,18 @@ celery_app.conf.update(
             "task": "app.modules.billing.tasks.notify_trial_expirations",
             "schedule": crontab(minute=30, hour=2),
         },
+        # Advance notice 3 days before the full-access evaluation ends, so
+        # the customer can decide before capabilities pause.
+        "trial-ending-reminder": {
+            "task": "app.modules.billing.tasks.notify_trial_ending_soon",
+            "schedule": crontab(minute=35, hour=2),
+        },
+        # Renewal notice for active paid subscriptions: date + the exact
+        # amount and currency that will be charged.
+        "billing-renewal-reminder": {
+            "task": "app.modules.billing.tasks.notify_upcoming_renewals",
+            "schedule": crontab(minute=40, hour=2),
+        },
     },
 )
 

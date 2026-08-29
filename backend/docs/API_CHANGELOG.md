@@ -162,3 +162,59 @@ GET  /v1/admin/operations/errors      # was /error-logs
 
 Partners (`/v1/admin/partners/*`) and vendor-submission tenant-admin routes
 are unchanged.
+
+## Billing currency (added)
+
+`GET /v1/billing/currency` — public, no auth — is the single source every payment
+surface reads:
+
+```json
+{
+  "product_currency": "USD",
+  "payment_currency": "NGN",
+  "payment_currency_name": "Nigerian Naira (NGN)",
+  "payment_symbol": "\u20a6",
+  "differs_from_product_currency": true,
+  "notice": "Please note that all transactions are currently processed in Nigerian Naira (NGN). …",
+  "checkout_ready": true,
+  "plan_payment_amounts": { "pro": { "monthly": "\u20a660,000.00 (NGN)", "annual": "\u20a6600,000.00 (NGN)" } }
+}
+```
+
+`checkout_ready: false` means no payment price is published for a self-serve plan:
+clients must not offer a live "continue to payment" action, and must show
+`notice` regardless. `plan_payment_amounts` carries **pre-formatted, ready-made
+strings** — clients render them verbatim and never compute a currency figure
+locally. Do not fall back to a hardcoded amount when this request fails: show the
+disclosure without a number.
+
+## Pricing
+
+`GET /v1/pricing` plans now carry the payment price alongside the USD list price:
+`payment_amount_display`, `payment_annual_amount_display` (both `null` when that
+price is unpublished) and `checkout_ready`. `price_usd` / `price_annual_usd` are
+unchanged: they remain RELIASTRA's canonical **product** list prices in USD.
+
+## Checkout
+
+`POST /v1/billing/initialize` echoes what it will charge, so the confirmation
+screen and the transaction cannot disagree:
+
+```json
+{ "authorization_url": "https://checkout.paystack.com/…", "reference": "…",
+  "amount_minor": 6000000, "currency": "NGN", "amount_display": "\u20a660,000.00 (NGN)" }
+```
+
+The request body stays `{plan, billing_interval}` — clients never send an amount
+or a currency. A plan with no published payment price returns `422` with an
+operator-readable message instead of starting a checkout.
+
+`POST /v1/billing/verify` now also returns `currency`, `amount_minor` and
+`amount_display` from the amount Paystack reports as collected, for restating the
+charge on a post-payment screen.
+
+## Transactional email
+
+Every automated email now ends in one canonical support footer rendered by
+`app/infrastructure/email_layout.py` (see `docs/TRANSACTIONAL_EMAIL.md`). Clients
+and templates must not add their own footer, support address or unsubscribe line.
