@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
 import {
   Building2,
   FileText,
@@ -16,25 +15,25 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
-import { api } from '@/lib/dashboard/api';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { ThemeToggle } from './theme-toggle';
+import { ClientSelector } from './client-selector';
 
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Optional pill rendered on the right of the row. No entry uses it today. */
+  /** Optional pill rendered on the right of the row. */
   badge?: string;
 };
 
 const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/clients', label: 'Agency', icon: Building2 },
   { href: '/dependencies', label: 'Dependencies', icon: Link2 },
   { href: '/incidents', label: 'Incidents', icon: TriangleAlert },
   { href: '/evidence', label: 'Evidence', icon: FileText },
-  { href: '/clients', label: 'Clients', icon: Building2 },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/support', label: 'Support', icon: MessageCircle },
 ];
@@ -120,40 +119,14 @@ function PlanFooter() {
 
 export function Sidebar() {
   const plan = useAppStore((s) => s.plan);
-  const clientId = useAppStore((s) => s.selectedClientId);
-  const setClient = useAppStore((s) => s.setSelectedClient);
   const current = getPlan(plan?.effective_plan ?? plan?.plan);
   const agency = current.id === 'enterprise';
-
-  // Real client workspaces from the backend. Enterprise only; the query stays
-  // disabled otherwise so no extra request fires for non-enterprise plans.
-  const { data: clients } = useQuery({
-    queryKey: ['agency', 'clients'],
-    queryFn: api.clients,
-    enabled: agency,
-    staleTime: 60_000,
-  });
 
   return (
     <aside className="rs-sidebar fixed bottom-0 left-0 top-14 z-40 hidden w-16 flex-col border-r border-rs-border-subtle bg-rs-base px-2 py-4 md:flex lg:w-60 lg:px-3">
       {agency && (
         <div className="mb-4 hidden lg:block">
-          <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">
-            Client
-          </div>
-          <select
-            value={clientId ?? ''}
-            onChange={(e) => setClient(e.target.value || null)}
-            aria-label="Active client workspace"
-            className="w-full rounded-lg border border-rs-border-subtle bg-rs-elevated px-3 py-2 text-sm font-medium text-rs-text focus-visible:outline-none focus-visible:border-rs-brand focus-visible:ring-[3px] focus-visible:ring-[rgb(37_99_235_/_0.20)]"
-          >
-            <option value="">All workspaces</option>
-            {(clients ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <ClientSelector />
         </div>
       )}
       <NavItems />
@@ -168,12 +141,14 @@ export function MobileSidebar() {
   const plan = useAppStore((s) => s.plan);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const current = getPlan(plan?.effective_plan ?? plan?.plan);
+  const agency = current.id === 'enterprise';
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div className="absolute inset-0 bg-[rgb(11_15_25_/_0.5)]" onClick={() => setOpen(false)} aria-hidden />
       <aside
-        className="absolute bottom-0 left-0 top-0 flex w-[260px] flex-col bg-rs-base p-4 shadow-rs-modal"
+        className="absolute bottom-0 left-0 top-0 flex w-[280px] flex-col bg-rs-base p-4 shadow-rs-modal"
         role="dialog"
         aria-label="Navigation"
       >
@@ -183,6 +158,11 @@ export function MobileSidebar() {
             <X size={18} />
           </button>
         </div>
+        {agency && (
+          <div className="mb-4">
+            <ClientSelector onSelect={() => setOpen(false)} />
+          </div>
+        )}
         <NavItems onNavigate={() => setOpen(false)} />
         <div className="mt-auto pt-4">
           <ThemeToggle className="w-full justify-center" />

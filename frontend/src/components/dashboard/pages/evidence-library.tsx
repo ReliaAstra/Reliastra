@@ -38,7 +38,7 @@ export function EvidenceLibraryPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-rs-text">Evidence</h1>
         <p className="mt-1.5 text-sm text-rs-text-tertiary">
-          Timestamped reports for vendor SLA claims.
+          Give clients and stakeholders a verifiable, cryptographic record of reliability performance and infrastructure events.
         </p>
       </div>
 

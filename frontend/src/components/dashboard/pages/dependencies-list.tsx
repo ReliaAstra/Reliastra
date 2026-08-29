@@ -58,7 +58,7 @@ export function DependenciesListPage() {
           actionLabel="Add your first dependency"
           onAction={onAdd}
           helpLabel="How does monitoring work?"
-          onHelp={() => window.open('/onboarding')}
+          onHelp={() => router.push('/onboarding')}
         />
       ) : (
         <>

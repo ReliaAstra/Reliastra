@@ -34,6 +34,7 @@ export const keys = {
   pricing: ['pricing'] as const,
   alerts: ['alerts'] as const,
   clients: ['agency', 'clients'] as const,
+  clientApplications: (clientId: string) => ['agency', 'clients', clientId, 'applications'] as const,
   portfolio: ['agency', 'portfolio'] as const,
   inbox: ['notifications', 'inbox'] as const,
   supportTickets: ['support', 'tickets'] as const,
@@ -136,6 +137,38 @@ export function useAlertConfigs() {
 export function useClients(enabled = true) {
   const ready = useSessionReady();
   return useQuery({ queryKey: keys.clients, queryFn: api.clients, enabled: enabled && ready });
+}
+
+export function useApplications(clientId: string | null | undefined, enabled = true) {
+  const ready = useSessionReady();
+  return useQuery({
+    queryKey: keys.clientApplications(clientId ?? ''),
+    queryFn: () => api.applications(clientId as string),
+    enabled: Boolean(clientId) && enabled && ready,
+  });
+}
+
+export function useCreateClient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name: string; description?: string }) => api.createClient(body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: keys.clients });
+      qc.invalidateQueries({ queryKey: keys.portfolio });
+    },
+  });
+}
+
+export function useCreateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, body }: { clientId: string; body: { name: string; description?: string } }) =>
+      api.createApplication(clientId, body),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: keys.clientApplications(variables.clientId) });
+      qc.invalidateQueries({ queryKey: keys.portfolio });
+    },
+  });
 }
 
 export function useCreateDependency() {

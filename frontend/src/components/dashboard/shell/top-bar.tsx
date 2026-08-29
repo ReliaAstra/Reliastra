@@ -8,29 +8,43 @@ import { useAppStore } from '@/stores/app-store';
 import { effectivePlan } from '@/lib/dashboard/plans';
 import { initials, timeAgo } from '@/lib/dashboard/format';
 import { api } from '@/lib/dashboard/api';
+import { useClients } from '@/lib/dashboard/queries';
 import { useEffect, useMemo, useState } from 'react';
 import { NotificationBell } from './notification-bell';
 import { ThemeToggle } from './theme-toggle';
 
-function crumbs(pathname: string): { label: string; href?: string }[] {
+function crumbs(pathname: string, clients?: Array<{ id: string; name: string }>): { label: string; href?: string }[] {
   const map: Record<string, string> = {
     dashboard: 'Dashboard',
     dependencies: 'Dependencies',
     incidents: 'Incidents',
     evidence: 'Evidence',
-    clients: 'Clients',
+    clients: 'Agency',
+    onboarding: 'Onboarding',
     settings: 'Settings',
     billing: 'Billing',
+    support: 'Support',
   };
   const parts = pathname.split('/').filter(Boolean);
   const out: { label: string; href?: string }[] = [];
   let acc = '';
   for (let i = 0; i < parts.length; i++) {
-    // Skip UUID segments on detail pages — the page H1 already shows the name.
-    if (/^[0-9a-f-]{8,}$/i.test(parts[i]) && parts[i].includes('-')) continue;
-    acc += '/' + parts[i];
+    const part = parts[i];
+    acc += '/' + part;
     const last = i === parts.length - 1;
-    const pretty = map[parts[i]] || parts[i];
+    
+    // Check if it's a client ID
+    if (/^[0-9a-f-]{8,}$/i.test(part) && parts[i - 1] === 'clients' && clients) {
+      const matchClient = clients.find((c) => c.id === part);
+      const label = matchClient ? matchClient.name : 'Client Workspace';
+      out.push({ label, href: last ? undefined : acc });
+      continue;
+    }
+    
+    // Skip other UUID segments on detail pages
+    if (/^[0-9a-f-]{8,}$/i.test(part) && part.includes('-')) continue;
+
+    const pretty = map[part] || part;
     out.push({ label: pretty, href: last ? undefined : acc });
   }
   if (out.length === 1 && out[0].label === 'Dashboard') return [];
@@ -136,10 +150,12 @@ export function TopBar() {
   const signOut = useAppStore((s) => s.signOut);
   const org = useAppStore((s) => s.org);
   const current = effectivePlan(plan);
+  const agencyEnabled = current.id === 'enterprise';
+  const { data: clients } = useClients(agencyEnabled);
   // Evaluation state comes straight from the backend's authoritative fields (server time).
   const trialActive = (plan?.is_evaluation_active ?? plan?.is_trial_active) === true;
   const daysLeft = plan?.evaluation_days_remaining ?? plan?.trial_days_remaining ?? 0;
-  const trail = useMemo(() => crumbs(pathname), [pathname]);
+  const trail = useMemo(() => crumbs(pathname, clients), [pathname, clients]);
   const [userOpen, setUserOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
 

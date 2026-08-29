@@ -6,6 +6,7 @@ import {
   Activity,
   AlertTriangle,
   Bell,
+  Building2,
   ChevronRight,
   Info,
   Link2,
@@ -538,6 +539,30 @@ export function OverviewPage() {
       </div>
 
       {isEmptyWorkspace && <WelcomePanel onStart={handleAdd} />}
+
+      {/* Agency Mode Shortcut for Enterprise / Agency organizations */}
+      {!isEmptyWorkspace && org?.has_agency_mode && (
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-rs-brand/30 bg-rs-brand-subtle px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <Building2 size={18} className="text-rs-brand shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-rs-text">
+                Agency Operations Command Center Active
+              </p>
+              <p className="text-xs text-rs-text-secondary">
+                Manage multi-client infrastructure, isolated applications, and SLA portals from one workspace.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/clients"
+            className="shrink-0 text-xs font-semibold text-rs-brand hover:underline inline-flex items-center gap-1"
+          >
+            <span>Command Center</span>
+            <ChevronRight size={14} />
+          </Link>
+        </div>
+      )}
 
       <TrialBanner />
 

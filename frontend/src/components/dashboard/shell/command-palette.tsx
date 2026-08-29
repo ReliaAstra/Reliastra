@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Users,
+  Building2,
   Activity,
   Bell,
   FileText,
@@ -13,11 +13,13 @@ import {
   Plus,
   Search,
   Settings,
+  Sparkles,
   TriangleAlert,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
-import { hasEvidence } from '@/lib/dashboard/plans';
+import { effectivePlan, hasEvidence } from '@/lib/dashboard/plans';
+import { useClients } from '@/lib/dashboard/queries';
 
 interface Item {
   id: string;
@@ -41,6 +43,10 @@ export function CommandPalette() {
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
 
+  const currentPlan = effectivePlan(plan);
+  const agencyEnabled = currentPlan.id === 'enterprise';
+  const { data: clients } = useClients(agencyEnabled);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -62,25 +68,46 @@ export function CommandPalette() {
 
   const items = useMemo<Item[]>(() => {
     const nav: Item[] = [
-      { id: 'dash', group: 'Navigate', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: 'G D' },
-      { id: 'deps', group: 'Navigate', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
-      { id: 'inc', group: 'Navigate', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
-      { id: 'evi', group: 'Navigate', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
-      { id: 'cli', group: 'Navigate', label: 'Clients', href: '/clients', icon: Users, shortcut: 'G C' },
-      { id: 'set', group: 'Navigate', label: 'Settings', href: '/settings', icon: Settings, shortcut: 'G S' },
+      { id: 'dash', group: 'Navigation', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: 'G D' },
+      { id: 'cli', group: 'Navigation', label: 'Agency Command Center', href: '/clients', icon: Building2, shortcut: 'G C' },
+      { id: 'deps', group: 'Navigation', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
+      { id: 'inc', group: 'Navigation', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
+      { id: 'evi', group: 'Navigation', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
+      { id: 'set', group: 'Navigation', label: 'Settings', href: '/settings', icon: Settings, shortcut: 'G S' },
     ];
+
+    const agencyActions: Item[] = agencyEnabled
+      ? [
+          {
+            id: 'new-client',
+            group: 'Agency Actions',
+            label: 'Create Client Workspace',
+            icon: Plus,
+            href: '/clients/onboarding',
+          },
+        ]
+      : [];
+
+    const clientItems: Item[] = (clients ?? []).map((c) => ({
+      id: `client-${c.id}`,
+      group: 'Client Workspaces',
+      label: `Client: ${c.name}`,
+      href: `/clients/${c.id}`,
+      icon: Building2,
+    }));
+
     const actions: Item[] = [
       {
         id: 'add',
-        group: 'Quick actions',
-        label: 'Add dependency',
+        group: 'Quick Actions',
+        label: 'Add Dependency',
         icon: Plus,
         action: () => setAdd(true),
       },
       {
         id: 'report',
-        group: 'Quick actions',
-        label: 'Generate report',
+        group: 'Quick Actions',
+        label: 'Generate Evidence Report',
         icon: FileText,
         action: () => {
           if (!hasEvidence(plan?.effective_plan ?? plan?.plan)) useAppStore.getState().setEvidenceGateOpen(true);
@@ -88,20 +115,14 @@ export function CommandPalette() {
         },
       },
       {
-        id: 'alert',
-        group: 'Quick actions',
-        label: 'Send test alert',
-        icon: Bell,
-        href: '/settings',
-      },
-      {
         id: 'help',
-        group: 'Quick actions',
-        label: 'Get help',
+        group: 'Quick Actions',
+        label: 'Get Help & Support',
         icon: HelpCircle,
-        action: () => setHelp(true),
+        href: '/support',
       },
     ];
+
     const rec: Item[] = recent.map((r, i) => ({
       id: `r${i}`,
       group: 'Recent',
@@ -109,11 +130,12 @@ export function CommandPalette() {
       href: r.href,
       icon: Activity,
     }));
-    const all = [...nav, ...actions, ...rec];
+
+    const all = [...nav, ...agencyActions, ...clientItems, ...actions, ...rec];
     const query = q.trim().toLowerCase();
     if (!query) return all;
     return all.filter((i) => i.label.toLowerCase().includes(query));
-  }, [plan?.plan, recent, router, setAdd, setHelp, q]);
+  }, [plan, recent, router, setAdd, setHelp, q, agencyEnabled, clients]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Item[]>();
