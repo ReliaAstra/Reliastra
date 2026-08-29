@@ -27,7 +27,7 @@ function EvaluationIntro() {
   return (
     <p className="mb-3 rounded-lg border border-rs-brand/20 bg-rs-brand-subtle px-3 py-2 text-xs leading-relaxed text-rs-text-secondary">
       <strong className="text-rs-text">Full-access evaluation:</strong> you have {left} day{left === 1 ? '' : 's'} of
-      Professional capabilities — evidence, Slack alerts, API access and extended retention — to
+      Pro capabilities — evidence, Slack alerts, API access and extended retention — to
       discover what you’ll keep when you subscribe. No feature limits, no card required.
     </p>
   );

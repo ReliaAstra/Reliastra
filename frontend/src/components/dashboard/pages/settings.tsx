@@ -77,9 +77,9 @@ export function SettingsPage() {
         <h2 className="rs-section-title mb-4 text-base font-semibold">Notifications</h2>
         <div className="divide-y divide-rs-border-subtle">
           {/* Channels reflect backend PLAN_FEATURES exactly: email everywhere,
-              Slack on Standard+. No PagerDuty exists in the entitlement model. */}
+              Slack on Pro+. No PagerDuty exists in the entitlement model. */}
           {['email', 'slack'].map((ch) => {
-            const locked = ch === 'slack' && !['standard', 'professional', 'agency'].includes(current.id) && !(plan?.is_trial_active === true);
+            const locked = ch === 'slack' && !['pro', 'enterprise'].includes(current.id) && !(plan?.is_trial_active === true);
             const enabled = alerts?.some((a) => a.channel_type === ch && a.is_active);
             return (
               <div key={ch} className="flex h-12 items-center justify-between">
@@ -90,7 +90,7 @@ export function SettingsPage() {
                     onClick={() => openUpgrade('alerts')}
                     className="text-sm text-rs-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
                   >
-                    Slack alerts are available on Standard →
+                    Slack alerts are available on Pro →
                   </button>
                 ) : (
                   <span className="text-sm text-rs-text-secondary">{enabled ? 'Configured' : 'Not configured'}</span>

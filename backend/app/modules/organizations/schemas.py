@@ -20,7 +20,7 @@ class OrganizationUpdateRequest(BaseModel):
     ai_explanations_enabled: bool | None = None
     # NOTE: Plan changes are NOT allowed here. Plan upgrades/downgrades
     # must go through the billing service (verify_transaction / webhook).
-    # An org admin setting ``plan: \"professional\"`` via PATCH would bypass
+    # An org admin setting ``plan: \"pro\"`` via PATCH would bypass
     # payment entirely — see P0-2 security audit finding.
 
 

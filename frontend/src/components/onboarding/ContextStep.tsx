@@ -101,7 +101,7 @@ export function ContextStep({ onNext }: { onNext: () => void }) {
 
       <div className="mt-8 flex items-center justify-between gap-3 border-t border-rs-border-subtle pt-5">
         <p className="text-xs text-rs-text-tertiary">
-          Professional evaluation active — all capabilities unlocked.
+          Pro trial active — all capabilities unlocked.
         </p>
         <RsButton onClick={handleContinue} disabled={!canContinue} aria-disabled={!canContinue}>
           Continue

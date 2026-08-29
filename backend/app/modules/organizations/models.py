@@ -26,7 +26,7 @@ class Organization(UUIDMixin, TimestampMixin, Base):
         Boolean, default=True, server_default="true", nullable=False
     )
     # 14-day full-access evaluation — first-class server-side entitlement state.
-    # Every new organization receives Professional limits for 14 days; after
+    # Every new organization receives Pro limits for 14 days; after
     # expiry it falls back to Free automatically. Stored on the organization so
     # no client state, cookie, or clock manipulation can extend or re-create it.
     evaluation_started_at: Mapped[datetime | None] = mapped_column(

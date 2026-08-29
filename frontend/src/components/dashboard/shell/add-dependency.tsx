@@ -80,7 +80,7 @@ export function AddDependencyPanel() {
 
   if (!open) return null;
 
-  const atLimit = !editingId && (deps?.length ?? 0) >= current.dependencies;
+  const atLimit = !editingId && current.dependencies != null && (deps?.length ?? 0) >= current.dependencies;
 
   function toggleCode(code: number) {
     setCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));

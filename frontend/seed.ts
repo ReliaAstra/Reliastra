@@ -11,20 +11,20 @@ async function seed() {
   const refs = [
     { partnerId: pid, referredEmail: 'alex@meridian.io', referredName: 'Alex Chen', plan: 'Pro', status: 'active', createdAt: new Date(Date.now() - 155 * d) },
     { partnerId: pid, referredEmail: 'sarah@brightcore.dev', referredName: 'Sarah Kim', plan: 'Pro', status: 'active', createdAt: new Date(Date.now() - 120 * d) },
-    { partnerId: pid, referredEmail: 'marcus@stacklane.co', referredName: 'Marcus Webb', plan: 'Team', status: 'active', createdAt: new Date(Date.now() - 85 * d) },
+    { partnerId: pid, referredEmail: 'marcus@stacklane.co', referredName: 'Marcus Webb', plan: 'Enterprise', status: 'active', createdAt: new Date(Date.now() - 85 * d) },
     { partnerId: pid, referredEmail: 'jordan@opstoolkit.com', referredName: 'Jordan Blake', plan: 'Pro', status: 'cancelled', createdAt: new Date(Date.now() - 60 * d) },
-    { partnerId: pid, referredEmail: 'priya@nexacore.io', referredName: 'Priya Sharma', plan: 'Team', status: 'active', createdAt: new Date(Date.now() - 22 * d) },
+    { partnerId: pid, referredEmail: 'priya@nexacore.io', referredName: 'Priya Sharma', plan: 'Enterprise', status: 'active', createdAt: new Date(Date.now() - 22 * d) },
   ];
 
   for (const r of refs) {
     await p.referral.upsert({ where: { id: r.referredEmail + '_' + pid }, update: r, create: r });
   }
 
-  const plans: Record<string, number> = { Pro: 4900, Team: 8700 };
+  const plans: Record<string, number> = { Pro: 3900, Enterprise: 0 };
   let ci = 200;
 
   for (const rf of refs) {
-    const ma = plans[rf.plan] || 4900;
+    const ma = plans[rf.plan] || 3900;
     const startOffset = Math.floor((Date.now() - new Date(rf.createdAt).getTime()) / d);
 
     for (let m = startOffset; m >= 0; m--) {

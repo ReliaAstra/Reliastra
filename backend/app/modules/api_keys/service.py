@@ -33,8 +33,8 @@ class ApiKeyService:
         org_id: uuid.UUID,
         request: ApiKeyCreateRequest,
     ) -> ApiKeyCreateResponse:
-        # API access is a paid capability (Standard+). During the 14-day
-        # evaluation the effective plan is Professional so creation succeeds;
+        # API access is a Pro-and-above capability. During the 14-day
+        # evaluation the effective plan is Pro so creation succeeds;
         # after expiry the effective plan falls back to Free and the gate
         # correctly blocks. Server-side, not a frontend flag.
         from app.core.exceptions import ForbiddenException
@@ -53,7 +53,7 @@ class ApiKeyService:
             if not PLAN_FEATURES.get(effective, {}).get("api_access"):
                 raise ForbiddenException(
                     "API access is not available on your current plan. "
-                    "Upgrade to Standard or higher, or start a 14-day evaluation."
+                    "Upgrade to Pro or higher, or start a 14-day trial."
                 )
 
         full_key, prefix, hashed_key = generate_api_key()

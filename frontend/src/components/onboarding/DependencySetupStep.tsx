@@ -187,7 +187,7 @@ export function DependencySetupStep({ onCreated }: { onCreated: (id: string) => 
               <label className="block">
                 <span className="rs-label mb-1.5 block">Check interval (seconds)</span>
                 <input type="number" min={5} className={cn(field, 'font-mono')} value={interval} onChange={(e) => setInterval(Number(e.target.value) || 60)} />
-                <span className="rs-input-helper">Professional minimum is 5s; Free minimum is 60s.</span>
+                <span className="rs-input-helper">Pro minimum is 15s; Free minimum is 60s.</span>
               </label>
               <label className="block">
                 <span className="rs-label mb-1.5 block">Timeout</span>

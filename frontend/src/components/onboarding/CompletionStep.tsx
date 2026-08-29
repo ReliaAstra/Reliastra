@@ -55,7 +55,7 @@ export function CompletionStep({ onFinish }: { onFinish: () => void }) {
             <div>
               <div className="text-sm font-medium text-rs-text">Workspace</div>
               <div className="text-xs leading-relaxed text-rs-text-tertiary">
-                {org?.name ?? 'Your organization'} · {plan?.effective_plan ?? plan?.plan ?? 'free'} plan · 14-day Professional evaluation
+                {org?.name ?? 'Your organization'} · {plan?.effective_plan ?? plan?.plan ?? 'free'} plan · 14-day Pro trial
               </div>
             </div>
           </div>

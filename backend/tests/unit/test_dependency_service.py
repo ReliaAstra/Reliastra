@@ -18,7 +18,7 @@ async def test_create_dependency_success(mocker):
     org_id = uuid.uuid4()
     fake_org = MagicMock()
     fake_org.id = org_id
-    fake_org.plan = "standard"
+    fake_org.plan = "pro"
     fake_org.created_at = datetime.now(timezone.utc) - timedelta(days=365)
     org_repo.get_by_id = AsyncMock(return_value=fake_org)
     dep_repo.count_for_org = AsyncMock(return_value=2)
@@ -80,7 +80,7 @@ async def test_create_dependency_interval_too_low():
         name="Stripe API",
         endpoint_url="https://api.stripe.com/health",
         method=HttpMethod.GET,
-        check_interval_seconds=30,  # Minimum for free is 300
+        check_interval_seconds=30,  # Minimum for free is 60
     )
 
     with pytest.raises(ValidationException):
@@ -97,7 +97,7 @@ async def test_create_dependency_limit_reached():
     fake_org.plan = "free"
     fake_org.created_at = datetime.now(timezone.utc) - timedelta(days=365)
     org_repo.get_by_id = AsyncMock(return_value=fake_org)
-    dep_repo.count_for_org = AsyncMock(return_value=5)  # Limit for free is 5
+    dep_repo.count_for_org = AsyncMock(return_value=5)  # Limit for free is 3
 
     service = DependencyService(repository=dep_repo, org_repository=org_repo)
     session = AsyncMock()

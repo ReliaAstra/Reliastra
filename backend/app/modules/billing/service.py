@@ -18,6 +18,8 @@ from app.core.exceptions import (
 )
 from app.core.permissions import (
     EVALUATION_DAYS,
+    PLAN_AMOUNTS,
+    PLAN_ANNUAL_AMOUNTS,
     PLAN_FEATURES,
     TRIAL_DAYS,
     Plan,
@@ -26,14 +28,17 @@ from app.core.permissions import (
     get_effective_entitlements,
     get_effective_plan_for_org,
     get_min_check_interval,
+    get_plan_billing_availability,
     get_plan_price_usd,
     get_retention_days,
     get_team_limit,
     is_evaluation_active,
     is_paid_plan,
+    normalize_plan,
 )
 from app.modules.billing.repository import BillingRepository
 from app.modules.billing.schemas import (
+    BillingInterval,
     InitializePaymentRequest,
     InitializePaymentResponse,
     PaystackWebhookResponse,
@@ -75,7 +80,7 @@ class PaystackClient:
                     "amount": amount,
                     # Without an explicit currency Paystack charges in the
                     # merchant account's default currency (typically NGN),
-                    # turning a $19 checkout into ~$0.01.
+                    # turning a $39 checkout into ~$0.01.
                     "currency": settings.PAYSTACK_CURRENCY,
                     "plan": plan,
                     "metadata": metadata or {},
@@ -107,18 +112,21 @@ class PaystackClient:
 
 paystack_client = PaystackClient()
 
-# Amounts in minor units of PAYSTACK_CURRENCY (default USD cents).
-# All self-serve paid plans:
-#   Starter:     $19/mo  ->  1,900
-#   Standard:    $49/mo  ->  4,900
-#   Professional: $99/mo ->  9,900
-# Agency ($199) and Free ($0) are NOT self-serve: agency is deliberately
-# absent here so the self-serve guards below reject it ("contact sales").
-PLAN_AMOUNTS: dict[str, int] = {
-    Plan.STARTER.value: 1900,
-    Plan.STANDARD.value: 4900,
-    Plan.PROFESSIONAL.value: 9900,
-}
+# Amounts in minor units of PAYSTACK_CURRENCY (default USD cents) are now
+# defined in ``app.core.permissions`` (PLAN_AMOUNTS / PLAN_ANNUAL_AMOUNTS) so
+# the canonical pricing contract lives in ONE place. ENTERPRISE and FREE are
+# NOT self-serve: enterprise routes to Contact Sales, and free has nothing to
+# charge. The self-serve guards below reject anything not in PLAN_AMOUNTS.
+_MONTHLY_AMOUNTS = PLAN_AMOUNTS
+_ANNUAL_AMOUNTS = PLAN_ANNUAL_AMOUNTS
+
+
+def _amount_for_interval(plan: str, interval: str) -> int | None:
+    """Return the charged amount (minor units) for a plan + billing interval."""
+    normalized = normalize_plan(plan)
+    if interval == BillingInterval.ANNUAL.value:
+        return _ANNUAL_AMOUNTS.get(normalized)
+    return _MONTHLY_AMOUNTS.get(normalized)
 
 
 def _parse_datetime(value: Any) -> datetime | None:
@@ -144,9 +152,19 @@ def _normalized_plan(data: dict[str, Any]) -> str:
             candidate = plan_data.get("name") or plan_data.get("plan_code")
         elif isinstance(plan_data, str):
             candidate = plan_data
-    candidate = str(candidate or Plan.STARTER.value).strip().lower()
-    valid_plans = {plan.value for plan in Plan}
-    return candidate if candidate in valid_plans else Plan.STARTER.value
+    # Fall back to PRO for legacy free-form payloads; normalize_plan maps
+    # legacy names to canonical ones.
+    return normalize_plan(str(candidate or Plan.PRO.value))
+
+
+def _billing_interval(data: dict[str, Any]) -> str:
+    """Resolve the billing interval from metadata (default monthly)."""
+    metadata = data.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    candidate = str(metadata.get("billing_interval") or BillingInterval.MONTHLY.value).strip().lower()
+    if candidate in {BillingInterval.MONTHLY.value, BillingInterval.ANNUAL.value}:
+        return candidate
+    return BillingInterval.MONTHLY.value
 
 
 class BillingService:
@@ -172,6 +190,7 @@ class BillingService:
         base_price = get_plan_price_usd(effective_plan)
         # Real account consequences for the fallback message (never fabricated).
         fallback_info = await self._build_fallback_info(session, org, ent)
+        effective_is_custom = get_plan_billing_availability(effective_plan) == "contact_sales"
         return PlanDetailsResponse(
             org_id=org.id,
             plan=ent["subscription_plan"],
@@ -196,6 +215,11 @@ class BillingService:
                 subscription.current_period_end if subscription else None
             ),
             price_usd=base_price,
+            billing_interval=(
+                subscription.billing_interval if subscription is not None else None
+            ),
+            # Enterprise uses custom pricing — never advertise a numeric price.
+            effective_is_custom=effective_is_custom,
         )
 
     async def _build_fallback_info(
@@ -213,15 +237,20 @@ class BillingService:
 
             total_deps = await DependencyRepository.count_for_org(session, org.id)
             effective = ent["effective_plan"]
-            free_limit = get_dependency_limit(Plan.FREE.value)
+            free_limit = get_dependency_limit(Plan.FREE.value) or 0
             current_limit = get_dependency_limit(effective)
+            # Enterprise/custom plans have no fixed numeric limit.
+            if current_limit is None:
+                current_limit = max(total_deps, free_limit)
             active_count = total_deps  # we have no paused state yet; count is authoritative
             # Estimate paused if they were to fall back now
             would_pause = max(0, total_deps - free_limit) if ent["is_evaluation_active"] else 0
             members = await OrganizationRepository.list_members(session, org.id)
             team_count = len(members)
-            team_free = get_team_limit(Plan.FREE.value)
+            team_free = get_team_limit(Plan.FREE.value) or 1
             team_current = get_team_limit(effective)
+            if team_current is None:
+                team_current = max(team_count, team_free)
             return {
                 "dependencies_configured": total_deps,
                 "dependencies_active": min(total_deps, current_limit),
@@ -250,20 +279,32 @@ class BillingService:
         if not org:
             raise ResourceNotFoundException("Organization not found")
 
-        plan = request.plan.lower()
+        plan = normalize_plan(request.plan)
 
-        # Validate plan
+        # Enterprise is NOT self-serve — it routes to Contact Sales. Never
+        # create a fake $0 checkout or invent a numeric enterprise price.
+        if get_plan_billing_availability(plan) == "contact_sales":
+            raise ValidationException(
+                "Enterprise plans use custom pricing. Please contact sales "
+                "to configure your plan."
+            )
+        # Free is not a paid plan; there is nothing to charge.
         if not is_paid_plan(plan):
             raise ValidationException(
-                f"Invalid paid plan: '{plan}'. Must be one of: starter, standard, professional."
+                f"Invalid paid plan: '{plan}'. The only self-serve paid plan is PRO."
             )
         if plan not in PLAN_AMOUNTS:
             raise ValidationException(
                 f"Plan '{plan}' is not available for self-serve checkout. "
-                f"Please contact sales for agency plans."
+                f"Please contact sales."
             )
 
-        base_amount = PLAN_AMOUNTS[plan]
+        interval = request.billing_interval.value
+        base_amount = _amount_for_interval(plan, interval)
+        if base_amount is None:
+            raise ValidationException(
+                f"Plan '{plan}' does not support {interval} billing."
+            )
 
         email = str(request.email) if request.email else None
         if not email:
@@ -288,6 +329,7 @@ class BillingService:
                 metadata={
                     "org_id": str(org_id),
                     "plan": plan,
+                    "billing_interval": interval,
                 },
             )
         except httpx.HTTPError as exc:
@@ -363,11 +405,14 @@ class BillingService:
             )
 
         plan = _normalized_plan(data)
+        billing_interval = _billing_interval(data)
 
         # Integrity check: the collected amount must cover the price of the
-        # plan the transaction claims to buy. Prevents a tampered/undersized
-        # charge from unlocking a higher tier.
-        expected_amount = PLAN_AMOUNTS.get(plan)
+        # plan + billing interval the transaction claims to buy. This prevents
+        # both a tampered/undersized charge from unlocking a higher tier AND
+        # the previous bug where an annual checkout silently billed the monthly
+        # amount.
+        expected_amount = _amount_for_interval(plan, billing_interval)
         collected = data.get("amount")
         if expected_amount is None:
             raise ValidationException(
@@ -377,7 +422,7 @@ class BillingService:
         # PAYSTACK_CURRENCY, so the integer comparison below is meaningless
         # until the denomination is known to match. A multi-currency Paystack
         # account can settle the same nominal amount in a far weaker currency
-        # (9900 NGN is about $6, not $99) and clear an amount-only check.
+        # (9900 NGN is about $6, not $39) and clear an amount-only check.
         # Checkout always initializes with settings.PAYSTACK_CURRENCY, so
         # anything else did not come from our checkout.
         #
@@ -453,6 +498,7 @@ class BillingService:
             "provider_subscription_id": str(data.get("subscription_code") or reference),
             "current_period_start": paid_at,
             "current_period_end": _parse_datetime(data.get("next_payment_date")),
+            "billing_interval": billing_interval,
         }
         if subscription:
             await self.repository.update_subscription(session, subscription, **values)
@@ -722,6 +768,7 @@ class BillingService:
             "provider_subscription_id": data.get("subscription_code"),
             "current_period_start": _parse_datetime(data.get("createdAt")),
             "current_period_end": _parse_datetime(data.get("next_payment_date")),
+            "billing_interval": _billing_interval(data),
         }
         subscription = await self.repository.get_subscription(session, org_id)
         if subscription:

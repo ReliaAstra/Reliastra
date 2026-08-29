@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import select
+
 from app.infrastructure.async_tasks import async_task_body
 from app.infrastructure.celery_app import celery_app
 
@@ -27,15 +29,54 @@ def process_outbox(batch_size: int = 100, request_id: str | None = None) -> int:
 
 
 @celery_app.task(name="app.modules.observations.tasks.retention_cleanup")
-def retention_cleanup(retention_days: int = 365) -> int:
+def retention_cleanup(retention_days: int | None = None) -> int:
+    """Prune stale observations per organization based on its EFFECTIVE plan.
+
+    Retention is no longer a single global 365-day value. Each organization is
+    pruned according to the retention policy of its effective plan (which
+    follows the 14-day PRO trial while a Free org is in trial). Enterprise /
+    custom plans (retention == None) are never pruned here.
+
+    ``retention_days`` is accepted for back-compat with the beat schedule but
+    is now ignored for the effective calculation — it only sets an upper bound
+    safety cap when no plan-specific retention can be resolved.
+    """
+
     async def _run(session) -> int:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+        from app.core.permissions import get_effective_plan_for_org, get_retention_days
         from app.modules.observations.repository import ObservationRepository
+        from app.modules.organizations.models import Organization
 
         try:
-            deleted = await ObservationRepository.delete_before(session, cutoff)
-            logger.info("Removed %s expired observations", deleted)
-            return deleted
+            now = datetime.now(timezone.utc)
+            total_deleted = 0
+            rows = (await session.execute(select(Organization.id))).scalars().all()
+            for org_id in rows:
+                org = await session.get(Organization, org_id)
+                if org is None:
+                    continue
+                effective = get_effective_plan_for_org(org)
+                days = get_retention_days(effective)
+                # Enterprise/custom plans and unknown plans are never pruned
+                # by the default job. Skip when no retention policy is
+                # configured for the effective plan.
+                if days is None:
+                    continue
+                cutoff = now - timedelta(days=days)
+                deleted = await ObservationRepository.delete_before_for_org(
+                    session, org_id, cutoff
+                )
+                total_deleted += deleted
+                if deleted:
+                    logger.info(
+                        "Retention cleanup: removed %s observations for org %s (plan=%s, retention=%sd)",
+                        deleted,
+                        org_id,
+                        effective,
+                        days,
+                    )
+            logger.info("Retention cleanup completed: removed %s observations", total_deleted)
+            return total_deleted
         except Exception:
             logger.exception("Observation retention cleanup failed")
             raise

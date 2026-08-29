@@ -102,21 +102,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   setDemoPlan: (planId) => {
     const prices: Record<PlanId, number> = {
       free: 0,
-      starter: 19,
-      standard: 49,
-      professional: 99,
-      agency: 199,
+      pro: 39,
+      enterprise: 0,
     };
-    const limits: Record<PlanId, number> = {
+    const limits: Record<PlanId, number | null> = {
       free: 3,
-      starter: 10,
-      standard: 30,
-      professional: 100,
-      agency: 500,
+      pro: 50,
+      enterprise: null,
     };
     set({
       demoPlanOverride: planId,
-      org: { ...(get().org ?? mockOrg), plan: planId, has_agency_mode: planId === 'agency' },
+      org: {
+        ...(get().org ?? mockOrg),
+        plan: planId,
+        has_agency_mode: planId === 'enterprise',
+      },
       plan: {
         ...(get().plan ?? mockPlan),
         plan: planId,

@@ -45,12 +45,12 @@ export function EvidenceLibraryPage() {
       {!allowed ? (
         <div className="rounded-xl border border-dashed border-rs-border bg-rs-elevated px-6 py-16 text-center">
           <Lock size={32} className="mx-auto text-rs-text-tertiary" />
-          <h3 className="mt-3 text-base font-medium text-rs-text">Evidence reports are a Standard feature</h3>
+          <h3 className="mt-3 text-base font-medium text-rs-text">Evidence reports are a Pro feature</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-rs-text-secondary">
-            Generate structured, timestamped evidence reports for vendor SLA claims. Upgrade to Standard to unlock.
+            Generate structured, timestamped evidence reports for vendor SLA claims. Upgrade to Pro to unlock.
           </p>
           <RsButton className="mt-4" onClick={() => openUpgrade('evidence')}>
-            Start Standard trial
+            Upgrade to Pro
           </RsButton>
         </div>
       ) : isLoading ? (

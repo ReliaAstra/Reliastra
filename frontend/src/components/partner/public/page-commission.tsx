@@ -124,7 +124,7 @@ export function PageCommission() {
                       Customer pays
                     </p>
                     <p className="font-mono text-2xl font-bold text-foreground sm:text-3xl">
-                      $49/mo
+                      $39/mo
                     </p>
                   </div>
 
@@ -140,7 +140,7 @@ export function PageCommission() {
                       You earn (30%)
                     </p>
                     <p className="font-mono text-2xl font-bold text-foreground sm:text-3xl">
-                      $14.70/mo
+                      $11.70/mo
                     </p>
                   </div>
                 </div>
@@ -216,22 +216,22 @@ export function PageCommission() {
 
               {[
                 {
-                  plan: 'Starter',
-                  fee: '$29/mo',
-                  commission: '$8.70',
-                  annual: '$104.40',
+                  plan: 'Free',
+                  fee: '$0/mo',
+                  commission: '$0',
+                  annual: '$0',
                 },
                 {
                   plan: 'Pro',
-                  fee: '$49/mo',
-                  commission: '$14.70',
-                  annual: '$176.40',
+                  fee: '$39/mo',
+                  commission: '$11.70',
+                  annual: '$117.00',
                 },
                 {
-                  plan: 'Team',
-                  fee: '$99/mo',
-                  commission: '$29.70',
-                  annual: '$356.40',
+                  plan: 'Enterprise',
+                  fee: 'Custom pricing',
+                  commission: 'Contact Sales',
+                  annual: 'Contact Sales',
                 },
               ].map((row) => (
                 <div

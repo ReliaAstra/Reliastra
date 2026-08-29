@@ -31,6 +31,11 @@ class Subscription(UUIDMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(
         String(30), nullable=False, default="inactive"
     )
+    # Billing interval the subscription was purchased under: "monthly" or
+    # "annual". The charged amount must match this interval.
+    billing_interval: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="monthly"
+    )
     current_period_start: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

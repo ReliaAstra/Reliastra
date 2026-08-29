@@ -263,10 +263,10 @@ export const api = {
 
   // ── Billing (real Paystack flow) ────────────────────────────────────────
 
-  initializePayment: (plan: PlanId | string) =>
+  initializePayment: (plan: PlanId | string, billingInterval: 'monthly' | 'annual' = 'monthly') =>
     request<{ authorization_url: string; reference: string; access_code: string }>(
       '/billing/initialize',
-      { method: 'POST', body: JSON.stringify({ plan }) }
+      { method: 'POST', body: JSON.stringify({ plan, billing_interval: billingInterval }) }
     ),
 
   verifyTransaction: (reference: string) =>

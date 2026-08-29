@@ -28,7 +28,7 @@ import { TableSkeleton } from '@/components/dashboard/ui/skeleton';
 import { StatusBadge } from '@/components/dashboard/ui/status-badge';
 import { cn } from '@/lib/utils';
 
-// ── Plan gate — Agency is exclusive (this IS the $199 surface) ──────────────
+// ── Plan gate — Client workspaces are exclusive to Enterprise ──────────────
 
 function AgencyGate() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
@@ -84,7 +84,7 @@ function AgencyGate() {
           </ul>
           <RsButton onClick={() => openUpgrade('clients')} className="mt-6 px-5 py-2.5">
             <Sparkles size={16} />
-            Unlock with Agency ($199/mo)
+            Contact Sales
           </RsButton>
         </div>
       </div>
@@ -208,7 +208,7 @@ function ShareButton({ token, name }: { token: string; name: string }) {
 export function ClientsPage() {
   const plan = useAppStore((s) => s.plan);
   const current = effectivePlan(plan);
-  const enabled = current.id === 'agency';
+  const enabled = current.id === 'enterprise';
   const { data, isLoading, error, refetch } = usePortfolio(enabled);
   const router = useRouter();
   const [creating, setCreating] = useState(false);

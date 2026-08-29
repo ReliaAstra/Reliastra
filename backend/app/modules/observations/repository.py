@@ -239,6 +239,19 @@ class ObservationRepository:
         return int(result.rowcount or 0)
 
     @staticmethod
+    async def delete_before_for_org(
+        session: AsyncSession, org_id: uuid.UUID, cutoff: datetime
+    ) -> int:
+        """Delete observations for a single organization older than *cutoff*."""
+        result = await session.execute(
+            delete(Observation).where(
+                Observation.org_id == org_id,
+                Observation.timestamp < cutoff,
+            )
+        )
+        return int(result.rowcount or 0)
+
+    @staticmethod
     async def count_between(
         session: AsyncSession, start: datetime, end: datetime
     ) -> int:

@@ -210,7 +210,7 @@ async def _send_trial_expired_email(org: Organization, owner: User) -> bool:
         "- Evidence generation, attribution, API access and extended "
         "history are paused until you upgrade.\n\n"
         f"Upgrade to keep full visibility: {origin}/settings/billing\n\n"
-        "Standard ($49/mo) unlocks evidence reports, deterministic "
+        "Pro ($39/mo) unlocks evidence reports, deterministic "
         "attribution, Slack alerts and API access.\n\n"
         "Need help choosing? Reply to this email or contact "
         "support@reliastra.com - we are happy to help.\n\n"
@@ -229,7 +229,7 @@ async def _send_trial_expired_email(org: Organization, owner: User) -> bool:
         "history are paused until you upgrade.</li>"
         "</ul>"
         f"<p><a href=\"{origin}/settings/billing\">Upgrade to keep full visibility</a></p>"
-        "<p style=\"color:#64748b;font-size:12px\">Standard ($49/mo) unlocks evidence reports, "
+        "<p style=\"color:#64748b;font-size:12px\">Pro ($39/mo) unlocks evidence reports, "
         "deterministic attribution, Slack alerts and API access.<br>"
         "Questions? support@reliastra.com</p>"
     )

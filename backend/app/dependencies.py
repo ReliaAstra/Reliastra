@@ -322,6 +322,23 @@ async def get_current_org(
         org = await org_repo.get_by_id(db, org_id_val)
         if not org:
             raise ResourceNotFoundException("Organization not found")
+
+        # ── Central API-access entitlement gate ──────────────────────────────
+        # API access is a paid capability (PRO+). Every programmatic request
+        # resolves its organization here (get_current_org), so gating at this
+        # single point makes the feature impossible to bypass by calling an
+        # endpoint directly: a key on a Free (or downgraded) org is rejected
+        # regardless of the route. Creation is additionally gated in
+        # ApiKeyService.create_key.
+        from app.core.permissions import PLAN_FEATURES, get_effective_plan_for_org
+
+        effective = get_effective_plan_for_org(org)
+        if not PLAN_FEATURES.get(effective, {}).get("api_access"):
+            raise ForbiddenException(
+                "API access is not enabled on your current plan. "
+                "Upgrade to Pro or higher to use API keys."
+            )
+
         request.state.current_role = Role.ADMIN.value
         return org
 

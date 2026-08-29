@@ -98,8 +98,8 @@ def test_checkout_start_then_convert(monkeypatch):
     svc = AnalyticsService()
 
     asyncio.run(svc.record_checkout_started(
-        "org-1", email="ceo@acme.com", plan="standard",
-        amount_minor=4900, reference="ref_123", user_id="u-9",
+        "org-1", email="ceo@acme.com", plan="pro",
+        amount_minor=3900, reference="ref_123", user_id="u-9",
     ))
     assert fake.starts["org-1"]["email"] == "ceo@acme.com"
     assert "org-1" in fake.open
@@ -121,14 +121,14 @@ def test_abandoned_leads_exposed_for_outreach(monkeypatch):
     svc = AnalyticsService()
 
     asyncio.run(svc.record_checkout_started(
-        "org-2", email="founder@globex.io", plan="professional",
-        amount_minor=9900, reference="ref_456",
+        "org-2", email="founder@globex.io", plan="pro",
+        amount_minor=3900, reference="ref_456",
     ))
     # org-2 never converts -> appears in abandoned list with contact info
     leads = asyncio.run(svc.abandoned_checkouts())
     match = [l for l in leads if l["org_id"] == "org-2"]
     assert match and match[0]["email"] == "founder@globex.io"
-    assert match[0]["amount_minor"] == 9900
+    assert match[0]["amount_minor"] == 3900
     assert match[0]["reference"] == "ref_456"
 
 

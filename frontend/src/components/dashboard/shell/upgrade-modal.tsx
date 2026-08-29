@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
-import { PLANS, effectivePlan, intervalLabel, retentionLabel } from '@/lib/dashboard/plans';
+import { PLANS, annualPrice, dependencyLabel, effectivePlan, intervalLabel, monthlyPrice, retentionLabel, seatLabel } from '@/lib/dashboard/plans';
 import { api } from '@/lib/dashboard/api';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
@@ -33,10 +33,11 @@ export function UpgradeModal() {
   const close = useAppStore((s) => s.closeUpgrade);
   const plan = useAppStore((s) => s.plan);
   const user = useAppStore((s) => s.user);
-  // Effective plan during trial is Professional; the *underlying* plan is
+  // Effective plan during trial is Pro; the *underlying* plan is
   // what a purchase would replace.
   const current = effectivePlan(plan);
   const [pending, setPending] = useState<string | null>(null);
+  const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly');
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +53,7 @@ export function UpgradeModal() {
   const startCheckout = async (targetId: string) => {
     setPending(targetId);
     try {
-      const res = await api.initializePayment(targetId);
+      const res = await api.initializePayment(targetId, interval);
       // Hand off to Paystack; entitlement flips server-side after payment.
       window.open(res.authorization_url, '_self', 'noopener');
     } catch (err) {
@@ -96,45 +97,73 @@ export function UpgradeModal() {
           </p>
         </div>
 
+        {/* Billing interval toggle — changes the ACTUAL amount charged. */}
+        <div className="flex items-center justify-center gap-3 px-6 pb-2">
+          <button
+            type="button"
+            onClick={() => setInterval('monthly')}
+            className={cn(
+              'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
+              interval === 'monthly' ? 'bg-rs-brand text-white' : 'text-rs-text-tertiary'
+            )}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setInterval('annual')}
+            className={cn(
+              'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
+              interval === 'annual' ? 'bg-rs-brand text-white' : 'text-rs-text-tertiary'
+            )}
+          >
+            Annual · Save 2 months
+          </button>
+        </div>
+
         <div className="flex gap-3 overflow-x-auto px-5 pb-6 rs-scrollbar md:px-6">
           {PLANS.map((p) => {
             const isCurrent = p.id === current.id;
-            const isStandard = p.id === 'standard';
-            const isAgency = p.id === 'agency';
+            const isPopular = p.id === 'pro';
             const isFree = p.id === 'free';
+            const isEnterprise = p.isEnterprise;
+            const price = interval === 'annual' ? annualPrice(p) : monthlyPrice(p);
             return (
               <div
                 key={p.id}
                 className={cn(
                   'relative flex min-w-[172px] flex-1 flex-col rounded-xl border p-4',
-                  isStandard
+                  isPopular
                     ? 'border-2 border-rs-brand bg-[rgba(37,99,235,0.03)]'
                     : 'border-rs-border-subtle bg-rs-elevated'
                 )}
               >
-                {isStandard && (
+                {isPopular && (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-rs-brand px-2.5 py-1 text-[11px] font-semibold text-white">
-                    Most popular
+                    Most Popular
                   </span>
                 )}
-                {isAgency && (
+                {isEnterprise && (
                   <span className="mb-2 inline-flex self-start rounded bg-rs-active px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-rs-text">
-                    Built for agencies
+                    Contact Sales
                   </span>
                 )}
                 <div className="text-sm font-medium text-rs-text">{p.name}</div>
                 <div className="mt-1 min-h-[32px] text-xs leading-snug text-rs-text-tertiary">{p.tagline}</div>
                 <div className="mt-3 font-mono text-2xl font-bold tracking-[-0.02em] text-rs-text">
-                  ${p.priceMonthly}
-                  <span className="text-xs font-normal text-rs-text-tertiary">/mo</span>
+                  {price}
+                  <span className="text-xs font-normal text-rs-text-tertiary">
+                    {isEnterprise ? '' : interval === 'annual' ? '/yr' : '/mo'}
+                  </span>
                 </div>
                 <div className="mt-4 border-t border-rs-border-subtle pt-2">
-                  <Feature ok={String(p.dependencies)}>Dependencies</Feature>
-                  <Feature ok={`${p.teamMembers} seat${p.teamMembers === 1 ? '' : 's'}`}>Team</Feature>
+                  <Feature ok={dependencyLabel(p.dependencies)}>Dependencies</Feature>
+                  <Feature ok={seatLabel(p.teamMembers)}>Team</Feature>
                   <Feature ok={intervalLabel(p.minIntervalSeconds).replace(' checks', '')}>Check interval</Feature>
                   <Feature ok={retentionLabel(p.retentionDays)}>Retention</Feature>
                   <Feature ok={p.alerts}>Alerts</Feature>
                   <Feature ok={p.evidence}>Evidence</Feature>
+                  <Feature ok={p.api}>API access</Feature>
                   <Feature ok={p.clientGroups}>Client groups</Feature>
                   <Feature ok={p.whiteLabel}>White-label</Feature>
                 </div>
@@ -153,12 +182,12 @@ export function UpgradeModal() {
                     >
                       Default tier
                     </button>
-                  ) : isAgency ? (
+                  ) : isEnterprise ? (
                     <a
-                      href="mailto:support@reliastra.com?subject=Agency%20plan"
+                      href="mailto:sales@reliastra.com?subject=Enterprise%20plan"
                       className="block w-full rounded-lg border border-rs-border bg-transparent py-2 text-center text-sm font-medium text-rs-text transition-colors hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
                     >
-                      Talk to us
+                      Contact Sales
                     </a>
                   ) : (
                     <RsButton
@@ -207,7 +236,7 @@ export function EvidenceGateModal() {
         onClick={(e) => e.stopPropagation()}
         role="document"
       >
-        <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Standard feature</h2>
+        <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Pro feature</h2>
         <p className="mt-2 text-sm leading-relaxed text-rs-text-secondary">
           Generate verifiable SLA evidence backed by multi-region checks — the artifact you attach
           to a refund request or executive postmortem.

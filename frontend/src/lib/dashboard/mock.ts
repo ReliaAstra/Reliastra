@@ -71,19 +71,17 @@ export const mockPricing: { plans: PricingPlan[] } = {
     plan: p.id,
     display_name: p.name,
     description: p.tagline,
-    tag:
-      p.id === 'standard'
-        ? 'most_popular'
-        : p.id === 'agency'
-          ? 'built_for_agencies'
-          : null,
-    price_usd: p.priceMonthly,
+    tag: p.badge ? 'most_popular' : p.isEnterprise ? 'contact_sales' : null,
+    price_usd: p.priceMonthly ?? 0,
+    price_annual_usd: p.priceAnnual,
     max_dependencies: p.dependencies,
-    min_check_interval_seconds:
-      p.id === 'free' || p.id === 'starter' ? 60 : p.id === 'standard' ? 15 : 5,
-    data_retention_days:
-      p.id === 'free' ? 1 : p.id === 'starter' ? 7 : p.id === 'standard' ? 30 : 90,
+    max_team_members: p.teamMembers,
+    min_check_interval_seconds: p.minIntervalSeconds,
+    data_retention_days: p.retentionDays,
     features: {},
+    billing_availability: p.billingAvailability,
+    is_enterprise: p.isEnterprise,
+    is_custom_pricing: p.isCustomPricing,
   })),
 };
 

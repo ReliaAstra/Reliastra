@@ -123,10 +123,10 @@ export function Sidebar() {
   const clientId = useAppStore((s) => s.selectedClientId);
   const setClient = useAppStore((s) => s.setSelectedClient);
   const current = getPlan(plan?.effective_plan ?? plan?.plan);
-  const agency = current.id === 'agency';
+  const agency = current.id === 'enterprise';
 
-  // Real client workspaces from the backend. Agency only; the query stays
-  // disabled otherwise so no extra request fires for non-agency plans.
+  // Real client workspaces from the backend. Enterprise only; the query stays
+  // disabled otherwise so no extra request fires for non-enterprise plans.
   const { data: clients } = useQuery({
     queryKey: ['agency', 'clients'],
     queryFn: api.clients,

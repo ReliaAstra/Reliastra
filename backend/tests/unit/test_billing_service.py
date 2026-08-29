@@ -18,11 +18,13 @@ async def test_get_plan_details():
     org_id = uuid.uuid4()
     fake_org = MagicMock(
         id=org_id,
-        plan=Plan.STANDARD.value,
+        plan=Plan.PRO.value,
         created_at=datetime.now(timezone.utc) - timedelta(days=365),
     )
     fake_subscription = MagicMock(
-        status="active", current_period_end=datetime.now(timezone.utc)
+        status="active",
+        current_period_end=datetime.now(timezone.utc),
+        billing_interval="monthly",
     )
     repo.get_org = AsyncMock(return_value=fake_org)
     repo.get_subscription = AsyncMock(return_value=fake_subscription)
@@ -30,9 +32,11 @@ async def test_get_plan_details():
     service = BillingService(repository=repo)
     res = await service.get_plan_details(AsyncMock(), org_id)
 
-    assert res.plan == Plan.STANDARD.value
+    assert res.plan == Plan.PRO.value
     assert res.subscription_status == "active"
     assert res.min_check_interval_seconds == 15
+    assert res.max_dependencies == 50
+    assert res.data_retention_days == 90
 
 
 @pytest.mark.asyncio
@@ -58,7 +62,7 @@ async def test_initialize_payment():
         AsyncMock(),
         org_id,
         InitializePaymentRequest(
-            plan="standard", email="owner@example.com"
+            plan="pro", email="owner@example.com"
         ),
     )
     assert response.reference == "ref_test"
