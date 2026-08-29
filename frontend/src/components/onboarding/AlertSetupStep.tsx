@@ -19,7 +19,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
 
   const hasEmail = configs?.some((c) => c.channel_type === 'email');
   const hasSlack = configs?.some((c) => c.channel_type === 'slack');
-  const slackAllowed = ['standard', 'professional', 'agency'].includes(current.id) || Boolean(plan?.is_evaluation_active || plan?.is_trial_active);
+  const slackAllowed = ['pro', 'enterprise'].includes(current.id) || Boolean(plan?.is_evaluation_active || plan?.is_trial_active);
 
   useEffect(() => {
     if (!isLoading && hasEmail) analytics.alertsEnabled({ channel: 'email', source: 'onboarding' });
@@ -112,7 +112,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
               <div>
                 <div className="text-sm font-medium text-rs-text">Slack</div>
                 <div className="text-xs text-rs-text-tertiary">
-                  {slackAllowed ? 'Incoming webhook — message with incident link and status.' : 'Requires Standard or higher — available during your Professional evaluation.'}
+                  {slackAllowed ? 'Incoming webhook — message with incident link and status.' : 'Requires Pro or higher — available during your Pro trial.'}
                 </div>
               </div>
             </div>
@@ -139,7 +139,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
             </span>
             <div>
               <div className="text-sm font-medium text-rs-text">PagerDuty</div>
-              <div className="text-xs text-rs-text-tertiary">Trigger incidents in PagerDuty — Standard and above. Add in Settings.</div>
+              <div className="text-xs text-rs-text-tertiary">Trigger incidents in PagerDuty — Pro and above. Add in Settings.</div>
             </div>
           </div>
         </div>

@@ -160,8 +160,9 @@ class OrganizationService:
                 effective = get_effective_plan_for_org(org)
                 limit = get_team_limit(effective)
                 members = await self.org_repository.list_members(session, org_id)
+                # Enterprise/custom plans have no fixed seat cap (None).
                 # Restoring a deleted member counts toward the limit (they become active again)
-                if len(members) >= limit:
+                if limit is not None and len(members) >= limit:
                     raise ConflictException(
                         f"Team limit reached for your current plan ({limit} members). "
                         f"Upgrade to add more members."

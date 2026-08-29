@@ -214,7 +214,7 @@ export function PageHome() {
                       Customer pays
                     </p>
                     <p className="font-mono text-lg font-semibold text-muted-foreground">
-                      $49/mo
+                      $39/mo
                     </p>
                   </div>
 
@@ -230,7 +230,7 @@ export function PageHome() {
                       You earn (30%)
                     </p>
                     <p className="font-mono text-lg font-bold text-foreground">
-                      $14.70/mo
+                      $11.70/mo
                     </p>
                   </div>
                 </div>
@@ -532,7 +532,7 @@ function CounterSection() {
           className="grid grid-cols-2 divide-x divide-border/40 lg:grid-cols-4"
         >
           <CounterItem target={30} prefix="" suffix="%" label="Recurring commission" active={started} />
-          <CounterItem target={49} prefix="$" suffix="/mo" label="Starting plan price" active={started} delay={0.1} />
+          <CounterItem target={39} prefix="$" suffix="/mo" label="Starting plan price" active={started} delay={0.1} />
           <CounterItem target={90} prefix="" suffix=" days" label="Attribution window" active={started} delay={0.2} />
           <CounterItem target={0} prefix="$" suffix="" label="Cost to join" active={started} isZero delay={0.3} />
         </motion.div>

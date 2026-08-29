@@ -138,8 +138,8 @@ class EvidenceService:
     async def _enforce_evidence_entitlement(self, session: AsyncSession, org_id: uuid.UUID) -> None:
         """Raise if the organization's effective plan does not include evidence.
 
-        Professional-unlocked evaluation is authoritative here: a Free org
-        inside its 14-day window has Professional features, so generation
+        Pro-unlocked evaluation is authoritative here: a Free org
+        inside its 14-day window has Pro features, so generation
         succeeds; once the window expires the effective plan falls back to
         Free and the gate correctly blocks. Never trusts client state.
         """
@@ -168,7 +168,7 @@ class EvidenceService:
         if not PLAN_FEATURES.get(effective, {}).get("evidence_generation"):
             raise ForbiddenException(
                 "Evidence reports are not available on your current plan. "
-                "Upgrade to Standard or higher to generate SLA evidence."
+                "Upgrade to Pro or higher to generate SLA evidence."
             )
 
     async def generate_for_incident(

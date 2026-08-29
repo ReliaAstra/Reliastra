@@ -85,7 +85,7 @@ async def get_agency_portfolio(
     current_org: Organization = Depends(get_current_org),
     _admin_guard=Depends(require_admin),
 ) -> PortfolioResponse:
-    """Rolled-up SLA posture for every client — the $199 artifact."""
+    """Rolled-up SLA posture for every client — the Enterprise artifact."""
     return await agency_service.get_portfolio(db, current_org.id)
 
 

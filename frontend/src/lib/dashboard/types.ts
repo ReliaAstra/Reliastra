@@ -1,9 +1,4 @@
-export type PlanId =
-  | 'free'
-  | 'starter'
-  | 'standard'
-  | 'professional'
-  | 'agency';
+export type PlanId = 'free' | 'pro' | 'enterprise';
 
 export type HealthStatus = 'operational' | 'degraded' | 'down' | 'unknown' | 'paused';
 
@@ -63,13 +58,15 @@ export interface PlanDetails {
     retention_days_current: number;
     retention_days_free: number;
   } | null;
-  max_dependencies: number;
-  max_team_members?: number;
-  min_check_interval_seconds: number;
-  data_retention_days?: number;
+  max_dependencies: number | null;
+  max_team_members?: number | null;
+  min_check_interval_seconds: number | null;
+  data_retention_days?: number | null;
   subscription_status: string | null;
   current_period_end: string | null;
   price_usd: number;
+  billing_interval?: string | null;
+  effective_is_custom?: boolean;
 }
 
 export interface PricingPlan {
@@ -78,10 +75,15 @@ export interface PricingPlan {
   description: string;
   tag: string | null;
   price_usd: number;
-  max_dependencies: number;
-  min_check_interval_seconds: number;
-  data_retention_days: number;
+  price_annual_usd: number | null;
+  max_dependencies: number | null;
+  max_team_members?: number | null;
+  min_check_interval_seconds: number | null;
+  data_retention_days: number | null;
   features: Record<string, unknown>;
+  billing_availability: string;
+  is_enterprise: boolean;
+  is_custom_pricing: boolean;
 }
 
 export interface DashboardSummary {

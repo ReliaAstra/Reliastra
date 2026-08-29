@@ -162,7 +162,7 @@ export function PageHowItWorks() {
               {[
                 { value: '30%', label: 'Recurring commission' },
                 { value: '90d', label: 'Attribution window' },
-                { value: '$49/mo', label: 'Starting plan' },
+                { value: '$39/mo', label: 'Starting plan' },
                 { value: '$0', label: 'To join' },
               ].map((m) => (
                 <div key={m.label} className="flex items-baseline gap-1.5">

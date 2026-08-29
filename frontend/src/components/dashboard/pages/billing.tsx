@@ -1,7 +1,7 @@
 'use client';
 
 import { useAppStore } from '@/stores/app-store';
-import { getPlan, nextPlan, retentionLabel } from '@/lib/dashboard/plans';
+import { getPlan, isEnterprise, nextPlan, retentionLabel } from '@/lib/dashboard/plans';
 import { useDependencies, usePlan } from '@/lib/dashboard/queries';
 import { formatDate } from '@/lib/dashboard/format';
 import { RsButton } from '../ui/button';
@@ -32,7 +32,9 @@ export function BillingPage() {
   const underlying = getPlan(p?.plan);
   const used = deps?.length ?? 0;
   const limit = p?.max_dependencies ?? current.dependencies;
-  const pct = Math.min(100, Math.round((used / limit) * 100));
+  // Enterprise/custom plans have no fixed dependency cap.
+  const limitIsCustom = limit == null;
+  const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const fill = pct > 80 ? '#F59E0B' : pct > 60 ? '#D97706' : '#2563EB';
 
   if (!p) {
@@ -69,18 +71,25 @@ export function BillingPage() {
               {underlying.name}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-rs-text-secondary">
-              <span>${underlying.priceMonthly}/mo</span>
+              <span>{underlying.priceMonthly == null ? 'Custom pricing' : `$${underlying.priceMonthly}/mo`}</span>
               {p.subscription_status && (
                 <span className="rounded-full border border-rs-border-subtle px-2 py-0.5 text-[11px] capitalize">
                   {p.subscription_status}
                 </span>
               )}
-              {p.current_period_end && underlying.priceMonthly > 0 && (
+              {p.current_period_end && (underlying.priceMonthly ?? 0) > 0 && (
                 <span>· Renews {formatDate(p.current_period_end)}</span>
               )}
             </div>
           </div>
-          {underlying.id !== 'agency' && (
+          {isEnterprise(underlying.id) ? (
+            <a
+              href="mailto:sales@reliastra.com?subject=Enterprise%20plan"
+              className="inline-flex shrink-0 items-center rounded-lg border border-rs-border bg-transparent px-4 py-2 text-sm font-medium text-rs-text transition-colors hover:bg-rs-hover"
+            >
+              Contact Sales
+            </a>
+          ) : (
             <RsButton onClick={() => openUpgrade()} className="shrink-0">
               {underlying.id === 'free' ? 'Upgrade' : 'Change plan'}
             </RsButton>
@@ -93,7 +102,7 @@ export function BillingPage() {
             <div className="flex items-center gap-2">
               <Sparkles size={15} className="text-rs-brand" />
               <p className="text-sm font-semibold text-rs-text">
-                14-day full-access evaluation · Professional capabilities
+                14-day full-access trial · Pro capabilities
               </p>
             </div>
             <p className="mt-1.5 text-[13px] leading-relaxed text-rs-text-secondary">
@@ -127,7 +136,7 @@ export function BillingPage() {
                       <strong>{fallback.dependencies_configured}</strong> dependencies monitored
                     </p>
                     <p className="text-xs text-rs-text-secondary">
-                      {fallback.retention_days_current} days retention · Professional evidence · API access
+                      {fallback.retention_days_current} days retention · Pro evidence · API access
                     </p>
                   </div>
                   <div className="rounded-md bg-rs-base p-3">
@@ -194,14 +203,22 @@ export function BillingPage() {
       <section className="mb-6 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
         <div className="mb-3 flex items-center justify-between">
           <div className="text-sm font-medium text-rs-text">Monitored dependencies</div>
-          <div className={cn('font-mono text-sm', used >= limit ? 'text-rs-degraded' : 'text-rs-text')}>
-            {used} / {limit}
+          <div
+            className={cn(
+              'font-mono text-sm',
+              limit != null && used >= limit ? 'text-rs-degraded' : 'text-rs-text'
+            )}
+          >
+            {limitIsCustom ? `${used} · Custom` : `${used} / ${limit}`}
           </div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-rs-border-subtle">
-          <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, background: fill }} />
+          <div
+            className="h-full rounded-full transition-[width] duration-500"
+            style={{ width: `${limitIsCustom ? 100 : pct}%`, background: fill }}
+          />
         </div>
-        {used >= limit && (
+        {!limitIsCustom && used >= limit && (
           <div className="mt-3 flex items-start justify-between gap-3 rounded-lg border border-rs-degraded/30 bg-rs-degraded/10 p-3">
             <p className="text-xs leading-relaxed text-rs-text-secondary">
               You&apos;ve reached your plan limit of {limit}.{' '}
@@ -223,9 +240,11 @@ export function BillingPage() {
               Check interval
             </dt>
             <dd className="mt-1 font-mono text-sm text-rs-text">
-              {p.min_check_interval_seconds >= 60
-                ? `${Math.round(p.min_check_interval_seconds / 60)} min`
-                : `${p.min_check_interval_seconds}s`}
+              {p.min_check_interval_seconds == null
+                ? 'Custom'
+                : p.min_check_interval_seconds >= 60
+                  ? `${Math.round(p.min_check_interval_seconds / 60)} min`
+                  : `${p.min_check_interval_seconds}s`}
             </dd>
           </div>
           <div>
@@ -241,7 +260,7 @@ export function BillingPage() {
               Team members
             </dt>
             <dd className="mt-1 font-mono text-sm text-rs-text">
-              {p.max_team_members ?? current.teamMembers}
+              {(p.max_team_members ?? current.teamMembers) == null ? 'Unlimited' : p.max_team_members ?? current.teamMembers}
             </dd>
           </div>
         </dl>
@@ -263,13 +282,13 @@ export function BillingPage() {
       {/* What this plan includes — mirrors backend PLAN_FEATURES semantics */}
       <section className="mb-6 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
         <h2 className="text-sm font-semibold text-rs-text">
-          {trialActive ? 'Included during your Professional trial' : `Included in ${underlying.name}`}
+          {trialActive ? 'Included during your Pro trial' : `Included in ${underlying.name}`}
         </h2>
         {trialActive && (
           <p className="mt-1 text-xs text-rs-text-tertiary">
             On {underlying.name}: {getPlan('free').dependencies} dependencies ·{' '}
             {retentionLabel(getPlan('free').retentionDays)} retention. Trial restores
-            Professional limits.
+            Pro limits.
           </p>
         )}
         <ul className="mt-3 space-y-2.5">
@@ -278,9 +297,9 @@ export function BillingPage() {
             { label: `${retentionLabel(p.data_retention_days ?? current.retentionDays)} check-history retention`, ok: true },
             { label: 'Email alerts & basic incident detection', ok: true },
             { label: 'Evidence reports (PDF/JSON)', ok: getPlan(p.effective_plan ?? p.plan).evidence },
-            { label: 'Deterministic vendor attribution', ok: ['standard', 'professional', 'agency'].includes(current.id) || (trialActive && getPlan(p.effective_plan).id !== 'free') },
+            { label: 'Deterministic vendor attribution', ok: getPlan(p.effective_plan ?? p.plan).attribution },
             { label: 'API access', ok: getPlan(p.effective_plan ?? p.plan).api },
-            { label: 'Client workspaces & white-label (Agency)', ok: current.id === 'agency' },
+            { label: 'Client workspaces & white-label', ok: current.clientGroups },
           ].map((f) => (
             <li key={f.label} className="flex items-center gap-2.5 text-sm">
               {f.ok ? (

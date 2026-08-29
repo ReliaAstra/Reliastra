@@ -29,7 +29,7 @@ export function DependenciesListPage() {
   }));
 
   function onAdd() {
-    if ((deps?.length ?? 0) >= current.dependencies) openUpgrade('limit');
+    if (current.dependencies != null && (deps?.length ?? 0) >= current.dependencies) openUpgrade('limit');
     else setAdd(true);
   }
 

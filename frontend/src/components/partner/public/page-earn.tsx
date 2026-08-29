@@ -100,7 +100,7 @@ const projections = [
 function EarningsCalculator() {
   const [monthlyRefs, setMonthlyRefs] = useState(3);
   const [months, setMonths] = useState(12);
-  const planPrice = 49;
+  const planPrice = 39;
   const commissionRate = 0.3;
   const perReferralMonthly = planPrice * commissionRate;
 
@@ -448,7 +448,7 @@ export function PageEarn() {
               custom={2}
               className="mt-4 font-mono text-xs leading-relaxed text-muted-foreground/60"
             >
-              Based on $49/mo Pro plan. You would earn $14.70/mo per referral.
+              Based on $39/mo Pro plan. You would earn $11.70/mo per referral.
             </motion.p>
           </motion.div>
         </div>
@@ -538,7 +538,7 @@ export function PageEarn() {
                 ))}
               </div>
               <p className="mt-3 font-mono text-[11px] leading-relaxed text-muted-foreground/60">
-                Assumes 30% commission on $120/mo average subscription. New referrals
+                Assumes 30% commission on $39/mo average subscription. New referrals
                 added monthly. Churn not modeled. For illustration only.
               </p>
             </motion.div>

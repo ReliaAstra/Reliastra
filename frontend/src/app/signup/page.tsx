@@ -94,7 +94,7 @@ export default function CustomerSignupPage() {
             <p className="rs-eyebrow">Create your organization</p>
             <h1 className="rs-page-title mt-2">Start monitoring in minutes</h1>
             <p className="rs-secondary-body mt-2">
-              14-day Professional trial. No card required — every feature,
+              14-day Pro trial. No card required — every feature,
               every region.
             </p>
 

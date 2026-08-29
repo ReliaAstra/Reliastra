@@ -116,7 +116,7 @@ function TrialBanner() {
               </span>
             </span>
             <RsButton onClick={() => openUpgrade('trial')} className="whitespace-nowrap px-4 py-2 text-[13px]">
-              Keep Professional
+              Keep Pro
             </RsButton>
           </div>
         </div>
@@ -290,7 +290,7 @@ function NextBestActionBanner({
           <div>
             <p className="rs-label">Next step</p>
             <p className="mt-1 text-sm font-semibold text-rs-text">Configure incident alerts</p>
-            <p className="mt-1 text-sm text-rs-text-secondary">Email is enabled by default — add Slack for Standard and above.</p>
+            <p className="mt-1 text-sm text-rs-text-secondary">Email is enabled by default — add Slack on Pro and above.</p>
           </div>
           <RsButton variant="secondary" onClick={() => router.push('/settings')}>
             Configure alerts
@@ -473,7 +473,7 @@ export function OverviewPage() {
   const isEmptyWorkspace = !isLoading && used === 0 && depCount === 0;
 
   const handleAdd = () => {
-    if (used >= limit) useAppStore.getState().openUpgrade('limit');
+    if (limit != null && used >= limit) useAppStore.getState().openUpgrade('limit');
     else setAdd(true);
   };
 
@@ -487,7 +487,7 @@ export function OverviewPage() {
       icon: Link2,
       bg: 'rgba(37,99,235,0.1)',
       color: '#2563EB',
-      usage: { used, total: limit },
+      usage: { used, total: limit ?? used },
       valueClass: 'text-rs-text',
       iconClass: 'rs-stat-icon-brand',
     },

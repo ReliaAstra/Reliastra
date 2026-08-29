@@ -99,7 +99,7 @@ export function FinalCTA() {
           >
             Start Free Today
           </button>
-          <p className="mt-4 text-xs text-white/40">Free for up to 5 vendors · No credit card required</p>
+          <p className="mt-4 text-xs text-white/40">Free plan includes up to 3 dependencies · No credit card required</p>
         </motion.div>
       </div>
     </section>

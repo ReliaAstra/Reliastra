@@ -119,7 +119,7 @@ export function IncidentDetailPage({ id }: { id: string }) {
             Generate report
             {!evidenceOk && (
               <span className="ml-2 rounded bg-rs-brand-subtle px-1.5 py-0.5 text-[10px] text-rs-brand">
-                Standard
+                Pro
               </span>
             )}
           </RsButton>
@@ -166,7 +166,7 @@ export function IncidentDetailPage({ id }: { id: string }) {
 
       {effectivePlanId(plan) === 'free' && (
         <div className="mt-3 rounded-[10px] border border-[rgba(37,99,235,0.2)] bg-rs-brand-subtle px-[18px] py-3.5 text-sm text-rs-text">
-          Basic correlation is active on Free. Full multi-signal correlation is available on Standard and above.{' '}
+          Basic correlation is active on Free. Full multi-signal correlation is available on Pro and above.{' '}
           <button type="button" className="text-rs-text-accent hover:underline" onClick={() => openUpgrade('correlation')}>
             View plans
           </button>
@@ -286,18 +286,18 @@ export function IncidentDetailPage({ id }: { id: string }) {
           <h2 className="text-lg font-semibold text-rs-text">Evidence reports</h2>
           <HelpTooltip
             title="Evidence reports"
-            body="Timestamped, multi-region verification you can attach to an SLA credit claim. Available on Standard and above."
+            body="Timestamped, multi-region verification you can attach to an SLA credit claim. Available on Pro and above."
           />
         </div>
         {!evidenceOk ? (
           <div className="rounded-xl border border-dashed border-rs-border bg-rs-elevated px-6 py-10 text-center">
             <Lock size={32} className="mx-auto text-rs-text-tertiary" />
-            <h3 className="mt-3 text-base font-medium text-rs-text">Evidence reports are a Standard feature</h3>
+            <h3 className="mt-3 text-base font-medium text-rs-text">Evidence reports are a Pro feature</h3>
             <p className="mx-auto mt-2 max-w-md text-sm text-rs-text-secondary">
-              Generate structured, timestamped evidence reports for vendor SLA claims. Upgrade to Standard to unlock.
+              Generate structured, timestamped evidence reports for vendor SLA claims. Upgrade to Pro to unlock.
             </p>
             <RsButton className="mt-4" onClick={() => openUpgrade('evidence')}>
-              Start Standard trial
+              Upgrade to Pro
             </RsButton>
 <p className="mt-3 text-xs text-rs-text-tertiary">
               See <Link href="/track" className="text-rs-text-accent hover:underline">public vendor tracking</Link>{' '}

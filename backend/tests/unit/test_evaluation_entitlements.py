@@ -1,7 +1,7 @@
 """Evaluation lifecycle: server-side enforcement verification.
 
 Covers:
-- new account -> evaluation active -> full Professional capabilities
+- new account -> evaluation active -> full Pro capabilities
 - active evaluation -> paid-tier functionality succeeds
 - expired evaluation -> premium entitlements disappear, Free limits apply
 - existing data preserved (17 deps -> 1 active, 16 paused)
@@ -50,7 +50,7 @@ def _org_free_expired():
 
 def _org_paid():
     now = datetime.now(timezone.utc)
-    return Org("professional", now - timedelta(days=1), now - timedelta(days=1), now + timedelta(days=13), "converted", True)
+    return Org("pro", now - timedelta(days=1), now - timedelta(days=1), now + timedelta(days=13), "converted", True)
 
 
 # ── New account full access ──────────────────────────────────────────────────
@@ -60,11 +60,11 @@ def test_new_customer_receives_full_access():
     assert is_evaluation_active(org) is True
     assert get_evaluation_status(org) == "active"
     assert evaluation_days_remaining(org) > 0
-    assert get_effective_plan_for_org(org) == EVALUATION_PLAN == Plan.PROFESSIONAL.value
+    assert get_effective_plan_for_org(org) == EVALUATION_PLAN == Plan.PRO.value
     ent = get_effective_entitlements(org)
-    assert ent["effective_plan"] == Plan.PROFESSIONAL.value
+    assert ent["effective_plan"] == Plan.PRO.value
     assert ent["is_evaluation_active"] is True
-    # All paid-tier capabilities available via Professional limits
+    # All paid-tier capabilities available via Pro limits
     assert ent["effective_features"]["evidence_generation"] is True
     assert ent["effective_features"]["api_access"] is True
     assert ent["effective_features"]["slack_alerts"] is True
@@ -92,9 +92,9 @@ async def test_active_evaluation_allows_evidence_generation():
 
     # Service imports OrganizationRepository inside the method, so patch there
     with patch("app.modules.organizations.repository.OrganizationRepository.get_by_id", new=AsyncMock(return_value=org)):
-        # Should NOT raise — effective plan is Professional
+        # Should NOT raise — effective plan is Pro
         await evidence_service._enforce_evidence_entitlement(AsyncMock(), org.id)  # type: ignore[arg-type]
-    assert get_effective_plan_for_org(org) == "professional"
+    assert get_effective_plan_for_org(org) == "pro"
 
 
 @pytest.mark.asyncio
@@ -239,8 +239,8 @@ def test_fallback_preserves_config_but_pauses_excess():
     assert paused_after == 14
     # Data preserved: total stays 17
     assert total_during_evaluation == active_after + paused_after
-    # With professional limit 100, all 17 were active during evaluation
-    prof_limit = PLAN_DEPENDENCY_LIMITS[Plan.PROFESSIONAL.value]
+    # With pro limit 50, all 17 were active during evaluation
+    prof_limit = PLAN_DEPENDENCY_LIMITS[Plan.PRO.value]
     assert total_during_evaluation <= prof_limit
 
 
@@ -249,18 +249,18 @@ def test_fallback_preserves_config_but_pauses_excess():
 def test_evaluation_to_paid_transition():
     now = datetime.now(timezone.utc)
     org_eval = Org("free", now - timedelta(days=1), now - timedelta(days=1), now + timedelta(days=13), "active", True)
-    assert get_effective_plan_for_org(org_eval) == "professional"
+    assert get_effective_plan_for_org(org_eval) == "pro"
     assert get_evaluation_status(org_eval) == "active"
     # Simulate verify_transaction converting to paid
-    org_eval.plan = "professional"
+    org_eval.plan = "pro"
     org_eval.evaluation_status = "converted"
-    assert get_effective_plan_for_org(org_eval) == "professional"
+    assert get_effective_plan_for_org(org_eval) == "pro"
     assert get_evaluation_status(org_eval) == "converted"
     # Entitlements now come from paid plan, not evaluation
     ent = get_effective_entitlements(org_eval)
-    assert ent["subscription_plan"] == "professional"
+    assert ent["subscription_plan"] == "pro"
     assert ent["evaluation_status"] == "converted"
-    assert ent["effective_plan"] == "professional"
+    assert ent["effective_plan"] == "pro"
     # is_evaluation_active should be False for paid even if window not elapsed
     assert is_evaluation_active(org_eval) is False
 
@@ -269,18 +269,18 @@ def test_no_conflicting_evaluation_after_paid():
     org = _org_paid()
     # Even though window still active chronologically, paid status suppresses it
     assert is_evaluation_active(org) is False
-    assert get_effective_plan_for_org(org) == "professional"  # via paid, not via trial
+    assert get_effective_plan_for_org(org) == "pro"  # via paid, not via trial
 
 
 # ── Security: client cannot bypass ──────────────────────────────────────────
 
 def test_client_payload_cannot_override_plan():
-    """Even if client sends plan=professional in API payload, server uses stored org.plan."""
+    """Even if client sends plan=pro in API payload, server uses stored org.plan."""
     org = _org_free_expired()  # stored as free, expired
-    # Client might try to craft org_plan = professional
+    # Client might try to craft org_plan = pro
     # Server's get_effective_plan_for_org ignores client payload, reads org.plan directly
     assert org.plan == "free"
-    assert get_effective_plan_for_org(org) == "free"  # not professional
+    assert get_effective_plan_for_org(org) == "free"  # not pro
     # Attempt to fake evaluation_status via client
     org_fake = Org("free", org.created_at, org.evaluation_started_at, org.evaluation_expires_at, "active", True)
     # But expiry is in the past, so server still says expired regardless of status column

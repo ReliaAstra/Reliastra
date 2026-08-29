@@ -140,7 +140,7 @@ export function OnboardingShell({
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20">
                 <p className="text-xs font-semibold text-rs-text">14-day full-access evaluation</p>
                 <p className="mt-1 text-xs leading-relaxed text-rs-text-secondary">
-                  Professional limits (100 deps, 90d retention, evidence, API) — no card. Your evaluation is server-time authoritative.
+                  Pro limits (50 deps, 90d retention, evidence, API) — no card. Your evaluation is server-time authoritative.
                 </p>
               </div>
             </div>

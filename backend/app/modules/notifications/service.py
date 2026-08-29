@@ -254,12 +254,12 @@ class NotificationService:
         effective = get_effective_plan_for_org(org)
         features = PLAN_FEATURES.get(effective, {})
         # Slack, PagerDuty, webhook are advanced — require slack_alerts flag.
-        # Email is always allowed. Evaluation unlocks advanced via Professional.
+        # Email is always allowed. Evaluation unlocks advanced via Pro.
         if channel_type.lower() in {"slack", "pagerduty", "webhook"}:
             if not features.get("slack_alerts"):
                 raise ForbiddenException(
-                    "Advanced alert channels (Slack/PagerDuty/Webhook) require Standard or higher. "
-                    "Your evaluation unlocks them for 14 days; upgrade to keep them."
+                    "Advanced alert channels (Slack/PagerDuty/Webhook) require the Pro plan or higher. "
+                    "Your trial unlocks them for 14 days; upgrade to keep them."
                 )
 
     async def create_config(

@@ -286,11 +286,12 @@ async def test_profile_password_change_revokes_sessions(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_agency_plan_not_self_serve():
+def test_enterprise_plan_not_self_serve():
     from app.core.permissions import Plan
     from app.modules.billing.service import PLAN_AMOUNTS
 
-    assert Plan.AGENCY.value not in PLAN_AMOUNTS
+    # Enterprise routes to Contact Sales — not a self-serve checkout amount.
+    assert Plan.ENTERPRISE.value not in PLAN_AMOUNTS
     assert all(v > 0 for v in PLAN_AMOUNTS.values())
 
 

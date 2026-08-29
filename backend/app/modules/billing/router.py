@@ -8,14 +8,18 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.core.permissions import (
+    PLAN_ANNUAL_PRICES_USD,
+    PLAN_BILLING_AVAILABILITY,
     PLAN_DEPENDENCY_LIMITS,
     PLAN_DESCRIPTIONS,
+    PLAN_DISPLAY_NAMES,
     PLAN_FEATURES,
     PLAN_PRICES_USD,
     PLAN_RETENTION_DAYS,
     PLAN_TAGS,
-    Plan,
+    PLAN_TEAM_LIMITS,
     get_min_check_interval,
+    is_enterprise_plan,
 )
 from app.db.session import get_db
 from app.dependencies import get_current_org, require_admin, require_member
@@ -46,11 +50,18 @@ class PricingPlanResponse(BaseModel):
     description: str
     tag: str | None = None
     price_usd: int
-    max_dependencies: int
-    max_team_members: int
-    min_check_interval_seconds: int
-    data_retention_days: int
+    price_annual_usd: int | None = None
+    max_dependencies: int | None = None
+    max_team_members: int | None = None
+    min_check_interval_seconds: int | None = None
+    data_retention_days: int | None = None
     features: dict
+    # Billing availability: "self_serve" or "contact_sales".
+    billing_availability: str
+    # Enterprise/custom indicators — the UI must route Enterprise to Contact
+    # Sales and must never render a numeric price for it.
+    is_enterprise: bool = False
+    is_custom_pricing: bool = False
 
 
 class PricingPlansResponse(BaseModel):
@@ -59,24 +70,29 @@ class PricingPlansResponse(BaseModel):
 
 @router.get("/pricing", response_model=PricingPlansResponse)
 async def get_pricing_plans() -> PricingPlansResponse:
-    """Public endpoint returning all plan details for the pricing page."""
-    from app.core.permissions import PLAN_TEAM_LIMITS
+    """Public endpoint returning exactly the three customer-facing plans."""
+    from app.core.permissions import CANONICAL_PLANS, get_plan_annual_price_usd
 
     plans = []
-    for plan_enum in Plan:
-        p = plan_enum.value
+    for plan_id in sorted(CANONICAL_PLANS):
+        p = plan_id
+        is_enterprise = is_enterprise_plan(p)
         plans.append(
             PricingPlanResponse(
                 plan=p,
-                display_name=p.capitalize(),
+                display_name=PLAN_DISPLAY_NAMES.get(p, p),
                 description=PLAN_DESCRIPTIONS.get(p, ""),
                 tag=PLAN_TAGS.get(p),
                 price_usd=PLAN_PRICES_USD.get(p, 0),
-                max_dependencies=PLAN_DEPENDENCY_LIMITS.get(p, 0),
-                max_team_members=PLAN_TEAM_LIMITS.get(p, 1),
+                price_annual_usd=get_plan_annual_price_usd(p),
+                max_dependencies=PLAN_DEPENDENCY_LIMITS.get(p),
+                max_team_members=PLAN_TEAM_LIMITS.get(p),
                 min_check_interval_seconds=get_min_check_interval(p),
-                data_retention_days=PLAN_RETENTION_DAYS.get(p, 1),
+                data_retention_days=PLAN_RETENTION_DAYS.get(p),
                 features=PLAN_FEATURES.get(p, {}),
+                billing_availability=PLAN_BILLING_AVAILABILITY.get(p, "contact_sales"),
+                is_enterprise=is_enterprise,
+                is_custom_pricing=is_enterprise,
             )
         )
     return PricingPlansResponse(plans=plans)

@@ -133,12 +133,12 @@ export function EvidenceIntroStep({ onNext }: { onNext: () => void }) {
 
             {!canEvidence && (
               <div className="mt-4 rounded-[10px] border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20">
-                <p className="text-sm font-medium text-rs-text">Evidence reports are a Standard feature</p>
+                <p className="text-sm font-medium text-rs-text">Evidence reports are a Pro feature</p>
                 <p className="mt-1 text-xs leading-relaxed text-rs-text-secondary">
-                  You can generate evidence during your Professional evaluation. On Free, you’ll see incidents and timelines; full reports resume on upgrade. No paywall before you’ve seen the value.
+                  You can generate evidence during your Pro trial. On Free, you’ll see incidents and timelines; full reports resume on upgrade. No paywall before you’ve seen the value.
                 </p>
                 <button onClick={() => { analytics.upgradeViewed({ source: 'onboarding_evidence' }); openUpgrade('evidence'); }} className="mt-2 text-xs font-medium text-rs-brand hover:underline">
-                  View what Standard unlocks →
+                  View what Pro unlocks →
                 </button>
               </div>
             )}
