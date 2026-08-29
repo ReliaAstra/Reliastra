@@ -10,7 +10,6 @@ export interface PlanMeta {
   retention: string;
   alerts: string;
   evidence: boolean;
-  api: boolean;
   seats: string;
   clientGroups: boolean;
   whiteLabel: boolean;
@@ -28,7 +27,6 @@ export const PLANS: PlanMeta[] = [
     retention: '24h',
     alerts: 'Email',
     evidence: false,
-    api: false,
     seats: '1',
     clientGroups: false,
     whiteLabel: false,
@@ -43,7 +41,6 @@ export const PLANS: PlanMeta[] = [
     retention: '7 days',
     alerts: 'Email',
     evidence: false,
-    api: false,
     seats: '1',
     clientGroups: false,
     whiteLabel: false,
@@ -58,7 +55,6 @@ export const PLANS: PlanMeta[] = [
     retention: '30 days',
     alerts: 'Email, Slack, PagerDuty',
     evidence: true,
-    api: true,
     seats: '1',
     clientGroups: false,
     whiteLabel: false,
@@ -74,7 +70,6 @@ export const PLANS: PlanMeta[] = [
     retention: '90 days',
     alerts: 'All channels',
     evidence: true,
-    api: true,
     seats: '5',
     clientGroups: false,
     whiteLabel: false,
@@ -89,7 +84,6 @@ export const PLANS: PlanMeta[] = [
     retention: '90 days',
     alerts: 'All channels',
     evidence: true,
-    api: true,
     seats: 'Unlimited',
     clientGroups: true,
     whiteLabel: true,
@@ -116,10 +110,6 @@ export function annualSavings(plan: PlanMeta): number {
 
 export function hasEvidence(plan: string | undefined | null): boolean {
   return getPlan(plan).evidence;
-}
-
-export function hasApiAccess(plan: string | undefined | null): boolean {
-  return getPlan(plan).api;
 }
 
 export function hasSlackAlerts(plan: string | undefined | null): boolean {

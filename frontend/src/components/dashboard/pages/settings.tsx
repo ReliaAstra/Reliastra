@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
-import { getPlan, hasApiAccess, hasSlackAlerts } from '@/lib/dashboard/plans';
+import { getPlan, hasSlackAlerts } from '@/lib/dashboard/plans';
 import { useAlertConfigs } from '@/lib/dashboard/queries';
 import { RsButton } from '../ui/button';
 import { toast } from 'sonner';
-import { Lock } from 'lucide-react';
 
 const field =
   'flex h-9 w-full rounded-[10px] border border-rs-border-subtle bg-rs-input px-3 text-sm text-rs-text placeholder:text-rs-text-tertiary outline-none transition-[border-color,box-shadow] duration-150 focus:border-rs-brand focus:ring-[3px] focus:ring-[rgb(37_99_235_/_0.20)] dark:focus:ring-[rgb(59_130_246_/_0.20)]';
@@ -61,7 +60,7 @@ export function SettingsPage() {
         </RsButton>
       </section>
 
-      <section className="mb-8 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
+      <section className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
         <h2 className="rs-section-title mb-4 text-base font-semibold">Notifications</h2>
         <div className="divide-y divide-rs-border-subtle">
           {['email', 'slack', 'pagerduty'].map((ch) => {
@@ -85,35 +84,6 @@ export function SettingsPage() {
             );
           })}
         </div>
-      </section>
-
-      <section className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
-        <h2 className="rs-section-title mb-4 text-base font-semibold">API access</h2>
-        {!hasApiAccess(plan?.plan) ? (
-          <div className="rounded-xl border border-dashed border-rs-border px-6 py-10 text-center">
-            <Lock size={32} className="mx-auto text-rs-text-tertiary" />
-            <p className="mt-3 text-sm text-rs-text">API access is a Standard feature</p>
-            <p className="mt-1 text-sm text-rs-text-secondary">
-              Query dependency health and incidents programmatically.
-            </p>
-            <RsButton className="mt-4" onClick={() => openUpgrade('api')}>
-              Start Standard trial
-            </RsButton>
-          </div>
-        ) : (
-          <div>
-            <p className="mb-3 font-mono text-sm text-rs-text-secondary">rl_live_••••••••••••4f2a</p>
-            <RsButton
-              variant="secondary"
-              onClick={() => {
-                navigator.clipboard.writeText('rl_live_demo_key');
-                toast.success('API key copied');
-              }}
-            >
-              Copy API key
-            </RsButton>
-          </div>
-        )}
       </section>
     </div>
   );

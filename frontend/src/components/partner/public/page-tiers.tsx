@@ -272,10 +272,6 @@ export function PageTiers() {
                   values: ['—', '—', 'Account manager', '24/7 dedicated'],
                 },
                 {
-                  label: 'API access',
-                  values: ['—', '—', '—', 'Custom API'],
-                },
-                {
                   label: 'White-label',
                   values: ['—', '—', '—', 'Available'],
                 },

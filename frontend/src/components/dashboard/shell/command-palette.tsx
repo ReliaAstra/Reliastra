@@ -8,7 +8,6 @@ import {
   Bell,
   FileText,
   HelpCircle,
-  KeyRound,
   LayoutDashboard,
   Link2,
   Plus,
@@ -87,13 +86,6 @@ export function CommandPalette() {
           if (!hasEvidence(plan?.plan)) useAppStore.getState().setEvidenceGateOpen(true);
           else router.push('/evidence');
         },
-      },
-      {
-        id: 'key',
-        group: 'Quick actions',
-        label: 'Copy API key',
-        icon: KeyRound,
-        href: '/settings',
       },
       {
         id: 'alert',

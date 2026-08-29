@@ -406,7 +406,6 @@ export const PARTNER_TIERS: TierInfo[] = [
       '40% recurring commission',
       'Lifetime attribution',
       '24/7 dedicated support',
-      'Custom API access',
       'On-demand payouts',
       'White-label options',
       'Revenue sharing bonuses',
