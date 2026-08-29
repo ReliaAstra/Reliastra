@@ -27,11 +27,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import escape, render_email, site_url
 from app.modules.admin.models import InAppNotification, InAppNotificationDelivery
 from app.modules.partners.models import PartnerNotificationPreference
 from app.modules.users.models import User
 
 logger = logging.getLogger(__name__)
+
+
+def partner_link(action_url: str | None) -> str:
+    """Absolute URL for a partner notification CTA (relative paths resolve on
+    the canonical public origin)."""
+    origin = settings.RELIASTRA_PUBLIC_URL.rstrip("/")
+    return (
+        f"{origin}{action_url}"
+        if action_url and action_url.startswith("/")
+        else (action_url or origin)
+    )
 
 
 class PartnerEvent:
@@ -183,13 +195,29 @@ class PartnerNotificationService:
         action_url: str | None = None,
     ) -> None:
         """Send an email without ever failing the caller's transaction."""
-        origin = settings.RELIASTRA_PUBLIC_URL.rstrip("/")
-        link = f"{origin}{action_url}" if action_url and action_url.startswith("/") else (action_url or origin)
-        text = f"{body}\n\nOpen your partner dashboard: {link}\n\n— RELIASTRA Partner Network"
-        html = (
-            f"<p>{body}</p>"
-            f'<p><a href="{link}">Open your partner dashboard</a></p>'
-            "<p style=\"color:#64748b;font-size:12px\">— RELIASTRA Partner Network</p>"
+        link = partner_link(action_url)
+        body_text = (
+            f"{body}\n\nOpen your partner dashboard: {link}"
+        )
+        body_html = (
+            f"<p>{escape(body)}</p>"
+            f'<p style="text-align: center;"><a href="{link}" class="button">'
+            "Open your partner dashboard</a></p>"
+        )
+        # Partner notifications are preference-controlled, so the footer keeps
+        # the canonical support paragraph *and* the preferences link (the
+        # partner-facing equivalent of an unsubscribe control).
+        preferences = site_url("/?page=settings")
+        text, html = render_email(
+            heading="Reliastra Partner Network",
+            body_html=body_html,
+            body_text=body_text,
+            footer_note_text=(
+                "You receive these emails because Partner Network notifications are "
+                "enabled for your account: " + preferences
+            ),
+            unsubscribe_html=f'<a href="{preferences}">Manage email preferences</a>',
+            unsubscribe_text="Manage email preferences: " + preferences,
         )
         try:
             await asyncio.to_thread(

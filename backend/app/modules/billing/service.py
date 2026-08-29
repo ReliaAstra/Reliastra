@@ -17,28 +17,39 @@ from app.core.exceptions import (
     ServiceUnavailableException,
 )
 from app.core.permissions import (
-    EVALUATION_DAYS,
     PLAN_AMOUNTS,
     PLAN_ANNUAL_AMOUNTS,
     PLAN_FEATURES,
     TRIAL_DAYS,
     Plan,
-    evaluation_days_remaining,
     get_dependency_limit,
     get_effective_entitlements,
-    get_effective_plan_for_org,
     get_min_check_interval,
     get_plan_billing_availability,
     get_plan_price_usd,
     get_retention_days,
     get_team_limit,
-    is_evaluation_active,
     is_paid_plan,
     normalize_plan,
+)
+from app.core.payment_pricing import (
+    ANNUAL as ANNUAL_INTERVAL,
+    MONTHLY as MONTHLY_INTERVAL,
+    PaymentPrice,
+    currency_info,
+    format_money,
+    payment_currency,
+    resolve_payment_price,
+)
+from app.modules.billing.notifications import (
+    PaymentSummary,
+    send_payment_receipt_email,
+    send_subscription_confirmed_email,
 )
 from app.modules.billing.repository import BillingRepository
 from app.modules.billing.schemas import (
     BillingInterval,
+    PaymentCurrencyResponse,
     InitializePaymentRequest,
     InitializePaymentResponse,
     PaystackWebhookResponse,
@@ -70,6 +81,7 @@ class PaystackClient:
         amount: int,
         plan: str,
         metadata: dict[str, str] | None = None,
+        currency: str | None = None,
     ) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(
@@ -78,10 +90,13 @@ class PaystackClient:
                 json={
                     "email": email,
                     "amount": amount,
-                    # Without an explicit currency Paystack charges in the
-                    # merchant account's default currency (typically NGN),
-                    # turning a $39 checkout into ~$0.01.
-                    "currency": settings.PAYSTACK_CURRENCY,
+                    # Currency MUST be explicit: without it Paystack charges in
+                    # the merchant account's default currency, silently
+                    # repricing the plan. The caller passes the currency that
+                    # this amount was resolved in (payment_pricing), never a
+                    # separately-read setting, so the amount and its currency
+                    # can never drift apart.
+                    "currency": (currency or payment_currency()),
                     "plan": plan,
                     "metadata": metadata or {},
                 },
@@ -112,21 +127,36 @@ class PaystackClient:
 
 paystack_client = PaystackClient()
 
-# Amounts in minor units of PAYSTACK_CURRENCY (default USD cents) are now
-# defined in ``app.core.permissions`` (PLAN_AMOUNTS / PLAN_ANNUAL_AMOUNTS) so
-# the canonical pricing contract lives in ONE place. ENTERPRISE and FREE are
-# NOT self-serve: enterprise routes to Contact Sales, and free has nothing to
-# charge. The self-serve guards below reject anything not in PLAN_AMOUNTS.
+# PRODUCT PRICING (USD list price: PLAN_PRICES_USD / PLAN_AMOUNTS in
+# ``app.core.permissions``) and PAYMENT PRICING (the amount actually charged
+# through Paystack, in the processing currency) are two separate concepts and
+# are resolved through ``app.core.payment_pricing``. Nothing converts one into
+# the other: for a non-USD processor the business publishes explicit payment
+# prices (PAYSTACK_NGN_PLAN_PRICES), and self-serve checkout is disabled for
+# any plan whose payment price is missing rather than silently charging the
+# USD minor-unit figure in another currency.
+#
+# ENTERPRISE and FREE are NOT self-serve: enterprise routes to Contact Sales,
+# and free has nothing to charge.
 _MONTHLY_AMOUNTS = PLAN_AMOUNTS
 _ANNUAL_AMOUNTS = PLAN_ANNUAL_AMOUNTS
 
 
+def _price_for(plan: str, interval: str) -> PaymentPrice:
+    """Canonical product+payment price for a plan/interval pair."""
+    return resolve_payment_price(
+        plan, ANNUAL_INTERVAL if interval == BillingInterval.ANNUAL.value else MONTHLY_INTERVAL
+    )
+
+
 def _amount_for_interval(plan: str, interval: str) -> int | None:
-    """Return the charged amount (minor units) for a plan + billing interval."""
-    normalized = normalize_plan(plan)
-    if interval == BillingInterval.ANNUAL.value:
-        return _ANNUAL_AMOUNTS.get(normalized)
-    return _MONTHLY_AMOUNTS.get(normalized)
+    """The amount (minor units of the processing currency) a checkout pays.
+
+    Kept as a helper because the webhook/verify integrity check needs the same
+    single source of truth the initializer uses — if these two ever disagreed,
+    every correctly priced payment would be rejected as "undersized".
+    """
+    return _price_for(plan, interval).payment_amount
 
 
 def _parse_datetime(value: Any) -> datetime | None:
@@ -220,7 +250,32 @@ class BillingService:
             ),
             # Enterprise uses custom pricing — never advertise a numeric price.
             effective_is_custom=effective_is_custom,
+            # Payment currency + canonical disclosure, resolved from the same
+            # source the checkout uses (never a frontend literal).
+            payment=PaymentCurrencyResponse(**currency_info()),
+            **self._next_charge_fields(subscription),
         )
+
+    @staticmethod
+    def _next_charge_fields(subscription) -> dict:
+        """Next renewal amount for the billing page, from the payment catalog.
+
+        Empty when there is no active paid subscription: the UI must not show
+        a "next charge" figure the customer will never be billed.
+        """
+        if subscription is None or subscription.plan == Plan.FREE.value:
+            return {}
+        price = resolve_payment_price(
+            subscription.plan, subscription.billing_interval or MONTHLY_INTERVAL
+        )
+        if not price.is_configured:
+            return {}
+        return {
+            "next_charge_amount_minor": price.payment_amount,
+            "next_charge_amount_display": format_money(
+                price.payment_amount, price.payment_currency
+            ),
+        }
 
     async def _build_fallback_info(
         self, session: AsyncSession, org, ent: dict
@@ -242,7 +297,6 @@ class BillingService:
             # Enterprise/custom plans have no fixed numeric limit.
             if current_limit is None:
                 current_limit = max(total_deps, free_limit)
-            active_count = total_deps  # we have no paused state yet; count is authoritative
             # Estimate paused if they were to fall back now
             would_pause = max(0, total_deps - free_limit) if ent["is_evaluation_active"] else 0
             members = await OrganizationRepository.list_members(session, org.id)
@@ -300,11 +354,24 @@ class BillingService:
             )
 
         interval = request.billing_interval.value
-        base_amount = _amount_for_interval(plan, interval)
-        if base_amount is None:
-            raise ValidationException(
-                f"Plan '{plan}' does not support {interval} billing."
+        price = _price_for(plan, interval)
+        if not price.is_configured:
+            # The product price exists, but the business has not published a
+            # PAYMENT price for the processing currency. Charging the USD
+            # minor-unit figure as Naira would mis-bill the customer, so we
+            # stop here — before any Paystack transaction exists.
+            logger.warning(
+                "Checkout disabled for plan '%s' (%s): no %s payment price published",
+                plan,
+                interval,
+                price.payment_currency,
             )
+            raise ValidationException(
+                f"Our {price.payment_currency} price for this plan is being "
+                "finalized. Please contact billing@reliastra.com and we will "
+                "set up your subscription directly."
+            )
+        base_amount = int(price.payment_amount or 0)
 
         email = str(request.email) if request.email else None
         if not email:
@@ -326,10 +393,18 @@ class BillingService:
                 email=email,
                 amount=base_amount,
                 plan=plan,
+                # The currency sent here is the currency every RELIASTRA
+                # surface displays to the customer, resolved from the same
+                # payment-pricing source of truth.
+                currency=price.payment_currency,
                 metadata={
                     "org_id": str(org_id),
                     "plan": plan,
                     "billing_interval": interval,
+                    "currency": price.payment_currency,
+                    "amount_minor": str(base_amount),
+                    "product_currency": price.product_currency,
+                    "product_amount_minor": str(price.product_amount or 0),
                 },
             )
         except httpx.HTTPError as exc:
@@ -356,6 +431,11 @@ class BillingService:
                 authorization_url=data["authorization_url"],
                 reference=data["reference"],
                 access_code=data["access_code"],
+                # Echo of the real charge, so the pre-payment hand-off and any
+                # post-redirect screen state the same currency Paystack holds.
+                amount_minor=base_amount,
+                currency=price.payment_currency,
+                amount_display=format_money(base_amount, price.payment_currency),
             )
         except KeyError as exc:
             raise ValidationException(
@@ -407,28 +487,29 @@ class BillingService:
         plan = _normalized_plan(data)
         billing_interval = _billing_interval(data)
 
-        # Integrity check: the collected amount must cover the price of the
-        # plan + billing interval the transaction claims to buy. This prevents
-        # both a tampered/undersized charge from unlocking a higher tier AND
-        # the previous bug where an annual checkout silently billed the monthly
-        # amount.
-        expected_amount = _amount_for_interval(plan, billing_interval)
+        # Integrity check: the collected amount must cover the PAYMENT price of
+        # the plan + billing interval the transaction claims to buy. This
+        # prevents both a tampered/undersized charge from unlocking a higher
+        # tier AND the historical bug where an annual checkout silently billed
+        # the monthly amount.
+        expected_price = _price_for(plan, billing_interval)
+        expected_amount = expected_price.payment_amount
         collected = data.get("amount")
         if expected_amount is None:
             raise ValidationException(
                 f"Plan '{plan}' is not available for self-serve checkout"
             )
-        # Step 1 — CURRENCY. PLAN_AMOUNTS is denominated in minor units of
-        # PAYSTACK_CURRENCY, so the integer comparison below is meaningless
-        # until the denomination is known to match. A multi-currency Paystack
-        # account can settle the same nominal amount in a far weaker currency
-        # (9900 NGN is about $6, not $39) and clear an amount-only check.
-        # Checkout always initializes with settings.PAYSTACK_CURRENCY, so
-        # anything else did not come from our checkout.
+        # Step 1 — CURRENCY. The expected amount is denominated in minor units
+        # of the processing currency, so the integer comparison below is
+        # meaningless until the denomination is known to match. A multi-currency
+        # Paystack account can settle the same nominal amount in a far weaker
+        # currency (3900 NGN is about $2.50, not the $39 Pro plan) and clear an
+        # amount-only check. Checkout always initializes in the resolved
+        # payment currency, so anything else did not come from our checkout.
         #
         # A MISSING currency is rejected too: defaulting it to the expected
         # value would let an omitted field pass the very check it must face.
-        expected_currency = (settings.PAYSTACK_CURRENCY or "USD").strip().upper()
+        expected_currency = payment_currency()
         raw_currency = data.get("currency")
         collected_currency = str(raw_currency).strip().upper() if raw_currency else ""
         if collected_currency != expected_currency:
@@ -528,7 +609,76 @@ class BillingService:
         # duplicate delivery cannot pay a partner twice.
         await self._record_partner_commission(session, org_id, data, reference)
 
-        return VerifyTransactionResponse(verified=True, plan=plan, reference=reference)
+        # Transactional email: subscription confirmation + receipt. Best-effort
+        # and exactly-once per payment reference (a webhook retry and the
+        # frontend verify call land in this same method).
+        await self._notify_payment_succeeded(
+            session,
+            org=org,
+            payment=PaymentSummary(
+                plan=plan,
+                billing_interval=billing_interval,
+                amount_minor=int(collected_minor),
+                currency=collected_currency or expected_currency,
+                reference=reference,
+                paid_at=paid_at,
+                period_start=_parse_datetime(data.get("transaction_date")) or paid_at,
+                period_end=_parse_datetime(data.get("next_payment_date")),
+            ),
+        )
+
+        settled_currency = collected_currency or expected_currency
+        return VerifyTransactionResponse(
+            verified=True,
+            plan=plan,
+            reference=reference,
+            currency=settled_currency,
+            amount_minor=int(collected_minor),
+            amount_display=format_money(int(collected_minor), settled_currency),
+        )
+
+    async def _notify_payment_succeeded(
+        self, session: AsyncSession, *, org, payment: PaymentSummary
+    ) -> None:
+        """Send confirmation + receipt once per payment reference.
+
+        Never raises: the customer has already paid, and a broken SMTP socket
+        must not turn a successful charge into a failed verification.
+        """
+        try:
+            if payment.reference:
+                from app.infrastructure.redis_client import safe_redis_claim
+
+                claimed = await safe_redis_claim(
+                    f"billing:receipt_sent:{payment.reference}", ex=30 * 24 * 3600
+                )
+                if claimed is False:
+                    return
+            from app.modules.organizations.repository import OrganizationRepository
+            from app.modules.users.repository import UserRepository
+
+            members = await OrganizationRepository.list_members(session, org.id)
+            owner = next((m for m in members if m.role == "owner"), None)
+            user = await UserRepository.get_by_id(session, owner.user_id) if owner else None
+            if user is None or not user.email:
+                logger.info(
+                    "No owner email for org %s — payment emails skipped", org.id
+                )
+                return
+            await send_subscription_confirmed_email(
+                to_email=user.email,
+                user_name=user.full_name or user.email.split("@")[0],
+                org_name=org.name,
+                payment=payment,
+            )
+            await send_payment_receipt_email(
+                to_email=user.email,
+                user_name=user.full_name or user.email.split("@")[0],
+                org_name=org.name,
+                payment=payment,
+            )
+        except Exception:
+            logger.exception("Billing notification failed for reference %s", payment.reference)
 
     @staticmethod
     async def _record_partner_commission(

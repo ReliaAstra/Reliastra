@@ -17,6 +17,7 @@ import type {
   VendorStatus,
 } from './types';
 import { PLANS } from './plans';
+import { DEFAULT_PAYMENT_CURRENCY } from '@/lib/billing/currency';
 
 const now = Date.now();
 const minutes = (m: number) => new Date(now - m * 60_000).toISOString();
@@ -64,6 +65,9 @@ export const mockPlan: PlanDetails = {
   subscription_status: 'active',
   current_period_end: new Date(now + 20 * 86_400_000).toISOString(),
   price_usd: 0,
+  // Mock data mirrors the live contract: the payment block is what tells the
+  // UI which currency a charge happens in.
+  payment: DEFAULT_PAYMENT_CURRENCY,
 };
 
 export const mockPricing: { plans: PricingPlan[] } = {

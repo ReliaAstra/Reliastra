@@ -8,7 +8,7 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.core.permissions import (
-    PLAN_ANNUAL_PRICES_USD,
+    Plan,
     PLAN_BILLING_AVAILABILITY,
     PLAN_DEPENDENCY_LIMITS,
     PLAN_DESCRIPTIONS,
@@ -21,10 +21,12 @@ from app.core.permissions import (
     get_min_check_interval,
     is_enterprise_plan,
 )
+from app.core.payment_pricing import currency_info, format_money, resolve_payment_price
 from app.db.session import get_db
 from app.dependencies import get_current_org, require_admin, require_member
 from app.modules.billing.schemas import (
     InitializePaymentRequest,
+    PaymentCurrencyResponse,
     InitializePaymentResponse,
     PaystackWebhookPayload,
     PaystackWebhookResponse,
@@ -49,8 +51,18 @@ class PricingPlanResponse(BaseModel):
     display_name: str
     description: str
     tag: str | None = None
+    # PRODUCT list price (canonical, unchanged by anything here).
     price_usd: int
     price_annual_usd: int | None = None
+    # PAYMENT price for this plan, in the currency Paystack charges. Separate
+    # from the USD list price above and never derived from it: the UI shows
+    # "billed as <amount> <currency>" only when the business published it.
+    # Pre-formatted so no surface composes a currency figure locally.
+    payment_amount_display: str | None = None
+    payment_annual_amount_display: str | None = None
+    # False when no payment price is published for the processing currency:
+    # the CTA must not start a checkout that cannot be priced.
+    checkout_ready: bool = True
     max_dependencies: int | None = None
     max_team_members: int | None = None
     min_check_interval_seconds: int | None = None
@@ -66,6 +78,9 @@ class PricingPlanResponse(BaseModel):
 
 class PricingPlansResponse(BaseModel):
     plans: list[PricingPlanResponse]
+    # Currency the customer will actually be charged in + the canonical
+    # disclosure, served once so no surface writes its own copy.
+    payment: PaymentCurrencyResponse
 
 
 @router.get("/pricing", response_model=PricingPlansResponse)
@@ -73,13 +88,28 @@ async def get_pricing_plans() -> PricingPlansResponse:
     """Public endpoint returning exactly the three customer-facing plans."""
     from app.core.permissions import CANONICAL_PLANS, get_plan_annual_price_usd
 
+    currency = PaymentCurrencyResponse(**currency_info())
     plans = []
     for plan_id in sorted(CANONICAL_PLANS):
         p = plan_id
         is_enterprise = is_enterprise_plan(p)
+        monthly = resolve_payment_price(p, "monthly")
+        annual = resolve_payment_price(p, "annual")
         plans.append(
             PricingPlanResponse(
                 plan=p,
+                payment_amount_display=(
+                    format_money(monthly.payment_amount, monthly.payment_currency) or None
+                ),
+                payment_annual_amount_display=(
+                    format_money(annual.payment_amount, annual.payment_currency) or None
+                ),
+                # Only self-serve *paid* plans need a published payment price;
+                # Free has nothing to charge and Enterprise routes to Contact Sales.
+                checkout_ready=(
+                    True if (is_enterprise or p == Plan.FREE.value)
+                    else (monthly.is_configured or annual.is_configured)
+                ),
                 display_name=PLAN_DISPLAY_NAMES.get(p, p),
                 description=PLAN_DESCRIPTIONS.get(p, ""),
                 tag=PLAN_TAGS.get(p),
@@ -95,7 +125,19 @@ async def get_pricing_plans() -> PricingPlansResponse:
                 is_custom_pricing=is_enterprise,
             )
         )
-    return PricingPlansResponse(plans=plans)
+    return PricingPlansResponse(plans=plans, payment=currency)
+
+
+@router.get("/billing/currency", response_model=PaymentCurrencyResponse)
+async def get_payment_currency() -> PaymentCurrencyResponse:
+    """The currency Paystack will charge, plus the canonical disclosure.
+
+    Public and cheap on purpose: the marketing pricing page, the upgrade modal
+    and the billing page all read the same object, so the currency statement a
+    prospect sees before signing up cannot differ from the one a customer sees
+    at checkout.
+    """
+    return PaymentCurrencyResponse(**currency_info())
 
 
 # ── Authenticated Endpoints ──────────────────────────────────────────────────────

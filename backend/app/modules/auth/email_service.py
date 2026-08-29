@@ -6,12 +6,16 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.core.exceptions import (
     ValidationException,
 )
 from app.core.security import get_password_hash
 from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import (
+    escape,
+    frontend_url,
+    render_email,
+)
 from app.modules.auth.repository import AuthRepository
 from app.modules.users.repository import UserRepository
 
@@ -35,19 +39,22 @@ class EmailAuthService:
 
     def _build_verification_url(self, token: str) -> str:
         """Build the frontend verification URL."""
-        base_url = settings.FRONTEND_BASE_URL or "http://localhost:3000"
-        return f"{base_url}/verify-email?token={token}"
+        return f"{frontend_url('/verify-email')}?token={token}"
 
     def _build_reset_url(self, token: str) -> str:
         """Build the frontend password reset URL."""
-        base_url = settings.FRONTEND_BASE_URL or "http://localhost:3000"
-        return f"{base_url}/reset-password?token={token}"
+        return f"{frontend_url('/reset-password')}?token={token}"
 
     def _render_verification_email(
         self, user_name: str, verification_url: str
     ) -> tuple[str, str]:
         """Returns (plain_text, html_body) for verification email."""
-        plain = f"""
+        name = escape(user_name)
+        expiry = (
+            f"This link expires in {EMAIL_VERIFICATION_EXPIRE_MINUTES} minutes. "
+            "If you did not create an account, you can safely ignore this email."
+        )
+        body_text = f"""
 Hello {user_name},
 
 Thank you for signing up with Reliastra. Please verify your email address by clicking the link below:
@@ -61,105 +68,61 @@ If you did not create an account, please ignore this email.
 Best regards,
 The Reliastra Team
         """.strip()
-
-        html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }}
-    .container {{ max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
-    .header {{ background: #1a1a2e; color: white; padding: 24px; text-align: center; }}
-    .header h1 {{ margin: 0; font-size: 22px; }}
-    .body {{ padding: 32px; }}
-    .body p {{ color: #333; line-height: 1.6; margin: 0 0 16px; }}
-    .button {{ display: inline-block; background: #4361ee; color: white !important; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; margin: 16px 0; }}
-    .footer {{ padding: 20px 32px; background: #f9f9f9; text-align: center; font-size: 13px; color: #888; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Reliastra</h1>
-    </div>
-    <div class="body">
-      <p>Hello <strong>{user_name}</strong>,</p>
-      <p>Thank you for signing up. Please verify your email address to get started:</p>
-      <p style="text-align: center;">
-        <a href="{verification_url}" class="button">Verify Email Address</a>
-      </p>
-      <p style="font-size: 13px; color: #888;">
-        This link expires in {EMAIL_VERIFICATION_EXPIRE_MINUTES} minutes. If you did not create an account, you can safely ignore this email.
-      </p>
-    </div>
-    <div class="footer">
-      <p>Reliastra — External Dependency Intelligence</p>
-    </div>
-  </div>
-</body>
-</html>
-        """.strip()
-
-        return plain, html
+        body_html = (
+            f"<p>Hello <strong>{name}</strong>,</p>"
+            "<p>Thank you for signing up. Please verify your email address to get started:</p>"
+            f'<p style="text-align: center;"><a href="{verification_url}" class="button">Verify Email Address</a></p>'
+            f'<p class="note">{expiry}</p>'
+        )
+        return render_email(
+            heading="Verify your email",
+            body_html=body_html,
+            body_text=body_text,
+            preheader="Verify your Reliastra email address",
+        )
 
     def _render_reset_email(self, user_name: str, reset_url: str) -> tuple[str, str]:
         """Returns (plain_text, html_body) for password reset email."""
-        plain = f"""
+        name = escape(user_name)
+        # Security-critical instruction stays in the body — deliberately above
+        # and outside the shared support footer.
+        security_html = (
+            f'<p class="note">This link expires in {PASSWORD_RESET_EXPIRE_MINUTES} '
+            "minutes. If you did not request a password reset, you can safely ignore "
+            "this email — your password will not change. Reliastra support will never "
+            "ask you for your password.</p>"
+        )
+        security_text = (
+            f"This link expires in {PASSWORD_RESET_EXPIRE_MINUTES} minutes.\n\n"
+            "If you did not request a password reset, please ignore this email — your "
+            "password will remain unchanged. Reliastra support will never ask you for "
+            "your password."
+        )
+        body_text = f"""
 Hello {user_name},
 
 We received a request to reset your Reliastra password. Click the link below to set a new password:
 
 {reset_url}
 
-This link expires in {PASSWORD_RESET_EXPIRE_MINUTES} minutes.
-
-If you did not request a password reset, please ignore this email — your password will remain unchanged.
+{security_text}
 
 Best regards,
 The Reliastra Team
         """.strip()
+        body_html = (
+            f"<p>Hello <strong>{name}</strong>,</p>"
+            "<p>We received a request to reset your password. Click the button below to choose a new one:</p>"
+            f'<p style="text-align: center;"><a href="{reset_url}" class="button" style="background:#e63946;">Reset Password</a></p>'
+            + security_html
+        )
+        return render_email(
+            heading="Reset your password",
+            body_html=body_html,
+            body_text=body_text,
+            preheader="Password reset requested for your Reliastra account",
+        )
 
-        html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }}
-    .container {{ max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
-    .header {{ background: #1a1a2e; color: white; padding: 24px; text-align: center; }}
-    .header h1 {{ margin: 0; font-size: 22px; }}
-    .body {{ padding: 32px; }}
-    .body p {{ color: #333; line-height: 1.6; margin: 0 0 16px; }}
-    .button {{ display: inline-block; background: #e63946; color: white !important; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; margin: 16px 0; }}
-    .footer {{ padding: 20px 32px; background: #f9f9f9; text-align: center; font-size: 13px; color: #888; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Reset Your Password</h1>
-    </div>
-    <div class="body">
-      <p>Hello <strong>{user_name}</strong>,</p>
-      <p>We received a request to reset your password. Click the button below to choose a new one:</p>
-      <p style="text-align: center;">
-        <a href="{reset_url}" class="button">Reset Password</a>
-      </p>
-      <p style="font-size: 13px; color: #888;">
-        This link expires in {PASSWORD_RESET_EXPIRE_MINUTES} minutes. If you did not request a password reset, you can safely ignore this email — your password will not change.
-      </p>
-    </div>
-    <div class="footer">
-      <p>Reliastra — External Dependency Intelligence</p>
-    </div>
-  </div>
-</body>
-</html>
-        """.strip()
-
-        return plain, html
 
     # ── Welcome Email ───────────────────────────────────────────────
 
@@ -181,11 +144,14 @@ The Reliastra Team
         """Returns (plain_text, html_body) for the post-signup welcome email."""
         if org_name:
             workspace_line = f'Your workspace "{org_name}" has been created on the free plan.'
-            workspace_html = f"Your workspace <strong>{org_name}</strong> has been created on the free plan."
+            workspace_html = (
+                f"Your workspace <strong>{escape(org_name)}</strong> has been created "
+                "on the free plan."
+            )
         else:
             workspace_line = "Your workspace has been created on the free plan."
             workspace_html = "Your workspace has been created on the free plan."
-        plain = f"""
+        body_text = f"""
 Hello {user_name},
 
 Welcome to Reliastra — your account is ready.
@@ -202,58 +168,26 @@ If you did not create this account, please ignore this email.
 Best regards,
 The Reliastra Team
         """.strip()
+        body_html = (
+            f"<p>Hello <strong>{escape(user_name)}</strong>,</p>"
+            f"<p>Your account is ready. {workspace_html}</p>"
+            "<p>Reliastra watches the third-party APIs and vendors your product depends on, correlates outages with your incidents, and generates verifiable SLA evidence.</p>"
+            "<div class=\"panel\"><strong>Get started in two minutes:</strong>"
+            "<ol style=\"margin: 8px 0 0; padding-left: 18px;\">"
+            "<li>Open your dashboard</li>"
+            "<li>Add your first dependency (Stripe, AWS, OpenAI, ...)</li>"
+            "<li>We start monitoring and attributing blame automatically</li>"
+            "</ol></div>"
+            f'<p style="text-align: center;"><a href="{dashboard_url}" class="button">Open your dashboard</a></p>'
+            '<p class="note">If you did not create this account, you can safely ignore this email.</p>'
+        )
+        return render_email(
+            heading="Welcome to Reliastra",
+            body_html=body_html,
+            body_text=body_text,
+            preheader="Your workspace is ready",
+        )
 
-        html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }}
-    .container {{ max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
-    .header {{ background: #1a1a2e; color: white; padding: 24px; text-align: center; }}
-    .header h1 {{ margin: 0; font-size: 22px; }}
-    .body {{ padding: 32px; }}
-    .body p {{ color: #333; line-height: 1.6; margin: 0 0 16px; }}
-    .steps {{ background: #f6f8ff; border: 1px solid #e3e9ff; border-radius: 8px; padding: 16px 20px; margin: 0 0 16px; }}
-    .steps li {{ color: #333; line-height: 1.6; margin: 6px 0; }}
-    .button {{ display: inline-block; background: #4361ee; color: white !important; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; margin: 16px 0; }}
-    .footer {{ padding: 20px 32px; background: #f9f9f9; text-align: center; font-size: 13px; color: #888; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Welcome to Reliastra</h1>
-    </div>
-    <div class="body">
-      <p>Hello <strong>{user_name}</strong>,</p>
-      <p>Your account is ready. {workspace_html}</p>
-      <p>Reliastra watches the third-party APIs and vendors your product depends on, correlates outages with your incidents, and generates verifiable SLA evidence.</p>
-      <div class="steps">
-        <strong>Get started in two minutes:</strong>
-        <ol style="margin: 8px 0 0; padding-left: 18px;">
-          <li>Open your dashboard</li>
-          <li>Add your first dependency (Stripe, AWS, OpenAI, ...)</li>
-          <li>We start monitoring and attributing blame automatically</li>
-        </ol>
-      </div>
-      <p style="text-align: center;">
-        <a href="{dashboard_url}" class="button">Open your dashboard</a>
-      </p>
-      <p style="font-size: 13px; color: #888;">
-        If you did not create this account, you can safely ignore this email.
-      </p>
-    </div>
-    <div class="footer">
-      <p>Reliastra — External Dependency Intelligence</p>
-    </div>
-  </div>
-</body>
-</html>
-        """.strip()
-
-        return plain, html
 
     async def send_welcome_email(
         self, email: str, full_name: str | None, org_name: str | None = None
@@ -264,8 +198,7 @@ The Reliastra Team
         caller (registration / verification) is never blocked by email delivery.
         """
         display_name = (full_name or "").strip() or email.split("@")[0]
-        base_url = settings.FRONTEND_BASE_URL or "http://localhost:3000"
-        dashboard_url = f"{base_url}/dashboard"
+        dashboard_url = frontend_url("/dashboard")
         plain, html = self._render_welcome_email(display_name, org_name, dashboard_url)
         try:
             # EmailClient.send_email is sync SMTP — run it off the event loop
@@ -322,10 +255,11 @@ The Reliastra Team
             session, user.id, token, expires_at
         )
 
-        # Send email
+        # Send email — blocking SMTP must never run on the event loop.
         verification_url = self._build_verification_url(token)
         plain, html = self._render_verification_email(user.full_name, verification_url)
-        email_client.send_email(
+        await asyncio.to_thread(
+            email_client.send_email,
             to_email=email,
             subject="Verify your Reliastra email",
             body=plain,
@@ -423,10 +357,11 @@ The Reliastra Team
             session, user.id, token, expires_at
         )
 
-        # Send email
+        # Send email (off the event loop — see the note above).
         reset_url = self._build_reset_url(token)
         plain, html = self._render_reset_email(user.full_name, reset_url)
-        email_client.send_email(
+        await asyncio.to_thread(
+            email_client.send_email,
             to_email=email,
             subject="Reset your Reliastra password",
             body=plain,

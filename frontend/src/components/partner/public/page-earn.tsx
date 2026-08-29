@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerStore } from '@/stores/partner-store';
 import { cn } from '@/lib/utils';
+import { CommissionBasisNote } from '../commission-basis-note';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -450,6 +451,7 @@ export function PageEarn() {
             >
               Based on $39/mo Pro plan. You would earn $11.70/mo per referral.
             </motion.p>
+            <CommissionBasisNote className="mt-3 max-w-md mx-auto" />
           </motion.div>
         </div>
       </section>

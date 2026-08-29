@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictException, ResourceNotFoundException, ValidationException
 from app.core.ssrf_protection import validate_outbound_url
+from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import escape, render_email
 from app.modules.vendor_submissions import repository as repo
 from app.modules.vendor_submissions.schemas import (
     AdminActionResponse,
@@ -369,23 +371,35 @@ class VendorSubmissionService:
     ) -> None:
         """Send a submission confirmation email to the submitter."""
         try:
-            from app.infrastructure.email import email_client
-
             subject = f"Reliastra — Vendor Submission Received: {display_name}"
-            body = (
-                f"Hi there,\n\n"
+            body_text = (
+                f"Hello,\n\n"
                 f"Thank you for submitting '{display_name}' ({vendor_name}) to Reliastra.\n\n"
                 f"Your submission is currently pending review. Our team typically reviews "
                 f"new vendor submissions within 3 business days. You will receive another "
                 f"email once a decision has been made.\n\n"
-                f"If you have any questions, reply to this email.\n\n"
                 f"Best regards,\n"
                 f"The Reliastra Team"
+            )
+            body_html = (
+                "<p>Hello,</p>"
+                f"<p>Thank you for submitting <strong>{escape(display_name)}</strong> "
+                f"({escape(vendor_name)}) to Reliastra.</p>"
+                "<p>Your submission is currently pending review. Our team typically reviews "
+                "new vendor submissions within 3 business days. You will receive another "
+                "email once a decision has been made.</p>"
+            )
+            body, html = render_email(
+                heading="Vendor submission received",
+                body_html=body_html,
+                body_text=body_text,
+                preheader="Your vendor submission is pending review",
             )
             email_client.send_email(
                 to_email=to_email,
                 subject=subject,
                 body=body,
+                html_body=html,
             )
         except Exception as exc:
             logger.warning("Failed to send confirmation email to %s: %s", to_email, exc)
@@ -401,35 +415,58 @@ class VendorSubmissionService:
     ) -> None:
         """Send an approval / rejection notification email to the submitter."""
         try:
-            from app.infrastructure.email import email_client
-
             if status == "approved":
                 subject = f"Reliastra — Vendor Approved: {display_name}"
-                body = (
-                    f"Hi there,\n\n"
-                    f"Great news! Your vendor submission '{display_name}' ({vendor_name}) "
+                heading = "Vendor submission approved"
+                body_text = (
+                    f"Hello,\n\n"
+                    f"Your vendor submission '{display_name}' ({vendor_name}) "
                     f"has been approved and added to Reliastra.\n\n"
                     f"You can now view its status page and monitoring data.\n\n"
                     f"Thank you for contributing to better infrastructure visibility.\n\n"
                     f"Best regards,\n"
                     f"The Reliastra Team"
                 )
+                body_html = (
+                    "<p>Hello,</p>"
+                    f"<p>Your vendor submission <strong>{escape(display_name)}</strong> "
+                    f"({escape(vendor_name)}) has been approved and added to Reliastra.</p>"
+                    "<p>You can now view its status page and monitoring data.</p>"
+                    "<p>Thank you for contributing to better infrastructure visibility.</p>"
+                )
             else:
                 subject = f"Reliastra — Vendor Submission Update: {display_name}"
-                body = (
-                    f"Hi there,\n\n"
+                heading = "Vendor submission update"
+                reason_text = reason or "No additional details provided."
+                body_text = (
+                    f"Hello,\n\n"
                     f"Your vendor submission '{display_name}' ({vendor_name}) "
                     f"has been reviewed but was not approved at this time.\n\n"
-                    f"Reason: {reason or 'No additional details provided.'}\n\n"
+                    f"Reason: {reason_text}\n\n"
                     f"You are welcome to resubmit with additional information if you believe "
                     f"this decision should be reconsidered.\n\n"
                     f"Best regards,\n"
                     f"The Reliastra Team"
                 )
+                body_html = (
+                    "<p>Hello,</p>"
+                    f"<p>Your vendor submission <strong>{escape(display_name)}</strong> "
+                    f"({escape(vendor_name)}) has been reviewed but was not approved at this "
+                    f"time.</p>"
+                    f"<p><strong>Reason:</strong> {escape(reason_text)}</p>"
+                    "<p>You are welcome to resubmit with additional information if you believe "
+                    "this decision should be reconsidered.</p>"
+                )
+            body, html = render_email(
+                heading=heading,
+                body_html=body_html,
+                body_text=body_text,
+            )
             email_client.send_email(
                 to_email=to_email,
                 subject=subject,
                 body=body,
+                html_body=html,
             )
         except Exception as exc:
             logger.warning("Failed to send review email to %s: %s", to_email, exc)

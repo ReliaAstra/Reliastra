@@ -34,6 +34,7 @@ from app.core.exceptions import (
     ValidationException,
 )
 from app.infrastructure.email import email_client
+from app.infrastructure.email_layout import escape, render_email
 from app.modules.auth.constants import (
     OTP_EXPIRE_MINUTES,
     OTP_LENGTH,
@@ -58,7 +59,12 @@ def generate_otp_code(length: int = OTP_LENGTH) -> str:
 
 
 def _render_otp_email(user_name: str, code: str) -> tuple[str, str]:
-    """Returns (plain_text, html_body) for the verification code email."""
+    """Returns (plain_text, html_body) for the verification code email.
+
+    The code and its expiry instructions are security-critical content and
+    therefore stay in the message body — the shared support footer is always
+    rendered below them, never around them.
+    """
     spaced = " ".join(code)
     plain = f"""
 Hello {user_name},
@@ -76,48 +82,23 @@ no account can be used until this code is entered.
 Best regards,
 The Reliastra Team
     """.strip()
+    body_html = (
+        f"<p>Hello <strong>{escape(user_name)}</strong>,</p>"
+        "<p>Use this code to finish creating your Reliastra account:</p>"
+        '<p style="text-align: center;"><span class="code">'
+        f"{escape(spaced)}</span></p>"
+        f'<p class="note">This code expires in {OTP_EXPIRE_MINUTES} minutes and can '
+        "only be used once. If you did not create an account, you can safely ignore "
+        "this email — no account can be used until this code is entered. Reliastra "
+        "will never ask you for this code by phone.</p>"
+    )
+    return render_email(
+        heading="Verify your email",
+        body_html=body_html,
+        body_text=plain,
+        preheader=f"Your Reliastra verification code is {code}",
+    )
 
-    html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }}
-    .container {{ max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }}
-    .header {{ background: #1a1a2e; color: white; padding: 24px; text-align: center; }}
-    .header h1 {{ margin: 0; font-size: 22px; }}
-    .body {{ padding: 32px; }}
-    .body p {{ color: #333; line-height: 1.6; margin: 0 0 16px; }}
-    .code {{ display: inline-block; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 32px; font-weight: 700; letter-spacing: 10px; color: #1a1a2e; background: #f1f3f9; border-radius: 10px; padding: 16px 24px; margin: 8px 0 16px; }}
-    .footer {{ padding: 20px 32px; background: #f9f9f9; text-align: center; font-size: 13px; color: #888; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Verify your email</h1>
-    </div>
-    <div class="body">
-      <p>Hello <strong>{user_name}</strong>,</p>
-      <p>Use this code to finish creating your Reliastra account:</p>
-      <p style="text-align: center;">
-        <span class="code">{spaced}</span>
-      </p>
-      <p style="font-size: 13px; color: #888;">
-        This code expires in {OTP_EXPIRE_MINUTES} minutes and can only be used once.
-        If you did not create an account, you can safely ignore this email.
-      </p>
-    </div>
-    <div class="footer">
-      <p>Reliastra — External Dependency Intelligence</p>
-    </div>
-  </div>
-</body>
-</html>
-    """.strip()
-
-    return plain, html
 
 
 class EmailOTPService:
