@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { adminApi, AdminApiError } from '@/lib/admin-api';
 import type { AdminOverviewResponse } from '@/types/admin';
 import { AdminShell } from '@/components/admin/admin-shell';
@@ -49,6 +50,7 @@ function createAdminQueryClient() {
 
 function AdminAccessGate({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [accessFailure, setAccessFailure] = useState<'expired' | 'denied' | null>(null);
 
   const overviewQuery = useQuery({
@@ -60,11 +62,18 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
 
   // Every admin API request dispatches this event on 401/403. Clearing the
   // whole query cache prevents a stale customer, financial, or support view
-  // from remaining visible after a session expires or permissions change.
+  // from remaining visible after a session expires.
+  //
+  // The admin session is a SEPARATE security domain (HttpOnly admin cookies),
+  // so "expired" routes to the dedicated /admin/login — never to the shared
+  // customer sign-in. The customer/partner session is never touched here.
   useEffect(() => {
     const onExpired = () => {
       queryClient.clear();
       setAccessFailure('expired');
+      router.replace(window.location.pathname === '/admin'
+        ? '/admin/login'
+        : `/admin/login?next=${encodeURIComponent(window.location.pathname)}`);
     };
     const onDenied = () => {
       queryClient.clear();
@@ -76,7 +85,7 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
       window.removeEventListener('reliastra:admin-expired', onExpired);
       window.removeEventListener('reliastra:admin-denied', onDenied);
     };
-  }, [queryClient]);
+  }, [queryClient, router]);
 
   const error = overviewQuery.error;
   const errorState = accessFailure ||

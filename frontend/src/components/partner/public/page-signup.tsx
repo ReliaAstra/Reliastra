@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
+import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { getStoredReferralCode } from './referral-banner';
 import { getSignupAttribution } from '@/lib/attribution';
@@ -106,8 +107,17 @@ export function PageSignup() {
       fullName: session.user.full_name,
     });
     store.setAuthStatus('authenticated');
-    toast.success('Email verified — welcome to RELIASTRA');
-    navigate('apply');
+
+    // Activation is free, idempotent, and needs no extra consent — do it
+    // automatically so a new partner lands on the dashboard directly.
+    try {
+      const profile = await partnerApi.apply({ agree_terms: true });
+      store.setPartner(mapPartnerProfile(profile));
+      toast.success('Email verified — welcome to RELIASTRA');
+    } catch {
+      toast.success('Email verified — you can activate your partner account from the dashboard');
+    }
+    navigate('dashboard');
   };
 
   return (

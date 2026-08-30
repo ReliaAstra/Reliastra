@@ -32,7 +32,7 @@ const FOOTER_LINKS = [
     links: [
       { label: 'Support', action: () => goTo('support') },
       { label: 'Contact', action: () => goTo('support') },
-      { label: 'Apply to Partner', action: () => goTo('apply') },
+      { label: 'Join as partner', action: () => goTo('signup') },
     ],
   },
   {

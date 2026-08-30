@@ -6,7 +6,7 @@ security-critical control-flow changes.
 
 import types
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -154,8 +154,20 @@ async def test_refresh_reuse_revokes_family_on_revoked_token(monkeypatch):
         async def get_latest_sequence(self, s, fam):
             return 1  # == sequence: old code reached family-kill only if > seq
 
+        async def get_latest_refresh_token(self, s, fam):
+            # Latest rotation is STALE (outside the grace window) so a replay
+            # of the revoked token is genuine reuse, not a benign parallel
+            # refresh.
+            return types.SimpleNamespace(
+                created_at=datetime.now(timezone.utc) - timedelta(minutes=5)
+            )
+
         async def revoke_family(self, s, fam):
             revoked_calls.append(fam)
+
+    class StubSession:
+        async def commit(self):
+            pass
 
     class StubUserRepo:
         @staticmethod
@@ -171,7 +183,7 @@ async def test_refresh_reuse_revokes_family_on_revoked_token(monkeypatch):
     )
 
     with pytest.raises(UnauthorizedException):
-        await svc.refresh(None, "attacker-copied-token")
+        await svc.refresh(StubSession(), "attacker-copied-token")
 
     assert revoked_calls and revoked_calls[0] == family, (
         "family revocation must fire when a revoked/rotated token is replayed"

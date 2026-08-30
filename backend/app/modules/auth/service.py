@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -49,6 +50,15 @@ class AuthService:
         self.auth_repository = auth_repository
         self.user_repository = user_repository
         self.org_repository = org_repository
+        # Serializes refresh per user so concurrent consumers of the SAME
+        # refresh token (customer console + partner SPA + admin console) can
+        # never both read the pre-rotation state and mint parallel sequences.
+        self._refresh_locks: dict[uuid.UUID, asyncio.Lock] = {}
+        # family -> (last issued pair, issued_at). Lets a replay inside the
+        # grace window return the SAME pair the winner just received instead
+        # of rotating again (which would strand the winner one sequence back)
+        # or revoking the whole family (which ends every surface's session).
+        self._grace_cache: dict[str, tuple[TokenResponse, datetime]] = {}
 
     def _generate_token_pair(self, user_id: uuid.UUID) -> TokenResponse:
         access_token = create_access_token(subject=str(user_id))
@@ -240,6 +250,26 @@ class AuthService:
         if payload.get("type") != TOKEN_CLAIM_TYPE_REFRESH:
             raise UnauthorizedException("Invalid token type")
 
+        user_id_str = payload.get("sub")
+        if not user_id_str:
+            raise UnauthorizedException("Invalid token payload")
+
+        user_id = uuid.UUID(user_id_str)
+        # One lock per user: all three surfaces (customer, partner, admin)
+        # share this single JWT session, so the same refresh token can be
+        # spent by parallel callers in the same tick. Without serialization
+        # two requests can both observe the pre-rotation state and mint
+        # parallel sequences — the reuse detector then kills the family and
+        # signs everyone out with a valid session.
+        lock = self._refresh_locks.setdefault(user_id, asyncio.Lock())
+        async with lock:
+            return await self._refresh_locked(
+                session, refresh_token_str, user_id
+            )
+
+    async def _refresh_locked(
+        self, session: AsyncSession, refresh_token_str: str, user_id: uuid.UUID
+    ) -> TokenResponse:
         stored_rt = await self.auth_repository.get_refresh_token(
             session, refresh_token_str
         )
@@ -252,27 +282,57 @@ class AuthService:
         # ever reaching the family-revocation branch — the exact theft
         # signal this exists for. Now ANY already-revoked token, or any
         # token whose sequence is below the family's latest, is treated as
-        # replay: the entire family is revoked.
+        # replay.
         family = stored_rt.token_family if stored_rt.token_family else uuid.uuid4()
         sequence = stored_rt.token_sequence if stored_rt.token_sequence else 1
         latest_sequence = await self.auth_repository.get_latest_sequence(
             session, family
         )
+        now = datetime.now(timezone.utc)
+        grace = timedelta(seconds=settings.REFRESH_REUSE_GRACE_SECONDS)
+
         if stored_rt.is_revoked or latest_sequence > sequence:
-            await self.auth_repository.revoke_family(session, family)
-            logger.warning(
-                "Refresh token reuse detected for family %s — family revoked",
+            # Benign-replay grace window: a parallel surface may legally
+            # spend the same token milliseconds after the winner rotated it.
+            # Inside the window the replay gets the SAME pair the winner
+            # received (or, across processes, a fresh rotation) instead of
+            # a family-wide revocation.
+            cached = self._grace_cache.get(str(family))
+            if cached is not None and now - cached[1] <= grace:
+                logger.info(
+                    "Refresh token reuse for family %s within grace window — "
+                    "returning the last issued pair",
+                    family,
+                )
+                return cached[0]
+
+            latest_rt = await self.auth_repository.get_latest_refresh_token(
+                session, family
+            )
+            recent_rotation = (
+                latest_rt is not None
+                and latest_rt.created_at is not None
+                and now - latest_rt.created_at <= grace
+            )
+            if not recent_rotation:
+                await self.auth_repository.revoke_family(session, family)
+                # Persist BEFORE raising: get_db() rolls back on exception,
+                # so an uncommitted revocation would make this 401 a lie —
+                # the family stays live and the theft signal is lost.
+                await session.commit()
+                logger.warning(
+                    "Refresh token reuse detected for family %s — family revoked",
+                    family,
+                )
+                raise UnauthorizedException(
+                    "Refresh token reuse detected; session has been revoked"
+                )
+            logger.info(
+                "Refresh token reuse for family %s within grace window "
+                "(recent rotation) — rotating without family revocation",
                 family,
             )
-            raise UnauthorizedException(
-                "Refresh token reuse detected; session has been revoked"
-            )
 
-        user_id_str = payload.get("sub")
-        if not user_id_str:
-            raise UnauthorizedException("Invalid token payload")
-
-        user_id = uuid.UUID(user_id_str)
         user = await self.user_repository.get_by_id(session, user_id)
         if not user or not user.is_active:
             raise UnauthorizedException("User account not found or disabled")
@@ -280,6 +340,9 @@ class AuthService:
         # e.g. an admin un-verifying an account kills its refresh chain.
         if not user.is_email_verified:
             await self.auth_repository.revoke_family(session, family)
+            # Same durability rule as the reuse branch: get_db() rolls back
+            # on exception, so commit the gate revocation before raising.
+            await session.commit()
             raise ForbiddenException(
                 "Email address is not verified.",
                 details={"code": EMAIL_NOT_VERIFIED_CODE},
@@ -295,11 +358,23 @@ class AuthService:
             tokens.refresh_token,
             expires_at,
             token_family=family,
-            token_sequence=sequence + 1,
+            token_sequence=max(sequence, latest_sequence) + 1,
         )
         if stored_rt:
             await self.auth_repository.revoke_refresh_token(session, refresh_token_str)
+        self._grace_cache[str(family)] = (tokens, datetime.now(timezone.utc))
+        self._prune_grace_cache(now)
         return tokens
+
+    def _prune_grace_cache(self, now: datetime) -> None:
+        """Bound the in-memory grace cache to expired entries + a hard cap."""
+        grace = timedelta(seconds=settings.REFRESH_REUSE_GRACE_SECONDS)
+        stale = [k for k, (_, at) in self._grace_cache.items() if now - at > grace]
+        for key in stale:
+            self._grace_cache.pop(key, None)
+        if len(self._grace_cache) > 2048:
+            for key in list(self._grace_cache)[: len(self._grace_cache) - 2048]:
+                self._grace_cache.pop(key, None)
 
     async def logout(self, session: AsyncSession, refresh_token_str: str) -> None:
         await self.auth_repository.revoke_refresh_token(session, refresh_token_str)

@@ -125,7 +125,7 @@ export function PagePremium() {
             <motion.div variants={fadeUp} custom={3} className="mt-8">
               <Button
                 size="lg"
-                onClick={() => navigate('apply')}
+                onClick={() => navigate('signup')}
                 className="gap-2 px-8"
               >
                 APPLY FOR PREMIUM
@@ -308,7 +308,7 @@ export function PagePremium() {
             >
               <Button
                 size="lg"
-                onClick={() => navigate('apply')}
+                onClick={() => navigate('signup')}
                 className="gap-2 bg-neutral-50 text-neutral-950 hover:bg-neutral-200 px-8"
               >
                 APPLY NOW

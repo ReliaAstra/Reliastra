@@ -176,9 +176,17 @@ async def test_tenant_isolation_bola_protection(async_client, db_session):
 @pytest.mark.asyncio
 async def test_admin_authorization_server_side_enforcement(async_client, db_session):
     """
-    Test Phase 11: Server-side System Admin enforcement.
+    Test Phase 11: Server-side admin enforcement via the dedicated credential.
+
+    Admin access is a separate JWT family (aud=reliastra-admin, typed
+    admin_access, ADMIN_TOKEN_SECRET). Customer/user JWTs — even rows that
+    have ``is_system_admin=True`` — are rejected; only the operator credential
+    path may mint the admin token.
     """
-    # Create a normal user
+    from tests.helpers import make_admin_headers
+
+    # Create a normal user and an "admin" user row. The flag no longer grants
+    # access — the dedicated credential does.
     normal_user = await UserRepository.create(
         db_session,
         email="normal_user@reliastra.com",
@@ -190,43 +198,54 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
         is_email_verified=True,
     )
 
-    # Create an admin user
     admin_user = await UserRepository.create(
         db_session,
         email="system_admin@reliastra.com",
         password_hash="",
         full_name="System Admin",
         is_active=True,
-        # Email verification is a hard gate; fixtures that bypass signup
-        # must mark the address verified or every request 403s.
         is_email_verified=True,
     )
-    # Explicitly set system admin
+    # Explicitly set system admin to prove the flag alone grants nothing.
     admin_user.is_system_admin = True
     db_session.add(admin_user)
     await db_session.commit()
 
     from app.modules.auth.service import auth_service
     token_normal = auth_service._generate_token_pair(normal_user.id).access_token
-    token_admin = auth_service._generate_token_pair(admin_user.id).access_token
+    token_admin_user = auth_service._generate_token_pair(admin_user.id).access_token
 
-    # Anonymous user -> DENIED
+    # Anonymous -> DENIED
     res = await async_client.get("/v1/admin/operations/metrics")
     assert res.status_code == 401
 
-    # Normal user -> DENIED
+    # Normal user -> DENIED (user JWT is not an admin credential)
     res = await async_client.get(
         "/v1/admin/operations/metrics",
         headers={"Authorization": f"Bearer {token_normal}"},
     )
-    assert res.status_code == 403
+    assert res.status_code == 401
 
-    # Authorized admin -> ALLOWED
+    # is_system_admin=True user JWT -> STILL DENIED (user token family)
     res = await async_client.get(
         "/v1/admin/operations/metrics",
-        headers={"Authorization": f"Bearer {token_admin}"},
+        headers={"Authorization": f"Bearer {token_admin_user}"},
+    )
+    assert res.status_code == 401
+
+    # Dedicated admin credential -> ALLOWED
+    res = await async_client.get(
+        "/v1/admin/operations/metrics",
+        headers=await make_admin_headers(db_session),
     )
     assert res.status_code == 200
+
+    # User JWT must never be accepted as an admin refresh credential either.
+    res = await async_client.post(
+        "/v1/admin/auth/refresh",
+        json={"refresh_token": token_admin_user},
+    )
+    assert res.status_code == 401
 
 
 @pytest.mark.asyncio

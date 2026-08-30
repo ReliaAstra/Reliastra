@@ -664,16 +664,19 @@ export interface AuditLogItem {
 
 export type AuditLogListResponse = PaginatedResponse<AuditLogItem>;
 
+/**
+ * Identity returned by `/v1/admin/auth/me` (the dedicated admin session).
+ *
+ * This is NOT a signed-in user: the row is the FK-anchor service account and
+ * the `username` is the operator credential identity. There is no customer
+ * `email`-based login behind this identity.
+ */
 export interface AdminCurrentUser {
   id: string;
+  username: string;
   email: string;
   full_name: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  avatar_url?: string | null;
-  auth_provider?: string | null;
-  created_at: string;
-  updated_at: string;
+  is_system_admin: boolean;
 }
 
 // -- Traffic & funnel analytics ----------------------------------------------

@@ -28,11 +28,11 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { adminApi, clearReliastraSession } from '@/lib/admin-api';
+import { adminApi } from '@/lib/admin-api';
 import { attentionHref, formatRelativeTime, initials } from '@/lib/admin-utils';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -352,23 +352,13 @@ function AdminAccount({ state }: { state: AdminShellState }) {
   const profile = profileQuery.data;
 
   const signOut = async () => {
-    // The access token is enough for the frontend security boundary. Logout is
-    // best-effort because a locally expired refresh token should not prevent
-    // the dashboard from clearing its sensitive cache.
-    try {
-      const refreshToken = window.localStorage.getItem('reliastra_refresh_token') || window.localStorage.getItem('partner_refresh_token');
-      if (refreshToken) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      }
-    } finally {
-      clearReliastraSession();
-      queryClient.clear();
-      router.push('/?page=login&next=%2Fadmin');
-    }
+    // Admin sign-out is scoped to the admin domain: it revokes the admin
+    // refresh token server-side and clears the HttpOnly admin cookies. The
+    // customer/partner session (shared storage) is NEVER touched — signing
+    // out of the control plane must not log a customer out of the console.
+    await adminApi.logout();
+    queryClient.clear();
+    router.push('/admin/login');
   };
 
   return (
@@ -380,7 +370,6 @@ function AdminAccount({ state }: { state: AdminShellState }) {
           aria-label="Open admin account menu"
         >
           <Avatar className="size-8 border border-slate-200 dark:border-white/10">
-            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt="" />}
             <AvatarFallback className="bg-slate-900 text-[10px] font-semibold text-white dark:bg-white dark:text-slate-950">
               {initials(profile?.full_name)}
             </AvatarFallback>
@@ -435,9 +424,9 @@ function ShellState({ state, onRetry }: { state: Exclude<AdminShellState, 'ready
       ? 'Your session has ended.'
       : 'Admin data is temporarily unavailable.';
   const description = denied
-    ? 'This account is signed in, but it does not have system administrator access. The backend has not returned any administrative data.'
+    ? 'This browser does not hold the admin control-plane credentials. Sign in with the dedicated administrator credentials to continue.'
     : expired
-      ? 'For security, RELIASTRA has cleared the local admin state. Sign in again to continue.'
+      ? 'For security, RELIASTRA has cleared the local admin session. Use the administrator credentials to sign in again.'
       : 'The command center could not establish a verified connection to RELIASTRA. No cached business or customer data is being shown.';
 
   return (
@@ -452,7 +441,7 @@ function ShellState({ state, onRetry }: { state: Exclude<AdminShellState, 'ready
         {state === 'unavailable' && onRetry && <Button onClick={onRetry}>Try again</Button>}
         {(expired || denied) && (
           <Button asChild variant="outline">
-            <Link href="/?page=login&next=%2Fadmin">Go to sign in</Link>
+            <Link href="/admin/login">Administrator sign in</Link>
           </Button>
         )}
         <Button asChild variant="ghost">

@@ -1,6 +1,8 @@
 'use client';
 
-import { getRefreshToken, setRefreshToken, useAppStore } from '@/stores/app-store';
+import { getRefreshToken, useAppStore } from '@/stores/app-store';
+import { refreshSession } from '@/lib/auth-refresh';
+import { setOrgIdCookie } from '@/lib/auth-cookie';
 import type {
   AlertConfig,
   AgencyPortfolio,
@@ -51,38 +53,13 @@ export class ApiError extends Error {
  * navigation fires several panel requests at once, and React's dev-mode double
  * mount does the same), so without dedup the losers replay the spent token,
  * the backend rejects it, and the user is bounced to "session ended" while
- * holding a perfectly valid session. One in-flight promise is shared instead.
+ * holding a perfectly valid session.
+ *
+ * The mutex lives in `lib/auth-refresh.ts` and is shared with the partner and
+ * admin API layers: this module must NOT own a second `refreshing` flag —
+ * two single-flights overwrite each other and the losers still replay the
+ * spent token. `refreshSession()` is the one and only refresh.
  */
-let refreshing: Promise<string | null> | null = null;
-
-async function refreshAccessToken(): Promise<string | null> {
-  if (refreshing) return refreshing;
-  refreshing = (async () => {
-    const refresh = getRefreshToken();
-    if (!refresh) return null;
-    try {
-      const res = await fetch(`${BASE}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refresh }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      if (data.access_token) {
-        useAppStore.getState().setAccessToken(data.access_token);
-      }
-      if (data.refresh_token) setRefreshToken(data.refresh_token);
-      return data.access_token ?? null;
-    } catch {
-      return null;
-    }
-  })();
-  try {
-    return await refreshing;
-  } finally {
-    refreshing = null;
-  }
-}
 
 /**
  * One shared session restoration.
@@ -164,11 +141,13 @@ async function request<T>(
   const res = await fetch(`${BASE}${path}`, { ...init, headers });
 
   if (res.status === 401 && retry) {
-    if (!refreshing) refreshing = refreshAccessToken().finally(() => { refreshing = null; });
-    const next = await refreshing;
+    const refreshed = await refreshSession();
     // Carry the caller's options through the retry: an exempt call must stay
     // exempt, or the restore would wait on a promise only it can settle.
-    if (next) return request<T>(path, init, false, opts);
+    if (refreshed) {
+      useAppStore.getState().setAccessToken(refreshed.accessToken);
+      return request<T>(path, init, false, opts);
+    }
   }
 
   // Session is unrecoverable — clear and let the shell route to sign-in.
@@ -454,12 +433,17 @@ export async function bootstrapSession(): Promise<{
   org: Organization;
   plan: PlanDetails;
 } | null> {
-  const access = await refreshAccessToken();
-  if (!access) return null;
+  const refreshed = await refreshSession();
+  if (!refreshed) return null;
+  useAppStore.getState().setAccessToken(refreshed.accessToken);
 
   const orgList = await api.orgs();
   const org = orgList[0];
   if (!org) return null;
+
+  // Mirror into the org-id cookie before the org-scoped fetches below: the
+  // proxy re-injects it when the browser's custom header is stripped.
+  setOrgIdCookie(org.id);
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${useAppStore.getState().accessToken ?? ''}`,

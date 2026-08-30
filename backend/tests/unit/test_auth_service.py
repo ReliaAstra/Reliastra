@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 import pytest
 from app.core.exceptions import ConflictException, UnauthorizedException
@@ -180,6 +181,7 @@ async def test_refresh_success(mocker):
 
 @pytest.mark.asyncio
 async def test_refresh_rejects_replayed_sequence(mocker):
+    """A replay OUTSIDE the grace window (stale latest rotation) is theft."""
     auth_repo = MagicMock()
     user_repo = MagicMock()
     org_repo = MagicMock()
@@ -196,6 +198,13 @@ async def test_refresh_rejects_replayed_sequence(mocker):
     )
     # The family has already advanced to sequence 2 → replay of sequence 1.
     auth_repo.get_latest_sequence = AsyncMock(return_value=2)
+    # The latest rotation is older than the grace window, so this is a
+    # genuine replay and must revoke the family.
+    auth_repo.get_latest_refresh_token = AsyncMock(
+        return_value=MagicMock(
+            created_at=datetime.now(timezone.utc) - timedelta(minutes=5)
+        )
+    )
     auth_repo.revoke_family = AsyncMock()
     user_repo.get_by_id = AsyncMock(return_value=MagicMock(id=user_id, is_active=True))
 
@@ -205,10 +214,62 @@ async def test_refresh_rejects_replayed_sequence(mocker):
         org_repository=org_repo,
     )
     session = AsyncMock()
+    session.commit = AsyncMock()
 
     with pytest.raises(UnauthorizedException):
         await service.refresh(session, rt_str)
     auth_repo.revoke_family.assert_awaited_once_with(session, family)
+    session.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_refresh_reuse_within_grace_does_not_revoke(mocker):
+    """A replay INSIDE the grace window rotates without family revocation."""
+    auth_repo = MagicMock()
+    user_repo = MagicMock()
+    org_repo = MagicMock()
+
+    from app.core.security import create_refresh_token
+    user_id = uuid.uuid4()
+    rt_str = create_refresh_token(str(user_id))
+
+    family = uuid.uuid4()
+    auth_repo.get_refresh_token = AsyncMock(
+        return_value=MagicMock(
+            is_revoked=False, token_family=family, token_sequence=1
+        )
+    )
+    auth_repo.get_latest_sequence = AsyncMock(return_value=2)
+    # Rotation happened moments ago → benign parallel refresh.
+    auth_repo.get_latest_refresh_token = AsyncMock(
+        return_value=MagicMock(
+            created_at=datetime.now(timezone.utc),
+            token_sequence=2,
+        )
+    )
+    auth_repo.revoke_family = AsyncMock()
+    auth_repo.create_refresh_token = AsyncMock()
+    auth_repo.revoke_refresh_token = AsyncMock()
+    user_repo.get_by_id = AsyncMock(
+        return_value=MagicMock(
+            id=user_id, is_active=True, is_email_verified=True
+        )
+    )
+
+    service = AuthService(
+        auth_repository=auth_repo,
+        user_repository=user_repo,
+        org_repository=org_repo,
+    )
+    session = AsyncMock()
+    session.commit = AsyncMock()
+
+    result = await service.refresh(session, rt_str)
+    assert result.access_token is not None
+    auth_repo.revoke_family.assert_not_awaited()
+    # sequence = max(1, 2) + 1 = 3 — no parallel sequence is minted.
+    args, kwargs = auth_repo.create_refresh_token.call_args
+    assert kwargs["token_sequence"] == 3
 
 
 @pytest.mark.asyncio

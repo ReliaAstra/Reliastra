@@ -13,7 +13,6 @@ import { PageCommission } from './page-commission';
 import { PageFaq } from './page-faq';
 import { PageTiers } from './page-tiers';
 import { PageResources } from './page-resources';
-import { PageApply } from './page-apply';
 import { PageLogin } from './page-login';
 import { PageSignup } from './page-signup';
 import { PageSupport } from './page-support';
@@ -34,7 +33,6 @@ const publicPages: PartnerPage[] = [
   'tiers',
   'premium',
   'resources',
-  'apply',
   'login',
   'signup',
   'support',
@@ -73,8 +71,6 @@ function PageContent({ page }: { page: PartnerPage }) {
       return <PageTiers />;
     case 'resources':
       return <PageResources />;
-    case 'apply':
-      return <PageApply />;
     case 'login':
       return <PageLogin />;
     case 'signup':

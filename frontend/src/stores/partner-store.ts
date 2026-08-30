@@ -11,6 +11,10 @@ import type {
   PayoutItem,
   Partner,
 } from '@/types/partner';
+import {
+  storeSessionTokens,
+  clearAllSessionTokens,
+} from '@/lib/session-storage';
 
 type PartnerAuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -104,8 +108,10 @@ export const usePartnerStore = create<PartnerStore>()(
       setAuthStatus: (authStatus) => set({ authStatus }),
       setUser: (user) => set({ user }),
       setTokens: (access, refresh) => {
-        localStorage.setItem('partner_access_token', access);
-        localStorage.setItem('partner_refresh_token', refresh);
+        // Single shared session store: writes the canonical `reliastra_*`
+        // keys AND the legacy `partner_*` mirror so every surface (customer
+        // console, partner SPA, admin) sees the same pair.
+        storeSessionTokens(access, refresh);
         set({ accessToken: access, refreshToken: refresh });
       },
 
@@ -124,8 +130,8 @@ export const usePartnerStore = create<PartnerStore>()(
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
 
       logout: () => {
-        localStorage.removeItem('partner_access_token');
-        localStorage.removeItem('partner_refresh_token');
+        // Explicit sign-out: the shared JWT session ends on all surfaces.
+        clearAllSessionTokens();
         set({
           ...initialState,
           currentPage: 'home',
@@ -134,8 +140,8 @@ export const usePartnerStore = create<PartnerStore>()(
       },
 
       reset: () => {
-        localStorage.removeItem('partner_access_token');
-        localStorage.removeItem('partner_refresh_token');
+        // Explicit sign-out: the shared JWT session ends on all surfaces.
+        clearAllSessionTokens();
         set({
           ...initialState,
           currentPage: 'home',

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
+import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { isEmailNotVerified, readApiError } from '@/lib/api-error';
 import { VerifyOtpStep, type VerifiedSession } from './verify-otp-step';
@@ -55,15 +56,10 @@ export function PageLogin() {
     }
     store.setAuthStatus('authenticated');
 
-    // A protected Admin route can hand the shared sign-in screen a return
-    // destination. Do this before partner activation checks: system admins
-    // do not need a partner profile to operate the control plane.
-    const next = new URLSearchParams(window.location.search).get('next');
-    if (next === '/admin') {
-      toast.success('Signed in — opening Admin');
-      router.push('/admin');
-      return;
-    }
+    // The admin control plane is a SEPARATE security domain with its own
+    // operator credentials. A partner/customer sign-in must NEVER route into
+    // `/admin` (or `/admin/login`): that surface only accepts the dedicated
+    // admin session and it would instantly 401 a partner token anyway.
 
     // Check if the user is already a partner
     const partnerRes = await fetch('/api/partners/me', {
@@ -71,21 +67,24 @@ export function PageLogin() {
     });
 
     if (partnerRes.ok) {
-      const partnerData = await partnerRes.json();
-      store.setPartner({
-        partnerId: partnerData.partner_id,
-        referralCode: partnerData.referral_code,
-        referralLink: partnerData.referral_link,
-        commissionRate: partnerData.commission_rate,
-        status: partnerData.status,
-        createdAt: partnerData.created_at,
-      });
+      store.setPartner(mapPartnerProfile(await partnerRes.json()));
       toast.success('Welcome back');
       navigate('dashboard');
+    } else if (partnerRes.status === 404) {
+      // Not a partner yet: activation is free, idempotent server-side, and
+      // requires no consent beyond the program terms — do it automatically so
+      // the user lands on the dashboard instead of a dead-end "apply" step.
+      try {
+        const profile = await partnerApi.apply({ agree_terms: true });
+        store.setPartner(mapPartnerProfile(profile));
+        toast.success('Welcome to the Partner Network');
+      } catch {
+        toast.error('Could not activate your partner account — try again from the dashboard.');
+      }
+      navigate('dashboard');
     } else {
-      // Not a partner yet (404 or other)
-      toast.success('Signed in — activate your partner account');
-      navigate('apply');
+      toast.error('Could not load your partner profile — try again from the dashboard.');
+      navigate('dashboard');
     }
   };
 
