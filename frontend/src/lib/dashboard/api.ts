@@ -204,6 +204,13 @@ export interface InitializePaymentResult {
   amount_minor?: number | null;
   currency?: string | null;
   amount_display?: string | null;
+  /** The USD product price this checkout corresponds to, backend-resolved —
+   *  the transparency triple at hand-off is composed from provider figures,
+   *  never from UI state. */
+  product_currency?: string | null;
+  product_amount_minor?: number | null;
+  product_price_display?: string | null;
+  payment_provider?: string;
 }
 
 export const api = {
@@ -215,7 +222,21 @@ export const api = {
       skipSessionGate: true,
     }).then(unwrapList),
   plan: () => request<PlanDetails>('/billing/plan'),
-  pricing: () => request<{ plans: PricingPlan[] }>('/pricing'),
+  pricing: () =>
+    request<{
+      plans: PricingPlan[];
+      payment?: import('@/lib/billing/currency').PaymentCurrencyInfo;
+    }>('/pricing'),
+
+  /**
+   * Payment history: one row per collected payment, carrying both the USD
+   * product price quoted and the ACTUAL charged amount/currency exactly as
+   * the provider reported them.
+   */
+  billingTransactions: () =>
+    request<import('@/lib/dashboard/types').BillingTransactionsResult>(
+      '/billing/transactions'
+    ),
 
   summary: () => request<DashboardSummary>('/dashboard/summary'),
   health: () =>
@@ -384,7 +405,18 @@ export const api = {
       currency?: string | null;
       amount_minor?: number | null;
       amount_display?: string | null;
-    }>(`/billing/verify?reference=${encodeURIComponent(reference)}`),
+      /** The USD product price quoted by the checkout, from the persisted
+       *  transaction — the transparency triple on the confirmation screen. */
+      product_currency?: string | null;
+      product_amount_minor?: number | null;
+      product_price_display?: string | null;
+      payment_provider?: string;
+    }>(`/billing/verify?reference=${encodeURIComponent(reference)}`, {
+      // The verify endpoint provisions the plan and settles the persisted
+      // transaction — a state-changing call, so it is a POST like every
+      // other checkout step. (The backend also guards replay idempotently.)
+      method: 'POST',
+    }),
 
   // ── Agency ────────────────────────────────────────────────────────────────
 

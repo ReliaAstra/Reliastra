@@ -91,8 +91,21 @@ export interface PricingPlan {
   /** Published payment amount for this plan (processing currency), if any. */
   payment_amount_display?: string | null;
   payment_annual_amount_display?: string | null;
+  /** Product list price, pre-formatted by the backend ("$39.00 (USD)"). */
+  product_price_display?: string | null;
+  product_annual_price_display?: string | null;
+  /** The mandatory transparency triple, per billing interval, backend-formatted. */
+  transparency?: Record<'monthly' | 'annual', PlanTransparencyLine>;
   /** False when self-serve checkout cannot be priced in this currency. */
   checkout_ready?: boolean;
+}
+
+export interface PlanTransparencyLine {
+  product_price: string | null;
+  actual_charge: string | null;
+  payment_provider: string;
+  payment_provider_display: string;
+  currency_label: string;
 }
 
 export interface DashboardSummary {
@@ -297,6 +310,39 @@ export interface Invoice {
   amount_minor: number;
   currency: string;
   status: 'paid' | 'open' | 'failed';
+}
+
+/**
+ * One collected payment, as persisted from the provider's own report at the
+ * time it happened (GET /v1/billing/transactions). Both sides of the deal are
+ * carried — the USD price quoted and the amount/currency actually charged —
+ * so history never re-prices itself when a catalog changes.
+ */
+export interface BillingTransactionItem {
+  id: string;
+  reference: string;
+  provider: string;
+  plan: string;
+  display_plan: string;
+  billing_interval: string;
+  status: 'success' | 'refunded' | 'disputed' | string;
+  product_currency: string;
+  product_amount_minor: number | null;
+  /** Pre-formatted from the backend, e.g. "$39.00 (USD)". */
+  product_price_display: string | null;
+  charged_currency: string;
+  charged_amount_minor: number;
+  /** Pre-formatted from the backend, e.g. "₦60,000.00 (NGN)". */
+  charged_amount_display: string;
+  paid_at: string | null;
+  period_start: string | null;
+  period_end: string | null;
+  created_at: string;
+}
+
+export interface BillingTransactionsResult {
+  items: BillingTransactionItem[];
+  payment?: import('@/lib/billing/currency').PaymentCurrencyInfo | null;
 }
 
 export interface PaymentMethod {

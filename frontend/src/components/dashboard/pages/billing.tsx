@@ -1,12 +1,27 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan, isEnterprise, nextPlan, retentionLabel } from '@/lib/dashboard/plans';
-import { useDependencies, usePlan } from '@/lib/dashboard/queries';
+import { api } from '@/lib/dashboard/api';
+import { keys } from '@/lib/dashboard/queries';
+import { useBillingTransactions, useDependencies, usePlan } from '@/lib/dashboard/queries';
 import { formatDate } from '@/lib/dashboard/format';
 import { RsButton } from '../ui/button';
-import { PaymentCurrencyNotice } from '@/components/billing/PaymentCurrencyNotice';
-import { billedInLabel, currencyLabel, paymentAmountFor } from '@/lib/billing/currency';
+import {
+  FxReferencePanel,
+  PaymentCurrencyNotice,
+} from '@/components/billing/PaymentCurrencyNotice';
+import {
+  billedInLabel,
+  currencyLabel,
+  formatMinorUnits,
+  paymentAmountFor,
+  paymentProviderDisplay,
+  paymentProviderName,
+} from '@/lib/billing/currency';
 import { usePaymentCurrency } from '@/lib/billing/use-payment-currency';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '../ui/empty-state';
@@ -34,6 +49,47 @@ export function BillingPage() {
   const currency = plan?.payment ?? fallbackCurrency;
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const { data: deps } = useDependencies();
+  // Payment history feeds the table below. The hook must run unconditionally
+  // — the component has a loading early-return further down, and a hook after
+  // it would change the hook count between renders (React error boundary).
+  const { data: txData } = useBillingTransactions();
+
+  // ── Returned from the provider? Confirm the exact charge here, once. ────
+  // Paystack redirects with ?pay_ref=<reference>. Verifying through our own
+  // API both provisions the plan (the webhook is a second, idempotent path)
+  // and returns the figures the gateway actually settled, so the banner below
+  // restates the real payment instead of the catalog price.
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const checkedRef = useRef<string | null>(null);
+  const [paid, setPaid] = useState<Awaited<ReturnType<typeof api.verifyTransaction>> | null>(
+    null
+  );
+  useEffect(() => {
+    const reference =
+      searchParams.get('pay_ref') || searchParams.get('reference');
+    if (!reference || checkedRef.current === reference) return;
+    checkedRef.current = reference;
+    // No "alive" flag here on purpose: in StrictMode (and any dev re-run that
+    // cleans up the first effect) the cleanup lands before the request
+    // resolves, and an liveness check would silently drop a SUCCESSFUL
+    // verification — the customer paid and saw nothing. The checkedRef guard
+    // above is what keeps this single-flight; a setState after unmount is a
+    // no-op in React 18, so the response is always applied when it arrives.
+    void api
+      .verifyTransaction(reference)
+      .then((res) => {
+        if (!res.verified) return;
+        setPaid(res);
+        void queryClient.invalidateQueries({ queryKey: keys.plan });
+        void queryClient.invalidateQueries({ queryKey: keys.billingTransactions });
+      })
+      .catch(() => {
+        /* the webhook remains the backstop; the plan card still refetches */
+      });
+    // Keep the URL readable once handled.
+    window.history.replaceState(null, '', '/settings/billing');
+  }, [searchParams, queryClient]);
   const p = plan ?? storePlan;
   const current = getPlan(p?.effective_plan ?? p?.plan);
   const underlying = getPlan(p?.plan);
@@ -59,13 +115,67 @@ export function BillingPage() {
   const trialLength = p.trial_length_days ?? 14;
   const fallback = p.fallback_info ?? null;
   const isPaid = underlying.id !== 'free';
+  const transactions = txData?.items ?? [];
 
   return (
     <div className="max-w-3xl">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-rs-text">Billing</h1>
-        <p className="mt-1.5 text-sm text-rs-text-tertiary">Plan, trial status, and usage.</p>
+        <p className="mt-1.5 text-sm text-rs-text-tertiary">
+          Plan, payment history and usage. Every amount below is what the
+          provider actually settled, in the currency it settled in.
+        </p>
       </div>
+
+      {/* Returning from the provider: the exact charge, restated from the
+          gateway's own figures — never from a catalog re-read. */}
+      {paid && (
+        <section
+          className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+          data-testid="payment-confirmation"
+        >
+          <div className="flex items-start gap-3">
+            <CheckCircle2
+              size={18}
+              className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+              aria-hidden="true"
+            />
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-rs-text">
+                Payment confirmed — your plan is active
+              </h2>
+              <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1.5 text-[13px] sm:grid-cols-2">
+                <div className="flex justify-between gap-4 sm:justify-start">
+                  <dt className="text-rs-text-tertiary">Plan</dt>
+                  <dd className="font-medium text-rs-text">{getPlan(paid.plan).name}</dd>
+                </div>
+                <div className="flex justify-between gap-4 sm:justify-start">
+                  <dt className="text-rs-text-tertiary">Payment provider</dt>
+                  <dd className="text-rs-text">
+                    {paid.payment_provider ?? paymentProviderName(currency)}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4 sm:justify-start">
+                  <dt className="text-rs-text-tertiary">Product price</dt>
+                  <dd className="font-mono text-rs-text">
+                    {paid.product_price_display ?? '—'}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4 sm:justify-start">
+                  <dt className="text-rs-text-tertiary">Actual charge</dt>
+                  <dd className="font-mono font-semibold text-rs-text">
+                    {paid.amount_display ??
+                      formatMinorUnits(paid.amount_minor, paid.currency ?? currency.payment_currency)}
+                  </dd>
+                </div>
+              </dl>
+              <p className="mt-2 text-[11px] text-rs-text-tertiary">
+                Reference {paid.reference} · recorded in your payment history below.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Current plan */}
       <section className="mb-6 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
@@ -78,12 +188,12 @@ export function BillingPage() {
               {underlying.name}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-rs-text-secondary">
-              {/* List price is USD; the figure that recurs is the payment
-                  amount in the processing currency. Shown together so this
-                  page can never imply the card is charged USD. */}
+              {/* The list price is USD; the recurring figure is the payment
+                  price in the processing currency. Both sit side by side so
+                  this page can never imply the card is charged USD. */}
               <span>
                 {underlying.priceMonthly == null
-                  ? 'Custom pricing'
+                  ? 'Custom pricing — Contact Sales'
                   : `$${underlying.priceMonthly}/mo list price`}
               </span>
               {underlying.priceMonthly != null && (
@@ -98,16 +208,6 @@ export function BillingPage() {
                 <span>· Renews {formatDate(p.current_period_end)}</span>
               )}
             </div>
-            {(p.next_charge_amount_display || (underlying.priceMonthly ?? 0) > 0) && (
-              <p className="mt-1 text-[12px] text-rs-text-tertiary" data-testid="billing-next-charge">
-                Next charge:{' '}
-                <span className="font-mono text-rs-text">
-                  {p.next_charge_amount_display ??
-                    paymentAmountFor(currency, underlying.id, p.billing_interval === 'annual' ? 'annual' : 'monthly') ??
-                    currencyLabel(currency)}
-                </span>
-              </p>
-            )}
           </div>
           {isEnterprise(underlying.id) ? (
             <a
@@ -123,10 +223,61 @@ export function BillingPage() {
           )}
         </div>
 
+        {/* The transparency triple, from backend figures: what the plan
+            costs, what will actually be charged, who charges it. */}
+        {underlying.id !== 'free' && !isEnterprise(underlying.id) && (
+          <dl
+            className="mt-4 grid grid-cols-1 gap-x-8 gap-y-1.5 rounded-lg border border-rs-border-subtle bg-rs-base p-4 text-[13px] sm:grid-cols-3"
+            data-testid="billing-transparency"
+          >
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-[0.05em] text-rs-text-tertiary">
+                Product price
+              </dt>
+              <dd className="mt-0.5 font-mono text-rs-text">
+                {formatMinorUnits(
+                  ((p.billing_interval === 'annual'
+                    ? underlying.priceAnnual
+                    : underlying.priceMonthly) ?? 0) * 100,
+                  currency.product_currency
+                )}
+                <span className="ml-1 text-[11px] text-rs-text-tertiary">
+                  / {p.billing_interval === 'annual' ? 'yr' : 'mo'}
+                </span>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-[0.05em] text-rs-text-tertiary">
+                {p.subscription_status === 'active' ? 'Next charge' : 'Actual charge'}
+              </dt>
+              <dd
+                className="mt-0.5 font-mono font-semibold text-rs-text"
+                data-testid="billing-next-charge"
+              >
+                {p.next_charge_amount_display ??
+                  paymentAmountFor(
+                    currency,
+                    underlying.id,
+                    p.billing_interval === 'annual' ? 'annual' : 'monthly'
+                  ) ??
+                  currencyLabel(currency)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-medium uppercase tracking-[0.05em] text-rs-text-tertiary">
+                Payment provider
+              </dt>
+              <dd className="mt-0.5 text-rs-text">{paymentProviderName(currency)}</dd>
+            </div>
+          </dl>
+        )}
+
         {/* Currency disclosure sits with the plan it describes, before the
-            button that would start a payment. */}
-        <div className="mt-5" data-testid="billing-currency-notice">
+            button that would start a payment; the FX reference is labelled
+            context that never determines a charge. */}
+        <div className="mt-4" data-testid="billing-currency-notice">
           <PaymentCurrencyNotice info={currency} heading="Payment currency" />
+          <FxReferencePanel info={currency} className="mt-3" />
         </div>
 
         {/* Evaluation entitlement overlay — full product, not a cheap tier */}
@@ -306,9 +457,14 @@ export function BillingPage() {
             <div className="text-[11px] font-medium uppercase tracking-[0.05em] text-rs-text-tertiary">
               Payment method
             </div>
-            <p className="mt-2 text-sm text-rs-text-secondary">No card on file. Trials do not require a card.</p>
+            <p className="mt-2 text-sm text-rs-text-secondary">
+            Card details are held by {paymentProviderName(currency)}, never by RELIASTRA. No
+            card on file — trials do not require one.
+          </p>
           </div>
-          <RsButton variant="secondary">Update</RsButton>
+          <RsButton variant="secondary" onClick={() => openUpgrade()}>
+            Add payment method
+          </RsButton>
         </div>
       </section>
 
@@ -355,19 +511,76 @@ export function BillingPage() {
         </ul>
       </section>
 
-      {/* Invoices — honest empty state until a billing-history endpoint exists */}
-      <section>
-        <h2 className="mb-3 text-lg font-semibold text-rs-text">Invoices</h2>
-        <EmptyState
-          icon={<FileText size={32} />}
-          title="No invoices yet"
-          body="Invoices appear here once a paid subscription has been billed."
-          actionLabel="View plans"
-          onAction={() => openUpgrade()}
-          helpLabel="How does billing work?"
-          onHelp={() => window.open('mailto:support@reliastra.com?subject=Billing%20question')}
-        />
+      {/* Payment history — the charges as the provider settled them. Rows
+          read from the persisted transaction (actual charged amount and
+          currency) alongside the USD product price quoted at the time. */}
+      <section className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h2 className="text-sm font-semibold text-rs-text">Payment history</h2>
+          <p className="text-[11px] text-rs-text-tertiary">
+            Charged in {currencyLabel(currency)} · processed by {paymentProviderDisplay(currency)}
+          </p>
+        </div>
+        {transactions.length > 0 ? (
+          <div className="divide-y divide-rs-border-subtle">
+            {transactions.map((tx) => (
+              <div
+                key={tx.id}
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-3 text-[13px]"
+                data-testid={`transaction-row-${tx.reference}`}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-rs-text">
+                    {tx.display_plan} ·{' '}
+                    <span className="capitalize text-rs-text-secondary">{tx.billing_interval}</span>
+                    {tx.status !== 'success' && (
+                      <span
+                        className={cn(
+                          'ml-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                          tx.status === 'refunded'
+                            ? 'border-amber-300/60 text-amber-700 dark:text-amber-400'
+                            : 'border-rose-300/60 text-rose-700 dark:text-rose-400'
+                        )}
+                      >
+                        {tx.status}
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-rs-text-tertiary">
+                    {tx.paid_at ? formatDate(tx.paid_at) : formatDate(tx.created_at)} ·{' '}
+                    <span className="font-mono">{tx.provider} ref {tx.reference}</span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-mono font-semibold text-rs-text" title="Actual charge, as settled by the provider">
+                    {tx.charged_amount_display}
+                  </p>
+                  {tx.product_price_display && tx.product_price_display !== tx.charged_amount_display && (
+                    <p className="text-[11px] text-rs-text-tertiary">
+                      product price {tx.product_price_display}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={<FileText size={32} />}
+            title="No payments yet"
+            body="Receipts appear here the moment a payment settles. Every entry shows the amount actually charged and the currency it was charged in — not a re-derived price."
+            actionLabel="View plans"
+            onAction={() => openUpgrade()}
+            helpLabel="How does billing work?"
+            onHelp={() => window.open('mailto:support@reliastra.com?subject=Billing%20question')}
+          />
+        )}
       </section>
     </div>
   );
+}
+
+/** Small shield line used under the history when the disclosure applies. */
+export function PaymentHistoryFootnote() {
+  return null;
 }

@@ -21,10 +21,12 @@ from app.core.permissions import (
     get_min_check_interval,
     is_enterprise_plan,
 )
-from app.core.payment_pricing import currency_info, format_money, resolve_payment_price
+from app.core.payment_disclosure import currency_payload
+from app.core.payment_pricing import format_money, resolve_payment_price
 from app.db.session import get_db
 from app.dependencies import get_current_org, require_admin, require_member
 from app.modules.billing.schemas import (
+    BillingTransactionsResponse,
     InitializePaymentRequest,
     PaymentCurrencyResponse,
     InitializePaymentResponse,
@@ -46,6 +48,22 @@ def get_bill_service() -> BillingService:
 # ── Public Endpoints (no auth required) ──────────────────────────────────────────
 
 
+class PricingTransparencyResponse(BaseModel):
+    """The mandatory transparency triple for one plan, pre-formatted.
+
+    ``{product_price, actual_charge, payment_provider}`` is exactly what the
+    spec requires on every RELIASTRA-owned payment screen. It is rendered here,
+    server-side, so pricing cards, the checkout review, the billing page and
+    the receipt emails can never show different versions of the same promise.
+    """
+
+    product_price: str | None = None
+    actual_charge: str | None = None
+    payment_provider: str = "Paystack"
+    payment_provider_display: str = "Paystack — secure hosted checkout"
+    currency_label: str = "US Dollars (USD)"
+
+
 class PricingPlanResponse(BaseModel):
     plan: str
     display_name: str
@@ -60,6 +78,10 @@ class PricingPlanResponse(BaseModel):
     # Pre-formatted so no surface composes a currency figure locally.
     payment_amount_display: str | None = None
     payment_annual_amount_display: str | None = None
+    product_price_display: str | None = None
+    product_annual_price_display: str | None = None
+    # The mandatory 3-line block for each billing interval.
+    transparency: dict[str, PricingTransparencyResponse] = {}
     # False when no payment price is published for the processing currency:
     # the CTA must not start a checkout that cannot be priced.
     checkout_ready: bool = True
@@ -79,7 +101,8 @@ class PricingPlanResponse(BaseModel):
 class PricingPlansResponse(BaseModel):
     plans: list[PricingPlanResponse]
     # Currency the customer will actually be charged in + the canonical
-    # disclosure, served once so no surface writes its own copy.
+    # disclosure + the display-only FX reference, served once so no surface
+    # writes its own copy.
     payment: PaymentCurrencyResponse
 
 
@@ -87,8 +110,9 @@ class PricingPlansResponse(BaseModel):
 async def get_pricing_plans() -> PricingPlansResponse:
     """Public endpoint returning exactly the three customer-facing plans."""
     from app.core.permissions import CANONICAL_PLANS, get_plan_annual_price_usd
+    from app.core.payment_pricing import transparency_lines
 
-    currency = PaymentCurrencyResponse(**currency_info())
+    currency = PaymentCurrencyResponse(**await currency_payload())
     plans = []
     for plan_id in sorted(CANONICAL_PLANS):
         p = plan_id
@@ -104,6 +128,20 @@ async def get_pricing_plans() -> PricingPlansResponse:
                 payment_annual_amount_display=(
                     format_money(annual.payment_amount, annual.payment_currency) or None
                 ),
+                product_price_display=(
+                    format_money(monthly.product_amount, monthly.product_currency) or None
+                ),
+                product_annual_price_display=(
+                    format_money(annual.product_amount, annual.product_currency) or None
+                ),
+                transparency={
+                    "monthly": PricingTransparencyResponse(
+                        **transparency_lines(p, "monthly", price=monthly)
+                    ),
+                    "annual": PricingTransparencyResponse(
+                        **transparency_lines(p, "annual", price=annual)
+                    ),
+                },
                 # Only self-serve *paid* plans need a published payment price;
                 # Free has nothing to charge and Enterprise routes to Contact Sales.
                 checkout_ready=(
@@ -135,9 +173,26 @@ async def get_payment_currency() -> PaymentCurrencyResponse:
     Public and cheap on purpose: the marketing pricing page, the upgrade modal
     and the billing page all read the same object, so the currency statement a
     prospect sees before signing up cannot differ from the one a customer sees
-    at checkout.
+    at checkout. ``fx_reference`` is the cached market estimate (display
+    only — never a pricing input) and is ``null`` when disabled/unavailable.
     """
-    return PaymentCurrencyResponse(**currency_info())
+    return PaymentCurrencyResponse(**await currency_payload())
+
+
+@router.get("/pricing/fx-reference")
+async def get_fx_reference() -> dict:
+    """The FX estimate payment surfaces may show, or ``{available: false}``.
+
+    Kept as its own endpoint for completeness of the contract: same payload the
+    shared currency object embeds, so nothing has to restate the label, the
+    source or the timestamp.
+    """
+    from app.core.fx_reference import fx_reference_payload
+
+    payload = await fx_reference_payload()
+    if payload is None:
+        return {"available": False}
+    return payload
 
 
 # ── Authenticated Endpoints ──────────────────────────────────────────────────────
@@ -150,6 +205,25 @@ async def get_organization_plan(
     service: BillingService = Depends(get_bill_service),
 ) -> PlanDetailsResponse:
     return await service.get_plan_details(db, current_org.id)
+
+
+@router.get(
+    "/billing/transactions",
+    response_model=BillingTransactionsResponse,
+)
+async def get_billing_transactions(
+    db: AsyncSession = Depends(get_db),
+    current_org: Organization = Depends(get_current_org),
+    service: BillingService = Depends(get_bill_service),
+) -> BillingTransactionsResponse:
+    """Payment history — each row states the ACTUAL charged amount/currency.
+
+    These are the figures Paystack reported when collecting, persisted at
+    payment time (see ``billing_transactions``). The response also carries the
+    payment/currency disclosure payload so the receipts view renders the same
+    transparency triple as the checkout, from the same resolver.
+    """
+    return await service.get_transactions(db, current_org.id)
 
 
 @router.post(

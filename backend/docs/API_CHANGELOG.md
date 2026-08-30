@@ -175,9 +175,24 @@ surface reads:
   "payment_currency_name": "Nigerian Naira (NGN)",
   "payment_symbol": "\u20a6",
   "differs_from_product_currency": true,
-  "notice": "Please note that all transactions are currently processed in Nigerian Naira (NGN). …",
+  "notice": "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are working toward enabling USD payment options for our global customers.",
   "checkout_ready": true,
-  "plan_payment_amounts": { "pro": { "monthly": "\u20a660,000.00 (NGN)", "annual": "\u20a6600,000.00 (NGN)" } }
+  "plan_payment_amounts": { "pro": { "monthly": "\u20a660,000.00 (NGN)", "annual": "\u20a6600,000.00 (NGN)" } },
+  "payment_provider": "Paystack",
+  "payment_provider_display": "Paystack \u2014 secure hosted checkout",
+  "fx_reference": {
+    "available": true,
+    "source_currency": "USD",
+    "payment_currency": "NGN",
+    "rate": 1650.12,
+    "source_timestamp": "Wed, 13 Aug 2025 00:40:32 +0000",
+    "retrieved_at": "2025-08-13T09:12:00Z",
+    "provider": "ExchangeRate-API",
+    "provider_url": "https://www.exchangerate-api.com",
+    "source_url": "https://open.er-api.com/v6/latest/USD",
+    "label": "Exchange rate reference (estimate \u2014 not the price you pay)",
+    "disclaimer": "Exchange rate shown is a market reference estimate only. \u2026"
+  }
 }
 ```
 
@@ -188,12 +203,24 @@ strings** — clients render them verbatim and never compute a currency figure
 locally. Do not fall back to a hardcoded amount when this request fails: show the
 disclosure without a number.
 
+`fx_reference` is **display-only context**: a market estimate, labelled as an
+estimate, attributed to a verifiable source and timestamped. It is *never* used
+to determine what is charged (the charge is the published payment price), and it
+is `null` when disabled or unavailable — clients hide the reference rather than
+inventing one. `GET /v1/pricing/fx-reference` returns the same object.
+
 ## Pricing
 
 `GET /v1/pricing` plans now carry the payment price alongside the USD list price:
 `payment_amount_display`, `payment_annual_amount_display` (both `null` when that
-price is unpublished) and `checkout_ready`. `price_usd` / `price_annual_usd` are
+price is unpublished), `product_price_display`,
+`product_annual_price_display`, a `transparency` triple per interval
+(`{monthly, annual}` each with `product_price`, `actual_charge`,
+`payment_provider`, `payment_provider_display`, `currency_label`) and
+`checkout_ready`. `price_usd` / `price_annual_usd` are
 unchanged: they remain RELIASTRA's canonical **product** list prices in USD.
+Every RELIASTRA-owned payment screen must render the transparency triple —
+Product price / Actual charge / Payment provider — verbatim from these fields.
 
 ## Checkout
 
@@ -202,16 +229,46 @@ screen and the transaction cannot disagree:
 
 ```json
 { "authorization_url": "https://checkout.paystack.com/…", "reference": "…",
-  "amount_minor": 6000000, "currency": "NGN", "amount_display": "\u20a660,000.00 (NGN)" }
+  "amount_minor": 6000000, "currency": "NGN", "amount_display": "\u20a660,000.00 (NGN)",
+  "product_currency": "USD", "product_amount_minor": 3900,
+  "product_price_display": "$39.00 (USD)", "payment_provider": "Paystack" }
 ```
 
 The request body stays `{plan, billing_interval}` — clients never send an amount
 or a currency. A plan with no published payment price returns `422` with an
-operator-readable message instead of starting a checkout.
+operator-readable message instead of starting a checkout. Enterprise (`contact_sales`)
+plans are refused: they are arranged with Sales, never priced through self-serve
+checkout.
 
 `POST /v1/billing/verify` now also returns `currency`, `amount_minor` and
-`amount_display` from the amount Paystack reports as collected, for restating the
-charge on a post-payment screen.
+`amount_display` from the amount Paystack reports as collected, plus the quoted
+product side (`product_price_display`) and `payment_provider`, for restating the
+exact charge on a post-payment screen.
+
+## Payment history (added)
+
+`GET /v1/billing/transactions` — authenticated, organization-scoped — returns
+one row per collected payment, persisted verbatim from the provider's
+verification report when the money moved:
+
+```json
+{
+  "items": [{
+    "reference": "6K…", "provider": "Paystack", "plan": "pro",
+    "billing_interval": "monthly", "status": "success",
+    "product_currency": "USD", "product_amount_minor": 3900,
+    "product_price_display": "$39.00 (USD)",
+    "charged_currency": "NGN", "charged_amount_minor": 6000000,
+    "charged_amount_display": "\u20a660,000.00 (NGN)",
+    "paid_at": "…", "created_at": "…"
+  }],
+  "payment": { …same currency object as /v1/billing/currency… }
+}
+```
+
+History rows record what was **actually charged** (currency + minor units) and
+the USD product price quoted at the time; they never re-derive amounts from
+today's catalog. Refunds and disputes update `status` via the webhook.
 
 ## Transactional email
 

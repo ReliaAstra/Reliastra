@@ -9,14 +9,16 @@ import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import { toast } from 'sonner';
 import {
+  FxReferencePanel,
   PaymentCurrencyNotice,
   PlanPaymentSummary,
 } from '@/components/billing/PaymentCurrencyNotice';
 import { usePaymentCurrency } from '@/lib/billing/use-payment-currency';
 import {
   currencyLabel,
+  formatMinorUnits,
   isCheckoutReady,
-  paymentAmountFor,
+  paymentProviderName,
 } from '@/lib/billing/currency';
 
 function Feature({ ok, children }: { ok: boolean | string; children: string }) {
@@ -224,6 +226,12 @@ export function UpgradeModal() {
                         info={currency}
                         plan={p.id}
                         interval={interval}
+                        productPrice={formatMinorUnits(
+                          (interval === 'annual' ? p.priceAnnual : p.priceMonthly) != null
+                            ? (interval === 'annual' ? p.priceAnnual! : p.priceMonthly!) * 100
+                            : null,
+                          'USD'
+                        )}
                         className="mt-1"
                       />
                     )}
@@ -283,8 +291,10 @@ export function UpgradeModal() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-t border-rs-border-subtle px-6 py-4 text-xs text-rs-text-tertiary">
-              <span>Secure checkout via Paystack</span>
-              <span>Charged in {currencyLabel(currency)}</span>
+              <span>Secure checkout via {paymentProviderName(currency)}</span>
+              <span>
+                Charged in {currencyLabel(currency)} · product price in {currency.product_currency}
+              </span>
               <span>Cancel anytime</span>
               <span>Questions? support@reliastra.com</span>
             </div>
@@ -322,9 +332,14 @@ function CheckoutReview({
   onBack: () => void;
 }) {
   const meta = getPlan(planId);
-  const listPrice = interval === 'annual' ? annualPrice(meta) : monthlyPrice(meta);
-  const charged = paymentAmountFor(currency, planId, interval);
   const ready = isCheckoutReady(currency);
+  const productPrice = formatMinorUnits(
+    (interval === 'annual' ? meta.priceAnnual : meta.priceMonthly) != null
+      ? (interval === 'annual' ? meta.priceAnnual! : meta.priceMonthly!) * 100
+      : null,
+    'USD'
+  );
+  const charged = currency.plan_payment_amounts?.[planId]?.[interval];
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 rs-scrollbar md:px-6">
@@ -336,32 +351,27 @@ function CheckoutReview({
           <Row label="Billing period">
             <span className="text-rs-text">{interval === 'annual' ? 'Annual' : 'Monthly'}</span>
           </Row>
-          <Row label="List price">
-            <span className="font-mono text-rs-text">{listPrice}</span>
-            <span className="text-rs-text-tertiary">
-              {' '}
-              / {interval === 'annual' ? 'yr' : 'mo'} ({currency.product_currency})
-            </span>
-          </Row>
-          <Row label="Charged as">
-            {charged ? (
-              <span className="font-mono font-semibold text-rs-text" data-testid="checkout-amount">
-                {charged}
-              </span>
-            ) : (
-              <span className="text-rs-text-secondary" data-testid="checkout-amount">
-                {currencyLabel(currency)} — amount confirmed at checkout
-              </span>
-            )}
-          </Row>
-          <Row label="Payment provider" last>
-            <span className="text-rs-text">Paystack (secure hosted checkout)</span>
-          </Row>
         </dl>
+
+        {/* The mandatory triple, one shared component with the pricing page and
+            the billing page: what the plan costs, what Paystack will charge,
+            who charges it. All figures are backend-resolved. */}
+        <div className="mt-3">
+          <PlanPaymentSummary
+            info={currency}
+            plan={planId}
+            interval={interval}
+            productPrice={productPrice}
+            emphasis="panel"
+            className="bg-rs-base"
+          />
+        </div>
 
         <div className="mt-4" data-testid="checkout-currency-notice">
           <PaymentCurrencyNotice info={currency} heading="Payment currency" />
         </div>
+
+        <FxReferencePanel info={currency} className="mt-3" />
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
           <RsButton variant="ghost" onClick={onBack} disabled={pending}>
@@ -384,9 +394,10 @@ function CheckoutReview({
           )}
         </div>
         <p className="mt-3 text-center text-[11px] leading-relaxed text-rs-text-tertiary sm:text-right">
-          You will be redirected to Paystack to enter your payment details.
+          You will be redirected to {paymentProviderName(currency)} to enter your
+          payment details.
           {ready
-            ? ` The amount above is what is sent to Paystack in ${currencyLabel(currency)}.`
+            ? ` The amount above is exactly what is sent to the provider, in ${currencyLabel(currency)} — never converted or recomputed.`
             : ''}
         </p>
       </div>
