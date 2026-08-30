@@ -145,6 +145,16 @@ export default function Home() {
     }
   }, [currentPage, authStatus, mounted, navigate]);
 
+  // A session must never be "authenticated" without an identity: the render
+  // below would otherwise produce a blank screen with no recovery path.
+  // Demote such a broken state to unauthenticated so the effect above routes
+  // the visitor back to the sign-in form instead of stranding them.
+  useEffect(() => {
+    if (mounted && authStatus === 'authenticated' && !user) {
+      setAuthStatus('unauthenticated');
+    }
+  }, [mounted, authStatus, user, setAuthStatus]);
+
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]">
@@ -181,12 +191,38 @@ export default function Home() {
   }
 
   // Dashboard pages: authenticated users
-  if (authStatus === 'authenticated' && user) {
-    return <DashboardLayout />;
+  if (authStatus === 'authenticated') {
+    if (user) {
+      return <DashboardLayout />;
+    }
+
+    // Authenticated without an identity is a broken state the effect above
+    // repairs; render the boot splash rather than a blank page in the interim.
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]">
+        <div className="flex items-center gap-3">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="animate-pulse text-[#0891B2] dark:text-[#22D3EE]"
+          >
+            <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="font-mono text-xs tracking-widest uppercase text-[#09090B] dark:text-[#FAFAFA]">
+            RELIASTRA
+          </span>
+        </div>
+      </div>
+    );
   }
 
   // For dashboard pages that aren't yet authenticated, show nothing (useEffect handles redirect)
-  if (isDashboardRoute(currentPage, authStatus === 'authenticated')) {
+  // Reaching here guarantees authStatus is no longer 'authenticated' (the
+  // branch above always returns), so the authenticated flag is always false.
+  if (isDashboardRoute(currentPage, false)) {
     return null;
   }
 

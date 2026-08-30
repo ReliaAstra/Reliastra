@@ -46,14 +46,22 @@ export function PageLogin() {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    if (meRes.ok) {
-      const user = await meRes.json();
-      store.setUser({
-        id: user.id,
-        email: user.email,
-        fullName: user.full_name,
-      });
+    // The identity fetch is what turns a token pair into a renderable session.
+    // If it fails (transient 5xx / dropped request), never mark the surface
+    // authenticated without a user: `authenticated && !user` renders a blank
+    // screen. Keep the stored tokens so a reload self-heals, and leave the
+    // user on the sign-in form to retry.
+    if (!meRes.ok) {
+      toast.error('Could not load your profile — please try again.');
+      return;
     }
+
+    const user = await meRes.json();
+    store.setUser({
+      id: user.id,
+      email: user.email,
+      fullName: user.full_name,
+    });
     store.setAuthStatus('authenticated');
 
     // The admin control plane is a SEPARATE security domain with its own

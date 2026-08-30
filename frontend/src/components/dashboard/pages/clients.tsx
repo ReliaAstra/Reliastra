@@ -292,9 +292,10 @@ export function ClientsPage() {
   const totals = data?.totals;
 
   // Sorted and filtered clients: Degraded/Critical clients float to the top
+  const clients = data?.clients;
   const filteredClients = useMemo(() => {
-    if (!data?.clients) return [];
-    let list = [...data.clients];
+    if (!clients) return [];
+    let list = [...clients];
 
     // Status filter
     if (statusFilter === 'attention') {
@@ -320,7 +321,7 @@ export function ClientsPage() {
       if (diff !== 0) return diff;
       return a.name.localeCompare(b.name);
     });
-  }, [data?.clients, search, statusFilter]);
+  }, [clients, search, statusFilter]);
 
   if (!enabled) return <AgencyGate />;
 

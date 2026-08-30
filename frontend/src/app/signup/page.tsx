@@ -7,6 +7,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { BrandMark } from '@/components/auth/brand-mark';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
+import { readApiError } from '@/lib/api-error';
 
 interface RegisterResponse {
   user?: { id: string; email: string };
@@ -49,16 +50,19 @@ export default function CustomerSignupPage() {
           password,
         }),
       });
-      const data: RegisterResponse = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const detail = data?.detail ?? '';
+        const apiError = await readApiError(
+          res,
+          'Registration failed. Try again in a moment.'
+        );
         setError(
-          /already/i.test(detail)
+          apiError.status === 409
             ? 'An account with this email already exists. Sign in instead.'
-            : detail || 'Registration failed. Try again in a moment.'
+            : apiError.message
         );
         return;
       }
+      const data: RegisterResponse = await res.json().catch(() => ({}));
       const access = data.tokens?.access_token ?? data.access_token;
       const refresh = data.tokens?.refresh_token ?? data.refresh_token;
       if (access || refresh) {

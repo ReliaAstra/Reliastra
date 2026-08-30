@@ -3,6 +3,7 @@ import {
   ADMIN_ACCESS_COOKIE,
   ADMIN_REFRESH_COOKIE,
   adminAccessMaxAgeSeconds,
+  adminRefreshMaxAgeSeconds,
   adminCookieAttrs,
   requestIsSecure,
 } from '@/lib/admin-session-cookie';
@@ -32,7 +33,10 @@ export function setAdminSessionCookiesProxy(
   });
   response.cookies.set(ADMIN_REFRESH_COOKIE, refreshToken, {
     ...attrs,
-    maxAge: Math.max(expiresInSeconds, 60 * 60),
+    // Match the cookie to the admin refresh token's lifetime (1 day by
+    // default) instead of an arbitrary 1-hour cap, or the browser discards
+    // the cookie long before the server session actually expires.
+    maxAge: adminRefreshMaxAgeSeconds(),
   });
 }
 
