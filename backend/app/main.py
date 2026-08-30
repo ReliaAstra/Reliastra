@@ -235,6 +235,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Scheduling is handled entirely by Celery Beat → `schedule_checks` →
     # `execute_check.delay()`.  No custom scheduler loop, no APScheduler.
     # The Celery worker container executes the actual probes.
+    # Proof 1: make the operational requirement explicit in logs so a local
+    # `uvicorn` without Beat/worker does not silently appear healthy while
+    # never executing checks.
+    if not settings.RUN_IN_PROCESS_SCHEDULER:
+        logger.info(
+            "In-process scheduler disabled (RUN_IN_PROCESS_SCHEDULER=false) — "
+            "checks require Celery Beat + worker (ENABLE_CELERY=true, REDIS_URL=%s, "
+            "CHECK_SCHEDULE_SECONDS=%s). For single-process dev set "
+            "RUN_IN_PROCESS_SCHEDULER=true or run celery beat+worker alongside the API.",
+            settings.REDIS_URL,
+            settings.CHECK_SCHEDULE_SECONDS,
+        )
     await ensure_admin_service_account()
     yield
     logger.info("Reliastra backend shutting down...")

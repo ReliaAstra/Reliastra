@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 import urllib.parse
@@ -137,28 +138,90 @@ class CheckService:
     async def schedule_due_checks(self, session: AsyncSession) -> int:
         """Celery Beat-driven scheduling: dispatch one Celery task per check.
 
-        Reads at most 500 due dependencies, advances ``next_check_at`` in a
-        single flush, and fires ``execute_check.delay()`` for each
-        dep/region pair.  Each check runs in its own Celery worker, so a
-        slow endpoint never blocks other probes.
+        Reads at most 500 due dependencies and fires ``execute_check.delay()``
+        for each dep/region pair.  Each check runs in its own Celery worker, so
+        a slow endpoint never blocks other probes.
+
+        Circuit breaker (FIX 8) is consulted before dispatch — open circuits
+        skip enqueue but still advance ``next_check_at`` to avoid a busy loop.
+        ``next_check_at`` is advanced **only after successful enqueue** so a
+        Redis/broker failure never silently loses a check (Proof 4).
         """
         now = datetime.now(timezone.utc)
         due_deps = await self.dep_repository.get_due_dependencies(session, limit=500)
-        dispatched = 0
-        for dep in due_deps:
-            dep.next_check_at = now + timedelta(seconds=dep.check_interval_seconds)
-            regions = dep.regions or ["us-east", "eu-west"]
-            for region in regions:
-                from app.modules.checks.tasks import execute_check as execute_check_task
+        if not due_deps:
+            logger.info("No due dependencies to dispatch")
+            return 0
+        # Batch circuit-breaker checks concurrently so 500 deps don't cost
+        # 500×1.5 s when Redis is unreachable (fail-open wall < 2 s).
+        try:
+            breaker_raw = await asyncio.gather(
+                *[circuit_breaker.should_dispatch(d.id) for d in due_deps],
+                return_exceptions=True,
+            )
+        except Exception:  # pragma: no cover - gather itself should not raise
+            breaker_raw = [True] * len(due_deps)
+        breaker_allow: list[bool] = []
+        for val in breaker_raw:
+            if isinstance(val, Exception):
+                logger.debug("Circuit breaker check failed fail-open: %s", val)
+                breaker_allow.append(True)
+            else:
+                breaker_allow.append(bool(val))
 
-                execute_check_task.delay(str(dep.id), region)
-                dispatched += 1
+        dispatched = 0
+        skipped_circuit = 0
+        for dep, allow_dispatch in zip(due_deps, breaker_allow):
+            regions = dep.regions or ["us-east", "eu-west"]
+            # FIX 8 / Proof 5: respect circuit breaker before dispatch.
+            if not allow_dispatch:
+                logger.info(
+                    "Skipping dispatch for dep %s: circuit open",
+                    dep.id,
+                )
+                dep.next_check_at = now + timedelta(
+                    seconds=dep.check_interval_seconds
+                )
+                skipped_circuit += 1
+                continue
+
+            # Proof 4: only advance next_check_at after every region enqueued ok.
+            dispatch_ok = True
+            dispatched_for_dep = 0
+            for region in regions:
+                try:
+                    from app.modules.checks.tasks import execute_check as execute_check_task
+
+                    execute_check_task.delay(str(dep.id), region)
+                    dispatched_for_dep += 1
+                except Exception as exc:
+                    logger.warning(
+                        "Failed to enqueue check for dep %s region %s: %s — "
+                        "leaving next_check_at due for retry",
+                        dep.id,
+                        region,
+                        exc,
+                    )
+                    dispatch_ok = False
+                    break
+            if dispatch_ok:
+                dep.next_check_at = now + timedelta(
+                    seconds=dep.check_interval_seconds
+                )
+                dispatched += dispatched_for_dep
+            else:
+                # Enqueue failed mid-dep: dispatched_for_dep may be >0 (partial
+                # dispatch). Count what was enqueued but keep next_check_at
+                # due so the next beat retries promptly instead of losing the
+                # check until the full interval passes.
+                dispatched += dispatched_for_dep
         await session.flush()
 
         logger.info(
-            "Dispatched %s checks across %s due dependencies",
+            "Dispatched %s checks across %s due dependencies (%s skipped by circuit breaker)",
             dispatched,
             len(due_deps),
+            skipped_circuit,
         )
         return dispatched
 

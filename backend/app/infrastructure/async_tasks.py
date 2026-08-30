@@ -118,6 +118,34 @@ def _get_process_loop() -> asyncio.AbstractEventLoop:
         return _process_loop
 
 
+def _reset_for_fork() -> None:
+    """Clear cached loops/engines after a Celery prefork (Proof 6).
+
+    Celery's prefork pool forks the parent process. The child inherits the
+    parent's globals but only the forking thread survives — a cached
+    ``_process_loop`` created in the parent is bound to the parent's loop
+    and its asyncpg pool is broken (``Task got Future attached to a different
+    loop`` → ``schedule_checks`` silently returns 0). The parent's
+    ``_LoopWorker`` thread also does not survive the fork.
+
+    Called from ``celery.signals.worker_process_init`` so each child starts
+    with fresh loop affinity.
+    """
+    global _process_loop, _worker
+    with _process_loop_lock:
+        if _process_loop is not None:
+            try:
+                if not _process_loop.is_closed():
+                    _process_loop.close()
+            except Exception:
+                logger.debug("closing stale process loop after fork failed", exc_info=True)
+            _process_loop = None
+    with _worker_lock:
+        # Parent's worker thread is dead in the child; drop it so a fresh
+        # one is created on demand if eager execution is ever used there.
+        _worker = None
+
+
 def is_running_loop() -> bool:
     """True when called from inside a running event loop."""
     try:

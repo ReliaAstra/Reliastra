@@ -229,13 +229,13 @@ def set_test_engine(engine: AsyncEngine) -> None:
 def reset_engine() -> None:
     """Drop the cached engine/sessionmaker so the next caller rebuilds them.
 
-    Used by the Celery tasks: each task runs its coroutine in a fresh asyncio
-    event loop, but asyncpg connections are bound to the loop that created
-    them.  Reusing the module-global engine across loops raises
+    Celery's prefork pool forks child processes after the parent may have
+    created an engine/pool. asyncpg connections are bound to the event loop
+    that created them, so reusing the parent's engine in the child raises
     "Task got Future attached to a different loop" and silently drops the
     task (measured: schedule_checks returned 0 while the API scheduler did all
-    the work).  Resetting per task bounds the leak to one pool per task and
-    guarantees loop affinity.
+    the work).  This is called from ``worker_process_init`` (Proof 6) and
+    bounds the leak to one pool per process with correct loop affinity.
     """
     global _engine, _sessionmaker
     engine = _engine
@@ -243,6 +243,24 @@ def reset_engine() -> None:
     _sessionmaker = None
     if engine is not None:
         try:
-            asyncio.run(engine.dispose())
+            # Dispose is best-effort: the child's loop is fresh, but the
+            # parent's loop may already be closed after fork.
+            try:
+                asyncio.get_running_loop()
+                # Inside a running loop (eager tests) we cannot asyncio.run.
+                # Schedule dispose on a fresh loop in a thread.
+                import threading
+
+                def _dispose() -> None:
+                    try:
+                        asyncio.run(engine.dispose())
+                    except Exception:
+                        pass
+
+                t = threading.Thread(target=_dispose, daemon=True)
+                t.start()
+                t.join(timeout=2)
+            except RuntimeError:
+                asyncio.run(engine.dispose())
         except Exception:
             logger.debug("engine dispose during reset failed", exc_info=True)

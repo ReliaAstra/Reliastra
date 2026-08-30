@@ -1,7 +1,12 @@
 import logging
 from celery import Celery
 from celery.schedules import crontab
-from celery.signals import task_postrun, task_prerun, task_failure
+from celery.signals import (
+    task_postrun,
+    task_prerun,
+    task_failure,
+    worker_process_init,
+)
 from app.config import settings
 from app.core.logging import configure_logging
 
@@ -116,9 +121,13 @@ celery_app.conf.update(
             "task": "app.modules.observations.tasks.daily_aggregation",
             "schedule": crontab(minute=0, hour=4),
         },
+        # Proof 7: was monthly (day 1 only). If Beat misses that single run,
+        # inserts fall into the DEFAULT partition and pruning degrades. Run
+        # daily — CREATE IF NOT EXISTS is cheap and idempotent; the task
+        # ensures 12 months ahead so a single missed day is harmless.
         "ensure-check-partitions-monthly": {
             "task": "app.modules.checks.tasks.ensure_check_result_partitions",
-            "schedule": crontab(minute=0, hour=2, day_of_month=1),
+            "schedule": crontab(minute=0, hour=2),
         },
         "flush-api-key-last-used": {
             "task": "app.modules.api_keys.tasks.flush_api_key_last_used",
@@ -196,3 +205,27 @@ def _on_task_failure(task_id=None, task=None, exception=None, **extra):
         task_id,
         exception,
     )
+
+
+# ---------------------------------------------------------------------------
+# Proof 6 — Fork safety: Celery prefork forks child processes after the parent
+# may have created a global engine / process-cached loop. asyncpg connections
+# are bound to the loop that created them, so the child must drop any
+# inherited pool and loop. Without this, schedule_checks silently returns 0:
+# "Task got Future attached to a different loop".
+# ---------------------------------------------------------------------------
+@worker_process_init.connect
+def _on_worker_process_init(**kwargs):
+    logger.info("Celery worker process init: resetting DB engine and async loop for fork safety")
+    try:
+        from app.db.session import reset_engine
+
+        reset_engine()
+    except Exception as exc:  # pragma: no cover - never break worker startup
+        logger.debug("reset_engine during worker_process_init failed: %s", exc, exc_info=True)
+    try:
+        from app.infrastructure import async_tasks
+
+        async_tasks._reset_for_fork()
+    except Exception as exc:  # pragma: no cover
+        logger.debug("_reset_for_fork failed: %s", exc, exc_info=True)
