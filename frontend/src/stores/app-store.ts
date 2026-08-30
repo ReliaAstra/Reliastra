@@ -3,8 +3,16 @@
 import { create } from 'zustand';
 import type { PlanId, UserMe, Organization, PlanDetails } from '@/lib/dashboard/types';
 import { mockOrg, mockPlan, mockUser } from '@/lib/dashboard/mock';
-
-const REFRESH_KEY = 'reliastra_refresh_token';
+import {
+  setAccessTokenCookie,
+  setOrgIdCookie,
+} from '@/lib/auth-cookie';
+import {
+  getRefreshToken as readStoredRefreshToken,
+  storeSessionTokens,
+  clearCustomerTokens,
+  clearAllSessionTokens,
+} from '@/lib/session-storage';
 
 export interface RecentItem {
   href: string;
@@ -79,17 +87,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   unreadCount: 0,
   online: true,
 
-  setAccessToken: (token) => set({ accessToken: token, isDemo: !token }),
+  setAccessToken: (token) => {
+    setAccessTokenCookie(token);
+    set({ accessToken: token, isDemo: !token });
+  },
   setHydrated: (v) => set({ hydrated: v }),
   setSessionState: (sessionState) => set({ sessionState }),
-  setSession: (user, org, plan) =>
+  setSession: (user, org, plan) => {
+    setOrgIdCookie(org?.id ?? null);
     set({
       sessionState: 'authenticated',
       isDemo: false,
       user,
       org,
       plan,
-    }),
+    });
+  },
   enterDemoMode: () =>
     set({
       isDemo: true,
@@ -141,8 +154,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   setUnreadCount: (n) => set({ unreadCount: n }),
   setOnline: (v) => set({ online: v }),
   sessionExpired: () => {
+    // Non-explicit session end: clear only the customer-console keys. The
+    // partner/admin surfaces share this backend session, but each owns its
+    // own cleanup — wiping their keys here is what previously logged a
+    // customer out of everything after a single surface's 401.
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(REFRESH_KEY);
+      clearCustomerTokens();
     }
     set({
       accessToken: null,
@@ -154,8 +171,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
   signOut: () => {
+    // Explicit sign-out may clear the whole shared session.
     if (typeof window !== 'undefined') {
-      localStorage.removeItem(REFRESH_KEY);
+      clearAllSessionTokens();
     }
     set({
       accessToken: null,
@@ -170,12 +188,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 }));
 
 export function getRefreshToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(REFRESH_KEY);
+  return readStoredRefreshToken();
 }
 
 export function setRefreshToken(token: string | null) {
-  if (typeof window === 'undefined') return;
-  if (token) localStorage.setItem(REFRESH_KEY, token);
-  else localStorage.removeItem(REFRESH_KEY);
+  storeSessionTokens(undefined, token);
 }

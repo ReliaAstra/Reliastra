@@ -34,7 +34,23 @@ export async function proxyToBackend(
   const headers: Record<string, string> = {};
 
   // Forward authorization and request-tracing / idempotency context.
-  const authHeader = req.headers.get('authorization');
+  let authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    // Some preview edge proxies strip the `Authorization` header from
+    // browser requests. The client mirrors the access token into a
+    // same-origin cookie (see lib/auth-cookie.ts); re-inject it here so
+    // authenticated calls survive the edge. If both are present the header
+    // wins (direct API clients keep working unchanged).
+    const cookieHeader = req.headers.get('cookie') ?? '';
+    const cookieMatch = cookieHeader
+      .split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('reliastra_access_token='));
+    if (cookieMatch) {
+      const token = cookieMatch.slice('reliastra_access_token='.length);
+      authHeader = `Bearer ${decodeURIComponent(token)}`;
+    }
+  }
   if (authHeader) headers['Authorization'] = authHeader;
   const requestId = req.headers.get('x-request-id');
   if (requestId) headers['X-Request-ID'] = requestId;
@@ -44,12 +60,20 @@ export async function proxyToBackend(
   // Tenant context must be forwarded on EVERY method: the backend resolves
   // the organization exclusively via these headers, and org-scoped GETs
   // (dependencies, incidents, dashboard, ...) fail without them.
-  for (const name of ['x-organization-id', 'reliastra-organization']) {
-    const value = req.headers.get(name);
-    if (value) {
-      headers[name.toLowerCase() === 'x-organization-id' ? 'X-Organization-ID' : 'Reliastra-Organization'] = value;
+  let orgHeader = req.headers.get('x-organization-id');
+  if (!orgHeader) {
+    // Mirrored by the client into a cookie (see lib/auth-cookie.ts) because
+    // custom headers can be stripped by preview edges.
+    const cookieHeader = req.headers.get('cookie') ?? '';
+    const orgMatch = cookieHeader
+      .split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('reliastra_organization_id='));
+    if (orgMatch) {
+      orgHeader = decodeURIComponent(orgMatch.slice('reliastra_organization_id='.length));
     }
   }
+  if (orgHeader) headers['X-Organization-ID'] = orgHeader;
 
   // Forward content-type for requests with body
   if (!options?.noBody && method !== 'GET' && method !== 'HEAD') {

@@ -24,7 +24,6 @@ from app.core.audit_log import AuditLog
 from app.modules.partners.commissions import commission_service
 from app.modules.partners.constants import CommissionStatus
 from app.modules.partners.models import PartnerCommission, PartnerProfile
-from app.modules.users.models import User
 from tests.helpers import register_and_verify
 
 
@@ -55,12 +54,19 @@ async def _activate_partner(async_client, headers):
     return res.json()
 
 
-async def _make_admin(db_session, user_id):
-    row = (
-        await db_session.execute(select(User).where(User.id == user_id))
-    ).scalar_one()
-    row.is_system_admin = True
-    await db_session.commit()
+async def _make_admin(db_session, admin):
+    """Grant admin access via the dedicated credential path.
+
+    The user account is NOT promoted; admin endpoints require the admin-family
+    JWT, so mint one (service account anchor seeded on the test DB) and swap
+    it into the request headers.
+    """
+    from tests.helpers import make_admin_headers
+
+    admin["token"] = (await make_admin_headers(db_session))[
+        "Authorization"
+    ].removeprefix("Bearer ")
+    admin["headers"] = {"Authorization": f"Bearer {admin['token']}"}
 
 
 async def _release_commissions(db_session, partner_id):
@@ -178,7 +184,7 @@ async def test_mark_paid_requires_reference_and_notifies_partner(
     async_client, db_session
 ):
     admin = await _register(async_client, "payadmin@example.com", "Pay Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
     admin_headers = {"Authorization": f"Bearer {admin['token']}"}
 
     partner = await _register(async_client, "paid@example.com", "Paid Kof")
@@ -250,7 +256,7 @@ async def test_mark_paid_requires_reference_and_notifies_partner(
 @pytest.mark.asyncio
 async def test_failed_payout_returns_balance_and_notifies(async_client, db_session):
     admin = await _register(async_client, "failadmin@example.com", "Fail Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
     admin_headers = {"Authorization": f"Bearer {admin['token']}"}
 
     partner = await _register(async_client, "fail@example.com", "Fail Kof")
@@ -421,7 +427,7 @@ async def test_notifications_are_private_to_the_partner(async_client, db_session
 @pytest.mark.asyncio
 async def test_admin_can_notify_all_partners(async_client, db_session):
     admin = await _register(async_client, "bcadmin@example.com", "Broadcast Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
     admin_headers = {"Authorization": f"Bearer {admin['token']}"}
 
     one = await _register(async_client, "bc1@example.com", "BC One")
@@ -477,12 +483,13 @@ async def test_admin_can_notify_all_partners(async_client, db_session):
 async def test_broadcast_requires_system_admin(async_client):
     partner = await _register(async_client, "nope@example.com", "Nope Kof")
     await _activate_partner(async_client, partner["headers"])
+    # A user/partner JWT is NOT a member of the admin credential family.
     res = await async_client.post(
         "/v1/admin/partners/notify",
         json={"audience": "all", "title": "Hi", "body": "There"},
         headers=partner["headers"],
     )
-    assert res.status_code == 403, res.text
+    assert res.status_code == 401, res.text
 
 
 # ── Support desk ─────────────────────────────────────────────────────────
@@ -493,7 +500,7 @@ async def test_partner_support_conversation_reaches_admin_and_back(
     async_client, db_session
 ):
     admin = await _register(async_client, "supadmin@example.com", "Support Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
     admin_headers = {"Authorization": f"Bearer {admin['token']}"}
 
     partner = await _register(async_client, "sup@example.com", "Sup Kof")
@@ -616,7 +623,7 @@ async def test_support_ticket_validates_message_length(async_client):
 async def test_payout_queue_exposes_destination_and_backlog(async_client, db_session):
     """The admin queue must show what to pay and where, without drilling in."""
     admin = await _register(async_client, "queueadmin@example.com", "Queue Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
     admin_headers = {"Authorization": f"Bearer {admin['token']}"}
 
     partner = await _register(async_client, "queue@example.com", "Queue Kof")
@@ -826,9 +833,9 @@ async def test_destination_change_notifies_and_holds_payouts(async_client, db_se
 
 @pytest.mark.asyncio
 async def test_admin_sees_masked_destination_until_revealed(async_client, db_session):
-    admin = await _register(async_client, "revealadmin@example.com", "Reveal Admin")
-    await _make_admin(db_session, admin["user_id"])
-    admin_headers = {"Authorization": f"Bearer {admin['token']}"}
+    from tests.helpers import make_admin_headers
+
+    admin_headers = await make_admin_headers(db_session)
 
     partner = await _register(async_client, "reveal@example.com", "Reveal Kof")
     await _activate_partner(async_client, partner["headers"])
@@ -882,7 +889,9 @@ async def test_admin_sees_masked_destination_until_revealed(async_client, db_ses
         .all()
     )
     assert len(events) == 1
-    assert events[0].payload["admin_email"] == "revealadmin@example.com"
+    # Admin actions are attributed to the console identity (the non-login-able
+    # service account the dedicated admin credential maps to).
+    assert events[0].payload["admin_email"] == settings.admin_service_email
     assert events[0].resource_id == partner_id
 
     # A partner cannot reveal anything, including their own record.
@@ -890,7 +899,7 @@ async def test_admin_sees_masked_destination_until_revealed(async_client, db_ses
         f"/v1/admin/partners/{partner_id}/payout-destination",
         headers=partner["headers"],
     )
-    assert res.status_code == 403, res.text
+    assert res.status_code == 401, res.text
 
 
 @pytest.mark.asyncio

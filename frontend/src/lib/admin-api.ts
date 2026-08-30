@@ -71,28 +71,24 @@ export class AdminApiError extends Error {
 type QueryValue = string | number | boolean | null | undefined;
 type QueryParams = Record<string, QueryValue>;
 
-function getAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  // The existing Partner Network uses this token for the shared RELIASTRA API.
-  // Read the generic key first so a future product login can migrate without
-  // breaking an active admin session.
-  return (
-    window.localStorage.getItem('reliastra_access_token') ||
-    window.localStorage.getItem('partner_access_token')
-  );
-}
+/**
+ * Admin session model (from the security redesign):
+ *
+ *   - Admin access/refresh tokens live ONLY in HttpOnly cookies managed by
+ *     the `/api/admin/*` route handlers and `proxy.ts`. Browser JavaScript
+ *     never sees them; there is NO localStorage/sessionStorage for admin.
+ *   - The admin token family is minted from the dedicated operator
+ *     credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) by the backend and is
+ *     rejected on every customer/partner surface. Conversely the shared
+ *     customer/partner token is rejected on every admin surface.
+ *   - Refresh rotation happens server-side (proxy + route handlers), so this
+ *     module never refreshes and never touches the shared session store.
+ *   - A 401 here means the admin session is genuinely gone; the gate routes
+ *     to the dedicated `/admin/login`. A customer/partner session is never
+ *     affected.
+ */
 
-export function clearReliastraSession() {
-  if (typeof window === 'undefined') return;
-  window.localStorage.removeItem('reliastra_access_token');
-  window.localStorage.removeItem('reliastra_refresh_token');
-  window.localStorage.removeItem('partner_access_token');
-  window.localStorage.removeItem('partner_refresh_token');
-  // The legacy Partner Network persists its auth envelope under this key.
-  // Remove it too so an expired shared API session cannot be resurrected by
-  // hydration after the admin console has cleared sensitive state.
-  window.localStorage.removeItem('partner-store');
-}
+const ADMIN_SESSION_MARKER = 'x-admin-request';
 
 function notifyAccessFailure(type: 'expired' | 'denied') {
   if (typeof window === 'undefined') return;
@@ -136,20 +132,12 @@ async function request<T>(
     signal?: AbortSignal;
   } = {}
 ): Promise<T> {
-  const token = getAccessToken();
-  if (!token) {
-    const error = new AdminApiError('Your admin session has expired. Please sign in again.', {
-      status: 401,
-      code: 'UNAUTHORIZED',
-    });
-    clearReliastraSession();
-    notifyAccessFailure('expired');
-    throw error;
-  }
-
   const method = options.method ?? 'GET';
   const headers: HeadersInit = {
-    Authorization: `Bearer ${token}`,
+    // The admin-only marker doubles as the CSRF guard on the server: a
+    // cross-site request cannot set a custom header. Cookies carry the
+    // session. There is NO Authorization header — tokens are HttpOnly.
+    [ADMIN_SESSION_MARKER]: '1',
     Accept: 'application/json',
   };
 
@@ -180,7 +168,9 @@ async function request<T>(
   if (!response.ok) {
     const error = errorFromBody(response.status, body as ApiErrorBody | undefined);
     if (response.status === 401) {
-      clearReliastraSession();
+      // The proxy already attempted a server-side rotation before returning
+      // 401, so the admin session is truly over. NEVER clear shared storage:
+      // a customer/partner session in another tab is unrelated and alive.
       notifyAccessFailure('expired');
     }
     if (response.status === 403) {
@@ -192,35 +182,78 @@ async function request<T>(
   return body as T;
 }
 
+export interface AdminLoginResult {
+  admin: AdminCurrentUser;
+  expires_in: number;
+}
+
 /**
  * A typed, single integration point for the registered `/v1/admin/*` API.
  * UI components consume this service through React Query; none issue fetches
  * directly or create a second client-side cache.
  */
 export const adminApi = {
-  currentUser: async (): Promise<AdminCurrentUser> => {
-    const token = getAccessToken();
-    if (!token) {
-      throw new AdminApiError('Your admin session has expired. Please sign in again.', {
-        status: 401,
-        code: 'UNAUTHORIZED',
+  /**
+   * Exchange the dedicated operator credentials for an admin session.
+   *
+   * POSTs to `/api/admin/auth/login`. The route handler talks to the backend
+   * and stores the minted tokens in HttpOnly cookies; the response body
+   * contains only the admin identity. Nothing is written to storage.
+   */
+  login: async (username: string, password: string): Promise<AdminLoginResult> => {
+    try {
+      const response = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [ADMIN_SESSION_MARKER]: '1',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: 'same-origin',
+      });
+      const body = await response.json().catch(() => undefined);
+      if (!response.ok) {
+        const error = errorFromBody(response.status, body as ApiErrorBody | undefined);
+        throw error;
+      }
+      const result = body as AdminLoginResult;
+      if (!result.admin) {
+        throw new AdminApiError('The backend returned an incomplete admin session.', {
+          status: 502,
+          code: 'BACKEND_PROTOCOL_ERROR',
+        });
+      }
+      return result;
+    } catch (cause) {
+      if (cause instanceof AdminApiError) throw cause;
+      throw new AdminApiError('Unable to reach the RELIASTRA API. Please try again.', {
+        status: 0,
+        code: 'NETWORK_ERROR',
       });
     }
-    const response = await fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-      credentials: 'same-origin',
-    });
-    const body = await response.json().catch(() => undefined);
-    if (!response.ok) {
-      const error = errorFromBody(response.status, body as ApiErrorBody | undefined);
-      if (response.status === 401) {
-        clearReliastraSession();
-        notifyAccessFailure('expired');
-      }
-      throw error;
-    }
-    return body as AdminCurrentUser;
   },
+
+  /**
+   * Explicit admin sign-out. Server-side revocation of the admin refresh
+   * token + HttpOnly cookie clearing. Customer/partner sessions are
+   * NEVER touched.
+   */
+  logout: async (): Promise<void> => {
+    try {
+      await fetch('/api/admin/auth/logout', {
+        method: 'POST',
+        headers: { [ADMIN_SESSION_MARKER]: '1', Accept: 'application/json' },
+        credentials: 'same-origin',
+      });
+    } catch {
+      // Best-effort: the browser will still have cookies cleared by the
+      // route handler on success; if the request fails entirely, the gate's
+      // next 401 will route to /admin/login anyway.
+    }
+  },
+
+  currentUser: async (): Promise<AdminCurrentUser> => request<AdminCurrentUser>('/auth/me'),
 
   overview: () => request<AdminOverviewResponse>('/overview'),
   attention: () => request<AttentionResponse>('/attention'),

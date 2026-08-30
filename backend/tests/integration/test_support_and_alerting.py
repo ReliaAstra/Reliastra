@@ -46,14 +46,16 @@ async def _register(async_client, email, full_name):
     }
 
 
-async def _make_admin(db_session, user_id):
-    from app.modules.users.models import User
+async def _make_admin(db_session, admin):
+    """Grant admin access via the dedicated credential path.
 
-    row = (
-        await db_session.execute(select(User).where(User.id == user_id))
-    ).scalar_one()
-    row.is_system_admin = True
-    await db_session.commit()
+    The user account itself is NOT promoted: admin endpoints now require the
+    admin-family JWT, so we mint one (service account anchor seeded on the
+    test DB) and swap it into the request headers.
+    """
+    from tests.helpers import make_admin_headers
+
+    admin["headers"] = await make_admin_headers(db_session)
 
 
 # ── Public support intake ────────────────────────────────────────────────
@@ -63,7 +65,7 @@ async def _make_admin(db_session, user_id):
 async def test_public_form_reaches_the_admin_queue(async_client, db_session):
     """A web-form message must land in the same queue the admin works."""
     admin = await _register(async_client, "psf-admin@example.com", "PSF Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
 
     res = await async_client.post(
         "/v1/support/tickets",
@@ -145,7 +147,7 @@ async def test_public_form_validates_input(async_client):
 async def test_reply_to_unlinked_ticket_is_emailed(async_client, db_session, mocker):
     """No account ⇒ no in-app feed, so the reply must go out by email."""
     admin = await _register(async_client, "unl-admin@example.com", "Unl Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
 
     res = await async_client.post(
         "/v1/support/tickets",
@@ -186,7 +188,7 @@ async def test_reply_to_unlinked_ticket_is_emailed(async_client, db_session, moc
 @pytest.mark.asyncio
 async def test_internal_note_never_leaves_the_team(async_client, db_session, mocker):
     admin = await _register(async_client, "note-admin@example.com", "Note Admin")
-    await _make_admin(db_session, admin["user_id"])
+    await _make_admin(db_session, admin)
 
     res = await async_client.post(
         "/v1/support/tickets",

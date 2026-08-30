@@ -65,7 +65,7 @@ export function CommandPalette() {
         { label: 'Support', page: 'support', icon: MessageSquare, category: 'Navigation' },
         { label: 'Log in', page: 'login', icon: Users, category: 'Account' },
         { label: 'Sign up', page: 'signup', icon: Users, category: 'Account' },
-        { label: 'Apply', page: 'apply', icon: FileText, category: 'Account' },
+        { label: 'Join as partner', page: 'signup', icon: FileText, category: 'Account' },
         { label: 'Privacy Policy', page: 'privacy', icon: FileText, category: 'Legal' },
         { label: 'Terms of Service', page: 'terms', icon: FileText, category: 'Legal' },
         { label: 'Toggle theme', action: () => setTheme(isDark ? 'light' : 'dark'), icon: isDark ? Sun : Moon, category: 'Actions' },

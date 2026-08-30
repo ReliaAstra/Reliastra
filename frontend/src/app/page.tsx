@@ -5,6 +5,12 @@ import { usePartnerStore } from '@/stores/partner-store';
 import { PageLanding } from '@/components/landing/page-landing';
 import { PublicLayout } from '@/components/partner/public/public-layout';
 import { DashboardLayout } from '@/components/partner/dashboard/dashboard-layout';
+import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
+import {
+  getAccessToken,
+  clearPartnerTokens,
+} from '@/lib/session-storage';
+import { refreshSession } from '@/lib/auth-refresh';
 import type { PartnerPage } from '@/types/partner';
 
 const dashboardPages: PartnerPage[] = [
@@ -52,7 +58,7 @@ export default function Home() {
     setMounted(true);
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('partner_access_token');
+        let token = getAccessToken();
         if (!token) {
           setAuthStatus('unauthenticated');
           setMounted(true);
@@ -60,9 +66,26 @@ export default function Home() {
         }
 
         // Fetch /api/auth/me — returns UserResponse directly (snake_case, not wrapped)
-        const meRes = await fetch('/api/auth/me', {
+        let meRes = await fetch('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        // 401 = access token expired (or the preview edge stripped the
+        // header): rotate the session silently before deciding the user is
+        // signed out. Only a failed refresh clears this surface's tokens.
+        if (meRes.status === 401) {
+          const refreshed = await refreshSession();
+          if (!refreshed) {
+            clearPartnerTokens();
+            setAuthStatus('unauthenticated');
+            setMounted(true);
+            return;
+          }
+          token = refreshed.accessToken;
+          meRes = await fetch('/api/auth/me', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
 
         if (meRes.ok) {
           const data = await meRes.json();
@@ -74,28 +97,26 @@ export default function Home() {
           setAuthStatus('authenticated');
 
           // Also try to fetch partner profile in parallel
-          const partnerRes = await fetch('/api/partners/me', {
+          let partnerRes = await fetch('/api/partners/me', {
             headers: { Authorization: `Bearer ${token}` },
           });
+
           if (partnerRes.ok) {
-            const p = await partnerRes.json();
-            setPartner({
-              partnerId: p.partner_id,
-              referralCode: p.referral_code,
-              referralLink: p.referral_link,
-              commissionRate: p.commission_rate,
-              status: p.status,
-              createdAt: p.created_at,
-              payoutMethod: p.payout_method ?? null,
-              walletAddress: p.wallet_address ?? null,
-              payoutNetwork: p.payout_network ?? null,
-              bankDetails: p.bank_details ?? null,
-            });
+            setPartner(mapPartnerProfile(await partnerRes.json()));
+          } else if (partnerRes.status === 404) {
+            // Account exists but was never activated. Activation is free and
+            // idempotent server-side — do it silently so the user lands on
+            // the dashboard instead of a useless "apply" step.
+            try {
+              const profile = await partnerApi.apply({ agree_terms: true });
+              setPartner(mapPartnerProfile(profile));
+            } catch {
+              // Automatic activation must never block sign-in.
+            }
           }
         } else {
-          // Token is invalid
-          localStorage.removeItem('partner_access_token');
-          localStorage.removeItem('partner_refresh_token');
+          // Token is invalid and refresh failed
+          clearPartnerTokens();
           setAuthStatus('unauthenticated');
         }
       } catch {

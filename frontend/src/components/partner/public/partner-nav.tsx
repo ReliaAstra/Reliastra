@@ -141,7 +141,7 @@ export function PartnerNav() {
             <Button
               variant="default"
               size="sm"
-              onClick={() => handleNav('apply')}
+              onClick={() => handleNav('signup')}
               className="text-sm"
             >
               Apply now
@@ -209,7 +209,7 @@ export function PartnerNav() {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => handleNav('apply')}
+                  onClick={() => handleNav('signup')}
                   className="w-full"
                 >
                   Apply now

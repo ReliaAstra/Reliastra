@@ -64,6 +64,20 @@ class AuthRepository:
         return int(result.scalar() or 0)
 
     @staticmethod
+    async def get_latest_refresh_token(
+        session: AsyncSession, token_family: uuid.UUID
+    ) -> RefreshToken | None:
+        """Most recently issued token in a family (highest sequence)."""
+        query = (
+            select(RefreshToken)
+            .where(RefreshToken.token_family == token_family)
+            .order_by(RefreshToken.token_sequence.desc())
+            .limit(1)
+        )
+        result = await session.execute(query)
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def revoke_family(session: AsyncSession, token_family: uuid.UUID) -> int:
         """Revoke every token in a family (FIX 28 reuse detection)."""
         query = select(RefreshToken).where(RefreshToken.token_family == token_family)

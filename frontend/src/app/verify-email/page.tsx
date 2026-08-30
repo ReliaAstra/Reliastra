@@ -7,8 +7,10 @@ import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { VerifyOtpStep } from '@/components/partner/public/verify-otp-step';
+import { VerifyOtpStep, type VerifiedSession } from '@/components/partner/public/verify-otp-step';
 import { readApiError } from '@/lib/api-error';
+import { useAppStore } from '@/stores/app-store';
+import { storeSessionTokens } from '@/lib/session-storage';
 
 type LinkState = 'verifying' | 'verified' | 'failed';
 
@@ -129,10 +131,10 @@ function VerifyEmailContent() {
         <CheckCircle2 className="size-8 text-emerald-500" />
         <h1 className="text-lg font-semibold text-foreground">Email verified</h1>
         <p className="text-sm text-muted-foreground">
-          Your account is active. Continue to the Partner Network.
+          Your account is active. Continue to your workspace.
         </p>
         <Button asChild className="mt-2 w-full">
-          <Link href="/?page=login">Continue</Link>
+          <Link href="/dashboard">Continue</Link>
         </Button>
       </div>
     );
@@ -143,7 +145,16 @@ function VerifyEmailContent() {
       <VerifyOtpStep
         email={confirmedEmail}
         autoSend
-        onVerified={() => setDone(true)}
+        // The OTP exchange issues the session — persist BOTH tokens before
+        // showing the "verified" screen so the console is authenticated.
+        onVerified={(session: VerifiedSession) => {
+          storeSessionTokens(
+            session.tokens.access_token,
+            session.tokens.refresh_token
+          );
+          useAppStore.getState().setAccessToken(session.tokens.access_token);
+          setDone(true);
+        }}
         onBack={() => setConfirmedEmail(null)}
         backLabel="Use a different email"
         title="Verify your email"

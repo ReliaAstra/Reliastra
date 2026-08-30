@@ -22,17 +22,29 @@ import type {
   PartnerApplyRequest,
   Partner,
 } from '@/types/partner';
+import {
+  getAccessToken,
+  getRefreshToken,
+  clearPartnerTokens,
+} from '@/lib/session-storage';
+import { refreshSession } from '@/lib/auth-refresh';
 
 const API_BASE = '/api';
 
+/**
+ * One authenticated request path.
+ *
+ * On 401 the shared single-flight refresh (lib/auth-refresh.ts — the SAME
+ * mutex the customer console and admin console use) rotates the session and
+ * the original request is retried once. Tokens are cleared ONLY when the
+ * refresh itself fails; a parallel surface's keys are never touched.
+ */
 async function request<T>(
   path: string,
-  options?: RequestInit
+  options?: RequestInit,
+  retried = false
 ): Promise<T> {
-  const token =
-    typeof window !== 'undefined'
-      ? localStorage.getItem('partner_access_token')
-      : null;
+  const token = getAccessToken();
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -48,12 +60,14 @@ async function request<T>(
     headers,
   });
 
+  if (res.status === 401 && !retried) {
+    const refreshed = await refreshSession();
+    if (refreshed) return request<T>(path, options, true);
+  }
   if (res.status === 401) {
-    // Clear tokens and redirect to login
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('partner_access_token');
-      localStorage.removeItem('partner_refresh_token');
-    }
+    // Refresh failed (or the retried request still failed) — this surface's
+    // session is unusable.
+    clearPartnerTokens();
     throw new Error('UNAUTHORIZED');
   }
 
@@ -64,6 +78,24 @@ async function request<T>(
   }
 
   return res.json();
+}
+
+/** Shape a backend partner profile into the client `Partner` model. */
+export function mapPartnerProfile(profile: PartnerProfileResponse): Partner {
+  return {
+    partnerId: profile.partner_id,
+    referralCode: profile.referral_code,
+    referralLink: profile.referral_link,
+    commissionRate: profile.commission_rate,
+    status: profile.status,
+    createdAt: profile.created_at,
+    payoutMethod: profile.payout_method ?? null,
+    walletAddress: profile.wallet_address ?? null,
+    payoutNetwork: profile.payout_network ?? null,
+    bankDetails: profile.bank_details ?? null,
+    payoutDestination: profile.payout_destination ?? null,
+    payoutDetailsUpdatedAt: profile.payout_details_updated_at ?? null,
+  };
 }
 
 export const partnerApi = {
@@ -140,10 +172,7 @@ export const partnerApi = {
    * this fix ensures it is revoked and cleared locally.
    */
   async logout() {
-    const refreshToken =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('partner_refresh_token')
-        : null;
+    const refreshToken = getRefreshToken();
     if (!refreshToken) return;
     try {
       await fetch(`${API_BASE}/auth/logout`, {
@@ -152,8 +181,7 @@ export const partnerApi = {
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
     } finally {
-      if (typeof window !== 'undefined')
-        localStorage.removeItem('partner_refresh_token');
+      clearPartnerTokens();
     }
   },
 
@@ -168,20 +196,7 @@ export const partnerApi = {
 
   async getMe(): Promise<Partner> {
     const res = await request<PartnerProfileResponse>('/partners/me');
-    return {
-      partnerId: res.partner_id,
-      referralCode: res.referral_code,
-      referralLink: res.referral_link,
-      commissionRate: res.commission_rate,
-      status: res.status,
-      createdAt: res.created_at,
-      payoutMethod: res.payout_method ?? null,
-      walletAddress: res.wallet_address ?? null,
-      payoutNetwork: res.payout_network ?? null,
-      bankDetails: res.bank_details ?? null,
-      payoutDestination: res.payout_destination ?? null,
-      payoutDetailsUpdatedAt: res.payout_details_updated_at ?? null,
-    };
+    return mapPartnerProfile(res);
   },
 
   async getPayoutSettings() {
@@ -247,10 +262,7 @@ export const partnerApi = {
   },
 
   async dismissNotification(id: string) {
-    const token =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('partner_access_token')
-        : null;
+    const token = getAccessToken();
     await fetch(`/api/partners/notifications/${id}`, {
       method: 'DELETE',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,

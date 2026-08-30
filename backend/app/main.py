@@ -53,8 +53,9 @@ from app.modules.growth.router import growth_router
 from app.modules.feed.router import feed_router
 from app.modules.status_pages.router import status_router, status_page_router
 from app.modules.admin.router import admin_router, public_announcements_router
+from app.modules.admin.auth_router import admin_auth_router
 from app.modules.admin.public_support_router import public_support_router
-from app.modules.admin.seed import seed_first_admin
+from app.modules.admin.seed import ensure_admin_service_account
 from app.modules.analytics.router import public_analytics_router
 
 logger = logging.getLogger(__name__)
@@ -234,7 +235,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Scheduling is handled entirely by Celery Beat → `schedule_checks` →
     # `execute_check.delay()`.  No custom scheduler loop, no APScheduler.
     # The Celery worker container executes the actual probes.
-    await seed_first_admin()
+    await ensure_admin_service_account()
     yield
     logger.info("Reliastra backend shutting down...")
     try:
@@ -321,6 +322,7 @@ def create_app() -> FastAPI:
     app.include_router(feed_router)
     app.include_router(status_router)
     app.include_router(status_page_router)
+    app.include_router(admin_auth_router)
     app.include_router(admin_router)
     app.include_router(public_announcements_router)
     app.include_router(public_support_router)

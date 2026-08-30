@@ -15,9 +15,40 @@ from __future__ import annotations
 from typing import Any
 
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.config import settings
+from app.core.security import create_admin_access_token
 
 #: The value ``generate_otp_code`` is patched to return during tests.
 TEST_OTP_CODE = "424242"
+
+
+async def make_admin_headers(db: AsyncSession) -> dict[str, str]:
+    """Mint a dedicated ADMIN-console session for integration tests.
+
+    This intentionally does NOT create a login-able user and does not flip
+    ``is_system_admin`` on one: it seeds the non-login-able service account
+    anchor and signs an admin-family access token, exactly like the operator
+    flow (``POST /v1/admin/auth/login`` → admin JWT).
+    """
+    if not settings.admin_console_enabled:
+        # Test environments without ADMIN_* configured would otherwise fail
+        # closed; configure a deterministic sandbox credential.
+        from pydantic import SecretStr
+
+        settings.ADMIN_USERNAME = "test-admin"
+        settings.ADMIN_PASSWORD = SecretStr("Test-Admin-Password-2026!")
+        settings.ADMIN_TOKEN_SECRET = (
+            "test-admin-token-secret-0123456789abcdef0123456789abcdef"
+        )
+
+    from app.modules.admin.seed import ensure_admin_service_account
+
+    seeded = await ensure_admin_service_account()
+    assert seeded, "admin service account must be seeded for tests"
+    token = create_admin_access_token(settings.ADMIN_USERNAME)
+    return {"Authorization": f"Bearer {token}"}
 
 
 async def register_and_verify(

@@ -505,7 +505,6 @@ export type PartnerPage =
   | 'faq'
   | 'tiers'
   | 'resources'
-  | 'apply'
   | 'login'
   | 'signup'
   | 'forgot-password'

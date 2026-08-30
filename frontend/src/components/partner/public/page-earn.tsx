@@ -637,7 +637,7 @@ export function PageEarn() {
             <motion.div variants={fadeUp} custom={2}>
               <Button
                 size="lg"
-                onClick={() => navigate('apply')}
+                onClick={() => navigate('signup')}
                 className="gap-2 px-8"
               >
                 Apply now

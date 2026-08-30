@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { BrandMark } from '@/components/auth/brand-mark';
+import { useAppStore } from '@/stores/app-store';
+import { storeSessionTokens } from '@/lib/session-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,10 +49,30 @@ function CustomerLoginPageContent() {
         setError(ERRORS[data?.detail ?? ''] ?? 'Email or password is incorrect.');
         return;
       }
-      if (data.refresh_token) {
-        localStorage.setItem('reliastra_refresh_token', data.refresh_token);
+      // Persist BOTH tokens (shared canonical store + legacy partner mirror)
+      // so the customer console, partner SPA, and admin gate all see the
+      // session immediately after redirect.
+      if (data.access_token || data.refresh_token) {
+        storeSessionTokens(
+          data.access_token ?? null,
+          data.refresh_token ?? null
+        );
       }
-      router.push(next && next.startsWith('/') ? next : '/dashboard');
+      if (data.access_token) {
+        useAppStore.getState().setAccessToken(data.access_token);
+      }
+      // The admin control plane is a separate security domain with its own
+      // credentials. A customer sign-in must NEVER route into `/admin`
+      // (even `/admin/login` is only meant for the operator credentials).
+      // A `next` like `/admin...` or a protocol-relative URL is ignored.
+      const destination =
+        next &&
+        next.startsWith('/') &&
+        !next.startsWith('//') &&
+        !next.toLowerCase().startsWith('/admin')
+          ? next
+          : '/dashboard';
+      router.push(destination);
     } catch {
       setError('Could not reach Reliastra. Check your connection and retry.');
     } finally {

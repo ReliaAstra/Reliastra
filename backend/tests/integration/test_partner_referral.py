@@ -20,7 +20,6 @@ from app.modules.partners.models import (
     PartnerReferral,
 )
 from app.modules.partners.service import partner_service
-from app.modules.users.models import User
 from tests.helpers import register_and_verify
 
 
@@ -347,12 +346,18 @@ async def test_partner_sees_only_own_data(async_client, db_session):
 
 
 @pytest.mark.asyncio
-async def test_admin_endpoints_require_system_admin(async_client):
+async def test_admin_endpoints_require_system_admin(async_client, db_session):
     partner = await _register(async_client, "alex@example.com", "Alexander Kof")
     await _activate_partner(async_client, partner["headers"])
 
+    # A normal user JWT (even one with is_system_admin in the DB) is NOT an
+    # admin credential — the dedicated admin JWT family is required.
     res = await async_client.get("/v1/admin/partners", headers=partner["headers"])
-    assert res.status_code == 403, res.text
+    assert res.status_code == 401, res.text
+
+    # A missing credential is also rejected.
+    res = await async_client.get("/v1/admin/partners")
+    assert res.status_code == 401, res.text
 
 
 # ── Payout ───────────────────────────────────────────────────────────────
@@ -532,13 +537,11 @@ async def test_public_referral_resolver(async_client, db_session):
 
 @pytest.mark.asyncio
 async def test_admin_control_plane(async_client, db_session):
-    admin = await _register(async_client, "admin@example.com", "Admin User")
-    # Promote to system admin directly.
-    admin_row = (
-        await db_session.execute(select(User).where(User.id == admin["user_id"]))
-    ).scalar_one()
-    admin_row.is_system_admin = True
-    await db_session.commit()
+    from tests.helpers import make_admin_headers
+
+    # Admin access is a dedicated credential path — mint the admin JWT the
+    # same way the operator login does (no user account is promoted).
+    admin_headers = await make_admin_headers(db_session)
 
     partner = await _register(async_client, "alex@example.com", "Alexander Kof")
     profile = await _activate_partner(async_client, partner["headers"])
@@ -558,7 +561,7 @@ async def test_admin_control_plane(async_client, db_session):
     )
     await db_session.commit()
 
-    admin_headers = {"Authorization": f"Bearer {admin['token']}"}
+
 
     # List partners.
     res = await async_client.get("/v1/admin/partners", headers=admin_headers)

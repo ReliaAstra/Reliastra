@@ -23,7 +23,7 @@ const footerSections = [
   {
     heading: 'Account',
     links: [
-      { label: 'Apply', page: 'apply' as PartnerPage },
+      { label: 'Join as partner', page: 'signup' as PartnerPage },
       { label: 'Log in', page: 'login' as PartnerPage },
       { label: 'Sign up', page: 'signup' as PartnerPage },
     ],

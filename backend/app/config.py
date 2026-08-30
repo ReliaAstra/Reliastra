@@ -93,6 +93,26 @@ class Settings(BaseSettings):
         default=7,
         description="Refresh token expiration time in days",
     )
+    REFRESH_REUSE_GRACE_SECONDS: int = Field(
+        default=20,
+        ge=10,
+        le=30,
+        description=(
+            "Seconds after a refresh rotation during which a replayed "
+            "previous token is treated as a benign parallel refresh (the "
+            "last issued pair is returned) instead of family-wide theft "
+            "revocation. Three frontend surfaces share one session and can "
+            "legitimately refresh the same token within milliseconds."
+        ),
+    )
+    ADMIN_TOKEN_SECRET: str = Field(
+        default="",
+        min_length=0,
+        description="Signing key (>= 32 chars) for ADMIN-console JWTs. "
+        "Must be set together with ADMIN_USERNAME/ADMIN_PASSWORD; the admin "
+        "console is disabled while it is missing. The frontend admin proxy "
+        "uses the same value to verify admin session cookies server-side.",
+    )
     # Supabase Storage S3 API — the ONLY object-storage backend.
     SUPABASE_S3_ENDPOINT: str = Field(
         default="",
@@ -547,6 +567,56 @@ class Settings(BaseSettings):
         return self
 
     @model_validator(mode="after")
+    def _validate_admin_credentials(self) -> Settings:
+        username = self.ADMIN_USERNAME.strip()
+        password = self.ADMIN_PASSWORD.get_secret_value() if self.ADMIN_PASSWORD else ""
+
+        if not username and not password:
+            # Disabled by default — admin console endpoints fail closed.
+            return self
+        if not username or not password:
+            raise ValueError(
+                "ADMIN_USERNAME and ADMIN_PASSWORD must be set together. "
+                "The admin console is disabled while either is missing."
+            )
+        if len(password) < 16:
+            raise ValueError(
+                "ADMIN_PASSWORD must be at least 16 characters long."
+            )
+        if password in _KNOWN_INSECURE_SECRETS or password.lower() in {
+            "changeme", "password", "admin", "secret", "reliastra"
+        }:
+            raise ValueError(
+                "ADMIN_PASSWORD is a known insecure value. Choose a "
+                "cryptographically strong, unique password."
+            )
+        if not self.ADMIN_TOKEN_SECRET:
+            raise ValueError(
+                "ADMIN_TOKEN_SECRET must be set together with "
+                "ADMIN_USERNAME/ADMIN_PASSWORD."
+            )
+        if len(self.ADMIN_TOKEN_SECRET) < 32:
+            raise ValueError(
+                "ADMIN_TOKEN_SECRET must be at least 32 characters long."
+            )
+        return self
+
+    @property
+    def admin_console_enabled(self) -> bool:
+        """True only when the dedicated admin credential is fully configured."""
+        username = self.ADMIN_USERNAME.strip()
+        password = (
+            self.ADMIN_PASSWORD.get_secret_value()
+            if self.ADMIN_PASSWORD
+            else ""
+        )
+        return bool(username and password and self.ADMIN_TOKEN_SECRET)
+
+    @property
+    def admin_service_email(self) -> str:
+        return self.ADMIN_SERVICE_EMAIL.strip().lower()
+
+    @model_validator(mode="after")
     def _reject_insecure_defaults_in_production(self) -> Settings:
         if self.ENVIRONMENT != "production":
             return self
@@ -639,10 +709,46 @@ class Settings(BaseSettings):
         description="Evidence report_token lifetime in days",
     )
 
-    # Admin panel bootstrap
-    FIRST_ADMIN_EMAIL: str | None = Field(
-        default=None,
-        description="Email of the first system admin to auto-promote on startup",
+    # ── Admin console (dedicated secret credentials) ─────────────────────────
+    # The admin control plane is NOT driven by user accounts. Access requires
+    # these dedicated credentials, configured as secrets. They are verified in
+    # constant time and only ever mint ADMIN-scoped JWTs (type=admin_access /
+    # admin_refresh, audience=reliastra-admin) that no user/partner/API-key
+    # endpoint will accept. Both must be set together; when unset the admin
+    # console is disabled (fail closed).
+    ADMIN_USERNAME: str = Field(
+        default="",
+        min_length=0,
+        max_length=64,
+        description="Admin console username (secret). Set together with "
+        "ADMIN_PASSWORD. Empty disables the admin console.",
+    )
+    ADMIN_PASSWORD: SecretStr = Field(
+        default=SecretStr(""),
+        description="Admin console password (secret, >= 16 chars). Set together "
+        "with ADMIN_USERNAME. Empty disables the admin console.",
+    )
+    ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=15,
+        ge=5,
+        le=120,
+        description="Admin access token lifetime in minutes.",
+    )
+    ADMIN_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
+        default=1,
+        ge=1,
+        le=14,
+        description="Admin refresh token lifetime in days.",
+    )
+    ADMIN_SERVICE_EMAIL: str = Field(
+        default="system-admin@reliastra.internal",
+        max_length=255,
+        description=(
+            "Email of the non-login-able service account used as the FK "
+            "anchor for admin-created records and the admin audit trail. "
+            "This account cannot sign in: its password hash is a random "
+            "value generated at seed time and never revealed."
+        ),
     )
 
     # ── Partner Network / Distribution Infrastructure ────────────────────────

@@ -333,7 +333,7 @@ export function PageTiers() {
             <motion.div variants={fadeUp} custom={3}>
               <Button
                 size="lg"
-                onClick={() => navigate('apply')}
+                onClick={() => navigate('signup')}
                 className="gap-2 px-8"
               >
                 Apply to the program

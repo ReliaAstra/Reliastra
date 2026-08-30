@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { BrandMark } from '@/components/auth/brand-mark';
+import { useAppStore } from '@/stores/app-store';
+import { storeSessionTokens } from '@/lib/session-storage';
 
 interface RegisterResponse {
   user?: { id: string; email: string };
@@ -57,9 +59,14 @@ export default function CustomerSignupPage() {
         );
         return;
       }
+      const access = data.tokens?.access_token ?? data.access_token;
       const refresh = data.tokens?.refresh_token ?? data.refresh_token;
-      if (refresh) {
-        localStorage.setItem('reliastra_refresh_token', refresh);
+      if (access || refresh) {
+        // Persist BOTH tokens so the session survives the navigate.
+        storeSessionTokens(access ?? null, refresh ?? null);
+      }
+      if (access) {
+        useAppStore.getState().setAccessToken(access);
       }
       // New enterprise onboarding: land directly in the guided setup
       // If verification is required, the API will return no tokens — send to verify-email

@@ -53,11 +53,10 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
       router.replace('/login');
     };
 
-    const refresh =
-      getRefreshToken() ??
-      (typeof window !== 'undefined'
-        ? window.localStorage.getItem('partner_refresh_token')
-        : null);
+    // `getRefreshToken()` reads the canonical `reliastra_refresh_token` with
+    // a fallback to the legacy `partner_refresh_token`, so an existing
+    // partner-session user keeps their session across the shared sign-in.
+    const refresh = getRefreshToken();
 
     if (!refresh) {
       setHydrated(true);
