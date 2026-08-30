@@ -2,7 +2,7 @@
 
 **Branch:** `arena/01a0548e-reliastra` (base `77f51e6`)
 **Date:** 2026-08-30
-**Scope:** Customer sign-in → dashboard, Partner sign-in → partner dashboard, Admin sign-in → admin console. Session lifecycle, UX, and bugs. Audit first — no fixes applied.
+**Scope:** Customer sign-in → dashboard, Partner sign-in → partner dashboard, Admin sign-in → admin console. Session lifecycle, UX, and bugs. Audit first; all findings were subsequently fixed — see **§6 Resolution**.
 
 ---
 
@@ -192,4 +192,27 @@ This is worth fixing regardless: it means the suite cannot currently be used to 
 5. **F-4** (partner blank-screen resilience).
 6. **F-7** (make admin auth test green) and **F-6** (lint error).
 
-No code has been changed in this audit; findings are reported for triage before any fix is applied.
+## 6. Resolution
+
+All seven findings were fixed on `arena/01a0548e-reliastra`. Post-fix verification is green.
+
+| # | Fix | Files |
+|---|---|---|
+| F-1 | Customer login now reads the error envelope via `readApiError()`; `EMAIL_NOT_VERIFIED` routes to `/verify-email?email=…` instead of showing "wrong password"; disabled-account message now reaches the user. | `frontend/src/app/login/page.tsx` |
+| F-2 | Customer signup switches on HTTP 409 via `readApiError()` — "account already exists" branch is live. | `frontend/src/app/signup/page.tsx` |
+| F-3 | Magic-link success CTA now links to `/login` (customer sign-in), not `/?page=login` (partner). | `frontend/src/app/verify-email/page.tsx` |
+| F-4 | Partner login no longer sets `authenticated` when `/api/auth/me` fails; `app/page.tsx` demotes any `authenticated && !user` state and renders a boot splash instead of `null`. | `frontend/src/components/partner/public/page-login.tsx`, `frontend/src/app/page.tsx` |
+| F-5 | Admin refresh cookie now uses `adminRefreshMaxAgeSeconds()` (1 day) in both setters; access cookie falls back to `adminAccessMaxAgeSeconds()`. Verified live: `reliastra_admin_refresh … Max-Age=86400`. | `frontend/src/lib/admin-backend-proxy.ts`, `frontend/src/lib/admin-session-gate.ts` |
+| F-6 | React-Compiler memoization error removed by hoisting `clients = data?.clients` and using `clients` in the `useMemo` deps. | `frontend/src/components/dashboard/pages/clients.tsx` |
+| F-7 | Test seeds the operator credential before the negative assertions so the console is enabled and anonymous/non-admin calls return 401. | `backend/tests/integration/test_supabase_auth_architecture.py` |
+
+**Post-fix verification:**
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | ✅ clean |
+| `npx eslint .` | ✅ 0 errors (5 pre-existing warnings, none in sign-in paths) |
+| `npx next build` | ✅ exit 0 |
+| Backend auth tests (unit + integration) | ✅ 56 passed |
+| Live: admin login `Set-Cookie` | ✅ access `Max-Age=900`, refresh `Max-Age=86400` |
+| Live: customer login 403 `EMAIL_NOT_VERIFIED` envelope | ✅ intact (page now routes to `/verify-email`) |

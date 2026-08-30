@@ -3,6 +3,8 @@ import {
   ADMIN_ACCESS_COOKIE,
   ADMIN_API_HEADER,
   ADMIN_REFRESH_COOKIE,
+  adminAccessMaxAgeSeconds,
+  adminRefreshMaxAgeSeconds,
   adminCookieAttrs,
   requestIsSecure,
 } from '@/lib/admin-session-cookie';
@@ -454,11 +456,16 @@ export function setAdminSessionCookies(
   const attrs = adminCookieAttrs(secure);
   response.cookies.set(ADMIN_ACCESS_COOKIE, accessToken, {
     ...attrs,
-    maxAge: expiresInSeconds,
+    // Match the cookie to the access token's own lifetime (falling back to
+    // the configured default if the backend reports a non-positive value).
+    maxAge: expiresInSeconds > 0 ? expiresInSeconds : adminAccessMaxAgeSeconds(),
   });
   response.cookies.set(ADMIN_REFRESH_COOKIE, refreshToken, {
     ...attrs,
-    maxAge: Math.max(expiresInSeconds, 60 * 60),
+    // The refresh token lives ADMIN_REFRESH_TOKEN_EXPIRE_DAYS (default 1 day);
+    // the cookie must survive that long or the browser drops it after an hour
+    // and forces a re-login with an otherwise-valid server session.
+    maxAge: adminRefreshMaxAgeSeconds(),
   });
 }
 

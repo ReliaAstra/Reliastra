@@ -185,6 +185,12 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
     """
     from tests.helpers import make_admin_headers
 
+    # Seed the dedicated admin credential FIRST so the console is *enabled* for
+    # the negative assertions below. A disabled console answers 403
+    # ("Admin console is disabled") instead of the 401 the test expects for
+    # anonymous / non-admin callers, which is what made this test red.
+    await make_admin_headers(db_session)
+
     # Create a normal user and an "admin" user row. The flag no longer grants
     # access — the dedicated credential does.
     normal_user = await UserRepository.create(

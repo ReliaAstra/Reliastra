@@ -7,6 +7,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { BrandMark } from '@/components/auth/brand-mark';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
+import { readApiError, isEmailNotVerified } from '@/lib/api-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,11 +45,25 @@ function CustomerLoginPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), password }),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(ERRORS[data?.detail ?? ''] ?? 'Email or password is incorrect.');
+        const apiError = await readApiError(
+          res,
+          'Email or password is incorrect.'
+        );
+        // The email-verification hard gate: credentials were correct but the
+        // address was never proven. The backend has already sent a fresh
+        // 6-digit code, so send the customer straight to the code-entry step
+        // instead of showing a misleading "wrong password" message.
+        if (isEmailNotVerified(apiError)) {
+          router.push(
+            `/verify-email?email=${encodeURIComponent(email.trim())}`
+          );
+          return;
+        }
+        setError(ERRORS[apiError.message] ?? apiError.message);
         return;
       }
+      const data = await res.json().catch(() => ({}));
       // Persist BOTH tokens (shared canonical store + legacy partner mirror)
       // so the customer console, partner SPA, and admin gate all see the
       // session immediately after redirect.

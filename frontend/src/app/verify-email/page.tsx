@@ -95,7 +95,7 @@ function VerifyEmailContent() {
             Your address is confirmed. You can sign in now.
           </p>
           <Button asChild className="mt-2 w-full">
-            <Link href="/?page=login">Go to sign in</Link>
+            <Link href="/login">Go to sign in</Link>
           </Button>
         </div>
       );
