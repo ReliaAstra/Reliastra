@@ -15,8 +15,9 @@ import {
   retentionLabel,
   seatLabel,
 } from '@/lib/dashboard/plans';
-import { isCheckoutReady } from '@/lib/billing/currency';
+import { formatMinorUnits, isCheckoutReady } from '@/lib/billing/currency';
 import {
+  FxReferencePanel,
   PaymentCurrencyNotice,
   PlanPaymentSummary,
 } from '@/components/billing/PaymentCurrencyNotice';
@@ -164,7 +165,8 @@ export function PricingSection() {
                 )}
 
                 {/* The USD figure above is the list price; this is the
-                    currency and amount the card is actually charged in. The
+                    mandatory transparency triple — product price, the amount
+                    actually charged through Paystack, and the provider. Every
                     wording lives in one shared component (billing/
                     PaymentCurrencyNotice) so no surface can drift. */}
                 {paidPlan && (
@@ -172,7 +174,13 @@ export function PricingSection() {
                     info={currency}
                     plan={p.id}
                     interval={interval}
-                    className="mt-2"
+                    productPrice={formatMinorUnits(
+                      (interval === 'annual' ? p.priceAnnual : p.priceMonthly) != null
+                        ? (interval === 'annual' ? p.priceAnnual! : p.priceMonthly!) * 100
+                        : null,
+                      'USD'
+                    )}
+                    className="mt-3"
                   />
                 )}
 
@@ -220,10 +228,13 @@ export function PricingSection() {
           })}
         </div>
 
-        {/* Plan information → currency disclosure → next step. One instance of
-            the canonical paragraph for the whole pricing view. */}
+        {/* Plan information → currency disclosure → FX reference → next step.
+            One instance of the canonical paragraph for the whole pricing view;
+            the FX panel below it is labelled context that can never be
+            mistaken for the billing basis. */}
         <div className="mx-auto mt-10 max-w-3xl" data-testid="pricing-currency-notice">
           <PaymentCurrencyNotice info={currency} heading="Billing currency" />
+          <FxReferencePanel info={currency} className="mt-3" />
         </div>
 
         <p className="mt-10 text-center text-sm text-[#52525B] dark:text-[#A1A1AA]">

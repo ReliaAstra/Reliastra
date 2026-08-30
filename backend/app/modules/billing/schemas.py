@@ -38,6 +38,49 @@ class PaymentCurrencyResponse(BaseModel):
     """``plan -> interval -> formatted amount`` for published payment prices.
     Absent means unpublished — the UI then states the currency without showing
     a figure, because no figure may be derived client-side."""
+    payment_provider: str = "Paystack"
+    """Who actually takes the money. Part of the mandatory transparency
+    triple (product price / actual charge / payment provider)."""
+    payment_provider_display: str = "Paystack — secure hosted checkout"
+    fx_reference: dict | None = None
+    """Market reference estimate (rate, source, timestamps, disclaimer) shown
+    *beside* prices for context. Display-only: it is never consulted to
+    determine a charge. ``None`` when disabled or unavailable — surfaces then
+    omit the estimate rather than inventing one."""
+
+
+class BillingTransactionResponse(BaseModel):
+    """One collected payment, as recorded at the time it happened.
+
+    Both sides are carried — the USD product price that was quoted and the
+    amount/currency the provider actually charged — so a receipt can restate
+    the full transparency triple from history without re-deriving anything.
+    """
+
+    id: uuid.UUID
+    reference: str
+    provider: str
+    plan: str
+    display_plan: str
+    billing_interval: str
+    status: str
+    product_currency: str
+    product_amount_minor: int | None = None
+    product_price_display: str | None = None
+    charged_currency: str
+    charged_amount_minor: int
+    charged_amount_display: str
+    paid_at: datetime | None = None
+    period_start: datetime | None = None
+    period_end: datetime | None = None
+    created_at: datetime
+
+
+class BillingTransactionsResponse(BaseModel):
+    items: list[BillingTransactionResponse]
+    # The same disclosure object every payment surface renders, so the history
+    # view can state the provider + currency without a second source.
+    payment: PaymentCurrencyResponse
 
 
 
@@ -114,6 +157,13 @@ class InitializePaymentResponse(BaseModel):
     amount_minor: int | None = None
     currency: str | None = None
     amount_display: str | None = None
+    # The USD product price this checkout corresponds to, resolved
+    # server-side, so the transparency triple on the hand-off screen is
+    # backend-sourced end to end (product price / actual charge / provider).
+    product_currency: str | None = None
+    product_amount_minor: int | None = None
+    product_price_display: str | None = None
+    payment_provider: str = "Paystack"
 
 
 class VerifyTransactionResponse(BaseModel):
@@ -127,3 +177,9 @@ class VerifyTransactionResponse(BaseModel):
     currency: str | None = None
     amount_minor: int | None = None
     amount_display: str | None = None
+    # The USD list price quoted by this checkout (transparency on
+    # confirmation screens, read back from the persisted transaction).
+    product_currency: str | None = None
+    product_amount_minor: int | None = None
+    product_price_display: str | None = None
+    payment_provider: str = "Paystack"

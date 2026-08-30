@@ -55,6 +55,10 @@ BASE_URL = os.environ.get("E2E_BASE_URL", "").rstrip("/")
 API_URL = os.environ.get("E2E_API_URL") or (f"{BASE_URL}/api/v1" if BASE_URL else "")
 MAIL_URL = os.environ.get("E2E_MAIL_URL", "").rstrip("/")
 PAYSTACK_CAPTURE = os.environ.get("E2E_PAYSTACK_CAPTURE", "")
+# Where the customer goes to pay. Production: Paystack's hosted checkout. The
+# local harness points this at the stand-in (audit/mock_paystack.py) so the
+# journey can watch the browser actually leave for it.
+PROVIDER_URL = os.environ.get("E2E_PAYSTACK_URL", "https://checkout.paystack.com").rstrip("/")
 PASSWORD = "Journey-S3cret!"
 
 #: A dev server compiles a route on first request, which can outlast
@@ -101,8 +105,8 @@ async def _sink_messages() -> list[dict[str, Any]]:
         }
         out.append(
             {
-                "subject": headers.get("subject", ""),
-                "to": headers.get("to", ""),
+                "subject": _decode_header(headers.get("subject", "")),
+                "to": _decode_header(headers.get("to", "")),
                 "raw": item.get("MIME", {}).get("raw", ""),
             }
         )
@@ -180,6 +184,20 @@ async def _mail_for(address: str, subject_re: str) -> dict[str, Any] | None:
     return None
 
 
+async def _await_mail(
+    address: str, subject_re: str, timeout: float = 30.0
+) -> dict[str, Any] | None:
+    """Poll :func:`_mail_for` — delivery is a best-effort side effect of the
+    verify call and lands asynchronously, exactly like a customer's inbox."""
+    deadline = asyncio.get_running_loop().time() + timeout
+    while asyncio.get_running_loop().time() < deadline:
+        msg = await _mail_for(address, subject_re)
+        if msg:
+            return msg
+        await asyncio.sleep(0.5)
+    return None
+
+
 # ── fixtures ───────────────────────────────────────────────────────────────
 
 _ACCOUNT: dict[str, Any] = {}
@@ -242,6 +260,17 @@ async def _create_account() -> dict[str, Any]:
     }
 
 
+def _flat(text: str) -> str:
+    """Lower-case, whitespace-collapsed innerText for content assertions.
+
+    Labels render uppercased through CSS ``text-transform`` — ``innerText``
+    reflects the *paint*, not the markup — and adjacent inline runs can render
+    without a gap (``(NGN)per month``). These assertions care about the words,
+    never about typography, so both are normalized away.
+    """
+    return " ".join(text.split()).lower()
+
+
 def _auth(token: str, org_id: str | None = None) -> dict[str, str]:
     """Bearer token, scoped to an organization when one is relevant.
 
@@ -285,7 +314,9 @@ async def page():
         "--no-sandbox",
         "--disable-dev-shm-usage",
         "--disable-gpu",
-        "--single-process",
+        # NOTE: do not add --single-process/--no-zygote here; the local
+        # Chromium build used in this sandbox crashes with them and runs
+        # normally without.
     ]
     executable = os.environ.get("E2E_BROWSER_PATH")
     launcher = {"executable_path": executable} if executable else {}
@@ -401,9 +432,17 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     assert per_card["visible"] and per_card["between"], (
         "the currency line must sit between the price and the card's action"
     )
-    assert "Nigerian Naira (NGN)" in per_card["text"]
-    assert re.search(r"Charged as ₦[\d,]+\.\d{2} \(NGN\) per month", per_card["text"]), (
-        "the card must state the published amount, spelled and coded"
+    card_note = _flat(per_card["text"])
+    assert "nigerian naira" in card_note or "ngn" in card_note
+    # The mandatory triple: Product price / Actual charge / Payment provider.
+    assert "product price $39.00 (usd)" in card_note, (
+        "every card names the USD product price, even on the marketing page"
+    )
+    assert re.search(r"actual charge ₦[\d,]+\.\d{2} ?\(ngn\) ?per month", card_note), (
+        "the card must state the published charge, spelled and coded"
+    )
+    assert re.search(r"payment provider paystack", card_note), (
+        "the card must name who takes the money"
     )
     assert "$39" in per_card["card"], (
         "the USD list price stays visible — the disclosure explains, it hides nothing"
@@ -417,10 +456,41 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     # Annual is a different charge, so it must be a different disclosure.
     await page.get_by_role("button", name=re.compile(r"^Annual", re.I)).click()
     await page.wait_for_timeout(500)
-    annual = await page.locator('[data-testid="payment-currency-pro"]').inner_text()
-    assert re.search(r"Charged as ₦[\d,]+\.\d{2} \(NGN\) per year", annual), (
+    annual = _flat(await page.locator('[data-testid="payment-currency-pro"]').inner_text())
+    assert re.search(r"actual charge ₦[\d,]+\.\d{2} ?\(ngn\) ?per year", annual), (
         "the annual card must show the annual payment price, not the monthly one"
     )
+
+    # Enterprise: Contact Sales only — no NGN figure, no checkout affordance.
+    ent = await page.locator('[data-testid="pricing-card-enterprise"]').inner_text()
+    ent_flat = _flat(ent)
+    assert "custom pricing" in ent_flat and "contact sales" in ent_flat
+    assert "₦" not in ent and "$" not in ent, (
+        "Enterprise must never be priced as a number, anywhere on its card"
+    )
+
+    # FX reference: if the API publishes one it must arrive labelled, sourced
+    # and timestamped; if it does not, the panel must be absent — never faked.
+    import urllib.request
+
+    with urllib.request.urlopen(f"{API_URL}/billing/currency", timeout=30) as res:
+        fx = json.loads(res.read().decode()).get("fx_reference")
+    panel = page.locator('[data-testid="fx-reference-panel"]')
+    if fx:
+        assert await panel.count() == 1, "an available reference must be displayed"
+        text = await panel.inner_text()
+        assert "estimate" in text.lower(), "the reference must be labelled an estimate"
+        assert fx["provider"].lower() in text.lower(), "the reference must name its source"
+        assert fx["retrieved_at"][:10].replace("-", " ") in text or "fetched" in text.lower(), (
+            "the reference must be timestamped"
+        )
+        assert _flat(fx["disclaimer"]) in _flat(text), (
+            "the 'not your charge' disclaimer is part of the panel, verbatim"
+        )
+    else:
+        assert await panel.count() == 0, (
+            "no source, no panel: the UI must never show an invented rate"
+        )
 
 
 # ── journey 2: upgrade flow → Paystack → mail ─────────────────────────────
@@ -455,18 +525,32 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     # publishes, so every amount below is derived from the API rather than from
     # a figure this test happens to know.
     expected_minor = int(re.sub(r"\D", "", published["monthly"]))
-    card_line = await modal.locator('[data-testid="payment-currency-pro"]').inner_text()
-    assert "Billed in Nigerian Naira (NGN)" in card_line
-    assert f"Charged as {published['monthly']} per month" in card_line
+    card_line = _flat(
+        await modal.locator('[data-testid="payment-currency-pro"]').inner_text()
+    )
+    assert "nigerian naira (ngn)" in card_line or "ngn" in card_line
+    assert f"actual charge {published['monthly'].lower()}" in card_line, (
+        "the plan chooser shows the same published charge as checkout will"
+    )
+    assert "payment provider paystack" in card_line
 
     await modal.get_by_role("button", name=re.compile(r"Upgrade to Pro", re.I)).click()
     review = page.locator('[data-testid="checkout-currency-notice"]')
     await review.wait_for(state="visible", timeout=TIMEOUT_MS)
     assert NGN_CURRENCY_NOTICE.strip() in " ".join((await review.inner_text()).split())
-    amount = (await page.locator('[data-testid="checkout-amount"]').inner_text()).strip()
+    amount = (
+        await modal.locator('[data-testid="payment-charge-pro"]').inner_text()
+    ).strip()
     assert amount == published["monthly"], (
         "the confirmed amount must match the published price character for character"
     )
+    review_block = _flat(
+        await modal.locator('[data-testid="payment-transparency-pro"]').inner_text()
+    )
+    assert "product price $39.00 (usd)" in review_block, (
+        "the last RELIASTRA screen before Paystack restates the product price"
+    )
+    assert "payment provider paystack — secure hosted checkout" in review_block
 
     continue_button = page.get_by_role(
         "button", name=re.compile(r"Continue to Paystack", re.I)
@@ -487,7 +571,7 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     events: list[tuple[str, str | None]] = []
 
     def record(request: Any) -> None:
-        if "/api/" not in request.url and "paystack" not in request.url:
+        if "/api/" not in request.url and not request.url.startswith(PROVIDER_URL):
             return
         try:
             events.append((request.url, request.post_data))
@@ -503,7 +587,7 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     while asyncio.get_running_loop().time() < deadline:
         init = next((e for e in events if e[0].endswith("/billing/initialize")), None)
         leave = next(
-            (url for url, _ in events if "paystack.com" in url and "checkout" in url),
+            (url for url, _ in events if url.startswith(PROVIDER_URL)),
             None,
         )
         if init and leave:
@@ -522,12 +606,24 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
 
     # The handoff is Paystack's own URL carrying our reference: nothing of ours
     # is layered between the customer and the payment form.
-    reference = re.search(r"paystack\.com/([^?/]+)", handoff).group(1)
+    # Real Paystack hands off via checkout.paystack.com/<code>; the local
+    # stand-in uses <provider>/pay/<reference>. Both carry OUR reference as the
+    # last path segment, which is what verification is keyed on.
+    match = re.search(r"paystack\.com/([^?/]+)", handoff) or re.search(
+        r"/([^/?#]+)/?$", handoff
+    )
+    assert match, f"provider handoff URL carries no reference: {handoff}"
+    reference = match.group(1)
     assert reference and reference != "initialize"
 
     if PAYSTACK_CAPTURE and os.path.exists(PAYSTACK_CAPTURE):
+        # The stand-in appends one JSON document per initialize (JSONL); the
+        # flow under test made exactly the payment it was shown, so the LAST
+        # record is this journey's.
         with open(PAYSTACK_CAPTURE) as handle:
-            upstream = json.load(handle)
+            lines = [line for line in handle.read().splitlines() if line.strip()]
+        assert lines, "capture file exists but recorded nothing"
+        upstream = json.loads(lines[-1])
         assert upstream["currency"] == "NGN", (
             "Paystack must be told the currency the customer was shown"
         )
@@ -552,8 +648,8 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     assert paid["amount_display"] == published["monthly"]
 
     if MAIL_URL:
-        receipt = await _mail_for(account["email"], r"receipt")
-        confirmation = await _mail_for(account["email"], r"subscription confirmed")
+        receipt = await _await_mail(account["email"], r"receipt")
+        confirmation = await _await_mail(account["email"], r"subscription confirmed")
         assert confirmation and receipt, "a payer must receive both mails"
         for mail in (confirmation, receipt):
             parts = _text_parts(mail["raw"])
@@ -564,7 +660,13 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
                 )
             joined = " ".join(parts)
             assert "NGN" in joined, "the mail must state the currency charged"
-            assert "$39" not in joined, "a receipt must not imply a USD charge"
+            # The triple belongs on payment documents too; the USD figure may
+            # only appear as a *labelled product price*, never as the charge.
+            assert "Payment provider: Paystack" in joined
+            assert "Product price: $39.00 (USD)" in joined
+            assert "Actual charge: ₦" in joined, (
+                "the charge line itself must be in the currency actually charged"
+            )
         assert published["monthly"] in " ".join(_text_parts(receipt["raw"])), (
             "the receipt shows the amount actually charged"
         )

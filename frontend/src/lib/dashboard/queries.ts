@@ -32,6 +32,7 @@ export const keys = {
   org: ['org'] as const,
   plan: ['plan'] as const,
   pricing: ['pricing'] as const,
+  billingTransactions: ['billing', 'transactions'] as const,
   alerts: ['alerts'] as const,
   clients: ['agency', 'clients'] as const,
   clientApplications: (clientId: string) => ['agency', 'clients', clientId, 'applications'] as const,
@@ -128,6 +129,21 @@ export function usePlan() {
 }
 export function usePricing() {
   return useQuery({ queryKey: keys.pricing, queryFn: api.pricing });
+}
+
+/**
+ * Payment history with the ACTUAL charged amount/currency per payment.
+ * Refetches on mount because it changes exactly when a payment lands —
+ * often before the webhook-driven plan state has settled.
+ */
+export function useBillingTransactions() {
+  const ready = useSessionReady();
+  return useQuery({
+    queryKey: keys.billingTransactions,
+    queryFn: api.billingTransactions,
+    enabled: ready,
+    refetchOnMount: 'always',
+  });
 }
 export function useAlertConfigs() {
   const ready = useSessionReady();

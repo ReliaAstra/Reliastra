@@ -32,11 +32,12 @@ from app.core.permissions import (
     is_paid_plan,
     normalize_plan,
 )
+from app.core.payment_disclosure import currency_payload
 from app.core.payment_pricing import (
     ANNUAL as ANNUAL_INTERVAL,
     MONTHLY as MONTHLY_INTERVAL,
+    PAYMENT_PROVIDER,
     PaymentPrice,
-    currency_info,
     format_money,
     payment_currency,
     resolve_payment_price,
@@ -49,6 +50,8 @@ from app.modules.billing.notifications import (
 from app.modules.billing.repository import BillingRepository
 from app.modules.billing.schemas import (
     BillingInterval,
+    BillingTransactionResponse,
+    BillingTransactionsResponse,
     PaymentCurrencyResponse,
     InitializePaymentRequest,
     InitializePaymentResponse,
@@ -82,24 +85,31 @@ class PaystackClient:
         plan: str,
         metadata: dict[str, str] | None = None,
         currency: str | None = None,
+        callback_url: str | None = None,
     ) -> dict[str, Any]:
         async with httpx.AsyncClient(timeout=10) as client:
+            payload: dict[str, Any] = {
+                "email": email,
+                "amount": amount,
+                # Currency MUST be explicit: without it Paystack charges in
+                # the merchant account's default currency, silently
+                # repricing the plan. The caller passes the currency that
+                # this amount was resolved in (payment_pricing), never a
+                # separately-read setting, so the amount and its currency
+                # can never drift apart.
+                "currency": (currency or payment_currency()),
+                "plan": plan,
+                "metadata": metadata or {},
+            }
+            if callback_url:
+                # Bring the customer back to RELIASTRA's billing page so the
+                # exact charge can be confirmed there (see the ?pay_ref=
+                # handler in the console) instead of a blank provider page.
+                payload["callback_url"] = callback_url
             response = await client.post(
                 f"{self.base_url}/transaction/initialize",
                 headers=self._headers(),
-                json={
-                    "email": email,
-                    "amount": amount,
-                    # Currency MUST be explicit: without it Paystack charges in
-                    # the merchant account's default currency, silently
-                    # repricing the plan. The caller passes the currency that
-                    # this amount was resolved in (payment_pricing), never a
-                    # separately-read setting, so the amount and its currency
-                    # can never drift apart.
-                    "currency": (currency or payment_currency()),
-                    "plan": plan,
-                    "metadata": metadata or {},
-                },
+                json=payload,
             )
             response.raise_for_status()
             return response.json()
@@ -250,9 +260,10 @@ class BillingService:
             ),
             # Enterprise uses custom pricing — never advertise a numeric price.
             effective_is_custom=effective_is_custom,
-            # Payment currency + canonical disclosure, resolved from the same
-            # source the checkout uses (never a frontend literal).
-            payment=PaymentCurrencyResponse(**currency_info()),
+            # Payment currency + canonical disclosure (+ the display-only FX
+            # reference), resolved from the same source the checkout uses —
+            # never a frontend literal.
+            payment=PaymentCurrencyResponse(**(await currency_payload())),
             **self._next_charge_fields(subscription),
         )
 
@@ -276,6 +287,51 @@ class BillingService:
                 price.payment_amount, price.payment_currency
             ),
         }
+
+    async def get_transactions(
+        self, session: AsyncSession, org_id: uuid.UUID
+    ) -> BillingTransactionsResponse:
+        """Payment history with the ACTUAL charged amount/currency per payment.
+
+        Every figure comes from the persisted provider response — never from
+        re-resolving today's price list — so history stays truthful even after
+        a repricing. Display strings are formatted here for the same reason
+        every other amount string is: the UI never composes money itself.
+        """
+        from app.core.permissions import get_plan_display_name
+
+        items = []
+        for tx in await self.repository.list_transactions(session, org_id):
+            items.append(
+                BillingTransactionResponse(
+                    id=tx.id,
+                    reference=tx.reference,
+                    provider=tx.provider.capitalize() if tx.provider else "Paystack",
+                    plan=tx.plan,
+                    display_plan=get_plan_display_name(tx.plan),
+                    billing_interval=tx.billing_interval,
+                    status=tx.status,
+                    product_currency=tx.product_currency,
+                    product_amount_minor=tx.product_amount_minor,
+                    product_price_display=format_money(
+                        tx.product_amount_minor, tx.product_currency
+                    )
+                    or None,
+                    charged_currency=tx.charged_currency,
+                    charged_amount_minor=tx.charged_amount_minor,
+                    charged_amount_display=format_money(
+                        tx.charged_amount_minor, tx.charged_currency
+                    ),
+                    paid_at=tx.paid_at,
+                    period_start=tx.period_start,
+                    period_end=tx.period_end,
+                    created_at=tx.created_at,
+                )
+            )
+        return BillingTransactionsResponse(
+            items=items,
+            payment=PaymentCurrencyResponse(**await currency_payload()),
+        )
 
     async def _build_fallback_info(
         self, session: AsyncSession, org, ent: dict
@@ -388,6 +444,8 @@ class BillingService:
                 "No email is available for payment initialization"
             )
 
+        from app.infrastructure.email_layout import frontend_url
+
         try:
             result = await self.client.initialize_transaction(
                 email=email,
@@ -397,6 +455,9 @@ class BillingService:
                 # surface displays to the customer, resolved from the same
                 # payment-pricing source of truth.
                 currency=price.payment_currency,
+                # Return the payer to RELIASTRA's billing page so the exact
+                # charge is restated there (see the pay_ref handler there).
+                callback_url=frontend_url("/settings/billing"),
                 metadata={
                     "org_id": str(org_id),
                     "plan": plan,
@@ -436,6 +497,16 @@ class BillingService:
                 amount_minor=base_amount,
                 currency=price.payment_currency,
                 amount_display=format_money(base_amount, price.payment_currency),
+                # …and the product price it corresponds to, so the mandatory
+                # "Product price / Actual charge / Payment provider" block on
+                # the hand-off screen is backend-sourced end to end.
+                product_currency=price.product_currency,
+                product_amount_minor=price.product_amount,
+                product_price_display=format_money(
+                    price.product_amount, price.product_currency
+                )
+                or None,
+                payment_provider=PAYMENT_PROVIDER,
             )
         except KeyError as exc:
             raise ValidationException(
@@ -595,6 +666,48 @@ class BillingService:
             session, org, plan=plan, evaluation_status="converted"
         )
 
+        # Persist the charge as the provider reported it. This is the
+        # permanent record of "what was actually paid": currency-explicit
+        # minor units from Paystack's own response, alongside the USD
+        # product price the checkout quoted. Receipts and the billing page
+        # read history from here, so a price-list change can never rewrite a
+        # past payment. Idempotent on (provider, reference).
+        try:
+            await self.repository.record_transaction(
+                session,
+                organization_id=org_id,
+                reference=str(data.get("reference") or reference),
+                email=customer.get("email"),
+                plan=plan,
+                billing_interval=billing_interval,
+                product_currency=expected_price.product_currency,
+                product_amount_minor=expected_price.product_amount,
+                charged_currency=collected_currency,
+                charged_amount_minor=int(collected_minor),
+                paid_at=paid_at,
+                period_start=_parse_datetime(data.get("transaction_date")) or paid_at,
+                period_end=_parse_datetime(data.get("next_payment_date")),
+                provider_metadata={
+                    key: data.get(key)
+                    for key in (
+                        "id",
+                        "domain",
+                        "channel",
+                        "gateway_reference",
+                        "status",
+                        "transaction_date",
+                    )
+                    if data.get(key) is not None
+                },
+            )
+        except Exception:
+            # The charge and provisioning are done; a record-keeping failure
+            # must not turn a successful payment into a failed verification.
+            # Logged loudly because reconciliation depends on this table.
+            logger.exception(
+                "Failed to persist billing transaction for reference %s", reference
+            )
+
         # Funnel analytics: this checkout lead converted. Single choke point
         # covers both the frontend verify call and the charge.success webhook.
         from app.modules.analytics.service import analytics_service
@@ -635,6 +748,16 @@ class BillingService:
             currency=settled_currency,
             amount_minor=int(collected_minor),
             amount_display=format_money(int(collected_minor), settled_currency),
+            # Product side of the transparency triple, from the same figures
+            # persisted on the transaction — the confirmation screen restates
+            # the deal, not a fresh calculation.
+            product_currency=expected_price.product_currency,
+            product_amount_minor=expected_price.product_amount,
+            product_price_display=format_money(
+                expected_price.product_amount, expected_price.product_currency
+            )
+            or None,
+            payment_provider=PAYMENT_PROVIDER,
         )
 
     async def _notify_payment_succeeded(
@@ -819,15 +942,41 @@ class BillingService:
             await self._handle_partner_churn(session, data)
         elif event_type in {"refund.processed", "charge.refunded"}:
             await self._reverse_partner_commissions(session, data, "refund")
+            # The persisted transaction record must tell the truth about the
+            # money: a refunded payment is flagged in the history the
+            # customer sees on the billing page.
+            await self._mark_transaction_status(session, data, "refunded")
             # A refunded payment must not keep the paid plan active. Mirror
             # the churn behaviour: mark the subscription inactive and drop
             # the organization back to the free plan.
             await self._disable_webhook_subscription(session, data)
         elif event_type in {"charge.dispute.create", "charge.dispute.remind"}:
             await self._reverse_partner_commissions(session, data, "chargeback")
+            await self._mark_transaction_status(session, data, "disputed")
             await self._disable_webhook_subscription(session, data)
 
         return PaystackWebhookResponse(received=True, event_type=event_type)
+
+    @staticmethod
+    async def _mark_transaction_status(
+        session: AsyncSession, data: dict[str, Any], status: str
+    ) -> None:
+        """Flag a persisted transaction on refund/dispute webhook events."""
+        try:
+            transaction = data.get("transaction")
+            transaction = transaction if isinstance(transaction, dict) else {}
+            reference = (
+                data.get("transaction_reference")
+                or data.get("reference")
+                or transaction.get("reference")
+            )
+            if not reference:
+                return
+            await BillingRepository.mark_transaction_status(
+                session, reference=str(reference), status=status
+            )
+        except Exception:
+            logger.exception("Billing transaction status update failed (%s)", status)
 
     @staticmethod
     async def _reverse_partner_commissions(

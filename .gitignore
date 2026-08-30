@@ -76,3 +76,6 @@ local-*
 .claude
 .z-ai-config
 /skills/tool-results/
+
+# Arena sandbox harness (browser builds, scratch DB) — never shipped
+.arena/

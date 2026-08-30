@@ -169,14 +169,62 @@ class Settings(BaseSettings):
                     "which silently reprices USD-denominated plans.",
     )
     PAYSTACK_NGN_PLAN_PRICES: dict[str, int | dict[str, int]] | None = Field(
-        default=None,
+        default_factory=lambda: {
+            # Explicit, business-published PAYMENT prices in NGN kobo. These
+            # are commercial decisions for the Nigerian merchant account, NOT
+            # an FX conversion of the USD list price: the application never
+            # derives them from a rate, and changing the USD price does not
+            # move these figures. Override per environment via the
+            # PAYSTACK_NGN_PLAN_PRICES env var (JSON) to reprice; set it to
+            # "{}" to publish no prices and disable self-serve checkout.
+            "pro": {"monthly": 6000000, "annual": 60000000},
+        },
         description="Business-published PAYMENT prices in NGN kobo (minor "
-        "units), separate from the USD product price list. Example: "
-        '{"pro": {"monthly": 6000000, "annual": 60000000}}. These are '
+        "units), separate from the USD product price list. Default: "
+        '{"pro": {"monthly": 6000000, "annual": 60000000}} — i.e. ₦60,000 '
+        "per month and ₦600,000 per year, the published NGN prices. These are "
         "explicit operator decisions \u2014 the application never derives them "
         "from an exchange rate. When PAYSTACK_CURRENCY is NGN and a plan is "
         "absent here, self-serve checkout for that plan is disabled rather "
         "than charging the USD minor-unit amount as Naira.",
+    )
+    # ── FX REFERENCE (display context ONLY — never a pricing input) ─────────
+    # The customer-facing pages may show a reference USD→NGN rate so the gap
+    # between the $39 list price and the ₦ payment price is not a mystery.
+    # It is labelled an estimate, attributed to a verifiable public source,
+    # timestamped, and read through a cache. No charge ever consults it.
+    FX_REFERENCE_ENABLED: bool = Field(
+        default=True,
+        description="Fetch and display a reference FX estimate on payment "
+        "surfaces. Set false to hide the panel entirely; pricing is "
+        "unaffected either way.",
+    )
+    FX_REFERENCE_URL: str = Field(
+        default="https://open.er-api.com/v6/latest/USD",
+        description="Verifiable public JSON endpoint used for the reference "
+        "rate only. ExchangeRate-API's open endpoint requires no key, names "
+        "itself in responses and carries an update timestamp "
+        "(time_last_update_utc). Any endpoint returning "
+        '{"base","rates","time_last_update_utc"} works.',
+    )
+    FX_REFERENCE_PROVIDER: str = Field(
+        default="ExchangeRate-API",
+        description="Source name shown beside the estimate.",
+    )
+    FX_REFERENCE_PROVIDER_URL: str = Field(
+        default="https://www.exchangerate-api.com",
+        description="Human-checkable URL for the source shown beside the "
+        "estimate.",
+    )
+    FX_REFERENCE_TIMEOUT_SECONDS: float = Field(
+        default=4.0,
+        description="Hard timeout for the reference-rate fetch. On failure "
+        "the estimate is simply not shown — nothing falls back to a guess.",
+    )
+    FX_REFERENCE_CACHE_TTL_SECONDS: int = Field(
+        default=3600,
+        description="How long a fetched reference rate is reused (Redis, or "
+        "process memory when Redis is unavailable).",
     )
     IPINFO_TOKEN: str = Field(
         default="",
@@ -296,6 +344,38 @@ class Settings(BaseSettings):
         value = (value or "").strip()
         if value and not value.startswith(("https://", "http://")):
             raise ValueError("RELIASTRA_AI_ENDPOINT_URL must be an HTTP(S) URL")
+        return value
+
+    @field_validator("PAYSTACK_NGN_PLAN_PRICES", mode="before")
+    @classmethod
+    def _parse_paystack_price_catalog(cls, value: object) -> object:
+        """Accept a dict (already parsed) or a JSON string; blank means None.
+
+        A blank ``PAYSTACK_NGN_PLAN_PRICES=`` env value must not crash the
+        application and must not be read as "0" or as the USD price: it is the
+        explicit no-catalog state, in which self-serve checkout stays disabled
+        for the NGN plans until the operator publishes prices.
+        """
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return None
+            try:
+                import json
+
+                value = json.loads(value)
+            except ValueError as exc:
+                raise ValueError(
+                    "PAYSTACK_NGN_PLAN_PRICES must be a JSON object mapping "
+                    'plan -> amount, e.g. {"pro": {"monthly": 6000000}}'
+                ) from exc
+        if value is None:
+            return None
+        if not isinstance(value, dict):
+            raise ValueError(
+                "PAYSTACK_NGN_PLAN_PRICES must be a JSON object mapping "
+                "plan -> amount in minor units"
+            )
         return value
 
     @property

@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from app.core.payment_pricing import (
+    PAYMENT_PROVIDER,
     PRODUCT_CURRENCY,
     format_money,
     resolve_payment_price,
@@ -70,6 +71,11 @@ class PaymentSummary:
     @property
     def plan_name(self) -> str:
         return get_plan_display_name(self.plan)
+
+    @property
+    def provider_label(self) -> str:
+        """Who actually took the money — always named on payment documents."""
+        return PAYMENT_PROVIDER
 
     @property
     def interval_label(self) -> str:
@@ -131,15 +137,23 @@ def render_subscription_confirmed_email(
     *, user_name: str, org_name: str, payment: PaymentSummary
 ) -> tuple[str, str]:
     billing_url = frontend_url("/settings/billing")
+    # The transparency triple, composed from the payment actually collected:
+    # what the plan costs, what was really charged, and who charged it.
     amount_line = (
-        f"Amount charged: {payment.charged_label}\n" if payment.charged_label else ""
+        f"Actual charge: {payment.charged_label}\n" if payment.charged_label else ""
+    )
+    product_line = (
+        f"Product price: {payment.product_price_label}\n"
+        if payment.product_price_label
+        else ""
     )
     body_text = f"""
 Hello {user_name},
 
 Your RELIASTRA subscription is active. {org_name} is now on the {payment.plan_name} plan ({payment.interval_label} billing).
 
-{amount_line}Billing currency: {payment.currency}
+{product_line}{amount_line}Payment provider: {payment.provider_label}
+Billing currency: {payment.currency}
 Renews: {_day(payment.period_end) if payment.period_end else 'see your billing page'}
 
 Manage your plan, seats and usage at any time: {billing_url}
@@ -148,11 +162,20 @@ Best regards,
 The Reliastra Team
 """.strip()
     rows = []
+    if payment.product_price_label:
+        rows.append(
+            f"<tr><td style=\"padding:6px 0;color:#55565e\">Product price</td>"
+            f"<td style=\"padding:6px 0;text-align:right\">{escape(payment.product_price_label)}</td></tr>"
+        )
     if payment.charged_label:
         rows.append(
-            f"<tr><td style=\"padding:6px 0;color:#55565e\">Amount charged</td>"
+            f"<tr><td style=\"padding:6px 0;color:#55565e\">Actual charge</td>"
             f"<td style=\"padding:6px 0;text-align:right\"><strong>{escape(payment.charged_label)}</strong></td></tr>"
         )
+    rows.append(
+        f"<tr><td style=\"padding:6px 0;color:#55565e\">Payment provider</td>"
+        f"<td style=\"padding:6px 0;text-align:right\">{escape(payment.provider_label)}</td></tr>"
+    )
     rows.append(
         f"<tr><td style=\"padding:6px 0;color:#55565e\">Billing currency</td>"
         f"<td style=\"padding:6px 0;text-align:right\">{escape(payment.currency)}</td></tr>"
@@ -212,13 +235,15 @@ This is your receipt for the recent RELIASTRA payment.
 
 Plan: {payment.plan_name} ({payment.interval_label} billing)
 Workspace: {org_name}
-Amount charged: {payment.charged_label or 'See your billing page'}
-Currency: {payment.currency}
+Product price: {payment.product_price_label or 'Custom'}
+Actual charge: {payment.charged_label or 'See your billing page'}
+Payment provider: {payment.provider_label}
+Charged currency: {payment.currency}
 Payment reference: {payment.reference or 'N/A'}
 Date: {_day(payment.paid_at) if payment.paid_at else 'N/A'}
 {f'Billing period: {payment.period_label}' if payment.period_label else ''}
 
-This amount was processed through Paystack in {payment.currency}. If anything looks incorrect, reply to this email and our team will resolve it.
+RELIASTRA's plans are priced in USD; this payment was collected by Paystack in {payment.currency}. If anything looks incorrect, reply to this email and our team will resolve it.
 
 Best regards,
 The Reliastra Team
@@ -226,8 +251,12 @@ The Reliastra Team
     rows = [
         ("Plan", f"{payment.plan_name} ({payment.interval_label})"),
         ("Workspace", org_name),
-        ("Amount charged", payment.charged_label or "—"),
-        ("Currency", payment.currency),
+        # Mandatory transparency triple: list price, the amount really
+        # collected, and the processor that collected it.
+        ("Product price", payment.product_price_label or "Custom"),
+        ("Actual charge", payment.charged_label or "—"),
+        ("Payment provider", payment.provider_label),
+        ("Charged currency", payment.currency),
         ("Payment reference", payment.reference or "—"),
         ("Date", _day(payment.paid_at) if payment.paid_at else "—"),
     ]
@@ -242,7 +271,8 @@ The Reliastra Team
         f"<p>Hello <strong>{escape(user_name)}</strong>,</p>"
         "<p>This is your receipt for the recent RELIASTRA payment.</p>"
         f'<div class="panel"><table style="width:100%;border-collapse:collapse;font-size:14px">{table}</table></div>'
-        f'<p class="note">This amount was processed through Paystack in '
+        f'<p class="note">RELIASTRA\u2019s plans are priced in USD; this payment '
+        f"was collected by {escape(payment.provider_label)} in "
         f"{escape(payment.currency)}. If anything looks incorrect, reply to this "
         "email and our team will resolve it.</p>"
     )
@@ -276,12 +306,18 @@ def render_renewal_reminder_email(
 ) -> tuple[str, str]:
     amount = payment.charged_label or payment.payment_price_label
     next_charge_line = f"Next charge: {amount} on {_day(payment.period_end)}" if amount and payment.period_end else ""
+    product_line = (
+        f"Product price: {payment.product_price_label}\n"
+        if payment.product_price_label
+        else ""
+    )
     body_text = f"""
 Hello {user_name},
 
 Your {payment.plan_name} subscription for {org_name} renews in {days_left} day{'s' if days_left == 1 else ''}.
 
 {next_charge_line}
+{product_line}Payment provider: {payment.provider_label}
 Billing currency: {payment.currency}
 
 Your payment method is charged automatically — no action is needed. To change plan or cancel before then: {frontend_url('/settings/billing')}
@@ -295,6 +331,15 @@ The Reliastra Team
             f"<tr><td style=\"padding:6px 0;color:#55565e\">Next charge</td>"
             f"<td style=\"padding:6px 0;text-align:right\"><strong>{escape(amount)}</strong></td></tr>"
         )
+    if payment.product_price_label:
+        rows.append(
+            f"<tr><td style=\"padding:6px 0;color:#55565e\">Product price</td>"
+            f"<td style=\"padding:6px 0;text-align:right\">{escape(payment.product_price_label)}</td></tr>"
+        )
+    rows.append(
+        f"<tr><td style=\"padding:6px 0;color:#55565e\">Payment provider</td>"
+        f"<td style=\"padding:6px 0;text-align:right\">{escape(payment.provider_label)}</td></tr>"
+    )
     if payment.period_end:
         rows.append(
             f"<tr><td style=\"padding:6px 0;color:#55565e\">On</td>"
@@ -354,7 +399,8 @@ def render_trial_ending_email(
         )
     if price.payment_amount and price.payment_currency != price.product_currency:
         amount_bits.append(
-            f"billed as {format_money(price.payment_amount, price.payment_currency)}"
+            f"billed as {format_money(price.payment_amount, price.payment_currency)} "
+            f"through {PAYMENT_PROVIDER}"
         )
     price_line = ", ".join(amount_bits)
     body_text = f"""

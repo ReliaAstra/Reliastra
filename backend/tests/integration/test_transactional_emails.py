@@ -14,9 +14,6 @@ isolation:
 
 from __future__ import annotations
 
-import hashlib
-import hmac
-import json
 import re
 import uuid
 from email import message_from_string
@@ -50,7 +47,9 @@ def assert_delivered_email(msg: dict[str, Any], *, label: str) -> None:
     assert _footer_count(html) == 1, f"{label}: footer must appear exactly once"
     assert _footer_count(text) == 1, f"{label}: footer must appear exactly once"
     # The footer must be a footer region, not a paragraph tacked onto content.
-    assert html.index(f'id="reliastra-email-footer"') > html.index('</div>', html.index('<div class="body">'))
+    assert html.index('id="reliastra-email-footer"') > html.index(
+        "</div>", html.index('<div class="body">')
+    )
     # Both parts are valid alternatives of one MIME message.
     # Rebuild the message the way EmailClient does, so the assertion runs on a
     # real multipart/alternative payload and not on the strings alone.
@@ -333,13 +332,38 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     for msg, label in ((confirmation, "confirmation"), (receipt, "receipt")):
         assert_delivered_email(msg, label=label)
 
-    # Currency truthfulness: the receipt states the amount and the ISO code
-    # that Paystack collected — never a USD figure for an NGN payment.
+    # Mandatory transparency triple. The receipt must state the product
+    # price, the amount ACTUALLY charged (with the ISO code Paystack settled
+    # in) and the provider — and the USD figure may appear only as the
+    # clearly-labelled product price, never as the charge.
     assert "\u20a660,000.00 (NGN)" in receipt["body"]
     assert "\u20a660,000.00 (NGN)" in receipt["html_body"]
-    assert "$39" not in receipt["body"]
+    assert "Product price: $39.00 (USD)" in receipt["body"]
+    assert "Actual charge: \u20a660,000.00 (NGN)" in receipt["body"]
+    assert "Payment provider: Paystack" in receipt["body"]
+    assert "payment was collected by Paystack in NGN" in receipt["body"]
     assert reference in receipt["body"]
     assert "Pro" in confirmation["body"]
+    # The confirmation mail carries the same triple.
+    assert "Product price: $39.00 (USD)" in confirmation["body"]
+    assert "Actual charge: \u20a660,000.00 (NGN)" in confirmation["body"]
+    assert "Payment provider: Paystack" in confirmation["body"]
+
+    # ── The charge is ALSO persisted as a transaction record: receipts and
+    # the billing page read history from the provider's own figures.
+    tx_res = await async_client.get(
+        "/v1/billing/transactions", headers=auth_data["headers"]
+    )
+    assert tx_res.status_code == 200, tx_res.text
+    items = tx_res.json()["items"]
+    match = next(t for t in items if t["reference"] == reference)
+    assert match["charged_currency"] == "NGN"
+    assert match["charged_amount_minor"] == NGN_CATALOG["pro"]["monthly"]
+    assert match["charged_amount_display"] == "\u20a660,000.00 (NGN)"
+    assert match["product_currency"] == "USD"
+    assert match["product_amount_minor"] == 3900
+    assert match["product_price_display"] == "$39.00 (USD)"
+    assert match["status"] == "success"
 
 
 @pytest.mark.asyncio

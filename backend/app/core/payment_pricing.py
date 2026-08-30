@@ -20,6 +20,9 @@ Rules this module enforces
   fetched at runtime, and ``$39`` is never silently transformed into a Naira
   figure. Paystack reads the integer it is given as the currency it is told,
   so an implicit conversion would be a mis-charge, not a rounding detail.
+  An *FX reference* exists for customer context (``app.core.fx_reference``)
+  but it is display-only: no function below consults it, and a test locks the
+  pricing path free of that import.
 * **No invented fallback.** If the payment price for a plan/interval has not
   been published for the configured currency, self-serve checkout is *not*
   offered: :func:`resolve_payment_price` reports ``is_configured=False`` and
@@ -80,16 +83,32 @@ CURRENCY_SYMBOLS: dict[str, str] = {
 MONTHLY = "monthly"
 ANNUAL = "annual"
 
+#: The payment processor RELIASTRA's current checkout runs through. Named
+#: explicitly on every payment surface so a customer always knows who is
+#: taking the money and in what currency.
+PAYMENT_PROVIDER = "Paystack"
+PAYMENT_PROVIDER_DISPLAY = "Paystack — secure hosted checkout"
+
 #: Canonical, customer-facing disclosure shown next to every RELIASTRA payment
 #: decision while the processing currency is Naira. One version for the whole
-#: product — never restate it in a page or a component.
+#: product — never restate it in a page or a component. This is the mandated
+#: transparency wording: what the price list says, what Paystack charges, and
+#: what is coming next. It must not be softened, shortened or paraphrased in
+#: a surface; the copy-guard tests diff this string against the frontend and
+#: the transactional emails.
 NGN_CURRENCY_NOTICE = (
-    "Please note that all transactions are currently processed in Nigerian Naira "
-    "(NGN). We are actively working towards enabling payments in US Dollars (USD) "
-    "to better serve our global user base. However, due to ongoing legal and "
-    "regulatory compliance requirements, this transition has been temporarily "
-    "delayed. We appreciate your patience and understanding as we work diligently "
-    "to resolve this matter."
+    "RELIASTRA's plans are priced in USD. Our current Paystack payment flow "
+    "processes payments in NGN. We are working toward enabling USD payment "
+    "options for our global customers."
+)
+
+#: Mandatory heading above the FX reference wherever one is displayed. A rate
+#: without these words is how a customer comes to believe the charge was
+#: converted at that rate — which it never is.
+FX_REFERENCE_DISCLAIMER = (
+    "Exchange rate shown is a market reference estimate only. It is provided "
+    "for context and is never used to determine your actual charge — the "
+    "amount billed by Paystack is the published NGN price above."
 )
 
 
@@ -390,4 +409,43 @@ def currency_info() -> dict:
         "notice": customer_currency_notice(),
         "checkout_ready": checkout_ready(),
         "plan_payment_amounts": published_payment_amounts(),
+        # The processor is part of the disclosure contract: every payment
+        # surface names who charges the customer.
+        "payment_provider": PAYMENT_PROVIDER,
+        "payment_provider_display": PAYMENT_PROVIDER_DISPLAY,
+    }
+
+
+def transparency_lines(
+    plan: str, interval: str = MONTHLY, *, price: PaymentPrice | None = None
+) -> dict[str, str | None]:
+    """The mandatory customer-facing transparency triple for one plan.
+
+    Renders exactly the three facts the product spec requires on every
+    RELIASTRA-owned payment surface::
+
+        Product price:     $39.00 (USD)
+        Actual charge:     ₦60,000.00 (NGN)
+        Payment provider:  Paystack
+
+    ``actual_charge`` is the *published payment price* — the integer that is
+    sent to Paystack — never a number the caller composes itself. It is
+    ``None`` when no payment price has been published (and the surface then
+    states the currency without a figure). ``product_price`` is ``None`` for
+    custom-priced plans, which route to Contact Sales instead of checkout.
+
+    Web, receipts and emails all call this so the three lines can never
+    disagree with each other or with the charge.
+    """
+    price = price or resolve_payment_price(plan, interval)
+    return {
+        "product_price": format_money(price.product_amount, price.product_currency) or None,
+        "actual_charge": (
+            format_money(price.payment_amount, price.payment_currency)
+            if price.is_configured
+            else None
+        ),
+        "payment_provider": PAYMENT_PROVIDER,
+        "payment_provider_display": PAYMENT_PROVIDER_DISPLAY,
+        "currency_label": currency_name(price.payment_currency),
     }
