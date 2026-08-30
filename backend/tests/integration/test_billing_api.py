@@ -165,8 +165,17 @@ async def test_enterprise_checkout_is_refused_without_creating_anything(
         headers=auth_data["headers"],
         json={"plan": "enterprise"},
     )
-    assert res.status_code == 422, res.text
-    assert "contact sales" in res.text.lower() or "custom" in res.text.lower()
+    # 409 + a classified reason: the customer's request is well-formed, the plan
+    # simply is not sold through checkout. The UI reads the slug to route them to
+    # sales instead of showing a form error for something they did not get wrong.
+    assert res.status_code == 409, res.text
+    error = res.json()["error"]
+    assert error["code"] == "CHECKOUT_FAILED"
+    assert {
+        "field": "reason",
+        "issue": "plan_not_self_serve",
+    } in error["details"]
+    assert "contact sales" in error["message"].lower() or "team" in error["message"].lower()
     inits = [c for c in captured["calls"] if "transaction/initialize" in c[0]]
     assert inits == [], "Paystack must not be called for Enterprise"
 
@@ -183,7 +192,17 @@ async def test_unpublished_price_disables_checkout_instead_of_guessing(
         headers=auth_data["headers"],
         json={"plan": "pro", "billing_interval": "monthly"},
     )
-    assert res.status_code == 422, res.text
+    # 409, not 422: the request is well-formed and retrying it changes nothing
+    # — the *account state* (no published price) is what conflicts. The client
+    # can act on that distinction, which is why the status is asserted rather
+    # than left at the generic validation code.
+    assert res.status_code == 409, res.text
+    body = res.json()
+    # The checkout UI branches on this slug to explain the situation in
+    # RELIASTRA's own words instead of surfacing a provider error.
+    assert body["error"]["code"] == "CHECKOUT_FAILED"
+    assert {"field": "reason", "issue": "price_not_configured"} in body["error"]["details"]
+    assert "being finalized" in body["error"]["message"]
     inits = [c for c in captured["calls"] if "transaction/initialize" in c[0]]
     assert inits == [], "no checkout may start without a published price"
 

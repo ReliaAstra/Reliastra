@@ -219,9 +219,23 @@ export function fxReference(
 ): FxReference | null {
   const config = info ?? DEFAULT_PAYMENT_CURRENCY;
   if (!config.differs_from_product_currency) return null;
-  const fx = config.fx_reference;
+  return usableFxReference(config.fx_reference);
+}
+
+/**
+ * Is a reference safe to show?
+ *
+ * The validity test lives here, not in each surface: a panel that renders a
+ * rate without checking it is a panel that can render `null`, `0` or a
+ * half-parsed object, and a wrong exchange rate on a payment page is worse than
+ * no rate at all. Surfaces that resolve an FX reference from somewhere other
+ * than `PaymentCurrencyInfo` (the checkout quote does) must pass it through
+ * this same gate.
+ */
+export function usableFxReference(fx: FxReference | null | undefined): FxReference | null {
   if (!fx || fx.available === false) return null;
   if (typeof fx.rate !== 'number' || !Number.isFinite(fx.rate) || fx.rate <= 0) return null;
+  if (!fx.source_currency || !fx.payment_currency) return null;
   return fx;
 }
 

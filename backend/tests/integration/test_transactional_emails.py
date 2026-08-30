@@ -265,8 +265,12 @@ async def test_initialize_refuses_when_no_payment_price_is_published(
         headers=auth_data["headers"],
         json={"plan": "pro", "billing_interval": "monthly"},
     )
-    assert res.status_code in (400, 422), res.text
+    # 409 is the state RELIASTRA is in (a price that has not been published
+    # yet); 400/422 remain accepted so this stays a check about the *refusal*,
+    # not about which code the API happens to use for it.
+    assert res.status_code in (400, 409, 422), res.text
     assert "finalized" in res.text
+    assert '"price_not_configured"' in res.text
     assert called.awaited is False
 
 

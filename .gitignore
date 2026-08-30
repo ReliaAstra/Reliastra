@@ -79,3 +79,6 @@ local-*
 
 # Arena sandbox harness (browser builds, scratch DB) — never shipped
 .arena/
+
+# Local dev-stack state (postgres cluster, redis, logs) — never committed
+backend/.dev-stack/

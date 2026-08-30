@@ -39,6 +39,9 @@ Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
 
 Details: [`docs/architecture/OVERVIEW.md`](docs/architecture/OVERVIEW.md).
 
+API contract changes — including the billing/checkout endpoints and their status-code
+semantics — are recorded in [`docs/API_CHANGELOG.md`](docs/API_CHANGELOG.md).
+
 The frontend proxies Partner Network calls to the production API at `https://api.reliastra.com/v1`. Override with `RELIASTRA_API_URL` for local or staging backends.
 
 ## Frontend development

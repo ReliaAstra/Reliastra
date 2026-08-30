@@ -71,9 +71,14 @@ class BillingTransactionResponse(BaseModel):
     charged_amount_minor: int
     charged_amount_display: str
     paid_at: datetime | None = None
+    # When RELIASTRA verified the charge with the provider (distinct from the
+    # provider's own ``paid_at``), so a receipt can state both facts.
+    verified_at: datetime | None = None
     period_start: datetime | None = None
     period_end: datetime | None = None
     created_at: datetime
+    # A second payment for an already-covered period. Surfaced, not hidden.
+    duplicate: bool = False
 
 
 class BillingTransactionsResponse(BaseModel):
@@ -139,18 +144,102 @@ class PaystackWebhookResponse(BaseModel):
     event_type: str
 
 
+class CheckoutQuoteResponse(BaseModel):
+    """Everything the RELIASTRA checkout page renders, resolved server-side.
+
+    This exists so a payment screen can be built without a single number being
+    composed in the browser. The page reads a plan id and an interval from its
+    URL, asks for this quote, and displays exactly what it is told: the product
+    price, the amount that will be charged, the currency that charge settles in,
+    the payment methods genuinely available to a global customer, and the
+    disclosure that explains the USD/NGN relationship. There is no amount,
+    currency or channel field for a client to set, and none to tamper with: the
+    request that actually creates money (:class:`InitializePaymentRequest`)
+    carries a plan and an interval and nothing else.
+
+    ``available`` is the honest gate. When checkout cannot be offered (no
+    published payment price, a contact-sales plan) the page says so with the
+    reason instead of presenting a button that will fail.
+    """
+
+    plan: str
+    display_plan: str
+    description: str = ""
+    features: dict | None = None
+    billing_interval: str
+    # ── The transparency triple: what it costs, what is charged, by whom ────
+    product_currency: str
+    product_amount_minor: int | None = None
+    product_price_display: str | None = None
+    payment_currency: str
+    payment_amount_minor: int | None = None
+    payment_amount_display: str | None = None
+    payment_currency_name: str
+    payment_provider: str = "Paystack"
+    payment_provider_display: str = "Paystack \u2014 secure hosted checkout"
+    period_word: str = "month"
+    # Canonical currency disclosure + the display-only FX reference.
+    currency_notice: str | None = None
+    fx_reference: dict | None = None
+    # ── Payment methods, as the backend's channel policy permits them ───────
+    # The UI renders this list verbatim and never appends a method of its own,
+    # so a market-restricted rail cannot appear because a component was
+    # optimistic. ``channels`` is the same list sent to Paystack on initialize.
+    payment_methods: list[dict] = []
+    channels: list[str] = []
+    #: Digest of the figures this quote was priced from (see ``_price_token`` in
+    #: the billing service). The checkout echoes it when it initializes the
+    #: payment: if the price list moved while the page was open, the payment is
+    #: refused instead of charging something the customer did not approve. An
+    #: opaque token, never an amount.
+    price_token: str = ""
+    # ── Who is paying, and what they already have ──────────────────────────
+    organization_name: str | None = None
+    billing_email: str | None = None
+    current_plan: str | None = None
+    current_interval: str | None = None
+    already_subscribed: bool = False
+    # ── Gate ───────────────────────────────────────────────────────────────
+    available: bool = True
+    unavailable_reason: str | None = None
+    unavailable_message: str | None = None
+    # True when card checkout can be opened right now (Paystack configured).
+    checkout_enabled: bool = True
+    trial_note: str | None = None
+
+
 class InitializePaymentRequest(BaseModel):
     plan: str = Field(min_length=1, max_length=50)
     email: EmailStr | None = None
     # Explicit billing interval. Required for paid plans. Defaults to monthly
     # for backward compatibility but ALL checkout callers should send it.
     billing_interval: BillingInterval = BillingInterval.MONTHLY
+    # Which *offered* method the customer picked. Validated against the
+    # backend's channel policy on the server; it cannot widen the set, and a
+    # value outside it is refused rather than passed through to Paystack.
+    payment_method: str | None = Field(default=None, max_length=40)
+    #: Optional echo of ``CheckoutQuoteResponse.price_token``. Absent is allowed
+    #: (an older client just skips the staleness check); present-and-different
+    #: stops initialization with a classified 409 rather than a mismatched charge.
+    expected_price_token: str | None = Field(default=None, max_length=64)
 
 
 class InitializePaymentResponse(BaseModel):
     authorization_url: str
     reference: str
     access_code: str
+    # Paystack's *publishable* key, for completing payment inside RELIASTRA's
+    # page via InlineJS. Safe by definition to expose (it is the key browser
+    # integrations are given); the secret key is never serialized anywhere.
+    public_key: str | None = None
+    inline_js_enabled: bool = False
+    inline_js_url: str | None = None
+    # The rails this transaction was opened with, echoed so the checkout can
+    # confirm the experience it launched matches what the customer approved.
+    channels: list[str] = []
+    payment_methods: list[dict] = []
+    plan: str | None = None
+    billing_interval: str | None = None
     # Echo of what is about to be charged, so the confirmation screen and any
     # post-redirect page can state the real currency/amount instead of
     # re-deriving (and possibly mis-deriving) it.
@@ -183,3 +272,19 @@ class VerifyTransactionResponse(BaseModel):
     product_amount_minor: int | None = None
     product_price_display: str | None = None
     payment_provider: str = "Paystack"
+    # Confirmation-screen identity, resolved server-side so the screen cannot
+    # contradict the plan the payment actually bought.
+    display_plan: str | None = None
+    billing_interval: str | None = None
+    period_word: str | None = None
+    # ``reason`` is a machine-readable CheckoutReason slug;
+    # ``reason_message`` is RELIASTRA's own sentence for it. The UI switches on
+    # the slug and prints the message — it never forwards a provider string.
+    reason: str | None = None
+    reason_message: str | None = None
+    # True when verification flipped this organization onto the paid plan;
+    # False for an idempotent re-verification of a payment already applied.
+    activated: bool = False
+    # A second valid payment for a period already covered. Applied, and shown
+    # honestly — never silently swallowed.
+    duplicate_payment: bool = False

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAppStore } from '@/stores/app-store';
@@ -127,6 +128,20 @@ export function useOrg() {
 export function usePlan() {
   return useQuery({ queryKey: keys.plan, queryFn: api.plan });
 }
+/**
+ * Drop the caches that a completed payment invalidates.
+ *
+ * Entitlement is a server-side fact, but the console caches the plan and the
+ * billing history for speed. Right after a verified payment both are knowingly
+ * stale, so the surfaces that read them must refetch — otherwise a customer
+ * pays for Pro and keeps being told they are on Free until they reload.
+ */
+export function invalidateBilling(queryClient: QueryClient) {
+  void queryClient.invalidateQueries({ queryKey: keys.plan });
+  void queryClient.invalidateQueries({ queryKey: keys.billingTransactions });
+  void queryClient.invalidateQueries({ queryKey: keys.summary });
+}
+
 export function usePricing() {
   return useQuery({ queryKey: keys.pricing, queryFn: api.pricing });
 }

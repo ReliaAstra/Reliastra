@@ -24,9 +24,15 @@ from app.core.permissions import (
 from app.core.payment_disclosure import currency_payload
 from app.core.payment_pricing import format_money, resolve_payment_price
 from app.db.session import get_db
-from app.dependencies import get_current_org, require_admin, require_member
+from app.dependencies import (
+    get_current_org,
+    get_current_user,
+    require_admin,
+    require_member,
+)
 from app.modules.billing.schemas import (
     BillingTransactionsResponse,
+    CheckoutQuoteResponse,
     InitializePaymentRequest,
     PaymentCurrencyResponse,
     InitializePaymentResponse,
@@ -37,6 +43,7 @@ from app.modules.billing.schemas import (
 )
 from app.modules.billing.service import BillingService, billing_service
 from app.modules.organizations.models import Organization
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/v1", tags=["Billing"])
 
@@ -226,6 +233,37 @@ async def get_billing_transactions(
     return await service.get_transactions(db, current_org.id)
 
 
+@router.get(
+    "/billing/checkout/quote",
+    response_model=CheckoutQuoteResponse,
+)
+async def get_checkout_quote(
+    plan: str = Query(min_length=1, max_length=50, description="Plan id"),
+    interval: str = Query(
+        default="monthly", pattern="^(monthly|annual)$", description="Billing interval"
+    ),
+    db: AsyncSession = Depends(get_db),
+    current_org: Organization = Depends(get_current_org),
+    service: BillingService = Depends(get_bill_service),
+) -> CheckoutQuoteResponse:
+    """The authoritative quote behind RELIASTRA's checkout page.
+
+    The browser chooses *which* plan and interval it wants to see and receives
+    every other figure — price, charge amount, currency, disclosure, payment
+    methods — already resolved. It is the read half of the same resolution the
+    write half (``/billing/initialize``) charges with, so what a customer
+    reviews is literally what Paystack is asked to collect, and no screen has to
+    derive money from a plan id.
+
+    Authenticated, and scoped to the caller's organization: the quote carries
+    that organization's name and billing email, which must not be readable for
+    someone else's account.
+    """
+    return await service.checkout_quote(
+        db, current_org.id, plan=plan, billing_interval=interval
+    )
+
+
 @router.post(
     "/billing/initialize",
     response_model=InitializePaymentResponse,
@@ -233,11 +271,18 @@ async def get_billing_transactions(
 )
 async def initialize_payment(
     request: InitializePaymentRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     current_org: Organization = Depends(get_current_org),
     service: BillingService = Depends(get_bill_service),
 ) -> InitializePaymentResponse:
-    return await service.initialize_payment(db, current_org.id, request)
+    # Authorization comes from ``require_admin`` above (starting a charge spends
+    # the organization's money); ``get_current_user`` supplies *identity* so the
+    # acting person is recorded on the transaction. A billing dispute needs to
+    # know who clicked, and only the authenticated request can say.
+    return await service.initialize_payment(
+        db, current_org.id, request, user_id=current_user.id
+    )
 
 
 @router.post(
@@ -247,6 +292,7 @@ async def initialize_payment(
 )
 async def verify_transaction(
     reference: str = Query(min_length=1, max_length=200),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     current_org: Organization = Depends(get_current_org),
     service: BillingService = Depends(get_bill_service),
@@ -255,7 +301,9 @@ async def verify_transaction(
     # service. Domain exceptions propagate through the global handlers —
     # wrapping them here used to leak upstream error details (Paystack
     # bodies, DB messages) to clients.
-    return await service.verify_transaction(db, reference, caller_org_id=current_org.id)
+    return await service.verify_transaction(
+        db, reference, caller_org_id=current_org.id, user_id=current_user.id
+    )
 
 
 @router.post("/billing/webhook", response_model=PaystackWebhookResponse)

@@ -36,10 +36,34 @@ const BASE = '/api/v1';
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** Machine-readable error code from the API envelope (e.g. CHECKOUT_FAILED). */
+  code?: string;
+  /**
+   * The reason slug for classified failures, read out of ``error.details``.
+   *
+   * Billing surfaces branch on this instead of on message text: a message is
+   * copy that gets reworded, a slug is a contract. It is what lets the checkout
+   * tell "your card was declined" apart from "we could not reach the provider"
+   * without parsing a sentence — and without relaying a provider's own error
+   * string to a customer who has no use for it.
+   */
+  reason?: string;
+  details?: { field: string; issue: string }[];
+  constructor(
+    message: string,
+    status: number,
+    extra: {
+      code?: string;
+      reason?: string;
+      details?: { field: string; issue: string }[];
+    } = {}
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = extra.code;
+    this.reason = extra.reason;
+    this.details = extra.details;
   }
 }
 
@@ -186,11 +210,31 @@ async function request<T>(
     throw new ApiError(`Malformed response (${res.status})`, res.status);
   }
   if (!res.ok) {
-    const message =
+    // The app's envelope is { error: { code, message, details } }. Read the
+    // code and reason beside the message: a caller that only needs a sentence
+    // shows the message, and a caller that must *decide* — the checkout above
+    // all — switches on the slug.
+    const envelope = (data as {
+      error?: {
+        code?: string;
+        message?: string;
+        details?: { field?: string; issue?: string }[];
+      };
+    })?.error;
+    const details = (envelope?.details ?? [])
+      .filter((d) => d && typeof d.field === 'string')
+      .map((d) => ({ field: d.field as string, issue: String(d.issue ?? '') }));
+    const reason = details.find((d) => d.field === 'reason')?.issue;
+    const raw =
+      envelope?.message ||
       (data as { detail?: string; message?: string })?.detail ||
       (data as { message?: string })?.message ||
       `Request failed (${res.status})`;
-    throw new ApiError(typeof message === 'string' ? message : JSON.stringify(message), res.status);
+    throw new ApiError(
+      typeof raw === 'string' ? raw : JSON.stringify(raw),
+      res.status,
+      { code: envelope?.code, reason, details }
+    );
   }
   return data as T;
 }
@@ -211,6 +255,91 @@ export interface InitializePaymentResult {
   product_amount_minor?: number | null;
   product_price_display?: string | null;
   payment_provider?: string;
+  /** The customer's own plan/interval echo, so the hand-off screen restates
+   *  the exact order it showed rather than re-deriving it from the URL. */
+  plan?: string | null;
+  billing_interval?: string | null;
+  /**
+   * Paystack's *publishable* key plus the InlineJS settings, which is what lets
+   * the checkout complete payment inside RELIASTRA's own page. Absent when the
+   * backend has no public key configured — the caller then falls back to
+   * ``authorization_url``. The secret key never appears in any API response.
+   */
+  public_key?: string | null;
+  inline_js_enabled?: boolean;
+  inline_js_url?: string | null;
+  /** The rails this transaction was opened with (e.g. ["card"]). */
+  channels?: string[];
+  payment_methods?: CheckoutPaymentMethod[];
+}
+
+/** A payment method the backend's channel policy actually enabled. */
+export interface CheckoutPaymentMethod {
+  id: string;
+  channel: string;
+  label: string;
+  description?: string;
+  networks?: string[];
+  restricted_networks?: {
+    name: string;
+    globally_supported: boolean;
+    markets: string[];
+  }[];
+  provider?: string;
+  provider_display?: string;
+  supports_international?: boolean;
+  markets?: string[];
+  /** Always "provider": RELIASTRA never receives card data. */
+  handles_card_data?: string;
+}
+
+/**
+ * The authoritative checkout quote.
+ *
+ * Rendered, never assembled: every figure a customer sees before paying —
+ * product price, charged amount, currency names, disclosure, FX reference,
+ * available methods — arrives pre-resolved from the same backend resolvers that
+ * will price the transaction. The frontend holds no price table, so there is
+ * nothing for it to get wrong and nothing for an attacker to edit.
+ */
+export interface CheckoutQuote {
+  plan: string;
+  display_plan: string;
+  description?: string;
+  features?: Record<string, unknown> | null;
+  billing_interval: 'monthly' | 'annual';
+  product_currency: string;
+  product_amount_minor?: number | null;
+  product_price_display?: string | null;
+  payment_currency: string;
+  payment_amount_minor?: number | null;
+  payment_amount_display?: string | null;
+  payment_currency_name: string;
+  payment_provider: string;
+  payment_provider_display?: string;
+  period_word?: string;
+  currency_notice?: string | null;
+  fx_reference?: import('@/lib/billing/currency').FxReference | null;
+  payment_methods: CheckoutPaymentMethod[];
+  channels: string[];
+  /**
+   * Digest of the figures this quote was priced from, echoed back when the
+   * payment is initialized. It carries no value of its own — the amount is
+   * re-resolved server-side either way — but it lets the backend refuse a
+   * payment whose page was priced from a since-changed price list, instead of
+   * charging the customer a figure they never saw.
+   */
+  price_token?: string;
+  organization_name?: string | null;
+  billing_email?: string | null;
+  current_plan?: string | null;
+  current_interval?: string | null;
+  already_subscribed?: boolean;
+  available: boolean;
+  unavailable_reason?: string | null;
+  unavailable_message?: string | null;
+  checkout_enabled?: boolean;
+  trial_note?: string | null;
 }
 
 export const api = {
@@ -378,10 +507,37 @@ export const api = {
 
   // ── Billing (real Paystack flow) ────────────────────────────────────────
 
-  initializePayment: (plan: PlanId | string, billingInterval: 'monthly' | 'annual' = 'monthly') =>
+  /**
+   * The checkout page's render model, resolved entirely server-side.
+   *
+   * Called with a plan id and an interval only; everything else comes back from
+   * the backend. The page never prices anything itself, which is what keeps the
+   * reviewed figure and the charged figure the same number.
+   */
+  checkoutQuote: (plan: PlanId | string, interval: 'monthly' | 'annual' = 'monthly') =>
+    request<CheckoutQuote>(
+      `/billing/checkout/quote?plan=${encodeURIComponent(plan)}&interval=${interval}`
+    ),
+
+  initializePayment: (
+    plan: PlanId | string,
+    billingInterval: 'monthly' | 'annual' = 'monthly',
+    paymentMethod?: string,
+    expectedPriceToken?: string
+  ) =>
     request<InitializePaymentResult>('/billing/initialize', {
       method: 'POST',
-      body: JSON.stringify({ plan, billing_interval: billingInterval }),
+      body: JSON.stringify({
+        plan,
+        billing_interval: billingInterval,
+        // Echoes the method the review screen displayed. It cannot widen the
+        // backend's channel policy — an unavailable method is refused there.
+        ...(paymentMethod ? { payment_method: paymentMethod } : {}),
+        // Proves which quote the customer was shown. Carries no amount, so it
+        // cannot price anything: the server re-resolves the figures and refuses
+        // the payment if they no longer match what this page displayed.
+        ...(expectedPriceToken ? { expected_price_token: expectedPriceToken } : {}),
+      }),
     }),
 
   /**
@@ -411,6 +567,17 @@ export const api = {
       product_amount_minor?: number | null;
       product_price_display?: string | null;
       payment_provider?: string;
+      /** Plan identity for the confirmation screen, from the verification. */
+      display_plan?: string | null;
+      billing_interval?: string | null;
+      period_word?: string | null;
+      /** CheckoutReason slug + RELIASTRA wording for a non-verified outcome. */
+      reason?: string | null;
+      reason_message?: string | null;
+      /** True when this verification is what activated the subscription. */
+      activated?: boolean;
+      /** A second valid payment for a covered period — stated, not hidden. */
+      duplicate_payment?: boolean;
     }>(`/billing/verify?reference=${encodeURIComponent(reference)}`, {
       // The verify endpoint provisions the plan and settles the persisted
       // transaction — a state-changing call, so it is a POST like every

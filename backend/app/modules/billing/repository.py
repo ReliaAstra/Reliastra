@@ -32,6 +32,9 @@ class BillingRepository:
         product_currency: str,
         product_amount_minor: int | None = None,
         email: str | None = None,
+        user_id: uuid.UUID | None = None,
+        verified_at: datetime | None = None,
+        duplicate: bool = False,
         paid_at: datetime | None = None,
         period_start: datetime | None = None,
         period_end: datetime | None = None,
@@ -63,6 +66,8 @@ class BillingRepository:
             "period_start": period_start,
             "period_end": period_end,
             "provider_metadata": provider_metadata,
+            "user_id": user_id,
+            "verified_at": verified_at,
         }
         if transaction is None:
             transaction = BillingTransaction(
@@ -74,7 +79,19 @@ class BillingRepository:
             session.add(transaction)
         else:
             for key, value in values.items():
+                # Attribution fields are only ever filled in, never blanked.
+                # The ``charge.success`` webhook usually arrives first and
+                # carries no payer identity (it is a server-to-server event);
+                # the customer's own verify call follows seconds later and does.
+                # Overwriting with ``None`` here would erase exactly the
+                # provenance the billing record exists to keep.
+                if value is None and key in {"user_id", "verified_at"}:
+                    continue
                 setattr(transaction, key, value)
+            # ``duplicate`` is sticky: once a second payment for the period has
+            # been seen, a later idempotent re-delivery must not un-flag it.
+            if duplicate:
+                transaction.duplicate = True
             # A refund/dispute already seen by the webhook outranks a later
             # re-verification of the same reference; never regress the state.
             if transaction.status == "pending":
@@ -133,8 +150,14 @@ class BillingRepository:
         provider_subscription_id: str | None = None,
         plan: str = "free",
         status: str = "inactive",
-        **periods: Any,
+        billing_interval: str = "monthly",
+        current_period_start: Any = None,
+        current_period_end: Any = None,
     ) -> Subscription:
+        # Every field is a named parameter on purpose. This constructor used to
+        # take **periods and read two keys out of it, which silently discarded
+        # billing_interval — an annual customer was created on the monthly
+        # default, so the interval they paid for was not the interval recorded.
         subscription = Subscription(
             organization_id=org_id,
             provider=provider,
@@ -142,8 +165,9 @@ class BillingRepository:
             provider_subscription_id=provider_subscription_id,
             plan=plan,
             status=status,
-            current_period_start=periods.get("current_period_start"),
-            current_period_end=periods.get("current_period_end"),
+            billing_interval=billing_interval,
+            current_period_start=current_period_start,
+            current_period_end=current_period_end,
         )
         session.add(subscription)
         await session.flush()
