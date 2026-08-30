@@ -2,163 +2,270 @@ import { expect, test } from '@playwright/test';
 import {
   CONTRACT,
   PAYSTACK_MOCK,
+  allPaystackInits,
   createAccount,
   decodeMailRaw,
   decodeMimeWords,
+  expectTextContains,
   flatText,
   lastPaystackInit,
-  expectTextContains,
   resetPaystackMock,
   signIn,
 } from './helpers';
 
 /**
- * THE core journey, through the real UI end to end:
- *   sign in -> billing -> plan chooser -> checkout review -> hosted Paystack
- *   payment -> redirected back -> confirmation + persisted history + receipt.
+ * Getting TO the checkout, and getting back.
  *
- * The assertion that matters: the exact amount + currency the RELIASTRA
- * backend asked Paystack to charge EQUALS what the customer was shown —
- * ₦60,000.00 on screen == 6,000,000 kobo + currency NGN upstream. Never
- * USD minor units, never an FX calculation.
+ * The checkout page itself is covered by `checkout-page.spec.ts`. This file owns
+ * the two seams around it, because those are where a customer is most likely to
+ * be stranded:
+ *
+ *   1. **Entry.** Every paid-plan action in the product must arrive at
+ *      RELIASTRA's own checkout with the plan and interval already chosen — not
+ *      start a payment from inside a modal, and not open a provider tab that the
+ *      customer then has to find their way back from. The upgrade dialog's job
+ *      ends at handing over intent.
+ *
+ *   2. **Return.** A customer who comes back to a signed-in session — from the
+ *      provider's hosted page, from an email link, or by pressing reload — must
+ *      land on a state that tells them the truth about their payment. That
+ *      includes the older `?pay_ref=` links already sitting in people's browser
+ *      history and in sent receipts: the route changed, the link did not.
  */
 
 const PASSWORD = 'Journey!2026';
 
-test.describe('checkout to payment', () => {
+test.describe('checkout entry and return', () => {
   test.beforeEach(async ({ request }) => {
     await resetPaystackMock(request);
   });
 
-  test('Pro monthly: screen figure == provider request, then receipt trail', async ({
+  test("the plan chooser hands off to RELIASTRA's checkout, price intact", async ({
     page,
     request,
   }) => {
-    const email = `e2e-billing-${Date.now()}@reliastra.dev`;
-
-    // A real account, created through the app's own signup + emailed OTP.
-    const { accessToken, organizationId } = await createAccount(page, email, PASSWORD);
+    const email = `e2e-entry-${Date.now()}@reliastra.dev`;
+    await createAccount(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
 
-    // Land on the console billing page and open the plan chooser.
     await page.goto('/settings/billing', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: /^upgrade$/i }).first().click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('heading', { name: /choose your plan/i })).toBeVisible();
 
-    // Transparency is mandatory on the chooser too.
-    // Anchor first on the resolved figure so no assertion can catch the
-    // placeholder state of the shared currency fetch.
-    await expect(
-      dialog.locator('[data-testid="payment-charge-pro"]').first(),
-    ).toHaveText(CONTRACT.actualChargeDisplay, { timeout: 30_000 });
-    const chooserText = await flatText(dialog);
-    expectTextContains(chooserText, 'Product price $39.00 (USD)');
-    expectTextContains(chooserText, 'Actual charge ₦60,000.00 (NGN) per month');
-    expectTextContains(chooserText, 'Payment provider Paystack');
-    expectTextContains(chooserText, CONTRACT.notice);
-
-    // Confirm -> review step: the last RELIASTRA-owned screen before the
-    // provider, and its CTA names the provider + exact figure.
-    await dialog.getByRole('button', { name: /upgrade to pro/i }).click();
-    await expect(
-      dialog.getByRole('heading', { name: /review your subscription/i }),
-    ).toBeVisible();
-    const charge = dialog.locator('[data-testid="payment-charge-pro"]');
-    await expect(charge).toHaveText(CONTRACT.actualChargeDisplay);
-    expectTextContains(
-      await flatText(dialog.locator('[data-testid="payment-transparency-pro"]')),
-      'Payment provider Paystack',
+    // Transparency is mandatory on the chooser too, anchored on the resolved
+    // figure so no assertion can catch a loading placeholder.
+    await expect(dialog.locator('[data-testid="payment-charge-pro"]').first()).toHaveText(
+      CONTRACT.actualChargeDisplay,
+      { timeout: 30_000 },
     );
-    const cta = dialog.getByRole('button', { name: /continue to paystack/i });
-    await expect(cta).toBeVisible();
-    // The button itself restates the exact figure the provider will charge.
-    expectTextContains(await flatText(cta), 'Continue to Paystack', CONTRACT.actualChargeDisplay);
+    const chooser = await flatText(dialog);
+    expectTextContains(
+      chooser,
+      'Product price $39.00 (USD)',
+      'Actual charge ₦60,000.00 (NGN)',
+      'Payment provider Paystack',
+      CONTRACT.notice,
+    );
 
-    // Pay. The browser leaves RELIASTRA for the hosted checkout page — the
-    // same figure must be on it.
-    await dialog.getByRole('button', { name: /continue to paystack/i }).click();
-    await page.waitForURL(`${PAYSTACK_MOCK}/pay/**`, { timeout: 90_000 });
-    // The provider's hosted URL carries the reference; grab it here because
-    // the billing page tidies ?pay_ref= out of the address bar once handled.
-    const payRef = decodeURIComponent(page.url().split('/pay/')[1]);
-    const hostedText = await flatText(page.locator('body'));
-    expectTextContains(hostedText, 'NGN 60,000.00');
+    // Choosing PRO opens the checkout — it does not pay from here. The dialog is
+    // RELIASTRA's, the payment is Paystack's, and the review step belongs to the
+    // page whose URL the customer can go back to.
+    await dialog.getByRole('button', { name: /upgrade to pro/i }).click();
+    await page.waitForURL(/\/checkout\?/, { timeout: 60_000 });
+    expect(page.url()).toContain('plan=pro');
+    expect(page.url()).not.toContain(PAYSTACK_MOCK);
 
-    // What the backend actually asked Paystack to charge (captured upstream).
-    const init = await lastPaystackInit(request);
-    expect(init, 'no initialize captured by the Paystack stand-in').not.toBeNull();
-    expect(init!.amount).toBe(CONTRACT.paymentAmountMinor); // 6_000_000 kobo
-    expect(init!.currency).toBe(CONTRACT.paymentCurrency); // "NGN"
-    expect(init!.amount).not.toBe(CONTRACT.productAmountMinor); // NOT USD minor units
-    // The reconciliation metadata rides along (minor units as strings by
-    // contract) — and the two amounts are DIFFERENT numbers, which is the
-    // whole point: the kobo amount was never a USD→NGN reinterpretation.
-    expect(init!.metadata).toMatchObject({
-      currency: CONTRACT.paymentCurrency,
-      amount_minor: String(CONTRACT.paymentAmountMinor),
-      product_currency: CONTRACT.productCurrency,
-      product_amount_minor: String(CONTRACT.productAmountMinor),
+    // The hand-off carries intent, and the page re-prices it server-side.
+    await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
+      CONTRACT.actualChargeDisplay,
+      { timeout: 60_000 },
+    );
+    await expect(page.locator('[data-testid="checkout-review-plan"]')).toContainText(/RELIASTRA Pro/);
+    // No payment has been started by arriving here.
+    expect(await lastPaystackInit(request)).toBeNull();
+
+    // Pay, from the checkout page, on the checkout page's own terms.
+    await page.locator('[data-testid="checkout-continue"]').click();
+    await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
+      timeout: 60_000,
     });
-    expect(init!.metadata!.amount_minor).not.toBe(init!.metadata!.product_amount_minor);
+    await page.locator('#reliastra-mock-paystack-overlay button[data-out="success"]').click();
+    await expect(page.locator('[data-testid="checkout-confirmation"]')).toBeVisible({
+      timeout: 60_000,
+    });
 
-    // Customer pays on the hosted page and is returned to RELIASTRA.
-    await page.getByRole('button', { name: /^pay NGN/i }).click();
-    await page.waitForURL(/\/settings\/billing\?pay_ref=/, { timeout: 90_000 });
+    const init = await lastPaystackInit(request);
+    expect(init!.amount).toBe(CONTRACT.paymentAmountMinor);
+    expect(init!.currency).toBe(CONTRACT.paymentCurrency);
+    expect(init!.channels).toEqual(['card']);
 
-    // Confirmation banner: built from what the GATEWAY reported, not re-read
-    // from the catalog, and re-states both currencies + the provider.
+    // And the console now reflects a paid plan without another click.
+    await page.goto('/settings/billing', { waitUntil: 'domcontentloaded' });
+    const row = page.locator(`[data-testid="transaction-row-${init!.reference}"]`);
+    await expect(row).toBeVisible({ timeout: 60_000 });
+    expectTextContains(
+      await flatText(row),
+      CONTRACT.actualChargeDisplay,
+      CONTRACT.productAmountDisplay,
+    );
+  });
+
+  test('the annual choice survives the hand-off', async ({ page, request }) => {
+    const email = `e2e-entry-annual-${Date.now()}@reliastra.dev`;
+    await createAccount(page, email, PASSWORD);
+    await signIn(page, email, PASSWORD);
+
+    await page.goto('/settings/billing', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: /^upgrade$/i }).first().click();
+    const dialog = page.getByRole('dialog');
+    const annual = dialog.getByRole('button', { name: /annual/i }).first();
+    if (await annual.isVisible().catch(() => false)) {
+      await annual.click();
+      await expect(dialog.locator('[data-testid="payment-charge-pro"]').first()).toHaveText(
+        CONTRACT.annualChargeDisplay,
+        { timeout: 30_000 },
+      );
+      await dialog.getByRole('button', { name: /upgrade to pro/i }).click();
+      await page.waitForURL(/\/checkout\?/, { timeout: 60_000 });
+      expect(page.url()).toContain('interval=annual');
+      await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
+        CONTRACT.annualChargeDisplay,
+        { timeout: 60_000 },
+      );
+      await page.locator('[data-testid="checkout-continue"]').click();
+      await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
+        timeout: 60_000,
+      });
+      const init = await lastPaystackInit(request);
+      expect(init!.amount).toBe(CONTRACT.annualAmountMinor);
+      expect(init!.metadata).toMatchObject({ billing_interval: 'annual' });
+    } else {
+      // No annual control in this build: the checkout must not invent one.
+      expect(await flatText(dialog)).not.toMatch(/annual/i);
+    }
+  });
+
+  test('the landing page sends new customers to an account, not to a payment', async ({
+    page,
+  }) => {
+    /**
+     * Checkout is organization-scoped: the quote is priced against an account and
+     * the receipt has to arrive in somebody's mailbox. A visitor with no
+     * workspace therefore goes to signup — a checkout they could only be turned
+     * away from is a worse first impression than an honest queue.
+     */
+    await page.goto('/#pricing', { waitUntil: 'domcontentloaded' });
+    const cta = page.locator('[data-testid="pricing-cta-pro"]');
+    await expect(cta).toBeVisible({ timeout: 30_000 });
+    await cta.getByRole('button').click();
+    await page.waitForURL(/\/signup/, { timeout: 30_000 });
+    expect(page.url()).not.toContain('checkout');
+  });
+
+  test('a reference from an older link still resolves to the payment', async ({
+    page,
+    request,
+  }) => {
+    /**
+     * `?pay_ref=` predates this checkout page: it is in sent receipts, in browser
+     * history, and in tabs left open over a weekend. It must not become a dead
+     * link or — worse — a second chance to pay. Visiting it with a paid reference
+     * verifies that reference and reports what was actually collected.
+     */
+    const email = `e2e-payref-${Date.now()}@reliastra.dev`;
+    const { accessToken, organizationId } = await createAccount(page, email, PASSWORD);
+    await signIn(page, email, PASSWORD);
+
+    // Take a payment through the checkout, then come back the old way.
+    await page.goto('/checkout?plan=pro&interval=monthly', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-testid="checkout-continue"]')).toBeVisible({
+      timeout: 60_000,
+    });
+    await page.locator('[data-testid="checkout-continue"]').click();
+    await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
+      timeout: 60_000,
+    });
+    await page.locator('#reliastra-mock-paystack-overlay button[data-out="success"]').click();
+    await expect(page.locator('[data-testid="checkout-confirmation"]')).toBeVisible({
+      timeout: 60_000,
+    });
+    const init = await lastPaystackInit(request);
+
+    await page.goto(`/settings/billing?pay_ref=${init!.reference}`, {
+      waitUntil: 'domcontentloaded',
+    });
     const banner = page.locator('[data-testid="payment-confirmation"]');
     await expect(banner).toBeVisible({ timeout: 60_000 });
-    const bannerText = await flatText(banner);
-    expectTextContains(bannerText, '₦60,000.00 (NGN)');
-    expectTextContains(bannerText, '$39.00 (USD)');
-    expect(bannerText).toMatch(/Payment provider Paystack/i);
+    expectTextContains(
+      await flatText(banner),
+      CONTRACT.actualChargeDisplay,
+      CONTRACT.productAmountDisplay,
+    );
+    // The address bar is tidied, so the banner cannot be re-triggered by refresh
+    // into a state the customer reads as a second charge.
+    expect(page.url()).not.toContain('pay_ref=');
 
-    // Billing history now carries the real, persisted charge — labelled in
-    // both currencies and linked to the provider reference.
-    const ref = payRef;
-    const row = page.locator(`[data-testid="transaction-row-${ref}"]`);
-    await expect(row).toBeVisible({ timeout: 60_000 });
-    const rowText = await flatText(row);
-    expectTextContains(rowText, '₦60,000.00 (NGN)');
-    expectTextContains(rowText, '$39.00 (USD)');
+    // Nothing new was asked of Paystack by coming back: one payment, one capture.
+    const captures = await allPaystackInits(request);
+    expect(captures.length).toBe(1);
 
-    // The API's own view of history agrees with what the UI shows.
-    // (Authenticated with the same bearer token the app store holds —
-    // localStorage is browser-side, the request fixture is not the browser.)
-    const txRes = await request.get('/api/v1/billing/transactions', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'X-Organization-ID': organizationId,
-      },
+    const planRes = await request.get('/api/v1/billing/plan', {
+      headers: { Authorization: `Bearer ${accessToken}`, 'X-Organization-ID': organizationId },
     });
-    expect(txRes.ok()).toBeTruthy();
-    const txBody = await txRes.json();
-    const tx = txBody.items.find((t: { reference: string }) => t.reference === ref);
-    expect(tx, 'transaction not persisted server-side').toBeTruthy();
-    expect(tx.charged_amount_minor).toBe(CONTRACT.paymentAmountMinor);
-    expect(tx.charged_currency).toBe(CONTRACT.paymentCurrency);
-    expect(tx.product_amount_minor).toBe(CONTRACT.productAmountMinor);
-    expect(tx.product_currency).toBe(CONTRACT.productCurrency);
-    expect(tx.status).toBe('success'); // persisted provider status; the UI words it as “successful”
-    expect(txBody.payment.notice).toBe(CONTRACT.notice);
+    expect((await planRes.json()).plan).toBe('pro');
+  });
 
-    // The receipt email states the same figures, labelled.
-    const mails = await request.get('http://127.0.0.1:8025/');
-    expect(mails.ok()).toBeTruthy();
+  test('a paid plan never shows an upgrade path that charges again by accident', async ({
+    page,
+    request,
+  }) => {
+    const email = `e2e-aftermath-${Date.now()}@reliastra.dev`;
+    await createAccount(page, email, PASSWORD);
+    await signIn(page, email, PASSWORD);
+    await page.goto('/checkout?plan=pro', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-testid="checkout-continue"]')).toBeVisible({
+      timeout: 60_000,
+    });
+    await page.locator('[data-testid="checkout-continue"]').click();
+    await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
+      timeout: 60_000,
+    });
+    await page.locator('#reliastra-mock-paystack-overlay button[data-out="success"]').click();
+    await expect(page.locator('[data-testid="checkout-confirmation"]')).toBeVisible({
+      timeout: 60_000,
+    });
+
+    // Returning to checkout for a plan already held must not be an invitation to
+    // buy it twice: the page says what the account already is.
+    await page.goto('/checkout?plan=pro&interval=monthly', { waitUntil: 'domcontentloaded' });
+    const body = await flatText(page.locator('main'));
+    expectTextContains(
+      body,
+      'already subscribed to RELIASTRA Pro on monthly billing',
+      'Paying again would add a second charge for a covered period',
+    );
+
+    // The receipt email states the figures the page stated.
+    const mails = await request.get(
+      `${process.env.E2E_MAIL_URL ?? 'http://127.0.0.1:8025'}/`,
+    );
     const { messages } = await mails.json();
     const receipt = (messages as { subject: string; to: string; raw: string }[]).find(
-      (m) =>
-        /receipt/i.test(decodeMimeWords(m.subject)) &&
-        m.to.toLowerCase().includes(email),
+      (m) => /receipt/i.test(decodeMimeWords(m.subject)) && m.to.toLowerCase().includes(email),
     );
-    expect(receipt, 'no receipt email captured for this run').toBeTruthy();
-    const body = decodeMailRaw(receipt!.raw).replace(/\s+/g, ' ');
-    expectTextContains(body, 'Product price: $39.00 (USD)');
-    expectTextContains(body, 'Actual charge: ₦60,000.00 (NGN)');
-    expectTextContains(body, 'Payment provider: Paystack');
-    expectTextContains(body, 'collected by Paystack in NGN');
+    expect(receipt, 'no receipt email captured').toBeTruthy();
+    const receiptText = decodeMailRaw(receipt!.raw);
+    expectTextContains(
+      receiptText,
+      'Product price: $39.00 (USD)',
+      'Actual charge: ₦60,000.00 (NGN)',
+      'Payment provider: Paystack',
+    );
+    // The reference belongs on the receipt: it is the only thing a customer can
+    // quote to support, and the only key into the record we persisted.
+    const init = await lastPaystackInit(request);
+    expect(receiptText).toContain(init!.reference);
   });
 });

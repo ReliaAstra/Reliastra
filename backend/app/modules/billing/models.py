@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     JSON,
@@ -80,6 +81,13 @@ class BillingTransaction(UUIDMixin, TimestampMixin, Base):
     provider: Mapped[str] = mapped_column(
         String(50), nullable=False, default="paystack"
     )
+    # The person who authorized the purchase, when it came through an
+    # authenticated checkout. Nullable and non-cascading by design: a payment
+    # is a financial fact that outlives a seat, so removing a user must never
+    # delete or reassign the record of what their organization paid.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     # Paystack's own transaction reference (also the idempotency key).
     reference: Mapped[str] = mapped_column(String(200), nullable=False)
     email: Mapped[str | None] = mapped_column(String(320), nullable=True)
@@ -100,6 +108,18 @@ class BillingTransaction(UUIDMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="success")
     paid_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    # When RELIASTRA confirmed this charge with the provider, as opposed to
+    # ``paid_at`` (the provider's own timestamp for when the money moved). The
+    # two differ whenever verification lands late — a webhook retry, an offline
+    # customer who returned to the confirmation page — and a dispute needs both.
+    verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # A second collected payment for a period already covered. Recorded rather
+    # than discarded, so finance and support can see that it happened.
+    duplicate: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
     )
     period_start: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

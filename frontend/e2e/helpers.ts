@@ -165,18 +165,59 @@ export async function signIn(page: Page, email: string, password: string): Promi
   await page.waitForTimeout(600);
 }
 
-/** Latest captured upstream initialize request for this reference. */
-export async function lastPaystackInit(request: APIRequestContext): Promise<{
+/**
+ * What the stand-in recorded of the `transaction/initialize` call RELIASTRA
+ * actually made — the authoritative answer to "what did we ask to be charged",
+ * as opposed to what the page displayed.
+ */
+export interface PaystackInitCapture {
   reference: string;
   amount: number | null;
   currency: string | null;
+  email?: string | null;
+  /** Must be absent/null: a plan code would override our published amount. */
+  plan?: string | null;
+  /** The rails the customer was allowed to pay through. */
+  channels?: string[];
   metadata?: Record<string, unknown>;
   callback_url?: string | null;
-} | null> {
+  /** The outcome the next verify will report. */
+  outcome?: 'success' | 'failed' | 'pending';
+}
+
+/** Latest captured upstream initialize request for this reference. */
+export async function lastPaystackInit(request: APIRequestContext): Promise<PaystackInitCapture | null> {
   const all = await request.get(`${PAYSTACK_MOCK}/capture/all`);
   if (!all.ok()) return null;
   const rows = (await all.json()) as unknown[];
-  return rows.length ? (rows[rows.length - 1] as never) : null;
+  return rows.length ? (rows[rows.length - 1] as PaystackInitCapture) : null;
+}
+
+/**
+ * Decide the fate of one payment at the provider, out of band.
+ *
+ * The hosted page and the popup both end up here, because "the bank declined
+ * it" is not something a test can arrange by clicking a real bank. Setting the
+ * outcome — rather than stubbing Paystack inside the app — keeps the customer's
+ * path identical to production's: RELIASTRA still verifies server-side and is
+ * still the only thing that decides whether the plan activates.
+ */
+export async function setPaystackOutcome(
+  request: APIRequestContext,
+  reference: string,
+  outcome: 'success' | 'failed' | 'pending',
+): Promise<void> {
+  const res = await request.post(`${PAYSTACK_MOCK}/outcome/${reference}/${outcome}`);
+  expect(res.ok(), `set outcome ${outcome} for ${reference} -> ${res.status()}`).toBeTruthy();
+}
+
+/** All captured initialize calls, oldest first. */
+export async function allPaystackInits(
+  request: APIRequestContext,
+): Promise<PaystackInitCapture[]> {
+  const res = await request.get(`${PAYSTACK_MOCK}/capture/all`);
+  if (!res.ok()) return [];
+  return (await res.json()) as PaystackInitCapture[];
 }
 
 export async function resetPaystackMock(request: APIRequestContext): Promise<void> {

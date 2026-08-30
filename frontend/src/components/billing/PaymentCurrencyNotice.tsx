@@ -5,10 +5,12 @@ import { cn } from '@/lib/utils';
 import {
   currencyNotice,
   formatFxRate,
+  usableFxReference,
   fxReference,
   isCheckoutReady,
   paymentAmountFor,
   paymentProviderDisplay,
+  type FxReference,
   type PaymentCurrencyInfo,
 } from '@/lib/billing/currency';
 
@@ -222,12 +224,24 @@ export function PaymentCurrencyNotice({
  */
 export function FxReferencePanel({
   info,
+  fx: fxOverride,
   className,
 }: {
   info?: PaymentCurrencyInfo | null;
+  /**
+   * A reference resolved elsewhere (the checkout quote carries its own), used
+   * instead of reading one off `info`. Kept as an input rather than a second
+   * component so there is exactly one rendering of this panel — and exactly one
+   * place its labelling can be weakened.
+   */
+  fx?: FxReference | null;
   className?: string;
 }) {
-  const fx = fxReference(info);
+  // Both sources pass one validity gate: a rate is displayed only if it is a
+  // positive, finite, fully-labelled number. Absent or invalid -> no panel.
+  const fx = usableFxReference(
+    fxOverride !== undefined ? fxOverride : fxReference(info)
+  );
   if (!fx) return null;
   const retrievedAt = formatFxTimestamp(fx.retrieved_at);
 

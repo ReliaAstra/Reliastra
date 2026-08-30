@@ -1,15 +1,13 @@
 'use client';
 
-import { ArrowLeft, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/stores/app-store';
 import { PLANS, annualPrice, dependencyLabel, getPlan, intervalLabel, monthlyPrice, retentionLabel, seatLabel } from '@/lib/dashboard/plans';
-import { api } from '@/lib/dashboard/api';
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
-import { toast } from 'sonner';
 import {
-  FxReferencePanel,
   PaymentCurrencyNotice,
   PlanPaymentSummary,
 } from '@/components/billing/PaymentCurrencyNotice';
@@ -17,7 +15,6 @@ import { usePaymentCurrency } from '@/lib/billing/use-payment-currency';
 import {
   currencyLabel,
   formatMinorUnits,
-  isCheckoutReady,
   paymentProviderName,
 } from '@/lib/billing/currency';
 
@@ -33,27 +30,27 @@ function Feature({ ok, children }: { ok: boolean | string; children: string }) {
 }
 
 /**
- * Upgrade flow — the REAL billing path.
+ * Plan chooser — the entry point into RELIASTRA's checkout.
  *
- * Choosing a plan opens a pre-payment confirmation step, and only an explicit
- * "Continue to Paystack" calls ``POST /v1/billing/initialize`` (the backend
- * creates a Paystack transaction scoped to the caller's organization) and
- * redirects to the provider's hosted authorization page. The backend's webhook
- * + verify endpoint flip the subscription; the frontend never mutates
- * entitlement state.
+ * This dialog answers one question (which plan, on which interval) and then
+ * hands off: selecting a paid plan routes to `/checkout`, where the quote, the
+ * currency disclosure, the payment methods enabled for a global customer and the
+ * Paystack hand-off all live. It used to run the payment itself, which meant two
+ * screens each believed they were the last thing a customer read before money
+ * moved — and only one of them was the screen the backend priced.
  *
- * Why the confirmation step exists: the Paystack-hosted page is not ours to
- * modify, so the currency the card will be charged in has to be unambiguous
- * *before* the customer leaves RELIASTRA. That step shows the plan, the
- * product price, the amount and currency Paystack will actually charge, and the
- * canonical disclosure — all read from the same backend resolver that prices
- * the transaction.
+ * Enterprise stays "Contact Sales" and Free stays the default tier: neither is
+ * chargeable through self-serve, so neither is offered a checkout at all. The
+ * currency disclosure is repeated here because this *is* a plan decision, and a
+ * customer should never have to reach a payment screen to learn what currency
+ * they are being billed in.
  */
 export function UpgradeModal() {
   const open = useAppStore((s) => s.upgradeOpen);
   const close = useAppStore((s) => s.closeUpgrade);
   const plan = useAppStore((s) => s.plan);
   const user = useAppStore((s) => s.user);
+  const router = useRouter();
   // The plan a purchase would replace is the *underlying* one. An
   // organization inside its evaluation has Pro capabilities but pays for
   // nothing, so counting the trial grant as "current" disabled Pro in the
@@ -61,46 +58,38 @@ export function UpgradeModal() {
   const current = getPlan(plan?.plan);
   const [pending, setPending] = useState<string | null>(null);
   const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly');
-  const [selected, setSelected] = useState<string | null>(null);
   const { currency } = usePaymentCurrency();
 
   // Reset the flow whenever the dialog is dismissed or reopened.
   useEffect(() => {
-    if (!open) {
-      setSelected(null);
-      setPending(null);
-    }
+    if (!open) setPending(null);
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        // Back out of the confirmation step first, then close the dialog.
-        if (selected) setSelected(null);
-        else close();
-      }
+      if (e.key === 'Escape') close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, close, selected]);
+  }, [open, close]);
 
   if (!open) return null;
 
-  const selectedPlan = selected ? PLANS.find((p) => p.id === selected) ?? null : null;
-
-  const startCheckout = async (targetId: string) => {
+  /**
+   * Enter RELIASTRA's checkout.
+   *
+   * The chooser used to price and launch the payment itself. That made two
+   * screens responsible for the same promise — the amount a customer is
+   * charged — and every copy of it a place pricing could drift. So this carries
+   * intent only (plan + interval) and `/checkout` resolves everything else from
+   * the backend: the quote, the payment methods enabled for a global customer,
+   * the provider hand-off and the verification that decides entitlement.
+   */
+  const startCheckout = (targetId: string) => {
     setPending(targetId);
-    try {
-      const res = await api.initializePayment(targetId, interval);
-      // Hand off to Paystack; entitlement flips server-side after payment.
-      window.open(res.authorization_url, '_self', 'noopener');
-    } catch (err) {
-      setPending(null);
-      toast.error(err instanceof Error ? err.message : 'Could not start checkout', {
-        description: 'If this persists, contact support@reliastra.com.',
-      });
-    }
+    close();
+    router.push(`/checkout?plan=${encodeURIComponent(targetId)}&interval=${interval}`);
   };
 
   return (
@@ -114,54 +103,31 @@ export function UpgradeModal() {
         className="rs-modal-panel-xl rs-modal-in flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated shadow-rs-modal"
         onClick={(e) => e.stopPropagation()}
         role="document"
-        aria-labelledby={selected ? 'checkout-review-title' : 'pricing-title'}
+        aria-labelledby="pricing-title"
       >
         <div className="relative shrink-0 px-6 pb-4 pt-7 md:px-8 md:pt-8">
           <button
             type="button"
-            onClick={() => (selected ? setSelected(null) : close())}
+            onClick={close}
             className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-lg text-rs-text-tertiary transition-colors hover:bg-rs-hover hover:text-rs-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
-            aria-label={selected ? 'Back to plan selection' : 'Close'}
+            aria-label="Close"
           >
             <X size={18} />
           </button>
-          {selectedPlan ? (
-            <>
-              <h2 id="checkout-review-title" className="rs-page-title text-xl">
-                Review your subscription
-              </h2>
-              <p className="mt-1 text-sm text-rs-text-tertiary">
-                Confirm the plan, the billing period and the currency you will be
-                charged in before continuing to Paystack.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 id="pricing-title" className="rs-page-title text-xl">
-                Choose your plan
-              </h2>
-              <p className="mt-1 text-sm text-rs-text-tertiary">
-                Monitor more dependencies. Generate evidence. Protect your SLAs.
-                {user?.email ? (
-                  <span className="hidden sm:inline"> Billing as {user.email}.</span>
-                ) : null}
-              </p>
-            </>
-          )}
+          <>
+            <h2 id="pricing-title" className="rs-page-title text-xl">
+              Choose your plan
+            </h2>
+            <p className="mt-1 text-sm text-rs-text-tertiary">
+              Monitor more dependencies. Generate evidence. Protect your SLAs.
+              {user?.email ? (
+                <span className="hidden sm:inline"> Billing as {user.email}.</span>
+              ) : null}
+            </p>
+          </>
         </div>
 
-        {selectedPlan ? (
-          <CheckoutReview
-            planName={selectedPlan.name}
-            planId={selectedPlan.id}
-            interval={interval}
-            currency={currency}
-            pending={pending === selectedPlan.id}
-            onConfirm={() => void startCheckout(selectedPlan.id)}
-            onBack={() => setSelected(null)}
-          />
-        ) : (
-          <>
+        <>
             {/* Billing interval toggle — changes the ACTUAL amount charged. */}
             <div className="flex shrink-0 items-center justify-center gap-3 px-6 pb-2">
               <button
@@ -272,7 +238,7 @@ export function UpgradeModal() {
                         <RsButton
                           className="w-full"
                           disabled={pending !== null}
-                          onClick={() => setSelected(p.id)}
+                          onClick={() => startCheckout(p.id)}
                         >
                           {`Upgrade to ${p.name}`}
                         </RsButton>
@@ -298,108 +264,7 @@ export function UpgradeModal() {
               <span>Cancel anytime</span>
               <span>Questions? support@reliastra.com</span>
             </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Pre-payment confirmation (the last RELIASTRA-owned screen before Paystack).
- *
- * Paystack hosts its own checkout page and offers no slot for arbitrary
- * merchant copy, so nothing here tries to reach into it. Everything the
- * customer needs to know about the charge — plan, period, product price, the
- * exact amount and currency being sent, and the canonical disclosure — is
- * stated here instead.
- */
-function CheckoutReview({
-  planId,
-  planName,
-  interval,
-  currency,
-  pending,
-  onConfirm,
-  onBack,
-}: {
-  planId: string;
-  planName: string;
-  interval: 'monthly' | 'annual';
-  currency: ReturnType<typeof usePaymentCurrency>['currency'];
-  pending: boolean;
-  onConfirm: () => void;
-  onBack: () => void;
-}) {
-  const meta = getPlan(planId);
-  const ready = isCheckoutReady(currency);
-  const productPrice = formatMinorUnits(
-    (interval === 'annual' ? meta.priceAnnual : meta.priceMonthly) != null
-      ? (interval === 'annual' ? meta.priceAnnual! : meta.priceMonthly!) * 100
-      : null,
-    'USD'
-  );
-  const charged = currency.plan_payment_amounts?.[planId]?.[interval];
-
-  return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 rs-scrollbar md:px-6">
-      <div className="mx-auto max-w-[560px]">
-        <dl className="rounded-xl border border-rs-border-subtle bg-rs-base p-5">
-          <Row label="Plan">
-            <span className="font-medium text-rs-text">{planName}</span>
-          </Row>
-          <Row label="Billing period">
-            <span className="text-rs-text">{interval === 'annual' ? 'Annual' : 'Monthly'}</span>
-          </Row>
-        </dl>
-
-        {/* The mandatory triple, one shared component with the pricing page and
-            the billing page: what the plan costs, what Paystack will charge,
-            who charges it. All figures are backend-resolved. */}
-        <div className="mt-3">
-          <PlanPaymentSummary
-            info={currency}
-            plan={planId}
-            interval={interval}
-            productPrice={productPrice}
-            emphasis="panel"
-            className="bg-rs-base"
-          />
-        </div>
-
-        <div className="mt-4" data-testid="checkout-currency-notice">
-          <PaymentCurrencyNotice info={currency} heading="Payment currency" />
-        </div>
-
-        <FxReferencePanel info={currency} className="mt-3" />
-
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
-          <RsButton variant="ghost" onClick={onBack} disabled={pending}>
-            <ArrowLeft size={14} className="mr-1.5" aria-hidden="true" />
-            Back to plans
-          </RsButton>
-          {ready ? (
-            <RsButton onClick={onConfirm} disabled={pending}>
-              {pending
-                ? 'Preparing checkout…'
-                : `Continue to Paystack — ${charged ?? currencyLabel(currency)}`}
-            </RsButton>
-          ) : (
-            <a
-              href="mailto:billing@reliastra.com?subject=Pro%20plan%20subscription"
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-rs-brand px-4 text-sm font-medium text-white transition-colors hover:bg-rs-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
-            >
-              Contact billing to start your subscription
-            </a>
-          )}
-        </div>
-        <p className="mt-3 text-center text-[11px] leading-relaxed text-rs-text-tertiary sm:text-right">
-          You will be redirected to {paymentProviderName(currency)} to enter your
-          payment details.
-          {ready
-            ? ` The amount above is exactly what is sent to the provider, in ${currencyLabel(currency)} — never converted or recomputed.`
-            : ''}
-        </p>
+        </>
       </div>
     </div>
   );

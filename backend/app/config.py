@@ -188,6 +188,54 @@ class Settings(BaseSettings):
         "absent here, self-serve checkout for that plan is disabled rather "
         "than charging the USD minor-unit amount as Naira.",
     )
+    # ── PAYMENT CHANNEL POLICY (global checkout) ─────────────────────────────
+    # Paystack shows the methods enabled on the dashboard unless a transaction
+    # declares its own. RELIASTRA serves customers worldwide, so it declares:
+    # card only. See app/core/payment_channels.py for the full rationale.
+    PAYSTACK_DEFAULT_CHANNEL: str = Field(
+        default="card",
+        description="The channel RELIASTRA's global checkout enables when "
+        "PAYSTACK_CHECKOUT_CHANNELS is unset. Card is the only Paystack "
+        "channel documented as available on all accounts and all markets.",
+    )
+    PAYSTACK_CHECKOUT_CHANNELS: list[str] | None = Field(
+        default=None,
+        description="Explicit `channels` array sent to "
+        "POST /transaction/initialize. Unset -> ['card']. Entries that are "
+        "not Paystack channels, or that are country-restricted for the active "
+        "currency, are dropped and logged rather than sent — a global customer "
+        "is never shown USSD, Pay with Bank, QR or mobile money. Accepts a "
+        'JSON array (["card"]) or a comma list (card) via env.',
+    )
+    PAYSTACK_ENABLE_LOCAL_CHANNELS: bool = Field(
+        default=False,
+        description="Escape hatch for a deployment that really bills local "
+        "customers (e.g. a Ghanaian entity charging GHS, where mobile money "
+        "genuinely works). Allows market-specific channels already permitted "
+        "for the active currency. Leaving this false is what keeps the global "
+        "checkout card-only even if someone edits the dashboard preferences.",
+    )
+    # ── SECURE PAYMENT EXPERIENCE (InlineJS popup) ───────────────────────────
+    # The transaction is always initialized server-side with the secret key;
+    # only the public key and the returned access code reach the browser. No
+    # card number, expiry or CVC is ever posted to RELIASTRA — Paystack's
+    # Cards API requires PCI-DSS attestation and RELIASTRA is not a
+    # PCI-attested merchant, so the raw-card path is not implemented by design.
+    PAYSTACK_INLINE_JS_ENABLED: bool = Field(
+        default=True,
+        description="Complete payment inside RELIASTRA's checkout using "
+        "Paystack InlineJS (popup + resumeTransaction with the access code), "
+        "so the customer stays on a RELIASTRA page instead of being redirected. "
+        "When false — or if the provider script cannot load — the checkout "
+        "falls back to the hosted authorization URL.",
+    )
+    PAYSTACK_INLINE_JS_URL: str = Field(
+        default="https://js.paystack.co/v1/inline.js",
+        description="URL of Paystack's InlineJS library. Only ever loaded in "
+        "the browser; kept in config so a provider domain change is not a "
+        "code edit.",
+    )
+
     # ── FX REFERENCE (display context ONLY — never a pricing input) ─────────
     # The customer-facing pages may show a reference USD→NGN rate so the gap
     # between the $39 list price and the ₦ payment price is not a mystery.
@@ -345,6 +393,41 @@ class Settings(BaseSettings):
         if value and not value.startswith(("https://", "http://")):
             raise ValueError("RELIASTRA_AI_ENDPOINT_URL must be an HTTP(S) URL")
         return value
+
+    @field_validator("PAYSTACK_CHECKOUT_CHANNELS", mode="before")
+    @classmethod
+    def _parse_paystack_channels(cls, value: object) -> object:
+        """Accept a JSON array or a comma/space list; blank means "use policy".
+
+        ``PAYSTACK_CHECKOUT_CHANNELS=`` must read as *unset* — RELIASTRA then
+        falls back to the card-only default in ``app.core.payment_channels``.
+        Reading a blank as an empty list would be the dangerous version: an
+        empty ``channels`` array is not "card only", it is Paystack choosing.
+        """
+        if value is None:
+            return None
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            if text.startswith("["):
+                try:
+                    import json
+
+                    value = json.loads(text)
+                except ValueError as exc:
+                    raise ValueError(
+                        "PAYSTACK_CHECKOUT_CHANNELS must be a JSON array, "
+                        'e.g. ["card"]'
+                    ) from exc
+            else:
+                return [part for part in text.replace(",", " ").split() if part]
+        if isinstance(value, (list, tuple, set)):
+            cleaned = [str(item).strip() for item in value if str(item).strip()]
+            return cleaned or None
+        raise ValueError(
+            "PAYSTACK_CHECKOUT_CHANNELS must be a list of Paystack channel names"
+        )
 
     @field_validator("PAYSTACK_NGN_PLAN_PRICES", mode="before")
     @classmethod
