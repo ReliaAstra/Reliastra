@@ -250,8 +250,8 @@ class Settings(BaseSettings):
         "falls back to the hosted authorization URL.",
     )
     PAYSTACK_INLINE_JS_URL: str = Field(
-        default="https://js.paystack.co/v1/inline.js",
-        description="URL of Paystack's InlineJS library. Only ever loaded in "
+        default="https://js.paystack.co/v2/inline.js",
+        description="URL of Paystack's InlineJS library (v2). Only ever loaded in "
         "the browser; kept in config so a provider domain change is not a "
         "code edit.",
     )

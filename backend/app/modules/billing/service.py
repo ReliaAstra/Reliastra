@@ -76,6 +76,28 @@ from app.modules.billing.schemas import (
 
 logger = logging.getLogger(__name__)
 
+# P3 fix: pooled HTTP client for Paystack (like checks service) — one pool
+# instead of a fresh TCP/TLS handshake per initialize/verify. Timeouts stay
+# per-request via the client's default timeout.
+_paystack_http_client: httpx.AsyncClient | None = None
+
+
+def _get_paystack_http_client() -> httpx.AsyncClient:
+    global _paystack_http_client
+    if _paystack_http_client is None:
+        _paystack_http_client = httpx.AsyncClient(
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=5),
+            timeout=httpx.Timeout(10.0),
+        )
+    return _paystack_http_client
+
+
+async def close_paystack_http_client() -> None:
+    global _paystack_http_client
+    if _paystack_http_client is not None:
+        await _paystack_http_client.aclose()
+        _paystack_http_client = None
+
 
 class PaystackClient:
     """Small async Paystack client built on the project's existing HTTP stack."""
@@ -127,54 +149,54 @@ class PaystackClient:
         logs, and so an initialization can be re-attempted for the same
         pending checkout without creating a second orphan transaction.
         """
-        async with httpx.AsyncClient(timeout=10) as client:
-            payload: dict[str, Any] = {
-                "email": email,
-                "amount": amount,
-                # Currency MUST be explicit: without it Paystack charges in
-                # the merchant account's default currency, silently
-                # repricing the plan. The caller passes the currency that
-                # this amount was resolved in (payment_pricing), never a
-                # separately-read setting, so the amount and its currency
-                # can never drift apart.
-                "currency": (currency or payment_currency()),
-                "channels": channels or checkout_channels(),
-                "metadata": metadata or {},
-            }
-            if reference:
-                payload["reference"] = reference
-            if callback_url:
-                # Bring the customer back to RELIASTRA's checkout so the exact
-                # charge is confirmed there (see the ?reference= handler in the
-                # checkout page) instead of on a blank provider page.
-                payload["callback_url"] = callback_url
-            response = await client.post(
-                f"{self.base_url}/transaction/initialize",
-                headers=self._headers(),
-                json=payload,
-            )
-            response.raise_for_status()
-            return response.json()
+        client = _get_paystack_http_client()
+        payload: dict[str, Any] = {
+            "email": email,
+            "amount": amount,
+            # Currency MUST be explicit: without it Paystack charges in
+            # the merchant account's default currency, silently
+            # repricing the plan. The caller passes the currency that
+            # this amount was resolved in (payment_pricing), never a
+            # separately-read setting, so the amount and its currency
+            # can never drift apart.
+            "currency": (currency or payment_currency()),
+            "channels": channels or checkout_channels(),
+            "metadata": metadata or {},
+        }
+        if reference:
+            payload["reference"] = reference
+        if callback_url:
+            # Bring the customer back to RELIASTRA's checkout so the exact
+            # charge is confirmed there (see the ?reference= handler in the
+            # checkout page) instead of on a blank provider page.
+            payload["callback_url"] = callback_url
+        response = await client.post(
+            f"{self.base_url}/transaction/initialize",
+            headers=self._headers(),
+            json=payload,
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def verify_transaction(self, reference: str) -> dict[str, Any]:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(
-                f"{self.base_url}/transaction/verify/{reference}",
-                headers=self._headers(),
-            )
-            response.raise_for_status()
-            return response.json()
+        client = _get_paystack_http_client()
+        response = await client.get(
+            f"{self.base_url}/transaction/verify/{reference}",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+        return response.json()
 
     async def fetch_plan(self, plan_code_or_id: str) -> dict[str, Any] | None:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(
-                f"{self.base_url}/plan/{plan_code_or_id}",
-                headers=self._headers(),
-            )
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            return response.json()
+        client = _get_paystack_http_client()
+        response = await client.get(
+            f"{self.base_url}/plan/{plan_code_or_id}",
+            headers=self._headers(),
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
 
 
 paystack_client = PaystackClient()

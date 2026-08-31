@@ -261,10 +261,10 @@ setTimeout(function() {{ location.reload(); }}, 60000);
 </script></body></html>"""
             self._html(200, html)
             return
-        if self.path.startswith("/v1/inline.js"):
-            # A stand-in for Paystack's InlineJS. It is the *contract* the
+        if self.path.startswith("/v1/inline.js") or self.path.startswith("/v2/inline.js"):
+            # A stand-in for Paystack's InlineJS (v1 + v2). It is the *contract* the
             # product integrates against — `new PaystackPop()` with
-            # `resumeTransaction(accessCode, {onSuccess,onCancel,onError,onLoad})`
+            # `checkout({accessCode})` / `resumeTransaction(accessCode, {...})`
             # — not an emulation of their UI: RELIASTRA's own code (script
             # loading, callback wiring, verify-on-success) is what is exercised.
             self._html(
@@ -307,6 +307,13 @@ setTimeout(function() {{ location.reload(); }}, 60000);
     window.__RELIASTRA_MOCK_CALLBACKS__=callbacks||{};
     if(callbacks&&callbacks.onLoad) callbacks.onLoad({id:1,accessCode:accessCode,customer:{}});
     overlay(String(accessCode));
+  };
+  PaystackPop.prototype.checkout=function(opts){
+    var code=(opts&&opts.accessCode)||'';
+    var cbs={onSuccess:opts&&opts.onSuccess,onCancel:opts&&opts.onCancel,onError:opts&&opts.onError,onLoad:opts&&opts.onLoad};
+    window.__RELIASTRA_MOCK_CALLBACKS__=cbs;
+    if(cbs.onLoad) cbs.onLoad({id:1,accessCode:code,customer:{}});
+    overlay(String(code));
   };
   PaystackPop.prototype.newTransaction=function(options){
     window.__RELIASTRA_MOCK_CALLBACKS__=options||{};

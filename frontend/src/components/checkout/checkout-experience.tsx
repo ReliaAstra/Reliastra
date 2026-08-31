@@ -84,6 +84,22 @@ export type CheckoutInterval = 'monthly' | 'annual';
  *  source of truth about pricing. */
 const CHECKOUT_PLAN = 'pro';
 
+function isSafePaystackRedirect(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const host = u.hostname;
+    // Local dev uses the mock at 127.0.0.1:9200/pay/... (http)
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return true;
+    if (u.protocol !== 'https:') return false;
+    // Paystack hosted checkout is always on checkout.paystack.com or
+    // *.paystack.com (including future subdomains). Reject anything else
+    // to avoid open-redirect if the backend/mock ever returns an unexpected URL.
+    return host === 'paystack.com' || host.endsWith('.paystack.com') || host.endsWith('paystack.co');
+  } catch {
+    return false;
+  }
+}
+
 /** What the confirmation screen restates, all of it from the verification. */
 export interface VerifiedPayment {
   reference: string;
@@ -125,6 +141,14 @@ export function CheckoutExperience() {
   }, []);
 
   const alive = useCallback(() => mountedRef.current, []);
+
+  // P2 fix: clear handingOff when the user navigates back (bfcache pageshow)
+  // so the "Redirecting..." overlay does not freeze after back-navigation.
+  useEffect(() => {
+    const onPageShow = () => setHandingOff(false);
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
 
   // ── Session gate ─────────────────────────────────────────────────────────
   // Checkout is organization-scoped, not public: the quote carries the billing
@@ -171,7 +195,7 @@ export function CheckoutExperience() {
   // First load, and every deliberate interval change.
   useEffect(() => {
     if (!accessToken || !org) return;
-    if (phase === 'success' || phase === 'verifying' || phase === 'paying') return;
+    if (phase === 'success' || phase === 'verifying' || phase === 'paying' || phase === 'preparing') return;
     void loadQuote(interval);
     // `phase` is deliberately not a dependency: moving between review and paying
     // must not re-quote, or the number under the customer's finger could change
@@ -262,7 +286,10 @@ export function CheckoutExperience() {
 
   // ── Launch the payment experience ────────────────────────────────────────
   const continueToPayment = useCallback(async () => {
-    if (!quote) return;
+    // Snapshot the quote at click time so an interval-driven re-quote
+    // racing in the background cannot change the amount under the finger.
+    const snapshotQuote = quote;
+    if (!snapshotQuote) return;
     setPhase('preparing');
     setFailure(null);
     let created: InitializePaymentResult;
@@ -271,10 +298,10 @@ export function CheckoutExperience() {
       // channels are the backend's, from the same resolution that produced the
       // numbers this page is showing.
       created = await api.initializePayment(
-        quote.plan,
-        quote.billing_interval,
+        snapshotQuote.plan,
+        snapshotQuote.billing_interval,
         'international_card',
-        quote.price_token
+        snapshotQuote.price_token
       );
     } catch (error) {
       if (!alive()) return;
@@ -335,6 +362,16 @@ export function CheckoutExperience() {
       }
       return;
     }
+    // P2 fix: validate hosted fallback is actually Paystack before leaving
+    // Reliastra. A compromised or mocked provider response must not become an
+    // open redirect.
+    if (!isSafePaystackRedirect(created.authorization_url)) {
+      if (alive()) {
+        setFailure(CHECKOUT_FAILURE_COPY.paystack_unavailable);
+        setPhase('failed');
+      }
+      return;
+    }
     setHandingOff(true);
     // A plain navigation, not a router push: this is a cross-origin hand-off to
     // the payment provider and the router has no business unmounting mid-flight.
@@ -345,6 +382,12 @@ export function CheckoutExperience() {
     setFailure(null);
     setSession(null);
     setHandingOff(false);
+    // P2 fix: clear dedup refs so a transient verify failure (network,
+    // pending) can be retried without a hard reload. Without this,
+    // resumedRef=true blocks re-verifying the same ?reference= and
+    // verifyingRef would still equal the reference.
+    resumedRef.current = false;
+    verifyingRef.current = null;
     if (quote?.available) {
       setPhase('review');
       return;
@@ -389,6 +432,9 @@ export function CheckoutExperience() {
           interval={interval}
           onIntervalChange={(next) => {
             if (next === interval) return;
+            // P3 fix: lock interval while a payment is in flight so the
+            // price under the finger cannot change mid-prepare.
+            if (phase !== 'review') return;
             setIntervalState(next);
           }}
         />

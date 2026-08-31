@@ -267,7 +267,7 @@ async def get_checkout_quote(
 @router.post(
     "/billing/initialize",
     response_model=InitializePaymentResponse,
-    dependencies=[Depends(require_admin)],
+    dependencies=[Depends(require_member)],
 )
 async def initialize_payment(
     request: InitializePaymentRequest,
@@ -276,7 +276,7 @@ async def initialize_payment(
     current_org: Organization = Depends(get_current_org),
     service: BillingService = Depends(get_bill_service),
 ) -> InitializePaymentResponse:
-    # Authorization comes from ``require_admin`` above (starting a charge spends
+    # Authorization comes from ``require_member`` above (starting a charge spends
     # the organization's money); ``get_current_user`` supplies *identity* so the
     # acting person is recorded on the transaction. A billing dispute needs to
     # know who clicked, and only the authenticated request can say.

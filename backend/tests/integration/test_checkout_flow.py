@@ -314,7 +314,7 @@ async def test_transaction_is_opened_with_a_card_only_channel_array(
     assert payload["channels"] == ["card"]
     assert payload["access_code"]
     assert payload["inline_js_enabled"] is True
-    assert payload["inline_js_url"] == "https://js.paystack.co/v1/inline.js"
+    assert payload["inline_js_url"] == "https://js.paystack.co/v2/inline.js"
     # The public key only: the secret never appears in a response body.
     assert payload["public_key"] == "pk_test_public"
     assert "secret" not in _json.dumps(payload).lower()

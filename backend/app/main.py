@@ -265,6 +265,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await close_notification_http_client()
     except Exception:  # pragma: no cover - shutdown must never raise
         logger.debug("Error closing notification HTTP client", exc_info=True)
+    try:
+        from app.modules.billing.service import close_paystack_http_client
+        await close_paystack_http_client()
+    except Exception:  # pragma: no cover - shutdown must never raise
+        logger.debug("Error closing Paystack HTTP client", exc_info=True)
     await close_redis()
 
 

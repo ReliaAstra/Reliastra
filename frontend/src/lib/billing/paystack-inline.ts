@@ -42,6 +42,13 @@ interface PaystackPopInstance {
     accessCode: string,
     callbacks?: PaystackTransactionCallbacks
   ) => void;
+  checkout?: (options: {
+    accessCode: string;
+    onSuccess?: PaystackTransactionCallbacks['onSuccess'];
+    onCancel?: PaystackTransactionCallbacks['onCancel'];
+    onLoad?: PaystackTransactionCallbacks['onLoad'];
+    onError?: PaystackTransactionCallbacks['onError'];
+  }) => void;
   newTransaction?: (
     options: PaystackTransactionCallbacks & {
       key: string;
@@ -97,14 +104,38 @@ export function loadPaystackInline(scriptUrl: string): Promise<PaystackConstruct
       // supplied by our own backend rather than by page input.
       document.head.appendChild(script);
     }
-    const settle = () => {
+    let settled = false;
+    const doResolve = (value: PaystackConstructor | null) => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+    const onError = () => {
+      // P2 fix: evict failed load so a later retry (after ad-blocker disabled
+      // or network recovers) can inject again instead of returning cached null
+      // forever.
+      loading.delete(scriptUrl);
       // Timeout and error both resolve null; the caller falls back and the
       // customer still gets a way to pay.
-      window.setTimeout(() => resolve(null), 0);
+      window.setTimeout(() => doResolve(null), 0);
     };
-    script.addEventListener('load', () => resolve(window.PaystackPop ?? null));
-    script.addEventListener('error', settle);
-    window.setTimeout(() => resolve(window.PaystackPop ?? null), 10_000);
+    const onLoad = () => {
+      const ctor = window.PaystackPop ?? null;
+      if (!ctor) {
+        // Script loaded but global not present — treat as failure and evict
+        // so a provider-side change can be retried.
+        loading.delete(scriptUrl);
+      }
+      doResolve(ctor);
+    };
+    script.addEventListener('load', onLoad, { once: true });
+    script.addEventListener('error', onError, { once: true });
+    window.setTimeout(() => {
+      if (!window.PaystackPop) {
+        loading.delete(scriptUrl);
+      }
+      doResolve(window.PaystackPop ?? null);
+    }, 10_000);
   });
 
   loading.set(scriptUrl, promise);
@@ -132,7 +163,18 @@ export async function launchPaystackTransaction(
   if (!PaystackPop) return false;
   try {
     const popup = new PaystackPop();
-    popup.resumeTransaction(options.accessCode, options.callbacks);
+    // V2 (https://js.paystack.co/v2/inline.js) prefers checkout({accessCode});
+    // V1 used resumeTransaction(accessCode). Support both so the migration is
+    // safe and wallets (Apple Pay paymentRequest) keep working.
+    const anyPopup = popup as unknown as {
+      checkout?: (opts: { accessCode: string } & PaystackTransactionCallbacks) => unknown;
+      resumeTransaction?: (code: string, cb?: PaystackTransactionCallbacks) => unknown;
+    };
+    if (typeof anyPopup.checkout === 'function') {
+      anyPopup.checkout({ accessCode: options.accessCode, ...options.callbacks });
+    } else {
+      popup.resumeTransaction(options.accessCode, options.callbacks);
+    }
     return true;
   } catch {
     // A constructor that throws is an unknown provider-side change; the safe
