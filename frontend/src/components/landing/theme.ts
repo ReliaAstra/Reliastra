@@ -24,6 +24,24 @@ export function goTo(page: PartnerPage) {
   }
 }
 
+/**
+ * Navigate to a PARTNER-NETWORK page (the state-routed surface served at
+ * `/?page=…`, NOT the customer `/login` or `/signup` routes).
+ *
+ * The landing page's `goTo('login'|'signup')` deliberately targets the
+ * customer auth routes, but the partner CTAs ("BECOME A PARTNER", "Join as
+ * partner") must land on the partner surface instead. `/?page=…` is the
+ * canonical entry point: the landing `page.tsx` reads it on mount and routes
+ * into the partner store.
+ */
+export function goToPartner(page: PartnerPage) {
+  if (typeof window !== 'undefined') {
+    window.location.assign(`/?page=${encodeURIComponent(page)}`);
+    return;
+  }
+  usePartnerStore.getState().navigate(page);
+}
+
 export function scrollToId(id: string) {
   if (typeof window === 'undefined') return;
   const el = document.getElementById(id);

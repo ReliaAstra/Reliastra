@@ -3,6 +3,7 @@ import {
   ADMIN_ACCESS_COOKIE,
   ADMIN_API_HEADER,
   ADMIN_REFRESH_COOKIE,
+  ADMIN_TOKEN_HEADER,
   adminAccessMaxAgeSeconds,
   adminRefreshMaxAgeSeconds,
   adminCookieAttrs,
@@ -15,7 +16,7 @@ const BACKEND_URL = process.env.RELIASTRA_API_URL?.replace(/\/$/, '') || 'https:
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': `${ADMIN_API_HEADER}, Content-Type, X-Request-ID, Idempotency-Key, X-Requested-With`,
+  'Access-Control-Allow-Headers': `${ADMIN_API_HEADER}, ${ADMIN_TOKEN_HEADER}, Content-Type, X-Request-ID, Idempotency-Key, X-Requested-With`,
   'Access-Control-Allow-Credentials': 'true',
 };
 
@@ -74,8 +75,10 @@ export interface AdminLoginPayload {
  * This is the ONLY admin route that does not require an existing session:
  * it forwards the operator credentials to the backend, which verifies them
  * in constant time (rate-limited). The minted tokens are captured server-side
- * and returned to the browser ONLY as HttpOnly cookies — the JSON body the
- * browser receives never contains them.
+ * and stored as HttpOnly cookies — the primary transport. As a fallback for
+ * embedded preview iframes that refuse cookies, the token pair is ALSO
+ * returned in the JSON body so the client can mirror it via
+ * `X-Reliastra-Admin-Token` (verified by the proxy exactly like the cookie).
  */
 export async function handleAdminLogin(
   req: NextRequest,
@@ -142,16 +145,26 @@ export async function handleAdminLogin(
     {
       admin: payload.admin,
       expires_in: payload.expires_in ?? 15 * 60,
+      // Preview-edge fallback: embedded iframes that refuse cookies still get
+      // a working session by mirroring these via X-Reliastra-Admin-Token.
+      access_token: payload.access_token,
+      refresh_token: payload.refresh_token,
     },
     { headers: CORS_HEADERS }
   );
+  const secure = requestIsSecure(req);
   setAdminSessionCookies(
     response,
     payload.access_token,
     payload.refresh_token,
     payload.expires_in ?? 15 * 60,
-    requestIsSecure(req)
+    secure
   );
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(
+      `[admin:login] success marker=${req.headers.get(ADMIN_API_HEADER) === '1' ? 'y' : 'n'} secure=${secure} fwd=${req.headers.get('x-forwarded-proto') ?? '-'} host=${req.headers.get('host') ?? '-'}`
+    );
+  }
   return response;
 }
 
@@ -193,8 +206,23 @@ export async function handleAdminRefresh(req: NextRequest): Promise<NextResponse
   if (!hasAdminMarker(req)) {
     return errorResponse(403, 'FORBIDDEN', 'Admin refresh requires the admin marker.', req.headers.get('x-request-id'));
   }
-  const refreshToken = req.cookies.get(ADMIN_REFRESH_COOKIE)?.value ?? null;
   const requestId = req.headers.get('x-request-id');
+
+  // The refresh token normally lives in the HttpOnly cookie. In embedded
+  // preview iframes that refuse cookies, the client mirrors it in the JSON
+  // body instead (it already holds it from the login response).
+  let refreshToken = req.cookies.get(ADMIN_REFRESH_COOKIE)?.value ?? null;
+  if (!refreshToken) {
+    try {
+      const body = (await req.json().catch(() => ({}))) as { refresh_token?: unknown };
+      if (typeof body.refresh_token === 'string' && body.refresh_token) {
+        refreshToken = body.refresh_token;
+      }
+    } catch {
+      /* no JSON body — fall through to the cookie result */
+    }
+  }
+
   if (!refreshToken || !verifyAdminToken(refreshToken, 'admin_refresh')) {
     return errorResponse(401, 'UNAUTHORIZED', 'Admin session has expired.', requestId);
   }
@@ -224,7 +252,13 @@ export async function handleAdminRefresh(req: NextRequest): Promise<NextResponse
   }
 
   const response = NextResponse.json(
-    { admin, expires_in: pair.expiresIn },
+    {
+      admin,
+      expires_in: pair.expiresIn,
+      // Preview-edge fallback (see handleAdminLogin).
+      access_token: pair.accessToken,
+      refresh_token: pair.refreshToken,
+    },
     { headers: CORS_HEADERS }
   );
   setAdminSessionCookies(
@@ -288,21 +322,42 @@ export async function proxyAdminToBackend(
 
   let authHeader: string | null = null;
   let refreshed: AdminTokenPair | null = null;
+  let authSource = 'none';
 
   if (!options?.bypassAuth) {
     const accessClaims = verifyAdminToken(accessToken, 'admin_access');
-    if (!accessClaims) {
+    const mirrorToken = req.headers.get(ADMIN_TOKEN_HEADER);
+    if (accessClaims) {
+      authHeader = `Bearer ${accessToken}`;
+      authSource = 'cookie';
+    } else if (mirrorToken && verifyAdminToken(mirrorToken, 'admin_access')) {
+      // Preview-edge fallback: the browser refused to store the HttpOnly
+      // cookie, so accept the client-mirrored token instead. Verified with
+      // the same signature/audience/type/expiry checks as the cookie.
+      authHeader = `Bearer ${mirrorToken}`;
+      authSource = ADMIN_TOKEN_HEADER;
+    } else {
       // No valid access token: try rotating the refresh cookie before failing.
       if (!options?.noReplay) {
         refreshed = await rotateAdminSession(refreshToken, requestId);
       }
       if (!refreshed) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            `[admin:gate] ${req.method} ${safePath} DENIED accessCookie=${accessToken ? 'y' : 'n'} mirror=${mirrorToken ? 'y' : 'n'} refreshCookie=${refreshToken ? 'y' : 'n'}`
+          );
+        }
         return errorResponse(401, 'UNAUTHORIZED', 'Admin authentication required.', requestId);
       }
       authHeader = `Bearer ${refreshed.accessToken}`;
-    } else {
-      authHeader = `Bearer ${accessToken}`;
+      authSource = 'rotated';
     }
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(
+      `[admin:gate] ${req.method} ${safePath} auth=${authSource} marker=${req.headers.get(ADMIN_API_HEADER) === '1' ? 'y' : 'n'} accessCookie=${accessToken ? 'y' : 'n'} refreshCookie=${refreshToken ? 'y' : 'n'}`
+    );
   }
 
   let response = await fetchBackend(safePath, req, authHeader);

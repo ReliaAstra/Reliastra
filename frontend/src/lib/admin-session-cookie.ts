@@ -1,5 +1,10 @@
 /**
- * Admin-session cookie transport (server-only; never imported by client code).
+ * Admin-session cookie transport (cookie attrs + header constants).
+ *
+ * Cookie WRITING stays server-side (route handlers + proxy). The module has no
+ * `server-only` guard because the admin client imports the `ADMIN_API_HEADER`
+ * and `ADMIN_TOKEN_HEADER` constants for its requests and the preview-edge
+ * mirror fallback.
  *
  * The admin console is a SEPARATE security domain from the customer/partner
  * console:
@@ -27,6 +32,20 @@ export const ADMIN_REFRESH_COOKIE = 'reliastra_admin_refresh';
 
 /** Custom header every admin API request must carry (CSRF defense). */
 export const ADMIN_API_HEADER = 'x-admin-request';
+
+/**
+ * Mirror header for the admin access token.
+ *
+ * The admin session is transported in HttpOnly cookies so the tokens never
+ * reach browser JavaScript. That design breaks in embedded cross-site preview
+ * iframes where the browser refuses to store ANY cookie — the same reason the
+ * customer surface mirrors its bearer token. As a fallback the login handler
+ * also returns the tokens to the client (held in sessionStorage), and the
+ * admin proxy accepts this header when the HttpOnly cookie is absent. It is
+ * verified (signature + audience + type + expiry) exactly like the cookie, so
+ * a customer/partner token can never be smuggled in.
+ */
+export const ADMIN_TOKEN_HEADER = 'X-Reliastra-Admin-Token';
 
 /** Defaults mirror backend settings; env may override per-deploy. */
 export function adminAccessMaxAgeSeconds(): number {
@@ -67,7 +86,22 @@ export function adminCookieAttrs(secure: boolean): AdminCookieAttrs {
  */
 export function requestIsSecure(request: Request): boolean {
   const forwarded = request.headers.get('x-forwarded-proto');
-  if (forwarded) return forwarded.split(',')[0].trim() === 'https';
+  if (forwarded) {
+    const proto = forwarded.split(',')[0].trim().toLowerCase();
+    if (proto === 'https') return true;
+    // Some preview edges forward `x-forwarded-proto: http` even though the
+    // browser actually connected over https (TLS terminates in front of the
+    // app). Do NOT trust that value blindly — fall through to the host
+    // heuristic below, which is the reliable signal here.
+  }
+  const host =
+    request.headers.get('x-forwarded-host') ||
+    request.headers.get('host') ||
+    '';
+  const isLocalHost = /(^|\.)(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:\d+)?$/i.test(host);
+  // A non-local host (arena.site, e2b.app, a real domain) is always served
+  // behind a TLS-terminating proxy from the browser's point of view.
+  if (host && !isLocalHost) return true;
   try {
     return new URL(request.url).protocol === 'https:';
   } catch {

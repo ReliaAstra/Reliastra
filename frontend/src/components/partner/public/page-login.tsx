@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
+import { AUTH_TOKEN_HEADER } from '@/lib/session-cookies';
 import { toast } from 'sonner';
 import { isEmailNotVerified, readApiError } from '@/lib/api-error';
 import { VerifyOtpStep, type VerifiedSession } from './verify-otp-step';
@@ -41,9 +42,14 @@ export function PageLogin() {
     const store = usePartnerStore.getState();
     store.setTokens(accessToken, refreshToken);
 
-    // Get current user info — UserResponse (snake_case, not wrapped)
+    // Get current user info — UserResponse (snake_case, not wrapped).
+    // The preview edge strips `Authorization`, so mirror the token into the
+    // same non-standard header the proxy re-injects (see lib/session-cookies.ts).
     const meRes = await fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        [AUTH_TOKEN_HEADER]: accessToken,
+      },
     });
 
     // The identity fetch is what turns a token pair into a renderable session.
@@ -71,7 +77,10 @@ export function PageLogin() {
 
     // Check if the user is already a partner
     const partnerRes = await fetch('/api/partners/me', {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        [AUTH_TOKEN_HEADER]: accessToken,
+      },
     });
 
     if (partnerRes.ok) {

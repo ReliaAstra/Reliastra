@@ -11,6 +11,7 @@ import {
   clearPartnerTokens,
 } from '@/lib/session-storage';
 import { refreshSession } from '@/lib/auth-refresh';
+import { AUTH_TOKEN_HEADER } from '@/lib/session-cookies';
 import type { PartnerPage } from '@/types/partner';
 
 const dashboardPages: PartnerPage[] = [
@@ -65,9 +66,14 @@ export default function Home() {
           return;
         }
 
-        // Fetch /api/auth/me — returns UserResponse directly (snake_case, not wrapped)
+        // Fetch /api/auth/me — returns UserResponse directly (snake_case, not wrapped).
+        // Mirror the token into X-Reliastra-Token: the preview edge strips
+        // `Authorization`, so the proxy needs the non-standard fallback.
         let meRes = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            [AUTH_TOKEN_HEADER]: token,
+          },
         });
 
         // 401 = access token expired (or the preview edge stripped the
@@ -83,7 +89,10 @@ export default function Home() {
           }
           token = refreshed.accessToken;
           meRes = await fetch('/api/auth/me', {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              [AUTH_TOKEN_HEADER]: token,
+            },
           });
         }
 
@@ -98,7 +107,10 @@ export default function Home() {
 
           // Also try to fetch partner profile in parallel
           let partnerRes = await fetch('/api/partners/me', {
-            headers: { Authorization: `Bearer ${token}` },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              [AUTH_TOKEN_HEADER]: token,
+            },
           });
 
           if (partnerRes.ok) {

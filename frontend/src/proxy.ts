@@ -98,6 +98,30 @@ async function resolveAdminPageSession(
   };
 }
 
+/**
+ * A client-side router navigation (RSC/fetch) as opposed to a full document
+ * load. On the preview edge the browser refuses to store cookies, so a
+ * post-login `router.replace('/admin')` arrives here with no session even
+ * though the client holds a valid mirror-channel token. The rendered shell
+ * self-gates via the API (which verifies the mirror header), so such
+ * navigations are allowed through; only full document loads fail closed.
+ *
+ * Next strips its internal `RSC` / `Next-Router-State-Tree` headers before
+ * middleware sees them, but the standard Fetch Metadata headers survive:
+ * a document navigation is `sec-fetch-mode: navigate` +
+ * `sec-fetch-dest: document`, while a same-origin client navigation is a
+ * fetch (`cors` / `empty`).
+ */
+function isClientNavigation(req: NextRequest): boolean {
+  const secFetchMode = req.headers.get('sec-fetch-mode');
+  const secFetchDest = req.headers.get('sec-fetch-dest');
+  if (secFetchMode && secFetchMode.toLowerCase() !== 'navigate') return true;
+  if (secFetchDest && secFetchDest.toLowerCase() !== 'document') return true;
+  // Fallbacks for clients that omit Fetch Metadata (curl, older browsers).
+  if (req.headers.get('rsc') === '1') return true;
+  return false;
+}
+
 export default async function proxy(req: NextRequest, _event?: unknown): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
   const isAdminPage = pathname === ADMIN_PAGE_PREFIX || pathname.startsWith(`${ADMIN_PAGE_PREFIX}/`);
@@ -109,6 +133,9 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
   if (isLoginPage) {
     const session = await resolveAdminPageSession(req);
     if (session) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[admin:gate] page /admin/login has-session -> /admin');
+      }
       const url = req.nextUrl.clone();
       url.pathname = '/admin';
       url.search = '';
@@ -133,6 +160,20 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
 
   const session = await resolveAdminPageSession(req);
   if (!session) {
+    // Client-side navigation with no cookie session: allow the shell to
+    // render. It self-gates through the API (which verifies the mirror
+    // header token the client holds), and shows the "session ended" state
+    // without any data when truly unauthenticated.
+    if (isClientNavigation(req)) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(
+          `[admin:gate] page ${pathname} rsc-nav no-session -> allow shell accessCookie=${req.cookies.get(ADMIN_ACCESS_COOKIE) ? 'y' : 'n'}`
+        );
+      }
+      const response = NextResponse.next();
+      applyAdminHeaders(response);
+      return response;
+    }
     // Fail closed: no (verified) session → the dedicated admin sign-in.
     const url = req.nextUrl.clone();
     url.pathname = ADMIN_LOGIN_PATH;
@@ -141,6 +182,11 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
     // Drop stale admin cookies on the way out so a revoked session does not
     // keep being replayed.
     clearAdminSessionCookiesProxy(response, secure);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        `[admin:gate] page ${pathname} no-session -> /admin/login accessCookie=${req.cookies.get(ADMIN_ACCESS_COOKIE) ? 'y' : 'n'} refreshCookie=${req.cookies.get(ADMIN_REFRESH_COOKIE) ? 'y' : 'n'} rsc=${req.headers.get('rsc') ?? '-'} rst=${req.headers.has('next-router-state-tree') ? 'y' : 'n'} headers=${Array.from(req.headers.keys()).join(',')}`
+      );
+    }
     return response;
   }
 

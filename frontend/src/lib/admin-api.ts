@@ -43,6 +43,13 @@ import type {
   AdminAnalyticsOverview,
   AbandonedCheckoutLead,
 } from '@/types/admin';
+import {
+  storeAdminTokens,
+  getAdminAccessToken,
+  getAdminRefreshToken,
+  clearAdminTokens,
+} from '@/lib/admin-session-storage';
+import { ADMIN_TOKEN_HEADER } from '@/lib/admin-session-cookie';
 
 export class AdminApiError extends Error {
   status: number;
@@ -72,20 +79,27 @@ type QueryValue = string | number | boolean | null | undefined;
 type QueryParams = Record<string, QueryValue>;
 
 /**
- * Admin session model (from the security redesign):
+ * Admin session model:
  *
- *   - Admin access/refresh tokens live ONLY in HttpOnly cookies managed by
- *     the `/api/admin/*` route handlers and `proxy.ts`. Browser JavaScript
- *     never sees them; there is NO localStorage/sessionStorage for admin.
+ *   - PRIMARY: admin access/refresh tokens live in HttpOnly cookies managed
+ *     by the `/api/admin/*` route handlers and `proxy.ts`. Browser JavaScript
+ *     never sees them in a normal (top-level, same-origin) deployment.
+ *   - FALLBACK (preview edge): embedded cross-site iframes refuse to store
+ *     cookies, so the login/refresh handlers ALSO return the token pair and
+ *     this module holds it in sessionStorage, mirroring it as
+ *     `X-Reliastra-Admin-Token`. The proxy verifies that header exactly like
+ *     the cookie (signature + audience + type + expiry), so a customer or
+ *     partner token can never be smuggled into the admin plane.
  *   - The admin token family is minted from the dedicated operator
  *     credentials (`ADMIN_USERNAME`/`ADMIN_PASSWORD`) by the backend and is
  *     rejected on every customer/partner surface. Conversely the shared
  *     customer/partner token is rejected on every admin surface.
- *   - Refresh rotation happens server-side (proxy + route handlers), so this
- *     module never refreshes and never touches the shared session store.
- *   - A 401 here means the admin session is genuinely gone; the gate routes
- *     to the dedicated `/admin/login`. A customer/partner session is never
- *     affected.
+ *   - Refresh rotation happens server-side (proxy + route handlers) when the
+ *     cookie channel is live; when only the mirror channel is available this
+ *     module refreshes explicitly and retries once. The customer/partner
+ *     session store is never touched.
+ *   - A 401 after a failed refresh means the admin session is genuinely gone;
+ *     the gate routes to the dedicated `/admin/login`.
  */
 
 const ADMIN_SESSION_MARKER = 'x-admin-request';
@@ -123,6 +137,41 @@ function errorFromBody(status: number, body: ApiErrorBody | undefined): AdminApi
   });
 }
 
+/**
+ * Rotate the mirror-channel admin session explicitly.
+ *
+ * Used only when the HttpOnly cookie channel is unavailable (embedded preview
+ * iframe). The refresh token is sent in the JSON body; the route handler
+ * verifies it with the same checks as the cookie and returns a fresh pair.
+ * On success the new tokens replace the sessionStorage copy.
+ */
+async function refreshAdminSession(): Promise<boolean> {
+  const refreshToken = getAdminRefreshToken();
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch('/api/admin/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [ADMIN_SESSION_MARKER]: '1',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+      credentials: 'same-origin',
+    });
+    if (!res.ok) return false;
+    const data = (await res.json().catch(() => ({}))) as {
+      access_token?: string;
+      refresh_token?: string;
+    };
+    if (!data.access_token || !data.refresh_token) return false;
+    storeAdminTokens(data.access_token, data.refresh_token);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function request<T>(
   path: string,
   options: {
@@ -130,16 +179,22 @@ async function request<T>(
     params?: QueryParams;
     body?: unknown;
     signal?: AbortSignal;
-  } = {}
+  } = {},
+  retried = false
 ): Promise<T> {
   const method = options.method ?? 'GET';
   const headers: HeadersInit = {
     // The admin-only marker doubles as the CSRF guard on the server: a
     // cross-site request cannot set a custom header. Cookies carry the
-    // session. There is NO Authorization header — tokens are HttpOnly.
+    // session when available; the mirror header is the preview-edge fallback.
     [ADMIN_SESSION_MARKER]: '1',
     Accept: 'application/json',
   };
+
+  const mirrorToken = getAdminAccessToken();
+  if (mirrorToken) {
+    headers[ADMIN_TOKEN_HEADER] = mirrorToken;
+  }
 
   if (options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
@@ -162,15 +217,23 @@ async function request<T>(
     });
   }
 
+  if (response.status === 401 && !retried) {
+    // The proxy already attempted a server-side (cookie) rotation before
+    // returning 401. On the preview edge the cookie channel is unavailable,
+    // so rotate the mirror-channel session and retry once.
+    if (getAdminRefreshToken() && (await refreshAdminSession())) {
+      return request<T>(path, options, true);
+    }
+  }
+
   if (response.status === 204) return undefined as T;
 
   const body = await response.json().catch(() => undefined);
   if (!response.ok) {
     const error = errorFromBody(response.status, body as ApiErrorBody | undefined);
     if (response.status === 401) {
-      // The proxy already attempted a server-side rotation before returning
-      // 401, so the admin session is truly over. NEVER clear shared storage:
-      // a customer/partner session in another tab is unrelated and alive.
+      // No usable session remains. NEVER clear shared storage: a
+      // customer/partner session in another tab is unrelated and alive.
       notifyAccessFailure('expired');
     }
     if (response.status === 403) {
@@ -185,6 +248,10 @@ async function request<T>(
 export interface AdminLoginResult {
   admin: AdminCurrentUser;
   expires_in: number;
+  /** Present only as a preview-edge fallback (mirror channel). */
+  access_token?: string;
+  /** Present only as a preview-edge fallback (mirror channel). */
+  refresh_token?: string;
 }
 
 /**
@@ -224,6 +291,13 @@ export const adminApi = {
           code: 'BACKEND_PROTOCOL_ERROR',
         });
       }
+      // Hold the token pair as the preview-edge fallback. In a normal
+      // deployment the HttpOnly cookie carries the session and these are
+      // simply the same tokens the server already has; storing them here only
+      // matters when the browser refused to store the cookie.
+      if (result.access_token || result.refresh_token) {
+        storeAdminTokens(result.access_token ?? null, result.refresh_token ?? null);
+      }
       return result;
     } catch (cause) {
       if (cause instanceof AdminApiError) throw cause;
@@ -250,6 +324,8 @@ export const adminApi = {
       // Best-effort: the browser will still have cookies cleared by the
       // route handler on success; if the request fails entirely, the gate's
       // next 401 will route to /admin/login anyway.
+    } finally {
+      clearAdminTokens();
     }
   },
 
