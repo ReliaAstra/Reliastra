@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Github } from 'lucide-react';
 import { BrandLogo } from '@/components/landing/shared/BrandLogo';
-import { goTo, scrollToId } from '@/components/landing/theme';
+import { goTo, goToPartner, scrollToId } from '@/components/landing/theme';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
@@ -32,7 +32,7 @@ const FOOTER_LINKS = [
     links: [
       { label: 'Support', action: () => goTo('support') },
       { label: 'Contact', action: () => goTo('support') },
-      { label: 'Join as partner', action: () => goTo('signup') },
+      { label: 'Join as partner', action: () => goToPartner('signup') },
     ],
   },
   {

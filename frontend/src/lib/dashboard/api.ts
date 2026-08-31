@@ -3,6 +3,7 @@
 import { getRefreshToken, useAppStore } from '@/stores/app-store';
 import { refreshSession } from '@/lib/auth-refresh';
 import { setOrgIdCookie } from '@/lib/auth-cookie';
+import { AUTH_TOKEN_HEADER, ORG_ID_HEADER } from '@/lib/session-cookies';
 import type {
   AlertConfig,
   AgencyPortfolio,
@@ -161,6 +162,12 @@ async function request<T>(
   if (token) headers.Authorization = `Bearer ${token}`;
   const orgId = useAppStore.getState().org?.id;
   if (orgId) headers['X-Organization-ID'] = orgId;
+  // Mirror headers: the preview edge strips `Authorization` and
+  // `X-Organization-ID`, so the same values are sent under non-standard names
+  // the edge is less likely to mangle. The proxy re-injects the standard
+  // headers upstream (see lib/backend-proxy.ts).
+  if (token) headers[AUTH_TOKEN_HEADER] = token;
+  if (orgId) headers[ORG_ID_HEADER] = orgId;
 
   const res = await fetch(`${BASE}${path}`, { ...init, headers });
 
@@ -612,9 +619,12 @@ export async function bootstrapSession(): Promise<{
   // proxy re-injects it when the browser's custom header is stripped.
   setOrgIdCookie(org.id);
 
+  const accessToken = useAppStore.getState().accessToken ?? '';
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${useAppStore.getState().accessToken ?? ''}`,
+    Authorization: `Bearer ${accessToken}`,
     'X-Organization-ID': org.id,
+    [AUTH_TOKEN_HEADER]: accessToken,
+    [ORG_ID_HEADER]: org.id,
   };
   const [userRes, orgRes, planRes] = await Promise.all([
     fetch(`${BASE}/users/me`, { headers }),

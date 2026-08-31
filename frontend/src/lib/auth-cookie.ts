@@ -19,8 +19,9 @@
  * backend itself.
  */
 
-export const ACCESS_TOKEN_COOKIE = 'reliastra_access_token';
-export const ORG_ID_COOKIE = 'reliastra_organization_id';
+import { ACCESS_TOKEN_COOKIE, ORG_ID_COOKIE } from '@/lib/session-cookies';
+
+export { ACCESS_TOKEN_COOKIE, ORG_ID_COOKIE };
 const MAX_AGE_SECONDS = 60 * 60; // matches ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 function sameSiteAttrs(): string {

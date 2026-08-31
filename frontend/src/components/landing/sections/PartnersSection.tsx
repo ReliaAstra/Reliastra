@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import { goTo } from '@/components/landing/theme';
+import { goTo, goToPartner } from '@/components/landing/theme';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
@@ -96,7 +96,7 @@ export function PartnersSection() {
             className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
           >
             <button
-              onClick={() => goTo('signup')}
+              onClick={() => goToPartner('signup')}
               className="inline-flex items-center gap-2 rounded-[10px] bg-[#0A0A0F] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#1A1A2F] dark:bg-white dark:text-[#0A0A0F] dark:hover:bg-[#E4E4E7]"
             >
               BECOME A PARTNER
@@ -247,7 +247,7 @@ export function PartnersSection() {
               Get someone to subscribe. Earn 30% every month. It&apos;s that simple.
             </p>
             <button
-              onClick={() => goTo('signup')}
+              onClick={() => goToPartner('signup')}
               className="mt-8 inline-flex items-center gap-2 rounded-[10px] bg-white px-8 py-4 text-sm font-semibold text-[#0A0A0F] transition-colors hover:bg-white/90 dark:bg-white dark:text-[#0A0A0F]"
             >
               BECOME A PARTNER

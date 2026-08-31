@@ -28,6 +28,7 @@ import {
   clearPartnerTokens,
 } from '@/lib/session-storage';
 import { refreshSession } from '@/lib/auth-refresh';
+import { AUTH_TOKEN_HEADER } from '@/lib/session-cookies';
 
 const API_BASE = '/api';
 
@@ -53,6 +54,9 @@ async function request<T>(
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    // Mirror header: the preview edge strips `Authorization`, so send the
+    // same bearer token under a non-standard name the proxy re-injects.
+    headers[AUTH_TOKEN_HEADER] = token;
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
@@ -265,7 +269,9 @@ export const partnerApi = {
     const token = getAccessToken();
     await fetch(`/api/partners/notifications/${id}`, {
       method: 'DELETE',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      headers: token
+        ? { Authorization: `Bearer ${token}`, [AUTH_TOKEN_HEADER]: token }
+        : undefined,
     });
   },
 
