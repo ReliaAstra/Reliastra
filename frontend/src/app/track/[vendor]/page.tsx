@@ -7,6 +7,7 @@ import {
   type TrackDeveloperInfo,
   type TrackPublicIncident,
 } from '@/lib/track-api';
+import { PreferredSourceSection } from '@/components/seo/preferred-source';
 
 export const revalidate = 60;
 
@@ -292,6 +293,9 @@ export default async function VendorTrackPage({ params }: Props) {
             </>
           )}
         </section>
+
+        {/* Preferred Source — vendor intelligence, subtle, after historical data */}
+        <PreferredSourceSection variant="vendor" />
 
         {/* CTA */}
         <section className="rounded-xl border border-zinc-200 bg-[#F8F9FA] p-6 dark:border-white/10 dark:bg-[#131318] md:p-8">

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { FileSearch, Network, ShieldCheck } from 'lucide-react';
+import { PreferredSourceSection } from '@/components/seo/preferred-source';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
@@ -68,6 +69,16 @@ export function ResearchSection() {
             </motion.div>
           ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease }}
+          className="mx-auto mt-10 max-w-2xl"
+        >
+          <PreferredSourceSection variant="research" />
+        </motion.div>
       </div>
     </section>
   );

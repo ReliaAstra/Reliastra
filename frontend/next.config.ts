@@ -58,6 +58,11 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "X-Frame-Options", value: "ALLOWALL" },
+          // Preferred Sources publisher.js — narrowest allow for Google's script
+          {
+            key: "Content-Security-Policy",
+            value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://news.google.com; connect-src 'self' https://news.google.com; frame-src https://news.google.com;",
+          },
         ],
       },
     ];

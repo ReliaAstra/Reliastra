@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { formatLatency, formatUptime } from '@/lib/dashboard/format';
 import type { AgencyPortfolio, PortfolioClient } from '@/lib/dashboard/types';
 import { cn } from '@/lib/utils';
+import { PreferredSourceSection } from '@/components/seo/preferred-source';
 
 type LoadState =
   | { kind: 'loading' }
@@ -249,6 +250,11 @@ export default function PortalPage() {
                 })}
               </div>
             )}
+
+            {/* Preferred Source — trust-based, after meaningful SLA data, before footer */}
+            <div className="mx-auto mt-10 max-w-2xl print:hidden">
+              <PreferredSourceSection variant="incident" />
+            </div>
 
             {/* Footer — signed-data line + Powered by hidden in print */}
             <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[#E8EBF0] pt-6 text-xs text-[#69748A] sm:flex-row dark:border-[#1E293B] dark:text-[#6B7893] print:flex-row print:border-[#E8EBF0]">

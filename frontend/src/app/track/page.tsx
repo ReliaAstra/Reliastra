@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchTrackedVendors, type TrackVendorListItem } from '@/lib/track-api';
+import { PreferredSourceSection } from '@/components/seo/preferred-source';
 
 export const metadata: Metadata = {
   title: 'Track — Public vendor status | RELIASTRA',
@@ -134,6 +135,10 @@ export default function TrackIndexPage() {
           <span className="font-mono text-[11px] text-zinc-500">updated every minute</span>
         </div>
         <VendorsList />
+      </section>
+
+      <section className="mx-auto mt-8 max-w-[880px] px-6">
+        <PreferredSourceSection variant="vendor" />
       </section>
 
       <section className="mx-auto mt-12 max-w-[880px] px-6">
