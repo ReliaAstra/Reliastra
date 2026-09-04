@@ -70,14 +70,14 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 1G
+          cpus: "1"
+          memory: 512M
 
   worker:
     image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
     container_name: reliastra-worker
     restart: unless-stopped
-    command: ["celery", "-A", "app.infrastructure.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    command: ["celery", "-A", "app.infrastructure.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=1"]
     env_file:
       - /opt/reliastra/.env.production
     environment:
@@ -127,7 +127,7 @@ services:
     image: redis:7-alpine
     container_name: reliastra-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--protected-mode", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru", "--protected-mode", "yes"]
     expose:
       - "6379"
     networks:
