@@ -86,7 +86,7 @@ const cyanLink =
 
 const PROGRAM_FACTS = [
   { label: 'Commission rate', value: '30%', note: 'Recurring, all plans' },
-  { label: 'Attribution', value: '90 days', note: 'First-touch referral link' },
+  { label: 'Attribution', value: '90 days', note: 'First-party referral link' },
   { label: 'Minimum payout', value: '$50.00', note: 'Bank · USDC · USDT' },
   { label: 'Cost to join', value: 'Free', note: 'No fee, no obligation' },
 ];
@@ -610,7 +610,7 @@ const STEPS = [
   {
     n: '04',
     title: 'Refer',
-    body: 'Qualified readers sign up through your referral link. Attribution is first-touch and self-referrals are excluded.',
+    body: 'Qualified readers sign up through your referral link. Attribution is recorded at signup, and self-referrals are excluded.',
   },
   {
     n: '05',
