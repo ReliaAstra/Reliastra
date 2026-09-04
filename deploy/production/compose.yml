@@ -1,0 +1,160 @@
+# Production runtime — single VPS, extensible to multi-host
+# Usage: IMAGE_DIGEST=sha256:... docker compose --env-file /opt/reliastra/.env.production -f compose.yml up -d
+# Never `build:` for app services — pull immutable artifact from GHCR.
+
+name: reliastra
+
+services:
+  # ── Reverse proxy — only public entrypoint
+  proxy:
+    image: caddy:2.9-alpine
+    container_name: reliastra-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - public
+      - internal
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  api:
+    image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
+    container_name: reliastra-api
+    restart: unless-stopped
+    env_file:
+      - /opt/reliastra/.env.production
+    environment:
+      ENVIRONMENT: production
+      LOG_JSON: "true"
+      RUN_IN_PROCESS_SCHEDULER: "false"
+    expose:
+      - "8000"
+    networks:
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+
+  worker:
+    image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
+    container_name: reliastra-worker
+    restart: unless-stopped
+    command: ["celery", "-A", "app.infrastructure.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=2"]
+    env_file:
+      - /opt/reliastra/.env.production
+    environment:
+      ENVIRONMENT: production
+      LOG_JSON: "true"
+    networks:
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+
+  scheduler:
+    image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
+    container_name: reliastra-scheduler
+    restart: unless-stopped
+    command: ["celery", "-A", "app.infrastructure.celery_app.celery_app", "beat", "--loglevel=info"]
+    env_file:
+      - /opt/reliastra/.env.production
+    environment:
+      ENVIRONMENT: production
+      LOG_JSON: "true"
+    networks:
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    user: "10001:10001"
+
+  redis:
+    image: redis:7-alpine
+    container_name: reliastra-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--protected-mode", "yes"]
+    expose:
+      - "6379"
+    networks:
+      - internal
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  public:
+    name: reliastra-public
+  internal:
+    name: reliastra-internal
+    internal: true
+
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:

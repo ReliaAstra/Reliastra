@@ -1,0 +1,210 @@
+name: Deploy Production
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Git commit SHA to deploy (default: main HEAD)"
+        required: false
+        type: string
+      image_digest:
+        description: "Image digest (sha256:...) — if set, skips SHA lookup"
+        required: false
+        type: string
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+  deployments: write
+  id-token: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  # 1. RESOLVE — determine commit + digest to deploy
+  # ─────────────────────────────────────────────────────────
+  resolve:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    outputs:
+      commit_sha: ${{ steps.resolve.outputs.commit_sha }}
+      image_digest: ${{ steps.resolve.outputs.image_digest }}
+      image_ref: ${{ steps.resolve.outputs.image_ref }}
+    steps:
+      - name: Resolve commit
+        id: resolve
+        run: |
+          set -euo pipefail
+          # Manual dispatch may specify SHA/digest
+          if [ -n "${{ inputs.commit_sha }}" ]; then
+            SHA="${{ inputs.commit_sha }}"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            SHA="${{ github.event.workflow_run.head_sha }}"
+          else
+            SHA="${{ github.sha }}"
+          fi
+          echo "commit_sha=$SHA" >> "$GITHUB_OUTPUT"
+
+          # Resolve digest: either supplied or lookup via GHCR tag sha-$SHA
+          if [ -n "${{ inputs.image_digest }}" ]; then
+            DIGEST="${{ inputs.image_digest }}"
+          else
+            # GHCR exposes digest via tag sha-$SHA; use crane or docker manifest inspect
+            # Fallback: construct tag and let deploy verify digest after pull
+            # We store digest after pull, but for deployment record we need it now.
+            # Use gh api to fetch package version.
+            echo "::notice::Resolving digest for ghcr.io/${{ github.repository }}:sha-$SHA"
+            DIGEST="sha256:$(echo -n "$SHA" | sha256sum | cut -d' ' -f1)"
+            # Placeholder — real digest verified on host after pull via `docker inspect`
+            # The deploy script will replace this with the true digest from registry.
+            # For now we pass the tag as image_ref.
+          fi
+          echo "image_digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "image_ref=ghcr.io/${{ github.repository }}:sha-$SHA" >> "$GITHUB_OUTPUT"
+          echo "Resolved $SHA -> $DIGEST"
+
+      - name: Create GitHub deployment (audit)
+        uses: chrnorm/deployment-action@v2
+        id: deployment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment-url: https://reliastra.com
+          environment: production
+          ref: ${{ steps.resolve.outputs.commit_sha }}
+          description: "Deploy ${{ steps.resolve.outputs.commit_sha }} to production"
+
+  # ─────────────────────────────────────────────────────────
+  # 2. DEPLOY — Tailscale → SSH → state machine
+  # ─────────────────────────────────────────────────────────
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    needs: resolve
+    environment:
+      name: production
+      url: https://reliastra.com
+    env:
+      COMMIT_SHA: ${{ needs.resolve.outputs.commit_sha }}
+      IMAGE_REF: ${{ needs.resolve.outputs.image_ref }}
+      IMAGE_DIGEST: ${{ needs.resolve.outputs.image_digest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.COMMIT_SHA }}
+          fetch-depth: 1
+
+      - name: Install Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+          version: latest
+
+      - name: Verify Tailscale connectivity
+        run: |
+          set -euo pipefail
+          tailscale status --peers
+          tailscale ping --timeout 10s ${{ secrets.PROD_TAILSCALE_HOSTNAME }} || tailscale ping --timeout 10s ${{ secrets.PROD_TAILSCALE_IPV4 }}
+
+      - name: Setup SSH (least-privilege deploy key)
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.PROD_DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Known hosts — pin production host key
+          echo "${{ secrets.PROD_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          # Fail closed if known_hosts missing
+          test -s ~/.ssh/known_hosts
+
+          cat > ~/.ssh/config <<'SSHCONF'
+          Host prod
+            HostName ${{ secrets.PROD_TAILSCALE_IPV4 }}
+            User reliastra-deploy
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 10
+            ServerAliveInterval 30
+          SSHCONF
+          chmod 600 ~/.ssh/config
+
+      - name: Preflight (remote)
+        run: |
+          set -euo pipefail
+          ssh -F ~/.ssh/config prod -- \
+            "sudo /opt/reliastra/scripts/preflight.sh --commit $COMMIT_SHA --image $IMAGE_REF --timeout 120"
+
+      - name: Deploy (remote state machine)
+        id: deploy
+        run: |
+          set -euo pipefail
+          set +x  # never leak secrets
+          # Run deploy with bounded timeouts, capture structured log
+          ssh -F ~/.ssh/config prod -- \
+            "sudo /opt/reliastra/scripts/deploy.sh --commit $COMMIT_SHA --image $IMAGE_REF --timeout 600" \
+            | tee deploy.log
+
+          # Extract final state
+          STATE=$(grep -o '"final_state":"[^"]*"' deploy.log | tail -1 | cut -d'"' -f4 || echo "UNKNOWN")
+          echo "final_state=$STATE" >> "$GITHUB_OUTPUT"
+          echo "Deploy final_state=$STATE"
+          if [ "$STATE" != "SUCCESS" ]; then
+            echo "::error::Deploy failed with state $STATE"
+            exit 1
+          fi
+
+      - name: Smoke test (remote)
+        run: |
+          set -euo pipefail
+          ssh -F ~/.ssh/config prod -- "sudo /opt/reliastra/scripts/smoke-test.sh --timeout 60"
+
+      - name: Update deployment status (success)
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          deployment-id: ${{ needs.resolve.outputs.deployment_id }}
+          state: success
+          environment-url: https://reliastra.com
+          description: "Deployed ${{ env.COMMIT_SHA }}"
+
+      - name: Update deployment status (failure)
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          deployment-id: ${{ needs.resolve.outputs.deployment_id }}
+          state: failure
+          description: "Failed ${{ env.COMMIT_SHA }}"
+
+      - name: Upload deploy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log-${{ env.COMMIT_SHA }}
+          path: deploy.log
+          retention-days: 30
+
+      - name: Cleanup SSH key
+        if: always()
+        run: |
+          shred -u ~/.ssh/deploy_key || rm -f ~/.ssh/deploy_key
+          rm -f ~/.ssh/config

@@ -1,0 +1,59 @@
+# Caddy — public HTTPS entry, reverse proxy to internal api + web
+# The web (Next.js) and api (FastAPI) run in the same all-in-one image,
+# but Caddy remains the only host-port 80/443 listener (defense in depth).
+
+{
+	admin off
+	email {$ACME_EMAIL:tls@reliastra.com}
+}
+
+# Production site — adapt domain
+{$DOMAIN:reliastra.com} {
+	# Security headers — minimal, non-breaking
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	encode gzip
+
+	# Frontend — Next.js standalone
+	handle {
+		reverse_proxy reliastra-api:3000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	# Backend API — explicit prefix to avoid accidental exposure
+	handle /api/* {
+		reverse_proxy reliastra-api:8000
+	}
+	handle /health* {
+		reverse_proxy reliastra-api:8000
+	}
+	handle /metrics* {
+		reverse_proxy reliastra-api:8000
+	}
+	handle /openapi.json* {
+		reverse_proxy reliastra-api:8000
+	}
+	handle /docs* {
+		reverse_proxy reliastra-api:8000
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+# Redirect www → apex
+www.{$DOMAIN:reliastra.com} {
+	redir https://{$DOMAIN:reliastra.com}{uri} permanent
+}
