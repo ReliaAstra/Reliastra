@@ -21,10 +21,9 @@ const FOOTER_LINKS = [
   {
     title: 'Research',
     links: [
-      { label: 'Research Home', href: '/research' },
-      { label: 'The Dependency Gap', href: '/research/the-dependency-gap' },
-      { label: 'Measurement Methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
-      { label: 'Research Agenda', href: '/research/reliastra-research-agenda' },
+      { label: 'The evidence engine', action: () => scrollToId('research') },
+      { label: 'Live vendor data', href: '/track' },
+      { label: 'System status', href: '/track' },
     ],
   },
   {

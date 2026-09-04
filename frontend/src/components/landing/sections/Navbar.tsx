@@ -20,6 +20,7 @@ const NAV_LINKS = [
   { label: 'Live Data', action: () => scrollToId('live') },
   { label: 'Compare', action: () => scrollToId('comparison') },
   { label: 'Pricing', action: () => scrollToId('pricing') },
+  { label: 'Research', action: () => scrollToId('research') },
 ];
 
 export function Navbar() {
@@ -63,12 +64,6 @@ export function Navbar() {
               {link.label}
             </button>
           ))}
-          <Link
-            href="/research"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
-          >
-            Research
-          </Link>
           <Link
             href="/track"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
@@ -127,13 +122,6 @@ export function Navbar() {
                     {link.label}
                   </button>
                 ))}
-                <Link
-                  href="/research"
-                  onClick={() => setMobileOpen(false)}
-                  className="block w-full rounded-lg px-3 py-3 text-left text-sm font-medium text-[#52525B] transition-colors hover:bg-[#F8F9FA] hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:bg-white/5 dark:hover:text-white"
-                >
-                  Research
-                </Link>
               </div>
               <div className="mt-6 space-y-3 border-t border-[#E4E4E7] pt-6 dark:border-white/10">
                 <ThemeToggle />

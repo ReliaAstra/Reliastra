@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
       "evidence",
       "clients",
     ];
-    return consoleSections.flatMap((section) => [
+    const consoleRedirects = consoleSections.flatMap((section) => [
       {
         source: `/dashboard/${section}`,
         destination: `/${section}`,
@@ -42,6 +42,34 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
     ]);
+
+    return [
+      ...consoleRedirects,
+
+      // The Partner Program is a client-side, state-routed surface at `/`
+      // (switched by the `?page=` query param). Give it a real, shareable URL
+      // so `/partners` resolves to the program landing instead of 404ing.
+      {
+        source: "/partners",
+        destination: "/?page=home",
+        permanent: false,
+      },
+      {
+        source: "/partners/:path*",
+        destination: "/?page=home",
+        permanent: false,
+      },
+
+      // The research articles were never published as standalone routes — the
+      // research content lives in the `#research` section of the landing page.
+      // Resolve any `/research/*` URL (including old bookmarks) there instead
+      // of returning a 404.
+      {
+        source: "/research/:path*",
+        destination: "/#research",
+        permanent: false,
+      },
+    ];
   },
   async headers() {
     return [
