@@ -95,7 +95,7 @@ export function clearAllSessionTokens(): void {
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
   window.localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
-  // The legacy Partner Network persists its auth envelope under this key.
+  // The legacy Partner Program persists its auth envelope under this key.
   // Remove it too so an explicit logout cannot be resurrected by hydration.
   window.localStorage.removeItem(LEGACY_PARTNER_STORE_KEY);
   clearSessionCookies();

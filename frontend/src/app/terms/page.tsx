@@ -71,7 +71,7 @@ export default function TermsPage() {
         </div>
 
         <p className="mt-12 rounded-xl border border-zinc-200 bg-[#F8F9FA] p-5 text-sm leading-relaxed text-zinc-600 dark:border-white/10 dark:bg-[#131318] dark:text-zinc-400">
-          These terms govern the RELIASTRA product. Partner Network participants are additionally
+          These terms govern the RELIASTRA product. Partner Program participants are additionally
           bound by the partner program terms presented at enrollment.
         </p>
       </div>

@@ -85,7 +85,7 @@ export function PageLogin() {
       try {
         const profile = await partnerApi.apply({ agree_terms: true });
         store.setPartner(mapPartnerProfile(profile));
-        toast.success('Welcome to the Partner Network');
+        toast.success('Welcome to the Partner Program');
       } catch {
         toast.error('Could not activate your partner account — try again from the dashboard.');
       }
@@ -272,7 +272,7 @@ export function PageLogin() {
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="size-3" />
-              Back to Partner Network
+              Back to the Partner Program
             </button>
           </motion.div>
             </>

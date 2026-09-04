@@ -102,7 +102,7 @@ export function PageSupport() {
               className="mb-6 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="size-3" />
-              Back to Partner Network
+              Back to the Partner Program
             </button>
             <div className="flex items-center gap-3 mb-4">
               <div className="flex items-center justify-center size-10 rounded-lg border border-border/60 bg-muted/30">
@@ -158,7 +158,7 @@ export function PageSupport() {
                   onClick={() => navigate('home')}
                   className="text-sm"
                 >
-                  Back to Partner Network
+                  Back to the Partner Program
                 </Button>
               </div>
             </motion.div>

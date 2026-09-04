@@ -23,8 +23,8 @@ const faqSections = [
     heading: 'Program basics',
     items: [
       {
-        q: 'What is the RELIASTRA Partner Network?',
-        a: 'The Partner Network is a commission-based referral program. Approved partners earn a recurring commission by referring new customers to RELIASTRA through unique tracking links.',
+        q: 'What is the RELIASTRA Partner Program?',
+        a: 'The Partner Program is a commission-based partnership program. Approved partners earn a recurring commission by referring new customers to RELIASTRA through unique tracking links.',
       },
       {
         q: 'Who is eligible to apply?',

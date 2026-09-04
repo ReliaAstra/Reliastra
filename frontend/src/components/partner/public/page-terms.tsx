@@ -21,7 +21,7 @@ const terms: TermSection[] = [
   {
     heading: '1. Acceptance of Terms',
     body: [
-      'By accessing or using the RELIASTRA Partner Network (the "Program"), you agree to be bound by these Terms of Service ("Terms"), which constitute a legally binding agreement between you ("Partner" or "you") and RELIASTRA Inc. ("RELIASTRA," "we," or "us").',
+      'By accessing or using the RELIASTRA Partner Program (the "Program"), you agree to be bound by these Terms of Service ("Terms"), which constitute a legally binding agreement between you ("Partner" or "you") and RELIASTRA Inc. ("RELIASTRA," "we," or "us").',
       'If you do not agree to these Terms, you may not participate in the Program or use any associated services, tools, or materials provided by RELIASTRA.',
       'These Terms apply to your participation in the Program, including but not limited to the use of referral links, the partner dashboard, marketing materials, and any commission or payout processes. RELIASTRA reserves the right to update these Terms at any time as described in Section 11.',
       'Your continued participation in the Program following any modification constitutes acceptance of the revised Terms.',
@@ -30,7 +30,7 @@ const terms: TermSection[] = [
   {
     heading: '2. The Partner Program',
     body: [
-      'The RELIASTRA Partner Network is a referral-based commission program designed for qualified professionals, agencies, and organizations that wish to promote RELIASTRA’s platform and earn recurring revenue from successful referrals.',
+      'The RELIASTRA Partner Program is a commission-based partnership program designed for technical creators and publishers — including technical content creators, cloud and DevOps creators, cybersecurity creators, infrastructure bloggers, developer educators, technical newsletter writers, and technical publishers — who wish to feature RELIASTRA’s platform in their content and earn recurring revenue from qualified referrals.',
       'Approved partners earn a flat commission of 30% of the monthly subscription fee paid by each referred customer. This commission is recurring in nature—you continue to earn as long as the referred customer maintains an active subscription with RELIASTRA.',
       'The commission applies to all subscription tiers offered by RELIASTRA. There is no cap on total earnings; your revenue scales directly with the number and size of your active referrals.',
       'RELIASTRA provides partners with a referral link, a partner dashboard for tracking referrals and commissions, and select marketing resources to support promotional efforts.',
@@ -40,7 +40,7 @@ const terms: TermSection[] = [
     heading: '3. Partner Eligibility & Application',
     body: [
       'The Program is open to individuals and entities who meet the following criteria: you must be at least 18 years of age (or the legal age of majority in your jurisdiction), have the legal capacity to enter into binding agreements, and not be prohibited from participating under applicable law.',
-      'To join the Program, you must submit a partner application through the RELIASTRA Partner Network website. All applications are subject to review by RELIASTRA. We reserve the right to approve or reject any application at our sole discretion, with or without cause.',
+      'To join the Program, you must submit a partner application through the RELIASTRA Partner Program website. All applications are subject to review by RELIASTRA. We reserve the right to approve or reject any application at our sole discretion, with or without cause.',
       'RELIASTRA may consider factors including but not limited to: the nature of your business or professional activities, your audience and reach, alignment with RELIASTRA’s brand values, and compliance history with prior programs or agreements.',
       'You agree to provide accurate and complete information during the application process. Misrepresentation of any material fact may result in immediate rejection or termination.',
     ],
@@ -115,7 +115,7 @@ const terms: TermSection[] = [
   {
     heading: '11. Modifications to Terms',
     body: [
-      'RELIASTRA reserves the right to modify, amend, or update these Terms at any time at its sole discretion. When material changes are made, RELIASTRA will notify partners by posting the updated Terms on the RELIASTRA Partner Network website and, where appropriate, by email.',
+      'RELIASTRA reserves the right to modify, amend, or update these Terms at any time at its sole discretion. When material changes are made, RELIASTRA will notify partners by posting the updated Terms on the RELIASTRA Partner Program website and, where appropriate, by email.',
       'The “Last updated” date at the top of this page indicates when the Terms were last revised. Continued use of the Program after the effective date of any modification constitutes your acceptance of the revised Terms.',
       'If you do not agree with any modification to these Terms, your sole remedy is to terminate your participation in the Program as described in Section 9.',
     ],
@@ -131,7 +131,7 @@ const terms: TermSection[] = [
   {
     heading: '13. Contact',
     body: [
-      'For questions, concerns, or notices related to these Terms of Service or the RELIASTRA Partner Network, please contact us at: RELIASTRA Inc. — Email: support@reliastra.com',
+      'For questions, concerns, or notices related to these Terms of Service or the RELIASTRA Partner Program, please contact us at: RELIASTRA Inc. — Email: support@reliastra.com',
       'We recommend reviewing these Terms periodically to stay informed of any updates. Your participation in the Program is valued, and we are committed to maintaining a transparent and mutually beneficial partnership.',
     ],
   },
@@ -155,7 +155,7 @@ export function PageTerms() {
               onClick={() => navigate('home')}
               className="mb-8 font-mono text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
             >
-              ← Back to Partner Network
+              ← Back to the Partner Program
             </motion.button>
             <motion.p
               variants={sectionFade}

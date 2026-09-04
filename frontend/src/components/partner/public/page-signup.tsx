@@ -136,15 +136,15 @@ export function PageSignup() {
                 <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <span className="font-mono text-xs font-semibold tracking-widest uppercase">
-                RELIASTRA Partner Network
+                RELIASTRA Partner Program
               </span>
             </motion.div>
 
             <motion.h2 variants={fadeUp} custom={1} className="text-3xl font-bold tracking-tight leading-tight mb-4">
-              Start earning with RELIASTRA.
+              Apply to the Partner Program.
             </motion.h2>
             <motion.p variants={fadeUp} custom={2} className="text-base leading-relaxed text-neutral-400">
-              Share RELIASTRA with someone who needs it. When they become a paying customer, you earn 30% every month they remain subscribed.
+              For technical creators and publishers covering cloud infrastructure, reliability, cybersecurity, DevOps, and modern software systems.
             </motion.p>
           </div>
 
@@ -198,9 +198,9 @@ export function PageSignup() {
           ) : (
             <>
           <motion.div variants={fadeUp} custom={1} className="mb-8">
-            <h1 className="text-xl font-semibold text-foreground">Start earning with RELIASTRA.</h1>
+            <h1 className="text-xl font-semibold text-foreground">Apply to the Partner Program.</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create your account to get started.
+              Create your account to apply. Activation is free and immediate.
             </p>
             {referralCode && (
               <motion.div
@@ -274,11 +274,11 @@ export function PageSignup() {
               {loading ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Creating account...
+                  Creating account…
                 </>
               ) : (
                 <>
-                  CREATE ACCOUNT
+                  Create account
                   <ArrowRight className="size-4" />
                 </>
               )}
@@ -303,7 +303,7 @@ export function PageSignup() {
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="size-3" />
-              Back to Partner Network
+              Back to the Partner Program
             </button>
           </motion.div>
             </>

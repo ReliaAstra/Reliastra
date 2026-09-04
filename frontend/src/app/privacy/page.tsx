@@ -76,7 +76,7 @@ export default function PrivacyPage() {
 
         <p className="mt-12 rounded-xl border border-zinc-200 bg-[#F8F9FA] p-5 text-sm leading-relaxed text-zinc-600 dark:border-white/10 dark:bg-[#131318] dark:text-zinc-400">
           Questions about this policy? Contact <span className="font-medium">support@reliastra.com</span>.
-          If you arrived from the Partner Network, note that partners are additionally covered by the
+          If you arrived from the Partner Program, note that partners are additionally covered by the
           partner-specific terms presented during program enrollment.
         </p>
       </div>

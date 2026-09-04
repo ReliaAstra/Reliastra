@@ -1,751 +1,1341 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import Link from 'next/link';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Activity,
+  ShieldCheck,
+  FileText,
+  LayoutDashboard,
+  Boxes,
+  BookOpen,
+  Users,
+  CircleDollarSign,
+  Check,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { usePartnerStore } from '@/stores/partner-store';
+import type { PartnerPage } from '@/types/partner';
 import { CommissionBasisNote } from '../commission-basis-note';
+import { readApiError } from '@/lib/api-error';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.07, duration: 0.6, ease: [0.25, 0.1, 0.25, 1] as const },
-  }),
-};
+type NavigateFn = (page: PartnerPage) => void;
 
-const roles = [
-  { name: 'Consultants', desc: 'You advise companies on infrastructure. You already have the trust.' },
-  { name: 'Agencies', desc: 'You build and manage systems for clients. Distribution is natural.' },
-  { name: 'MSPs', desc: 'You manage operations. Your clients depend on your recommendations.' },
-  { name: 'Developers', desc: 'You build the software. Your network trusts your technical judgment.' },
-  { name: 'Engineers', desc: 'You run production systems. You know what matters in infrastructure.' },
-  { name: 'Founders', desc: 'You lead companies. Your network looks to you for tooling advice.' },
-  { name: 'Creators', desc: 'You produce content about technology. Your audience listens.' },
-  { name: 'Communities', desc: 'You run technical communities. Members trust shared recommendations.' },
+/* ────────────────────────────────────────────────────────────────────────────
+   RELIASTRA Partner Program — landing page.
+
+   Positioning: a partnership program for technical creators and publishers,
+   not a generic affiliate scheme. Hierarchy: Trust → Fit → Value → Access →
+   Economics → Application. Every claim on this page is backed by something
+   that exists in the product: the commission policy, the public tracking
+   surface, the evidence engine, the published documentation and legal pages.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
+function SectionHead({
+  id,
+  label,
+  title,
+  lede,
+}: {
+  id?: string;
+  label: string;
+  title: string;
+  lede?: string;
+}) {
+  return (
+    <div className="max-w-2xl">
+      <SectionLabel>{label}</SectionLabel>
+      <h2
+        id={id}
+        className="text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl"
+      >
+        {title}
+      </h2>
+      {lede && (
+        <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+          {lede}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ── Shared style constants ──────────────────────────────────────────────── */
+
+const cyanLink =
+  'inline-flex items-center gap-1 text-[13px] font-medium text-[#0891B2] underline-offset-4 hover:underline dark:text-[#22D3EE]';
+
+/* ── Hero program facts (all real, product-backed numbers) ───────────────── */
+
+const PROGRAM_FACTS = [
+  { label: 'Commission rate', value: '30%', note: 'Recurring, all plans' },
+  { label: 'Attribution', value: '90 days', note: 'First-touch referral link' },
+  { label: 'Minimum payout', value: '$50.00', note: 'Bank · USDC · USDT' },
+  { label: 'Cost to join', value: 'Free', note: 'No fee, no obligation' },
 ];
 
 export function PageHome() {
   const navigate = usePartnerStore((s) => s.navigate);
 
   return (
-    <div>
-      {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden border-b border-border/40">
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.025]">
-          <svg width="100%" height="100%" className="h-full w-full">
-            <defs>
-              <pattern id="hero-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="currentColor" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#hero-grid)" />
-          </svg>
-        </div>
-
-        <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 sm:pb-28 sm:pt-28 lg:px-8 lg:pb-36 lg:pt-36">
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Left: Copy */}
-            <motion.div initial="hidden" animate="visible" className="max-w-xl">
-              <motion.div
-                variants={fadeUp}
-                custom={0}
-                className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/80 bg-background px-4 py-1.5"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span className="font-mono text-xs tracking-wide text-muted-foreground">
-                  Partner Network
-                </span>
-              </motion.div>
-
-              <motion.h1
-                variants={fadeUp}
-                custom={1}
-                className="text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem]"
-              >
-                Turn your network into{' '}
-                <span className="text-foreground">recurring revenue.</span>
-              </motion.h1>
-
-              <motion.p
-                variants={fadeUp}
-                custom={2}
-                className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg"
-              >
-                Share RELIASTRA with people who depend on critical infrastructure. When they subscribe, you earn 30% every month they remain a paying customer.
-              </motion.p>
-
-              <motion.div
-                variants={fadeUp}
-                custom={3}
-                className="mt-10 flex flex-col gap-3 sm:flex-row"
-              >
-                <Button
-                  size="lg"
-                  onClick={() => navigate('signup')}
-                  className="gap-2 px-8"
-                >
-                  BECOME A PARTNER
-                  <ArrowRight className="size-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => navigate('how-it-works')}
-                  className="px-8"
-                >
-                  HOW IT WORKS
-                </Button>
-              </motion.div>
-            </motion.div>
-
-            {/* Right: Network visualization */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const }}
-              className="hidden lg:block"
-            >
-              <NetworkVisualization />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 30% COMMISSION CALL-OUT ===== */}
-      <section className="border-b border-border/40 bg-muted/20">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="mx-auto max-w-2xl text-center"
-          >
-            <motion.p
-              variants={fadeUp}
-              custom={0}
-              className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-6"
-            >
-              Recurring commission
-            </motion.p>
-            {/* 30% number with pulsing ring and scale animation */}
-            <motion.div
-              variants={fadeUp}
-              custom={1}
-              className="relative inline-flex items-center justify-center"
-            >
-              {/* Pulsing ring (inner) */}
-              <motion.span
-                className="pointer-events-none absolute rounded-full border border-foreground/10"
-                initial={{ scale: 0.9, opacity: 0 }}
-                whileInView={{ scale: [1, 1.15, 1], opacity: [0, 0.4, 0] }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  repeatDelay: 1.5,
-                  ease: 'easeInOut',
-                }}
-                style={{
-                  width: '220px',
-                  height: '220px',
-                }}
-              />
-              {/* Pulsing ring (outer) */}
-              <motion.span
-                className="pointer-events-none absolute rounded-full border border-foreground/5"
-                initial={{ scale: 0.9, opacity: 0 }}
-                whileInView={{ scale: [1, 1.3, 1], opacity: [0, 0.2, 0] }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  repeatDelay: 1.5,
-                  ease: 'easeInOut',
-                  delay: 0.4,
-                }}
-                style={{
-                  width: '220px',
-                  height: '220px',
-                }}
-              />
-              <motion.span
-                className="text-7xl sm:text-8xl lg:text-9xl font-bold tracking-tight text-foreground"
-                initial={{ scale: 0.85, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.8,
-                  ease: [0.25, 0.1, 0.25, 1] as const,
-                }}
-              >
-                30
-              </motion.span>
-              <motion.span
-                className="text-4xl sm:text-5xl font-bold text-muted-foreground"
-                initial={{ scale: 0.85, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.8,
-                  ease: [0.25, 0.1, 0.25, 1] as const,
-                }}
-              >
-                %
-              </motion.span>
-            </motion.div>
-            <motion.p
-              variants={fadeUp}
-              custom={2}
-              className="mt-4 text-base text-muted-foreground"
-            >
-              Every month a referred customer remains subscribed.
-            </motion.p>
-
-            {/* Visual arithmetic flow with connecting line */}
-            <motion.div variants={fadeUp} custom={3} className="mt-10 inline-block">
-              <div className="rounded-lg border border-border/60 bg-background p-6 sm:p-8">
-                {/* "Customer pays" is a statement about a real charge, so it
-                    carries the same shared basis note as the commission pages. */}
-                <CommissionBasisNote className="mb-5 justify-center text-center" />
-                {/* Row 1: Customer pays → You earn */}
-                <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-0 sm:justify-center">
-                  <div className="text-center sm:text-right">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-1.5">
-                      Customer pays
-                    </p>
-                    <p className="font-mono text-lg font-semibold text-muted-foreground">
-                      $39/mo
-                    </p>
-                  </div>
-
-                  {/* Connecting arrow */}
-                  <div className="flex items-center justify-center px-5 py-1">
-                    <svg width="56" height="20" viewBox="0 0 56 20" fill="none" className="text-muted-foreground/30">
-                      <path d="M0 10h48M40 3l7 7-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-
-                  <div className="text-center sm:text-left">
-                    <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/60 mb-1.5">
-                      You earn (30%)
-                    </p>
-                    <p className="font-mono text-lg font-bold text-foreground">
-                      $11.70/mo
-                    </p>
-                  </div>
-                </div>
-
-                {/* Vertical connector */}
-                <div className="flex justify-center py-3">
-                  <div className="h-4 w-px bg-border" />
-                </div>
-
-                {/* Row 2: Recurring note */}
-                <p className="text-center text-sm text-muted-foreground">
-                  They stay subscribed.{' '}
-                  <span className="font-semibold text-foreground">You keep earning.</span>
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ===== WHO IS THIS FOR ===== */}
-      <section>
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-          >
-            <motion.div variants={fadeUp} custom={0} className="mb-4 max-w-lg">
-              <p className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                Who is this for
-              </p>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                You already have access to the people who need RELIASTRA.
-              </h2>
-            </motion.div>
-
-            <motion.div
-              variants={fadeUp}
-              custom={1}
-              className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border/60 bg-border/60 sm:grid-cols-2 lg:grid-cols-4"
-            >
-              {roles.map((role) => (
-                <motion.div
-                  key={role.name}
-                  whileHover={{ boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.15)' }}
-                  transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
-                  className="bg-background p-6 transition-all duration-200 hover:bg-muted/30 hover:-translate-y-px"
-                >
-                  <h3 className="mb-2 text-sm font-semibold text-foreground">
-                    {role.name}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {role.desc}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ===== ANIMATED NUMBER COUNTERS ===== */}
-      <CounterSection />
-
-      {/* ===== YOU DON'T NEED A HUGE AUDIENCE ===== */}
-      <section className="border-t border-border/40 bg-muted/20">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="grid items-center gap-12 lg:grid-cols-2"
-          >
-            <motion.div variants={fadeUp} custom={0}>
-              <p className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                Distribution philosophy
-              </p>
-              <h2 className="mb-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                You don&apos;t need a huge audience.
-              </h2>
-              <p className="text-base leading-relaxed text-muted-foreground">
-                You need access to the right people.
-              </p>
-            </motion.div>
-
-            <motion.div variants={fadeUp} custom={1} className="space-y-6">
-              <div className="rounded-lg border border-border/60 bg-background p-6">
-                <div className="flex items-center gap-4">
-                  <span className="font-mono text-lg font-semibold text-muted-foreground/50">
-                    100,000 followers
-                  </span>
-                  <span className="text-2xl text-muted-foreground/30">/=</span>
-                  <span className="font-mono text-lg font-semibold text-muted-foreground/50">
-                    100,000 customers
-                  </span>
-                </div>
-              </div>
-              <div className="rounded-lg border-2 border-foreground/80 bg-background p-6">
-                <div className="flex items-center gap-4">
-                  <span className="font-mono text-lg font-semibold text-foreground">
-                    10 relevant client relationships
-                  </span>
-                  <span className="text-2xl text-foreground">=</span>
-                  <span className="font-mono text-lg font-semibold text-foreground">
-                    real distribution
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ===== PRODUCT CONNECTION ===== */}
-      <section className="border-t border-border/40">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-          >
-            <motion.div variants={fadeUp} custom={0} className="mb-12 max-w-lg">
-              <p className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                What you&apos;re referring
-              </p>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                You&apos;re not referring another uptime monitor.
-              </h2>
-            </motion.div>
-
-            <motion.div
-              variants={fadeUp}
-              custom={1}
-              className="grid gap-px overflow-hidden rounded-lg border border-border/60 bg-border/60 sm:grid-cols-3"
-            >
-              {[
-                {
-                  step: '01',
-                  title: 'TRACK',
-                  desc: 'Know what happened. Full incident timeline with evidence collection.',
-                },
-                {
-                  step: '02',
-                  title: 'CORRELATE',
-                  desc: 'Find the dependency. Cross-system correlation reveals root causes.',
-                },
-                {
-                  step: '03',
-                  title: 'PROVE',
-                  desc: 'Produce the evidence. Actionable reports for stakeholders and audits.',
-                },
-              ].map((item) => (
-                <div key={item.step} className="bg-background p-8 transition-all duration-200 hover:bg-muted/20">
-                  <span className="mb-4 block font-mono text-xs tracking-widest text-muted-foreground/60">
-                    {item.step}
-                  </span>
-                  <h3 className="mb-2 text-lg font-semibold tracking-tight text-foreground">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {item.desc}
-                  </p>
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ===== TESTIMONIALS / SOCIAL PROOF ===== */}
-      <section className="border-t border-border/40">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-          >
-            <motion.div variants={fadeUp} custom={0} className="mb-12 max-w-lg">
-              <p className="mb-3 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                What partners say
-              </p>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                Trusted by infrastructure professionals.
-              </h2>
-            </motion.div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <motion.div
-                variants={fadeUp}
-                custom={1}
-              >
-                <TestimonialCard
-                  quote="I recommended RELIASTRA to three infrastructure clients during a consulting engagement. Two subscribed within a week. I now earn recurring revenue from work I was already doing."
-                  name="Marcus Webb"
-                  role="Infrastructure Consultant"
-                  badge="$440+/mo earned"
-                />
-              </motion.div>
-              <motion.div
-                variants={fadeUp}
-                custom={2}
-              >
-                <TestimonialCard
-                  quote="Our agency runs on RELIASTRA internally. When clients ask what we use for incident correlation, the answer naturally leads to a referral. It feels organic, not salesy."
-                  name="Sarah Lin"
-                  role="CTO, Operations Agency"
-                  badge="$870+/mo earned"
-                />
-              </motion.div>
-              <motion.div
-                variants={fadeUp}
-                custom={3}
-                className="sm:col-span-2 lg:col-span-1"
-              >
-                <TestimonialCard
-                  quote="I posted a single breakdown of how we use RELIASTRA for post-incident reviews. That one piece of content generated eight trial signups and four paying customers."
-                  name="David Okafor"
-                  role="DevOps Content Creator"
-                  badge="$580+/mo earned"
-                />
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ===== DARK CTA ===== */}
-      <section className="border-t border-border/40 bg-neutral-950 text-neutral-50">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            className="mx-auto max-w-2xl text-center"
-          >
-            <motion.h2
-              variants={fadeUp}
-              custom={0}
-              className="mb-4 text-2xl font-semibold tracking-tight sm:text-3xl"
-            >
-              Your next customer could already be in your network.
-            </motion.h2>
-            <motion.p
-              variants={fadeUp}
-              custom={1}
-              className="mb-10 text-base leading-relaxed text-neutral-400"
-            >
-              Get someone to subscribe. Earn 30% every month. It&apos;s that simple.
-            </motion.p>
-            <motion.div variants={fadeUp} custom={2}>
-              <Button
-                size="lg"
-                onClick={() => navigate('signup')}
-                className="gap-2 bg-neutral-50 text-neutral-950 hover:bg-neutral-200 px-8"
-              >
-                BECOME A PARTNER
-                <ArrowRight className="size-4" />
-              </Button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
+    <div className="bg-background text-foreground">
+      <Hero navigate={navigate} />
+      <TrustSection />
+      <PublishersSection />
+      <BenefitsSection />
+      <AccessSection />
+      <PlacementSection />
+      <HowItWorks />
+      <QualitySection />
+      <FitSection />
+      <ApplicationSection navigate={navigate} />
+      <CommissionSection />
+      <TransparencySection />
+      <FinalCta navigate={navigate} />
     </div>
   );
 }
 
-// --- Animated Counter Section ---
-function CounterSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const [started, setStarted] = useState(false);
+/* ── 01 · HERO ────────────────────────────────────────────────────────────── */
 
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          const t = setTimeout(() => setStarted(true), 300);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
+function Hero({ navigate }: { navigate: NavigateFn }) {
   return (
-    <section ref={sectionRef} className="border-y border-border/40 bg-muted/20">
-      <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const }}
-          className="grid grid-cols-2 divide-x divide-border/40 lg:grid-cols-4"
-        >
-          <CounterItem target={30} prefix="" suffix="%" label="Recurring commission" active={started} />
-          <CounterItem target={39} prefix="$" suffix="/mo" label="Starting plan price" active={started} delay={0.1} />
-          <CounterItem target={90} prefix="" suffix=" days" label="Attribution window" active={started} delay={0.2} />
-          <CounterItem target={0} prefix="$" suffix="" label="Cost to join" active={started} isZero delay={0.3} />
-        </motion.div>
+    <section id="program" className="relative border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-24">
+        <div className="grid items-start gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          {/* Left — copy */}
+          <div className="max-w-xl">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/30 px-4 py-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#0891B2] dark:bg-[#22D3EE]" />
+              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Partner Program · Technical Publishers
+              </span>
+            </div>
+
+            <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-5xl">
+              Partner with RELIASTRA
+            </h1>
+            <p className="mt-5 text-xl font-medium leading-snug tracking-tight text-foreground/90 sm:text-2xl">
+              Bring credible infrastructure intelligence to your audience.
+            </p>
+
+            <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
+              RELIASTRA works with technical creators and publishers who educate
+              audiences about cloud infrastructure, reliability, cybersecurity,
+              DevOps, SaaS, and modern software systems. We provide the
+              infrastructure intelligence, evidence, data, and a serious product.
+              You provide trusted distribution, education, analysis, and audience
+              reach.
+            </p>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                onClick={() => navigate('signup')}
+                className="h-11 gap-2 px-7 text-sm font-medium"
+              >
+                Apply to the Partner Program
+                <ArrowRight className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate('landing')}
+                className="h-11 px-7 text-sm font-medium"
+              >
+                Explore RELIASTRA
+              </Button>
+            </div>
+
+            <p className="mt-6 text-[13px] leading-relaxed text-muted-foreground/90">
+              A professional partnership for credible technical publishers — not a
+              generic affiliate network. No fee to apply, no requirement to become
+              a salesperson.
+            </p>
+          </div>
+
+          {/* Right — program facts + public evidence strip */}
+          <div className="lg:pt-2">
+            <div className="overflow-hidden rounded-lg border border-border/70 bg-background">
+              <div className="flex items-center justify-between border-b border-border/60 px-5 py-3">
+                <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Program at a glance
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
+                  Current program terms
+                </span>
+              </div>
+              <dl>
+                {PROGRAM_FACTS.map((f, i) => (
+                  <div
+                    key={f.label}
+                    className={cn(
+                      'flex items-center justify-between px-5 py-4',
+                      i !== PROGRAM_FACTS.length - 1 && 'border-b border-border/50'
+                    )}
+                  >
+                    <dt className="text-[13px] text-muted-foreground">
+                      {f.label}
+                      <span className="block text-[11px] text-muted-foreground/60">
+                        {f.note}
+                      </span>
+                    </dt>
+                    <dd className="font-mono text-lg font-semibold tabular-nums tracking-tight text-foreground">
+                      {f.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <Link
+              href="/track"
+              className="group mt-4 flex items-center justify-between rounded-lg border border-border/70 bg-muted/20 px-5 py-4 transition-colors hover:bg-muted/40"
+            >
+              <span className="flex items-center gap-3">
+                <Activity className="size-4 text-[#0891B2] dark:text-[#22D3EE]" />
+                <span className="text-[13px] text-muted-foreground">
+                  Public infrastructure tracking — live, independent measurements
+                  at{' '}
+                  <span className="font-mono text-foreground">reliastra.com/track</span>
+                </span>
+              </span>
+              <ArrowUpRight className="size-4 text-muted-foreground/50 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-// --- Animated Counter Item ---
-function CounterItem({
-  target,
-  prefix,
-  suffix,
-  label,
-  isZero = false,
-  active = false,
-  delay = 0,
+/* ── 02 · TRUST / CREDIBILITY ─────────────────────────────────────────────── */
+
+const TRUST_ITEMS = [
+  {
+    icon: Activity,
+    title: 'Public infrastructure tracking',
+    body: 'Live, independent measurements of third-party services — real endpoints, real probe data, published at reliastra.com/track.',
+    href: '/track',
+    hrefLabel: 'View public tracking',
+    external: false,
+  },
+  {
+    icon: FileText,
+    title: 'SLA evidence reports',
+    body: 'Timestamped, independently verified evidence of vendor failures, generated from the platform\u2019s own observations — the core of the Pro product.',
+    href: '/track',
+    hrefLabel: 'See the evidence engine',
+    external: false,
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Deterministic attribution',
+    body: 'Incident attribution is computed by a deterministic engine that correlates vendor failure with your own incidents — not heuristic status-page scraping.',
+    href: 'https://api.reliastra.com/docs',
+    hrefLabel: 'Read the API reference',
+    external: true,
+  },
+  {
+    icon: LayoutDashboard,
+    title: 'Public API & documentation',
+    body: 'A published OpenAPI reference, and API access included with the Pro plan. The product is inspectable, not a black box.',
+    href: 'https://api.reliastra.com/docs',
+    hrefLabel: 'Open documentation',
+    external: true,
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Security & data practice',
+    body: 'First-party attribution, no third-party tracking in referral attribution, and published legal terms. Read the Privacy Policy.',
+    href: '/privacy',
+    hrefLabel: 'Read the Privacy Policy',
+    external: false,
+  },
+  {
+    icon: Users,
+    title: 'Company & contact',
+    body: 'Reliastra, Inc. — with published sales and billing contacts and a human support queue that answers every enquiry.',
+    href: '/terms',
+    hrefLabel: 'Company & terms',
+    external: false,
+  },
+];
+
+function TrustSection() {
+  return (
+    <section id="trust" className="border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="The platform behind the program"
+          title="A real product, independently verifiable."
+          lede="Before you attach your name to RELIASTRA, verify it the way your audience will. The product ships, the data is public, and the documentation is published."
+        />
+
+        <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/60 sm:grid-cols-2 lg:grid-cols-3">
+          {TRUST_ITEMS.map((item) => (
+            <div key={item.title} className="bg-background p-6 sm:p-7">
+              <item.icon className="size-4 text-muted-foreground/60" />
+              <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-foreground">
+                {item.title}
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                {item.body}
+              </p>
+              {item.external ? (
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(cyanLink, 'mt-4')}
+                >
+                  {item.hrefLabel}
+                  <ArrowUpRight className="size-3.5" />
+                </a>
+              ) : (
+                <Link href={item.href} className={cn(cyanLink, 'mt-4')}>
+                  {item.hrefLabel}
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-6 max-w-2xl text-[13px] leading-relaxed text-muted-foreground/80">
+          We do not publish customer logos, press mentions, or aggregate
+          statistics we cannot stand behind. What is verifiable — the product,
+          the public data, and the terms — is linked above.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ── 03 · WHY TECHNICAL PUBLISHERS ────────────────────────────────────────── */
+
+const CONTENT_TYPES = [
+  'Technical articles',
+  'YouTube videos',
+  'Newsletters',
+  'Research',
+  'Infrastructure explainers',
+  'Incident analysis',
+  'Cloud reliability content',
+  'Dependency analysis',
+  'Cybersecurity / infrastructure education',
+  'Product comparisons and technical commentary',
+];
+
+function PublishersSection() {
+  return (
+    <section id="publishers" className="border-b border-border/40 bg-muted/20">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <SectionHead
+              label="Why the program exists"
+              title="Your audience already asks the question RELIASTRA answers."
+              lede="Technical audiences increasingly care about what actually happens inside the infrastructure they depend on. RELIASTRA produces useful infrastructure intelligence and evidence that can support the work you already do."
+            />
+            <p className="mt-6 max-w-xl border-l-2 border-border/70 pl-5 text-[15px] leading-relaxed text-muted-foreground">
+              You are not required to become a salesperson. You are an
+              independent technical publisher using a serious infrastructure
+              product. Your credibility is the asset — and RELIASTRA is designed
+              to reinforce it rather than spend it.
+            </p>
+          </div>
+
+          <div>
+            <SectionLabel>Material it can support</SectionLabel>
+            <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+              {CONTENT_TYPES.map((t) => (
+                <li
+                  key={t}
+                  className="flex items-center gap-2.5 border-b border-border/50 py-3 text-[14px] text-foreground/90"
+                >
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-[#0891B2] dark:bg-[#22D3EE]" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 04 · WHAT PARTNERS RECEIVE ───────────────────────────────────────────── */
+
+const BENEFITS = [
+  {
+    icon: CircleDollarSign,
+    title: 'Revenue',
+    body: 'A recurring commission of 30% on eligible subscription revenue from customers you refer, for as long as they remain subscribed.',
+  },
+  {
+    icon: LayoutDashboard,
+    title: 'Professional partner account',
+    body: 'A dedicated partner dashboard for attribution, referrals, commissions, and earnings — the same evidence-grade tooling the rest of RELIASTRA is built on.',
+  },
+  {
+    icon: Boxes,
+    title: 'Product access',
+    body: 'Appropriate access to RELIASTRA so you can genuinely understand and demonstrate the product. Start on the free plan; upgrade when it is useful.',
+  },
+  {
+    icon: Activity,
+    title: 'Research & data access',
+    body: 'Where appropriate, data, reports, infrastructure observations, and product material useful for technical content.',
+  },
+  {
+    icon: BookOpen,
+    title: 'Partner resources',
+    body: 'Product documentation, screenshots, technical explanations, product briefs, and approved messaging.',
+  },
+  {
+    icon: Users,
+    title: 'Direct relationship',
+    body: 'Serious partners have a direct line to the RELIASTRA team — including senior leadership where appropriate — for collaboration, technical questions, and content coordination.',
+  },
+];
+
+function BenefitsSection() {
+  return (
+    <section id="benefits" className="border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="What partners receive"
+          title="Product, evidence, and a professional relationship."
+          lede="RELIASTRA provides the substance. What it does not provide is scripted sales copy, or any expectation that you publish it."
+        />
+
+        <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/60 sm:grid-cols-2 lg:grid-cols-3">
+          {BENEFITS.map((b) => (
+            <div key={b.title} className="bg-background p-6 sm:p-7">
+              <b.icon className="size-4 text-muted-foreground/60" />
+              <h3 className="mt-4 text-[15px] font-semibold tracking-tight text-foreground">
+                {b.title}
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                {b.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 05 · DIRECT RELATIONSHIP / HUMAN TRUST ───────────────────────────────── */
+
+const ACCESS_POINTS = [
+  'Partnership enquiries',
+  'Technical clarification',
+  'Collaboration opportunities',
+  'Content coordination',
+  'Research opportunities',
+  'Strategic discussions',
+];
+
+function AccessSection() {
+  return (
+    <section id="access" className="border-b border-border/40 bg-muted/20">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <SectionHead
+              label="A direct relationship"
+              title="A direct relationship with RELIASTRA."
+              lede="This is not an anonymous affiliate system. Qualified partners have direct access to the RELIASTRA team — including senior leadership where appropriate — for:"
+            />
+            <ul className="mt-6 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+              {ACCESS_POINTS.map((p) => (
+                <li
+                  key={p}
+                  className="flex items-center gap-2.5 border-b border-border/50 py-3 text-[14px] text-foreground/90"
+                >
+                  <span className="h-1 w-1 shrink-0 rounded-full bg-[#0891B2] dark:bg-[#22D3EE]" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 max-w-xl text-[13px] leading-relaxed text-muted-foreground/90">
+              There are real people accountable for this relationship — not a
+              referral link left unattended.
+            </p>
+          </div>
+
+          {/* Founder card */}
+          <div className="lg:pt-2">
+            <div className="rounded-lg border border-border/70 bg-background p-7 sm:p-8">
+              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Founder &amp; Principal Contact
+              </p>
+
+              <div className="mt-6 flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-border/70 bg-muted/40">
+                  <span className="text-base font-semibold text-foreground">EO</span>
+                </div>
+                <div>
+                  <p className="text-[15px] font-semibold tracking-tight text-foreground">
+                    Emmanuel Osei
+                  </p>
+                  <p className="text-[13px] text-muted-foreground">
+                    Founder &amp; CEO, RELIASTRA
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-6 text-[14px] leading-relaxed text-muted-foreground">
+                &ldquo;RELIASTRA exists because infrastructure teams needed
+                independent evidence of what actually happened when a dependency
+                failed. I am directly involved in the partner program, and
+                available to serious publishers for collaboration, technical
+                questions, and content opportunities.&rdquo;
+              </p>
+
+              <div className="mt-6 border-t border-border/60 pt-5">
+                <p className="text-[13px] leading-relaxed text-muted-foreground/90">
+                  For serious collaboration, qualified partners are connected
+                  with the right person — including senior leadership where the
+                  work warrants it.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 06 · PROFESSIONAL PLACEMENT ──────────────────────────────────────────── */
+
+const CHANNELS = [
+  'Technical articles',
+  'Editorial references',
+  'Tutorials',
+  'YouTube videos',
+  'Newsletters',
+  'Product walkthroughs',
+  'Infrastructure research',
+  'Technical comparisons',
+  'Resource pages',
+  'Relevant educational content',
+  'Appropriate website placements',
+  'Sponsored editorial, where explicitly disclosed',
+];
+
+function PlacementSection() {
+  return (
+    <section id="placement" className="border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="How partners feature RELIASTRA"
+          title="Professional placement, not coupon codes."
+          lede="Partners promote RELIASTRA the way serious publishers cover any serious tool — through useful, accurate content for an audience that cares."
+        />
+
+        <div className="mt-12 grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+            {CHANNELS.map((c) => (
+              <li
+                key={c}
+                className="flex items-center gap-2.5 border-b border-border/50 py-3 text-[14px] text-foreground/90"
+              >
+                <span className="h-1 w-1 shrink-0 rounded-full bg-[#0891B2] dark:bg-[#22D3EE]" />
+                {c}
+              </li>
+            ))}
+          </ul>
+
+          <div className="rounded-lg border border-border/70 bg-muted/20 p-7 sm:p-8">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="size-4 text-[#0891B2] dark:text-[#22D3EE]" />
+              <h3 className="text-[15px] font-semibold tracking-tight text-foreground">
+                Editorial integrity matters
+              </h3>
+            </div>
+            <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+              Partners are never expected to make unsupported claims.
+              Advertising and sponsorship should be clearly disclosed where
+              required. Your credibility is an asset — RELIASTRA is built to
+              reinforce it, not to damage it.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 07 · HOW IT WORKS ────────────────────────────────────────────────────── */
+
+const STEPS = [
+  {
+    n: '01',
+    title: 'Apply',
+    body: 'Create your account and verify your email. There is no fee and no waiting list.',
+  },
+  {
+    n: '02',
+    title: 'Receive access',
+    body: 'Your partner account, referral link, and resources are issued immediately.',
+  },
+  {
+    n: '03',
+    title: 'Publish',
+    body: 'Publish relevant technical content for an audience that cares about infrastructure, reliability, and security.',
+  },
+  {
+    n: '04',
+    title: 'Refer',
+    body: 'Qualified readers sign up through your referral link. Attribution is first-touch and self-referrals are excluded.',
+  },
+  {
+    n: '05',
+    title: 'Earn',
+    body: 'Earn a 30% recurring commission on eligible subscription revenue. Commissions become payable after the 30-day hold.',
+  },
+];
+
+function HowItWorks() {
+  return (
+    <section id="how-it-works" className="border-b border-border/40 bg-muted/20">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="How it works"
+          title="A simple, structured process."
+          lede="Five steps, no unnecessary complexity. Activation is immediate; commission eligibility begins when a referred customer subscribes."
+        />
+
+        <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/60 md:grid-cols-5">
+          {STEPS.map((s) => (
+            <div key={s.n} className="bg-background p-6">
+              <span className="font-mono text-[13px] tracking-widest text-muted-foreground/50">
+                {s.n}
+              </span>
+              <h3 className="mt-3 text-[14px] font-semibold tracking-tight text-foreground">
+                {s.title}
+              </h3>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                {s.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 08 · PARTNER QUALITY ─────────────────────────────────────────────────── */
+
+function QualitySection() {
+  return (
+    <section id="quality" className="border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-3xl text-center">
+          <SectionLabel>Quality over volume</SectionLabel>
+          <blockquote className="text-2xl font-medium leading-snug tracking-tight text-foreground sm:text-[28px]">
+            &ldquo;RELIASTRA does not aim to build the largest partner
+            directory. We aim to work with publishers whose audiences genuinely
+            care about infrastructure, reliability, security, and modern
+            software systems.&rdquo;
+          </blockquote>
+          <p className="mx-auto mt-6 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
+            The program is open to credible technical publishers. We would rather
+            support a smaller number of partners well than a larger number
+            poorly. There is no artificial cap — only a clear standard.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 09 · IDEAL PARTNER ───────────────────────────────────────────────────── */
+
+const FIT_ITEMS = [
+  'Publish technical content consistently',
+  'Have an audience interested in cloud, infrastructure, security, SaaS, DevOps, or software engineering',
+  'Care about technical accuracy',
+  'Have a credible publishing history',
+  'Prefer useful tools over generic sponsorships',
+  'Want long-term relationships rather than one-off promotions',
+];
+
+const NOT_FIT_ITEMS = [
+  'Run primarily general entertainment or lifestyle content',
+  'Promote unrelated products indiscriminately',
+  'Publish misleading technical claims',
+  'Operate spam-heavy affiliate sites',
+  'Have no meaningful technical audience',
+];
+
+function FitSection() {
+  return (
+    <section id="fit" className="border-b border-border/40 bg-muted/20">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="Fit"
+          title="Who this program is for."
+          lede="A clear definition of fit — for you and for us. If the first column describes you, we would welcome an application."
+        />
+
+        <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-lg border border-border/70 bg-background p-7 sm:p-8">
+            <div className="flex items-center gap-2.5">
+              <Check className="size-4 text-[#16A34A] dark:text-[#22C55E]" />
+              <h3 className="text-[15px] font-semibold tracking-tight text-foreground">
+                You may be a strong fit if you
+              </h3>
+            </div>
+            <ul className="mt-5 space-y-3">
+              {FIT_ITEMS.map((item) => (
+                <li key={item} className="flex items-start gap-3 text-[14px] leading-relaxed text-foreground/90">
+                  <span className="mt-2 h-px w-4 shrink-0 bg-border" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-lg border border-border/70 bg-background p-7 sm:p-8">
+            <div className="flex items-center gap-2.5">
+              <X className="size-4 text-muted-foreground/60" />
+              <h3 className="text-[15px] font-semibold tracking-tight text-foreground">
+                Probably not a fit if you
+              </h3>
+            </div>
+            <ul className="mt-5 space-y-3">
+              {NOT_FIT_ITEMS.map((item) => (
+                <li key={item} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                  <span className="mt-2 h-px w-4 shrink-0 bg-border" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 border-t border-border/60 pt-5 text-[13px] leading-relaxed text-muted-foreground/80">
+              None of this is a judgment on your work — it is a definition of
+              where the partnership is genuinely useful on both sides.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 10 · APPLICATION ─────────────────────────────────────────────────────── */
+
+function ApplicationSection({
+  navigate,
 }: {
-  target: number;
-  prefix: string;
-  suffix: string;
-  label: string;
-  isZero?: boolean;
-  active?: boolean;
-  delay?: number;
+  navigate: NavigateFn;
 }) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    website: '',
+    platform: '',
+    publication: '',
+    category: '',
+    geography: '',
+    audience: '',
+    recentWork: '',
+    why: '',
+    how: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!active) return;
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<any>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
 
-    const startTimeout = setTimeout(() => {
-      if (isZero) {
-        setDisplayValue(0);
-        return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (
+      !form.name.trim() ||
+      !form.email.trim() ||
+      !form.website.trim() ||
+      !form.platform ||
+      !form.publication.trim() ||
+      !form.category ||
+      !form.geography ||
+      !form.audience ||
+      !form.why.trim() ||
+      !form.how.trim()
+    ) {
+      setError('Please complete all required fields before submitting.');
+      return;
+    }
+
+    setLoading(true);
+
+    const subject = `Partner application — ${form.name.trim()}`;
+    const message = [
+      `Name: ${form.name.trim()}`,
+      `Email: ${form.email.trim()}`,
+      `Website: ${form.website.trim()}`,
+      `Primary platform: ${form.platform}`,
+      `Publication / audience: ${form.publication.trim()}`,
+      `Content category: ${form.category}`,
+      `Audience geography: ${form.geography}`,
+      `Approximate audience size: ${form.audience}`,
+      `Recent technical content: ${form.recentWork.trim() || '—'}`,
+      ``,
+      `Why RELIASTRA: ${form.why.trim()}`,
+      `How I expect to feature RELIASTRA: ${form.how.trim()}`,
+    ].join('\n');
+
+    try {
+      const res = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name.trim(), email: form.email.trim(), subject, message }),
+      });
+
+      if (!res.ok) {
+        const apiError = await readApiError(res, 'Submission failed');
+        throw new Error(apiError.message);
       }
 
-      const duration = 1400;
-      const startTime = performance.now();
+      setSubmitted(true);
+      toast.success('Application received — the RELIASTRA team will respond');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('reach') || msg.includes('fetch')) {
+        setError('Unable to reach RELIASTRA. Please check your connection and try again.');
+      } else {
+        setError(msg || 'Unable to submit your application. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      const tick = (now: number) => {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        // Ease out cubic
-        const eased = 1 - Math.pow(1 - progress, 3);
-        setDisplayValue(Math.round(eased * target));
-        if (progress < 1) {
-          requestAnimationFrame(tick);
-        }
-      };
-
-      requestAnimationFrame(tick);
-    }, delay * 1000);
-
-    return () => clearTimeout(startTimeout);
-  }, [active, target, isZero, delay]);
+  const selectClass =
+    'h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-none outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50';
 
   return (
-    <div className="py-8 sm:py-10 text-center px-4 first:pl-0">
-      {isZero ? (
-        <motion.span
-          className="font-mono tabular-nums text-3xl font-bold text-foreground sm:text-4xl"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={active ? { scale: [1, 1.05, 1], opacity: 1 } : {}}
-          transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as const, delay }}
-        >
-          {prefix}0{suffix}
-        </motion.span>
-      ) : (
-        <span className="font-mono tabular-nums text-3xl font-bold text-foreground sm:text-4xl">
-          {prefix}{displayValue}{suffix}
-        </span>
-      )}
-      <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-        {label}
-      </p>
-    </div>
-  );
-}
+    <section id="apply" className="border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          {/* Left — process */}
+          <div>
+            <SectionHead
+              label="Application"
+              title="Apply to the Partner Program."
+              lede="A short, structured intake. There is no fee and no obligation. Creating your account activates the program immediately; the intake below helps us support your work properly."
+            />
 
-// --- Testimonial Card ---
-function TestimonialCard({
-  quote,
-  name,
-  role,
-  badge,
-}: {
-  quote: string;
-  name: string;
-  role: string;
-  badge: string;
-}) {
-  return (
-    <div className="h-full border border-border/60 rounded-lg bg-background p-6 transition-all duration-200 hover:-translate-y-px hover:border-foreground/15 hover:shadow-sm">
-      <p className="mb-1 font-mono text-xs text-muted-foreground">
-        PARTNER TESTIMONIAL
-      </p>
-      <p className="mt-4 text-sm leading-relaxed text-foreground/90">
-        <span className="text-3xl leading-none text-foreground/15 select-none">
-          &ldquo;
-        </span>
-        {quote}
-      </p>
-      <div className="mt-6">
-        <p className="text-sm font-semibold text-foreground">{name}</p>
-        <p className="text-xs text-muted-foreground">{role}</p>
-        <span className="mt-3 inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-mono text-xs font-semibold text-emerald-600">
-          {badge}
-        </span>
+            <div className="mt-8 space-y-4">
+              {[
+                {
+                  n: '1',
+                  title: 'Create your account',
+                  body: 'Name, email, and password — then verify your email. Activation is immediate and free.',
+                },
+                {
+                  n: '2',
+                  title: 'Receive partner access',
+                  body: 'Your partner dashboard and referral link are issued at once.',
+                },
+                {
+                  n: '3',
+                  title: 'Share your publication context',
+                  body: 'The intake on the right reaches the team directly, so we can support your work from day one.',
+                },
+              ].map((s) => (
+                <div key={s.n} className="flex gap-4">
+                  <span className="font-mono text-[13px] tracking-widest text-muted-foreground/50">
+                    {s.n}
+                  </span>
+                  <div>
+                    <p className="text-[14px] font-semibold tracking-tight text-foreground">
+                      {s.title}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                      {s.body}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-8">
+              <Button
+                onClick={() => navigate('signup')}
+                className="h-11 gap-2 px-6 text-sm font-medium"
+              >
+                Apply to the Partner Program
+                <ArrowRight className="size-4" />
+              </Button>
+              <p className="mt-3 text-[12px] text-muted-foreground/80">
+                Formal activation. Your referral link is issued immediately after
+                email verification.
+              </p>
+            </div>
+          </div>
+
+          {/* Right — intake form */}
+          <div className="rounded-lg border border-border/70 bg-background p-6 sm:p-8">
+            {submitted ? (
+              <div className="py-6 text-center">
+                <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full border border-border/70 bg-muted/30">
+                  <Check className="size-5 text-[#16A34A] dark:text-[#22C55E]" />
+                </div>
+                <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                  Application received
+                </h3>
+                <p className="mx-auto mt-2 max-w-sm text-[14px] leading-relaxed text-muted-foreground">
+                  Thank you. The RELIASTRA team will review your publication and
+                  respond to{' '}
+                  <span className="font-mono text-[13px] text-foreground">
+                    {form.email.trim()}
+                  </span>
+                  . To activate your partner account now:
+                </p>
+                <Button
+                  onClick={() => navigate('signup')}
+                  className="mt-6 h-11 gap-2 px-6 text-sm font-medium"
+                >
+                  Create your partner account
+                  <ArrowRight className="size-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Partnership intake
+                </p>
+                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                  Tell us about your publication
+                </h3>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  This reaches the team directly and is not used for anything
+                  except your application.
+                </p>
+
+                {error && (
+                  <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-name" className="text-xs font-mono uppercase tracking-wider">
+                        Name
+                      </Label>
+                      <Input id="app-name" value={form.name} onChange={set('name')} placeholder="Jane Doe" autoComplete="name" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-email" className="text-xs font-mono uppercase tracking-wider">
+                        Email
+                      </Label>
+                      <Input id="app-email" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" autoComplete="email" />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-website" className="text-xs font-mono uppercase tracking-wider">
+                        Website
+                      </Label>
+                      <Input id="app-website" value={form.website} onChange={set('website')} placeholder="https://…" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-platform" className="text-xs font-mono uppercase tracking-wider">
+                        Primary platform
+                      </Label>
+                      <select id="app-platform" value={form.platform} onChange={set('platform')} className={selectClass}>
+                        <option value="" disabled>Select…</option>
+                        <option>YouTube</option>
+                        <option>Newsletter</option>
+                        <option>Blog / website</option>
+                        <option>X (Twitter)</option>
+                        <option>LinkedIn</option>
+                        <option>Podcast</option>
+                        <option>Twitch / livestream</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="app-publication" className="text-xs font-mono uppercase tracking-wider">
+                      Publication / audience
+                    </Label>
+                    <Input id="app-publication" value={form.publication} onChange={set('publication')} placeholder="The name of your channel, newsletter, or publication" />
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-category" className="text-xs font-mono uppercase tracking-wider">
+                        Content category
+                      </Label>
+                      <select id="app-category" value={form.category} onChange={set('category')} className={selectClass}>
+                        <option value="" disabled>Select…</option>
+                        <option>Cloud infrastructure</option>
+                        <option>DevOps</option>
+                        <option>Cybersecurity</option>
+                        <option>SaaS</option>
+                        <option>Developer tools</option>
+                        <option>AI infrastructure</option>
+                        <option>Reliability / SRE</option>
+                        <option>Software engineering</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-geography" className="text-xs font-mono uppercase tracking-wider">
+                        Audience geography
+                      </Label>
+                      <select id="app-geography" value={form.geography} onChange={set('geography')} className={selectClass}>
+                        <option value="" disabled>Select…</option>
+                        <option>Global</option>
+                        <option>North America</option>
+                        <option>United Kingdom</option>
+                        <option>Europe</option>
+                        <option>Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="app-audience" className="text-xs font-mono uppercase tracking-wider">
+                        Approx. audience size
+                      </Label>
+                      <select id="app-audience" value={form.audience} onChange={set('audience')} className={selectClass}>
+                        <option value="" disabled>Select…</option>
+                        <option>Under 1,000</option>
+                        <option>1,000 – 10,000</option>
+                        <option>10,000 – 50,000</option>
+                        <option>50,000 – 250,000</option>
+                        <option>250,000+</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="app-recent" className="text-xs font-mono uppercase tracking-wider">
+                      Examples of recent technical content <span className="text-muted-foreground/60">(optional)</span>
+                    </Label>
+                    <Textarea id="app-recent" value={form.recentWork} onChange={set('recentWork')} rows={2} placeholder="Links to 1–3 recent pieces your audience values." className="resize-none" />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="app-why" className="text-xs font-mono uppercase tracking-wider">
+                      Why do you want to work with RELIASTRA?
+                    </Label>
+                    <Textarea id="app-why" value={form.why} onChange={set('why')} rows={3} placeholder="A few sentences on why this is a fit for your publication." className="resize-none" />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="app-how" className="text-xs font-mono uppercase tracking-wider">
+                      How do you expect to feature RELIASTRA?
+                    </Label>
+                    <Textarea id="app-how" value={form.how} onChange={set('how')} rows={3} placeholder="Articles, tutorials, videos, newsletter mentions — in your own words." className="resize-none" />
+                  </div>
+
+                  <Button type="submit" disabled={loading} className="h-11 w-full text-sm font-medium">
+                    {loading ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Submitting…
+                      </>
+                    ) : (
+                      'Submit application'
+                    )}
+                  </Button>
+
+                  <p className="text-center text-[12px] leading-relaxed text-muted-foreground/80">
+                    Submitting reaches the RELIASTRA team. It does not create an
+                    account. You may also{' '}
+                    <button
+                      type="button"
+                      onClick={() => navigate('signup')}
+                      className="font-medium text-[#0891B2] underline-offset-4 hover:underline dark:text-[#22D3EE]"
+                    >
+                      create your account
+                    </button>{' '}
+                    directly.
+                  </p>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-// --- Network Visualization SVG ---
-function NetworkVisualization() {
+/* ── 11 · COMMISSION ──────────────────────────────────────────────────────── */
+
+const COMMISSION_TERMS = [
+  {
+    title: 'Rate',
+    body: '30% of eligible subscription revenue, recurring — every month a referred customer remains subscribed. The rate applies uniformly across all plans.',
+  },
+  {
+    title: 'Attribution',
+    body: 'Attribution is via your unique referral link (reliastra.com/r/{code}). The link is first-party, stored for 90 days, and recorded at signup. Self-referrals are not eligible.',
+  },
+  {
+    title: 'When commissions are earned',
+    body: 'Commission is recorded only from confirmed payments — never from signups. Each commission is held for 30 days to cover refunds and chargebacks, then becomes payable.',
+  },
+  {
+    title: 'Payout',
+    body: 'Minimum payout of $50.00, paid via bank transfer, USDC, or USDT. Refunds and chargebacks reverse the associated commission; a churned customer stops future accrual.',
+  },
+];
+
+function CommissionSection() {
   return (
-    <div className="relative w-full aspect-square max-w-md mx-auto">
-      <svg viewBox="0 0 400 400" className="w-full h-full" fill="none">
-        {/* Connection lines */}
-        <line x1="100" y1="80" x2="200" y2="200" stroke="currentColor" strokeWidth="1" className="text-border" />
-        <line x1="200" y1="200" x2="300" y2="320" stroke="currentColor" strokeWidth="1" className="text-border" />
-        <line x1="300" y1="320" x2="100" y2="320" stroke="currentColor" strokeWidth="1" className="text-border" />
-
-        {/* Animated data packets */}
-        <motion.circle
-          r="3"
-          fill="currentColor"
-          className="text-foreground/40"
-          animate={{
-            cx: [100, 200],
-            cy: [80, 200],
-            opacity: [0, 1, 1, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            repeatDelay: 1,
-            ease: 'linear',
-          }}
-        />
-        <motion.circle
-          r="3"
-          fill="currentColor"
-          className="text-foreground/40"
-          animate={{
-            cx: [200, 300],
-            cy: [200, 320],
-            opacity: [0, 1, 1, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            repeatDelay: 1,
-            ease: 'linear',
-            delay: 1.5,
-          }}
-        />
-        <motion.circle
-          r="3"
-          fill="currentColor"
-          className="text-emerald-500"
-          animate={{
-            cx: [300, 100],
-            cy: [320, 320],
-            opacity: [0, 1, 1, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            repeatDelay: 1,
-            ease: 'linear',
-            delay: 3,
-          }}
+    <section id="commission" className="border-b border-border/40 bg-muted/20">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="Commission"
+          title="The economics, stated plainly."
+          lede="No hidden thresholds, no tiers to negotiate, no caps. The structure below is what the product actually implements."
         />
 
-        {/* Node: YOU */}
-        <g>
-          <rect x="68" y="48" width="64" height="64" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-border" />
-          <text x="100" y="74" textAnchor="middle" className="fill-foreground text-[10px] font-mono" fontFamily="monospace" fontSize="10" fontWeight="600">YOU</text>
-          <text x="100" y="92" textAnchor="middle" className="fill-muted-foreground text-[8px] font-mono" fontFamily="monospace" fontSize="8">referral</text>
-        </g>
+        <div className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          {/* Left — worked example */}
+          <div className="rounded-lg border border-border/70 bg-background p-7 sm:p-8">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              Worked example
+            </p>
 
-        {/* Node: RELIASTRA */}
-        <g>
-          <rect x="152" y="168" width="96" height="64" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
-          <text x="200" y="196" textAnchor="middle" className="fill-foreground text-[10px] font-mono" fontFamily="monospace" fontSize="10" fontWeight="600">RELIASTRA</text>
-          <text x="200" y="214" textAnchor="middle" className="fill-muted-foreground text-[8px] font-mono" fontFamily="monospace" fontSize="8">platform</text>
-        </g>
+            <div className="mt-6 flex items-center gap-3">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
+                  Pro subscription
+                </p>
+                <p className="mt-1 font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+                  $39<span className="text-base text-muted-foreground">/mo</span>
+                </p>
+              </div>
+              <ArrowRight className="mx-2 size-5 shrink-0 text-muted-foreground/40" />
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground/70">
+                  Your commission (30%)
+                </p>
+                <p className="mt-1 font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground">
+                  $11.70<span className="text-base text-muted-foreground">/mo</span>
+                </p>
+              </div>
+            </div>
 
-        {/* Node: SUBSCRIBER */}
-        <g>
-          <rect x="268" y="288" width="64" height="64" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-border" />
-          <text x="300" y="314" textAnchor="middle" className="fill-foreground text-[10px] font-mono" fontFamily="monospace" fontSize="10" fontWeight="600">CUSTOMER</text>
-          <text x="300" y="332" textAnchor="middle" className="fill-muted-foreground text-[8px] font-mono" fontFamily="monospace" fontSize="8">subscribed</text>
-        </g>
+            <p className="mt-6 border-t border-border/60 pt-5 text-[13px] leading-relaxed text-muted-foreground">
+              While that customer remains subscribed. Ten active referred
+              customers at that rate is{' '}
+              <span className="font-mono text-foreground">$117.00/mo</span> — for
+              illustration, based on the published Pro list price.
+            </p>
 
-        {/* Node: YOU EARN */}
-        <g>
-          <rect x="60" y="288" width="80" height="64" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-emerald-600" />
-          <text x="100" y="314" textAnchor="middle" className="fill-emerald-600 text-[10px] font-mono" fontFamily="monospace" fontSize="10" fontWeight="600">YOU EARN</text>
-          <text x="100" y="332" textAnchor="middle" className="fill-emerald-600/60 text-[8px] font-mono" fontFamily="monospace" fontSize="8">30%/month</text>
-        </g>
+            <div className="mt-5">
+              <CommissionBasisNote />
+            </div>
+          </div>
 
-        {/* Edge labels */}
-        <text x="138" y="130" textAnchor="middle" className="fill-muted-foreground/50 text-[8px] font-mono" fontFamily="monospace" fontSize="8" transform="rotate(-40 138 130)">share link</text>
-        <text x="260" y="260" textAnchor="middle" className="fill-muted-foreground/50 text-[8px] font-mono" fontFamily="monospace" fontSize="8" transform="rotate(40 260 260)">subscribes</text>
-        <text x="200" y="340" textAnchor="middle" className="fill-emerald-600/50 text-[8px] font-mono" fontFamily="monospace" fontSize="8">recurring value</text>
-      </svg>
-    </div>
+          {/* Right — terms */}
+          <div className="grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/60 sm:grid-cols-2">
+            {COMMISSION_TERMS.map((t) => (
+              <div key={t.title} className="bg-background p-6">
+                <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+                  {t.title}
+                </h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                  {t.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 12 · TRUST & TRANSPARENCY ────────────────────────────────────────────── */
+
+const TRANSPARENCY_LINKS: {
+  label: string;
+  desc: string;
+  href: string;
+  external?: boolean;
+  page?: PartnerPage;
+}[] = [
+  {
+    label: 'Partner terms',
+    desc: 'The agreement that governs the partner program.',
+    page: 'terms',
+    href: '',
+  },
+  {
+    label: 'Privacy Policy',
+    desc: 'How data is collected, stored, and used.',
+    href: '/privacy',
+  },
+  {
+    label: 'Public tracking',
+    desc: 'Live, independent measurements of third-party services.',
+    href: '/track',
+  },
+  {
+    label: 'API documentation',
+    desc: 'The published OpenAPI reference for the platform.',
+    href: 'https://api.reliastra.com/docs',
+    external: true,
+  },
+  {
+    label: 'Contact',
+    desc: 'A human support queue that answers every enquiry.',
+    page: 'support',
+    href: '',
+  },
+  {
+    label: 'Terms of Service',
+    desc: 'The terms under which the product is provided.',
+    href: '/terms',
+  },
+];
+
+function TransparencySection() {
+  const navigate = usePartnerStore((s) => s.navigate);
+
+  return (
+    <section id="trust-links" className="border-b border-border/40">
+      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24 lg:px-8">
+        <SectionHead
+          label="Trust & transparency"
+          title="Built to withstand scrutiny."
+          lede="Everything below is published and reachable — the kind of page a journalist, a procurement professional, or a cybersecurity reviewer could open and verify."
+        />
+
+        <div className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border/70 bg-border/60 sm:grid-cols-2 lg:grid-cols-3">
+          {TRANSPARENCY_LINKS.map((l) => {
+            const inner = (
+              <>
+                <h3 className="text-[14px] font-semibold tracking-tight text-foreground">
+                  {l.label}
+                </h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                  {l.desc}
+                </p>
+              </>
+            );
+            const className = 'block bg-background p-6 transition-colors hover:bg-muted/30';
+
+            if (l.page) {
+              const page = l.page;
+              return (
+                <button
+                  key={l.label}
+                  onClick={() => navigate(page)}
+                  className={cn(className, 'text-left')}
+                >
+                  {inner}
+                </button>
+              );
+            }
+            if (l.external) {
+              return (
+                <a
+                  key={l.label}
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {inner}
+                </a>
+              );
+            }
+            return (
+              <Link key={l.label} href={l.href} className={className}>
+                {inner}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── 13 · FINAL CTA ───────────────────────────────────────────────────────── */
+
+function FinalCta({ navigate }: { navigate: NavigateFn }) {
+  return (
+    <section className="bg-neutral-950 text-neutral-50">
+      <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-28 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <SectionLabel>
+            <span className="text-neutral-400">Partner Program</span>
+          </SectionLabel>
+          <h2 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            Build with evidence.
+            <br />
+            Publish with confidence.
+          </h2>
+          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-neutral-400">
+            A professional partnership for technical publishers who cover
+            infrastructure, reliability, security, and modern software systems.
+          </p>
+
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button
+              size="lg"
+              onClick={() => navigate('signup')}
+              className="h-11 gap-2 bg-neutral-50 px-7 text-sm font-medium text-neutral-950 hover:bg-neutral-200"
+            >
+              Apply to the Partner Program
+              <ArrowRight className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate('support')}
+              className="h-11 border-neutral-700 px-7 text-sm font-medium text-neutral-200 hover:bg-neutral-900 hover:text-neutral-50"
+            >
+              Contact RELIASTRA
+            </Button>
+          </div>
+
+          <p className="mt-8 text-[12px] text-neutral-500">
+            The beginning of a professional relationship — not a link, left
+            unattended.
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }

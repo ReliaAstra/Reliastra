@@ -30,7 +30,7 @@ const sections: PolicySection[] = [
   {
     heading: '1. Information We Collect',
     paragraphs: [
-      'We collect information that you provide directly when you interact with the RELIASTRA Partner Network. This includes your name, email address, company or organization name, billing details, and any other information you choose to provide during the application process or while using the partner dashboard.',
+      'We collect information that you provide directly when you interact with the RELIASTRA Partner Program. This includes your name, email address, company or organization name, billing details, and any other information you choose to provide during the application process or while using the partner dashboard.',
       'We automatically collect certain usage data when you access our platform. This includes IP address, browser type and version, operating system, referring URLs, pages viewed, links clicked, and the date and time of your interactions. This data helps us understand how partners use our platform and improve the experience accordingly.',
       'We use cookies and similar tracking technologies to maintain your session, remember your preferences, and support referral attribution. When a visitor arrives through your unique referral link, a cookie is placed on their device to track the referral for the attribution window (currently 90 days). See Section 6 for full details on our cookie practices.',
       'For the purpose of commission tracking, we collect referral data including the referral code used, the date and time of the referral click, the referred customer\'s sign-up and subscription status, and any subsequent commission events tied to your partner account.',
@@ -39,7 +39,7 @@ const sections: PolicySection[] = [
   {
     heading: '2. How We Use Your Information',
     paragraphs: [
-      'We use the information we collect to operate and improve the RELIASTRA Partner Network. Specifically, we process your data to evaluate and manage partner applications, provide access to the partner dashboard and referral tools, track and attribute referrals, calculate and process commission payments, and communicate with you about your account, earnings, and program updates.',
+      'We use the information we collect to operate and improve the RELIASTRA Partner Program. Specifically, we process your data to evaluate and manage partner applications, provide access to the partner dashboard and referral tools, track and attribute referrals, calculate and process commission payments, and communicate with you about your account, earnings, and program updates.',
       'Your personal information is used to verify your identity, comply with know-your-customer requirements for payout processing, prevent fraud and abuse of the referral program, and ensure the integrity of our commission tracking system.',
       'We may use aggregate, anonymized usage data to analyze platform performance, identify trends, and make improvements to the partner experience. This data cannot be used to identify you personally.',
       'With your consent where required, we may send you communications about new features, program changes, partner events, or promotional materials that we believe may be relevant to your partnership with RELIASTRA.',
@@ -94,7 +94,7 @@ const sections: PolicySection[] = [
   {
     heading: '8. Children\'s Privacy',
     paragraphs: [
-      'The RELIASTRA Partner Network is not directed at individuals under the age of 16. We do not knowingly collect personal information from children. If you are under 16, please do not use the platform or submit any personal information.',
+      'The RELIASTRA Partner Program is not directed at individuals under the age of 16. We do not knowingly collect personal information from children. If you are under 16, please do not use the platform or submit any personal information.',
       'If we become aware that we have inadvertently collected personal information from a child under 16, we will take immediate steps to delete that information from our systems. If you believe a child has provided us with personal information, please contact us at support@reliastra.com.',
     ],
   },
@@ -103,7 +103,7 @@ const sections: PolicySection[] = [
     paragraphs: [
       'We may update this Privacy Policy from time to time to reflect changes in our practices, technology, legal requirements, or other factors. When we make material changes, we will notify you by posting the updated policy on this page and, where appropriate, by sending you an email notification.',
       'The "Last updated" date at the top of this page indicates when the most recent revision was made. We encourage you to review this policy periodically to stay informed about how we protect your information.',
-      'Your continued use of the RELIASTRA Partner Network after any changes to this Privacy Policy constitutes your acceptance of the revised terms.',
+      'Your continued use of the RELIASTRA Partner Program after any changes to this Privacy Policy constitutes your acceptance of the revised terms.',
     ],
   },
   {
@@ -131,7 +131,7 @@ export function PagePrivacy() {
             onClick={() => navigate('home')}
             className="mb-8 text-xs font-mono uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
           >
-            &larr; Back to Partner Network
+            &larr; Back to the Partner Program
           </motion.button>
         </div>
       </div>
