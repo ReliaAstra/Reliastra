@@ -60,7 +60,16 @@ async def send_via_resend(
     correlation_id: str | None = None,
 ) -> tuple[bool, str | None]:
     """Send via Resend. Returns (ok, resend_id). Never logs secrets."""
-    api_key = settings.RESEND_API_KEY.get_secret_value() if settings.RESEND_API_KEY else None
+    raw = settings.RESEND_API_KEY
+    if raw is None:
+        api_key = None
+    elif hasattr(raw, "get_secret_value"):
+        try:
+            api_key = raw.get_secret_value()  # type: ignore[attr-defined]
+        except Exception:
+            api_key = str(raw)
+    else:
+        api_key = str(raw)
     if not api_key:
         return False, None
 

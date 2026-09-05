@@ -52,11 +52,16 @@ class ResendWebhookService:
         svix_timestamp: str | None,
         svix_signature: str | None,
     ) -> bool:
-        secret = (
-            settings.RESEND_WEBHOOK_SECRET.get_secret_value()
-            if settings.RESEND_WEBHOOK_SECRET
-            else None
-        )
+        raw_secret = settings.RESEND_WEBHOOK_SECRET
+        if raw_secret is None:
+            secret = None
+        elif hasattr(raw_secret, "get_secret_value"):
+            try:
+                secret = raw_secret.get_secret_value()  # type: ignore[attr-defined]
+            except Exception:
+                secret = str(raw_secret)
+        else:
+            secret = str(raw_secret)
         if not secret:
             # In dev/test without secret, allow but warn (never in production)
             if settings.ENVIRONMENT == "production":
