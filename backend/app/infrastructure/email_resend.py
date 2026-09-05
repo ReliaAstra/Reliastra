@@ -98,7 +98,12 @@ async def send_via_resend(
             return False, None
         data = resp.json()
         resend_id = data.get("id")
-        logger.info("Resend accepted category=%s to=%s id=%s", category, recipients[0][:3] + "***", resend_id)
+        logger.info(
+            "Resend accepted category=%s to=%s id=%s",
+            category,
+            recipients[0][:3] + "***",
+            resend_id,
+        )
         return True, resend_id
     except Exception as exc:
         logger.warning("Resend send failed category=%s: %s", category, exc)

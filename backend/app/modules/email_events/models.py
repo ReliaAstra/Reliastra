@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import String, DateTime, Text, Index, UniqueConstraint
+from sqlalchemy import DateTime, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,13 +14,17 @@ class EmailRecord(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "email_records"
 
     # Resend email ID (re_...) — unique when present
-    resend_id: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
+    resend_id: Mapped[str | None] = mapped_column(
+        String(64), unique=True, nullable=True, index=True
+    )
     recipient: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
     sender: Mapped[str] = mapped_column(String(320), nullable=False)
     subject: Mapped[str | None] = mapped_column(String(500), nullable=True)
     category: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     # Correlation
-    organization_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True
+    )
     user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     correlation_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     template: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -29,9 +33,7 @@ class EmailRecord(UUIDMixin, TimestampMixin, Base):
     last_event_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     meta: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
-    __table_args__ = (
-        Index("ix_email_records_recipient_category", "recipient", "category"),
-    )
+    __table_args__ = (Index("ix_email_records_recipient_category", "recipient", "category"),)
 
 
 class ResendWebhookEvent(UUIDMixin, TimestampMixin, Base):

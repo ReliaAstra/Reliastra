@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from fastapi import APIRouter, Request, Header, Response, Depends
+
+from fastapi import APIRouter, Depends, Header, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
@@ -10,6 +11,7 @@ from app.modules.email_events.service import resend_webhook_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+
 
 @router.post("/resend")
 async def resend_webhook(

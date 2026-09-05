@@ -45,6 +45,12 @@ build-backend = "setuptools.build_meta"
 # Don't try to package anything - uvicorn imports directly from filesystem
 py-modules = []
 
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+ignore = ["B008", "BLE001", "S110", "UP017", "FURB188"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
