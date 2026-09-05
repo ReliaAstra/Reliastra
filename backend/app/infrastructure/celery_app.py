@@ -87,6 +87,7 @@ celery_app = Celery(
         "app.modules.api_keys.tasks",
         "app.modules.billing.tasks",
         "app.modules.partners.tasks",
+        "app.modules.email_events.tasks",
     ],
 )
 

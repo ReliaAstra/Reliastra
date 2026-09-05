@@ -305,6 +305,32 @@ class Settings(BaseSettings):
         default=False,
         description="Whether to negotiate SMTP TLS when supported",
     )
+    # ── Resend — transactional outbound ────────────────────────────────
+    RESEND_API_KEY: SecretStr | None = Field(
+        default=None,
+        description="Resend API key (re_...). When set, transactional email uses Resend; otherwise falls back to SMTP.",
+    )
+    RESEND_FROM_EMAIL: str = Field(
+        default="RELIASTRA <noreply@reliastra.com>",
+        description="Default From for transactional email via Resend.",
+    )
+    RESEND_ALERTS_FROM_EMAIL: str = Field(
+        default="RELIASTRA <alerts@reliastra.com>",
+        description="From for monitoring/incident alerts via Resend.",
+    )
+    RESEND_WEBHOOK_SECRET: SecretStr | None = Field(
+        default=None,
+        description="Resend webhook signing secret (whsec_...) for POST /webhooks/resend verification (Svix).",
+    )
+    # ── Human inbound aliases (ImprovMX forwarding) ───────────────────
+    SUPPORT_EMAIL: str = Field(default="support@reliastra.com")
+    SECURITY_EMAIL: str = Field(default="security@reliastra.com")
+    BILLING_EMAIL: str = Field(default="billing@reliastra.com")
+    PARTNERS_EMAIL: str = Field(default="partners@reliastra.com")
+    HELLO_EMAIL: str = Field(default="hello@reliastra.com")
+    ABUSE_EMAIL: str = Field(default="abuse@reliastra.com")
+    LEGAL_EMAIL: str = Field(default="legal@reliastra.com")
+    PRIVACY_EMAIL: str = Field(default="privacy@reliastra.com")
     ENVIRONMENT: str = Field(
         default="development",
         description="Current environment (development, staging, production)",

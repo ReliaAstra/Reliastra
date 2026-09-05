@@ -57,6 +57,8 @@ from app.modules.admin.auth_router import admin_auth_router
 from app.modules.admin.public_support_router import public_support_router
 from app.modules.admin.seed import ensure_admin_service_account
 from app.modules.analytics.router import public_analytics_router
+from app.modules.email_events.router import router as email_webhook_router
+from app.modules.email_events.admin_router import router as email_admin_router
 
 logger = logging.getLogger(__name__)
 
@@ -270,6 +272,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await close_paystack_http_client()
     except Exception:  # pragma: no cover - shutdown must never raise
         logger.debug("Error closing Paystack HTTP client", exc_info=True)
+    try:
+        from app.infrastructure.email_resend import close_resend_client
+        await close_resend_client()
+    except Exception:  # pragma: no cover
+        logger.debug("Error closing Resend client", exc_info=True)
     await close_redis()
 
 
@@ -303,6 +310,9 @@ def create_app() -> FastAPI:
             "Idempotency-Key",
             "X-Request-ID",
             "x-paystack-signature",
+            "svix-id",
+            "svix-timestamp",
+            "svix-signature",
         ],
     )
 
@@ -347,6 +357,8 @@ def create_app() -> FastAPI:
     app.include_router(public_partners_router)
     app.include_router(admin_partners_router)
     app.include_router(public_analytics_router)
+    app.include_router(email_webhook_router)
+    app.include_router(email_admin_router)
 
     async def _run_health_checks() -> tuple[dict[str, Any], int]:
         checks: dict[str, Any] = {}

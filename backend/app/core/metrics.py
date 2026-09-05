@@ -66,6 +66,12 @@ ai_generation_latency = Histogram(
     buckets=(0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0),
 )
 
+email_events_total = Counter(
+    "reliastra_email_events_total",
+    "Total email webhook events processed",
+    ["event_type", "status"],
+)
+
 
 def render_metrics() -> bytes:
     """Render the current Prometheus exposition text."""
