@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
     ];
     return [
       // "Vendor Tracking" is the public label for the Track experience, but
-      // the canonical route is `/track` — redirect instead of duplicating.
+      // the canonical route is `/track` - redirect instead of duplicating.
       {
         source: "/vendor-tracking",
         destination: "/track",

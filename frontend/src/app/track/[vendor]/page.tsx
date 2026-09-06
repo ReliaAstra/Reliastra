@@ -141,7 +141,7 @@ export default async function VendorTrackPage({ params }: Props) {
   }
 
   // Related vendors for the internal link graph: same category first, never
-  // self, never fabricated — only vendors the Track API actually returns. A
+  // self, never fabricated - only vendors the Track API actually returns. A
   // failed catalog fetch renders nothing rather than a broken section.
   let relatedVendors: TrackVendorListItem[] = [];
   try {
@@ -355,7 +355,7 @@ export default async function VendorTrackPage({ params }: Props) {
         {/* Preferred Source - vendor intelligence, subtle, after historical data */}
         <PreferredSourceSection variant="vendor" />
 
-        {/* Related vendors + concepts — the crawlable topical graph */}
+        {/* Related vendors + concepts - the crawlable topical graph */}
         {(relatedVendors.length > 0) && (
           <section>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">

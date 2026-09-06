@@ -151,7 +151,7 @@ describe('marketing navigation link integrity', () => {
 
   it('exposes the sitelinks-candidate hierarchy with descriptive labels', () => {
     // Sitelink candidates must be prominent, stable, crawlable links with
-    // labels that name their destination — never vague "Explore/Solutions".
+    // labels that name their destination - never vague "Explore/Solutions".
     const banned = [/explore/i, /solutions/i, /^platform$/i, /^learn$/i];
     const flat: { label: string; href: string }[] = [];
     for (const entry of NAV) {
