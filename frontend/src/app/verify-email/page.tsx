@@ -3,24 +3,35 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { VerifyOtpStep, type VerifiedSession } from '@/components/partner/public/verify-otp-step';
+import {
+  AuthAlert,
+  AuthShell,
+  AuthSubmit,
+  Field,
+} from '@/components/site/auth/auth-shell';
+import {
+  VerifyOtpStep,
+  type VerifiedSession,
+} from '@/components/partner/public/verify-otp-step';
 import { readApiError } from '@/lib/api-error';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
+import { AUTH_ROUTES } from '@/lib/routes';
 
 type LinkState = 'verifying' | 'verified' | 'failed';
 
 /**
  * Destination for the `?token=` magic link the backend emails
- * (`FRONTEND_BASE_URL/verify-email?token=...`). This route did not exist, so
- * every verification link 404'd.
+ * (`FRONTEND_BASE_URL/verify-email?token=...`).
  *
  * Without a token it doubles as the standalone code-entry screen, which is
- * where a user lands if they close the signup tab before verifying.
+ * where a user lands if they close the signup tab before verifying, or if a
+ * sign-in is blocked by the verification gate.
+ *
+ * Both paths are preserved exactly; only their presentation changed. Note the
+ * single-use token guard (`consumedRef`) — React StrictMode double-mounts in
+ * development, and firing the exchange twice would report the second call as
+ * "already used" and show a false failure.
  */
 function VerifyEmailContent() {
   const router = useRouter();
@@ -35,8 +46,6 @@ function VerifyEmailContent() {
     emailParam || null
   );
   const [done, setDone] = useState(false);
-  // StrictMode double-mount guard: a verification token is single-use, so
-  // firing twice would report the second call as "already used".
   const consumedRef = useRef(false);
 
   const verifyToken = useCallback(async (value: string) => {
@@ -57,7 +66,9 @@ function VerifyEmailContent() {
       }
       setLinkState('verified');
     } catch {
-      setLinkError("We couldn't reach RELIASTRA. Check your connection and try again.");
+      setLinkError(
+        'Could not reach RELIASTRA. Check your connection and try again.'
+      );
       setLinkState('failed');
     }
   }, []);
@@ -68,137 +79,146 @@ function VerifyEmailContent() {
     void verifyToken(token);
   }, [token, verifyToken]);
 
-  const shell = (children: React.ReactNode) => (
-    <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm rounded-lg border border-border/60 bg-background p-6 sm:p-8">
-        {children}
-      </div>
-    </main>
-  );
-
-  // ── Magic-link flow ──────────────────────────────────────────────
+  // ── Magic-link flow ────────────────────────────────────────────────────
   if (token) {
     if (linkState === 'verifying') {
-      return shell(
-        <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Verifying your email...</p>
-        </div>
-      );
-    }
-    if (linkState === 'verified') {
-      return shell(
-        <div className="flex flex-col items-center gap-3 py-4 text-center">
-          <CheckCircle2 className="size-8 text-emerald-500" />
-          <h1 className="text-lg font-semibold text-foreground">Email verified</h1>
-          <p className="text-sm text-muted-foreground">
-            Your address is confirmed. You can sign in now.
+      return (
+        <AuthShell
+          eyebrow="Email verification"
+          title="Verifying your address"
+          intro="Exchanging the link token with the authentication service."
+        >
+          <p role="status" className="ob-label text-[var(--ob-text-4)]">
+            Working…
           </p>
-          <Button asChild className="mt-2 w-full">
-            <Link href="/login">Go to sign in</Link>
-          </Button>
-        </div>
+        </AuthShell>
       );
     }
-    return shell(
-      <div className="flex flex-col items-center gap-3 py-4 text-center">
-        <XCircle className="size-8 text-red-500" />
-        <h1 className="text-lg font-semibold text-foreground">
-          Verification failed
-        </h1>
-        <p className="text-sm text-muted-foreground">{linkError}</p>
-        <p className="text-sm text-muted-foreground">
-          Enter your email below and we&apos;ll send you a fresh 6-digit code.
+
+    if (linkState === 'verified') {
+      return (
+        <AuthShell
+          eyebrow="Email verification"
+          title="Address confirmed"
+          intro="Your email address has been verified. You can sign in now."
+        >
+          <AuthAlert tone="ok">
+            Verification complete. This link cannot be used again.
+          </AuthAlert>
+          <Link
+            href={AUTH_ROUTES.login}
+            className="ob-btn ob-btn-signal ob-btn-block mt-7"
+          >
+            Go to sign in
+          </Link>
+        </AuthShell>
+      );
+    }
+
+    return (
+      <AuthShell
+        eyebrow="Email verification"
+        title="Verification failed"
+        intro="The link could not be used. Links are single-use and expire, so this is most often because it was already opened."
+      >
+        <AuthAlert tone="error">{linkError}</AuthAlert>
+        <p className="ob-body mt-6 text-[14px]">
+          Request a fresh 6-digit code instead — it is sent to the same address
+          and works from any device.
         </p>
-        <Button
-          variant="outline"
-          className="mt-2 w-full"
+        <button
+          type="button"
           onClick={() => {
             // Drop the spent ?token= and fall through to the code form.
-            router.replace('/verify-email');
+            router.replace(AUTH_ROUTES.verifyEmail);
           }}
+          className="ob-btn ob-btn-outline ob-btn-block mt-6"
         >
           Use a code instead
-        </Button>
-      </div>
+        </button>
+      </AuthShell>
     );
   }
 
-  // ── Code flow ────────────────────────────────────────────────────
+  // ── Code flow ──────────────────────────────────────────────────────────
   if (done) {
-    return shell(
-      <div className="flex flex-col items-center gap-3 py-4 text-center">
-        <CheckCircle2 className="size-8 text-emerald-500" />
-        <h1 className="text-lg font-semibold text-foreground">Email verified</h1>
-        <p className="text-sm text-muted-foreground">
-          Your account is active. Continue to your workspace.
-        </p>
-        <Button asChild className="mt-2 w-full">
-          <Link href="/dashboard">Continue</Link>
-        </Button>
-      </div>
+    return (
+      <AuthShell
+        eyebrow="Email verification"
+        title="Account active"
+        intro="Your address is verified and your session is live."
+      >
+        <AuthAlert tone="ok">
+          Verification complete. Your organization is ready.
+        </AuthAlert>
+        <Link
+          href="/dashboard"
+          className="ob-btn ob-btn-signal ob-btn-block mt-7"
+        >
+          Continue to your workspace
+        </Link>
+      </AuthShell>
     );
   }
 
   if (confirmedEmail) {
-    return shell(
-      <VerifyOtpStep
-        email={confirmedEmail}
-        autoSend
-        // The OTP exchange issues the session - persist BOTH tokens before
-        // showing the "verified" screen so the console is authenticated.
-        onVerified={(session: VerifiedSession) => {
-          storeSessionTokens(
-            session.tokens.access_token,
-            session.tokens.refresh_token
-          );
-          useAppStore.getState().setAccessToken(session.tokens.access_token);
-          setDone(true);
-        }}
-        onBack={() => setConfirmedEmail(null)}
-        backLabel="Use a different email"
-        title="Verify your email"
-      />
+    return (
+      <AuthShell eyebrow="Email verification" title="Check your email">
+        <VerifyOtpStep
+          email={confirmedEmail}
+          autoSend
+          // The OTP exchange issues the session - persist BOTH tokens before
+          // showing the "verified" screen so the console is authenticated.
+          onVerified={(session: VerifiedSession) => {
+            storeSessionTokens(
+              session.tokens.access_token,
+              session.tokens.refresh_token
+            );
+            useAppStore.getState().setAccessToken(session.tokens.access_token);
+            setDone(true);
+          }}
+          onBack={() => setConfirmedEmail(null)}
+          backLabel="Use a different email"
+          title="Enter your verification code"
+        />
+      </AuthShell>
     );
   }
 
-  return shell(
-    <form
-      className="space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (email.trim()) setConfirmedEmail(email.trim());
-      }}
+  return (
+    <AuthShell
+      eyebrow="Email verification"
+      title="Verify your email"
+      intro="Enter the address you signed up with and a 6-digit code will be sent to it."
     >
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">
-          Verify your email
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Enter the address you signed up with and we&apos;ll send a 6-digit code.
-        </p>
-      </div>
-      <div className="space-y-2">
-        <Label
-          htmlFor="verify-email"
-          className="font-mono text-xs uppercase tracking-wider"
-        >
-          Email
-        </Label>
-        <Input
+      <form
+        className="flex flex-col gap-5"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (email.trim()) setConfirmedEmail(email.trim());
+        }}
+      >
+        <Field
           id="verify-email"
+          label="Email address"
           type="email"
           required
+          autoFocus
+          autoComplete="email"
           placeholder="you@company.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
         />
-      </div>
-      <Button type="submit" className="w-full">
-        SEND CODE
-      </Button>
-    </form>
+        <AuthSubmit loading={false}>Send code</AuthSubmit>
+      </form>
+
+      <p className="mt-7 text-[13.5px] text-[var(--ob-text-3)]">
+        Already verified?{' '}
+        <Link href={AUTH_ROUTES.login} className="ob-link">
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
 
@@ -206,9 +226,9 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </main>
+        <div className="ob flex min-h-screen items-center justify-center px-6">
+          <p className="ob-label text-[var(--ob-text-4)]">Loading…</p>
+        </div>
       }
     >
       <VerifyEmailContent />

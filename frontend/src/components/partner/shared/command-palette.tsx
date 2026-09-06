@@ -19,7 +19,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { usePartnerStore } from '@/stores/partner-store';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import type { PartnerPage } from '@/types/partner';

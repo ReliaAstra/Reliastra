@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
+import { JsonLd } from '@/components/seo/json-ld';
+import { breadcrumbJsonLd } from '@/lib/seo';
+import { PUBLIC_ROUTES } from '@/lib/routes';
 
 export const metadata: Metadata = {
   title: 'Terms of Service - RELIASTRA',
@@ -42,40 +45,67 @@ const SECTIONS = [
   },
 ];
 
+/**
+ * Terms of service.
+ *
+ * Clause text is unchanged. Only the container and typography were rebuilt so
+ * the page has site navigation, a breadcrumb trail and a readable measure.
+ */
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-white pb-24 dark:bg-[#0A0A0F]">
-      <div className="mx-auto max-w-[760px] px-6 py-16">
-        <Link href="/" className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-700 hover:text-cyan-600 dark:text-cyan-400">
-          ← RELIASTRA
-        </Link>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
-          Terms of Service
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500">Last updated: August 2026</p>
+    <MarketingPage
+      eyebrow="Legal"
+      title="Terms of Service"
+      lede="The terms governing use of the RELIASTRA dependency monitoring, incident correlation and evidence platform."
+      breadcrumbs={[
+        { name: 'Home', href: '/' },
+        { name: 'Terms of Service', href: PUBLIC_ROUTES.terms },
+      ]}
+      related={[
+        {
+          label: 'Privacy Policy',
+          href: PUBLIC_ROUTES.privacy,
+          description: 'What data is collected and how it is handled.',
+        },
+        {
+          label: 'Pricing & billing terms',
+          href: PUBLIC_ROUTES.pricing,
+          description: 'Trials, renewal, currency and enforcement.',
+        },
+      ]}
+    >
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Terms of Service', path: PUBLIC_ROUTES.terms },
+        ])}
+      />
+      <p className="ob-label">Last updated: August 2026</p>
 
-        <div className="mt-10 space-y-10">
-          {SECTIONS.map((s) => (
-            <section key={s.title}>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{s.title}</h2>
-              {Array.isArray(s.body) ? (
-                <ul className="mt-3 list-disc space-y-2 pl-5">
-                  {s.body.map((p, i) => (
-                    <li key={i} className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{p}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{s.body}</p>
-              )}
-            </section>
-          ))}
-        </div>
+      <Prose className="mt-8">
+        {SECTIONS.map((s) => (
+          <section key={s.title}>
+            <h2>{s.title}</h2>
+            {Array.isArray(s.body) ? (
+              <ul>
+                {s.body.map((paragraph, i) => (
+                  <li key={i}>{paragraph}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>{s.body}</p>
+            )}
+          </section>
+        ))}
+      </Prose>
 
-        <p className="mt-12 rounded-xl border border-zinc-200 bg-[#F8F9FA] p-5 text-sm leading-relaxed text-zinc-600 dark:border-white/10 dark:bg-[#131318] dark:text-zinc-400">
-          These terms govern the RELIASTRA product. Partner Network participants are additionally
-          bound by the partner program terms presented at enrollment.
+      <div className="ob-alert ob-alert-note mt-12">
+        <p className="text-[14px] leading-[1.65] text-[var(--ob-text-2)]">
+          These terms govern the RELIASTRA product. Partner Network
+          participants are additionally bound by the partner program terms
+          presented at enrollment.
         </p>
       </div>
-    </main>
+    </MarketingPage>
   );
 }

@@ -8,7 +8,7 @@ import {
   Search, FileText, Layout, Wrench, Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import type { PartnerPage } from '@/types/partner';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -52,18 +52,18 @@ interface ResourceContent {
 const categoryColors: Record<ResourceCategory, { border: string; bg: string; text: string }> = {
   guides: {
     border: 'border-l-amber-500/70',
-    bg: 'bg-amber-500/5',
-    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-[var(--ob-signal-wash)]',
+    text: 'text-[var(--ob-signal)]',
   },
   templates: {
     border: 'border-l-violet-500/70',
     bg: 'bg-violet-500/5',
-    text: 'text-violet-600 dark:text-violet-400',
+    text: 'text-violet-600',
   },
   tools: {
     border: 'border-l-emerald-500/70',
-    bg: 'bg-emerald-500/5',
-    text: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-[var(--ob-healthy-wash)]',
+    text: 'text-[var(--ob-healthy)]',
   },
 };
 
@@ -117,8 +117,8 @@ const resources: Resource[] = [
             'Always display the logo at its original proportions',
             'Minimum size: 24px width for digital, 0.5\" for print',
             'Never place the logo on busy backgrounds without a container',
-            'The wordmark "RELIASTRA" uses Inter or a similar geometric sans-serif',
-            'On dark backgrounds, use the reversed (white) version',
+            'The wordmark is typographic: RELIASTRA set in a grotesk sans, uppercase, letterspaced - there is no icon lockup',
+            'RELIASTRA renders on dark surfaces only; do not reverse it onto white',
           ],
         },
         {
@@ -129,12 +129,12 @@ const resources: Resource[] = [
           type: 'color-swatch',
           content: 'Primary colors used across RELIASTRA brand materials.',
           colors: [
-            { name: 'Primary Black', value: '#09090B' },
-            { name: 'Foreground', value: '#18181B' },
-            { name: 'Muted', value: '#71717A' },
-            { name: 'Border', value: '#E4E4E7' },
-            { name: 'Background', value: '#FAFAFA' },
-            { name: 'Accent Emerald', value: '#10B981' },
+            { name: 'Void (page ground)', value: '#08090A' },
+            { name: 'Base (section surface)', value: '#0D0F10' },
+            { name: 'Raised (band, table fill)', value: '#111416' },
+            { name: 'Text primary', value: '#F2F2EE' },
+            { name: 'Text secondary', value: '#94999D' },
+            { name: 'Signal (single accent)', value: '#D9A441' },
           ],
         },
         {
@@ -143,11 +143,11 @@ const resources: Resource[] = [
         },
         {
           type: 'paragraph',
-          content: 'RELIASTRA uses Inter as its primary typeface. For mono-spaced elements (labels, code, metadata), use JetBrains Mono. Headlines use semibold weight (600), body text uses regular (400).',
+          content: 'RELIASTRA sets everything in a neutral grotesk sans - headlines semibold (600), body regular (400). Monospace is reserved for data: identifiers, timestamps, measurements and codes. Small uppercase letterspaced text is used for technical labels, never for body copy.',
         },
         {
           type: 'tip',
-          content: 'When creating referral materials, use the RELIASTRA brand colors as accents only. Your own brand identity should remain primary - the goal is subtle co-branding, not a full rebrand.',
+          content: 'When creating referral materials, use the RELIASTRA signal amber as an accent only - one accent, no gradients. Your own brand identity should remain primary - the goal is subtle co-branding, not a full rebrand.',
         },
       ],
     },
@@ -575,11 +575,11 @@ function ResourceDetail({ resource, onClose }: { resource: Resource; onClose: ()
               )}
 
               {block.type === 'tip' && (
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-50/40 px-4 py-3 dark:bg-emerald-950/30">
-                  <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <div className="rounded-lg border border-[var(--ob-healthy)]/30 bg-[var(--ob-healthy-wash)] px-4 py-3">
+                  <p className="mb-1 font-mono text-[10px] uppercase tracking-wider text-[var(--ob-healthy)]">
                     Pro tip
                   </p>
-                  <p className="text-sm leading-relaxed text-emerald-900/80 dark:text-emerald-100/80">{block.content}</p>
+                  <p className="text-sm leading-relaxed text-[var(--ob-healthy)]">{block.content}</p>
                 </div>
               )}
 
@@ -727,9 +727,9 @@ function ResourceCard({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2.5 mb-1.5">
-                <h3 className="text-sm font-semibold text-foreground truncate">
+                <h2 className="text-sm font-semibold text-foreground truncate">
                   {resource.title}
-                </h3>
+                </h2>
                 <span className={
                   `shrink-0 rounded border px-1.5 py-0.5 font-mono text-[9px] font-medium uppercase tracking-wider ${colors.bg} ${colors.text} border-current/20`
                 }>
@@ -1030,7 +1030,7 @@ export function PageResources() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-50 bg-black/50"
+              className="fixed inset-0 z-50 bg-[var(--ob-void)]/70"
               onClick={() => setSelectedResource(null)}
             />
             <motion.div

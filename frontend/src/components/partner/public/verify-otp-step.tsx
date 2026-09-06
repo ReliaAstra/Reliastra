@@ -1,10 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, MailCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import {
   InputOTP,
   InputOTPGroup,
@@ -148,104 +145,82 @@ export function VerifyOtpStep({
 
   return (
     <div className="w-full">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="mb-6 flex size-10 items-center justify-center rounded-full border border-border/60 bg-muted/40">
-          <MailCheck className="size-5 text-foreground" aria-hidden />
-        </div>
+      <p className="ob-label text-[var(--ob-signal)]">Email verification</p>
+      <h1 className="ob-h2 mt-4 text-[clamp(1.75rem,4vw,2.25rem)]">{title}</h1>
+      <p className="ob-body mt-4 text-[14.5px]">
+        A {CODE_LENGTH}-digit code was sent to{' '}
+        <span className="ob-mono text-[var(--ob-text)]">{email}</span>. Enter it
+        below to activate your account.
+      </p>
 
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          We sent a {CODE_LENGTH}-digit code to{' '}
-          <span className="font-medium text-foreground">{email}</span>. Enter it
-          below to activate your account.
+      {error && (
+        <div role="alert" className="ob-alert ob-alert-error mt-6">
+          {error}
+        </div>
+      )}
+
+      <form
+        className="mt-8"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit(code);
+        }}
+      >
+        <label htmlFor="otp-code" className="ob-field-label">
+          Verification code
+        </label>
+        <InputOTP
+          id="otp-code"
+          maxLength={CODE_LENGTH}
+          value={code}
+          onChange={handleChange}
+          disabled={verifying}
+          autoFocus
+          containerClassName="justify-start"
+          aria-describedby="otp-help"
+        >
+          <InputOTPGroup>
+            {Array.from({ length: CODE_LENGTH }, (_, i) => (
+              <InputOTPSlot key={i} index={i} />
+            ))}
+          </InputOTPGroup>
+        </InputOTP>
+        <p id="otp-help" className="ob-help">
+          The code expires shortly after it is sent.
         </p>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            role="alert"
-            className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400"
-          >
-            {error}
-          </motion.div>
-        )}
-
-        <form
-          className="mt-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void submit(code);
-          }}
+        <button
+          type="submit"
+          disabled={verifying || code.length !== CODE_LENGTH}
+          aria-busy={verifying}
+          className="ob-btn ob-btn-signal ob-btn-block mt-7"
         >
-          <label
-            htmlFor="otp-code"
-            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
-          >
-            Verification code
-          </label>
-          <InputOTP
-            id="otp-code"
-            maxLength={CODE_LENGTH}
-            value={code}
-            onChange={handleChange}
-            disabled={verifying}
-            autoFocus
-            containerClassName="justify-start"
-          >
-            <InputOTPGroup>
-              {Array.from({ length: CODE_LENGTH }, (_, i) => (
-                <InputOTPSlot key={i} index={i} />
-              ))}
-            </InputOTPGroup>
-          </InputOTP>
+          {verifying ? 'Verifying…' : 'Verify email'}
+        </button>
+      </form>
 
-          <Button
-            type="submit"
-            disabled={verifying || code.length !== CODE_LENGTH}
-            className="mt-6 w-full"
-          >
-            {verifying ? (
-              <>
-                <Loader2 className="size-4 animate-spin" />
-                Verifying...
-              </>
-            ) : (
-              'VERIFY EMAIL'
-            )}
-          </Button>
-        </form>
+      <p className="mt-7 text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
+        Didn&apos;t receive it? Check your spam folder, or{' '}
+        <button
+          type="button"
+          onClick={() => void resend()}
+          disabled={resending || cooldown > 0}
+          className="font-medium text-[var(--ob-text)] underline decoration-[var(--ob-line-3)] underline-offset-4 transition-colors hover:text-[var(--ob-signal)] disabled:cursor-not-allowed disabled:text-[var(--ob-text-4)] disabled:no-underline"
+        >
+          {cooldown > 0 ? `resend in ${cooldown}s` : 'resend the code'}
+        </button>
+        .
+      </p>
 
-        <div className="mt-6 text-sm text-muted-foreground">
-          Didn&apos;t get it? Check your spam folder, or{' '}
-          <button
-            type="button"
-            onClick={() => void resend()}
-            disabled={resending || cooldown > 0}
-            className="font-medium text-foreground underline-offset-4 transition-colors hover:underline disabled:cursor-not-allowed disabled:font-normal disabled:text-muted-foreground disabled:no-underline"
-          >
-            {cooldown > 0 ? `resend in ${cooldown}s` : 'resend the code'}
-          </button>
-          .
-        </div>
-
-        {onBack && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="size-3" />
-              {backLabel}
-            </button>
-          </div>
-        )}
-      </motion.div>
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="ob-label mt-6 transition-colors hover:text-[var(--ob-signal)]"
+        >
+          ← {backLabel}
+        </button>
+      )}
     </div>
   );
 }

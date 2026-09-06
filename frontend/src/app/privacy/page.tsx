@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
+import { JsonLd } from '@/components/seo/json-ld';
+import { breadcrumbJsonLd } from '@/lib/seo';
+import { PUBLIC_ROUTES } from '@/lib/routes';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - RELIASTRA',
@@ -48,39 +51,70 @@ const SECTIONS = [
   },
 ];
 
+/**
+ * Privacy policy.
+ *
+ * The policy text is unchanged - it is a legal document, not copy to be
+ * rewritten for tone. What changed is that it now renders inside the standard
+ * site shell (it previously had no header, no footer and no route back except
+ * one small link), and the body uses the shared `.ob-prose` reading scale so
+ * it is legible on a phone.
+ */
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-white pb-24 dark:bg-[#0A0A0F]">
-      <div className="mx-auto max-w-[760px] px-6 py-16">
-        <Link href="/" className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-700 hover:text-cyan-600 dark:text-cyan-400">
-          ← RELIASTRA
-        </Link>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">
-          Privacy Policy
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500">Last updated: August 2026</p>
+    <MarketingPage
+      eyebrow="Legal"
+      title="Privacy Policy"
+      lede="How RELIASTRA collects, uses and protects customer data across its monitoring, evidence and billing systems."
+      breadcrumbs={[
+        { name: 'Home', href: '/' },
+        { name: 'Privacy Policy', href: PUBLIC_ROUTES.privacy },
+      ]}
+      related={[
+        {
+          label: 'Terms of Service',
+          href: PUBLIC_ROUTES.terms,
+          description: 'The agreement governing use of the platform.',
+        },
+        {
+          label: 'Security',
+          href: PUBLIC_ROUTES.security,
+          description: 'How the platform is operated and protected.',
+        },
+      ]}
+    >
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Home', path: '/' },
+          { name: 'Privacy Policy', path: PUBLIC_ROUTES.privacy },
+        ])}
+      />
+      <p className="ob-label">Last updated: August 2026</p>
 
-        <div className="mt-10 space-y-10">
-          {SECTIONS.map((s) => (
-            <section key={s.title}>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{s.title}</h2>
-              <ul className="mt-3 space-y-3">
-                {s.body.map((p, i) => (
-                  <li key={i} className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
+      <Prose className="mt-8">
+        {SECTIONS.map((s) => (
+          <section key={s.title}>
+            <h2>{s.title}</h2>
+            <ul>
+              {s.body.map((paragraph, i) => (
+                <li key={i}>{paragraph}</li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </Prose>
 
-        <p className="mt-12 rounded-xl border border-zinc-200 bg-[#F8F9FA] p-5 text-sm leading-relaxed text-zinc-600 dark:border-white/10 dark:bg-[#131318] dark:text-zinc-400">
-          Questions about this policy? Contact <span className="font-medium">support@reliastra.com</span>.
-          If you arrived from the Partner Network, note that partners are additionally covered by the
-          partner-specific terms presented during program enrollment.
+      <div className="ob-alert ob-alert-note mt-12">
+        <p className="text-[14px] leading-[1.65] text-[var(--ob-text-2)]">
+          Questions about this policy? Contact{' '}
+          <a href="mailto:support@reliastra.com" className="ob-link">
+            support@reliastra.com
+          </a>
+          . If you arrived from the Partner Network, note that partners are
+          additionally covered by the partner-specific terms presented during
+          program enrollment.
         </p>
       </div>
-    </main>
+    </MarketingPage>
   );
 }

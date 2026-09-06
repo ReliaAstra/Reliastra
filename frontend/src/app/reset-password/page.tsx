@@ -3,16 +3,27 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  AuthAlert,
+  AuthShell,
+  AuthSubmit,
+  Field,
+} from '@/components/site/auth/auth-shell';
 import { readApiError } from '@/lib/api-error';
+import { AUTH_ROUTES, partnerUrl } from '@/lib/routes';
 
 /**
  * Destination for the password-reset email
- * (`FRONTEND_BASE_URL/reset-password?token=...`). Like `/verify-email`, this
- * route did not exist, so every reset link 404'd.
+ * (`FRONTEND_BASE_URL/reset-password?token=...`).
+ *
+ * Security properties preserved verbatim:
+ * - The token is only ever sent in the request body, never logged or echoed
+ *   back into the DOM.
+ * - A failed exchange returns the backend's message unchanged; it does not
+ *   reveal whether an account exists.
+ * - The success copy states that other sessions were signed out, because the
+ *   backend rotates refresh tokens on password change and the user should
+ *   know their other devices are now logged out.
  */
 function ResetPasswordContent() {
   const token = useSearchParams().get('token');
@@ -22,47 +33,61 @@ function ResetPasswordContent() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
-  const shell = (children: React.ReactNode) => (
-    <main className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm rounded-lg border border-border/60 bg-background p-6 sm:p-8">
-        {children}
-      </div>
-    </main>
-  );
-
   if (!token) {
-    return shell(
-      <div className="flex flex-col items-center gap-3 py-4 text-center">
-        <XCircle className="size-8 text-red-500" />
-        <h1 className="text-lg font-semibold text-foreground">
-          Missing reset token
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Open the link from your password reset email, or request a new one.
+    return (
+      <AuthShell
+        eyebrow="Password reset"
+        title="Reset link incomplete"
+        intro="This page needs the token from your password-reset email. Reset links are single-use and expire."
+      >
+        <AuthAlert tone="error">
+          No reset token was supplied. Open the link directly from the email, or
+          request a new one.
+        </AuthAlert>
+        <div className="mt-7 flex flex-col gap-3">
+          <Link
+            href={AUTH_ROUTES.login}
+            className="ob-btn ob-btn-signal ob-btn-block"
+          >
+            Request a new link
+          </Link>
+          <p className="ob-help">
+            Enter your email on the sign-in page and choose “Forgot password”.
+          </p>
+        </div>
+        <p className="mt-6 text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+          Resetting a partner account?{' '}
+          <Link href={partnerUrl('forgot-password')} className="ob-link">
+            Partner password reset
+          </Link>
         </p>
-        <Button asChild variant="outline" className="mt-2 w-full">
-          <Link href="/partner/forgot-password">Request a new link</Link>
-        </Button>
-      </div>
+      </AuthShell>
     );
   }
 
   if (done) {
-    return shell(
-      <div className="flex flex-col items-center gap-3 py-4 text-center">
-        <CheckCircle2 className="size-8 text-emerald-500" />
-        <h1 className="text-lg font-semibold text-foreground">
-          Password updated
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          All other sessions were signed out. Use your new password to sign in.
-        </p>
-        <Button asChild className="mt-2 w-full">
-          <Link href="/login">Go to sign in</Link>
-        </Button>
-      </div>
+    return (
+      <AuthShell
+        eyebrow="Password reset"
+        title="Password updated"
+        intro="Your new password is active."
+      >
+        <AuthAlert tone="ok">
+          All other sessions were signed out. Any device that was still signed
+          in will need the new password.
+        </AuthAlert>
+        <Link
+          href={AUTH_ROUTES.login}
+          className="ob-btn ob-btn-signal ob-btn-block mt-7"
+        >
+          Go to sign in
+        </Link>
+      </AuthShell>
     );
   }
+
+  const mismatch = Boolean(confirm) && password !== confirm;
+  const tooShort = Boolean(password) && password.length < 8;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,77 +119,55 @@ function ResetPasswordContent() {
       }
       setDone(true);
     } catch {
-      setError("We couldn't reach RELIASTRA. Check your connection and try again.");
+      setError(
+        'Could not reach RELIASTRA. Check your connection and try again.'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  return shell(
-    <form className="space-y-4" onSubmit={submit}>
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">
-          Choose a new password
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Minimum 8 characters.
-        </p>
-      </div>
+  return (
+    <AuthShell
+      eyebrow="Password reset"
+      title="Choose a new password"
+      intro="Minimum 8 characters. Setting a new password signs out every other session."
+    >
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-      {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400"
-        >
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <Label
-          htmlFor="new-password"
-          className="font-mono text-xs uppercase tracking-wider"
-        >
-          New password
-        </Label>
-        <Input
+      <form
+        className={error ? 'mt-6 flex flex-col gap-5' : 'flex flex-col gap-5'}
+        onSubmit={submit}
+        noValidate
+      >
+        <Field
           id="new-password"
+          label="New password"
           type="password"
           required
+          autoFocus
+          minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
+          hint={tooShort ? undefined : 'At least 8 characters.'}
+          error={tooShort ? 'Too short — use at least 8 characters.' : undefined}
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label
-          htmlFor="confirm-password"
-          className="font-mono text-xs uppercase tracking-wider"
-        >
-          Confirm password
-        </Label>
-        <Input
+        <Field
           id="confirm-password"
+          label="Confirm password"
           type="password"
           required
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
+          error={mismatch ? 'Those passwords do not match.' : undefined}
         />
-      </div>
-
-      <Button type="submit" disabled={saving} className="w-full">
-        {saving ? (
-          <>
-            <Loader2 className="size-4 animate-spin" />
-            Updating...
-          </>
-        ) : (
-          'UPDATE PASSWORD'
-        )}
-      </Button>
-    </form>
+        <AuthSubmit loading={saving} loadingLabel="Updating…">
+          Update password
+        </AuthSubmit>
+      </form>
+    </AuthShell>
   );
 }
 
@@ -172,9 +175,9 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </main>
+        <div className="ob flex min-h-screen items-center justify-center px-6">
+          <p className="ob-label text-[var(--ob-text-4)]">Loading…</p>
+        </div>
       }
     >
       <ResetPasswordContent />

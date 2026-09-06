@@ -107,15 +107,23 @@ export function PublicLayout({ page }: { page?: PartnerPage } = {}) {
     return null;
   }
 
-  const isCenteredPage = currentPage === 'login' || currentPage === 'signup' || currentPage === 'forgot-password';
-  const isFooterHidden = currentPage === 'support' || isCenteredPage;
+  const isCenteredPage =
+    currentPage === 'login' ||
+    currentPage === 'signup' ||
+    currentPage === 'forgot-password';
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    // `ob` puts this subtree on the Obsidian palette AND remaps the shadcn
+    // semantic tokens (see the token bridge in globals.css), so the partner
+    // surface stops rendering as a light-theme island inside a dark site.
+    <div className="ob flex min-h-screen flex-col">
+      <a href="#partner-main" className="ob-skip">
+        Skip to content
+      </a>
       <ReferralBanner />
       <PartnerNav activePage={currentPage} />
 
-      <main className="flex-1">
+      <main id="partner-main" className="flex-1">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPage}
@@ -130,7 +138,11 @@ export function PublicLayout({ page }: { page?: PartnerPage } = {}) {
         </AnimatePresence>
       </main>
 
-      {!isFooterHidden && <PartnerFooter />}
+      {/* The footer is rendered on EVERY public partner page. It was
+          previously suppressed on the auth and support screens, which left a
+          visitor on those pages with no navigation and no legal links at
+          all - the exact pages where terms and privacy matter most. */}
+      <PartnerFooter />
 
       <ScrollToTop />
       <CommandPalette />

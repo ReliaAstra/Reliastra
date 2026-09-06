@@ -1,9 +1,9 @@
 ﻿'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { cn } from '@/lib/utils';
 
 const fadeUp = {
@@ -91,19 +91,27 @@ const roles = [
 ];
 
 function PulseLine() {
+  // A single travelling tick that shows direction of flow. It loops, so it is
+  // gated on prefers-reduced-motion: `useReducedMotion` returns true and the
+  // tick is rendered as a static mark at the start of the run instead.
+  const reduced = useReducedMotion();
   return (
     <div className="relative flex w-10 shrink-0 items-center justify-center lg:w-14">
       <div className="h-px w-full bg-border" />
-      <motion.div
-        className="absolute left-0 h-px w-4 bg-foreground/40"
-        animate={{ left: ['0%', 'calc(100% - 16px)'] }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          repeatDelay: 1,
-          ease: 'easeInOut',
-        }}
-      />
+      {reduced ? (
+        <div className="absolute left-0 h-px w-4 bg-foreground/40" />
+      ) : (
+        <motion.div
+          className="absolute left-0 h-px w-4 bg-foreground/40"
+          animate={{ left: ['0%', 'calc(100% - 16px)'] }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            repeatDelay: 1,
+            ease: 'easeInOut',
+          }}
+        />
+      )}
       <svg
         width="12"
         height="12"
@@ -112,7 +120,7 @@ function PulseLine() {
         className="absolute right-0 -translate-y-px text-muted-foreground/40"
       >
         <path
-          d="M2 6h6M6 2l4 4-4 4"
+        d="M2 6h6M6 2l4 4-4 4"
           stroke="currentColor"
           strokeWidth="1.2"
           strokeLinecap="round"
@@ -196,20 +204,18 @@ export function PageHowItWorks() {
                   className={cn(
                     'flex-1 rounded-lg border bg-background p-8 xl:p-10 transition-colors duration-200',
                     step.accent
-                      ? 'border-emerald-500/40 bg-emerald-50/20 hover:border-emerald-500/60'
+                      ? 'border-[var(--ob-healthy)] bg-[var(--ob-healthy-wash)] hover:border-[var(--ob-healthy)]'
                       : 'border-border/60 hover:border-border'
                   )}
                 >
                   <motion.span
                     className="mb-5 block font-mono text-4xl font-extralight leading-none text-muted-foreground/30"
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                   >
                     {step.number}
                   </motion.span>
-                  <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-foreground">
+                  <h2 className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-foreground">
                     {step.title}
-                  </h3>
+                  </h2>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {step.description}
                   </p>
@@ -229,22 +235,20 @@ export function PageHowItWorks() {
                   className={cn(
                     'rounded-lg border bg-background p-6 sm:p-8 transition-colors duration-200',
                     step.accent
-                      ? 'border-emerald-500/40 bg-emerald-50/20'
+                      ? 'border-[var(--ob-healthy)] bg-[var(--ob-healthy-wash)]'
                       : 'border-border/60'
                   )}
                 >
                   <div className="flex items-start gap-4 sm:items-start">
                     <motion.span
                       className="shrink-0 font-mono text-4xl font-extralight leading-none text-muted-foreground/30"
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                     >
                       {step.number}
                     </motion.span>
                     <div>
-                      <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-foreground">
+                      <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-foreground">
                         {step.title}
-                      </h3>
+                      </h2>
                       <p className="text-sm leading-relaxed text-muted-foreground">
                         {step.description}
                       </p>
@@ -361,7 +365,7 @@ export function PageHowItWorks() {
       </section>
 
       {/* ===== DARK CTA SECTION ===== */}
-      <section className="border-t border-border/40 bg-neutral-950 text-neutral-50">
+      <section className="border-t border-border/40 bg-[var(--ob-void)] text-[var(--ob-text)]">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
           <motion.div
             initial="hidden"
@@ -379,7 +383,7 @@ export function PageHowItWorks() {
             <motion.p
               variants={fadeUp}
               custom={1}
-              className="mb-10 text-base leading-relaxed text-neutral-400"
+              className="mb-10 text-base leading-relaxed text-[var(--ob-text-3)]"
             >
               The process takes minutes. The earnings last as long as your
               referrals stay subscribed.
@@ -388,7 +392,7 @@ export function PageHowItWorks() {
               <Button
                 size="lg"
                 onClick={() => navigate('signup')}
-                className="gap-2 bg-neutral-50 text-neutral-950 hover:bg-neutral-200 px-8"
+                className="gap-2 bg-[var(--ob-base)] text-[var(--ob-text)] hover:bg-[var(--ob-elevated)] px-8"
               >
                 BECOME A PARTNER
                 <ArrowRight className="size-4" />

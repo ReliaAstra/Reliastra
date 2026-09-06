@@ -3,11 +3,16 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { BrandMark } from '@/components/auth/brand-mark';
+import {
+  AuthAlert,
+  AuthShell,
+  AuthSubmit,
+  Field,
+} from '@/components/site/auth/auth-shell';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
 import { readApiError } from '@/lib/api-error';
+import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
 
 interface RegisterResponse {
   user?: { id: string; email: string };
@@ -15,6 +20,7 @@ interface RegisterResponse {
   tokens?: { access_token: string; refresh_token: string };
   access_token?: string;
   refresh_token?: string;
+  verification_required?: boolean;
   detail?: string;
 }
 
@@ -27,6 +33,7 @@ export default function CustomerSignupPage() {
   const [loading, setLoading] = useState(false);
 
   const passwordOk = password.length >= 8;
+  const passwordTooShort = Boolean(password) && !passwordOk;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -72,14 +79,15 @@ export default function CustomerSignupPage() {
       if (access) {
         useAppStore.getState().setAccessToken(access);
       }
-      // New enterprise onboarding: land directly in the guided setup
-      // If verification is required, the API will return no tokens - send to verify-email
-      const needsVerify = (data as any)?.verification_required === true || !refresh;
+      // If verification is required the API returns no refresh token - send
+      // the customer to the code-entry step rather than into a console they
+      // are about to be bounced out of.
+      const needsVerify = data.verification_required === true || !refresh;
       if (needsVerify) {
         const emailParam = encodeURIComponent(email.trim());
-        router.push(`/verify-email?email=${emailParam}`);
+        router.push(`${AUTH_ROUTES.verifyEmail}?email=${emailParam}`);
       } else {
-        // Start the premium onboarding journey immediately (state is resumable)
+        // Start the guided onboarding journey immediately (state is resumable)
         try {
           localStorage.removeItem('reliastra_onboarding_v2'); // fresh start
           localStorage.removeItem('reliastra_dismiss_trial_banner');
@@ -87,171 +95,142 @@ export default function CustomerSignupPage() {
         router.push('/onboarding');
       }
     } catch {
-      setError('Could not reach Reliastra. Check your connection and retry.');
+      setError('Could not reach RELIASTRA. Check your connection and retry.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="rs-app flex min-h-screen">
-      <div className="flex w-full flex-col px-6 py-8 lg:w-[480px] lg:shrink-0 lg:px-14">
-        <Link href="/" aria-label="Reliastra home" className="inline-flex items-center gap-2.5">
-          <BrandMark size={26} />
+    <AuthShell
+      eyebrow="Create your organization"
+      title="Start measuring your dependencies"
+      intro="14-day Pro trial with attribution and evidence enabled. No payment method required."
+      image="/media/fiber-patch-panel.jpg"
+      imageAlt="Macro view of a fibre patch panel: densely stacked duplex connectors and coiled jumpers."
+      aside={<SignupAside />}
+      footer={
+        <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+          Agency, MSP or distribution partner?{' '}
+          <Link href={partnerUrl('signup')} className="ob-link">
+            Apply to the partner network
+          </Link>
+        </p>
+      }
+    >
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+      <form
+        onSubmit={handleSubmit}
+        className={error ? 'mt-6 flex flex-col gap-5' : 'flex flex-col gap-5'}
+        noValidate
+      >
+        <Field
+          id="fullName"
+          label="Full name"
+          type="text"
+          autoComplete="name"
+          autoFocus
+          required
+          placeholder="Alex Rivera"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+        />
+        <Field
+          id="email"
+          label="Work email"
+          type="email"
+          autoComplete="email"
+          required
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <Field
+          id="password"
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          hint={
+            passwordTooShort
+              ? undefined
+              : 'At least 8 characters. Used only for your account.'
+          }
+          error={
+            passwordTooShort
+              ? 'Too short — use at least 8 characters.'
+              : undefined
+          }
+        />
+
+        <AuthSubmit loading={loading} loadingLabel="Creating organization…">
+          Create organization
+        </AuthSubmit>
+
+        <p className="text-[12.5px] leading-[1.6] text-[var(--ob-text-4)]">
+          By continuing you agree to the{' '}
+          <Link href={PUBLIC_ROUTES.terms} className="ob-link">
+            Terms of Service
+          </Link>{' '}
+          and{' '}
+          <Link href={PUBLIC_ROUTES.privacy} className="ob-link">
+            Privacy Policy
+          </Link>
+          .
+        </p>
+      </form>
+
+      <p className="mt-7 text-[13.5px] text-[var(--ob-text-3)]">
+        Already have an organization?{' '}
+        <Link href={AUTH_ROUTES.login} className="ob-link">
+          Sign in
         </Link>
+      </p>
+    </AuthShell>
+  );
+}
 
-        <div className="flex flex-1 items-center">
-          <div className="w-full max-w-sm">
-            <p className="rs-eyebrow">Create your organization</p>
-            <h1 className="rs-page-title mt-2">Start monitoring in minutes</h1>
-            <p className="rs-secondary-body mt-2">
-              14-day Pro trial. No card required - every feature,
-              every region.
+function SignupAside() {
+  return (
+    <div className="max-w-[46ch]">
+      <p className="ob-label">The first hour</p>
+      <h2 className="ob-h3 mt-4">
+        Your first dependency check runs on the next interval.
+      </h2>
+      <ol className="mt-10 flex flex-col">
+        {[
+          [
+            '01',
+            'Add an endpoint',
+            'Paste the URL of an external service you depend on, choose the regions and the interval.',
+          ],
+          [
+            '02',
+            'Observation begins',
+            'RELIASTRA starts checking it from independent infrastructure and records every result.',
+          ],
+          [
+            '03',
+            'Evidence accumulates',
+            'When the dependency fails, the correlation and the record already exist — you are not reconstructing them afterwards.',
+          ],
+        ].map(([index, term, desc]) => (
+          <li key={index} className="border-t border-[var(--ob-line)] py-5">
+            <p className="ob-label flex items-center gap-3">
+              <span className="text-[var(--ob-signal)]">{index}</span>
+              <span aria-hidden className="h-px w-5 bg-[var(--ob-line-2)]" />
+              {term}
             </p>
-
-            {error && (
-              <div
-                role="alert"
-                className="mt-6 rounded-[10px] border border-rs-down/25 bg-rs-down-bg px-4 py-3 text-[13px] leading-relaxed text-rs-down"
-              >
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-              <div>
-                <label htmlFor="fullName" className="rs-label mb-1.5 block">
-                  Full name
-                </label>
-                <input
-                  id="fullName"
-                  type="text"
-                  autoComplete="name"
-                  autoFocus
-                  className="rs-input"
-                  placeholder="Alex Rivera"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="rs-label mb-1.5 block">
-                  Work email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className="rs-input"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="rs-label mb-1.5 block">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  className="rs-input"
-                  placeholder="At least 8 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  aria-describedby="password-help"
-                />
-                <p
-                  id="password-help"
-                  className={`rs-input-helper ${password && !passwordOk ? 'text-rs-degraded' : ''}`}
-                  data-error={Boolean(password) && !passwordOk}
-                >
-                  {password && !passwordOk
-                    ? 'Too short - use at least 8 characters.'
-                    : 'Used only for your account. We never share it.'}
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="rs-button rs-button-primary rs-button-lg w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Creating organization…
-                  </>
-                ) : (
-                  <>
-                    Create organization
-                    <ArrowRight size={16} aria-hidden />
-                  </>
-                )}
-              </button>
-
-              <p className="text-xs leading-relaxed text-rs-text-tertiary">
-                By continuing you agree to the{' '}
-                <Link href="/terms" className="text-rs-text-secondary hover:text-rs-text">
-                  Terms
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="text-rs-text-secondary hover:text-rs-text">
-                  Privacy Policy
-                </Link>
-                .
-              </p>
-            </form>
-
-            <p className="rs-secondary-body mt-6">
-              Already have an organization?{' '}
-              <Link href="/login" className="font-medium text-rs-brand hover:underline">
-                Sign in
-              </Link>
+            <p className="mt-2 text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
+              {desc}
             </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-rs-border-subtle pt-4">
-          <p className="text-xs text-rs-text-tertiary">
-            Distribution or agency partner?{' '}
-            <Link href="/partner/signup" className="text-rs-text-secondary hover:text-rs-text">
-              Apply to the partner network
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      <aside className="relative hidden flex-1 border-l border-rs-border-subtle bg-rs-elevated lg:block">
-        <div className="grid-pattern absolute inset-0" aria-hidden />
-        <div className="relative flex h-full flex-col justify-between p-14">
-          <div className="rs-mono text-xs text-rs-text-tertiary">
-            reliastra.com/signup
-          </div>
-          <div className="max-w-lg">
-            <p className="rs-eyebrow">What you get on day one</p>
-            <h2 className="mt-3 text-[28px] font-semibold leading-tight tracking-[-0.02em] text-rs-text">
-              Your first dependency check runs before your coffee cools.
-            </h2>
-            <dl className="mt-10 space-y-6">
-              {[
-                ['Add an endpoint', 'Paste a URL, pick regions and interval. Checks start on the next tick.'],
-                ['Watch the network', 'Live vendor posture from Reliastra’s public monitoring fleet.'],
-                ['Prove what happened', 'When a vendor fails, attribution and evidence are generated for you.'],
-              ].map(([term, desc]) => (
-                <div key={term} className="border-l-2 border-rs-border pl-4">
-                  <dt className="text-sm font-semibold text-rs-text">{term}</dt>
-                  <dd className="rs-secondary-body mt-1">{desc}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <div className="rs-mono text-xs text-rs-text-tertiary">
-            No credit card · Cancel anytime · Export your data
-          </div>
-        </div>
-      </aside>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

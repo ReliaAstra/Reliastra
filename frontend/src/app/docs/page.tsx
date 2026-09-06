@@ -50,15 +50,19 @@ export default function DocsPage() {
           </p>
           <h2>Guides</h2>
         </Prose>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+        <ul className="mt-2 grid gap-x-12 sm:grid-cols-2">
           {GUIDES.map((g) => (
             <li key={g.href}>
               <a
                 href={g.href}
-                className="block rounded-xl border border-zinc-200 p-4 transition-colors hover:border-cyan-600 dark:border-white/10 dark:hover:border-cyan-400"
+                className="group flex flex-col gap-1.5 border-t border-[var(--ob-line)] py-5 transition-colors hover:border-[var(--ob-line-3)]"
               >
-                <span className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{g.label}</span>
-                <span className="mt-1 block text-xs text-zinc-500">{g.description}</span>
+                <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">
+                  {g.label}
+                </span>
+                <span className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+                  {g.description}
+                </span>
               </a>
             </li>
           ))}

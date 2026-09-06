@@ -43,15 +43,22 @@ export default function GlossaryPage() {
             humans and machines meet the same meaning everywhere.
           </p>
         </Prose>
-        <nav aria-label="Glossary terms" className="mt-6 grid gap-3 sm:grid-cols-2">
+        <nav
+          aria-label="Glossary terms"
+          className="mt-6 grid gap-x-12 sm:grid-cols-2"
+        >
           {GLOSSARY_TERMS.map((g) => (
             <Link
               key={g.slug}
               href={`/glossary/${g.slug}`}
-              className="block rounded-xl border border-zinc-200 p-4 transition-colors hover:border-cyan-600 dark:border-white/10 dark:hover:border-cyan-400"
+              className="group flex flex-col gap-1.5 border-t border-[var(--ob-line)] py-5 transition-colors hover:border-[var(--ob-line-3)]"
             >
-              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{g.term}</span>
-              <span className="mt-1 block text-xs leading-relaxed text-zinc-500">{g.short}</span>
+              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">
+                {g.term}
+              </span>
+              <span className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+                {g.short}
+              </span>
             </Link>
           ))}
         </nav>

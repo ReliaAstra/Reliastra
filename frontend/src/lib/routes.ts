@@ -148,7 +148,7 @@ export function isResearchSlug(slug: string): slug is ResearchSlug {
  * Partner dashboard pages have no file routes by design: they render inside
  * the authenticated home shell, so a shared/bookmarked URL can never leak
  * into a protected surface. Navigation to them is store-driven (see
- * `navigatePartner` in `components/landing/theme`).
+ * `navigatePartner` in `components/partner/public/navigation`).
  */
 export const PARTNER_DASHBOARD_PAGES = [
   'dashboard',
@@ -241,18 +241,30 @@ export const EXTERNAL_LINKS = {
 } as const;
 
 /**
- * Landing-page section anchors. `scrollToId` silently scrolls to the top when
- * an id is missing, so a stale anchor is a dead link that still looks like it
- * works. Every id here must exist in the rendered landing composition - the
- * accompanying test asserts that.
+ * Homepage section anchors.
+ *
+ * A stale anchor is a dead link that still looks like it works (the browser
+ * simply does nothing, and `scrollToId` silently scrolls to the top), so every
+ * id here must exist in the rendered homepage composition -
+ * `components/site/__tests__/navigation-links.test.tsx` asserts exactly that.
+ *
+ * Updated for the rebuilt narrative: `evidence` and `research` survive from
+ * the previous composition; `live` became `public-intelligence` (the section
+ * is public dependency intelligence, not a "live" widget); `comparison` was
+ * removed with the competitor table; `problem`, `how-it-works`, `chain`,
+ * `partners` and `reference` are new.
  */
 export const LANDING_SECTIONS = [
   'top',
+  'problem',
+  'how-it-works',
+  'chain',
   'evidence',
-  'live',
   'research',
-  'comparison',
+  'public-intelligence',
+  'partners',
   'pricing',
+  'reference',
 ] as const;
 
 export type LandingSectionId = (typeof LANDING_SECTIONS)[number];

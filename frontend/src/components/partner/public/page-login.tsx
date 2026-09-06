@@ -1,31 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Loader2, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 import { usePartnerStore } from '@/stores/partner-store';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { isEmailNotVerified, readApiError } from '@/lib/api-error';
 import { VerifyOtpStep, type VerifiedSession } from './verify-otp-step';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.08, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const },
-  }),
-};
+import {
+  AuthAlert,
+  AuthSubmit,
+  Field,
+} from '@/components/site/auth/auth-shell';
+import { partnerUrl } from '@/lib/routes';
 
 export function PageLogin() {
   const navigate = navigatePartner;
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -155,130 +146,83 @@ export function PageLogin() {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          className="rounded-lg border border-border/60 bg-background p-6 sm:p-8"
-        >
-          {pendingEmail ? (
-            <VerifyOtpStep
-              email={pendingEmail}
-              onVerified={handleVerified}
-              onBack={() => setPendingEmail(null)}
-              backLabel="Back to sign in"
-              title="Verify your email"
-            />
-          ) : (
-            <>
-          {/* Logo */}
-          <motion.div variants={fadeUp} custom={0} className="mb-8 text-center">
-            <button
-              onClick={() => navigate('home')}
-              className="mx-auto mb-6 flex items-center gap-2 transition-opacity hover:opacity-70"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="font-mono text-xs font-semibold tracking-widest uppercase text-foreground">
-                RELIASTRA
-              </span>
-            </button>
-            <h1 className="text-xl font-semibold text-foreground">Welcome back.</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Your RELIASTRA referral network is waiting.
+    <div className="ob-container-narrow">
+      <div className="mx-auto w-full max-w-[400px]">
+        {pendingEmail ? (
+          <VerifyOtpStep
+            email={pendingEmail}
+            onVerified={handleVerified}
+            onBack={() => setPendingEmail(null)}
+            backLabel="Back to sign in"
+            title="Verify your email"
+          />
+        ) : (
+          <>
+            <p className="ob-label text-[var(--ob-signal)]">Partner network</p>
+            <h1 className="ob-h2 mt-4 text-[clamp(1.75rem,4vw,2.25rem)]">
+              Sign in to your partner account.
+            </h1>
+            <p className="ob-body mt-4 text-[14.5px]">
+              Track referrals, commission and payouts. This is the partner
+              network - if you monitor dependencies with RELIASTRA, use{' '}
+              <Link href="/login" className="ob-link">
+                customer sign in
+              </Link>{' '}
+              instead.
             </p>
-          </motion.div>
 
-          {/* Error */}
-          {fieldError && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400"
-            >
-              {fieldError}
-            </motion.div>
-          )}
+            {fieldError && (
+              <div className="mt-8">
+                <AuthAlert tone="error">{fieldError}</AuthAlert>
+              </div>
+            )}
 
-          {/* Form */}
-          <motion.form variants={fadeUp} custom={1} onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-email" className="text-xs font-mono uppercase tracking-wider">
-                Email
-              </Label>
-              <Input
-                id="login-email"
+            <form onSubmit={handleSubmit} className="mt-9 flex flex-col gap-6">
+              <Field
+                id="partner-login-email"
+                label="Work email"
                 type="email"
-                placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
+                inputMode="email"
+                required
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="login-password" className="text-xs font-mono uppercase tracking-wider">
-                Password
-              </Label>
-              <Input
-                id="login-password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-              <div className="flex justify-end">
-                <button
-                  onClick={() => navigate('forgot-password')}
-                  className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-                >
-                  Forgot password?
-                </button>
+              <div className="flex flex-col">
+                <Field
+                  id="partner-login-password"
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+                <div className="mt-2.5 flex justify-end">
+                  <Link
+                    href={partnerUrl('forgot-password')}
+                    className="ob-small underline underline-offset-4 transition-colors hover:text-[var(--ob-signal)]"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
-            </div>
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Authenticating...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-          </motion.form>
+              <AuthSubmit loading={loading} loadingLabel="Signing in…">
+                Sign in
+              </AuthSubmit>
+            </form>
 
-          {/* Footer */}
-          <motion.div variants={fadeUp} custom={2} className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <button
-                onClick={() => navigate('signup')}
-                className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
-              >
-                Create one
-              </button>
+            <p className="ob-small mt-8 border-t border-[var(--ob-line)] pt-6">
+              No partner account yet?{' '}
+              <Link href={partnerUrl('signup')} className="ob-link">
+                Apply to the partner network
+              </Link>
+              .
             </p>
-          </motion.div>
-
-          {/* Back link */}
-          <motion.div variants={fadeUp} custom={3} className="mt-4 text-center">
-            <button
-              onClick={() => navigate('home')}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="size-3" />
-              Back to Partner Network
-            </button>
-          </motion.div>
-            </>
-          )}
-        </motion.div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,36 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Breadcrumbs } from '@/components/seo/json-ld';
+import { SiteShell } from '@/components/site/site-shell';
+import {
+  ArrowLink,
+  Breadcrumb,
+  CTA,
+  Container,
+  Eyebrow,
+  Rule,
+  Section,
+} from '@/components/site/primitives';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
+import { cn } from '@/lib/utils';
 
 export type MarketingLink = { label: string; href: string; description?: string };
 
 /**
- * Shared shell for indexable marketing/concept/docs pages.
- * One H1 per page (via `title`), logical H2/H3 in children, breadcrumb nav,
- * related internal links, and a consistent CTA - the topical graph in markup.
+ * Shared shell for indexable marketing, concept, docs and legal pages.
+ *
+ * Two things changed here beyond the visual language, and both were defects:
+ *
+ * 1. These pages previously rendered a bare `<main>` with NO global header
+ *    and NO footer. Seventeen public routes — the entire product, docs,
+ *    glossary, legal and company surface — were unreachable from each other
+ *    and had no site-wide navigation at all. Every one of them now renders
+ *    inside `SiteShell`, so the internal link graph is complete.
+ * 2. Breadcrumbs are rendered once, by this component, from the same array
+ *    the page passes to its structured data — they cannot disagree.
+ *
+ * The contract (eyebrow / title / lede / breadcrumbs / children / related /
+ * ctaTitle / ctaBody) is unchanged, so all seventeen callers were restyled
+ * without touching their content or their metadata.
  */
 export function MarketingPage({
   eyebrow,
@@ -16,8 +39,8 @@ export function MarketingPage({
   breadcrumbs,
   children,
   related,
-  ctaTitle = 'Know when your dependencies fail. Prove what happened.',
-  ctaBody = 'Monitor the external APIs your product relies on, correlate their failures with your incidents, and generate verifiable evidence when a vendor causes downtime.',
+  ctaTitle = 'Know what you depend on. Prove what it did.',
+  ctaBody = 'RELIASTRA observes the external services your product relies on, attributes their failures, and produces evidence you can act on. Every new organization starts on a 14-day Pro trial.',
 }: {
   eyebrow: string;
   title: string;
@@ -29,79 +52,94 @@ export function MarketingPage({
   ctaBody?: string;
 }) {
   return (
-    <main className="min-h-screen bg-white pb-24 text-zinc-900 dark:bg-[#0A0A0F] dark:text-zinc-100">
-      <section className="border-b border-zinc-200 bg-[#F8F9FA] py-12 dark:border-white/10 dark:bg-[#131318] md:py-16">
-        <div className="mx-auto max-w-[880px] px-6">
-          <Breadcrumbs items={breadcrumbs} />
-          <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-cyan-700 dark:text-cyan-400">
-            {eyebrow}
-          </p>
-          <h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {lede}
-          </p>
-        </div>
-      </section>
+    <SiteShell>
+      {/* Masthead */}
+      <header className="border-b border-[var(--ob-line)] bg-[var(--ob-base)]">
+        <Container className="py-14 md:py-20">
+          <Breadcrumb items={breadcrumbs} className="mb-8" />
+          <Eyebrow>{eyebrow}</Eyebrow>
+          <h1 className="ob-h1 mt-5 max-w-[17ch]">{title}</h1>
+          <p className="ob-lede mt-6">{lede}</p>
+        </Container>
+      </header>
 
-      <div className="mx-auto max-w-[880px] px-6 pt-10">{children}</div>
+      <Section tone="void" divider={false} tight>
+        <Container width="narrow" className="!px-0">
+          <div className="ob-container-read !max-w-none !px-[var(--ob-gutter)] lg:!max-w-[780px] lg:!px-0">
+            {children}
+          </div>
+        </Container>
+      </Section>
 
       {related && related.length > 0 && (
-        <nav aria-label="Related" className="mx-auto mt-12 max-w-[880px] px-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wider">Related</h2>
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {related.map((r) => (
-              <li key={r.href}>
-                <Link
-                  href={r.href}
-                  className="block rounded-xl border border-zinc-200 p-4 transition-colors hover:border-cyan-600 dark:border-white/10 dark:hover:border-cyan-400"
-                >
-                  <span className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">
-                    {r.label}
-                  </span>
-                  {r.description && (
-                    <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
-                      {r.description}
+        <Section tone="void" tight aria-labelledby="related-heading">
+          <Container width="narrow">
+            <h2 id="related-heading" className="ob-label">
+              Related
+            </h2>
+            <ul className="mt-2 grid gap-x-12 sm:grid-cols-2">
+              {related.map((r) => (
+                <li key={r.href}>
+                  <Link
+                    href={r.href}
+                    className="group flex flex-col gap-2 border-t border-[var(--ob-line)] py-6 transition-colors hover:border-[var(--ob-line-3)]"
+                  >
+                    <span className="text-[15.5px] font-semibold tracking-[-0.01em] text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">
+                      {r.label}
                     </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+                    {r.description && (
+                      <span className="text-[13.5px] leading-[1.6] text-[var(--ob-text-4)]">
+                        {r.description}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </Section>
       )}
 
-      <section className="mx-auto mt-12 max-w-[880px] px-6">
-        <div className="rounded-xl border border-zinc-200 bg-[#F8F9FA] p-6 dark:border-white/10 dark:bg-[#131318] md:p-8">
-          <h2 className="text-lg font-semibold tracking-tight">{ctaTitle}</h2>
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {ctaBody}
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              href="/signup"
-              className="rounded-[10px] bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              Start free
-            </Link>
-            <Link
-              href="/track"
-              className="rounded-[10px] border border-zinc-300 px-5 py-2.5 text-sm font-medium transition-colors hover:bg-white dark:border-white/20 dark:hover:bg-white/5"
-            >
-              Track a vendor
-            </Link>
+      <Section tone="base" tight aria-labelledby="page-cta-heading">
+        <Container width="narrow">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-4">
+              <h2 id="page-cta-heading" className="ob-h3 max-w-[24ch]">
+                {ctaTitle}
+              </h2>
+              <p className="ob-body max-w-[58ch]">{ctaBody}</p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
+              <CTA href={AUTH_ROUTES.signup} tone="signal">
+                Start monitoring
+              </CTA>
+              <CTA href={PUBLIC_ROUTES.track} tone="outline">
+                Public dependency data
+              </CTA>
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </Container>
+      </Section>
+    </SiteShell>
   );
 }
 
-export function Prose({ children }: { children: ReactNode }) {
-  return (
-    <div className="space-y-6 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-400 [&_h2]:pt-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-zinc-900 dark:[&_h2]:text-white [&_h3]:pt-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-zinc-900 dark:[&_h3]:text-zinc-100 [&_a]:text-cyan-700 [&_a]:underline [&_a]:underline-offset-4 dark:[&_a]:text-cyan-400 [&_li]:ml-5 [&_li]:list-disc [&_strong]:text-zinc-900 dark:[&_strong]:text-zinc-100">
-      {children}
-    </div>
-  );
+/**
+ * Long-form body copy.
+ *
+ * All styling lives in the `.ob-prose` block in globals.css, so every article,
+ * doc page and legal page shares one typographic scale, one link treatment and
+ * one list style. Callers write plain semantic HTML.
+ */
+export function Prose({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cn('ob-prose', className)}>{children}</div>;
 }
+
+/** Re-exported so page files can reach the shared bits without a second import. */
+export { ArrowLink, Rule, Container, Eyebrow };

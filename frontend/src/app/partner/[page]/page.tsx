@@ -30,11 +30,13 @@ const TITLES: Record<string, { title: string; description: string }> = {
   },
   faq: {
     title: 'FAQ - Partner Network',
-    description: 'Common questions about the RELIASTRA Partner Network.',
+    description:
+      'Common questions about the RELIASTRA Partner Network: eligibility, attribution windows, commission and payouts.',
   },
   tiers: {
     title: 'Tiers - Partner Network',
-    description: 'Partner tiers and what each level unlocks.',
+    description:
+      'RELIASTRA partner tiers, the thresholds that move a partner between them, and what each level unlocks.',
   },
   premium: {
     title: 'Premium - Partner Network',
@@ -42,31 +44,38 @@ const TITLES: Record<string, { title: string; description: string }> = {
   },
   resources: {
     title: 'Resources - Partner Network',
-    description: 'Sales and technical resources for RELIASTRA partners.',
+    description:
+      'Sales collateral, technical references and positioning material for RELIASTRA partners.',
   },
   login: {
     title: 'Partner sign in',
-    description: 'Sign in to the RELIASTRA Partner Network dashboard.',
+    description:
+      'Sign in to the RELIASTRA Partner Network dashboard to track referrals, commission and payouts.',
   },
   signup: {
     title: 'Join as partner',
-    description: 'Apply to the RELIASTRA Partner Network.',
+    description:
+      'Apply to the RELIASTRA Partner Network and earn recurring commission on every subscription you refer.',
   },
   'forgot-password': {
     title: 'Reset partner password',
-    description: 'Request a password reset for your partner account.',
+    description:
+      'Request a password reset link for your RELIASTRA Partner Network account.',
   },
   support: {
     title: 'Partner support',
-    description: 'Contact partner support or open the conversation desk.',
+    description:
+      'Contact RELIASTRA partner support about referrals, attribution, commission or payouts.',
   },
   privacy: {
     title: 'Partner privacy',
-    description: 'How referral, attribution and commission data is handled in the Partner Network.',
+    description:
+      'How referral, attribution and commission data is collected and handled in the RELIASTRA Partner Network.',
   },
   terms: {
     title: 'Partner terms',
-    description: 'The terms governing participation in the RELIASTRA Partner Network.',
+    description:
+      'The terms governing participation in the RELIASTRA Partner Network, including commission, hold periods and reversals.',
   },
 };
 

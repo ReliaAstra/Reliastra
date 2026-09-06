@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { cn } from '@/lib/utils';
 import { CommissionBasisNote } from '../commission-basis-note';
 
@@ -363,16 +363,16 @@ export function PageEarn() {
                   className={cn(
                     'flex-1 rounded-lg border bg-background p-6 transition-colors',
                     step.accent
-                      ? 'border-emerald-500/40 bg-emerald-50/30'
+                      ? 'border-[var(--ob-signal)]/40 bg-[var(--ob-signal)]/[0.06]'
                       : 'border-border/60'
                   )}
                 >
                   <span className="mb-4 block font-mono text-[48px] font-extralight leading-none text-muted-foreground/30">
                     {step.number}
                   </span>
-                  <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-foreground">
+                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-foreground">
                     {step.title}
-                  </h3>
+                  </h2>
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {step.description}
                   </p>
@@ -390,7 +390,7 @@ export function PageEarn() {
                   className={cn(
                     'rounded-lg border bg-background p-6',
                     step.accent
-                      ? 'border-emerald-500/40 bg-emerald-50/30'
+                      ? 'border-[var(--ob-signal)]/40 bg-[var(--ob-signal)]/[0.06]'
                       : 'border-border/60'
                   )}
                 >
@@ -399,9 +399,9 @@ export function PageEarn() {
                       {step.number}
                     </span>
                     <div>
-                      <h3 className="mb-1 text-xs font-semibold uppercase tracking-widest text-foreground">
+                      <h2 className="mb-1 text-xs font-semibold uppercase tracking-widest text-foreground">
                         {step.title}
-                      </h3>
+                      </h2>
                       <p className="text-sm leading-relaxed text-muted-foreground">
                         {step.description}
                       </p>
