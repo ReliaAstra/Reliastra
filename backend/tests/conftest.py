@@ -169,6 +169,17 @@ def client() -> TestClient:
 
 
 @pytest.fixture(scope="function", autouse=True)
+def _blank_resend_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Never hit the real email provider from any test.
+
+    Delivery goes Resend-first in production; without this guard a
+    workstation holding live keys would send real mail from test runs.
+    Tests assert on the hermetic SMTP-capture fallback path instead.
+    """
+    monkeypatch.setattr(settings, "RESEND_API_KEY", None)
+
+
+@pytest.fixture(scope="function", autouse=True)
 def otp_test_harness(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     """Make the signup OTP deterministic and keep SMTP out of the test run.
 
@@ -176,14 +187,8 @@ def otp_test_harness(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     ``TEST_OTP_CODE`` so the hard gate can be walked end to end. Outbound mail
     is captured in the returned list instead of hitting a real SMTP socket
     (which would otherwise block for the client's 3s timeout on every signup).
-    RESEND_API_KEY is blanked so a developer workstation holding live keys can
-    never send real provider mail from a test run — delivery assertions run
-    against the SMTP-capture fallback path.
     """
-    from app.config import settings as _test_settings
     from app.modules.auth import otp_service as otp_module
-
-    monkeypatch.setattr(_test_settings, "RESEND_API_KEY", None)
 
     monkeypatch.setattr(
         otp_module, "generate_otp_code", lambda *args, **kwargs: TEST_OTP_CODE
@@ -207,7 +212,9 @@ def otp_test_harness(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
         )
         return True
 
-    monkeypatch.setattr(otp_module.email_client, "send_email", _capture)
+    from app.infrastructure.email import email_client as _shared_email_client
+
+    monkeypatch.setattr(_shared_email_client, "send_email", _capture)
     return sent
 
 

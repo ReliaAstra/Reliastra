@@ -28,9 +28,36 @@ class EmailClient:
         subject: str,
         body: str,
         html_body: str | None = None,
+        *,
+        category: str = "transactional",
     ) -> bool:
-        """SYNC — call via ``asyncio.to_thread`` from async code."""
+        """SYNC — call via ``asyncio.to_thread`` from async code.
+
+        Resend-first: when ``RESEND_API_KEY`` is configured the message goes
+        through Resend (the only supported production path — there is no
+        local MTA in production). SMTP is strictly a fallback for local
+        development (MailHog) and hermetic tests. No caller sends SMTP-only.
+        """
         logger.info("Sending email to '%s': Subject='%s'", to_email, subject)
+        try:
+            from app.infrastructure.email_resend import send_via_resend_sync
+
+            ok, _resend_id = send_via_resend_sync(
+                to=to_email,
+                subject=subject,
+                html=html_body or f"<p>{body}</p>",
+                text=body,
+                category=category,
+            )
+            if ok:
+                return True
+            logger.debug(
+                "Resend unavailable, falling back to SMTP %s:%s",
+                self.smtp_host,
+                self.smtp_port,
+            )
+        except Exception as exc:
+            logger.debug("Resend attempt failed, falling back to SMTP: %s", exc)
         message = MIMEMultipart("alternative")
         message["Subject"] = subject
         message["From"] = self.smtp_from
