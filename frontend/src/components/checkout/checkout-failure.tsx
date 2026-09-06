@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils';
  *
  * A payment failure has two facts a customer needs immediately and usually
  * cannot infer: whether money moved, and what to do next. So this screen always
- * states both — the wording comes from `checkout-errors` keyed by the backend's
- * reason slug — and never shows a provider's raw message. "Amount must be
+ * states both - the wording comes from `checkout-errors` keyed by the backend's
+ * reason slug - and never shows a provider's raw message. "Amount must be
  * greater than 100" is not an explanation of anything to a buyer; "your card was
  * declined, nothing was charged, try another card" is.
  *
@@ -130,7 +130,7 @@ export function CheckoutFailure({
       </div>
 
       <p className="mt-3 text-center text-[11.5px] leading-relaxed text-rs-text-tertiary">
-        If you believe this payment succeeded, do not try again — we match every
+        If you believe this payment succeeded, do not try again - we match every
         charge automatically. Email{' '}
         <a
           href="mailto:billing@reliastra.com"

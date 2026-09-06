@@ -52,7 +52,7 @@ async def test_billing_endpoints(async_client, auth_data, monkeypatch):
 # refactor: they read the actual HTTP body the Paystack client posts.
 #
 # Mechanics: the service constructs a fresh ``httpx.AsyncClient`` per call, so
-# the tests swap in a subclass that installs a MockTransport — the already-
+# the tests swap in a subclass that installs a MockTransport - the already-
 # built async_client (ASGITransport) is untouched, and everything the billing
 # service sends upstream is captured verbatim.
 
@@ -69,7 +69,7 @@ import httpx as _httpx  # noqa: E402
 def _intercept_paystack(monkeypatch):
     """Capture the JSON body POSTed to Paystack; answer with a mock success.
 
-    Returns the capture dict — tests assert on ``captured["body"]``.
+    Returns the capture dict - tests assert on ``captured["body"]``.
     """
     captured: dict = {"calls": []}
 
@@ -158,7 +158,7 @@ async def test_initialize_annual_uses_the_annual_payment_price(
 async def test_enterprise_checkout_is_refused_without_creating_anything(
     async_client, auth_data, monkeypatch
 ):
-    """Enterprise is Contact Sales — never a self-serve NGN checkout."""
+    """Enterprise is Contact Sales - never a self-serve NGN checkout."""
     captured = _intercept_paystack(monkeypatch)
     res = await async_client.post(
         "/v1/billing/initialize",
@@ -193,7 +193,7 @@ async def test_unpublished_price_disables_checkout_instead_of_guessing(
         json={"plan": "pro", "billing_interval": "monthly"},
     )
     # 409, not 422: the request is well-formed and retrying it changes nothing
-    # — the *account state* (no published price) is what conflicts. The client
+    # - the *account state* (no published price) is what conflicts. The client
     # can act on that distinction, which is why the status is asserted rather
     # than left at the generic validation code.
     assert res.status_code == 409, res.text

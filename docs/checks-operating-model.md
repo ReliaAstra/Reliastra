@@ -1,4 +1,4 @@
-# Check execution — operating model
+# Check execution - operating model
 
 RELIASTRA's uptime probes do **not** run inside the API process. They run in a
 Celery worker, dispatched by Celery Beat, through a Redis broker. If any of
@@ -20,7 +20,7 @@ A deployment that can execute checks has all four of these, always:
 
 > **There is no in-process scheduler and no escape hatch.** A
 > `RUN_IN_PROCESS_SCHEDULER` flag used to exist in config and documentation. It
-> was never implemented — `main.py` only logged about it — so setting it to
+> was never implemented - `main.py` only logged about it - so setting it to
 > `true` executed zero checks while silencing the very warning that said so.
 > The flag has been deleted. Celery Beat is the single authoritative scheduler;
 > do not add a second one.
@@ -63,7 +63,7 @@ celery -A app.infrastructure.celery_app.celery_app inspect ping
 # ->  celery@<host>: pong
 ```
 
-No answer means no worker, and therefore no probes — regardless of what the
+No answer means no worker, and therefore no probes - regardless of what the
 API's own health endpoint says.
 
 ### Beat is ticking
@@ -98,12 +98,12 @@ curl -s http://<api>/health/checks | jq
 | `status` per component | Meaning |
 |---|---|
 | `healthy` | heartbeat seen inside the derived staleness window |
-| `stale` | heartbeat seen, but too old — that component stopped ticking |
-| `not_observed` | no heartbeat yet — never started, or TTL expired |
+| `stale` | heartbeat seen, but too old - that component stopped ticking |
+| `not_observed` | no heartbeat yet - never started, or TTL expired |
 | `redis_unavailable` | Redis itself is unreachable |
 
 Overall `status` is `healthy`, `degraded` (one component down) or `unavailable`,
-and the endpoint returns **HTTP 503** unless healthy — so a load balancer or
+and the endpoint returns **HTTP 503** unless healthy - so a load balancer or
 orchestrator healthcheck treats a checks-dead deployment as unhealthy. No broker
 address or credential is ever included in the response.
 
@@ -130,7 +130,7 @@ history cannot:
 | `awaiting_scheduled_execution` | due, waiting for the next Beat tick | pending |
 | `queued` | published to the broker, not yet consumed | infra if it lingers |
 | `executing` | a worker is running the probe right now | pending |
-| `successful` | last probe succeeded | — |
+| `successful` | last probe succeeded | - |
 | `target_failed` | probe reached the target and it failed | **the vendor** |
 | `blocked_by_security_policy` | SSRF policy refused the target | **your config** |
 | `dispatch_failed` | RELIASTRA could not publish the probe | **RELIASTRA** |
@@ -144,7 +144,7 @@ before it existed, both looked like an empty chart.
 A `blocked_by_security_policy` state is never a vendor outage. It means the
 configured URL resolves to a private, loopback, link-local or metadata address,
 so RELIASTRA refused to send anything. The SSRF policy is deliberately not
-relaxed for development convenience — if a dev check needs a local target, that
+relaxed for development convenience - if a dev check needs a local target, that
 is a configuration problem to solve explicitly, not a policy to weaken.
 
 ---
@@ -161,11 +161,11 @@ curl -X POST http://<api>/v1/checks/run \
 
 Authenticated, authorized and rate-limited (`check_trigger_limiter`, per
 organization). It enqueues the **same** `execute_check` task the scheduler
-uses — there is no second probe implementation, and it does not bypass SSRF
+uses - there is no second probe implementation, and it does not bypass SSRF
 resolution.
 
-It returns **202** with the queued task ids — the probe has been *accepted*,
-not completed — and it reports broker errors as **503 with a `reason`** rather
+It returns **202** with the queued task ids - the probe has been *accepted*,
+not completed - and it reports broker errors as **503 with a `reason`** rather
 than pretending to have run. A failed trigger never advances `next_check_at`
 and never writes a `CheckResult`. Because it publishes through the same broker
 to the same worker, a success here is end-to-end proof that
@@ -180,7 +180,7 @@ These are deliberate and are covered by tests:
 - **Dispatch failed** → `checks_dispatch_failures_total{region,reason}` is
   incremented, an error is logged with the dependency id, region, exception type
   and a truncated message, and **`next_check_at` is left unchanged** so the next
-  Beat tick retries. No fake `CheckResult` is written — an observation that
+  Beat tick retries. No fake `CheckResult` is written - an observation that
   never happened must never appear in history.
 - **Broker unreachable** → the whole cycle is skipped before any database work,
   counted as `reason="broker_unavailable"`, and logged loudly.
@@ -221,7 +221,7 @@ because its own process never records any. All three processes therefore set
 PROMETHEUS_MULTIPROC_DIR=/var/lib/reliastra/prometheus
 ```
 
-The directory must be **cleared on worker restart** — stale files from a killed
+The directory must be **cleared on worker restart** - stale files from a killed
 process would otherwise be reported as live series forever. `scripts/dev-stack.sh`
 does this automatically. If the variable is unset, `/metrics` falls back to the
 process-local registry, exactly as before.
@@ -236,7 +236,7 @@ REDIS_URL=redis://127.0.0.1:6379/0 ./scripts/dev-stack.sh start
 ```
 
 Starts Postgres, Redis, migrations, a Paystack mock, a mail sink, the API, a
-worker and Beat — with real readiness waits, not assumptions — and prints an
+worker and Beat - with real readiness waits, not assumptions - and prints an
 operational summary. `stop`, `restart`, `status`, and individual `api` /
 `worker` / `beat` commands are supported; `run` keeps everything in the
 foreground and cleans up its children on exit. Logs land in `.dev-stack/*.log`.
@@ -263,7 +263,7 @@ cd backend
 
 Verify with `celery inspect ping`, both heartbeat keys present, and
 `GET /health/checks` (alias `GET /v1/checks/health`) returning 200. Restart
-the API after pulling — a stale API process serves an OpenAPI without those
+the API after pulling - a stale API process serves an OpenAPI without those
 routes (404 on both).
 
 ---
@@ -272,7 +272,7 @@ routes (404 on both).
 
 - **Redis is the broker, so `maxmemory-policy` must be `noeviction`.** An
   `allkeys-lru` policy evicts least-recently-used keys, which under pressure
-  includes queued check tasks and the heartbeat keys — silently dropping work
+  includes queued check tasks and the heartbeat keys - silently dropping work
   while the service still looks up. `noeviction` fails loudly on write instead,
   which is what the dispatch-failure metric and `/health/checks` are for.
 - `appendonly yes` keeps the queue across a Redis restart.

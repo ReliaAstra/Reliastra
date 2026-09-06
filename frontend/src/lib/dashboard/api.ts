@@ -50,7 +50,7 @@ export class ApiError extends Error {
    * Billing surfaces branch on this instead of on message text: a message is
    * copy that gets reworded, a slug is a contract. It is what lets the checkout
    * tell "your card was declined" apart from "we could not reach the provider"
-   * without parsing a sentence — and without relaying a provider's own error
+   * without parsing a sentence - and without relaying a provider's own error
    * string to a customer who has no use for it.
    */
   reason?: string;
@@ -84,7 +84,7 @@ export class ApiError extends Error {
  * holding a perfectly valid session.
  *
  * The mutex lives in `lib/auth-refresh.ts` and is shared with the partner and
- * admin API layers: this module must NOT own a second `refreshing` flag —
+ * admin API layers: this module must NOT own a second `refreshing` flag -
  * two single-flights overwrite each other and the losers still replay the
  * spent token. `refreshSession()` is the one and only refresh.
  */
@@ -92,8 +92,8 @@ export class ApiError extends Error {
 /**
  * One shared session restoration.
  *
- * A hard page load — a refresh, a deep link to `/settings/billing`, an email
- * link — starts with a refresh token in localStorage and nothing else: the
+ * A hard page load - a refresh, a deep link to `/settings/billing`, an email
+ * link - starts with a refresh token in localStorage and nothing else: the
  * access token and the active organization live only in the store. Every panel
  * mounts in the same tick, so each one used to fire its first request while the
  * session was still being restored: 401 without a token, then 403 on any
@@ -102,7 +102,7 @@ export class ApiError extends Error {
  *
  * Requests now await the same restoration promise the shell uses, so the
  * session is established once and no surface has to know about it. Calls made
- * *by* the restoration itself skip the gate — otherwise `api.orgs()` would
+ * *by* the restoration itself skip the gate - otherwise `api.orgs()` would
  * wait on the promise it is resolving.
  */
 let restorePromise: ReturnType<typeof bootstrapSession> | null = null;
@@ -112,7 +112,7 @@ let restorePromise: ReturnType<typeof bootstrapSession> | null = null;
  *
  * The store is written *inside* this promise, so "resolved" and "the app knows
  * its organization" are the same moment. A caller that awaits restoration and
- * then reads the store must never be able to observe a half-applied session —
+ * then reads the store must never be able to observe a half-applied session -
  * that gap is what made organization-scoped requests 403 right after a reload.
  */
 export function restoreSession() {
@@ -170,7 +170,7 @@ async function request<T>(
   try {
     res = await fetch(`${BASE}${path}`, { ...init, headers });
   } catch (thrown) {
-    // The request never completed. That is NOT an expired session — clearing
+    // The request never completed. That is NOT an expired session - clearing
     // the refresh token here would turn an offline moment into a forced
     // re-login. Logged as `kind=network` so it stays distinguishable from a
     // 401 in the console.
@@ -191,7 +191,7 @@ async function request<T>(
     }
   }
 
-  // Session is unrecoverable — clear and let the shell route to sign-in.
+  // Session is unrecoverable - clear and let the shell route to sign-in.
   // Only a 401 reaches here: a 429, a 5xx or a proxy failure falls through to
   // the typed-error path below and leaves the session alone.
   if (res.status === 401) {
@@ -218,8 +218,8 @@ async function request<T>(
   if (!res.ok) {
     // The app's envelope is { error: { code, message, details } }. Read the
     // code and reason beside the message: a caller that only needs a sentence
-    // shows the message, and a caller that must *decide* — the checkout above
-    // all — switches on the slug.
+    // shows the message, and a caller that must *decide* - the checkout above
+    // all - switches on the slug.
     const envelope = (data as {
       error?: {
         code?: string;
@@ -250,11 +250,11 @@ export interface InitializePaymentResult {
   authorization_url: string;
   reference: string;
   access_code: string;
-  /** Minor units of `currency` — the exact amount handed to Paystack. */
+  /** Minor units of `currency` - the exact amount handed to Paystack. */
   amount_minor?: number | null;
   currency?: string | null;
   amount_display?: string | null;
-  /** The USD product price this checkout corresponds to, backend-resolved —
+  /** The USD product price this checkout corresponds to, backend-resolved -
    *  the transparency triple at hand-off is composed from provider figures,
    *  never from UI state. */
   product_currency?: string | null;
@@ -268,7 +268,7 @@ export interface InitializePaymentResult {
   /**
    * Paystack's *publishable* key plus the InlineJS settings, which is what lets
    * the checkout complete payment inside RELIASTRA's own page. Absent when the
-   * backend has no public key configured — the caller then falls back to
+   * backend has no public key configured - the caller then falls back to
    * ``authorization_url``. The secret key never appears in any API response.
    */
   public_key?: string | null;
@@ -302,9 +302,9 @@ export interface CheckoutPaymentMethod {
 /**
  * The authoritative checkout quote.
  *
- * Rendered, never assembled: every figure a customer sees before paying —
+ * Rendered, never assembled: every figure a customer sees before paying -
  * product price, charged amount, currency names, disclosure, FX reference,
- * available methods — arrives pre-resolved from the same backend resolvers that
+ * available methods - arrives pre-resolved from the same backend resolvers that
  * will price the transaction. The frontend holds no price table, so there is
  * nothing for it to get wrong and nothing for an attacker to edit.
  */
@@ -330,8 +330,8 @@ export interface CheckoutQuote {
   channels: string[];
   /**
    * Digest of the figures this quote was priced from, echoed back when the
-   * payment is initialized. It carries no value of its own — the amount is
-   * re-resolved server-side either way — but it lets the backend refuse a
+   * payment is initialized. It carries no value of its own - the amount is
+   * re-resolved server-side either way - but it lets the backend refuse a
    * payment whose page was priced from a since-changed price list, instead of
    * charging the customer a figure they never saw.
    */
@@ -537,7 +537,7 @@ export const api = {
         plan,
         billing_interval: billingInterval,
         // Echoes the method the review screen displayed. It cannot widen the
-        // backend's channel policy — an unavailable method is refused there.
+        // backend's channel policy - an unavailable method is refused there.
         ...(paymentMethod ? { payment_method: paymentMethod } : {}),
         // Proves which quote the customer was shown. Carries no amount, so it
         // cannot price anything: the server re-resolves the figures and refuses
@@ -568,7 +568,7 @@ export const api = {
       amount_minor?: number | null;
       amount_display?: string | null;
       /** The USD product price quoted by the checkout, from the persisted
-       *  transaction — the transparency triple on the confirmation screen. */
+       *  transaction - the transparency triple on the confirmation screen. */
       product_currency?: string | null;
       product_amount_minor?: number | null;
       product_price_display?: string | null;
@@ -582,11 +582,11 @@ export const api = {
       reason_message?: string | null;
       /** True when this verification is what activated the subscription. */
       activated?: boolean;
-      /** A second valid payment for a covered period — stated, not hidden. */
+      /** A second valid payment for a covered period - stated, not hidden. */
       duplicate_payment?: boolean;
     }>(`/billing/verify?reference=${encodeURIComponent(reference)}`, {
       // The verify endpoint provisions the plan and settles the persisted
-      // transaction — a state-changing call, so it is a POST like every
+      // transaction - a state-changing call, so it is a POST like every
       // other checkout step. (The backend also guards replay idempotently.)
       method: 'POST',
     }),

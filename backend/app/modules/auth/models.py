@@ -12,7 +12,7 @@ class RefreshToken(UUIDMixin, Base):
     FIX 28: every token belongs to a ``token_family`` (a UUID created at
     login/register) and carries a monotonically increasing ``token_sequence``.
     Using a token whose sequence is below the family's latest sequence proves
-    replay/theft — the entire family is revoked.
+    replay/theft - the entire family is revoked.
     """
 
     __tablename__ = "refresh_tokens"

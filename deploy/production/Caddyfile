@@ -1,4 +1,4 @@
-# Caddy — public HTTPS entry, reverse proxy to internal api + web
+# Caddy - public HTTPS entry, reverse proxy to internal api + web
 # The web (Next.js) and api (FastAPI) run in the same all-in-one image,
 # but Caddy remains the only host-port 80/443 listener (defense in depth).
 
@@ -7,9 +7,9 @@
 	email {$ACME_EMAIL:tls@reliastra.com}
 }
 
-# Production site — adapt domain
+# Production site - adapt domain
 {$DOMAIN:reliastra.com} {
-	# Security headers — minimal, non-breaking
+	# Security headers - minimal, non-breaking
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
@@ -20,7 +20,7 @@
 
 	encode gzip
 
-	# Frontend — Next.js standalone
+	# Frontend - Next.js standalone
 	handle {
 		reverse_proxy reliastra-api:3000 {
 			header_up Host {host}
@@ -50,7 +50,7 @@
 		reverse_proxy reliastra-api:8000
 	}
 	# Interactive API consoles. NOTE: `/docs/*` is intentionally NOT proxied
-	# here — that namespace belongs to the public product documentation
+	# here - that namespace belongs to the public product documentation
 	# (Next.js, served by the catch-all above and indexed by search engines).
 	handle /api-docs* {
 		reverse_proxy reliastra-api:8000

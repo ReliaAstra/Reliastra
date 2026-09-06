@@ -6,11 +6,11 @@ import { setAccessTokenCookie, clearSessionCookies } from '@/lib/auth-cookie';
  * Single shared session-token store for every authenticated surface.
  *
  * Three surfaces share one backend JWT session:
- *   - customer console (`/dashboard`, app-store) — historically wrote only
+ *   - customer console (`/dashboard`, app-store) - historically wrote only
  *     `reliastra_refresh_token`;
- *   - partner SPA (`/`, state-routed) — historically wrote only
+ *   - partner SPA (`/`, state-routed) - historically wrote only
  *     `partner_access_token` / `partner_refresh_token`;
- *   - admin console (`/admin`, admin-api) — read either, but wiped everything
+ *   - admin console (`/admin`, admin-api) - read either, but wiped everything
  *     on a non-admin 401, logging the customer out.
  *
  * The canonical keys are `reliastra_access_token` / `reliastra_refresh_token`.

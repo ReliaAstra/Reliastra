@@ -17,7 +17,7 @@ import {
  * panels at once, or the customer console + partner SPA + admin console are
  * open together), each module-level single-flight used to be independent and
  * the losers replayed the just-spent token. The backend then treated the
- * replay as theft and revoked the WHOLE family — "signed out everywhere"
+ * replay as theft and revoked the WHOLE family - "signed out everywhere"
  * with a perfectly valid session.
  *
  * This module owns the ONLY refresh mutex: every request layer

@@ -74,7 +74,7 @@ export interface AdminLoginPayload {
  * This is the ONLY admin route that does not require an existing session:
  * it forwards the operator credentials to the backend, which verifies them
  * in constant time (rate-limited). The minted tokens are captured server-side
- * and returned to the browser ONLY as HttpOnly cookies — the JSON body the
+ * and returned to the browser ONLY as HttpOnly cookies - the JSON body the
  * browser receives never contains them.
  */
 export async function handleAdminLogin(
@@ -187,7 +187,7 @@ export async function handleAdminLogout(req: NextRequest): Promise<NextResponse>
 /**
  * Client-triggered refresh: rotate using the HttpOnly refresh cookie and
  * refresh the identity by re-checking `/auth/me`. The client never supplies
- * the token — it lives only in the cookie.
+ * the token - it lives only in the cookie.
  */
 export async function handleAdminRefresh(req: NextRequest): Promise<NextResponse> {
   if (!hasAdminMarker(req)) {
@@ -252,7 +252,7 @@ export async function handleAdminRefresh(req: NextRequest): Promise<NextResponse
  *      with ADMIN_TOKEN_SECRET before anything is forwarded.
  *   4. If the access token is expired but the refresh cookie is valid, the
  *      proxy rotates it against `/v1/admin/auth/refresh`, stores the new pair
- *      in the response cookies, and replays the request once — client JS
+ *      in the response cookies, and replays the request once - client JS
  *      stays out of the refresh loop entirely.
  *   5. Only `/v1/admin/*` paths are reachable; the caller already sanitized
  *      and prefixed the path with `/admin`.
@@ -337,7 +337,7 @@ export async function proxyAdminToBackend(
  *
  * Returns the pair on success or null when the refresh token is invalid,
  * expired, replayed, or the backend is unreachable. The refresh token is
- * single-use server-side, so a failed rotation is terminal for the session —
+ * single-use server-side, so a failed rotation is terminal for the session -
  * which is why failures are surfaced to the client as "expired".
  */
 async function rotateAdminSession(

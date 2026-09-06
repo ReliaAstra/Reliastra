@@ -3,7 +3,7 @@
 Once two concurrent regions both insert an open incident for the same
 dependency, IncidentRepository.get_open_for_dependency() uses
 scalar_one_or_none(), which raises MultipleResultsFound forever after.
-Every subsequent check for that dependency then dies — monitoring silently
+Every subsequent check for that dependency then dies - monitoring silently
 stops for that customer AND the incident can never auto-resolve.
 """
 from __future__ import annotations
@@ -64,7 +64,7 @@ async def main() -> None:
                 await sess.rollback()
                 return f"{type(e).__name__}: {e}"
 
-    print("PHASE 1 — concurrent two-region failure (the race):")
+    print("PHASE 1 - concurrent two-region failure (the race):")
     out = await asyncio.gather(probe("us-east"), probe("eu-west"))
     print(f"   us-east: {out[0]}")
     print(f"   eu-west: {out[1]}")
@@ -72,7 +72,7 @@ async def main() -> None:
             "AND status='open';")
     print(f"   open incidents now: {n}  (correct = 1)")
 
-    print("\nPHASE 2 — subsequent checks on the SAME dependency:")
+    print("\nPHASE 2 - subsequent checks on the SAME dependency:")
     dead = 0
     for i in range(4):
         res = await probe("us-east")
@@ -84,7 +84,7 @@ async def main() -> None:
     print(f"\n   check_results ever written for this dependency: {rows}")
     print(f"   failed subsequent checks: {dead}/4")
 
-    print("\nPHASE 3 — can the incident still auto-resolve? "
+    print("\nPHASE 3 - can the incident still auto-resolve? "
           "(simulate vendor recovery)")
     sql(f"UPDATE dependencies SET endpoint_url='https://api.github.com/status' "
         f"WHERE id='{dep_id}';")
@@ -96,7 +96,7 @@ async def main() -> None:
 
     print("\nVERDICT:")
     if dead >= 3:
-        print("   CONFIRMED PERMANENT POISONING — the dependency is bricked.")
+        print("   CONFIRMED PERMANENT POISONING - the dependency is bricked.")
         print("   Monitoring for this customer endpoint stops forever, the")
         print("   incident can never auto-resolve, and only manual SQL fixes it.")
     else:

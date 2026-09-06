@@ -17,31 +17,31 @@ export function generateStaticParams() {
 
 const TITLES: Record<string, { title: string; description: string }> = {
   earn: {
-    title: 'Earn — Partner Network',
+    title: 'Earn - Partner Network',
     description: 'How RELIASTRA partners earn recurring commissions for every referred subscription.',
   },
   'how-it-works': {
-    title: 'How It Works — Partner Network',
+    title: 'How It Works - Partner Network',
     description: 'How the RELIASTRA Partner Network works: apply, refer, track, get paid.',
   },
   commission: {
-    title: 'Commission — Partner Network',
+    title: 'Commission - Partner Network',
     description: 'Commission structure, hold periods, payout minimums and reversals.',
   },
   faq: {
-    title: 'FAQ — Partner Network',
+    title: 'FAQ - Partner Network',
     description: 'Common questions about the RELIASTRA Partner Network.',
   },
   tiers: {
-    title: 'Tiers — Partner Network',
+    title: 'Tiers - Partner Network',
     description: 'Partner tiers and what each level unlocks.',
   },
   premium: {
-    title: 'Premium — Partner Network',
+    title: 'Premium - Partner Network',
     description: 'Premium partnership for consultants, agencies and technology advisors.',
   },
   resources: {
-    title: 'Resources — Partner Network',
+    title: 'Resources - Partner Network',
     description: 'Sales and technical resources for RELIASTRA partners.',
   },
   login: {
@@ -85,7 +85,7 @@ export async function generateMetadata({ params }: { params: Promise<{ page: str
 
 /**
  * Straightforward partner URLs: every public partner page (plus the program
- * legal pages) resolves at `/partner/<slug>`. Unknown slugs 404 — they never
+ * legal pages) resolves at `/partner/<slug>`. Unknown slugs 404 - they never
  * silently render the home page, which would hide broken links.
  */
 export default async function PartnerSlugPage({ params }: { params: Promise<{ page: string }> }) {

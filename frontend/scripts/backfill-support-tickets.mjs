@@ -91,7 +91,7 @@ async function main() {
     }
 
     if (DRY_RUN) {
-      console.log(`[dry-run] would create: ${row.email} — ${row.subject}`);
+      console.log(`[dry-run] would create: ${row.email} - ${row.subject}`);
       created += 1;
       continue;
     }
@@ -114,7 +114,7 @@ async function main() {
       console.log(`created ${ticket.ticket_number} for ${row.email}`);
     } catch (err) {
       failed += 1;
-      console.error(`FAILED ${row.email} — ${row.subject}: ${err.message}`);
+      console.error(`FAILED ${row.email} - ${row.subject}: ${err.message}`);
     }
   }
 

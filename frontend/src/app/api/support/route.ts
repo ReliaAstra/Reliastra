@@ -5,7 +5,7 @@ import { proxyToBackend } from '@/lib/backend-proxy';
  * Public support intake.
  *
  * This used to write into the frontend's own Prisma `SupportTicket` table,
- * which nothing ever read — every web-form message vanished. It now forwards
+ * which nothing ever read - every web-form message vanished. It now forwards
  * to `POST /v1/support/tickets`, so submissions land in the same
  * `feedback_tickets` queue the admin support workspace serves, and an admin
  * reply can actually reach the person who wrote in.

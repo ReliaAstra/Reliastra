@@ -3,9 +3,9 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Product — External Dependency Intelligence platform',
+  title: 'Product - External Dependency Intelligence platform',
   description:
-    'How RELIASTRA works: multi-region dependency checks, quorum-confirmed incidents, deterministic attribution, and verifiable SLA evidence — in one platform.',
+    'How RELIASTRA works: multi-region dependency checks, quorum-confirmed incidents, deterministic attribution, and verifiable SLA evidence - in one platform.',
   path: '/product',
 });
 
@@ -28,7 +28,7 @@ export default function ProductPage() {
             '@type': 'WebPage',
             '@id': canonicalUrl('/product'),
             url: canonicalUrl('/product'),
-            name: 'Product — External Dependency Intelligence platform',
+            name: 'Product - External Dependency Intelligence platform',
             description:
               'How RELIASTRA monitors dependencies, attributes incidents, and generates SLA evidence.',
             isPartOf: { '@id': canonicalUrl('/#website') },
@@ -52,7 +52,7 @@ export default function ProductPage() {
           <h2>Who this is for</h2>
           <p>
             SaaS teams whose product breaks when a payment, auth, messaging, AI or cloud API
-            degrades — and agencies that operate customer infrastructure and need to show
+            degrades - and agencies that operate customer infrastructure and need to show
             clients exactly which dependency failed. If your incident reviews ever end with
             “we think it was the vendor,” this is the record that replaces “we think.”
           </p>
@@ -67,7 +67,7 @@ export default function ProductPage() {
           <h3>1. Monitor every dependency directly</h3>
           <p>
             Add any HTTP endpoint. One scheduler dispatches one check task per dependency
-            per region through a message broker to workers — never inside the API process,
+            per region through a message broker to workers - never inside the API process,
             so a busy dashboard cannot delay a probe. Every result carries its region,
             timestamp, latency, status code and outcome. See{' '}
             <a href="/dependency-monitoring">dependency monitoring</a> and{' '}
@@ -82,7 +82,7 @@ export default function ProductPage() {
           <h3>3. Attribute with a deterministic engine</h3>
           <p>
             Your incident history and the dependency’s observation history share one
-            timeline. The correlation engine reports overlap with confidence levels —{' '}
+            timeline. The correlation engine reports overlap with confidence levels -{' '}
             <a href="/incident-evidence">incident evidence</a>, never claimed causation.
           </p>
           <h3>4. Generate evidence you can submit</h3>

@@ -23,7 +23,7 @@ export function ExpandStep({
         <p className="rs-eyebrow">Step 7 · Scale</p>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-rs-text">Expand your reliability picture.</h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-rs-text-secondary">
-          One dependency proves the loop. A second makes the incident correlation meaningful. Add them in priority order — Reliastra stays quiet until there’s something worth your attention.
+          One dependency proves the loop. A second makes the incident correlation meaningful. Add them in priority order - Reliastra stays quiet until there’s something worth your attention.
         </p>
       </div>
 
@@ -69,14 +69,14 @@ export function ExpandStep({
           </span>
           <div className="mt-3 text-sm font-semibold text-rs-text">Invite a teammate</div>
           <div className="mt-1 text-xs leading-relaxed text-rs-text-secondary">
-            On-call or platform — they’ll see the same independent evidence and alerts.
+            On-call or platform - they’ll see the same independent evidence and alerts.
           </div>
           <span className="mt-3 inline-flex text-xs font-medium text-rs-text-tertiary">Settings → Members</span>
         </button>
       </div>
 
       <div className="mt-6 flex items-center justify-between border-t border-rs-border-subtle pt-5">
-        <p className="text-xs text-rs-text-tertiary">You can do both later — pick one now or skip.</p>
+        <p className="text-xs text-rs-text-tertiary">You can do both later - pick one now or skip.</p>
         <RsButton onClick={onNext} variant="secondary">
           Skip for now
         </RsButton>

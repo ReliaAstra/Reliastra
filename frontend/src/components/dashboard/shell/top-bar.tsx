@@ -52,7 +52,7 @@ function crumbs(pathname: string, clients?: Array<{ id: string; name: string }>)
 }
 
 /**
- * Attention feed — real open incidents from the backend. There is no
+ * Attention feed - real open incidents from the backend. There is no
  * fabricated notification stream in the customer console: what needs
  * attention IS the open incident list.
  */
@@ -83,7 +83,10 @@ function AttentionBell() {
         onClick={() => setOpen((v) => !v)}
         className="relative flex h-12 w-12 items-center justify-center text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
       >
-        <Bell size={20} />
+        {/* Triangle, not a second bell: the top bar must never show two
+            identical bell icons - this one is "needs attention" (open
+            incidents), the plain bell beside it is the activity feed. */}
+        <TriangleAlert size={20} />
         {count > 0 && (
           <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-rs-down" />
         )}
@@ -201,7 +204,7 @@ export function TopBar() {
           <button
             type="button"
             onClick={() => openUpgrade('trial')}
-            title="14-day full-access evaluation — every capability unlocked (server time)"
+            title="14-day full-access evaluation - every capability unlocked (server time)"
             className="rs-trial-pill group hidden items-center gap-1.5 py-0.5 pl-2.5 pr-1.5 text-[11px] font-medium tracking-[0.02em] sm:inline-flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
           >
             PRO TRIAL

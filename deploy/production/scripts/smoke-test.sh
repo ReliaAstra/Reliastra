@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# smoke-test.sh — minimal production smoke, no dummy data
+# smoke-test.sh - minimal production smoke, no dummy data
 # Usage: ./smoke-test.sh --timeout 60
 #
 # NOTE: the api container publishes NO host ports by design (only the proxy
@@ -26,7 +26,7 @@ if ! timeout "$TIMEOUT" bash -c 'docker exec reliastra-api curl -fsS --max-time 
 fi
 echo "smoke: openapi OK"
 
-# 2. Public vendor list (no auth) — should 200 even if empty
+# 2. Public vendor list (no auth) - should 200 even if empty
 code=$("${API_EXEC[@]}" -s -o /dev/null -w "%{http_code}" --max-time 10 http://127.0.0.1:8000/v1/public/vendors || echo "000")
 if [[ "$code" != "200" && "$code" != "401" ]]; then
   # Depending on impl, may be 200 public. Allow 401 if behind auth.
@@ -40,7 +40,7 @@ if ! curl -fsS --max-time 10 http://127.0.0.1:80 >/dev/null; then
 fi
 echo "smoke: frontend OK"
 
-# 4. Auth shape — login with bad creds should 401, not 500
+# 4. Auth shape - login with bad creds should 401, not 500
 code=$("${API_EXEC[@]}" -s -o /dev/null -w "%{http_code}" --max-time 10 -X POST -H "Content-Type: application/json" -d '{"email":"smoke@example.com","password":"wrong"}' http://127.0.0.1:8000/v1/auth/login || echo "000")
 if [[ "$code" != "401" && "$code" != "422" && "$code" != "403" ]]; then
   echo "smoke FAIL: /v1/auth/login expected 401/422 got $code" >&2

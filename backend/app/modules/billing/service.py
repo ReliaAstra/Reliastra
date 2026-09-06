@@ -76,7 +76,7 @@ from app.modules.billing.schemas import (
 
 logger = logging.getLogger(__name__)
 
-# P3 fix: pooled HTTP client for Paystack (like checks service) — one pool
+# P3 fix: pooled HTTP client for Paystack (like checks service) - one pool
 # instead of a fresh TCP/TLS handshake per initialize/verify. Timeouts stay
 # per-request via the client's default timeout.
 _paystack_http_client: httpx.AsyncClient | None = None
@@ -140,7 +140,7 @@ class PaystackClient:
           (``PLN_...``) and states that supplying it "would invalidate the
           value provided in ``amount``". RELIASTRA's plans are priced by
           :mod:`app.core.payment_pricing`, not by Paystack plan objects, so the
-          plan name travels in ``metadata`` for reconciliation instead —
+          plan name travels in ``metadata`` for reconciliation instead -
           sending ``"pro"`` there would either fail initialization or let the
           dashboard plan silently reprice the transaction.
 
@@ -249,7 +249,7 @@ def _amount_for_interval(plan: str, interval: str) -> int | None:
     """The amount (minor units of the processing currency) a checkout pays.
 
     Kept as a helper because the webhook/verify integrity check needs the same
-    single source of truth the initializer uses — if these two ever disagreed,
+    single source of truth the initializer uses - if these two ever disagreed,
     every correctly priced payment would be rejected as "undersized".
     """
     return _price_for(plan, interval).payment_amount
@@ -269,15 +269,15 @@ def _resolve_period_end(
     """End of the period this payment bought.
 
     Paystack reports ``next_payment_date`` for *subscription*-backed charges.
-    Our checkout creates a one-off transaction — deliberately, because RELIASTRA
+    Our checkout creates a one-off transaction - deliberately, because RELIASTRA
     owns the billing state and does not put customers on a recurring provider
-    plan it cannot reprice — so that field is normally empty, and the period
+    plan it cannot reprice - so that field is normally empty, and the period
     would be left null. A null period end reads as "never expires" to every
     entitlement check, which is how a paid month becomes free forever.
 
     So the end is derived from the interval the customer actually paid for: one
     calendar month or twelve, counted from when payment was taken. A provider
-    date, when there is one, wins — it is the more authoritative figure of the
+    date, when there is one, wins - it is the more authoritative figure of the
     two.
     """
     if provider_period_end is not None:
@@ -305,7 +305,7 @@ def transaction_metadata(raw: Any) -> dict[str, Any]:
 
     The Initialize Transaction reference types ``metadata`` as a *stringified*
     JSON object, while verify and the webhook events return the object back in
-    whichever form they received it — and in practice RELIASTRA has seen both
+    whichever form they received it - and in practice RELIASTRA has seen both
     encodings across API versions. A strict ``isinstance(x, dict)`` therefore
     reads a legitimately-returned JSON string as "no metadata", which would
     silently refuse a paid customer's organization association and never
@@ -334,9 +334,9 @@ def _optional_uuid(value: Any) -> uuid.UUID | None:
     """Parse a UUID from untrusted input without ever raising.
 
     Anything read back out of a Paystack payload is attacker-influenceable in
-    principle — ``metadata`` is echoed by the provider exactly as it was sent,
+    principle - ``metadata`` is echoed by the provider exactly as it was sent,
     and a payment page reference can be replayed against the verify endpoint
-    — so an unparseable value must degrade to "unknown", not blow up. It would
+    - so an unparseable value must degrade to "unknown", not blow up. It would
     be worse than cosmetic here: the persistence call this feeds sits inside a
     ``try/except`` that deliberately swallows failures so a bookkeeping problem
     cannot turn a successful payment into a failed verification, and a raised
@@ -433,10 +433,10 @@ class BillingService:
             billing_interval=(
                 subscription.billing_interval if subscription is not None else None
             ),
-            # Enterprise uses custom pricing — never advertise a numeric price.
+            # Enterprise uses custom pricing - never advertise a numeric price.
             effective_is_custom=effective_is_custom,
             # Payment currency + canonical disclosure (+ the display-only FX
-            # reference), resolved from the same source the checkout uses —
+            # reference), resolved from the same source the checkout uses -
             # never a frontend literal.
             payment=PaymentCurrencyResponse(**(await currency_payload())),
             **self._next_charge_fields(subscription),
@@ -468,8 +468,8 @@ class BillingService:
     ) -> BillingTransactionsResponse:
         """Payment history with the ACTUAL charged amount/currency per payment.
 
-        Every figure comes from the persisted provider response — never from
-        re-resolving today's price list — so history stays truthful even after
+        Every figure comes from the persisted provider response - never from
+        re-resolving today's price list - so history stays truthful even after
         a repricing. Display strings are formatted here for the same reason
         every other amount string is: the UI never composes money itself.
         """
@@ -571,7 +571,7 @@ class BillingService:
 
         Why an endpoint instead of letting the checkout page compute from the
         pricing list it already fetched: the page would then be *composing* a
-        price — plan id plus interval in, "₦60,000" out — and any bug in that
+        price - plan id plus interval in, "₦60,000" out - and any bug in that
         composition is a customer who was shown one number and charged another.
         So the page asks, and displays. It receives the product price, the
         payment amount, the currency names, the disclosure, the FX reference and
@@ -580,9 +580,9 @@ class BillingService:
         the review screen and Paystack can be guaranteed to agree.
 
         The response also gates the flow. ``available=False`` with a reason is
-        the state where checkout must not be offered at all — an unpublished
+        the state where checkout must not be offered at all - an unpublished
         payment price for the processing currency, or a plan that is not
-        self-serve — and the page then explains instead of presenting a CTA
+        self-serve - and the page then explains instead of presenting a CTA
         that would fail mid-payment.
         """
         from app.core.permissions import (
@@ -602,7 +602,7 @@ class BillingService:
         org = await self.repository.get_org(session, org_id)
         subscription = await self.repository.get_subscription(session, org_id)
 
-        # Whose mailbox the receipt goes to — shown for confirmation, and sent
+        # Whose mailbox the receipt goes to - shown for confirmation, and sent
         # to Paystack as the payer identity. Read from the organization's owner,
         # never trusted from a request body that could name someone else.
         billing_email = None
@@ -652,7 +652,7 @@ class BillingService:
             available, reason = False, CheckoutReason.PROVIDER_UNAVAILABLE
             message = (
                 "Online payment is temporarily unavailable. No charge has been "
-                "made — please try again shortly or contact "
+                "made - please try again shortly or contact "
                 "billing@reliastra.com."
             )
 
@@ -719,7 +719,7 @@ class BillingService:
         """Create the Paystack transaction for one organization's checkout.
 
         Every number that reaches Paystack is resolved here, from server-side
-        configuration — ``request`` carries a plan and a billing interval and
+        configuration - ``request`` carries a plan and a billing interval and
         nothing else. There is deliberately no amount, currency or channel
         field to accept: a client cannot price its own subscription, choose
         which rails it pays through, or pick the currency its charge settles
@@ -732,7 +732,7 @@ class BillingService:
 
         plan = normalize_plan(request.plan)
 
-        # Enterprise is NOT self-serve — it routes to Contact Sales. Never
+        # Enterprise is NOT self-serve - it routes to Contact Sales. Never
         # create a fake $0 checkout or invent a numeric enterprise price.
         if get_plan_billing_availability(plan) == "contact_sales":
             raise CheckoutRejectedException(
@@ -758,7 +758,7 @@ class BillingService:
             # The product price exists, but the business has not published a
             # PAYMENT price for the processing currency. Charging the USD
             # minor-unit figure as Naira would mis-bill the customer, so we
-            # stop here — before any Paystack transaction exists.
+            # stop here - before any Paystack transaction exists.
             logger.warning(
                 "Checkout disabled for plan '%s' (%s): no %s payment price published",
                 plan,
@@ -789,7 +789,7 @@ class BillingService:
             )
         policy = resolve_checkout_channels()
 
-        # The quote and this transaction are priced by the same resolution — but
+        # The quote and this transaction are priced by the same resolution - but
         # a checkout page can sit open across an operator repricing the plan, and
         # the customer would then approve one number while we sent another. The
         # page echoes the token its quote was issued under (never an amount: a
@@ -819,7 +819,7 @@ class BillingService:
         # lands in, so it is chosen from this organization rather than from the
         # request. A client may name a member of this workspace (a teammate
         # paying on its behalf); naming an address outside it is ignored, not
-        # obeyed — otherwise any authenticated user could send somebody else's
+        # obeyed - otherwise any authenticated user could send somebody else's
         # payment confirmation to a stranger.
         from app.modules.organizations.repository import OrganizationRepository
         from app.modules.users.repository import UserRepository
@@ -891,13 +891,13 @@ class BillingService:
             )
         except httpx.HTTPError as exc:
             # Logged with detail, answered without it. A provider outage has a
-            # specific customer-facing shape — nothing moved, try again — that
+            # specific customer-facing shape - nothing moved, try again - that
             # no amount of upstream text improves.
             logger.warning("Paystack initialization failed: %s", exc)
             raise CheckoutRejectedException(
                 CheckoutReason.PROVIDER_UNAVAILABLE,
                 "We could not reach our payment provider just now. No money "
-                "has moved — please try again in a moment.",
+                "has moved - please try again in a moment.",
                 status_code=503,
             ) from exc
 
@@ -910,7 +910,7 @@ class BillingService:
             )
             raise CheckoutRejectedException(
                 CheckoutReason.PROVIDER_UNAVAILABLE,
-                "We could not start the payment. No money has moved — please "
+                "We could not start the payment. No money has moved - please "
                 "try again, or contact billing@reliastra.com if this persists.",
                 status_code=503,
             )
@@ -931,7 +931,7 @@ class BillingService:
                 authorization_url=data["authorization_url"],
                 reference=str(data.get("reference") or reference),
                 access_code=data["access_code"],
-                # The public key is a *publishable* credential — Paystack's
+                # The public key is a *publishable* credential - Paystack's
                 # InlineJS reference takes it in browser code. The secret key
                 # never leaves this process.
                 public_key=settings.PAYSTACK_PUBLIC_KEY or None,
@@ -1005,14 +1005,14 @@ class BillingService:
         caller_org_id: uuid.UUID | None = None,
         user_id: uuid.UUID | None = None,
     ) -> VerifyTransactionResponse:
-        """Confirm a payment with Paystack and activate it — or say why not.
+        """Confirm a payment with Paystack and activate it - or say why not.
 
         The browser never decides anything here: the client supplies only a
         reference, and every other fact (what was bought, for how long, for how
         much, in which currency, by which organization) is read from Paystack's
         own answer and from RELIASTRA's published pricing. A successful
         `onSuccess` callback in the popup is a hint to call this endpoint,
-        never proof of payment — proof is the provider's `status`, `amount`
+        never proof of payment - proof is the provider's `status`, `amount`
         and `currency` over TLS, from a server.
 
         Every rejection carries a :class:`CheckoutReason` slug so the checkout
@@ -1026,7 +1026,7 @@ class BillingService:
             # reference and has no such transaction. Classifying it as
             # "we could not reach the provider" would send the customer away to
             # wait for a confirmation that will never come, when the truth is
-            # that there is nothing to confirm — and the reference to check.
+            # that there is nothing to confirm - and the reference to check.
             if exc.response.status_code == 404:
                 logger.info(
                     "Paystack has no transaction for reference %s (404 from the "
@@ -1044,7 +1044,7 @@ class BillingService:
             raise CheckoutRejectedException(
                 CheckoutReason.VERIFICATION_UNAVAILABLE,
                 "We could not confirm your payment with our provider yet. If "
-                "you completed the charge it is not lost — we verify every "
+                "you completed the charge it is not lost - we verify every "
                 "payment automatically and will activate your plan. Please "
                 "check back in a few minutes.",
                 status_code=503,
@@ -1058,7 +1058,7 @@ class BillingService:
             raise CheckoutRejectedException(
                 CheckoutReason.VERIFICATION_UNAVAILABLE,
                 "We could not confirm your payment with our provider yet. If "
-                "you completed the charge it is not lost — we verify every "
+                "you completed the charge it is not lost - we verify every "
                 "payment automatically and will activate your plan. Please "
                 "check back in a few minutes.",
                 status_code=503,
@@ -1084,7 +1084,7 @@ class BillingService:
                     data,
                     CheckoutReason.PENDING,
                     "Your payment is still being processed by your bank. "
-                    "Nothing further is needed from you — we activate your "
+                    "Nothing further is needed from you - we activate your "
                     "plan as soon as it settles.",
                 )
             if provider_status in {"failed", "abandoned"}:
@@ -1093,7 +1093,7 @@ class BillingService:
                     data,
                     CheckoutReason.DECLINED,
                     "Your payment was not completed. No charge was made to "
-                    "your card — you can try again, or use a different card.",
+                    "your card - you can try again, or use a different card.",
                 )
             return self._unverified_response(
                 reference,
@@ -1190,7 +1190,7 @@ class BillingService:
             raise ValidationException(
                 f"Plan '{plan}' is not available for self-serve checkout"
             )
-        # Step 1 — CURRENCY. The expected amount is denominated in minor units
+        # Step 1 - CURRENCY. The expected amount is denominated in minor units
         # of the processing currency, so the integer comparison below is
         # meaningless until the denomination is known to match. A multi-currency
         # Paystack account can settle the same nominal amount in a far weaker
@@ -1222,7 +1222,7 @@ class BillingService:
                 extra={"reference": reference},
             )
 
-        # Step 2 — AMOUNT, now that both sides are in the same minor units.
+        # Step 2 - AMOUNT, now that both sides are in the same minor units.
         # Integer comparison only; never floats for money.
         if collected is None:
             raise ValidationException("Transaction is missing a collected amount")
@@ -1262,7 +1262,7 @@ class BillingService:
         # provisioned it (provider_subscription_id) and when that payment
         # was made (current_period_start). Re-verifying the SAME reference
         # stays idempotent; presenting any OTHER reference whose payment is
-        # not newer than the already-applied one is a replay — e.g. re-using
+        # not newer than the already-applied one is a replay - e.g. re-using
         # an old reference after cancellation to restore the paid plan for
         # free.
         if (
@@ -1285,7 +1285,7 @@ class BillingService:
             )
 
         # A second, *newer* payment for a period already covered is not a
-        # replay — the customer really paid twice, usually by refreshing and
+        # replay - the customer really paid twice, usually by refreshing and
         # retrying. Refusing it would strand their money; ignoring it would be
         # a surprise on the invoice. So it is applied and stated plainly.
         duplicate_within_period = bool(
@@ -1309,7 +1309,7 @@ class BillingService:
         # found rather than the state it created. A customer who reloads the
         # confirmation page re-verifies the same reference, and telling them the
         # plan "was activated" again would imply something changed a second time
-        # — the answer they need is that the same payment is still applied.
+        # - the answer they need is that the same payment is still applied.
         already_applied = bool(
             subscription is not None
             and subscription.status == "active"
@@ -1366,7 +1366,7 @@ class BillingService:
                 # RELIASTRA confirmed it server-side. ``verified_at`` is kept
                 # distinct from ``paid_at`` on purpose: the provider's
                 # timestamp is when money moved, ours is when this record was
-                # established as verified — the two differ under webhook retry
+                # established as verified - the two differ under webhook retry
                 # and are both needed in a dispute.
                 user_id=_optional_uuid(metadata.get("actor_user_id")) or user_id,
                 verified_at=datetime.now(timezone.utc),
@@ -1434,7 +1434,7 @@ class BillingService:
             billing_interval=billing_interval,
             # The confirmation screen needs the plan's *customer* name and the
             # period it bought, and must not re-derive either from a local
-            # dictionary — so both are answered here, beside the figures.
+            # dictionary - so both are answered here, beside the figures.
             display_plan=PLAN_DISPLAY_NAMES.get(plan, plan.title()),
             period_word="year" if billing_interval == ANNUAL_INTERVAL else "month",
             activated=not already_applied,
@@ -1445,7 +1445,7 @@ class BillingService:
             amount_minor=int(collected_minor),
             amount_display=format_money(int(collected_minor), settled_currency),
             # Product side of the transparency triple, from the same figures
-            # persisted on the transaction — the confirmation screen restates
+            # persisted on the transaction - the confirmation screen restates
             # the deal, not a fresh calculation.
             product_currency=expected_price.product_currency,
             product_amount_minor=expected_price.product_amount,
@@ -1481,7 +1481,7 @@ class BillingService:
             user = await UserRepository.get_by_id(session, owner.user_id) if owner else None
             if user is None or not user.email:
                 logger.info(
-                    "No owner email for org %s — payment emails skipped", org.id
+                    "No owner email for org %s - payment emails skipped", org.id
                 )
                 return
             await send_subscription_confirmed_email(
@@ -1508,7 +1508,7 @@ class BillingService:
     ) -> None:
         """Convert a verified payment into a partner commission.
 
-        Failures here must never fail the payment itself — the customer has
+        Failures here must never fail the payment itself - the customer has
         already paid and their plan must be provisioned.
         """
         try:
@@ -1552,15 +1552,15 @@ class BillingService:
         return f"{event_type}:{event_id}"
 
     async def _claim_webhook_event(self, event_id: str) -> bool | None:
-        """Claim *event_id* for processing. Tri-state — see the return values.
+        """Claim *event_id* for processing. Tri-state - see the return values.
 
         Uses a Redis SET-NX with a 24h TTL so Paystack retries (which resend
         the same event) never double-process ``charge.success``.
 
         Returns:
-            True  — claimed; this delivery should be processed.
-            False — the event was already processed; skip it.
-            None  — the idempotency store is unreachable, so we cannot tell.
+            True  - claimed; this delivery should be processed.
+            False - the event was already processed; skip it.
+            None  - the idempotency store is unreachable, so we cannot tell.
 
         ``None`` is deliberately NOT collapsed into either bool. The caller
         must decide, because both defaults are wrong: treating it as a
@@ -1598,7 +1598,7 @@ class BillingService:
         data = data if isinstance(data, dict) else {}
         logger.info("Received verified Paystack webhook: %s", event_type)
 
-        # FIX 31: idempotency — skip events already processed in the last 24h.
+        # FIX 31: idempotency - skip events already processed in the last 24h.
         event_id = self._webhook_event_id(payload)
         if event_id:
             claimed = await self._claim_webhook_event(event_id)
@@ -1617,7 +1617,7 @@ class BillingService:
                 # provisions independently, so this defers work rather than
                 # losing it.
                 logger.error(
-                    "Paystack webhook idempotency store unavailable — refusing "
+                    "Paystack webhook idempotency store unavailable - refusing "
                     "event %s (type=%s) so Paystack retries it",
                     event_id,
                     event_type,
@@ -1680,7 +1680,7 @@ class BillingService:
     ) -> None:
         """Reverse partner commissions after a refund or chargeback.
 
-        The original commission rows are never deleted — their status is set
+        The original commission rows are never deleted - their status is set
         to ``reversed``.
         """
         try:

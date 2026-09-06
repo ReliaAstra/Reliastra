@@ -207,7 +207,7 @@ class CheckRepository:
             stats_map[uuid.UUID(str(row.dependency_id))] = (
                 CheckRepository._stats_from_row(row)
             )
-        # Dependencies with no rows in the window are UNKNOWN — never claim 100%.
+        # Dependencies with no rows in the window are UNKNOWN - never claim 100%.
         for dep_id in dependency_ids:
             stats_map.setdefault(
                 dep_id,

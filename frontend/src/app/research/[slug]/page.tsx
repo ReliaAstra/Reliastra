@@ -13,7 +13,7 @@ type Params = { params: Promise<{ slug: string }> };
  *
  * Derived from the same `RESEARCH_ARTICLES` constant that the footer links, the
  * research index and the sitemap use, so a linked slug and a generated route
- * cannot drift apart — the divergence that produced the original 404s.
+ * cannot drift apart - the divergence that produced the original 404s.
  */
 export function generateStaticParams() {
   return RESEARCH_ARTICLES.map((article) => ({ slug: article.slug }));
@@ -22,10 +22,10 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const article = RESEARCH_ARTICLES.find((a) => a.slug === slug);
-  if (!article) return { title: 'Not found — RELIASTRA' };
+  if (!article) return { title: 'Not found - RELIASTRA' };
 
   return {
-    title: `${article.title} — RELIASTRA Research`,
+    title: `${article.title} - RELIASTRA Research`,
     description: article.summary,
     alternates: { canonical: researchRoute(slug) },
     openGraph: {

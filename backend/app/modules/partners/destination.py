@@ -1,7 +1,7 @@
 """Payout-destination handling: encryption at rest, masking, and display.
 
 A partner's payout destination is the single most attackable field in the
-program — whoever controls it receives the money. Three rules follow:
+program - whoever controls it receives the money. Three rules follow:
 
 1. **Encrypted at rest.** ``wallet_address`` and ``bank_details`` are stored
    Fernet-encrypted (key derived from ``SECRET_KEY``), so a database dump is
@@ -9,7 +9,7 @@ program — whoever controls it receives the money. Three rules follow:
    plaintext and are read transparently, then re-encrypted on the next save.
 2. **Masked by default everywhere.** Partner-facing responses and the admin
    list/queue only ever carry a masked form. The full value is available to a
-   system admin through one explicit, audited endpoint — the moment before
+   system admin through one explicit, audited endpoint - the moment before
    they actually send money.
 3. **Changes are visible.** Saving a destination re-authenticates the partner,
    notifies them out-of-band, and starts a cool-down before the new
@@ -91,7 +91,7 @@ def decrypt_bank_details(stored: dict[str, Any] | None) -> dict[str, Any] | None
 
 
 def mask_wallet(address: str | None) -> str | None:
-    """``0x71C7…9F2a`` — enough to recognise, not enough to reuse."""
+    """``0x71C7…9F2a`` - enough to recognise, not enough to reuse."""
     if not address:
         return None
     if len(address) <= 10:
@@ -133,7 +133,7 @@ _METHOD_LABELS = {"crypto_usdc": "USDC", "crypto_usdt": "USDT"}
 def describe_destination(partner, *, reveal: bool = False) -> str:
     """One-line destination summary.
 
-    Masked by default — used in notifications, emails and the admin payout
+    Masked by default - used in notifications, emails and the admin payout
     queue. ``reveal=True`` produces the payable value and must only be used
     behind an audited admin action.
     """

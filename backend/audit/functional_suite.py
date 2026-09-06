@@ -1,4 +1,4 @@
-"""Reliastra production readiness — functional test suite (STEP 2).
+"""Reliastra production readiness - functional test suite (STEP 2).
 
 Exercises the full API surface and records PASS/FAIL/SEVERITY per assertion.
 Run:  .venv/bin/python audit/functional_suite.py
@@ -151,7 +151,7 @@ def main() -> int:
         "method": "GET", "check_interval_seconds": 60})
     record("RBAC", "Viewer CANNOT POST dependencies (expect 403)",
            rdep.status_code == 403, "P0",
-           f"got {rdep.status_code} — privilege escalation if 2xx")
+           f"got {rdep.status_code} - privilege escalation if 2xx")
 
     # viewer must not be able to read another org's data they aren't in
     rleak = vc.req("GET", f"/v1/orgs/{org_id}/dependencies")
@@ -174,7 +174,7 @@ def main() -> int:
         rx = oc.req("GET", f"/v1/orgs/{org_id}/dependencies")
         record("RBAC", "Cross-tenant read blocked (expect 403/404)",
                rx.status_code in (403, 404), "P0",
-               f"got {rx.status_code} — TENANT DATA LEAK if 200")
+               f"got {rx.status_code} - TENANT DATA LEAK if 200")
         rx2 = oc.req("GET", f"/v1/orgs/{org_id}/dashboard/summary")
         record("RBAC", "Cross-tenant dashboard blocked",
                rx2.status_code in (403, 404), "P0", f"got {rx2.status_code}")
@@ -313,7 +313,7 @@ def main() -> int:
     r = cl.req("GET", f"/v1/orgs/{org_id}/dashboard/latency?hours=999999")
     record("Dashboard", "latency rejects absurd range (expect 422)",
            r.status_code == 422, "P2",
-           f"got {r.status_code} — unbounded scan risk if 200")
+           f"got {r.status_code} - unbounded scan risk if 200")
 
     # ─────────────────────── PUBLIC VENDORS ───────────────────────
     print("\n=== PUBLIC VENDORS ===")
@@ -325,7 +325,7 @@ def main() -> int:
     paginated = isinstance(vbody, dict) and any(
         k in vbody for k in ("items", "total", "page", "next"))
     record("PublicVendors", "vendor list is paginated", paginated, "P1",
-           f"returned {type(vbody).__name__} — unbounded list if array")
+           f"returned {type(vbody).__name__} - unbounded list if array")
     for sub in ("", "/history", "/metrics", "/incidents"):
         r = pub.get(f"/v1/public/vendors/stripe{sub}")
         record("PublicVendors", f"GET /public/vendors/stripe{sub or ' (detail)'}",
@@ -385,7 +385,7 @@ def main() -> int:
             r = httpx.get(f"{BASE}/v1/orgs/{org_id}/dependencies",
                           headers={"Authorization": f"ApiKey {full_key}"}, timeout=30)
             record("ApiKeys", "revoked key rejected", r.status_code in (401, 403),
-                   "P0", f"got {r.status_code} — revocation broken if 200")
+                   "P0", f"got {r.status_code} - revocation broken if 200")
 
     # ────────────────────────── BILLING ──────────────────────────
     print("\n=== BILLING ===")
@@ -437,7 +437,7 @@ def main() -> int:
     r = cl.req("POST", "/v1/auth/refresh", json={"refresh_token": tok})
     record("Auth", "refresh token revoked after logout",
            r.status_code in (401, 403), "P0",
-           f"got {r.status_code} — session not terminated if 200")
+           f"got {r.status_code} - session not terminated if 200")
 
     dump()
     return 0

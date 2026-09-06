@@ -32,7 +32,7 @@ async def _register(async_client, email, full_name, ref_code=None):
     }
     if ref_code:
         payload["ref_code"] = ref_code
-    # Registration is gated on email verification — walk the OTP flow.
+    # Registration is gated on email verification - walk the OTP flow.
     body = await register_and_verify(async_client, payload)
     return {
         "token": body["tokens"]["access_token"],
@@ -351,7 +351,7 @@ async def test_admin_endpoints_require_system_admin(async_client, db_session):
     await _activate_partner(async_client, partner["headers"])
 
     # A normal user JWT (even one with is_system_admin in the DB) is NOT an
-    # admin credential — the dedicated admin JWT family is required.
+    # admin credential - the dedicated admin JWT family is required.
     res = await async_client.get("/v1/admin/partners", headers=partner["headers"])
     assert res.status_code == 401, res.text
 
@@ -421,7 +421,7 @@ async def test_payout_settings_roundtrip(async_client, db_session):
     partner = await _register(async_client, "wallet@example.com", "Wallet Kof")
     await _activate_partner(async_client, partner["headers"])
 
-    # 1. Save a crypto destination. The response is masked — the full address
+    # 1. Save a crypto destination. The response is masked - the full address
     #    is stored encrypted and never returned to the browser.
     res = await async_client.put(
         "/v1/partners/payout-settings",
@@ -539,7 +539,7 @@ async def test_public_referral_resolver(async_client, db_session):
 async def test_admin_control_plane(async_client, db_session):
     from tests.helpers import make_admin_headers
 
-    # Admin access is a dedicated credential path — mint the admin JWT the
+    # Admin access is a dedicated credential path - mint the admin JWT the
     # same way the operator login does (no user account is promoted).
     admin_headers = await make_admin_headers(db_session)
 

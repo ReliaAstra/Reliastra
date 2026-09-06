@@ -1,8 +1,8 @@
 """Live-application journeys for the billing-currency UX.
 
-These tests drive the ASSEMBLED product — the Next frontend rendering real
+These tests drive the ASSEMBLED product - the Next frontend rendering real
 components, the FastAPI API running real billing logic, a Paystack stand-in and
-real delivered mail — because every guarantee in this area is a property of the
+real delivered mail - because every guarantee in this area is a property of the
 assembly rather than of one module:
 
 * the disclosure has to be visible where the customer decides, which only a
@@ -22,7 +22,7 @@ Run against a stack of your own::
 its ``/api/v1`` proxy, so the test travels exactly the origin a customer does.
 ``E2E_MAIL_URL`` is an HTTP API over captured mail (MailHog from
 docker-compose, or any sink returning ``{"messages":[{"subject","to","raw"}]}``)
-— required for the journeys that sign up and pay, because their proof depends on
+- required for the journeys that sign up and pay, because their proof depends on
 the emailed code and on the mail a real user received. ``E2E_PAYSTACK_CAPTURE``
 is a file a local Paystack stand-in writes with the JSON body it received, which
 is how the test can assert what was actually sent upstream.
@@ -93,7 +93,7 @@ async def _sink_messages() -> list[dict[str, Any]]:
         return []
     async with httpx.AsyncClient(timeout=10) as client:
         res = await client.get(f"{MAIL_URL}/api/v2/messages")
-        if res.status_code == 404:  # not MailHog — try the plain endpoint
+        if res.status_code == 404:  # not MailHog - try the plain endpoint
             res = await client.get(f"{MAIL_URL}/")
     res.raise_for_status()
     payload = res.json()
@@ -139,7 +139,7 @@ def _text_parts(raw: str) -> list[str]:
     """Decoded text/* parts of a delivered message, as the recipient sees them.
 
     Captured mail arrives either as the message source (an SMTP sink) or as the
-    whole message base64-encoded (MailHog), so both are tried before giving up —
+    whole message base64-encoded (MailHog), so both are tried before giving up -
     asserting on an encoded blob would pass on shape and fail on meaning.
     """
     body = raw.strip()
@@ -163,7 +163,7 @@ async def _wait_for_code(address: str, timeout: float = 30.0) -> str:
             if address.lower() not in msg.get("to", "").lower():
                 continue
             # The body is base64 in a MIME part, so the code is read from the
-            # decoded text — the same thing the recipient sees.
+            # decoded text - the same thing the recipient sees.
             for text in _text_parts(msg.get("raw", "")):
                 match = re.search(r"verification code is:?\s*([0-9 ]{6,24})", text)
                 if match:
@@ -187,7 +187,7 @@ async def _mail_for(address: str, subject_re: str) -> dict[str, Any] | None:
 async def _await_mail(
     address: str, subject_re: str, timeout: float = 30.0
 ) -> dict[str, Any] | None:
-    """Poll :func:`_mail_for` — delivery is a best-effort side effect of the
+    """Poll :func:`_mail_for` - delivery is a best-effort side effect of the
     verify call and lands asynchronously, exactly like a customer's inbox."""
     deadline = asyncio.get_running_loop().time() + timeout
     while asyncio.get_running_loop().time() < deadline:
@@ -215,7 +215,7 @@ async def _account() -> dict[str, Any]:
 
     Memoized because the journey *pays* with it and a second signup would add
     nothing but noise. A test that must see the pre-payment state creates its
-    own with :func:`_create_account` instead — order-independence matters more
+    own with :func:`_create_account` instead - order-independence matters more
     here than saving one signup.
     """
     if not _ACCOUNT:
@@ -227,7 +227,7 @@ async def _create_account() -> dict[str, Any]:
     """A verified RELIASTRA account, created for real through the public API.
 
     Over HTTP rather than in-process because the point is that the *deployed*
-    signup — SMTP, OTP gate and all — actually works.
+    signup - SMTP, OTP gate and all - actually works.
     """
     if not MAIL_URL:
         pytest.skip("E2E_MAIL_URL is required: signup is gated on a real code")
@@ -263,8 +263,8 @@ async def _create_account() -> dict[str, Any]:
 def _flat(text: str) -> str:
     """Lower-case, whitespace-collapsed innerText for content assertions.
 
-    Labels render uppercased through CSS ``text-transform`` — ``innerText``
-    reflects the *paint*, not the markup — and adjacent inline runs can render
+    Labels render uppercased through CSS ``text-transform`` - ``innerText``
+    reflects the *paint*, not the markup - and adjacent inline runs can render
     without a gap (``(NGN)per month``). These assertions care about the words,
     never about typography, so both are normalized away.
     """
@@ -275,7 +275,7 @@ def _auth(token: str, org_id: str | None = None) -> dict[str, str]:
     """Bearer token, scoped to an organization when one is relevant.
 
     Billing is organization-scoped, so the header is part of a valid billing
-    request rather than a test convenience — the frontend sends the same one.
+    request rather than a test convenience - the frontend sends the same one.
     """
     headers = {"Authorization": f"Bearer {token}"}
     if org_id:
@@ -288,7 +288,7 @@ def warm_routes() -> None:
     """Fetch each route once before the browser starts.
 
     Removes "first compile" from the measurement, so a timeout means the page
-    really did not render — which is the only thing worth reporting.
+    really did not render - which is the only thing worth reporting.
     """
     import urllib.error
     import urllib.request
@@ -338,7 +338,7 @@ async def _sign_in(page: Any, account: dict[str, Any]) -> None:
     The session the checkout depends on is part of what is under test, so a
     token written straight into storage would prove less than it appears to.
     The submit is retried because an un-hydrated form swallows a click silently
-    — a click that never issues a request is a test-harness race, not a defect
+    - a click that never issues a request is a test-harness race, not a defect
     in the app, and must not be reported as one.
     """
     seen: list[tuple[int, str]] = []
@@ -366,7 +366,7 @@ async def _sign_in(page: Any, account: dict[str, Any]) -> None:
     await page.wait_for_url(re.compile(r"/dashboard"), timeout=TIMEOUT_MS)
     # Wait for the console's own session restore to land before navigating on.
     # Starting a new document mid-restore aborts it, and an interrupted refresh
-    # rotation leaves the browser holding a spent token — the next load then
+    # rotation leaves the browser holding a spent token - the next load then
     # reads as an expired session. A customer clicking a link a moment after
     # sign-in hits exactly this, so the journey settles first and says so.
     deadline = asyncio.get_running_loop().time() + TIMEOUT_MS / 1000
@@ -445,7 +445,7 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
         "the card must name who takes the money"
     )
     assert "$39" in per_card["card"], (
-        "the USD list price stays visible — the disclosure explains, it hides nothing"
+        "the USD list price stays visible - the disclosure explains, it hides nothing"
     )
 
     overflow = await page.evaluate(
@@ -461,7 +461,7 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
         "the annual card must show the annual payment price, not the monthly one"
     )
 
-    # Enterprise: Contact Sales only — no NGN figure, no checkout affordance.
+    # Enterprise: Contact Sales only - no NGN figure, no checkout affordance.
     ent = await page.locator('[data-testid="pricing-card-enterprise"]').inner_text()
     ent_flat = _flat(ent)
     assert "custom pricing" in ent_flat and "contact sales" in ent_flat
@@ -470,7 +470,7 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     )
 
     # FX reference: if the API publishes one it must arrive labelled, sourced
-    # and timestamped; if it does not, the panel must be absent — never faked.
+    # and timestamped; if it does not, the panel must be absent - never faked.
     import urllib.request
 
     with urllib.request.urlopen(f"{API_URL}/billing/currency", timeout=30) as res:
@@ -550,7 +550,7 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     assert "product price $39.00 (usd)" in review_block, (
         "the last RELIASTRA screen before Paystack restates the product price"
     )
-    assert "payment provider paystack — secure hosted checkout" in review_block
+    assert "payment provider paystack - secure hosted checkout" in review_block
 
     continue_button = page.get_by_role(
         "button", name=re.compile(r"Continue to Paystack", re.I)
@@ -682,7 +682,7 @@ async def test_upgrade_modal_stays_usable_on_a_phone(page: Any) -> None:
     await page.set_viewport_size({"width": 390, "height": 844})
     await _sign_in(page, await _create_account())
     await page.goto(f"{BASE_URL}/settings/billing", wait_until="domcontentloaded")
-    # "Upgrade" before a subscription exists, "Change plan" once one does — the
+    # "Upgrade" before a subscription exists, "Change plan" once one does - the
     # journeys share one account, so both are legitimate entry points.
     await page.get_by_role("button", name=re.compile(r"upgrade|change plan", re.I)).first.click()
     modal = page.locator('[role="dialog"]')

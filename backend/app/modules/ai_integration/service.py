@@ -2,7 +2,7 @@
 
 The LLM behind AI explanations belongs to Reliastra. Endpoint, model,
 credential and generation parameters come from platform configuration
-(``app.config.Settings.RELIASTRA_AI_*``) — organizations never register a
+(``app.config.Settings.RELIASTRA_AI_*``) - organizations never register a
 provider, never supply a key, and never choose a model. The only tenant-side
 control is an opt-out flag: ``organizations.ai_explanations_enabled``.
 
@@ -123,18 +123,18 @@ class AIService:
         model = self.platform_model()
         if model is None:
             logger.info(
-                "Reliastra-managed LLM is not configured — skipping AI explanation"
+                "Reliastra-managed LLM is not configured - skipping AI explanation"
             )
             return None
 
         if session is not None and org_id is not None:
             if not await self._org_opted_in(session, org_id):
                 logger.info(
-                    "Organization %s has AI explanations disabled — skipping", org_id
+                    "Organization %s has AI explanations disabled - skipping", org_id
                 )
                 return None
 
-        # Bound context size — prevent prompt injection / huge payloads
+        # Bound context size - prevent prompt injection / huge payloads
         try:
             context_json = json.dumps(context, sort_keys=True, ensure_ascii=False)
         except Exception:
@@ -154,15 +154,15 @@ class AIService:
             result = await self._call_model(model, prompt)
             text = result.get("text")
             if text:
-                # Bound output — protects PDF size / storage
+                # Bound output - protects PDF size / storage
                 if len(text) > MAX_EXPLANATION_CHARS:
                     text = text[:MAX_EXPLANATION_CHARS] + "...[truncated]"
                 return text
             return None
         except ValidationException:
-            # SSRF validation errors — misconfigured platform endpoint.
+            # SSRF validation errors - misconfigured platform endpoint.
             logger.error(
-                "Reliastra-managed LLM endpoint failed safety validation — "
+                "Reliastra-managed LLM endpoint failed safety validation - "
                 "check RELIASTRA_AI_ENDPOINT_URL"
             )
             return None
@@ -181,7 +181,7 @@ class AIService:
         from app.core.metrics import ai_generation_latency, ai_generation_total
 
         start = time.monotonic()
-        # Resolve + pin DNS once — closes DNS-rebinding TOCTOU
+        # Resolve + pin DNS once - closes DNS-rebinding TOCTOU
         try:
             target = resolve_pinned_target(model.endpoint_url)
         except ValueError as exc:

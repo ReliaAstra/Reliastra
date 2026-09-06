@@ -100,7 +100,7 @@ def test_pinned_transport_cache_is_reused():
 def test_public_hostname_urls_are_allowed(url):
     safe, reason = is_url_safe(url)
     assert safe, reason
-    # Must not raise either — this is what the channels actually call.
+    # Must not raise either - this is what the channels actually call.
     validate_outbound_url(url)
 
 

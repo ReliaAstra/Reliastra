@@ -5,7 +5,7 @@ import { GLOSSARY_TERMS } from '@/lib/seo';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Glossary — Dependency intelligence concepts',
+  title: 'Glossary - Dependency intelligence concepts',
   description:
     'Precise definitions: External Dependency Intelligence, incident attribution, SLA evidence, vendor reliability, dependency telemetry, infrastructure evidence.',
   path: '/glossary',
@@ -38,8 +38,8 @@ export default function GlossaryPage() {
       >
         <Prose>
           <p>
-            Each entry follows one structure — definition, problem, why it matters,
-            practical example, how RELIASTRA approaches it, related concepts — so
+            Each entry follows one structure - definition, problem, why it matters,
+            practical example, how RELIASTRA approaches it, related concepts - so
             humans and machines meet the same meaning everywhere.
           </p>
         </Prose>
@@ -63,7 +63,7 @@ export default function GlossaryPage() {
               '@type': 'DefinedTermSet',
               '@id': canonicalUrl('/glossary'),
               url: canonicalUrl('/glossary'),
-              name: 'RELIASTRA glossary — dependency intelligence concepts',
+              name: 'RELIASTRA glossary - dependency intelligence concepts',
               hasDefinedTerm: GLOSSARY_TERMS.map((g) => ({
                 '@type': 'DefinedTerm',
                 name: g.term,

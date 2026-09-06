@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — RELIASTRA',
+  title: 'Privacy Policy - RELIASTRA',
   description: 'How RELIASTRA collects, uses, and protects customer data across its monitoring, evidence, and billing systems.',
   alternates: { canonical: '/privacy' },
 };
@@ -14,7 +14,7 @@ const SECTIONS = [
       'Account data you provide at registration: name, work email, organization name, and authentication credentials (hashed) or federated identity tokens from Google or GitHub.',
       'Monitoring data: the endpoint URLs, HTTP methods, headers and expected responses of the dependencies you configure us to check, plus the results of those checks (timing, status codes, regional origin).',
       'Operational metadata: incident records, correlation results, generated evidence reports, audit-log entries for security-relevant actions, and billing state.',
-      'First-party acquisition attribution: the campaign parameters that brought you to our site (UTM source/medium/campaign and landing path). We use first-party storage only — no third-party advertising cookies.',
+      'First-party acquisition attribution: the campaign parameters that brought you to our site (UTM source/medium/campaign and landing path). We use first-party storage only - no third-party advertising cookies.',
     ],
   },
   {
@@ -23,14 +23,14 @@ const SECTIONS = [
       'To run the service: scheduling checks, detecting incidents, correlating vendor failures with your alerts, generating evidence reports, and delivering notifications through the channels you configure.',
       'To secure accounts: authentication, session management, rate limiting, payout-destination change verification, and abuse prevention.',
       'To bill accurately: subscription state, usage against plan limits, and payment processing through our payment provider (Paystack). Card details are handled by the provider; RELIASTRA never stores full card numbers.',
-      'We do not sell personal data, and we do not share monitoring data with other customers. Public Track pages only ever show aggregated posture for vendors that have been made public — never customer endpoints or credentials.',
+      'We do not sell personal data, and we do not share monitoring data with other customers. Public Track pages only ever show aggregated posture for vendors that have been made public - never customer endpoints or credentials.',
     ],
   },
   {
     title: 'Evidence & public data',
     body: [
       'Evidence reports belong to the organization that generated them. They are exposed publicly only through explicit share links or verification references created by that organization.',
-      'The public verification endpoint confirms a report exists and binds its checksum — it does not disclose endpoints, headers, or account details.',
+      'The public verification endpoint confirms a report exists and binds its checksum - it does not disclose endpoints, headers, or account details.',
     ],
   },
   {

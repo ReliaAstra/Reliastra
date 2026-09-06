@@ -241,7 +241,7 @@ function CustomerLoginPageContent() {
             <dl className="mt-10 space-y-6">
               {[
                 ['Independent regions', 'Every dependency checked from multiple regions with quorum confirmation.'],
-                ['Deterministic attribution', 'Incidents correlated to vendor behavior with confidence levels — not guesswork.'],
+                ['Deterministic attribution', 'Incidents correlated to vendor behavior with confidence levels - not guesswork.'],
                 ['Evidence you can submit', 'Timestamped, checksummed SLA reports accepted by major cloud vendors.'],
               ].map(([term, desc]) => (
                 <div key={term} className="border-l-2 border-rs-border pl-4">

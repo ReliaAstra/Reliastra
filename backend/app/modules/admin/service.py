@@ -634,7 +634,7 @@ class AdminFeedbackService:
             # Unlinked ticket (submitted from an address with no account, or
             # created by an admin on someone's behalf).  There is no in-app
             # feed to write to, so email is the only way the requester learns
-            # they were answered — without this the reply silently vanished.
+            # they were answered - without this the reply silently vanished.
             try:
                 import asyncio
 
@@ -644,7 +644,7 @@ class AdminFeedbackService:
                     subject=f"[{ticket.ticket_number}] Re: {ticket.subject}",
                     body=(
                         f"{request.body}\n\n"
-                        f"— RELIASTRA Support\n"
+                        f"- RELIASTRA Support\n"
                         f"Ticket {ticket.ticket_number}"
                     ),
                 )

@@ -15,7 +15,7 @@ from app.modules.observations.outbox import process_outbox_batch
 
 
 async def _make_org(db_session):
-    """Observations.org_id has a FK to organizations — create a real org."""
+    """Observations.org_id has a FK to organizations - create a real org."""
     from app.modules.organizations.repository import OrganizationRepository
 
     org = await OrganizationRepository.create(

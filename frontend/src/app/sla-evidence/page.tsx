@@ -37,7 +37,7 @@ export default function SlaEvidencePage() {
       <MarketingPage
         eyebrow="Capability"
         title="SLA evidence & outage proof"
-        lede="When a vendor fails, bring a timestamped, independently measured record to the credit conversation — not screenshots."
+        lede="When a vendor fails, bring a timestamped, independently measured record to the credit conversation - not screenshots."
         breadcrumbs={crumbs}
         related={[
           { label: 'Incident evidence', href: '/incident-evidence', description: 'Attribution: was it you or the vendor?' },
@@ -49,8 +49,8 @@ export default function SlaEvidencePage() {
         <Prose>
           <h2>Who this is for</h2>
           <p>
-            Anyone who pays for a vendor SLA — SaaS operators, platform teams, agencies
-            billing clients for reliability — and has learned that claiming credits with
+            Anyone who pays for a vendor SLA - SaaS operators, platform teams, agencies
+            billing clients for reliability - and has learned that claiming credits with
             “the site was down for a while” goes nowhere.
           </p>
           <h2>Why vendors honor structured evidence</h2>
@@ -69,7 +69,7 @@ export default function SlaEvidencePage() {
             <li>Computed credit figure under your plan’s SLA clause.</li>
             <li>SHA-256 checksum and public verification reference.</li>
           </ul>
-          <h2>What verification discloses — and what it never does</h2>
+          <h2>What verification discloses - and what it never does</h2>
           <p>
             The public verification endpoint confirms a report exists and matches its
             checksum. It never discloses endpoints, headers, credentials or account
@@ -79,7 +79,7 @@ export default function SlaEvidencePage() {
           <h2>Honest scope</h2>
           <p>
             Evidence documents observed behavior; it is not by itself a legal
-            determination of fault or a contractual credit — those remain governed by
+            determination of fault or a contractual credit - those remain governed by
             your agreements. RELIASTRA reports correlation and leaves causation to the
             engineers reading the timeline.
           </p>

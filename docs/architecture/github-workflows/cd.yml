@@ -1,4 +1,4 @@
-name: CD — Build, Push & Deploy
+name: CD - Build, Push & Deploy
 
 on:
   push:
@@ -186,7 +186,7 @@ jobs:
             echo "Pulling latest image..."
             docker compose -f docker-compose.production.yml pull api
 
-            # Rolling deploy — stop old, start new
+            # Rolling deploy - stop old, start new
             echo "Deploying new container..."
             docker compose -f docker-compose.production.yml up -d --remove-orphans --force-recreate api
 
@@ -238,5 +238,5 @@ jobs:
       - name: Notify Deployment Failure
         if: failure()
         run: |
-          echo "DEPLOYMENT FAILED — check logs above"
+          echo "DEPLOYMENT FAILED - check logs above"
           echo "You may need to SSH into VPS and run: docker compose -f docker-compose.production.yml logs api --tail=100"

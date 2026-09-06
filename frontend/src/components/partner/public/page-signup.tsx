@@ -87,9 +87,9 @@ export function PageSignup() {
       }
 
       // Response: { user, organization, tokens: null, verification_required }
-      // No session is issued here — the emailed code is the next step.
+      // No session is issued here - the emailed code is the next step.
       await res.json();
-      toast.success('Account created — check your email for the code');
+      toast.success('Account created - check your email for the code');
       setPendingEmail(email);
     } catch {
       setFieldError("We couldn't reach RELIASTRA. Check your connection and try again.");
@@ -109,14 +109,14 @@ export function PageSignup() {
     });
     store.setAuthStatus('authenticated');
 
-    // Activation is free, idempotent, and needs no extra consent — do it
+    // Activation is free, idempotent, and needs no extra consent - do it
     // automatically so a new partner lands on the dashboard directly.
     try {
       const profile = await partnerApi.apply({ agree_terms: true });
       store.setPartner(mapPartnerProfile(profile));
-      toast.success('Email verified — welcome to RELIASTRA');
+      toast.success('Email verified - welcome to RELIASTRA');
     } catch {
-      toast.success('Email verified — you can activate your partner account from the dashboard');
+      toast.success('Email verified - you can activate your partner account from the dashboard');
     }
     navigate('dashboard');
   };

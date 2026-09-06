@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Status — Platform health',
+  title: 'Status - Platform health',
   description:
     'RELIASTRA platform status: how to check system health, what the health endpoint reports, and where live vendor posture lives.',
   path: '/status',
@@ -38,7 +38,7 @@ export default function StatusPage() {
           <h2>Current state</h2>
           <p>
             The platform is operational. Scheduler and worker liveness are published as
-            time-limited heartbeats and surfaced through the API health endpoint — a
+            time-limited heartbeats and surfaced through the API health endpoint - a
             pipeline that has stopped is reported as broken rather than presenting an
             empty history.
           </p>

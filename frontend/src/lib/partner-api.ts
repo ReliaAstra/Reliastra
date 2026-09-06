@@ -34,7 +34,7 @@ const API_BASE = '/api';
 /**
  * One authenticated request path.
  *
- * On 401 the shared single-flight refresh (lib/auth-refresh.ts — the SAME
+ * On 401 the shared single-flight refresh (lib/auth-refresh.ts - the SAME
  * mutex the customer console and admin console use) rotates the session and
  * the original request is retried once. Tokens are cleared ONLY when the
  * refresh itself fails; a parallel surface's keys are never touched.
@@ -65,7 +65,7 @@ async function request<T>(
     if (refreshed) return request<T>(path, options, true);
   }
   if (res.status === 401) {
-    // Refresh failed (or the retried request still failed) — this surface's
+    // Refresh failed (or the retried request still failed) - this surface's
     // session is unusable.
     clearPartnerTokens();
     throw new Error('UNAUTHORIZED');
@@ -109,7 +109,7 @@ export const partnerApi = {
   },
 
   async signup(data: RegisterRequest) {
-    // Returns `tokens: null` — the account is inert until the emailed code
+    // Returns `tokens: null` - the account is inert until the emailed code
     // is submitted via `verifyOtp`.
     return request<RegisterResponse>('/auth/register', {
       method: 'POST',
@@ -165,7 +165,7 @@ export const partnerApi = {
   /**
    * Best-effort server-side revocation of the current refresh token.
    *
-   * Uses a raw fetch because the backend answers 204 No Content — the
+   * Uses a raw fetch because the backend answers 204 No Content - the
    * shared `request()` helper would try to parse an empty body.
    * `dashboard-layout` called `partnerApi.logout()` at three sign-out sites,
    * but the method did not exist, so the refresh token survived sign-out;
@@ -282,7 +282,7 @@ export const partnerApi = {
 
   // ── Support ──────────────────────────────────
 
-  /** Public (unauthenticated) contact form — kept for the marketing pages. */
+  /** Public (unauthenticated) contact form - kept for the marketing pages. */
   async submitSupport(data: { name: string; email: string; subject: string; message: string }) {
     return request<{ success: boolean }>('/support', {
       method: 'POST',

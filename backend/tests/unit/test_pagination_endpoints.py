@@ -20,7 +20,7 @@ async def test_vendors_list_is_cursor_paginated(async_client, db_session):
     assert payload["has_more"] is True
     assert payload["next_cursor"] is not None
 
-    # Follow the cursor — the next page must not repeat items.
+    # Follow the cursor - the next page must not repeat items.
     page2 = await async_client.get(
         "/v1/vendors",
         params={"limit": 3, "cursor": payload["next_cursor"]},

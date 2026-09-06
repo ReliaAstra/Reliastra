@@ -12,7 +12,7 @@ import { FinalCTA } from '@/components/landing/sections/FinalCTA';
 import { Footer } from '@/components/landing/sections/Footer';
 
 /**
- * Marketing landing — deliberately tight (9 sections).
+ * Marketing landing - deliberately tight (9 sections).
  * Narrative: promise → proof (evidence engine) → live data → research
  * → differentiation → pricing → objections → CTA. Every removed section
  * moved its one essential idea into Hero or Evidence.

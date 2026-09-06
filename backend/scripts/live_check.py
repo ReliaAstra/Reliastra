@@ -1,4 +1,4 @@
-"""Live endpoint check for Reliastra backend — starts server inline, tests all endpoints."""
+"""Live endpoint check for Reliastra backend - starts server inline, tests all endpoints."""
 import subprocess
 import time
 import sys

@@ -52,8 +52,8 @@ async def check_pipeline_health() -> Response:
     used directly as an alerting probe: a deployment where checks have silently
     stopped will not report success here.
 
-    Requires no organization context — it describes infrastructure, not tenant
-    data — and exposes no credentials (the broker URL is sanitized).
+    Requires no organization context - it describes infrastructure, not tenant
+    data - and exposes no credentials (the broker URL is sanitized).
     """
     from app.modules.checks.scheduler_health import read_pipeline_health
 
@@ -109,7 +109,7 @@ async def trigger_check_now(
     never probes inline and never bypasses Celery, so a success here is proof
     that API → broker → worker → probe works end to end.
 
-    Returns **202** with the queued task ids — the probe has been accepted, not
+    Returns **202** with the queued task ids - the probe has been accepted, not
     completed. A **503** means the broker could not accept it, which is the
     infrastructure failure being reported rather than hidden.
     """

@@ -9,13 +9,13 @@ own documentation states the rule plainly:
     "Card payment channels are available on all Paystack accounts, while the
     other payment channels are only available in countries where they're
     supported."
-    — https://paystack.com/docs/payments/payment-channels/
+    - https://paystack.com/docs/payments/payment-channels/
 
 RELIASTRA sells to customers worldwide, so a checkout that inherits whatever
 the dashboard happens to enable would present a Nigerian storefront to a buyer
 in Berlin: USSD codes they cannot use, "Pay with Bank" tied to a Nigerian
 account number, QR and mobile-money rails that cannot settle their card. That
-is not merely untidy — it advertises a payment method, the customer picks it,
+is not merely untidy - it advertises a payment method, the customer picks it,
 and it then fails. So RELIASTRA does not inherit the dashboard configuration;
 it *declares* the channel set on every ``transaction/initialize`` call, and
 this module is the single place that declaration is defined.
@@ -39,8 +39,8 @@ supports Visa and Mastercard across all of its markets, while Verve is Nigeria
 and American Express is Nigeria, South Africa and Kenya
 (``payment-channels/#cards``). RELIASTRA's global copy therefore promises only
 Visa and Mastercard. Verve and Amex are *not* refusals of the customer's card
-— a Verve card that Paystack accepts on the ``card`` channel will still be
-charged — they are simply not claimed in the interface, because promising a
+- a Verve card that Paystack accepts on the ``card`` channel will still be
+charged - they are simply not claimed in the interface, because promising a
 network that a given customer's card may not carry is exactly the surprise
 this checkout is built to avoid.
 
@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 
 # ── Paystack's own vocabulary ────────────────────────────────────────────────
 #: Every value Paystack accepts in the ``channels`` array of
-#: ``POST /transaction/initialize``. Anything else is a typo, not a channel —
+#: ``POST /transaction/initialize``. Anything else is a typo, not a channel -
 #: sending an unknown string risks the whole initialization failing, which is
 #: why :func:`resolve_checkout_channels` filters against this set.
 #: https://paystack.com/docs/api/transaction/#initialize
@@ -87,7 +87,7 @@ PAYSTACK_CHANNELS: frozenset[str] = frozenset(
 
 #: Channels safe for a customer anywhere in the world. ``card`` is the only
 #: one: it is the channel Paystack documents as available on all accounts and
-#: all markets. ``apple_pay`` is deliberately *absent* — it is an express
+#: all markets. ``apple_pay`` is deliberately *absent* - it is an express
 #: wallet layered on a card rather than a settlement channel of its own, its
 #: availability is not documented as global for NGN accounts, and Paystack
 #: exposes it through ``paymentRequest`` element mounting rather than the plain
@@ -96,13 +96,13 @@ PAYSTACK_CHANNELS: frozenset[str] = frozenset(
 GLOBALLY_AVAILABLE_CHANNELS: frozenset[str] = frozenset({"card"})
 
 #: Country-restricted rails, with where they actually work. The value is only
-#: documentation for operators and for support answers — the enforcement is
+#: documentation for operators and for support answers - the enforcement is
 #: that none of these appear in a global checkout unless the operator
 #: explicitly opts in for a deployment that really has those customers.
 COUNTRY_RESTRICTED_CHANNELS: dict[str, tuple[str, ...]] = {
-    "bank": ("NG",),  # Pay with Bank — Nigerian internet banking + OTP
-    "ussd": ("NG",),  # USSD — Nigerian bank shortcodes, bank-specific
-    "qr": ("NG",),  # QR code — Nigerian bank apps
+    "bank": ("NG",),  # Pay with Bank - Nigerian internet banking + OTP
+    "ussd": ("NG",),  # USSD - Nigerian bank shortcodes, bank-specific
+    "qr": ("NG",),  # QR code - Nigerian bank apps
     "eft": ("ZA",),  # South African instant bank EFT
     "capitec_pay": ("ZA",),  # Capitec app approval
     "mobile_money": ("GH", "KE", "TZ"),  # M-Pesa / MTN MoMo / Airtel Money
@@ -157,7 +157,7 @@ CARD_NETWORKS: tuple[CardNetwork, ...] = (
     CardNetwork("American Express", globally_supported=False, markets=("NG", "ZA", "KE")),
 )
 
-#: Networks advertised to a global buyer — the union of what every Paystack
+#: Networks advertised to a global buyer - the union of what every Paystack
 #: market accepts, intersected with the card channel actually enabled. Kept as
 #: a tuple of display strings so the frontend and the emails can share one
 #: wording ("Visa · Mastercard") instead of each inventing their own.
@@ -173,7 +173,7 @@ INTERNATIONAL_CARD_METHOD_ID = "international_card"
 INTERNATIONAL_CARD_LABEL = "International card"
 INTERNATIONAL_CARD_DESCRIPTION = (
     "Visa and Mastercard issued anywhere in the world, including cards billed "
-    "in USD. Charged securely by Paystack — RELIASTRA never sees your card "
+    "in USD. Charged securely by Paystack - RELIASTRA never sees your card "
     "number, expiry or CVC."
 )
 
@@ -191,7 +191,7 @@ class ChannelPolicy:
     requested: tuple[str, ...] = ("card",)
     rejected: tuple[tuple[str, str], ...] = ()
     currency: str = "NGN"
-    #: True when a card channel is present — the one condition under which
+    #: True when a card channel is present - the one condition under which
     #: RELIASTRA may offer self-serve checkout at all (see ``raw_card_allowed``).
     card_enabled: bool = True
     #: Raw card *data* handling: RELIASTRA never collects it. Retained as an
@@ -261,7 +261,7 @@ def resolve_checkout_channels() -> ChannelPolicy:
             continue
         if channel not in allowed_for_currency:
             rejected.append(
-                (channel, f"not available for {currency} transactions — "
+                (channel, f"not available for {currency} transactions - "
                  f"Paystack restricts it to "
                  f"{', '.join(COUNTRY_RESTRICTED_CHANNELS.get(channel, ('restricted markets',)))}")
             )
@@ -307,7 +307,7 @@ def payment_method_descriptors() -> list[dict]:
 
     One entry per enabled channel, built here rather than in a component so the
     checkout page, the pricing API and the receipt emails state the same thing.
-    ``networks`` lists only the card brands Paystack supports in every market —
+    ``networks`` lists only the card brands Paystack supports in every market -
     the UI is not trusted to know which brands are safe to promise.
     """
     policy = resolve_checkout_channels()
@@ -363,7 +363,7 @@ def payment_method_descriptors() -> list[dict]:
 def method_is_enabled(method_id: str) -> bool:
     """Is the method the UI is about to show actually enabled upstream?
 
-    The checkout page accepts no client-side choice of channel — but it does
+    The checkout page accepts no client-side choice of channel - but it does
     echo the one it displayed, so the backend can refuse a mismatch rather
     than launch a payment through a method nobody was told about.
     """
@@ -388,7 +388,7 @@ def settled_channel_is_acceptable(channel: object) -> tuple[bool, str | None]:
     is accepted because the gateway adds methods, and refusing to activate a
     subscription over a channel name this build has never seen would punish a
     customer for a vendor changelog. Whether the payment is *ours* is decided by
-    the amount, currency, reference and organization checks — this guard only
+    the amount, currency, reference and organization checks - this guard only
     notices a rail we consciously excluded.
     """
     if channel is None or str(channel).strip() == "":

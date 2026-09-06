@@ -100,7 +100,7 @@ class ServiceUnavailableException(AppException):
     """A dependency the request needs is unavailable; the caller should retry.
 
     Distinct from a 5xx bug: the request was well-formed and may well succeed
-    later. Used where degrading silently would be worse than refusing — e.g.
+    later. Used where degrading silently would be worse than refusing - e.g.
     a payment webhook whose idempotency store is unreachable, which must not
     be acknowledged as processed.
     """

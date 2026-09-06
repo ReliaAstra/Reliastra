@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Monitoring docs — Checks, regions, states',
+  title: 'Monitoring docs - Checks, regions, states',
   description:
     'Configure RELIASTRA dependency monitoring: endpoints, regions, intervals, quorum incidents, the nine-state taxonomy, and retention.',
   path: '/docs/monitoring',
@@ -28,7 +28,7 @@ export default function MonitoringDocsPage() {
       <MarketingPage
         eyebrow="Docs · Monitoring"
         title="Monitoring: checks, regions, states"
-        lede="How to configure dependencies and read what the network reports — including the states that mean “we could not run the probe.”"
+        lede="How to configure dependencies and read what the network reports - including the states that mean “we could not run the probe.”"
         breadcrumbs={crumbs}
         related={[
           { label: 'Quickstart', href: '/docs/quickstart', description: 'First check in minutes.' },
@@ -42,7 +42,7 @@ export default function MonitoringDocsPage() {
           <p>
             Each dependency is an endpoint you are authorized to test: URL, HTTP
             method, headers and the expected response. Targets resolve and validate
-            against the SSRF policy before any request leaves — private, loopback,
+            against the SSRF policy before any request leaves - private, loopback,
             link-local and metadata addresses are rejected and recorded as policy
             blocks, never as vendor outages.
           </p>
@@ -63,7 +63,7 @@ export default function MonitoringDocsPage() {
           <h2>The state taxonomy</h2>
           <ul>
             <li><strong>Target problems:</strong> the probe reached the vendor and it failed, or the target was policy-blocked.</li>
-            <li><strong>Infrastructure problems:</strong> dispatch failed or the scheduler was not proven alive — no probe could have run.</li>
+            <li><strong>Infrastructure problems:</strong> dispatch failed or the scheduler was not proven alive - no probe could have run.</li>
             <li><strong>Transitional:</strong> never checked, awaiting schedule, queued, or executing.</li>
           </ul>
           <p>
@@ -73,8 +73,8 @@ export default function MonitoringDocsPage() {
           </p>
           <h2>Retention</h2>
           <p>
-            Check history retention follows the plan — 24 hours on Free, up to 90 days
-            on Pro, custom on Enterprise — pruned by scheduled jobs, never kept
+            Check history retention follows the plan - 24 hours on Free, up to 90 days
+            on Pro, custom on Enterprise - pruned by scheduled jobs, never kept
             indefinitely or backfilled when probes are missed.
           </p>
           <h2>Next</h2>

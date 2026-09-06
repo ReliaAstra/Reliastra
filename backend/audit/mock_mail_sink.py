@@ -10,7 +10,7 @@ MailHog so existing e2e tooling works unchanged:
 
 The backend points at it with SMTP_HOST=127.0.0.1 SMTP_PORT=2525. Tests read
 the emailed OTP and the payment mails from here, exactly as a customer would
-receive them — no in-process mocks.
+receive them - no in-process mocks.
 """
 
 import json

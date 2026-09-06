@@ -40,7 +40,7 @@ export default function OnboardingPage() {
     if (!_hydrated) return current;
     const hasDeps = (deps?.length ?? 0) > 0;
     const hasSecond = (deps?.length ?? 0) >= 2;
-    const hasTeam = false; // team expansion not yet tracked — keep simple
+    const hasTeam = false; // team expansion not yet tracked - keep simple
     const hasAlerts = Boolean(configs?.some((c) => c.channel_type === 'email'));
 
     // allow resume: if user is on context and has deps, jump to first-value

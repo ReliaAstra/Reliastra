@@ -11,7 +11,7 @@ import type { MetadataRoute } from 'next';
  * /admin/*, auth pages, token-scoped shares (/portal/*, /reports/*),
  * /checkout (per-customer, uncacheable), and /api/*.
  *
- * CSS/JS/image resources are NOT blocked — crawlers need them to render
+ * CSS/JS/image resources are NOT blocked - crawlers need them to render
  * public pages.
  */
 export default function robots(): MetadataRoute.Robots {

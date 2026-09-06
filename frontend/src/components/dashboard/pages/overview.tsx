@@ -63,7 +63,7 @@ function uptimeColor(v: number | null | undefined) {
 }
 
 /**
- * Trial banner — state comes exclusively from the backend's
+ * Trial banner - state comes exclusively from the backend's
  * ``GET /v1/billing/plan`` (``is_trial_active``, ``trial_days_remaining``).
  * The client never computes or extends trial eligibility.
  */
@@ -93,13 +93,13 @@ function TrialBanner() {
             <div className="flex items-center gap-2">
               <Sparkles size={16} className="shrink-0 text-rs-brand" />
               <p className="rs-trial-title text-sm font-semibold">
-                14-day full-access evaluation — every feature unlocked
+                14-day full-access evaluation - every feature unlocked
               </p>
             </div>
             <p className="rs-trial-support mt-1 text-[13px] leading-relaxed">
               You have 14 days of full access to explore RELIASTRA without feature restrictions.
               You are on day {length - left + 1} of {length}. Upgrade before it ends and your
-              limits and evidence reports carry over — nothing to reconfigure.
+              limits and evidence reports carry over - nothing to reconfigure.
             </p>
             <div className="rs-trial-progress-track mt-3 h-1.5 max-w-md">
               <div
@@ -172,7 +172,7 @@ function TrialBanner() {
 }
 
 /**
- * Welcome experience — premium enterprise setup. Replaces the generic checklist.
+ * Welcome experience - premium enterprise setup. Replaces the generic checklist.
  * Shows only while workspace is empty. Directs to the dedicated onboarding flow.
  */
 function WelcomePanel({ onStart }: { onStart: () => void }) {
@@ -225,7 +225,7 @@ function WelcomePanel({ onStart }: { onStart: () => void }) {
               </a>
             </div>
             <p className="mt-3 text-xs text-rs-text-tertiary">
-              Guided setup takes ~5 minutes. You&apos;ll see a live observation before you finish — 14-day full-access evaluation, no card.
+              Guided setup takes ~5 minutes. You&apos;ll see a live observation before you finish - 14-day full-access evaluation, no card.
             </p>
           </div>
           <div className="hidden w-[320px] shrink-0 lg:block">
@@ -291,7 +291,7 @@ function NextBestActionBanner({
           <div>
             <p className="rs-label">Next step</p>
             <p className="mt-1 text-sm font-semibold text-rs-text">Configure incident alerts</p>
-            <p className="mt-1 text-sm text-rs-text-secondary">Email is enabled by default — add Slack on Pro and above.</p>
+            <p className="mt-1 text-sm text-rs-text-secondary">Email is enabled by default - add Slack on Pro and above.</p>
           </div>
           <RsButton variant="secondary" onClick={() => router.push('/settings')}>
             Configure alerts
@@ -373,14 +373,14 @@ function HealthTable() {
                 <td className="px-4"><StatusBadge status={row.current_status} /></td>
                 <td className="px-4 text-right font-mono text-sm text-rs-text">
                   {row.current_status === 'unknown' || row.uptime_percentage_24h === null ? (
-                    <span className="text-rs-text-tertiary">—</span>
+                    <span className="text-rs-text-tertiary">-</span>
                   ) : (
                     formatUptime(row.uptime_percentage_24h)
                   )}
                 </td>
                 <td className="px-4 text-right font-mono text-sm text-rs-text">
                   {row.current_status === 'unknown' || row.uptime_percentage_24h === null ? (
-                    <span className="text-rs-text-tertiary">—</span>
+                    <span className="text-rs-text-tertiary">-</span>
                   ) : (
                     <>
                       {formatLatency(row.avg_latency_ms_24h)}
@@ -389,7 +389,7 @@ function HealthTable() {
                   )}
                 </td>
                 <td className="px-4 text-right text-xs text-rs-text-tertiary">
-                  {row.current_status === 'unknown' || !row.last_check_at ? '—' : timeAgo(row.last_check_at)}
+                  {row.current_status === 'unknown' || !row.last_check_at ? '-' : timeAgo(row.last_check_at)}
                 </td>
                 <td className="px-4 text-right">
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-rs-text-tertiary">
@@ -464,7 +464,7 @@ export function OverviewPage() {
   const setAdd = useAppStore((s) => s.setAddDependencyOpen);
   const plan = useAppStore((s) => s.plan);
   const org = useAppStore((s) => s.org);
-  // Authoritative limit — reflects the effective (trial-aware) entitlement.
+  // Authoritative limit - reflects the effective (trial-aware) entitlement.
   const limit = plan?.max_dependencies ?? getPlan(plan?.effective_plan ?? plan?.plan).dependencies;
   const router = useRouter();
 
@@ -570,7 +570,7 @@ export function OverviewPage() {
         <NextBestActionBanner deps={depCount} hasAlerts={hasAlerts} onAdd={handleAdd} />
       )}
 
-      {/* Primary signal — promoted when an open incident needs attention */}
+      {/* Primary signal - promoted when an open incident needs attention */}
       {!isLoading && (summary?.open_incidents_count ?? 0) > 0 && incidents && incidents[0] && (
         <div className="mb-6 flex items-center justify-between rounded-xl border border-rs-down/20 bg-rs-down-bg px-5 py-3">
           <div className="flex items-center gap-3">

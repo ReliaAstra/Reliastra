@@ -67,7 +67,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
         <p className="rs-eyebrow">Step 6 · Alerting</p>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-rs-text">How should Reliastra reach you?</h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-rs-text-secondary">
-          When a dependency fails quorum, you’ll get a concise alert with incident link and evidence. Email is on by default — add Slack or PagerDuty if your plan allows.
+          When a dependency fails quorum, you’ll get a concise alert with incident link and evidence. Email is on by default - add Slack or PagerDuty if your plan allows.
         </p>
       </div>
 
@@ -112,7 +112,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
               <div>
                 <div className="text-sm font-medium text-rs-text">Slack</div>
                 <div className="text-xs text-rs-text-tertiary">
-                  {slackAllowed ? 'Incoming webhook — message with incident link and status.' : 'Requires Pro or higher — available during your Pro trial.'}
+                  {slackAllowed ? 'Incoming webhook - message with incident link and status.' : 'Requires Pro or higher - available during your Pro trial.'}
                 </div>
               </div>
             </div>
@@ -139,7 +139,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
             </span>
             <div>
               <div className="text-sm font-medium text-rs-text">PagerDuty</div>
-              <div className="text-xs text-rs-text-tertiary">Trigger incidents in PagerDuty — Pro and above. Add in Settings.</div>
+              <div className="text-xs text-rs-text-tertiary">Trigger incidents in PagerDuty - Pro and above. Add in Settings.</div>
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@ export function AlertSetupStep({ onNext }: { onNext: () => void }) {
 
       <div className="mt-6 flex items-center justify-between border-t border-rs-border-subtle pt-5">
         <p className="text-xs text-rs-text-tertiary">
-          Alerts are per-dependency and deduped (60s). In-dashboard alerts always appear — external channels are additive.
+          Alerts are per-dependency and deduped (60s). In-dashboard alerts always appear - external channels are additive.
         </p>
         <RsButton onClick={onNext}>Continue</RsButton>
       </div>

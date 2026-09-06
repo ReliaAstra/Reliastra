@@ -22,7 +22,7 @@ async def verify_evidence(
             db, verification_id
         )
     except Exception:
-        # Database unreachable — return a structured error rather than 500
+        # Database unreachable - return a structured error rather than 500
         return Response(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             media_type="application/json",

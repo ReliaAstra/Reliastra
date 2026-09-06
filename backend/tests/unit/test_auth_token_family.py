@@ -94,7 +94,7 @@ async def test_revoke_family_revokes_all_tokens(db_session):
 @pytest.mark.asyncio
 async def test_refresh_service_rejects_replayed_token(db_session):
     """FIX 28 end-to-end: using an old (lower-sequence) token revokes the
-    entire family — once the benign-replay grace window has elapsed."""
+    entire family - once the benign-replay grace window has elapsed."""
     from app.core.security import create_refresh_token
     from app.modules.auth.service import AuthService
 
@@ -122,7 +122,7 @@ async def test_refresh_service_rejects_replayed_token(db_session):
         token_family=first.token_family,
         token_sequence=2,
     )
-    # The most recent token in the family is stale too — otherwise the
+    # The most recent token in the family is stale too - otherwise the
     # replay would be allowed through the grace window by design.
     latest = await AuthRepository.get_latest_refresh_token(
         db_session, first.token_family

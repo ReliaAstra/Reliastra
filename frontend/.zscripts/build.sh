@@ -42,7 +42,7 @@ bun run build
 # 校验 standalone 服务端入口是否生成（部署成功率守卫）。
 # Next 仅在 next.config 含 output:"standalone" 时产出 .next/standalone/server.js。
 # 若用户/AI 编辑项目时改写或删除了该配置，bun run build 仍会成功（static 照常
-# 产出、退出码 0），但 standalone 缺失——打出的包里没有 server.js，部署到 FC 后
+# 产出、退出码 0），但 standalone 缺失--打出的包里没有 server.js，部署到 FC 后
 # start.sh 找不到 next-service-dist/server.js → 不启动 Next → Caddy:81 反代空的
 # 3000 → FC 健康检查 120s 超时失败（线上 warmup_412 / FunctionNotStarted 的主因）。
 # 这里做一次自愈：仅在确实缺失时，给 next.config 补回 output:"standalone" 并重建。
@@ -66,7 +66,7 @@ if [ ! -f ".next/standalone/server.js" ]; then
 
     if grep -Eq "output\s*:\s*['\"]" "$NEXT_CONFIG_FILE"; then
         # 已显式声明了其它 output（如 "export" 静态导出 / "standalone" 之外的值）。
-        # "export" 与本部署模型（standalone + 自定义 server）互斥——不能注入第二个
+        # "export" 与本部署模型（standalone + 自定义 server）互斥--不能注入第二个
         # output 覆盖用户意图（JS 对象重复 key 后者生效，注入也无效）。明确失败。
         echo "❌ 构建失败：$NEXT_CONFIG_FILE 已声明非 standalone 的 output（如 \"export\" 静态导出），与当前部署模型不兼容。"
         echo "   当前部署需要 output:\"standalone\"。请改为 standalone，或确认该项目是否应走静态托管而非部署沙箱。"

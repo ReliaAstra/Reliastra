@@ -28,7 +28,7 @@ RUN python -m venv --copies /opt/venv && \
 # ── Stage 2: Runtime image ───────────────────────────────────────────────
 FROM python:3.12-slim
 
-# Redis (queue/cache) + supervisord. No PostgreSQL — the app uses Supabase.
+# Redis (queue/cache) + supervisord. No PostgreSQL - the app uses Supabase.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     redis-server \
     supervisor \

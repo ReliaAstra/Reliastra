@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin
 
 
-class BadgeImpression(UUIDMixin, Base):  # NOTE: No TimestampMixin — only created_at
+class BadgeImpression(UUIDMixin, Base):  # NOTE: No TimestampMixin - only created_at
     __tablename__ = "badge_impressions"
 
     vendor_name: Mapped[str] = mapped_column(

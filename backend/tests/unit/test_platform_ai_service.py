@@ -2,7 +2,7 @@
 
 These tests pin the design: endpoint, model, credential and parameters come
 from platform configuration only, and an organization can do exactly one
-thing — opt out.
+thing - opt out.
 """
 
 import uuid

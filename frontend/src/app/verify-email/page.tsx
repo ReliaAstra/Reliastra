@@ -145,7 +145,7 @@ function VerifyEmailContent() {
       <VerifyOtpStep
         email={confirmedEmail}
         autoSend
-        // The OTP exchange issues the session — persist BOTH tokens before
+        // The OTP exchange issues the session - persist BOTH tokens before
         // showing the "verified" screen so the console is authenticated.
         onVerified={(session: VerifiedSession) => {
           storeSessionTokens(

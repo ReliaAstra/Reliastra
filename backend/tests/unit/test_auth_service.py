@@ -267,7 +267,7 @@ async def test_refresh_reuse_within_grace_does_not_revoke(mocker):
     result = await service.refresh(session, rt_str)
     assert result.access_token is not None
     auth_repo.revoke_family.assert_not_awaited()
-    # sequence = max(1, 2) + 1 = 3 — no parallel sequence is minted.
+    # sequence = max(1, 2) + 1 = 3 - no parallel sequence is minted.
     args, kwargs = auth_repo.create_refresh_token.call_args
     assert kwargs["token_sequence"] == 3
 

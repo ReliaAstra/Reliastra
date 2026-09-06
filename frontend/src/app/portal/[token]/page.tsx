@@ -31,7 +31,7 @@ function uptimeColor(v: number) {
 }
 
 /**
- * Public client-facing SLA portal — the artifact agencies hand to their
+ * Public client-facing SLA portal - the artifact agencies hand to their
  * customers. Unauthenticated by design (HMAC-signed share link), white-label,
  * print-friendly. Spec: light-first, print-safe (borders only, no shadows/animations),
  * header 72px with logo tile 40px #2563EB, generated timestamp top-right mono 12px,
@@ -60,7 +60,7 @@ export default function PortalPage() {
 
   return (
     <main className="min-h-screen bg-[#F7F8FA] text-[#0B1220] antialiased dark:bg-[#0B0F19] dark:text-[#F8FAFC] print:bg-white print:text-black">
-      {/* Header — 72px per spec, logo tile 40px #2563EB, timestamp mono 12px top-right */}
+      {/* Header - 72px per spec, logo tile 40px #2563EB, timestamp mono 12px top-right */}
       <header className="h-[72px] border-b border-[#E8EBF0] bg-white dark:border-[#1E293B] dark:bg-[#111726] print:border-0 print:bg-white">
         <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ export default function PortalPage() {
 
         {state.kind === 'ready' && (
           <>
-            {/* Totals — print 4-col */}
+            {/* Totals - print 4-col */}
             <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4 print:grid-cols-4">
               {[
                 {
@@ -162,7 +162,7 @@ export default function PortalPage() {
               ))}
             </div>
 
-            {/* Client cards — grid sm:2 lg:3 per spec, borders only no shadows/animations in print */}
+            {/* Client cards - grid sm:2 lg:3 per spec, borders only no shadows/animations in print */}
             {!state.data.clients.length ? (
               <div className="rounded-xl border border-dashed border-[#D5DAE2] p-12 text-center text-sm text-[#69748A] dark:border-[#313F58] dark:text-[#6B7893]">
                 No clients are published on this portal yet.
@@ -251,12 +251,12 @@ export default function PortalPage() {
               </div>
             )}
 
-            {/* Preferred Source — trust-based, after meaningful SLA data, before footer */}
+            {/* Preferred Source - trust-based, after meaningful SLA data, before footer */}
             <div className="mx-auto mt-10 max-w-2xl print:hidden">
               <PreferredSourceSection variant="incident" />
             </div>
 
-            {/* Footer — signed-data line + Powered by hidden in print */}
+            {/* Footer - signed-data line + Powered by hidden in print */}
             <footer className="mt-14 flex flex-col items-center justify-between gap-3 border-t border-[#E8EBF0] pt-6 text-xs text-[#69748A] sm:flex-row dark:border-[#1E293B] dark:text-[#6B7893] print:flex-row print:border-[#E8EBF0]">
               <span className="font-mono text-[12px]">
                 Signed data · generated{' '}

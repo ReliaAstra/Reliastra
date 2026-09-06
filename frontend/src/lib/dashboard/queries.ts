@@ -133,7 +133,7 @@ export function usePlan() {
  *
  * Entitlement is a server-side fact, but the console caches the plan and the
  * billing history for speed. Right after a verified payment both are knowingly
- * stale, so the surfaces that read them must refetch — otherwise a customer
+ * stale, so the surfaces that read them must refetch - otherwise a customer
  * pays for Pro and keeps being told they are on Free until they reload.
  */
 export function invalidateBilling(queryClient: QueryClient) {
@@ -148,7 +148,7 @@ export function usePricing() {
 
 /**
  * Payment history with the ACTUAL charged amount/currency per payment.
- * Refetches on mount because it changes exactly when a payment lands —
+ * Refetches on mount because it changes exactly when a payment lands -
  * often before the webhook-driven plan state has settled.
  */
 export function useBillingTransactions() {

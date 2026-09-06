@@ -3,7 +3,7 @@
 Email verification is a hard gate (see ``app/modules/auth/otp_service.py``):
 ``POST /v1/auth/register`` issues no tokens, and ``POST /v1/auth/login``
 refuses unverified accounts. Every test that needs an authenticated session
-therefore has to walk the OTP flow — :func:`register_and_verify` does that in
+therefore has to walk the OTP flow - :func:`register_and_verify` does that in
 one call.
 
 The code is deterministic in tests because ``conftest`` patches

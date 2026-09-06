@@ -94,7 +94,7 @@ const resources: Resource[] = [
     keyTakeaways: [
       'Always maintain clear space around the logo equal to the checkmark height',
       'Use the reversed (white) logo version on dark backgrounds',
-      'Keep RELIASTRA branding as accents — your brand identity stays primary',
+      'Keep RELIASTRA branding as accents - your brand identity stays primary',
       'Inter for body text, JetBrains Mono for code and labels',
     ],
     actionLabel: 'Download PDF',
@@ -147,7 +147,7 @@ const resources: Resource[] = [
         },
         {
           type: 'tip',
-          content: 'When creating referral materials, use the RELIASTRA brand colors as accents only. Your own brand identity should remain primary — the goal is subtle co-branding, not a full rebrand.',
+          content: 'When creating referral materials, use the RELIASTRA brand colors as accents only. Your own brand identity should remain primary - the goal is subtle co-branding, not a full rebrand.',
         },
       ],
     },
@@ -197,7 +197,7 @@ const resources: Resource[] = [
         },
         {
           type: 'paragraph',
-          content: 'Don\'t lead with the commission. Lead with the problem RELIASTRA solves. Frame it as: "I found something that addresses [specific pain point] we talked about." Let the product speak for itself — your role is to make the introduction.',
+          content: 'Don\'t lead with the commission. Lead with the problem RELIASTRA solves. Frame it as: "I found something that addresses [specific pain point] we talked about." Let the product speak for itself - your role is to make the introduction.',
         },
         {
           type: 'tip',
@@ -209,7 +209,7 @@ const resources: Resource[] = [
         },
         {
           type: 'paragraph',
-          content: 'After sharing your link, wait 5-7 days before following up. A simple "Did you get a chance to look at RELIASTRA? Happy to walk through it" is sufficient. Avoid more than two follow-ups — if they\'re not interested, move on.',
+          content: 'After sharing your link, wait 5-7 days before following up. A simple "Did you get a chance to look at RELIASTRA? Happy to walk through it" is sufficient. Avoid more than two follow-ups - if they\'re not interested, move on.',
         },
         {
           type: 'heading',
@@ -237,7 +237,7 @@ const resources: Resource[] = [
     categoryLabel: 'TEMPLATES',
     readTime: '3 min',
     readMinutes: 3,
-    summary: 'Copy-ready email templates for different referral scenarios — from warm intros to community shares. Each template includes a subject line and body that you can customize in minutes.',
+    summary: 'Copy-ready email templates for different referral scenarios - from warm intros to community shares. Each template includes a subject line and body that you can customize in minutes.',
     keyTakeaways: [
       'Template 1: Direct introduction for warm contacts with infrastructure challenges',
       'Template 2: Technical community share for Slack, Discord, or mailing lists',
@@ -258,7 +258,7 @@ const resources: Resource[] = [
           content: 'Best for warm contacts who have expressed infrastructure challenges.',
           templateData: {
             subject: 'Found something for your incident management workflow',
-            body: 'Hi [Name],\n\nFollowing up on our conversation about [specific pain point]. I\'ve been using a tool called RELIASTRA that handles exactly this — it tracks incidents across systems and produces the correlation reports you mentioned needing.\n\nWorth a look: [your referral link]\n\nHappy to share more about my experience with it if useful.\n\nBest,\n[Your name]',
+            body: 'Hi [Name],\n\nFollowing up on our conversation about [specific pain point]. I\'ve been using a tool called RELIASTRA that handles exactly this - it tracks incidents across systems and produces the correlation reports you mentioned needing.\n\nWorth a look: [your referral link]\n\nHappy to share more about my experience with it if useful.\n\nBest,\n[Your name]',
           },
         },
         {
@@ -270,7 +270,7 @@ const resources: Resource[] = [
           content: 'Best for sharing in Slack communities, Discord servers, or email lists.',
           templateData: {
             subject: 'Tool recommendation: cross-system incident correlation',
-            body: 'Hey everyone — wanted to share a tool I\'ve been using for incident tracking and cross-system correlation. RELIASTRA connects to your existing monitoring stack and builds dependency maps automatically.\n\nThe evidence-based reporting has been particularly useful for our compliance audits.\n\nIf you want to check it out: [your referral link]\n\nHappy to answer questions about my setup.',
+            body: 'Hey everyone - wanted to share a tool I\'ve been using for incident tracking and cross-system correlation. RELIASTRA connects to your existing monitoring stack and builds dependency maps automatically.\n\nThe evidence-based reporting has been particularly useful for our compliance audits.\n\nIf you want to check it out: [your referral link]\n\nHappy to answer questions about my setup.',
           },
         },
         {
@@ -282,7 +282,7 @@ const resources: Resource[] = [
           content: 'Best for consultants and agencies recommending to clients.',
           templateData: {
             subject: 'Incident management recommendation for [Client Name]',
-            body: 'Hi [Name],\n\nDuring our recent assessment, I identified an opportunity to improve your incident response workflow. I\'d recommend evaluating RELIASTRA — it provides the cross-system correlation and audit-ready reporting that aligns with your compliance requirements.\n\nYou can explore the platform here: [your referral link]\n\nI\'m happy to facilitate an introduction to their team if you\'d like.\n\nRegards,\n[Your name]',
+            body: 'Hi [Name],\n\nDuring our recent assessment, I identified an opportunity to improve your incident response workflow. I\'d recommend evaluating RELIASTRA - it provides the cross-system correlation and audit-ready reporting that aligns with your compliance requirements.\n\nYou can explore the platform here: [your referral link]\n\nI\'m happy to facilitate an introduction to their team if you\'d like.\n\nRegards,\n[Your name]',
           },
         },
         {
@@ -324,12 +324,12 @@ const resources: Resource[] = [
           type: 'list',
           content: 'Template categories included:',
           items: [
-            'Technical Breakdown — "Here\'s how I set up cross-system incident correlation"',
-            'Results Story — "After 3 months with RELIASTRA, here\'s what changed"',
-            'Tool Comparison — "Why we moved from spreadsheets to automated correlation"',
-            'Problem-Solution — "The incident report that used to take 4 hours now takes 15 minutes"',
-            'Behind-the-Scenes — "A look at how we handle post-incident reviews"',
-            'Community Discussion — "What do you use for dependency mapping?"',
+            'Technical Breakdown - "Here\'s how I set up cross-system incident correlation"',
+            'Results Story - "After 3 months with RELIASTRA, here\'s what changed"',
+            'Tool Comparison - "Why we moved from spreadsheets to automated correlation"',
+            'Problem-Solution - "The incident report that used to take 4 hours now takes 15 minutes"',
+            'Behind-the-Scenes - "A look at how we handle post-incident reviews"',
+            'Community Discussion - "What do you use for dependency mapping?"',
           ],
         },
         {
@@ -342,7 +342,7 @@ const resources: Resource[] = [
         },
         {
           type: 'tip',
-          content: 'LinkedIn posts between 1,200-1,500 characters perform best for technical content. On Twitter/X, threads of 5-8 tweets outperform single posts. Always include a visual — posts with screenshots or diagrams get 2-3x more engagement.',
+          content: 'LinkedIn posts between 1,200-1,500 characters perform best for technical content. On Twitter/X, threads of 5-8 tweets outperform single posts. Always include a visual - posts with screenshots or diagrams get 2-3x more engagement.',
         },
       ],
     },
@@ -376,17 +376,17 @@ const resources: Resource[] = [
           content: 'The 12-slide deck follows this structure:',
           items: [
             'Title slide with your name and co-branding',
-            'The reliability problem — industry context',
+            'The reliability problem - industry context',
             'Why spreadsheets and manual processes break down',
-            'Introducing RELIASTRA — the solution overview',
+            'Introducing RELIASTRA - the solution overview',
             'How it works: Track, Correlate, Prove',
-            'Real-world impact — data from production environments',
-            'Integration ecosystem — works with your existing stack',
-            'Case study template — customize with your experience',
+            'Real-world impact - data from production environments',
+            'Integration ecosystem - works with your existing stack',
+            'Case study template - customize with your experience',
             'Partner program overview and benefits',
-            'Getting started — next steps for the audience',
+            'Getting started - next steps for the audience',
             'Q&A slide',
-            'Partner attribution — your contact details',
+            'Partner attribution - your contact details',
           ],
         },
         {
@@ -404,7 +404,7 @@ const resources: Resource[] = [
     categoryLabel: 'TOOLS',
     readTime: '6 min',
     readMinutes: 6,
-    summary: 'A walkthrough of your partner dashboard — how to read your metrics, track referral status, understand commission calculations, and manage payouts effectively.',
+    summary: 'A walkthrough of your partner dashboard - how to read your metrics, track referral status, understand commission calculations, and manage payouts effectively.',
     keyTakeaways: [
       'Dashboard shows real-time referral status: pending, active, churned',
       'Commission is 30% of the subscriber\'s monthly plan price',
@@ -432,10 +432,10 @@ const resources: Resource[] = [
           type: 'list',
           content: 'The four primary metrics on your overview:',
           items: [
-            'Total Earned — cumulative commission across all active referrals',
-            'This Month — commission earned in the current billing period',
-            'Active Customers — referrals with an active RELIASTRA subscription',
-            'Payable — balance available for withdrawal (minimum $50)',
+            'Total Earned - cumulative commission across all active referrals',
+            'This Month - commission earned in the current billing period',
+            'Active Customers - referrals with an active RELIASTRA subscription',
+            'Payable - balance available for withdrawal (minimum $50)',
           ],
         },
         {
@@ -984,7 +984,7 @@ export function PageResources() {
           className="mt-8 font-mono text-xs text-muted-foreground"
         >
           {filteredResources.length} resource{filteredResources.length !== 1 ? 's' : ''} available.
-          More are added regularly — check back for updates.
+          More are added regularly - check back for updates.
         </motion.p>
       </div>
 

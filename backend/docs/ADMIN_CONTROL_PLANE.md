@@ -33,7 +33,7 @@ TAKE ONE CLEAR ACTION (audited)
 | `GET /v1/admin/business/mrr-timeseries` | **DEPRECATE** | `GET /v1/admin/revenue/timeseries` |
 | `GET /v1/admin/business/recent-signups` | **DEPRECATE** | `GET /v1/admin/customers/recent` |
 | `GET /v1/admin/business/churn-signals` | **DEPRECATE** | `GET /v1/admin/customers/churn-risk` |
-| `GET /v1/admin/business/founding-customers` | **REMOVED** (founding program retired) | — |
+| `GET /v1/admin/business/founding-customers` | **REMOVED** (founding program retired) | - |
 | `GET /v1/admin/analytics/growth-funnel` | **DEPRECATE** | `GET /v1/admin/growth/funnel` |
 | `GET /v1/admin/analytics/retention` | **DEPRECATE** | `GET /v1/admin/growth/retention` |
 | `GET /v1/admin/analytics/feature-adoption` | **DEPRECATE** | `GET /v1/admin/product/features` |
@@ -201,5 +201,5 @@ POST  /v1/admin/partners/payouts/{id}/process
 1. Point admin home at `GET /overview` + `GET /attention` (+ optional timeseries/recent).
 2. Replace user screens with customers endpoints.
 3. Replace analytics/business calls with growth/product/revenue namespaces.
-4. Prefer ticket workspace detail — stop fan-out to customer/org/billing separately.
+4. Prefer ticket workspace detail - stop fan-out to customer/org/billing separately.
 5. After frontend ships, remove deprecated routes in a follow-up release.

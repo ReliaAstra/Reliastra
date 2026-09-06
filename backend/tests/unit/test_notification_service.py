@@ -65,7 +65,7 @@ async def test_dispatch_alert(mocker):
 
     repo.list_for_org = AsyncMock(return_value=[fake_config])
 
-    # PagerDuty now performs a real Events API v2 call (FIX 19) — stub it.
+    # PagerDuty now performs a real Events API v2 call (FIX 19) - stub it.
     mocker.patch(
         "app.modules.notifications.service.PagerDutyChannel.send",
         new=AsyncMock(return_value=True),

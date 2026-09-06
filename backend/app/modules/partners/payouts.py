@@ -2,7 +2,7 @@
 
 Payouts are administratively driven in v1: an admin creates a payout from a
 partner's payable balance and later marks it paid (or failed). The service
-keeps the ledger consistent — payable commissions are reserved by a payout
+keeps the ledger consistent - payable commissions are reserved by a payout
 and settle to ``paid`` only when the payout itself is marked paid.
 """
 
@@ -82,7 +82,7 @@ class PartnerPayoutService:
                 raise ValidationException(
                     "Your payout destination was changed recently. Payouts to a "
                     f"new destination unlock {cooldown_hours} hour(s) after the "
-                    "change — this protects you if someone else made it."
+                    "change - this protects you if someone else made it."
                 )
 
         # Row-locked read: two concurrent create_payout calls serialize here
@@ -163,7 +163,7 @@ class PartnerPayoutService:
         # State machine: transitions are only valid from the PENDING state.
         # Without this guard an already-PAID payout could be marked failed
         # (returning its commissions to the payable pool) and then paid out
-        # AGAIN — a double payout. A FAILED payout must be recreated, not
+        # AGAIN - a double payout. A FAILED payout must be recreated, not
         # silently revived.
         if payout.status != PayoutStatus.PENDING.value:
             raise ValidationException(
@@ -213,7 +213,7 @@ class PartnerPayoutService:
             #
             # NOTE: the repository's ``update`` helper skips ``None`` values,
             # so ``update(..., payout_id=None)`` is a silent no-op and would
-            # strand the money forever — neither payable nor paid. The
+            # strand the money forever - neither payable nor paid. The
             # reservation is therefore cleared directly on the model.
             for commission in await self.commission_repo.commissions_for_payout(
                 session, payout.id

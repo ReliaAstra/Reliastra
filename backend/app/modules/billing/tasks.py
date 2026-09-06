@@ -71,7 +71,7 @@ def _trial_marker_key(org_id: str) -> str:
 def notify_trial_expirations() -> int:
     """Email owners of Free-plan organizations whose trial just ended.
 
-    Paid organizations are skipped — subscriptions never lose entitlements.
+    Paid organizations are skipped - subscriptions never lose entitlements.
     Returns the number of emails actually sent (deduplicated).
     """
     return asyncio.run(_run())
@@ -131,7 +131,7 @@ async def _run() -> int:
             continue
         if claimed is None:
             logger.warning(
-                "Idempotency store unavailable — sending trial expiry notice for "
+                "Idempotency store unavailable - sending trial expiry notice for "
                 "org %s without duplicate protection",
                 org.id,
             )
@@ -161,7 +161,7 @@ async def _sync_evaluation_expiry(org_id) -> None:
 
     The entitlement layer already treats the window as expired via server time,
     so this is purely a state-sync / data-preservation helper. It must never
-    delete customer data — excess dependencies are paused (is_active=False),
+    delete customer data - excess dependencies are paused (is_active=False),
     preserving configuration and history for re-activation on upgrade.
     """
     session_maker = get_session_maker()
@@ -228,7 +228,7 @@ async def _org_owner(session, org_id) -> User | None:
 
 
 def _fallback_lines(org, dependencies_total: int | None) -> list[str]:
-    """Expiry consequences — same numbers the dashboard shows, never invented."""
+    """Expiry consequences - same numbers the dashboard shows, never invented."""
     free_limit = PLAN_DEPENDENCY_LIMITS[Plan.FREE.value]
     lines = [
         "Your account stays active and your data is preserved.",

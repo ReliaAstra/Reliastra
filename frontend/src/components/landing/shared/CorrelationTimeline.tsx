@@ -47,7 +47,7 @@ export function CorrelationTimeline() {
                     {v.status.replace(/_/g, ' ')}
                   </span>
                   <span className="font-mono text-[12px] text-[#67E8F9]">
-                    {v.latency_ms != null ? `${v.latency_ms}ms` : '—'}
+                    {v.latency_ms != null ? `${v.latency_ms}ms` : '-'}
                   </span>
                 </div>
               </div>

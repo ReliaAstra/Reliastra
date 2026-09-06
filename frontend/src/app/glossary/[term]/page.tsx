@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ term: str
   const g = GLOSSARY_TERMS.find((x) => x.slug === term);
   if (!g) return { title: 'Not found | RELIASTRA' };
   return buildMetadata({
-    title: `${g.term} — Definition`,
+    title: `${g.term} - Definition`,
     description: g.short,
     path: `/glossary/${g.slug}`,
   });

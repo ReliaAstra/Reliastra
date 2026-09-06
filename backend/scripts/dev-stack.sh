@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# RELIASTRA local stack — no Docker, no external SaaS.
+# RELIASTRA local stack - no Docker, no external SaaS.
 #
 # Boots everything the product needs to run for real rather than mocked inside
 # the browser:
@@ -7,8 +7,8 @@
 #   postgres      embedded (pgserver), migrated to head
 #   redis         broker + result backend for Celery (and the app cache)
 #   api           uvicorn on :8000
-#   worker        celery worker — executes the probes
-#   beat          celery beat — the ONE thing that schedules checks
+#   worker        celery worker - executes the probes
+#   beat          celery beat - the ONE thing that schedules checks
 #   paystack      audit/mock_paystack.py on :9200  (records what we ask to charge)
 #   mail          audit/mock_mail_sink.py  SMTP :2525 / HTTP inbox :8025
 #
@@ -61,7 +61,7 @@ UVICORN="$VENV/uvicorn"
 REDIS_SERVER_BIN="${REDIS_SERVER_BIN:-$(command -v redis-server || true)}"
 REDIS_CLI_BIN="${REDIS_CLI_BIN:-$(command -v redis-cli || true)}"
 
-# Scheduler heartbeat key — written by the Beat task `schedule_checks`. Its
+# Scheduler heartbeat key - written by the Beat task `schedule_checks`. Its
 # presence is the proof that Beat is alive, which is why `start` waits on it.
 HEARTBEAT_KEY="reliastra:checks:scheduler:last_heartbeat"
 
@@ -102,7 +102,7 @@ cleanup_children() {
 # ── postgres ────────────────────────────────────────────────────────────────
 start_postgres() {
   # The cluster outlives this helper (cleanup_mode=None), and pgserver would
-  # block trying to re-adopt one that is already running — so a live cluster is
+  # block trying to re-adopt one that is already running - so a live cluster is
   # recognised from its postmaster.pid and the saved URI is reused. Helper
   # stdout is redirected because a daemon holding the caller's pipe would keep
   # `start` from ever returning.
@@ -221,7 +221,7 @@ wait_for() { # url, name, seconds
   echo "  ! $name did not answer on $url" >&2; return 1
 }
 
-wait_for_worker() { # seconds — celery inspect ping
+wait_for_worker() { # seconds - celery inspect ping
   local limit="${1:-40}" i=0 out
   [ -n "$CELERY" ] || return 1
   while [ "$i" -lt "$limit" ]; do
@@ -240,7 +240,7 @@ wait_for_worker() { # seconds — celery inspect ping
   return 1
 }
 
-wait_for_beat() { # seconds — the scheduler heartbeat appearing in Redis
+wait_for_beat() { # seconds - the scheduler heartbeat appearing in Redis
   local limit="${1:-40}" i=0
   while [ "$i" -lt "$limit" ]; do
     local value
@@ -293,7 +293,7 @@ export PROMETHEUS_MULTIPROC_DIR="$STATE_DIR/prometheus"
 ENV
 }
 
-with_env() { # command... — run with the stack env loaded
+with_env() { # command... - run with the stack env loaded
   ( cd "$BACKEND_DIR" && set -a && . "$STATE_DIR/api.env" && set +a && "$@" )
 }
 
@@ -310,7 +310,7 @@ start_api() {
 }
 
 start_worker() {
-  [ -n "$CELERY" ] || die "celery not found on PATH or in $VENV — cannot start a worker.
+  [ -n "$CELERY" ] || die "celery not found on PATH or in $VENV - cannot start a worker.
   Check execution requires it (pip install -r requirements.txt)."
   # Windows (Git Bash / MSYS / Cygwin) cannot run Celery prefork: billiard
   # fails with PermissionError [WinError 5] Access denied and the worker
@@ -335,7 +335,7 @@ start_worker() {
 }
 
 start_beat() {
-  [ -n "$CELERY" ] || die "celery not found on PATH or in $VENV — cannot start beat.
+  [ -n "$CELERY" ] || die "celery not found on PATH or in $VENV - cannot start beat.
   Beat is the only thing that schedules checks."
   echo "▶ celery beat (every ${CHECK_SCHEDULE_SECONDS}s)"
   _spawn beat "$STATE_DIR/beat.log" \
@@ -457,7 +457,7 @@ status() {
 run() {
   trap 'echo; echo "shutting down..."; cleanup_children; stop' EXIT INT TERM
   start || exit 1
-  echo "running in foreground — Ctrl-C to stop everything"
+  echo "running in foreground - Ctrl-C to stop everything"
   while true; do sleep 5; done
 }
 

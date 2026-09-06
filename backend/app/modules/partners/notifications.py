@@ -1,6 +1,6 @@
 """Notification delivery for the Partner Referral program.
 
-One entry point — :meth:`PartnerNotificationService.notify` — writes an
+One entry point - :meth:`PartnerNotificationService.notify` - writes an
 **in-app** notification (always) and optionally sends an **email** copy when
 the partner's preferences allow it. Browser/Chrome notifications are raised by
 the dashboard itself from the in-app feed (the partner opts in via
@@ -288,7 +288,7 @@ class PartnerNotificationService:
             session,
             user_id=partner_user_id,
             event=PartnerEvent.PAYOUT_REQUESTED,
-            title=f"Payout request received — {_money(amount_minor, currency)}",
+            title=f"Payout request received - {_money(amount_minor, currency)}",
             body=(
                 f"We received your payout request for {_money(amount_minor, currency)} "
                 f"to {destination}. You'll be notified as soon as it is sent."
@@ -311,7 +311,7 @@ class PartnerNotificationService:
             session,
             user_id=partner_user_id,
             event=PartnerEvent.PAYOUT_PAID,
-            title=f"Payout sent — {_money(amount_minor, currency)}",
+            title=f"Payout sent - {_money(amount_minor, currency)}",
             body=(
                 f"{_money(amount_minor, currency)} has been sent to {destination}. "
                 f"Transaction reference: {transaction_reference}."
@@ -333,7 +333,7 @@ class PartnerNotificationService:
             session,
             user_id=partner_user_id,
             event=PartnerEvent.PAYOUT_FAILED,
-            title=f"Payout could not be completed — {_money(amount_minor, currency)}",
+            title=f"Payout could not be completed - {_money(amount_minor, currency)}",
             body=(
                 "We were unable to complete your payout. The amount has been returned "
                 "to your payable balance. Please check your payout destination in "
@@ -352,7 +352,7 @@ class PartnerNotificationService:
         destination: str,
         cooldown_hours: int,
     ) -> None:
-        """Security notice — always emailed, regardless of preferences.
+        """Security notice - always emailed, regardless of preferences.
 
         This is the one notification a partner cannot switch off: it is their
         only out-of-band signal that someone changed where their money goes.
@@ -392,7 +392,7 @@ class PartnerNotificationService:
             session,
             user_id=partner_user_id,
             event=PartnerEvent.SUPPORT_REPLY,
-            title=f"Support replied — {subject}",
+            title=f"Support replied - {subject}",
             body=f"[{ticket_number}] {preview}",
             action_url="/?page=support",
             action_label="Open conversation",
@@ -487,7 +487,7 @@ class PartnerNotificationService:
 
         Returns the number of delivery rows touched. The update is scoped by
         ``user_id``, so a caller acting on someone else's notification matches
-        zero rows — callers turn that into a 404 rather than a misleading 204.
+        zero rows - callers turn that into a 404 rather than a misleading 204.
         """
         now = datetime.now(timezone.utc)
         result = await session.execute(

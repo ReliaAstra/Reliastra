@@ -8,7 +8,7 @@ then will ``POST /v1/auth/login`` succeed.
 Security properties:
 
 * Codes are generated with :mod:`secrets` (CSPRNG), never :mod:`random`.
-* Only an HMAC of the code — salted by user id and ``SECRET_KEY`` — is stored.
+* Only an HMAC of the code - salted by user id and ``SECRET_KEY`` - is stored.
 * Comparison is constant time (:func:`hmac.compare_digest`).
 * At most one live code per user; issuing a new one burns the previous.
 * ``OTP_MAX_ATTEMPTS`` wrong guesses burn the code (bounds online brute force
@@ -60,7 +60,7 @@ def _render_otp_email(user_name: str, code: str) -> tuple[str, str]:
     """Returns (plain_text, html_body) for the verification code email.
 
     The code and its expiry instructions are security-critical content and
-    therefore stay in the message body — the shared support footer is always
+    therefore stay in the message body - the shared support footer is always
     rendered below them, never around them.
     """
     spaced = " ".join(code)
@@ -74,7 +74,7 @@ Your Reliastra verification code is:
 Enter it on the verification screen to activate your account. The code
 expires in {OTP_EXPIRE_MINUTES} minutes.
 
-If you did not create a Reliastra account, you can safely ignore this email —
+If you did not create a Reliastra account, you can safely ignore this email -
 no account can be used until this code is entered.
 
 Best regards,
@@ -87,7 +87,7 @@ The Reliastra Team
         f"{escape(spaced)}</span></p>"
         f'<p class="note">This code expires in {OTP_EXPIRE_MINUTES} minutes and can '
         "only be used once. If you did not create an account, you can safely ignore "
-        "this email — no account can be used until this code is entered. Reliastra "
+        "this email - no account can be used until this code is entered. Reliastra "
         "will never ask you for this code by phone.</p>"
     )
     return render_email(
@@ -155,7 +155,7 @@ class EmailOTPService:
         plain, html = _render_otp_email(user.full_name, code)
         # Resend-first with SMTP fallback (never SMTP-only: production has no
         # local MTA). The code is already persisted above, so a mail failure
-        # must not roll back registration — the user can hit "Resend code".
+        # must not roll back registration - the user can hit "Resend code".
         try:
             from app.modules.email_events.sender import send_transactional_email
 
@@ -240,7 +240,7 @@ class EmailOTPService:
             # NOT a success path. The router mints a session from whatever
             # this returns, so short-circuiting here would let anyone POST
             # {email, "000000"} for any already-verified account and be
-            # handed tokens — a full authentication bypass. Registration
+            # handed tokens - a full authentication bypass. Registration
             # already discloses "address is taken" via 409, so naming the
             # state here leaks nothing new.
             raise ValidationException(
@@ -312,7 +312,7 @@ class EmailOTPService:
         logger.info("Email verified via OTP for user %s", user.id)
 
         # Welcome email: verification is the moment a signup becomes a real
-        # account — greet them. Failure-isolated, same contract as issue_code:
+        # account - greet them. Failure-isolated, same contract as issue_code:
         # a broken SMTP layer must never fail verification.
         try:
             from app.modules.auth.email_service import email_auth_service

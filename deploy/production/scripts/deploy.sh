@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy.sh — deterministic state machine, least-privilege
+# deploy.sh - deterministic state machine, least-privilege
 # Usage: sudo ./deploy.sh --commit <sha> --image <ref> [--timeout 600]
 set -euo pipefail
 
@@ -124,8 +124,8 @@ if timeout 120 bash -c 'set -a; source /opt/reliastra/.env.production; pg_dump -
   find /opt/reliastra/backups -name "pre-*.sql.gz" -mtime +7 -delete 2>/dev/null || true
   ls -1t /opt/reliastra/backups/pre-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f
 else
-  log "WARN" "pg_dump failed — continuing if Supabase PITR available, else operator must verify"
-  # Don't fail deploy if pg_dump fails but DB is reachable — Supabase has PITR
+  log "WARN" "pg_dump failed - continuing if Supabase PITR available, else operator must verify"
+  # Don't fail deploy if pg_dump fails but DB is reachable - Supabase has PITR
   # Record that backup was skipped
   echo "backup: skipped or failed at $START_TS for $COMMIT" >> /opt/reliastra/logs/backup.log
 fi
@@ -133,7 +133,7 @@ fi
 # We refuse to auto-run if heads contain destructive ops unless explicitly flagged
 HEADS_DIFF=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic history --verbose 2>&1 | head -100' || true)
 if echo "$HEADS_DIFF" | grep -qi "drop_table\|drop_column"; then
-  log "WARN" "heads contain destructive ops — manual review required"
+  log "WARN" "heads contain destructive ops - manual review required"
   # For now we still allow expand migrations (add), but log
 fi
 
@@ -163,7 +163,7 @@ fi
 # 7. WAIT FOR HEALTH
 log "INFO" "HEALTH"
 if ! timeout 120 /opt/reliastra/scripts/healthcheck.sh --timeout 120; then
-  log "ERROR" "health failed — initiating rollback"
+  log "ERROR" "health failed - initiating rollback"
   if /opt/reliastra/scripts/rollback.sh --reason "health"; then
     record_state "ROLLED_BACK"
   else
@@ -175,7 +175,7 @@ fi
 # 8. SMOKE TEST
 log "INFO" "SMOKE"
 if ! timeout 60 /opt/reliastra/scripts/smoke-test.sh --timeout 60; then
-  log "ERROR" "smoke failed — rollback"
+  log "ERROR" "smoke failed - rollback"
   if /opt/reliastra/scripts/rollback.sh --reason "smoke"; then
     record_state "ROLLED_BACK"
   else
@@ -184,7 +184,7 @@ if ! timeout 60 /opt/reliastra/scripts/smoke-test.sh --timeout 60; then
   exit 1
 fi
 
-# 9. SUCCESS — update current with success
+# 9. SUCCESS - update current with success
 log "INFO" "SUCCESS"
 cat > "$STATE_DIR/current.json" <<JSON
 {"commit":"$COMMIT","image":"$IMAGE","digest":"$IMAGE_DIGEST","workflow":"$WORKFLOW","deployer":"$DEPLOYER","start":"$START_TS","end":"$(date -u +%FT%TZ)","status":"success"}

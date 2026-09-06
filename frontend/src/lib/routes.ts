@@ -103,7 +103,7 @@ export const RESEARCH_ARTICLES = [
     slug: 'the-dependency-gap',
     title: 'The Dependency Gap',
     summary:
-      'Why an outage you caused and an outage your vendor caused look identical from inside your own monitoring — and what it takes to tell them apart.',
+      'Why an outage you caused and an outage your vendor caused look identical from inside your own monitoring - and what it takes to tell them apart.',
     publishedAt: '2025-11-18',
     category: 'Research',
     tags: ['Dependency management', 'Incident analysis'],
@@ -243,7 +243,7 @@ export const EXTERNAL_LINKS = {
 /**
  * Landing-page section anchors. `scrollToId` silently scrolls to the top when
  * an id is missing, so a stale anchor is a dead link that still looks like it
- * works. Every id here must exist in the rendered landing composition — the
+ * works. Every id here must exist in the rendered landing composition - the
  * accompanying test asserts that.
  */
 export const LANDING_SECTIONS = [

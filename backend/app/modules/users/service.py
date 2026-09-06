@@ -36,7 +36,7 @@ class UserService:
             raise ResourceNotFoundException("User not found")
 
         # Credential changes (password or email) require re-proving knowledge
-        # of the current password — a briefly-stolen access token must not
+        # of the current password - a briefly-stolen access token must not
         # be sufficient for a permanent takeover. Accounts created via
         # external identity providers have no local password; they may only
         # change non-credential fields here.

@@ -70,7 +70,7 @@ def setup_test_db_server() -> Generator[str, None, None]:
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def test_engine(setup_test_db_server: str) -> AsyncGenerator[AsyncEngine, None]:
     if setup_test_db_server.startswith("postgresql+asyncpg://dummy"):
-        # No real DB — provide a dummy engine that unit tests won't use.
+        # No real DB - provide a dummy engine that unit tests won't use.
         # Integration tests that need a real DB should be skipped.
         yield None  # type: ignore
         return
@@ -129,7 +129,7 @@ async def _reset_paystack_http_pool() -> AsyncGenerator[None, None]:
 
     The billing service caches one process-global httpx.AsyncClient
     (``_paystack_http_client``). Tests patch ``httpx.AsyncClient`` per test
-    with a MockTransport that captures into that test's own dict — but a
+    with a MockTransport that captures into that test's own dict - but a
     client built by an EARLIER test keeps serving later tests, so their
     requests succeed (200) while landing in the wrong capture dict
     (``KeyError: 'body'``). ASGITransport never runs app lifespan, so nothing
@@ -226,7 +226,7 @@ async def auth_data(async_client: AsyncClient) -> dict[str, Any]:
         "full_name": "Test Owner",
         "org_name": "Reliastra Test Org",
     }
-    # Registration alone yields no session — the OTP gate must be cleared.
+    # Registration alone yields no session - the OTP gate must be cleared.
     body = await register_and_verify(async_client, register_payload)
     token_data = body["tokens"]
     user_data = body["user"]

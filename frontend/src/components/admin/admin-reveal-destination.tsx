@@ -65,13 +65,13 @@ export function RevealDestinationButton({
   const bank = revealed.bank_details || {};
   const rows: [string, string][] = revealed.wallet_address
     ? [
-        ['Network', revealed.payout_network || '—'],
+        ['Network', revealed.payout_network || '-'],
         ['Wallet', revealed.wallet_address],
       ]
     : [
-        ['Account name', bank.account_name || '—'],
-        ['Bank', bank.bank_name || '—'],
-        ['Account number', bank.account_number || '—'],
+        ['Account name', bank.account_name || '-'],
+        ['Bank', bank.bank_name || '-'],
+        ['Account number', bank.account_number || '-'],
         ...((bank.routing_number ? [['Routing', bank.routing_number]] : []) as [string, string][]),
         ...((bank.swift_bic ? [['SWIFT / BIC', bank.swift_bic]] : []) as [string, string][]),
       ];
@@ -80,7 +80,7 @@ export function RevealDestinationButton({
     <div className="w-full space-y-2 rounded-lg border border-amber-300 bg-amber-50/60 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
       <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-400">
         <ShieldAlert className="size-3.5" />
-        Revealed — this access was logged
+        Revealed - this access was logged
       </div>
 
       {revealed.in_cooldown && (
@@ -98,7 +98,7 @@ export function RevealDestinationButton({
               <span className="break-all font-mono text-slate-800 dark:text-slate-100">
                 {value}
               </span>
-              {value !== '—' && (
+              {value !== '-' && (
                 <button
                   onClick={() => void copy(value)}
                   aria-label={`Copy ${label}`}

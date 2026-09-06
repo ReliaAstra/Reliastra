@@ -1,4 +1,4 @@
-"""FX reference rate: sourced, timestamped, labelled — and never in the charge.
+"""FX reference rate: sourced, timestamped, labelled - and never in the charge.
 
 The reference estimate exists so a global customer can make sense of the gap
 between a $39 list price and a ₦60,000 payment. These tests pin the honesty
@@ -74,7 +74,7 @@ async def test_reference_payload_is_sourced_and_timestamped(mock_httpx, monkeypa
     assert fx["source_url"] == settings.FX_REFERENCE_URL
     assert fx["source_timestamp"] == "Wed, 13 Aug 2025 00:40:32 +0000"
     assert fx["retrieved_at"].endswith("Z")
-    # It says it is an estimate — in the label and in the disclaimer.
+    # It says it is an estimate - in the label and in the disclaimer.
     assert "estimate" in fx["label"].lower()
     assert "never" in fx["disclaimer"].lower()
     assert fx["disclaimer"] == FX_REFERENCE_DISCLAIMER
@@ -91,7 +91,7 @@ async def test_absent_on_error_never_invented(mock_httpx):
 
 @pytest.mark.asyncio
 async def test_wrong_base_currency_is_refused(mock_httpx):
-    """A quote not denominated in USD would mislabel the estimate — reject it."""
+    """A quote not denominated in USD would mislabel the estimate - reject it."""
     mock_httpx["transport"] = _transport(
         {"base": "EUR", "rates": {"NGN": 999.0}, "time_last_update_utc": ""}
     )

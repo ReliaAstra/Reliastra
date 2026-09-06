@@ -33,7 +33,7 @@ const STATES = {
 } as const;
 
 function formatUtc(iso?: string): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
   return d.toLocaleString('en-US', {
     year: 'numeric',
@@ -51,7 +51,7 @@ function formatUtc(iso?: string): string {
  * A report link carries a verification id; the backend's public
  * ``/v1/verify/{id}`` endpoint is the single source of truth for whether the
  * snapshot exists and what it contains. Nothing here is inferred or
- * fabricated — an unknown token simply does not verify.
+ * fabricated - an unknown token simply does not verify.
  */
 export function EvidenceReportPage({ token }: { token: string }) {
   const [state, setState] = useState<(typeof STATES)[keyof typeof STATES]>(STATES.loading);
@@ -126,7 +126,7 @@ export function EvidenceReportPage({ token }: { token: string }) {
               ].map(([label, value]) => (
                 <div key={label as string} className="grid grid-cols-[160px_1fr] gap-3 px-5 py-3">
                   <dt className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#94A3B8]">{label}</dt>
-                  <dd className="break-all font-mono text-sm text-[#0F172A]">{value || '—'}</dd>
+                  <dd className="break-all font-mono text-sm text-[#0F172A]">{value || '-'}</dd>
                 </div>
               ))}
             </dl>

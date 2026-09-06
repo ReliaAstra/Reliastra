@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cleanup.sh — retention-aware, never blind prune
+# cleanup.sh - retention-aware, never blind prune
 set -euo pipefail
 
 # Keep last 5 app images + current/previous (total ~7)

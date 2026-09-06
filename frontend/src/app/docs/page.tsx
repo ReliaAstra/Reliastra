@@ -68,7 +68,7 @@ export default function DocsPage() {
             <h2>Concepts first?</h2>
             <p>
               The <a href="/glossary">glossary</a> defines External Dependency
-              Intelligence, incident attribution, SLA evidence and telemetry — each
+              Intelligence, incident attribution, SLA evidence and telemetry - each
               with problem, example and RELIASTRA’s approach.
             </p>
           </Prose>

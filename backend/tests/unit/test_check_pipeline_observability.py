@@ -404,7 +404,7 @@ async def test_successful_dispatch_is_counted_and_marks_the_dependency_queued(
 
     assert dispatched == 1
     assert _counter_value(checks_scheduled_total, region="eu-west") == before + 1
-    # next_check_at advanced because — and only because — it was enqueued.
+    # next_check_at advanced because - and only because - it was enqueued.
     assert dep.next_check_at > datetime.now(timezone.utc)
 
     from app.modules.checks.scheduler_health import read_check_markers
@@ -563,7 +563,7 @@ def _import_all_task_modules() -> None:
     """Import every module Celery is configured to include.
 
     This is what a real worker does at startup, so the registry inspected below
-    is the registry a worker actually has — including tasks scheduled by Beat
+    is the registry a worker actually has - including tasks scheduled by Beat
     but never imported by the API process.
     """
     import importlib

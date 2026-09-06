@@ -179,8 +179,8 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
     Test Phase 11: Server-side admin enforcement via the dedicated credential.
 
     Admin access is a separate JWT family (aud=reliastra-admin, typed
-    admin_access, ADMIN_TOKEN_SECRET). Customer/user JWTs — even rows that
-    have ``is_system_admin=True`` — are rejected; only the operator credential
+    admin_access, ADMIN_TOKEN_SECRET). Customer/user JWTs - even rows that
+    have ``is_system_admin=True`` - are rejected; only the operator credential
     path may mint the admin token.
     """
     from tests.helpers import make_admin_headers
@@ -192,7 +192,7 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
     await make_admin_headers(db_session)
 
     # Create a normal user and an "admin" user row. The flag no longer grants
-    # access — the dedicated credential does.
+    # access - the dedicated credential does.
     normal_user = await UserRepository.create(
         db_session,
         email="normal_user@reliastra.com",

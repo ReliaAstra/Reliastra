@@ -84,17 +84,17 @@ The Reliastra Team
     def _render_reset_email(self, user_name: str, reset_url: str) -> tuple[str, str]:
         """Returns (plain_text, html_body) for password reset email."""
         name = escape(user_name)
-        # Security-critical instruction stays in the body — deliberately above
+        # Security-critical instruction stays in the body - deliberately above
         # and outside the shared support footer.
         security_html = (
             f'<p class="note">This link expires in {PASSWORD_RESET_EXPIRE_MINUTES} '
             "minutes. If you did not request a password reset, you can safely ignore "
-            "this email — your password will not change. Reliastra support will never "
+            "this email - your password will not change. Reliastra support will never "
             "ask you for your password.</p>"
         )
         security_text = (
             f"This link expires in {PASSWORD_RESET_EXPIRE_MINUTES} minutes.\n\n"
-            "If you did not request a password reset, please ignore this email — your "
+            "If you did not request a password reset, please ignore this email - your "
             "password will remain unchanged. Reliastra support will never ask you for "
             "your password."
         )
@@ -154,7 +154,7 @@ The Reliastra Team
         body_text = f"""
 Hello {user_name},
 
-Welcome to Reliastra — your account is ready.
+Welcome to Reliastra - your account is ready.
 
 {workspace_line} Reliastra watches the third-party APIs and vendors your product depends on, correlates outages with your incidents, and generates verifiable SLA evidence.
 
@@ -201,12 +201,12 @@ The Reliastra Team
         dashboard_url = frontend_url("/dashboard")
         plain, html = self._render_welcome_email(display_name, org_name, dashboard_url)
         try:
-            # EmailClient.send_email is sync SMTP — run it off the event loop
+            # EmailClient.send_email is sync SMTP - run it off the event loop
             # exactly as its docstring instructs.
             sent = await asyncio.to_thread(
                 email_client.send_email,
                 to_email=email,
-                subject="Welcome to Reliastra — your workspace is ready",
+                subject="Welcome to Reliastra - your workspace is ready",
                 body=plain,
                 html_body=html,
             )
@@ -227,7 +227,7 @@ The Reliastra Team
         """Generate a verification token and send the email.
 
         The response is deliberately uniform for unknown addresses, already
-        verified addresses and real sends — this is an unauthenticated
+        verified addresses and real sends - this is an unauthenticated
         endpoint and must not leak which emails are registered or verified.
         """
         user = await self.user_repository.get_by_email(session, email)
@@ -255,7 +255,7 @@ The Reliastra Team
             session, user.id, token, expires_at
         )
 
-        # Send email — blocking SMTP must never run on the event loop.
+        # Send email - blocking SMTP must never run on the event loop.
         verification_url = self._build_verification_url(token)
         plain, html = self._render_verification_email(user.full_name, verification_url)
         await asyncio.to_thread(
@@ -311,7 +311,7 @@ The Reliastra Team
             logger.info("Email verified for user %s", user.id)
             if was_unverified:
                 # Magic-link verification is an alternate completion of the
-                # same signup — welcome exactly once, only on the transition.
+                # same signup - welcome exactly once, only on the transition.
                 # Failure-isolated: email must never fail verification.
                 try:
                     org_name = await self._first_org_name(session, user.id)
@@ -357,7 +357,7 @@ The Reliastra Team
             session, user.id, token, expires_at
         )
 
-        # Send email (off the event loop — see the note above).
+        # Send email (off the event loop - see the note above).
         reset_url = self._build_reset_url(token)
         plain, html = self._render_reset_email(user.full_name, reset_url)
         await asyncio.to_thread(
@@ -412,7 +412,7 @@ The Reliastra Team
             # refresh token copied before the reset cannot outlive it.
             revoked = await self.auth_repository.revoke_all_for_user(session, user.id)
             logger.info(
-                "Password reset completed for user %s — revoked %s refresh session(s)",
+                "Password reset completed for user %s - revoked %s refresh session(s)",
                 user.id,
                 revoked,
             )

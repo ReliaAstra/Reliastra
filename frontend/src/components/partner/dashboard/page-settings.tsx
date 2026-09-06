@@ -209,7 +209,7 @@ function PayoutInfoTab() {
     account_name: partner?.bankDetails?.account_name || '',
     bank_name: partner?.bankDetails?.bank_name || '',
     // Account and routing numbers come back masked, so they are never
-    // prefilled — the partner re-enters them to change the destination.
+    // prefilled - the partner re-enters them to change the destination.
     account_number: '',
     routing_number: '',
     swift_bic: '',
@@ -292,7 +292,7 @@ function PayoutInfoTab() {
       setSaved(true);
       setWalletAddress('');
       setBank((prev) => ({ ...prev, account_number: '', routing_number: '', swift_bic: '' }));
-      toast.success('Payout details saved — payouts are held briefly for your protection');
+      toast.success('Payout details saved - payouts are held briefly for your protection');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not save payout details');
     } finally {
@@ -312,10 +312,10 @@ function PayoutInfoTab() {
             Current destination
           </p>
           <p className="mt-1 break-all font-mono text-sm">
-            {partner.payoutDestination || '—'}
+            {partner.payoutDestination || '-'}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Stored encrypted and shown masked — we never display it in full again.
+            Stored encrypted and shown masked - we never display it in full again.
             To change it, enter the new details below and confirm your password.
           </p>
         </div>
@@ -364,7 +364,7 @@ function PayoutInfoTab() {
               className="font-mono text-sm"
             />
             <p className="text-[11px] text-muted-foreground">
-              Enter your {selectedMethodInfo?.name} wallet address. Double-check before saving — crypto transactions are irreversible.
+              Enter your {selectedMethodInfo?.name} wallet address. Double-check before saving - crypto transactions are irreversible.
             </p>
           </div>
 
@@ -483,7 +483,7 @@ function PayoutInfoTab() {
         <p className="text-xs text-muted-foreground">
           Changing where your money goes requires your password. We&apos;ll email
           you when it changes, and payouts to a new destination are held for 24
-          hours — so if it wasn&apos;t you, there is still time to stop it.
+          hours - so if it wasn&apos;t you, there is still time to stop it.
         </p>
       </div>
 
@@ -516,7 +516,7 @@ function PayoutInfoTab() {
 function PartnerLinkTab() {
   const dashboardData = usePartnerStore((s) => s.dashboardData);
   const user = usePartnerStore((s) => s.user);
-  // PartnerDashboardResponse is snake_case straight off the API — the
+  // PartnerDashboardResponse is snake_case straight off the API - the
   // camelCase read here always produced '' and the share links were dead.
   const referralLink = dashboardData?.referral_link || '';
 
@@ -526,7 +526,7 @@ function PartnerLinkTab() {
       description: 'Send directly to a contact',
       action: () => {
         const subject = encodeURIComponent('Check out RELIASTRA');
-        const body = encodeURIComponent(`I thought you'd find this useful — it's a platform for critical infrastructure intelligence.\n\n${referralLink}`);
+        const body = encodeURIComponent(`I thought you'd find this useful - it's a platform for critical infrastructure intelligence.\n\n${referralLink}`);
         window.open(`mailto:?subject=${subject}&body=${body}`);
         toast.success('Email client opened');
       },
@@ -544,7 +544,7 @@ function PartnerLinkTab() {
       name: 'LinkedIn',
       description: 'Share with your network',
       action: () => {
-        const text = encodeURIComponent(`RELIASTRA — infrastructure intelligence for critical operations. Track, correlate, and prove what happened.\n\n${referralLink}`);
+        const text = encodeURIComponent(`RELIASTRA - infrastructure intelligence for critical operations. Track, correlate, and prove what happened.\n\n${referralLink}`);
         window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}&summary=${text}`, '_blank');
         toast.success('Opening LinkedIn');
       },
@@ -657,7 +657,7 @@ function NotificationsTab() {
       update({ browser_enabled: false });
       return;
     }
-    // Chrome only grants permission from a user gesture — this toggle is one.
+    // Chrome only grants permission from a user gesture - this toggle is one.
     const result = await requestBrowserNotifications();
     setPermission(result);
     if (result === 'unsupported') {
@@ -724,7 +724,7 @@ function NotificationsTab() {
       <p className="text-sm text-muted-foreground">
         Choose how you want to hear about referrals, commissions and payouts.
         Everything always appears in your{' '}
-        <span className="font-medium text-foreground">Notifications</span> page —
+        <span className="font-medium text-foreground">Notifications</span> page -
         these settings control email and desktop alerts.
       </p>
 
@@ -741,7 +741,7 @@ function NotificationsTab() {
               Get a desktop alert the moment a referral signs up or a payout is
               sent, while the dashboard is open.
               {permission === 'denied' &&
-                ' Notifications are blocked for this site — allow them in your browser settings first.'}
+                ' Notifications are blocked for this site - allow them in your browser settings first.'}
             </p>
           </div>
           <Switch

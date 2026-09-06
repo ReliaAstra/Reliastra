@@ -13,7 +13,7 @@ from app.modules.email_events.models import EmailRecord, ResendWebhookEvent
 
 router = APIRouter(
     prefix="/v1/admin/email",
-    tags=["Admin — Email Health"],
+    tags=["Admin - Email Health"],
     dependencies=[Depends(require_system_admin)],
 )
 

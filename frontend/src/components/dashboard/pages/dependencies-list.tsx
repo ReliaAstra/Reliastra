@@ -63,7 +63,7 @@ export function DependenciesListPage() {
         <EmptyState
           icon={<Link2 size={32} />}
           title="No dependencies yet"
-          body="Reliastra is ready to start observing your critical external services. Add your first endpoint — checks begin on the next tick and history appears within minutes. Your 14-day full-access evaluation is active."
+          body="Reliastra is ready to start observing your critical external services. Add your first endpoint - checks begin on the next tick and history appears within minutes. Your 14-day full-access evaluation is active."
           actionLabel="Add your first dependency"
           onAction={onAdd}
           helpLabel="How does monitoring work?"

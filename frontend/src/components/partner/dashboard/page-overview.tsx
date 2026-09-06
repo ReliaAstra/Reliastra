@@ -181,7 +181,7 @@ function TrendCard({ analytics }: { analytics: any }) {
     <div className="rounded-xl border border-border/60 bg-background overflow-hidden">
       <div className="px-5 py-4 border-b border-border/40 flex items-center gap-2">
         <Activity className="size-4 text-muted-foreground" />
-        <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Referral signups — last 14 days</p>
+        <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Referral signups - last 14 days</p>
       </div>
       <div className="p-5">
         <div className="flex items-end gap-1 h-[80px]">
@@ -265,7 +265,7 @@ function InsightBanner({ analytics, d }: { analytics: any; d: any }) {
     action = { label: 'View referrals', page: 'referrals' };
   } else if (d.signups === 0) {
     title = 'Get your first referral';
-    body = 'Share your link with teams that depend on external APIs — your dashboard updates in seconds when someone signs up.';
+    body = 'Share your link with teams that depend on external APIs - your dashboard updates in seconds when someone signs up.';
     action = null;
   }
 

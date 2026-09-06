@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# generate-secrets.sh — cryptographically generate production secrets on the VPS
+# generate-secrets.sh - cryptographically generate production secrets on the VPS
 # Runs ONLY on the VPS via Tailscale SSH as reliastra (sudo). Never prints secrets.
 # Usage: sudo ./generate-secrets.sh
 set -euo pipefail
@@ -21,7 +21,7 @@ fi
 
 # If file exists, preserve existing secrets (idempotent)
 if [[ -f "$ENV_FILE" ]]; then
-  echo "existing $ENV_FILE found — will only fill missing keys (no overwrite)"
+  echo "existing $ENV_FILE found - will only fill missing keys (no overwrite)"
   # shellcheck disable=SC1090
   set -a; source "$ENV_FILE" 2>/dev/null || true; set +a
 else

@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Brand logo — a faithful copy of the partner-page logo
+ * Brand logo - a faithful copy of the partner-page logo
  * (`@/components/partner/shared/reliastra-logo`) used across the marketing
  * landing page. The wordmark uses `text-current` so the colour can be
  * controlled by the surrounding context (dark nav/footer vs light body).

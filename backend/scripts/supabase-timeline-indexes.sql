@@ -1,5 +1,5 @@
 -- =============================================================================
--- RELIASTRA: Vendor Timeline Endpoint — Supabase SQL
+-- RELIASTRA: Vendor Timeline Endpoint - Supabase SQL
 -- =============================================================================
 -- Run this in the Supabase SQL Editor.
 -- Creates composite indexes on the partitioned observations table

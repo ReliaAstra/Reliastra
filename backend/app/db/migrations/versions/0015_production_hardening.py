@@ -3,14 +3,14 @@
 Production-hardening fixes from the platform reliability review:
 
 1. ``check_results`` monthly partitions for the next 12 months
-   (FIX 5) — the parent table is PARTITION BY RANGE (executed_at) and only
+   (FIX 5) - the parent table is PARTITION BY RANGE (executed_at) and only
    a DEFAULT partition existed.
-2. Partial index on ``dependencies.next_check_at`` (FIX 24) — the
+2. Partial index on ``dependencies.next_check_at`` (FIX 24) - the
    ``get_due_dependencies`` scan only reads active, non-deleted rows.
-3. ``observation_outbox`` table (FIX 9) — transactional outbox for the
+3. ``observation_outbox`` table (FIX 9) - transactional outbox for the
    observation dual-write.
 4. Refresh-token family columns ``token_family`` / ``token_sequence``
-   (FIX 28) — rotation + replay detection.
+   (FIX 28) - rotation + replay detection.
 
 NOTE: users admin/growth columns are handled by main's
 ``0012_user_admin_fields``; this migration chains after

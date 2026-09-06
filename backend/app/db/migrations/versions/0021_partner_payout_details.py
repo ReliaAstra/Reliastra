@@ -4,10 +4,10 @@ Adds the payout destination fields to ``partner_profiles`` so a partner can
 configure how they want to be paid (USDC / USDT / bank) and the admin panel
 can surface that destination when settling payouts.
 
-* ``payout_method``  — ``crypto_usdc`` | ``crypto_usdt`` | ``bank`` (nullable).
-* ``wallet_address`` — crypto wallet address (nullable; unused for bank).
-* ``payout_network`` — blockchain network for crypto methods (nullable).
-* ``bank_details``   — JSONB object holding bank-account fields (nullable).
+* ``payout_method``  - ``crypto_usdc`` | ``crypto_usdt`` | ``bank`` (nullable).
+* ``wallet_address`` - crypto wallet address (nullable; unused for bank).
+* ``payout_network`` - blockchain network for crypto methods (nullable).
+* ``bank_details``   - JSONB object holding bank-account fields (nullable).
 
 All columns are nullable and default to ``NULL`` (no destination configured)
 so existing partners are unaffected by the migration.

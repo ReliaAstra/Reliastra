@@ -90,7 +90,7 @@ async def create_timeline_share(
         user: User = await get_current_user(request, db)
         user_id = user.id
     except Exception:
-        # No valid auth — proceed as anonymous share
+        # No valid auth - proceed as anonymous share
         pass
 
     return await service.create_share_link(

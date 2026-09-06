@@ -27,7 +27,7 @@ from app.modules.notifications.schemas import (
 
 logger = logging.getLogger(__name__)
 
-# FIX 20: module-level pooled HTTP client shared by Slack/Webhook/PagerDuty —
+# FIX 20: module-level pooled HTTP client shared by Slack/Webhook/PagerDuty -
 # no more fresh httpx.AsyncClient() (and handshake) per alert.
 _notification_http_client: httpx.AsyncClient | None = None
 
@@ -151,7 +151,7 @@ class PagerDutyChannel(BaseNotificationChannel):
     """PagerDuty Events API v2 integration (FIX 19).
 
     POSTs a ``trigger`` event to https://events.pagerduty.com/v2/enqueue with
-    the routing key from the alert config — the previous implementation only
+    the routing key from the alert config - the previous implementation only
     logged and returned True without sending anything.
     """
 
@@ -275,10 +275,10 @@ class NotificationService:
                 pass
             raise ResourceNotFoundException("Organization not found")
         if not isinstance(getattr(org, "plan", None), str):
-            return  # mocked org without real plan — skip gate for unit test compat
+            return  # mocked org without real plan - skip gate for unit test compat
         effective = get_effective_plan_for_org(org)
         features = PLAN_FEATURES.get(effective, {})
-        # Slack, PagerDuty, webhook are advanced — require slack_alerts flag.
+        # Slack, PagerDuty, webhook are advanced - require slack_alerts flag.
         # Email is always allowed. Evaluation unlocks advanced via Pro.
         if channel_type.lower() in {"slack", "pagerduty", "webhook"}:
             if not features.get("slack_alerts"):
@@ -400,13 +400,13 @@ class NotificationService:
         if claimed is None:
             # Redis is unreachable, so duplication is unknown. Deliberate
             # fail-open: dedupe is a noise optimisation, but suppression is
-            # data loss — a missed alert means the customer never learns
+            # data loss - a missed alert means the customer never learns
             # their service is down, during the exact window when our own
             # infrastructure is degraded. Bounded risk: the worst case is
             # repeated notifications for 60s, and the WARNING makes it
             # attributable rather than mysterious.
             logger.warning(
-                "Alert dedupe store unavailable — dispatching '%s' without "
+                "Alert dedupe store unavailable - dispatching '%s' without "
                 "deduplication",
                 alert.title,
             )

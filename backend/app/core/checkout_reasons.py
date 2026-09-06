@@ -2,7 +2,7 @@
 
 A payment failure is a *product state*, not an exception message. The frontend
 must be able to show a customer exactly what happened and what to do next
-without relaying a provider's raw error string — "Amount must be greater than
+without relaying a provider's raw error string - "Amount must be greater than
 100" or "Invalid Authorization token" means nothing to a buyer and, worse,
 leaks implementation detail of a third party they never agreed to debug.
 
@@ -11,7 +11,7 @@ UI maps slug → copy. The mapping lives in
 ``frontend/src/lib/billing/checkout-errors.ts`` and
 ``backend/tests/unit/test_checkout_failure_reasons.py`` guards that the two
 lists stay in step, because a slug the UI does not know silently degrades into
-a generic error — the exact failure mode this exists to prevent.
+a generic error - the exact failure mode this exists to prevent.
 
 Two rules for adding a reason:
 
@@ -62,7 +62,7 @@ class CheckoutReason:
 
     ACTION_REQUIRED = "authentication_required"
     """3-D Secure / Strong Customer Authentication is pending or was not
-    completed. Not a failure — the customer may be able to retry."""
+    completed. Not a failure - the customer may be able to retry."""
 
     PENDING = "payment_pending"
     """Paystack has not settled the transaction yet."""
@@ -96,7 +96,7 @@ class CheckoutReason:
 
     DUPLICATE_PAYMENT = "duplicate_payment"
     """A second, valid payment for a period already covered. Applied as
-    credit, and surfaced honestly — never silently swallowed."""
+    credit, and surfaced honestly - never silently swallowed."""
 
 
 #: Reasons that mean "we know for certain nothing was taken". The UI wording
@@ -104,7 +104,7 @@ class CheckoutReason:
 #: your payment", so this classification is contractual, not cosmetic: it is
 #: what allows a screen to promise the customer they were not charged.
 #:
-#: Being absent from both sets is a legitimate state — it means the outcome is
+#: Being absent from both sets is a legitimate state - it means the outcome is
 #: genuinely unknown to us (a provider that reported a payment we cannot
 #: reconcile) and the copy must not take a position on the money.
 AMOUNT_NEUTRAL_REASONS = frozenset(
@@ -142,7 +142,7 @@ class CheckoutRejectedException(ValidationException):
     reasons that are both about not breaking trust in the API:
 
     * every existing caller and handler that catches a validation failure on a
-      billing route keeps catching this one — a payment path must not start
+      billing route keeps catching this one - a payment path must not start
       throwing an uncaught type because the error got more precise;
     * the HTTP status is still the accurate one (409 for a policy/integrity
       rejection the client cannot fix by retrying, 503 when the provider could
@@ -156,7 +156,7 @@ class CheckoutRejectedException(ValidationException):
     #: customer submitted are fine, and what is wrong is the state of the world
     #: (this plan is not self-serve, this payment was already applied, this
     #: transaction belongs to someone else). No amount of retrying fixes that,
-    #: so the default is 409 Conflict rather than 422 — and the one case where
+    #: so the default is 409 Conflict rather than 422 - and the one case where
     #: a retry *is* the answer, the provider being unreachable, is stated
     #: explicitly as 503 at those call sites. A new reason therefore inherits the
     #: safe status instead of silently advertising itself as retryable input.

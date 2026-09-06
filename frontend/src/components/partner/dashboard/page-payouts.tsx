@@ -320,7 +320,7 @@ export function PagePayouts() {
 
   // "Available to withdraw" is the *payable* balance: commissions whose hold
   // period has elapsed and that are not already reserved by an open payout.
-  // `pending_commission_minor` is deliberately NOT used here — it also counts
+  // `pending_commission_minor` is deliberately NOT used here - it also counts
   // money still on hold and money already inside a pending payout, which would
   // show the partner a figure they cannot actually withdraw.
   const currency = dashboardData?.currency || 'USD';
@@ -338,7 +338,7 @@ export function PagePayouts() {
   // disabling the button.
   const balanceHint = (() => {
     if (belowMinimum) {
-      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)} — keep earning to unlock a withdrawal.`;
+      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)} - keep earning to unlock a withdrawal.`;
     }
     const parts: string[] = [];
     if (onHoldMinor > 0) {

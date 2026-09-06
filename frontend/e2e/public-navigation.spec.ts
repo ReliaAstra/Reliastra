@@ -8,14 +8,14 @@ import { expect, test, type Page } from '@playwright/test';
  * 1. Every public route renders. Four research URLs previously 404'd because
  *    the footer hard-coded slugs for routes that were never created.
  * 2. Every internal anchor on those pages resolves. A link can only be added
- *    if the target responds — this is what catches a stale href at the point
+ *    if the target responds - this is what catches a stale href at the point
  *    it ships, rather than when a customer clicks it.
  * 3. No console errors, page errors, failed requests or hydration warnings.
  *    Hydration failures are asserted by text, because React logs them as
  *    console errors rather than throwing.
  * 4. The landing page contains exactly the canonical section set, so a section
  *    cannot be silently dropped from the composition (or referenced by an
- *    anchor after it was removed — the bug that made `#solution` and
+ *    anchor after it was removed - the bug that made `#solution` and
  *    `#partners` dead links).
  * 5. Protected routes redirect deterministically when unauthenticated.
  *
@@ -86,7 +86,7 @@ function instrument(page: Page): Captured {
   page.on('requestfailed', (r) => {
     const url = r.url();
     if (isExternal(url)) cap.external.push(url);
-    else cap.failedRequests.push(`${r.method()} ${url} — ${r.failure()?.errorText}`);
+    else cap.failedRequests.push(`${r.method()} ${url} - ${r.failure()?.errorText}`);
   });
   page.on('response', (r) => {
     const url = r.url();

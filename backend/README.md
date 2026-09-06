@@ -1,4 +1,4 @@
-# Reliastra — External Dependency Intelligence Platform
+# Reliastra - External Dependency Intelligence Platform
 
 > This application lives at `backend/` in the Reliastra monorepo. Run the commands below from this directory.
 
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL (Supabase Postgres), REDIS_URL, SECRET_KEY, and SUPABASE_S3_*
+# Edit .env - set DATABASE_URL (Supabase Postgres), REDIS_URL, SECRET_KEY, and SUPABASE_S3_*
 
 # 3. Run database migrations
 alembic upgrade head
@@ -33,7 +33,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 3. **Extensibility by Design**:
    - Notification routing uses a Strategy pattern with a pluggable `CHANNEL_REGISTRY` supporting Email, Slack, PagerDuty, and Webhooks.
    - Incident correlation uses an extensible `BaseCorrelationStrategy` interface with Temporal Correlation (`±5m` window) implemented as the MVP default.
-   - AI explanations run on the **Reliastra-managed LLM**: the endpoint, model, credential and generation parameters live in platform configuration (`RELIASTRA_AI_*`). Organizations do not bring their own provider or key — they only toggle `ai_explanations_enabled` on their organization. AI output is explanatory and can never change attribution or confidence.
+   - AI explanations run on the **Reliastra-managed LLM**: the endpoint, model, credential and generation parameters live in platform configuration (`RELIASTRA_AI_*`). Organizations do not bring their own provider or key - they only toggle `ai_explanations_enabled` on their organization. AI output is explanatory and can never change attribution or confidence.
 4. **Scalability Hooks**:
    - High-volume time-series check execution data (`CheckResult`) is partitioned by month using PostgreSQL native range partitioning (`PARTITION BY RANGE (executed_at)`).
    - Redis-backed sliding window rate limiter, idempotency caching (`Idempotency-Key` header with 24h TTL), and Celery task queues.
@@ -43,10 +43,10 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
 6. **Triple Authentication & Account Security**:
    - **Email/Password** registration and login with bcrypt-hashed passwords.
-   - **Google OAuth 2.0** — authorization code flow with automatic account creation, email-based account linking, and verified email enforcement.
-   - **GitHub OAuth 2.0** — authorization code flow with parallel user info + email fetching, multi-tier email resolution (public → primary verified → any verified → noreply fallback), and automatic account creation.
-   - **Email Verification** — one-time link sent to user's inbox, SHA-256 hashed tokens with 60-minute expiry, automatic revocation of prior tokens on re-send.
-   - **Password Reset** — anti-enumeration forgot-password flow (generic success message regardless of email existence), SHA-256 hashed tokens with 15-minute expiry, single-use tokens with automatic revocation.
+   - **Google OAuth 2.0** - authorization code flow with automatic account creation, email-based account linking, and verified email enforcement.
+   - **GitHub OAuth 2.0** - authorization code flow with parallel user info + email fetching, multi-tier email resolution (public → primary verified → any verified → noreply fallback), and automatic account creation.
+   - **Email Verification** - one-time link sent to user's inbox, SHA-256 hashed tokens with 60-minute expiry, automatic revocation of prior tokens on re-send.
+   - **Password Reset** - anti-enumeration forgot-password flow (generic success message regardless of email existence), SHA-256 hashed tokens with 15-minute expiry, single-use tokens with automatic revocation.
    - JWT Access (`15m` expiry) and Refresh (`7d` expiry) tokens for all human user flows.
    - Hashed API keys (SHA-256) for programmatic and CI/CD access (`rel_...`).
 7. **SLA Evidence Generation**:
@@ -83,11 +83,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `PAYSTACK_SECRET_KEY` | _(empty)_ | Paystack API secret key |
 | `PAYSTACK_PUBLIC_KEY` | _(empty)_ | Paystack public key for checkout |
 | `PAYSTACK_BASE_URL` | `https://api.paystack.co` | Paystack API base (point at a stand-in for local QA) |
-| `PAYSTACK_CURRENCY` | `NGN` | The currency the merchant account settles in — i.e. what customers are **charged** |
+| `PAYSTACK_CURRENCY` | `NGN` | The currency the merchant account settles in - i.e. what customers are **charged** |
 | `PAYSTACK_NGN_PLAN_PRICES` | _(empty)_ | JSON, minor units, per plan (and optionally per billing interval): the prices Paystack is told to charge |
 | `PAYSTACK_WEBHOOK_SECRET` | _(empty)_ | HMAC key for verifying `POST /v1/billing/webhook`; required in production |
 | `SUPABASE_S3_ENDPOINT` | _(empty)_ | Supabase Storage S3 endpoint, e.g. `https://<project-ref>.supabase.co/storage/v1/s3` (Storage → S3 Access Keys) |
-| `SUPABASE_S3_REGION` | _(empty)_ | Supabase project region (e.g. `eu-west-3`) — required, no default |
+| `SUPABASE_S3_REGION` | _(empty)_ | Supabase project region (e.g. `eu-west-3`) - required, no default |
 | `SUPABASE_S3_ACCESS_KEY_ID` | _(empty)_ | Supabase Storage S3 access key id (NOT the anon/service-role key) |
 | `SUPABASE_S3_SECRET_ACCESS_KEY` | _(empty)_ | Supabase Storage S3 secret access key |
 | `SUPABASE_S3_BUCKET` | _(empty)_ | Supabase Storage bucket name (created in the dashboard) |
@@ -97,7 +97,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `FRONTEND_BASE_URL` | `http://localhost:3000` | Frontend base URL for email verification & password reset links |
 | `SMTP_USE_TLS` | `false` | Enable TLS for SMTP (STARTTLS on port 587) |
 | `RELIASTRA_AI_ENABLED` | `true` | Master switch for the Reliastra-managed LLM used in evidence explanations |
-| `RELIASTRA_AI_API_KEY` | _(empty)_ | Reliastra's own LLM credential — the only value required to switch AI on |
+| `RELIASTRA_AI_API_KEY` | _(empty)_ | Reliastra's own LLM credential - the only value required to switch AI on |
 | `RELIASTRA_AI_PROVIDER_TYPE` | `openai_compatible` | Wire format: `openai_compatible`, `anthropic` or `google` |
 | `RELIASTRA_AI_ENDPOINT_URL` | `https://api.openai.com/v1/chat/completions` | Endpoint of the Reliastra-managed LLM |
 | `RELIASTRA_AI_MODEL` | `gpt-4o-mini` | Model served by that endpoint |
@@ -128,7 +128,7 @@ docker-compose up -d --build
 
 This starts Redis, MailHog, the API server, and Celery workers. The API auto-runs migrations on startup against **Supabase Postgres**.
 
-Postgres and object storage are **Supabase only** — there is no local
+Postgres and object storage are **Supabase only** - there is no local
 PostgreSQL or MinIO. Set `DATABASE_URL` (Supabase pooler URI) and
 `SUPABASE_S3_*` in `.env` (see `.env.example`) before `docker-compose up`;
 compose fails loudly if they are missing. Use a **separate dev bucket**,
@@ -196,8 +196,8 @@ Three authentication methods are supported for human users:
 - **Email/Password**: `POST /v1/auth/register` and `POST /v1/auth/login`
 - **Google OAuth**: `GET /v1/auth/google/url` → `POST /v1/auth/google`
 - **GitHub OAuth**: `GET /v1/auth/github/url` → `POST /v1/auth/github`
-- **JWT**: `Authorization: Bearer <token>` — 15min access, 7-day refresh
-- **API Keys**: `X-API-Key: rel_xxxxxxxx` — SHA-256 hashed, scope-enforced
+- **JWT**: `Authorization: Bearer <token>` - 15min access, 7-day refresh
+- **API Keys**: `X-API-Key: rel_xxxxxxxx` - SHA-256 hashed, scope-enforced
 - **Email Verification**: `POST /v1/auth/send-verification` → `POST /v1/auth/verify-email`
 - **Password Reset**: `POST /v1/auth/forgot-password` → `POST /v1/auth/reset-password`
 
@@ -253,17 +253,17 @@ Implemented in [`app/modules/auth/otp_service.py`](app/modules/auth/otp_service.
 
 * Generated with `secrets` (CSPRNG); leading zeros preserved, so the full
   10^6 keyspace is used.
-* Stored as an **HMAC-SHA256 salted by user id + `SECRET_KEY`** — the
+* Stored as an **HMAC-SHA256 salted by user id + `SECRET_KEY`** - the
   `email_verification_codes` table cannot be replayed if it leaks, and one
   rainbow table cannot cover all users.
 * Compared with `hmac.compare_digest` (constant time).
-* **One live code per user** — issuing a new one burns the previous.
+* **One live code per user** - issuing a new one burns the previous.
 * **5 wrong attempts** burn the code (attempt writes are committed even
   though the request fails, so the budget really does decrease).
 * **60s per-account resend cooldown**, on top of the per-IP rate limiter.
 * Codes expire after **10 minutes**.
 * `resend-otp` returns an identical body for unknown, verified and real
-  addresses — it cannot be used to enumerate accounts.
+  addresses - it cannot be used to enumerate accounts.
 * Verifying an already-verified address is an **error**, not a no-op:
   returning early there would hand a session to anyone who knows the email.
 
@@ -330,7 +330,7 @@ If a user with the same email already exists (e.g., registered via email/passwor
 # Install test dependencies
 pip install -r requirements.txt
 
-# Run all tests (zero external dependencies — uses embedded PostgreSQL + FakeRedis)
+# Run all tests (zero external dependencies - uses embedded PostgreSQL + FakeRedis)
 pytest -v
 
 # Run specific suites
@@ -387,4 +387,4 @@ Reliastra-backend/
 
 ## License
 
-Proprietary — All rights reserved.
+Proprietary - All rights reserved.

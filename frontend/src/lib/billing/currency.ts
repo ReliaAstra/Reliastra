@@ -1,11 +1,11 @@
 /**
- * Payment currency — the single source of truth for the frontend.
+ * Payment currency - the single source of truth for the frontend.
  *
  * RELIASTRA prices products in USD (see `lib/dashboard/plans.ts`, which mirrors
  * the backend's `PLAN_PRICES_USD`). Paystack currently *charges* in Nigerian
  * Naira. Those are two different things and this module keeps them apart:
  * nothing here converts one currency into another, and no amount is computed
- * from an exchange rate — every payment figure is a string the backend
+ * from an exchange rate - every payment figure is a string the backend
  * resolved from its published payment-price catalog.
  *
  * The disclosure paragraph below is the ONE canonical version in the web tier.
@@ -20,7 +20,7 @@
  *
  * It is display data from the backend (`app.core.fx_reference`): labelled an
  * estimate, attributed to a verifiable source and timestamped. It never
- * determines what is charged — the amount sent to Paystack comes from the
+ * determines what is charged - the amount sent to Paystack comes from the
  * published payment-price catalog, and the frontend must not use this number
  * for anything a customer pays.
  */
@@ -37,7 +37,7 @@ export interface FxReference {
   provider: string;
   provider_url: string;
   source_url: string;
-  /** Heading label, e.g. "Exchange rate reference (estimate — not the price you pay)". */
+  /** Heading label, e.g. "Exchange rate reference (estimate - not the price you pay)". */
   label: string;
   /** Mandatory wording that the estimate is not the billing basis. */
   disclaimer: string;
@@ -65,13 +65,13 @@ export interface PaymentCurrencyInfo {
    * is exactly the mis-billing this separation prevents.
    */
   plan_payment_amounts?: Record<string, Record<string, string>>;
-  /** The processor that collects the money — part of the transparency triple. */
+  /** The processor that collects the money - part of the transparency triple. */
   payment_provider?: string;
-  /** Longer form for payment-surface copy, e.g. "Paystack — secure hosted checkout". */
+  /** Longer form for payment-surface copy, e.g. "Paystack - secure hosted checkout". */
   payment_provider_display?: string;
   /**
    * Market reference estimate shown for context only. `null`/absent when
-   * disabled or unavailable — surfaces then hide the reference entirely; a
+   * disabled or unavailable - surfaces then hide the reference entirely; a
    * fallback rate would be an invented one.
    */
   fx_reference?: FxReference | null;
@@ -85,12 +85,12 @@ export interface PaymentCurrencyInfo {
  */
 export const PAYMENT_CURRENCY_NOTICE =
   "RELIASTRA's plans are priced in USD. Our current Paystack payment flow " +
-  'processes payments in NGN. We are working toward enabling USD payment ' +
-  'options for our global customers.';
+  'processes payments in NGN. We are awaiting confirmation of additional ' +
+  'payment options for international customers.';
 
 /** Fallback provider identity when the API has not answered yet. */
 export const PAYMENT_PROVIDER = 'Paystack';
-export const PAYMENT_PROVIDER_DISPLAY = 'Paystack — secure hosted checkout';
+export const PAYMENT_PROVIDER_DISPLAY = 'Paystack - secure hosted checkout';
 
 /**
  * Fallback used only for the *disclosure*, never for a price.
@@ -99,13 +99,13 @@ export const PAYMENT_PROVIDER_DISPLAY = 'Paystack — secure hosted checkout';
  * because a fetch failed, so the copy here mirrors `app/config.py` and
  * `app/core/payment_pricing.py`. What it deliberately does NOT claim:
  *
- * - `checkout_ready: false` — without the backend's answer we cannot know the
+ * - `checkout_ready: false` - without the backend's answer we cannot know the
  *   Paystack account can price this plan, so no surface may present a live
  *   "continue to payment" action on the strength of this object.
- * - `plan_payment_amounts: {}` — amounts are business-published numbers; a
+ * - `plan_payment_amounts: {}` - amounts are business-published numbers; a
  *   stale or invented Naira figure is a mis-charge risk, so the UI shows the
  *   currency without a number until `/api/v1/billing/currency` answers.
- * - `fx_reference: null` — a missing estimate must not be replaced by an
+ * - `fx_reference: null` - a missing estimate must not be replaced by an
  *   assumed rate. Absent means "do not show a reference", always.
  *
  * The notice itself is what a customer needs before deciding; the amount and
@@ -127,7 +127,7 @@ export const DEFAULT_PAYMENT_CURRENCY: PaymentCurrencyInfo = {
 
 /**
  * Format a minor-unit amount as the backend does: symbol, grouped amount and
- * the ISO code in parentheses. The code is never omitted — a bare "\u20a6" is not
+ * the ISO code in parentheses. The code is never omitted - a bare "\u20a6" is not
  * an accessible or unambiguous way to communicate currency.
  */
 export function formatMinorUnits(minor: number | null | undefined, currency: string): string {
@@ -153,7 +153,7 @@ const SYMBOLS: Record<string, string> = {
 /**
  * Resolve the notice to show for a given currency config.
  *
- * `null` means "no disclosure applies" — i.e. the processing currency is the
+ * `null` means "no disclosure applies" - i.e. the processing currency is the
  * same one the price list uses, so showing a Naira paragraph would itself be
  * misleading.
  */
@@ -165,7 +165,7 @@ export function currencyNotice(
   return config.notice ?? PAYMENT_CURRENCY_NOTICE;
 }
 
-/** "Nigerian Naira (NGN)" — always includes the code as words. */
+/** "Nigerian Naira (NGN)" - always includes the code as words. */
 export function currencyLabel(info: PaymentCurrencyInfo | null | undefined): string {
   const config = info ?? DEFAULT_PAYMENT_CURRENCY;
   return config.payment_currency_name || config.payment_currency;
@@ -178,7 +178,7 @@ export function isCheckoutReady(info: PaymentCurrencyInfo | null | undefined): b
 /**
  * The published payment amount for a plan/interval, as a ready-made string
  * from the backend (e.g. "\u20a660,000.00 (NGN)"). `null` when the business has
- * not published that price — callers must then omit the amount rather than
+ * not published that price - callers must then omit the amount rather than
  * compute one.
  */
 export function paymentAmountFor(
@@ -190,7 +190,7 @@ export function paymentAmountFor(
   return amounts?.[plan]?.[interval] ?? null;
 }
 
-/** "Billed in Nigerian Naira (NGN)" — the short form used inside a card. */
+/** "Billed in Nigerian Naira (NGN)" - the short form used inside a card. */
 export function billedInLabel(info: PaymentCurrencyInfo | null | undefined): string {
   return `Billed in ${currencyLabel(info)}`;
 }
@@ -211,7 +211,7 @@ export function paymentProviderDisplay(
  * The FX estimate to display beside prices, or `null`.
  *
  * Only surfaced when the currency actually differs and the backend returned a
- * fresh, sourced, timestamped payload. `null` hides the panel — there is no
+ * fresh, sourced, timestamped payload. `null` hides the panel - there is no
  * default rate, and no component may substitute one.
  */
 export function fxReference(
@@ -239,7 +239,7 @@ export function usableFxReference(fx: FxReference | null | undefined): FxReferen
   return fx;
 }
 
-/** "1 USD ≈ ₦1,650.00 NGN" style copy — explicitly an estimate. */
+/** "1 USD ≈ ₦1,650.00 NGN" style copy - explicitly an estimate. */
 export function formatFxRate(fx: FxReference): string {
   const symbol = SYMBOLS[fx.payment_currency] ?? '';
   const amount = fx.rate.toLocaleString('en-US', {

@@ -203,8 +203,8 @@ def verify_api_key(raw_key: str, stored_hash: str) -> bool:
 
     Supports both hash formats so pre-existing rows keep working:
 
-    * ``$2b$...``  — bcrypt (all new keys)
-    * 64 hex chars — legacy SHA-256 (checked in constant time)
+    * ``$2b$...``  - bcrypt (all new keys)
+    * 64 hex chars - legacy SHA-256 (checked in constant time)
     """
     if stored_hash.startswith(("$2a$", "$2b$", "$2y$")):
         try:
@@ -242,6 +242,6 @@ def decrypt_jsonb(encrypted_str: str | None) -> dict[str, Any] | None:
         # returning empty dict as a safe default for callers.
         import logging
         logging.getLogger(__name__).warning(
-            "Failed to decrypt JSONB data — possibly rotated SECRET_KEY: %s", exc
+            "Failed to decrypt JSONB data - possibly rotated SECRET_KEY: %s", exc
         )
         return {}

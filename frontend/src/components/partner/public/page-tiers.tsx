@@ -63,7 +63,7 @@ export function PageTiers() {
               custom={2}
               className="mt-4 text-base leading-relaxed text-muted-foreground"
             >
-              Every referral you bring moves you closer to a higher tier — and
+              Every referral you bring moves you closer to a higher tier - and
               a higher commission rate. No application needed, you advance
               automatically.
             </motion.p>
@@ -256,7 +256,7 @@ export function PageTiers() {
                 {
                   label: 'Min. referrals',
                   values: PARTNER_TIERS.map((t) =>
-                    t.minReferrals === 0 ? '—' : String(t.minReferrals)
+                    t.minReferrals === 0 ? '-' : String(t.minReferrals)
                   ),
                 },
                 {
@@ -269,11 +269,11 @@ export function PageTiers() {
                 },
                 {
                   label: 'Dedicated support',
-                  values: ['—', '—', 'Account manager', '24/7 dedicated'],
+                  values: ['-', '-', 'Account manager', '24/7 dedicated'],
                 },
                 {
                   label: 'White-label',
-                  values: ['—', '—', '—', 'Available'],
+                  values: ['-', '-', '-', 'Available'],
                 },
               ].map((row) => (
                 <div
@@ -288,7 +288,7 @@ export function PageTiers() {
                       key={`${row.label}-${i}`}
                       className={cn(
                         'text-center text-sm tabular-nums',
-                        val === '—'
+                        val === '-'
                           ? 'text-muted-foreground/40'
                           : 'text-foreground'
                       )}

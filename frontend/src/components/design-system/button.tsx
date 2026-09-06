@@ -30,7 +30,7 @@ const sizeStyles: Record<Size, string> = {
 };
 
 /**
- * RsButton — the only button in the product.
+ * RsButton - the only button in the product.
  * All product buttons must go through this primitive.
  */
 export function RsButton({

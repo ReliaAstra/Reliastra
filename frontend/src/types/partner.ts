@@ -98,14 +98,14 @@ export interface PartnerProfileResponse {
   status: string;
   created_at: string;
   payout_method?: string | null;
-  /** Masked (`0x71C7…9F2a`) — the API never returns the full address. */
+  /** Masked (`0x71C7…9F2a`) - the API never returns the full address. */
   wallet_address?: string | null;
   payout_network?: string | null;
   /** Masked: account/routing numbers arrive as `••••1234`. */
   bank_details?: Record<string, string> | null;
   /** One-line masked summary, ready to display. */
   payout_destination?: string | null;
-  /** Last destination change — payouts are held briefly afterwards. */
+  /** Last destination change - payouts are held briefly afterwards. */
   payout_details_updated_at?: string | null;
 }
 
@@ -129,7 +129,7 @@ export interface PartnerDashboardResponse {
   active_paid_customers: number;
   monthly_commission_minor: number;
   /**
-   * Everything earned but not yet paid — includes commissions still inside the
+   * Everything earned but not yet paid - includes commissions still inside the
    * hold period and commissions reserved by an open payout. Informational only:
    * never show this as the withdrawable amount.
    */
@@ -329,10 +329,10 @@ export interface Partner {
   status: string;
   createdAt: string;
   payoutMethod?: string | null;
-  /** Masked — never the full address. */
+  /** Masked - never the full address. */
   walletAddress?: string | null;
   payoutNetwork?: string | null;
-  /** Masked — account numbers arrive as `••••1234`. */
+  /** Masked - account numbers arrive as `••••1234`. */
   bankDetails?: Record<string, string> | null;
   payoutDestination?: string | null;
   payoutDetailsUpdatedAt?: string | null;

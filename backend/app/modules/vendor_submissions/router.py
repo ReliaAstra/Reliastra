@@ -24,7 +24,7 @@ from app.modules.vendor_submissions.service import (
 )
 
 # ---------------------------------------------------------------------------
-# Rate limiters — dual rate limiting (IP + email)
+# Rate limiters - dual rate limiting (IP + email)
 # ---------------------------------------------------------------------------
 
 # Per-IP: 10 submissions per minute

@@ -3,7 +3,7 @@
 Runs without the Linux-only pgserver conftest DB. Covers:
 
 * constant-time credential verification (and fail-closed when unconfigured);
-* the isolated admin JWT family (audience + type) — user tokens must never
+* the isolated admin JWT family (audience + type) - user tokens must never
   be accepted as admin tokens and vice versa;
 * the request guard rejecting anonymous, user-family, refresh, and API-key
   requests while accepting valid admin access tokens.

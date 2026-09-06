@@ -11,7 +11,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  *   secret:  ADMIN_TOKEN_SECRET (same value as the backend; injected into the
  *            frontend env so the proxy can verify before serving admin HTML)
  *
- * This is a hand-rolled HS256 verification with Node's `crypto` module —
+ * This is a hand-rolled HS256 verification with Node's `crypto` module -
  * deliberately no `jose`/`jsonwebtoken` dependency. It is used ONLY for the
  * admin surface's server-side gate (proxy + /api/admin route handler); the
  * backend remains the authority for every admin operation.

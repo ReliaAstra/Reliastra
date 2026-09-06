@@ -354,7 +354,7 @@ function AdminAccount({ state }: { state: AdminShellState }) {
   const signOut = async () => {
     // Admin sign-out is scoped to the admin domain: it revokes the admin
     // refresh token server-side and clears the HttpOnly admin cookies. The
-    // customer/partner session (shared storage) is NEVER touched — signing
+    // customer/partner session (shared storage) is NEVER touched - signing
     // out of the control plane must not log a customer out of the console.
     await adminApi.logout();
     queryClient.clear();

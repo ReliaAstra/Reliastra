@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Minimal analytics for onboarding — mirrors existing `app.modules.analytics` conventions.
+ * Minimal analytics for onboarding - mirrors existing `app.modules.analytics` conventions.
  * No heavy SDK. Every event is also logged to console in dev so QA can verify.
  * If a backend endpoint exists, it is called best-effort; failures never block UX.
  */

@@ -35,7 +35,7 @@ function isDashboardRoute(page: PartnerPage, authenticated: boolean): boolean {
  * SEO-safe home shell.
  *
  * The previous version returned a bare `<BootSplash />` until `mounted`
- * became true — which meant the server response (and therefore every
+ * became true - which meant the server response (and therefore every
  * crawler) received no H1, no copy and no links. This version renders the
  * full public landing as the default SSR output and only swaps to the
  * authenticated dashboard after the client has proven a session. Crawlers
@@ -178,7 +178,7 @@ export function HomeClient() {
       return <DashboardLayout />;
     }
     // Authenticated without identity: show landing (crawlable) while the
-    // repair effect demotes the broken session — never a blank page.
+    // repair effect demotes the broken session - never a blank page.
     return <PageLanding />;
   }
 

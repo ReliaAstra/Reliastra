@@ -7,7 +7,7 @@ verified in constant time, which mint an isolated JWT family
 (``aud=reliastra-admin``, ``type=admin_access|admin_refresh``) signed with
 ``ADMIN_TOKEN_SECRET``:
 
-* ``require_system_admin`` accepts ONLY that family — a customer/partner
+* ``require_system_admin`` accepts ONLY that family - a customer/partner
   access token, Supabase token, refresh token, or API key is rejected;
 * admin refresh tokens are short-lived and single-use (Redis-claimed jti);
 * login is rate-limited per client IP.
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 admin_auth_router = APIRouter(
     prefix="/v1/admin/auth",
-    tags=["Admin — Authentication"],
+    tags=["Admin - Authentication"],
 )
 
 # Brute-force throttle: 10 attempts / 15 minutes per client IP, regardless of
@@ -279,7 +279,7 @@ async def admin_logout(
                 "1",
             )
     except UnauthorizedException:
-        # Already invalid/expired — nothing to revoke.
+        # Already invalid/expired - nothing to revoke.
         pass
     db.rollback()
 

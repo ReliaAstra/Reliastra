@@ -1,7 +1,7 @@
 """SSRF protection with DNS-rebinding-safe IP pinning.
 
-The naive approach — resolve the hostname, validate the IPs, then let httpx
-connect — has a TOCTOU window: an attacker-controlled DNS server can return a
+The naive approach - resolve the hostname, validate the IPs, then let httpx
+connect - has a TOCTOU window: an attacker-controlled DNS server can return a
 public IP during validation and a private IP (e.g. 169.254.169.254) when the
 HTTP client actually connects.
 
@@ -54,7 +54,7 @@ def _normalize_ip(ip_str: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
     """Parse an address and unwrap IPv4-embedded IPv6 forms.
 
     ``::ffff:169.254.169.254`` parses as IPv6Address, which does NOT match the
-    IPv4 blocked networks — a classic SSRF bypass. Unwrap:
+    IPv4 blocked networks - a classic SSRF bypass. Unwrap:
 
     * IPv4-mapped (::ffff:a.b.c.d)  → the embedded IPv4 address
     * NAT64 (64:ff9b::a.b.c.d)      → the embedded IPv4 address
@@ -137,7 +137,7 @@ def is_url_safe(
     Validate that *url* does not point to a private / internal IP range.
 
     Returns (is_safe, reason).  When *is_safe* is False, *reason* explains why.
-    NOTE: performs blocking DNS — prefer :func:`is_url_safe_async` in async code.
+    NOTE: performs blocking DNS - prefer :func:`is_url_safe_async` in async code.
     """
     allowed = allowed_schemes or _ALLOWED_SCHEMES
 
@@ -243,7 +243,7 @@ def resolve_pinned_target(url: str) -> PinnedTarget:
     """Validate *url* and pin it to its currently-resolved public IPs.
 
     Raises ``ValueError`` when the URL is unsafe or unresolvable.
-    NOTE: blocking DNS — prefer :func:`resolve_pinned_target_async` in async code.
+    NOTE: blocking DNS - prefer :func:`resolve_pinned_target_async` in async code.
     """
     validate_outbound_url(url)
     parsed = urllib.parse.urlparse(url)

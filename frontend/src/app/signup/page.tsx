@@ -73,7 +73,7 @@ export default function CustomerSignupPage() {
         useAppStore.getState().setAccessToken(access);
       }
       // New enterprise onboarding: land directly in the guided setup
-      // If verification is required, the API will return no tokens — send to verify-email
+      // If verification is required, the API will return no tokens - send to verify-email
       const needsVerify = (data as any)?.verification_required === true || !refresh;
       if (needsVerify) {
         const emailParam = encodeURIComponent(email.trim());
@@ -105,7 +105,7 @@ export default function CustomerSignupPage() {
             <p className="rs-eyebrow">Create your organization</p>
             <h1 className="rs-page-title mt-2">Start monitoring in minutes</h1>
             <p className="rs-secondary-body mt-2">
-              14-day Pro trial. No card required — every feature,
+              14-day Pro trial. No card required - every feature,
               every region.
             </p>
 
@@ -168,7 +168,7 @@ export default function CustomerSignupPage() {
                   data-error={Boolean(password) && !passwordOk}
                 >
                   {password && !passwordOk
-                    ? 'Too short — use at least 8 characters.'
+                    ? 'Too short - use at least 8 characters.'
                     : 'Used only for your account. We never share it.'}
                 </p>
               </div>

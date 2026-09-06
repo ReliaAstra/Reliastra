@@ -182,7 +182,7 @@ export function PageEarnings() {
   const total = response?.total ?? 0;
   const totalPages = Math.ceil(total / pageSize);
 
-  // Group commissions by period for the bar chart (use all pages' worth if possible — first page only)
+  // Group commissions by period for the bar chart (use all pages' worth if possible - first page only)
   const monthlyData = useMemo(() => {
     const periodMap = new Map<string, number>();
     for (const c of list) {

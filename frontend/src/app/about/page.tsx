@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl, organizationJsonLd } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'About — Why RELIASTRA exists',
+  title: 'About - Why RELIASTRA exists',
   description:
     'RELIASTRA exists to answer one question reliably: was it you, or your vendors? The story behind External Dependency Intelligence.',
   path: '/about',
@@ -29,7 +29,7 @@ export default function AboutPage() {
       <MarketingPage
         eyebrow="Company"
         title="Was it you, or your vendors?"
-        lede="RELIASTRA exists because that question decides incidents, postmortems and SLA conversations — and no existing tool answered it with evidence."
+        lede="RELIASTRA exists because that question decides incidents, postmortems and SLA conversations - and no existing tool answered it with evidence."
         breadcrumbs={crumbs}
         related={[
           { label: 'Research agenda', href: '/research/reliastra-research-agenda', description: 'What we publish and what we refuse to.' },
@@ -44,13 +44,13 @@ export default function AboutPage() {
             Every serious outage review contains the same unresolved argument: the
             vendor’s status page says “operational,” your dashboard says “failing,” and
             nobody kept a third record. The team with the better record wins the
-            argument — and until now, that record did not exist.
+            argument - and until now, that record did not exist.
           </p>
           <h2>What we build</h2>
           <p>
             An independent measurement network for third-party dependencies, a
             deterministic attribution engine that refuses to claim more than the
-            timelines support, and evidence artifacts that survive the incident —
+            timelines support, and evidence artifacts that survive the incident -
             checksummed, verifiable, and owned by the organization that generated them.
           </p>
           <h2>What we will not do</h2>

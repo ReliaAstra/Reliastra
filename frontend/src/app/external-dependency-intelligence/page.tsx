@@ -5,7 +5,7 @@ import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 export const metadata = buildMetadata({
   title: 'External Dependency Intelligence',
   description:
-    'What External Dependency Intelligence is: independently observed knowledge about third-party services — and why it replaces vendor status pages as the record of what happened.',
+    'What External Dependency Intelligence is: independently observed knowledge about third-party services - and why it replaces vendor status pages as the record of what happened.',
   path: '/external-dependency-intelligence',
 });
 
@@ -39,7 +39,7 @@ export default function EdiPage() {
       <MarketingPage
         eyebrow="Category"
         title="External Dependency Intelligence"
-        lede="Independently observed, timestamped knowledge about the third-party services your infrastructure depends on — the record that answers “was it us or them?”"
+        lede="Independently observed, timestamped knowledge about the third-party services your infrastructure depends on - the record that answers “was it us or them?”"
         breadcrumbs={crumbs}
         related={[
           { label: 'Dependency monitoring', href: '/dependency-monitoring', description: 'How the observations are produced.' },
@@ -52,7 +52,7 @@ export default function EdiPage() {
           <h2>Definition</h2>
           <p>
             <strong>External Dependency Intelligence</strong> is the continuous observation of
-            third-party APIs and services — from outside both your stack and the vendor’s —
+            third-party APIs and services - from outside both your stack and the vendor’s -
             turned into attributable, timestamped records of behavior. Status pages describe
             intent; intelligence describes behavior.
           </p>
@@ -61,7 +61,7 @@ export default function EdiPage() {
             Modern products are compositions of vendors: payments, auth, messaging, AI
             inference, cloud primitives. A monitoring system that watches only your own
             services has a blind spot shaped exactly like your dependency graph. When
-            checkout fails, the alert says checkout is failing — not whether the cause is
+            checkout fails, the alert says checkout is failing - not whether the cause is
             your deploy or the provider’s outage.
           </p>
           <h2>How it differs from uptime monitoring</h2>
@@ -77,7 +77,7 @@ export default function EdiPage() {
             and timestamp, quorum-confirmed incidents, deterministic correlation against
             your own incident history, and verifiable <a href="/sla-evidence">SLA evidence</a>.
             The full method is published in{' '}
-            <a href="/research/how-reliastra-measures-vendor-reliability">how RELIASTRA measures vendor reliability</a> —
+            <a href="/research/how-reliastra-measures-vendor-reliability">how RELIASTRA measures vendor reliability</a> -
             including the cases we deliberately refuse to call an outage.
           </p>
           <h2>Practical example</h2>

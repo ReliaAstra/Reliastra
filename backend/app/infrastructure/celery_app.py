@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Import EVERY model module so the SQLAlchemy metadata (and FK graph) is
 # complete inside the worker process.  Without this, any ORM flush that
 # touches a cross-module FK fails with
-# ``NoReferencedTableError: could not find table 'applications'`` — the
+# ``NoReferencedTableError: could not find table 'applications'`` - the
 # worker's ``schedule_checks`` task would fail for every due dependency.
 # The API process happens to work only because uvicorn's app import pulls in
 # all routers (and therefore all models) transitively.
@@ -114,7 +114,7 @@ celery_app.conf.update(
     task_create_missing_queues=True,
     # ``acks_late`` plus this: a worker killed mid-probe returns the task to
     # the queue instead of losing it. Re-execution is idempotent by
-    # construction — each probe writes one CheckResult row keyed on its own
+    # construction - each probe writes one CheckResult row keyed on its own
     # uuid, so a duplicate is a duplicate observation, not corruption.
     task_reject_on_worker_lost=True,
     # Broker connection handling: bounded and fast. Celery's defaults retry a
@@ -176,7 +176,7 @@ celery_app.conf.update(
         },
         # Proof 7: was monthly (day 1 only). If Beat misses that single run,
         # inserts fall into the DEFAULT partition and pruning degrades. Run
-        # daily — CREATE IF NOT EXISTS is cheap and idempotent; the task
+        # daily - CREATE IF NOT EXISTS is cheap and idempotent; the task
         # ensures 12 months ahead so a single missed day is harmless.
         "ensure-check-partitions-monthly": {
             "task": "app.modules.checks.tasks.ensure_check_result_partitions",
@@ -261,7 +261,7 @@ def _on_task_failure(task_id=None, task=None, exception=None, **extra):
 
 
 # ---------------------------------------------------------------------------
-# Proof 6 — Fork safety: Celery prefork forks child processes after the parent
+# Proof 6 - Fork safety: Celery prefork forks child processes after the parent
 # may have created a global engine / process-cached loop. asyncpg connections
 # are bound to the loop that created them, so the child must drop any
 # inherited pool and loop. Without this, schedule_checks silently returns 0:
@@ -296,7 +296,7 @@ def _on_worker_process_init(**kwargs):
 def probe_broker(timeout: float = 5.0) -> tuple[bool, str]:
     """Return ``(reachable, detail)`` for the configured broker.
 
-    Never raises. ``detail`` carries only an exception type and message — no
+    Never raises. ``detail`` carries only an exception type and message - no
     broker URL, which may contain credentials.
     """
     conn = None

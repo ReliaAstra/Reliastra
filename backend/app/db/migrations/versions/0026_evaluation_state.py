@@ -4,10 +4,10 @@ Every newly created organization receives 14 days of full product access.
 The evaluation is a first-class server-side state, not a frontend flag.
 
 Adds to ``organizations``:
-* evaluation_started_at  — when the 14-day window began (server time)
-* evaluation_expires_at  — when it ends (started_at + 14 days)
-* evaluation_status      — active | expired | converted | none
-* evaluation_used        — True once the org has consumed its one evaluation
+* evaluation_started_at  - when the 14-day window began (server time)
+* evaluation_expires_at  - when it ends (started_at + 14 days)
+* evaluation_status      - active | expired | converted | none
+* evaluation_used        - True once the org has consumed its one evaluation
 
 Backfill: existing rows get started_at = created_at, expires_at = created_at +14d.
 Status is derived from plan + expiry so billing never depends on a background job.

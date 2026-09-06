@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-harness.sh — exercise deploy state machine without real VPS
+# test-harness.sh - exercise deploy state machine without real VPS
 # Runs locally with mocked DB/registry, validates failure semantics.
 # Usage: ./test-harness.sh [happy|broken|health-fail|smoke-fail|migration-fail|duplicate|concurrent|registry-fail|rollback-fail|all]
 set -euo pipefail
@@ -37,7 +37,7 @@ setup_mock() {
   cp /tmp/reliastra-test/state/current.json /tmp/reliastra-test/state/previous.json 2>/dev/null || true
 }
 
-# Mock helpers — override via PATH
+# Mock helpers - override via PATH
 export PATH="/tmp/reliastra-test/bin:$PATH"
 mkdir -p /tmp/reliastra-test/bin
 cat > /tmp/reliastra-test/bin/docker <<'MOCK'
@@ -70,7 +70,7 @@ for s in deploy/production/scripts/*.sh; do
 done
 echo "syntax OK"
 
-# Happy path — mock success
+# Happy path - mock success
 # Note: real happy path needs DB and compose, so we only verify preflight and state handling here
 run_case "happy-preflight-syntax" "SUCCESS" "bash -n deploy/production/scripts/preflight.sh && echo SUCCESS"
 

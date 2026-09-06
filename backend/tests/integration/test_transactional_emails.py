@@ -2,7 +2,7 @@
 
 These run against the real FastAPI app (embedded Postgres, same as CI) with
 SMTP captured by the ``otp_test_harness`` fixture in ``conftest``. The point is
-to assert on the bytes the customer receives — not on a template read in
+to assert on the bytes the customer receives - not on a template read in
 isolation:
 
 * welcome / verification / password-reset / receipt / confirmation emails all
@@ -88,7 +88,7 @@ async def test_signup_and_verification_emails_carry_the_footer(
     )
     assert res.status_code == 201, res.text
 
-    # The one-time code is an account/security email — footer exactly once.
+    # The one-time code is an account/security email - footer exactly once.
     code_mail = otp_test_harness[-1]
     assert_delivered_email(code_mail, label="verification code")
     assert TEST_OTP_CODE in code_mail["body"]
@@ -338,7 +338,7 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
 
     # Mandatory transparency triple. The receipt must state the product
     # price, the amount ACTUALLY charged (with the ISO code Paystack settled
-    # in) and the provider — and the USD figure may appear only as the
+    # in) and the provider - and the USD figure may appear only as the
     # clearly-labelled product price, never as the charge.
     assert "\u20a660,000.00 (NGN)" in receipt["body"]
     assert "\u20a660,000.00 (NGN)" in receipt["html_body"]

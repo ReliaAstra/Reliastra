@@ -33,7 +33,7 @@ async function proxyAdminRequest(req: NextRequest, context: RouteContext) {
   const requestId = req.headers.get('x-request-id');
 
   // Dedicated admin authentication endpoints. `/auth/login` is the only
-  // endpoint that works without an existing admin session — it exchanges the
+  // endpoint that works without an existing admin session - it exchanges the
   // operator credentials for HttpOnly admin cookies (the raw tokens never
   // reach the browser). Everything else is handled by the cookie-gated proxy.
   const authPath = path.join('/');

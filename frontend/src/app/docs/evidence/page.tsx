@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Evidence docs — Generate, share, verify',
+  title: 'Evidence docs - Generate, share, verify',
   description:
     'Generate External Dependency Fault Reports from retained telemetry: what they contain, how checksums bind them, and how verification works.',
   path: '/docs/evidence',
@@ -41,8 +41,8 @@ export default function EvidenceDocsPage() {
           <h2>When to generate</h2>
           <p>
             On detection or on demand: pick the dependency and the window (UTC).
-            Reports compile from retained telemetry — per-region observations,
-            quorum verdict, correlated customer impact — so generate before
+            Reports compile from retained telemetry - per-region observations,
+            quorum verdict, correlated customer impact - so generate before
             retention prunes the window (24h Free, 90 days Pro).
           </p>
           <h2>What a report contains</h2>
@@ -57,20 +57,20 @@ export default function EvidenceDocsPage() {
           <p>
             Reports belong to the organization that generated them. They become
             public only through explicit share links or verification references the
-            organization creates — token-scoped URLs that are deliberately excluded
+            organization creates - token-scoped URLs that are deliberately excluded
             from the sitemap and carry noindex.
           </p>
           <h2>Verification</h2>
           <p>
             The public verification reference confirms a report exists and matches
             its checksum. It discloses no endpoints, headers, credentials or
-            account details — integrity without exposure.
+            account details - integrity without exposure.
           </p>
           <h2>Scope honesty</h2>
           <p>
             A report documents observed behavior. It is not a legal determination
             of fault or a contractual credit; those remain governed by your vendor
-            agreements. Bring the record — the contract decides the outcome.
+            agreements. Bring the record - the contract decides the outcome.
           </p>
         </Prose>
       </MarketingPage>

@@ -154,7 +154,7 @@ class FeedService:
             severity_label = inc.severity.upper()
             resolved_label = " [RESOLVED]" if inc.resolved_at else " [ACTIVE]"
             inc_entries = {
-                "title": f"{vendor.display_name}: {severity_label} incident{resolved_label} — {inc.description or inc.root_cause}",
+                "title": f"{vendor.display_name}: {severity_label} incident{resolved_label} - {inc.description or inc.root_cause}",
                 "id": f"urn:reliastra:incident:{inc.id}",
                 "link": f"{_BASE_URL}/vendors/{vendor.vendor_name}#incident-{inc.id}",
                 "updated": inc.resolved_at or inc.started_at,

@@ -23,7 +23,7 @@ const navLinks: { label: string; page: PartnerPage; href: string }[] = [
 ];
 
 /**
- * Partner network navigation — straightforward `/partner/*` links.
+ * Partner network navigation - straightforward `/partner/*` links.
  *
  * Every destination is a real URL (crawlable, shareable, refresh-safe).
  * `activePage` lets file-routed `/partner/*` pages mark the active link

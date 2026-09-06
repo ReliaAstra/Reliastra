@@ -1,8 +1,8 @@
-"""FX reference rate — customer context only, never a pricing input.
+"""FX reference rate - customer context only, never a pricing input.
 
 Global B2B customers see a USD list price ($39) and an NGN charge (the
 published Paystack price). The gap between the two invites the question
-"what rate did you use?" — this module answers it *without* answering it
+"what rate did you use?" - this module answers it *without* answering it
 commercially:
 
 * the rate is fetched from a **verifiable public source** (default:
@@ -20,7 +20,7 @@ commercially:
 Failure behaviour is deliberately boring: if fetching or parsing fails, the
 estimate is *absent* (``None``) and payment surfaces hide the reference
 panel. There is no cached-forever value, no fallback number, and no
-synthesized rate — an unavailable reference is honest, a wrong one is not.
+synthesized rate - an unavailable reference is honest, a wrong one is not.
 
 Caching: Redis when available (shared across workers), otherwise a
 process-local TTL cache; both also short-cache *failures* so an offline
@@ -45,7 +45,7 @@ from app.core.payment_pricing import (
 
 logger = logging.getLogger(__name__)
 
-#: Short TTL for a failed fetch — long enough to stop hammering a dead
+#: Short TTL for a failed fetch - long enough to stop hammering a dead
 #: endpoint, short enough that a recovered source shows up quickly.
 _FAILURE_TTL_SECONDS = 120
 
@@ -76,7 +76,7 @@ async def _cache_store(payload_json: str, ttl: int) -> None:
     _memory_cache = (payload_json, time.monotonic() + max(int(ttl), 5))
     from app.infrastructure.redis_client import safe_redis_set
 
-    # Cross-worker refresh; best-effort — safe_redis_set swallows its own
+    # Cross-worker refresh; best-effort - safe_redis_set swallows its own
     # errors, and the memory cache already holds the value either way.
     await safe_redis_set(_redis_cache_key, payload_json, ex=max(int(ttl), 5))
 
@@ -144,7 +144,7 @@ async def _fetch_rate() -> dict | None:
             "provider": settings.FX_REFERENCE_PROVIDER,
             "provider_url": settings.FX_REFERENCE_PROVIDER_URL,
             "source_url": settings.FX_REFERENCE_URL,
-            "label": "Exchange rate reference (estimate — not the price you pay)",
+            "label": "Exchange rate reference (estimate - not the price you pay)",
             "disclaimer": FX_REFERENCE_DISCLAIMER,
         }
     except (httpx.HTTPError, ValueError, TypeError) as exc:
@@ -155,7 +155,7 @@ async def _fetch_rate() -> dict | None:
 async def fx_reference_payload() -> dict | None:
     """The customer-facing FX estimate, or ``None`` when unavailable.
 
-    ``None`` means the UI shows *no* reference — it must not show a stale or
+    ``None`` means the UI shows *no* reference - it must not show a stale or
     invented one.
     """
     if not fx_reference_enabled():

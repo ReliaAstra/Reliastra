@@ -97,7 +97,7 @@ function TicketList({
         <EmptyState
           icon={<MessageSquarePlus size={32} />}
           title="No conversations yet"
-          body="Ask us anything about your monitors, evidence reports, or billing. A human replies — usually within a few hours."
+          body="Ask us anything about your monitors, evidence reports, or billing. A human replies - usually within a few hours."
           actionLabel="Start a conversation"
           onAction={onCompose}
         />
@@ -160,8 +160,8 @@ function NewConversation({
     <div className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-6">
       <h2 className="text-base font-semibold text-rs-text">Start a conversation</h2>
       <p className="mt-1 text-xs text-rs-text-tertiary">
-        The more context you give us — dependency name, timeframe, what you
-        expected — the faster we can help.
+        The more context you give us - dependency name, timeframe, what you
+        expected - the faster we can help.
       </p>
 
       <div className="mt-5 space-y-4">
@@ -291,7 +291,7 @@ function Thread({ ticketId, onBack }: { ticketId: string; onBack: () => void }) 
           />
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-xs text-rs-text-tertiary">
-              Replies appear here automatically — no refresh needed.
+              Replies appear here automatically - no refresh needed.
             </p>
             <RsButton
               size="sm"
@@ -317,7 +317,7 @@ function Thread({ ticketId, onBack }: { ticketId: string; onBack: () => void }) 
         <ul className="mt-3 space-y-2.5 text-xs leading-5 text-rs-text-secondary">
           <li>A human from the RELIASTRA team reads every message.</li>
           <li>
-            You get a notification here the moment we reply — no need to keep
+            You get a notification here the moment we reply - no need to keep
             this tab open.
           </li>
           <li>

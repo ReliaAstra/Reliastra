@@ -21,7 +21,7 @@ const ease = [0.25, 0.1, 0.25, 1] as const;
  * broke:
  *
  * 1. Every destination is a real URL. The old entries were `<button>`s wired to
- *    `scrollToId('solution')` and `scrollToId('partners')` — ids that exist
+ *    `scrollToId('solution')` and `scrollToId('partners')` - ids that exist
  *    only inside section components the landing page does not render. Because
  *    `scrollToId` falls back to scrolling to the top when the id is missing,
  *    those links were dead but still *looked* like they worked.

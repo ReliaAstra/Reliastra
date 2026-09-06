@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# harden-host.sh — idempotent VPS hardening for single-node production
+# harden-host.sh - idempotent VPS hardening for single-node production
 # Run once via Tailscale SSH as root or sudo.
 # Covers: UFW, sshd Tailscale-only, Tailscale, users, Docker, unattended-upgrades, NTP
 set -euo pipefail
@@ -22,7 +22,7 @@ systemctl enable --now unattended-upgrades || true
 timedatectl set-ntp true || true
 systemctl enable --now systemd-timesyncd || true
 
-# 2. Users — dedicated, no password, key only
+# 2. Users - dedicated, no password, key only
 for u in "$ADMIN_USER" "$DEPLOY_USER"; do
   if ! id "$u" >/dev/null 2>&1; then
     useradd -m -s /bin/bash "$u"
@@ -45,10 +45,10 @@ chmod 440 /etc/sudoers.d/reliastra-*
 # Operator must add to /home/reliastra-deploy/.ssh/authorized_keys:
 # command="sudo /opt/reliastra/scripts/deploy.sh --commit \$SSH_ORIGINAL_COMMAND",no-port-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA...
 
-# 3. SSH — Tailscale only, key only, no root, no password
+# 3. SSH - Tailscale only, key only, no root, no password
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.$(date +%s) || true
 cat > /etc/ssh/sshd_config.d/99-reliastra.conf <<SSHD
-# Reliastra — Tailscale-only SSH
+# Reliastra - Tailscale-only SSH
 PasswordAuthentication no
 PermitRootLogin no
 PubkeyAuthentication yes
@@ -60,17 +60,17 @@ PermitTunnel no
 # Listen only on Tailscale + loopback (prevents public exposure even if UFW fails)
 ListenAddress 127.0.0.1
 ListenAddress $TAILSCALE_IPV4
-# When Tailscale not yet up, ListenAddress may fail — alternative is to bind 0.0.0.0 and rely on UFW.
+# When Tailscale not yet up, ListenAddress may fail - alternative is to bind 0.0.0.0 and rely on UFW.
 # We keep both for defense-in-depth; UFW is the hard boundary.
 SSHD
 # Remove ListenAddress if Tailscale IP not yet assigned (fallback to UFW only)
 if ! ip addr show tailscale0 >/dev/null 2>&1; then
-  echo "# Tailscale not yet up — relying on UFW for now" >> /etc/ssh/sshd_config.d/99-reliastra.conf
+  echo "# Tailscale not yet up - relying on UFW for now" >> /etc/ssh/sshd_config.d/99-reliastra.conf
   sed -i '/ListenAddress.*100\./d' /etc/ssh/sshd_config.d/99-reliastra.conf || true
 fi
 systemctl restart sshd || systemctl restart ssh
 
-# 4. UFW — deny public SSH, allow 80/443 public, allow SSH only on tailscale0
+# 4. UFW - deny public SSH, allow 80/443 public, allow SSH only on tailscale0
 ufw --force reset
 ufw default deny incoming
 ufw default allow outgoing
@@ -80,14 +80,14 @@ ufw allow 443/tcp
 if ip link show tailscale0 >/dev/null 2>&1; then
   ufw allow in on tailscale0 to any port 22 proto tcp
 else
-  echo "WARN: tailscale0 not up — adding temporary rule for current SSH (will be tightened after Tailscale joins)"
+  echo "WARN: tailscale0 not up - adding temporary rule for current SSH (will be tightened after Tailscale joins)"
   # Keep current SSH open until Tailscale is verified, then re-run this script
   ufw allow 22/tcp
 fi
 ufw --force enable
 ufw status verbose
 
-# 5. Docker daemon — no public exposure
+# 5. Docker daemon - no public exposure
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json <<DOCKER
 {
@@ -100,7 +100,7 @@ cat > /etc/docker/daemon.json <<DOCKER
 DOCKER
 systemctl restart docker || true
 
-# 6. Tailscale — install if missing
+# 6. Tailscale - install if missing
 if ! command -v tailscale >/dev/null 2>&1; then
   curl -fsSL https://tailscale.com/install.sh | sh
 fi

@@ -127,7 +127,7 @@ export function websiteJsonLd() {
     '@type': 'WebSite',
     '@id': `${SITE_URL}/#website`,
     url: `${SITE_URL}/`,
-    name: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    name: `${SITE_NAME} - ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
     publisher: { '@id': `${SITE_URL}/#organization` },
     inLanguage: 'en',
@@ -264,7 +264,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'External Dependency Intelligence',
     short: 'Independent knowledge about the third-party services your product depends on.',
     definition:
-      'External Dependency Intelligence is the practice of continuously observing the third-party APIs and services your infrastructure depends on — from outside both your stack and the vendor’s — and turning those observations into attributable, timestamped records of behavior.',
+      'External Dependency Intelligence is the practice of continuously observing the third-party APIs and services your infrastructure depends on - from outside both your stack and the vendor’s - and turning those observations into attributable, timestamped records of behavior.',
     problem:
       'Your own monitoring tells you that your checkout is failing. It cannot tell you whether the cause is your code or the payment provider three hops away whose status page still reads “operational”.',
     whyItMatters:
@@ -284,13 +284,13 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'Dependency Monitoring',
     short: 'Continuous third-party API observation with quorum-confirmed incidents.',
     definition:
-      'Dependency monitoring is the continuous probing of external endpoints your product relies on — APIs, auth providers, payment gateways, cloud services — to detect degradation before your users report it.',
+      'Dependency monitoring is the continuous probing of external endpoints your product relies on - APIs, auth providers, payment gateways, cloud services - to detect degradation before your users report it.',
     problem:
       'Vendor status pages are written by humans, after the fact, and scoped to incidents the vendor chose to declare. Timing is approximate and the record belongs to the counterparty.',
     whyItMatters:
       'A dependency that fails silently breaks your product while every internal dashboard stays green. Direct measurement closes that blind spot.',
     example:
-      'Your auth provider starts returning 500s to one region. RELIASTRA’s multi-region checks disagree — one origin fails, two succeed — distinguishing a regional path problem from a vendor-wide outage.',
+      'Your auth provider starts returning 500s to one region. RELIASTRA’s multi-region checks disagree - one origin fails, two succeed - distinguishing a regional path problem from a vendor-wide outage.',
     howReliastra:
       'One scheduler dispatches one task per dependency per region through a message broker to workers. Every result carries its region. Recovery requires consecutive successes, so flapping does not page your team twice.',
     related: [
@@ -304,7 +304,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'Incident Attribution',
     short: 'Determining whether an incident originated inside your stack or with a vendor.',
     definition:
-      'Incident attribution is the process of assigning an observed failure to its most likely origin — your infrastructure or a specific external dependency — using correlated timelines rather than inference.',
+      'Incident attribution is the process of assigning an observed failure to its most likely origin - your infrastructure or a specific external dependency - using correlated timelines rather than inference.',
     problem:
       'An outage you caused and an outage your vendor caused look identical from inside your own monitoring. Both present as your service failing.',
     whyItMatters:
@@ -312,7 +312,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     example:
       'Your incident window (14:02–14:19) overlaps a period in which the dependency was independently observed failing across two regions. That overlap is a fact about two measured timelines.',
     howReliastra:
-      'RELIASTRA keeps your incident history and the dependency’s observation history on the same timeline, applies a deterministic correlation engine with confidence levels, and refuses to claim causation — only correlated, timestamped evidence.',
+      'RELIASTRA keeps your incident history and the dependency’s observation history on the same timeline, applies a deterministic correlation engine with confidence levels, and refuses to claim causation - only correlated, timestamped evidence.',
     related: [
       { label: 'Incident evidence', href: '/incident-evidence' },
       { label: 'SLA evidence', href: '/glossary/sla-evidence' },
@@ -324,13 +324,13 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'SLA Evidence',
     short: 'Timestamped, checksummed records of vendor behavior for credit conversations.',
     definition:
-      'SLA evidence is an independent, timestamped record of a vendor’s observed behavior during a failure window — suitable for bringing into a service-credit conversation governed by your contract with that vendor.',
+      'SLA evidence is an independent, timestamped record of a vendor’s observed behavior during a failure window - suitable for bringing into a service-credit conversation governed by your contract with that vendor.',
     problem:
       'Screenshots and Slack messages do not settle credit disputes. The vendor’s own status page is written by the counterparty to the claim.',
     whyItMatters:
       'Structured, third-party verification is the basis of successful SLA claims. Vendors honor claims backed by regional timestamps far more readily than manual reports.',
     example:
-      'A 17-minute degradation with per-minute observations from two regions, correlated service impact, and a computed credit figure under your plan’s SLA clause — compiled into one report with a verifiable checksum.',
+      'A 17-minute degradation with per-minute observations from two regions, correlated service impact, and a computed credit figure under your plan’s SLA clause - compiled into one report with a verifiable checksum.',
     howReliastra:
       'When a vendor incident is detected, RELIASTRA compiles independent observations, duration, correlated impact and the calculated credit amount. Reports are checksummed, bound to your organization, and verifiable without disclosing endpoints or credentials.',
     related: [
@@ -344,7 +344,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'Vendor Reliability',
     short: 'How consistently a third-party service meets its expected behavior over time.',
     definition:
-      'Vendor reliability is the measured consistency of a third-party service — uptime, latency distribution and incident frequency — observed independently over stated windows and origin sets.',
+      'Vendor reliability is the measured consistency of a third-party service - uptime, latency distribution and incident frequency - observed independently over stated windows and origin sets.',
     problem:
       'Self-reported “99.99% uptime” figures rarely state the window, the origin set, or how outcomes were classified. A number without those is marketing.',
     whyItMatters:
@@ -352,7 +352,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     example:
       'Two payment providers both claim four nines. Independent 30-day measurement shows one at 99.98% with a 340ms p95, the other at 99.91% with three multi-region incidents. The architecture decision writes itself.',
     howReliastra:
-      'RELIASTRA publishes aggregated posture only for vendors made public, always with window and methodology stated. Public Track pages show uptime, latency and incident history measured — not self-reported.',
+      'RELIASTRA publishes aggregated posture only for vendors made public, always with window and methodology stated. Public Track pages show uptime, latency and incident history measured - not self-reported.',
     related: [
       { label: 'Track vendors', href: '/track' },
       { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
@@ -364,13 +364,13 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'Dependency Telemetry',
     short: 'The raw observations behind every reliability claim: checks, regions, outcomes.',
     definition:
-      'Dependency telemetry is the retained record of every probe against a dependency — timestamp, region of origin, latency, status code and outcome — from which uptime, latency and incident figures are derived.',
+      'Dependency telemetry is the retained record of every probe against a dependency - timestamp, region of origin, latency, status code and outcome - from which uptime, latency and incident figures are derived.',
     problem:
       'An uptime percentage without its underlying observations cannot be audited. You cannot distinguish “vendor down” from “we never ran the probe”.',
     whyItMatters:
       'Telemetry is what makes a reliability claim inspectable. It separates target failures (the vendor failed) from infrastructure failures (the probe could not run) and transitional states (never checked, queued, executing).',
     example:
-      'A gap in the chart is labeled explicitly: policy-blocked target, dispatch failure, or dead scheduler — three different causes with three different owners, never collapsed into “no data”.',
+      'A gap in the chart is labeled explicitly: policy-blocked target, dispatch failure, or dead scheduler - three different causes with three different owners, never collapsed into “no data”.',
     howReliastra:
       'Each stored result records region, outcome, status code, latency and execution time. Missed probes are never backfilled. Retention follows the plan (24 hours on Free up to 90 days on Pro).',
     related: [
@@ -383,7 +383,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'Infrastructure Evidence',
     short: 'Verifiable records of how infrastructure behaved during a window.',
     definition:
-      'Infrastructure evidence is any verifiable record of how systems behaved during a time window — probe results, incident timelines, correlation outputs — preserved with enough context (timestamps, origins, checksums) to be relied upon later.',
+      'Infrastructure evidence is any verifiable record of how systems behaved during a time window - probe results, incident timelines, correlation outputs - preserved with enough context (timestamps, origins, checksums) to be relied upon later.',
     problem:
       'Logs rotate, dashboards are mutable, and memories of an incident decay within days. By the time a credit conversation or postmortem happens, the record is gone or disputed.',
     whyItMatters:
@@ -391,7 +391,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     example:
       'A fault report covering a 22-minute window: per-region observations, quorum verdict, correlated customer impact, and a SHA-256 checksum binding the report to the organization that generated it.',
     howReliastra:
-      'Generated reports are checksummed and bound to the producing organization. A public verification reference confirms a report exists and matches its checksum — without disclosing endpoints, headers or account details.',
+      'Generated reports are checksummed and bound to the producing organization. A public verification reference confirms a report exists and matches its checksum - without disclosing endpoints, headers or account details.',
     related: [
       { label: 'Incident evidence', href: '/incident-evidence' },
       { label: 'Fault reports', href: '/glossary/external-dependency-fault-report' },
@@ -404,13 +404,13 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     definition:
       'An External Dependency Fault Report is the compiled artifact for one failure window: which dependency failed, over what interval, observed from where, with what severity, what customer impact correlated, and what the record’s checksum is.',
     problem:
-      'Incident threads contain fragments — graphs, pasted curl output, status-page screenshots. Nobody can later reconstruct exactly what was observed and when.',
+      'Incident threads contain fragments - graphs, pasted curl output, status-page screenshots. Nobody can later reconstruct exactly what was observed and when.',
     whyItMatters:
       'A single compiled report replaces a scattered thread. It is what gets attached to vendor tickets, postmortems and SLA claims.',
     example:
       'Report contents: dependency, window (UTC), per-region timeline, quorum verdict, severity, correlated incidents, methodology reference, checksum, verification link.',
     howReliastra:
-      'Reports are generated from retained telemetry on detection or on demand, carry the organization binding and checksum, and expose a public verification endpoint that confirms existence and integrity — never private configuration.',
+      'Reports are generated from retained telemetry on detection or on demand, carry the organization binding and checksum, and expose a public verification endpoint that confirms existence and integrity - never private configuration.',
     related: [
       { label: 'SLA evidence', href: '/sla-evidence' },
       { label: 'Evidence docs', href: '/docs/evidence' },

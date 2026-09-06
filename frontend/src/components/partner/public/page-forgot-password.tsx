@@ -38,7 +38,7 @@ export function PageForgotPassword() {
     setLoading(true);
 
     try {
-      // Always show success (anti-enumeration) — even if request fails
+      // Always show success (anti-enumeration) - even if request fails
       try {
         await fetch('/api/auth/forgot-password', {
           method: 'POST',
@@ -46,11 +46,11 @@ export function PageForgotPassword() {
           body: JSON.stringify({ email: email.trim() }),
         });
       } catch {
-        // Swallow network errors — still show success
+        // Swallow network errors - still show success
       }
 
       setSubmitted(true);
-      toast.success('Reset link sent — check your inbox');
+      toast.success('Reset link sent - check your inbox');
     } finally {
       setLoading(false);
     }

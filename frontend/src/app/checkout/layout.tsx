@@ -19,7 +19,7 @@ export const metadata: Metadata = {
  *
  * A deliberately narrow frame: the RELIASTRA masthead, a lock that says who is
  * taking the money, and nothing else. No marketing nav, no footer sitemap, no
- * theme switch, no route back into the product's other surfaces — every one of
+ * theme switch, no route back into the product's other surfaces - every one of
  * those is a way to leave a payment half-finished. The provider is named at the
  * top rather than only inside a form, because "who is charging me" should be
  * answerable before the first click, not after.

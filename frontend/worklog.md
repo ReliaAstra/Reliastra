@@ -97,7 +97,7 @@ Agent: Main
 Task: Create Resources page, register it, improve EmptyState, add footer link
 
 Work Log:
-- Created src/components/partner/public/page-resources.tsx: structured reference page with RESOURCES header (border-b, label + headline + subtext), 6 resource cards in responsive grid (1/2/3 cols) — Brand Guidelines (Palette), Referral Playbook (BookOpen), Technical Overview (Cpu), Commission FAQ → navigates to 'faq' (HelpCircle), API Documentation (Code), Email Templates (Mail). Each card: thin border, rounded-lg, p-6, icon in bordered box, title font-semibold, description text-sm muted, 'View →' arrow link at bottom, hover: border darkens + -1px y-translate + shadow-sm. framer-motion staggered reveal on scroll (whileInView). Below grid: 'More resources are added regularly. Check back for updates.' in font-mono text-xs muted. CTA section: 'Ready to start?' + BECOME A PARTNER button → navigates to signup. Separator between grid and CTA.
+- Created src/components/partner/public/page-resources.tsx: structured reference page with RESOURCES header (border-b, label + headline + subtext), 6 resource cards in responsive grid (1/2/3 cols) - Brand Guidelines (Palette), Referral Playbook (BookOpen), Technical Overview (Cpu), Commission FAQ → navigates to 'faq' (HelpCircle), API Documentation (Code), Email Templates (Mail). Each card: thin border, rounded-lg, p-6, icon in bordered box, title font-semibold, description text-sm muted, 'View →' arrow link at bottom, hover: border darkens + -1px y-translate + shadow-sm. framer-motion staggered reveal on scroll (whileInView). Below grid: 'More resources are added regularly. Check back for updates.' in font-mono text-xs muted. CTA section: 'Ready to start?' + BECOME A PARTNER button → navigates to signup. Separator between grid and CTA.
 - Added 'resources' to PartnerPage type union in src/types/partner.ts
 - Updated src/components/partner/public/public-layout.tsx: imported PageResources, added 'resources' to publicPages array, added case 'resources' → <PageResources /> to PageContent switch
 - Rewrote src/components/partner/shared/empty-state.tsx: added animated SVG network graph above heading (3 nodes connected by thin lines, top-center node pulses with scale/opacity animation + expanding ring via <animate>), heading changed from text-2xl md:text-3xl with more emphasis, step indicators changed from plain '01'/'02' text to circular badges (h-6 w-6 rounded-full border bg-muted/50 with number centered), vertical spacing between steps increased (space-y-4 → space-y-5), added 'We\'ll notify you when someone signs up.' text below ReferralLinkCard in text-xs muted. Removed unused Copy import.
@@ -161,10 +161,10 @@ Verification Results:
 - Added Forgot password link to Login
 
 **Unresolved / Low Priority:**
-- Forgot password link is non-functional (navigates to login) — requires backend support
-- Privacy/Terms footer links navigate to home — requires actual legal pages
-- Resources page cards are non-functional placeholders — content/design assets not yet created
-- Dashboard API uses demo user lookup (first user in DB) — needs proper token-based auth
+- Forgot password link is non-functional (navigates to login) - requires backend support
+- Privacy/Terms footer links navigate to home - requires actual legal pages
+- Resources page cards are non-functional placeholders - content/design assets not yet created
+- Dashboard API uses demo user lookup (first user in DB) - needs proper token-based auth
 - No real referral tracking yet (needs cookie/localStorage attribution on public pages)
 
 **Recommendations for next phase:**
@@ -221,7 +221,7 @@ Stage Summary:
 - Payouts page shows crypto recommendation banner
 
 **Unresolved / Low Priority:**
-- Dashboard API uses demo user lookup (first user in DB) — needs proper token-based auth
+- Dashboard API uses demo user lookup (first user in DB) - needs proper token-based auth
 - No real referral tracking yet (needs cookie/localStorage attribution)
 - Resources page cards are non-functional placeholders
 - Privacy/Terms footer links navigate to home
@@ -239,8 +239,8 @@ Task: Add Support & Forgot Password pages with backend APIs, fix bugs, push to G
 Work Log:
 - Added 'support' and 'forgot-password' to PartnerPage type union in types/partner.ts
 - Added SupportTicket model to prisma/schema.prisma, ran db:push
-- Created POST /api/support/route.ts — validates name/email/subject/message, creates SupportTicket in DB
-- Created POST /api/auth/forgot-password/route.ts — validates email, anti-enumeration (always returns success)
+- Created POST /api/support/route.ts - validates name/email/subject/message, creates SupportTicket in DB
+- Created POST /api/auth/forgot-password/route.ts - validates email, anti-enumeration (always returns success)
 - Created page-support.tsx: premium centered card with subject chip selector (7 options + Other with custom input), name/email/message form, character counter, loading state, success state with confirmation email display, response time note, pre-fills name/email from authenticated user
 - Created page-forgot-password.tsx: premium centered card with lock icon, email input with Mail icon, "Send reset link" button, success state showing "Check your email" with email address, "Return to sign in" button, "Remember your password?" link
 - Updated public-layout.tsx: registered both new pages, added to publicPages array, isCenteredPage hides footer on auth-like pages
@@ -301,7 +301,7 @@ Stage Summary:
 
 **Pushed to GitHub:**
 - Pushed to `partner-network` branch: https://github.com/ReliaAstra/Frontend/tree/partner-network
-- Remote `main` has separate history (PRs #3–#8) — no common ancestor, kept on separate branch per user decision
+- Remote `main` has separate history (PRs #3–#8) - no common ancestor, kept on separate branch per user decision
 - GitHub token configured for future pushes
 
 **Unresolved:**
@@ -325,14 +325,14 @@ Work Log:
 - QA via agent-browser: Homepage, Login, Dashboard (Overview/Referrals/Earnings/Payouts/Settings), all API calls returning 200
 - Lint: clean, no errors
 - Dev server: healthy, no errors in dev.log
-- Dashboard pages already had loading skeletons (Referrals, Earnings, Payouts) — skipped that task
+- Dashboard pages already had loading skeletons (Referrals, Earnings, Payouts) - skipped that task
 - Created page-privacy.tsx: Premium editorial Privacy Policy page with 10 sections, framer-motion reveal animations, LEGAL label, back button, comprehensive legal content (data collection, usage, sharing, security, user rights, cookies, retention, children's privacy, changes, contact)
 - Created page-terms.tsx: Premium editorial Terms of Service page with 13 sections, framer-motion reveal animations, comprehensive legal content (acceptance, program details, 30% commission, referral tracking with 90-day cookies, payout $50 minimum, partner obligations, IP, termination, limitation of liability, governing law Delaware, contact)
 - Added 'privacy' and 'terms' to PartnerPage type union in types/partner.ts
 - Updated public-layout.tsx: imported PagePrivacy and PageTerms, added to publicPages array, added switch cases
 - Updated partner-footer.tsx: Legal section links now navigate to 'privacy' and 'terms' instead of 'home'
 - Replaced shadcn Toaster with Sonner toast system: updated sonner.tsx to not depend on next-themes, styled to match RELIASTRA design (border-border/60, bg-background, font-mono descriptions), updated layout.tsx import
-- Wired toast notifications to: ReferralLinkCard (copy success), PageSupport (submit success, error), PageForgotPassword (reset link sent), PageLogin (welcome back, sign in error, connection error), DashboardLayout (signed out — all 3 handleSignOut instances: sidebar, sheet, account menu)
+- Wired toast notifications to: ReferralLinkCard (copy success), PageSupport (submit success, error), PageForgotPassword (reset link sent), PageLogin (welcome back, sign in error, connection error), DashboardLayout (signed out - all 3 handleSignOut instances: sidebar, sheet, account menu)
 - Removed old useToast import from page-login.tsx
 - Enhanced EarningsEmpty state with projected earnings visualization: animated horizontal bar chart showing 1/5/10/25 referrals at $49/mo Pro plan, monthly and yearly figures, font-mono tabular-nums, footnote about assumptions
 - Lint: clean after all changes
@@ -353,10 +353,10 @@ Stage Summary:
 **Overall Health**: Stable. All features working, no bugs, no lint errors.
 
 **Completed in this round:**
-- Privacy Policy page — comprehensive legal content with editorial design
-- Terms of Service page — 13 sections covering full partner program terms
-- Toast notification system (Sonner) — wired to copy, submit, login, signout actions
-- Projected earnings visualization — animated bar chart on empty Earnings page
+- Privacy Policy page - comprehensive legal content with editorial design
+- Terms of Service page - 13 sections covering full partner program terms
+- Toast notification system (Sonner) - wired to copy, submit, login, signout actions
+- Projected earnings visualization - animated bar chart on empty Earnings page
 - Footer Legal links now navigate to dedicated pages
 
 **Verified via agent-browser:**
@@ -508,7 +508,7 @@ Stage Summary:
 **Unresolved:**
 - Dashboard API uses demo user lookup (first user in DB)
 - Notification preferences not persisted (client state only)
-- Privacy/Terms footer links navigate to home instead of real pages (partially resolved — they do have their own pages now)
+- Privacy/Terms footer links navigate to home instead of real pages (partially resolved - they do have their own pages now)
 
 **Recommendations for next phase:**
 1. Implement real session-based auth (replace demo user lookup)
@@ -535,13 +535,13 @@ Work Log:
 - Staggered fadeUp animations on testimonial cards via whileInView
 - Section header: "What partners say" label + "Trusted by infrastructure professionals." heading
 - All styling follows existing design system: font-mono, tracking-widest labels, border-border/60, emerald badges
-- Ran bun run lint — passed with zero errors
+- Ran bun run lint - passed with zero errors
 
 Stage Summary:
 - Two new sections added to homepage: animated counters and testimonials
 - CounterItem uses framer-motion useMotionValue/useTransform/animate for smooth 0-to-target counting on scroll into view
 - TestimonialCard is a reusable component with hover lift effects and emerald result badges
-- Lint clean — no errors or warnings
+- Lint clean - no errors or warnings
 
 ---
 Task ID: 4
@@ -551,11 +551,11 @@ Task: Add loading skeleton states to all dashboard pages
 Work Log:
 - Audited all 5 dashboard pages for useQuery usage and existing skeleton states
 - PageSettings has no useQuery (only uses usePartnerStore), so no loading skeleton needed
-- PageOverview already had OverviewSkeleton — improved it: fixed space-y-6 to space-y-8, added border-border/60 to metric card skeletons, replaced flat Skeleton elements for referral link card and how-it-works strip with properly shaped bordered skeletons, replaced flat table skeleton with structured card matching actual RecentReferrals layout (px-5 py-3.5 header + rows), wrapped in motion.div with opacity 0→1 fade-in
-- PageReferrals already had ReferralsSkeleton — improved it: added bg-background to table container, wrapped in motion.div with opacity 0→1 fade-in
-- PageEarnings already had EarningsSkeleton — improved it: replaced flat h-20 w-72 hero metric Skeleton with a proper bordered card (border-border/60 rounded-lg bg-background p-6 md:p-8) containing label + value skeletons, added border-border/60 to metric card skeletons, added bg-background to table container, wrapped in motion.div with opacity 0→1 fade-in
-- PagePayouts already had PayoutsSkeleton — improved it: replaced flat h-36 Skeleton with a proper bordered card (border-border/60 rounded-lg bg-background p-6 md:p-8) containing label, value, and button skeletons, added crypto recommendation banner skeleton matching actual CryptoBanner layout (icon circle + title/description text lines), added bg-background to table container, wrapped in motion.div with opacity 0→1 fade-in
-- Ran bun run lint — passed with zero errors
+- PageOverview already had OverviewSkeleton - improved it: fixed space-y-6 to space-y-8, added border-border/60 to metric card skeletons, replaced flat Skeleton elements for referral link card and how-it-works strip with properly shaped bordered skeletons, replaced flat table skeleton with structured card matching actual RecentReferrals layout (px-5 py-3.5 header + rows), wrapped in motion.div with opacity 0→1 fade-in
+- PageReferrals already had ReferralsSkeleton - improved it: added bg-background to table container, wrapped in motion.div with opacity 0→1 fade-in
+- PageEarnings already had EarningsSkeleton - improved it: replaced flat h-20 w-72 hero metric Skeleton with a proper bordered card (border-border/60 rounded-lg bg-background p-6 md:p-8) containing label + value skeletons, added border-border/60 to metric card skeletons, added bg-background to table container, wrapped in motion.div with opacity 0→1 fade-in
+- PagePayouts already had PayoutsSkeleton - improved it: replaced flat h-36 Skeleton with a proper bordered card (border-border/60 rounded-lg bg-background p-6 md:p-8) containing label, value, and button skeletons, added crypto recommendation banner skeleton matching actual CryptoBanner layout (icon circle + title/description text lines), added bg-background to table container, wrapped in motion.div with opacity 0→1 fade-in
+- Ran bun run lint - passed with zero errors
 
 Stage Summary:
 - All 4 data-loading dashboard pages (Overview, Referrals, Earnings, Payouts) now have improved loading skeletons
@@ -577,7 +577,7 @@ Work Log:
 - FAQ page (page-faq.tsx): Added hover:bg-muted/20 transition-colors duration-150 rounded-md to AccordionTrigger buttons. Wrapped each FAQ answer in a div with border-l-2 border-foreground/10 pl-4 for a left accent line that animates in with the accordion expand/collapse.
 - How It Works page (page-how-it-works.tsx): Added continuous subtle pulse animation to step number elements (both desktop and mobile layouts). Uses framer-motion animate={{ scale: [1, 1.05, 1] }} with transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}.
 - Dashboard Sidebar (dashboard-layout.tsx): Replaced motion.div active indicator with border-l-2 border-foreground -ml-px on the nav button itself (active state). Inactive state uses border-l-2 border-transparent -ml-px to prevent content shift. Changed hover from bg-muted/60 to hover:bg-muted/30 transition-colors duration-150.
-- Ran bun run lint — passed with zero errors.
+- Ran bun run lint - passed with zero errors.
 
 Stage Summary:
 - 5 files modified with style polish: partner-nav.tsx, page-commission.tsx, page-faq.tsx, page-how-it-works.tsx, dashboard-layout.tsx
@@ -661,7 +661,7 @@ Stage Summary:
 - Lint: clean (0 errors, 0 warnings)
 
 **Unresolved:**
-- Dashboard API uses demo user lookup (first user in DB) — needs proper token-based auth
+- Dashboard API uses demo user lookup (first user in DB) - needs proper token-based auth
 - Notification preferences not persisted (client state only)
 
 **Recommendations for next phase:**
@@ -692,7 +692,7 @@ Work Log:
 - Falls back to simple text message when no commissions have a `period` field
 - Adjusted earnings history section animation delay from 0.3 to 0.5 to accommodate new section
 - Removed unused `shortLabel` variable from bar rendering map
-- Ran `bun run lint` — passed with zero errors
+- Ran `bun run lint` - passed with zero errors
 
 Stage Summary:
 - Monthly earnings trend bar chart added between summary cards and earnings history
@@ -767,7 +767,7 @@ Work Log:
 - Numbers use text-lg md:text-xl font-semibold tabular-nums; labels use text-[10px] font-mono uppercase tracking-widest text-muted-foreground
 - Conversion rate number uses text-emerald-600 dark:text-emerald-400
 - Wrapped in motion.div with matching table animation (opacity 0->1, y 12->0, duration 0.4, delay 0.05)
-- Ran bun run lint — no errors
+- Ran bun run lint - no errors
 
 Stage Summary:
 - Conversion funnel stats bar successfully added to Referrals page
@@ -928,7 +928,7 @@ Stage Summary:
 - Dev log: all 200s, no errors
 
 **Unresolved:**
-- Dashboard API uses demo user lookup (first user in DB) — needs proper token-based auth
+- Dashboard API uses demo user lookup (first user in DB) - needs proper token-based auth
 - Notification preferences not persisted (client state only)
 - Login form doesn't validate password (API always authenticates)
 
@@ -959,7 +959,7 @@ Work Log:
 - Added PageTiers import and case to PublicLayout page router
 - Added 'Tiers' entry with Crown icon to CommandPalette public navigation items
 - Removed unused PARTNER_TIERS import from tier-progress-card.tsx
-- Ran `bun run lint` — 0 errors
+- Ran `bun run lint` - 0 errors
 
 Stage Summary:
 - Full 4-tier partner system implemented (Bronze 30%/Silver 32%/Gold 35%/Platinum 40%)
@@ -978,7 +978,7 @@ Work Log:
 - Built 7 skeleton primitives/components: `SkeletonLine`, `SkeletonPulse`, `SkeletonShimmer`, `SkeletonCard`, `SkeletonTableRow` (internal helpers)
 - Built 5 page-specific skeletons: `DashboardOverviewSkeleton`, `DashboardReferralsSkeleton`, `DashboardEarningsSkeleton`, `DashboardPayoutsSkeleton`, `DashboardSettingsSkeleton`
 - Shimmer animation uses CSS `@keyframes skeleton-shimmer` with `background-position: -200% → 200%` for a smooth, premium sweep effect
-- Shimmer gradient: `linear-gradient(90deg, muted/40 25%, background/60 50%, muted/40 75%)` — subtle and dark-mode compatible
+- Shimmer gradient: `linear-gradient(90deg, muted/40 25%, background/60 50%, muted/40 75%)` - subtle and dark-mode compatible
 - All skeletons wrapped in `motion.div` with fade-in on mount for smooth appearance
 - Each skeleton faithfully mimics its page's layout: card counts, row counts, responsive grid columns
 - Replaced inline `OverviewSkeleton` in page-overview.tsx with `DashboardOverviewSkeleton`
@@ -987,7 +987,7 @@ Work Log:
 - Replaced inline `PayoutsSkeleton` in page-payouts.tsx with `DashboardPayoutsSkeleton`
 - Added `DashboardSettingsSkeleton` to page-settings.tsx with brief 300ms mount delay + user null check
 - Removed all `import { Skeleton } from '@/components/ui/skeleton'` from the 5 dashboard pages
-- Ran `bun run lint` — 0 errors, dev server compiles successfully
+- Ran `bun run lint` - 0 errors, dev server compiles successfully
 
 Stage Summary:
 - Premium shimmer skeleton system created with reusable primitives and 5 page-specific layouts
@@ -1074,7 +1074,7 @@ Stage Summary:
 ---
 Task ID: 6
 Agent: Main (Orchestrator)
-Task: Cron QA cycle — assess project state, QA, fix bugs, add new features
+Task: Cron QA cycle - assess project state, QA, fix bugs, add new features
 
 Work Log:
 - Read full worklog.md (1073 lines) to understand project history
@@ -1128,7 +1128,7 @@ Work Log:
 - Social links in footer
 
 **Unresolved / Low Priority:**
-- Dashboard API uses demo user lookup (first user in DB) — needs proper token-based auth
+- Dashboard API uses demo user lookup (first user in DB) - needs proper token-based auth
 - Login doesn't validate password (API accepts any password if email exists)
 - Notification preferences not persisted (client state only)
 - No real referral cookie tracking on public pages
@@ -1152,7 +1152,7 @@ Agent: Main
 Task: Create main landing page for Reliastra External Dependency Intelligence platform
 
 Work Log:
-- Created src/components/landing/page-landing.tsx — a comprehensive, self-contained landing page component with all 11 required sections in a single file
+- Created src/components/landing/page-landing.tsx - a comprehensive, self-contained landing page component with all 11 required sections in a single file
 - Navbar: Fixed top, transparent→solid on scroll (scroll event listener), logo "reliastra" (monospace), 6 nav links (Features→home, How It Works→how-it-works, Pricing→premium, Partners→home, Blog→home, Status→home), Sign In→login, Start Free→login, theme toggle (Sun/Moon via next-themes), mobile hamburger menu with full link set
 - Hero Section: "Your site went down. Was it you, or your vendors?" headline with staggered framer-motion fade-in, subtext about monitoring/correlating/evidence, two CTAs (Start Free→login, See Live Data→home), mini dashboard with 5 vendor latency bars (Stripe 124ms, Auth0 342ms, Vercel 48ms, Twilio 187ms, SendGrid 96ms) with animated width transitions on viewport entry
 - Problem Section: "THE 2 AM WAR ROOM" label, 3 pain-point cards (Blind to Vendor Failures, No Causal Evidence, Credits Left on the Table) with icons and descriptions

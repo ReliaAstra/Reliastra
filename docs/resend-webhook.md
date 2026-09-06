@@ -1,4 +1,4 @@
-# Resend Webhook — Setup & Verification
+# Resend Webhook - Setup & Verification
 
 ## Endpoint
 ```
@@ -24,7 +24,7 @@ POST https://api.reliastra.com/webhooks/resend
 3. Enable only if used:
    - `email.opened` (analytics, not critical)
    - `email.clicked` (analytics)
-4. **Do NOT enable** `email.received` — inbound is ImprovMX (see `docs/email/improvmx-setup.md`)
+4. **Do NOT enable** `email.received` - inbound is ImprovMX (see `docs/email/improvmx-setup.md`)
 5. **Do NOT enable** `contact.*` / `domain.*` unless you have a use case
 6. Copy **Signing Secret** `whsec_...` → set on host as `RESEND_WEBHOOK_SECRET` (600, never in repo, never in logs)
 

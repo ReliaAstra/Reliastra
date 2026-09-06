@@ -315,7 +315,7 @@ export interface Invoice {
 /**
  * One collected payment, as persisted from the provider's own report at the
  * time it happened (GET /v1/billing/transactions). Both sides of the deal are
- * carried — the USD price quoted and the amount/currency actually charged —
+ * carried - the USD price quoted and the amount/currency actually charged -
  * so history never re-prices itself when a catalog changes.
  */
 export interface BillingTransactionItem {

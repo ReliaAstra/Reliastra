@@ -273,7 +273,7 @@ class ObservationRepository:
         resolution, using epoch-based bucket alignment.
 
         The interval is built with ``make_interval(secs => ...)`` so the
-        value is passed as a bound parameter — never interpolated into SQL.
+        value is passed as a bound parameter - never interpolated into SQL.
         """
         interval = func.make_interval(0, 0, 0, 0, 0, 0, resolution_seconds)
         origin = text("'2000-01-01T00:00:00Z'::timestamptz")
@@ -290,7 +290,7 @@ class ObservationRepository:
     ) -> list[dict[str, Any]]:
         """Aggregate observations into time-buckets using PostgreSQL
         ``date_bin``.  All heavy lifting (GROUP BY, AVG, COUNT) happens
-        inside PostgreSQL — no Python-side aggregation of raw rows.
+        inside PostgreSQL - no Python-side aggregation of raw rows.
 
         Returns a list of dicts, one per bucket, ordered chronologically.
         """

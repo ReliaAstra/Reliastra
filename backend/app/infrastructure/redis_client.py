@@ -75,13 +75,13 @@ async def safe_redis_claim(
     """SET NX that distinguishes "already claimed" from "Redis unavailable".
 
     Returns:
-        True  — the key was newly created; the caller owns the claim.
-        False — the key already existed; this is a genuine duplicate.
-        None  — Redis could not be reached, so duplication is UNKNOWN.
+        True  - the key was newly created; the caller owns the claim.
+        False - the key already existed; this is a genuine duplicate.
+        None  - Redis could not be reached, so duplication is UNKNOWN.
 
     This is the ONLY SET-NX primitive. Its predecessor ``safe_redis_set_nx``
     returned a plain ``bool``, collapsing "duplicate" and "Redis down" into
-    ``False`` — which silently turned a Redis outage into "everything is a
+    ``False`` - which silently turned a Redis outage into "everything is a
     duplicate" and dropped Paystack payments and outage alerts on the floor.
     It was deleted rather than deprecated so the ambiguity cannot come back.
 
@@ -106,7 +106,7 @@ async def safe_redis_claim(
 
 
 async def safe_redis_incr(key: str, timeout: float = 2.0) -> int | None:
-    """INCR wrapper — returns the new value, or None on Redis failure."""
+    """INCR wrapper - returns the new value, or None on Redis failure."""
     try:
         redis = get_redis()
         return int(await asyncio.wait_for(redis.incr(key), timeout=timeout))

@@ -39,7 +39,7 @@ class DashboardRepository:
         alerts_today = int(today_res.scalar() or 0)
 
         # Compute actual uptime from check results in the last 24 hours.
-        # No checks in the window means uptime is UNKNOWN — never claim 100%.
+        # No checks in the window means uptime is UNKNOWN - never claim 100%.
         uptime_window = datetime.now(timezone.utc) - timedelta(hours=24)
         uptime_query = select(
             func.count(CheckResult.id).label("total"),

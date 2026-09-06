@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Contact — Talk to RELIASTRA',
+  title: 'Contact - Talk to RELIASTRA',
   description:
     'Contact RELIASTRA: support, sales and security. Support at support@reliastra.com, Enterprise sales at sales@reliastra.com.',
   path: '/contact',
@@ -28,7 +28,7 @@ export default function ContactPage() {
             '@type': 'ContactPage',
             '@id': canonicalUrl('/contact'),
             url: canonicalUrl('/contact'),
-            name: 'Contact — Talk to RELIASTRA',
+            name: 'Contact - Talk to RELIASTRA',
             isPartOf: { '@id': canonicalUrl('/#website') },
             inLanguage: 'en',
           },
@@ -37,7 +37,7 @@ export default function ContactPage() {
       <MarketingPage
         eyebrow="Company"
         title="Talk to RELIASTRA"
-        lede="Support, sales and security — real inboxes, answered by the team that operates the measurement network."
+        lede="Support, sales and security - real inboxes, answered by the team that operates the measurement network."
         breadcrumbs={crumbs}
         related={[
           { label: 'Documentation', href: '/docs', description: 'Answers before you ask.' },
@@ -49,18 +49,18 @@ export default function ContactPage() {
         <Prose>
           <h2>Support</h2>
           <p>
-            <a href="mailto:support@reliastra.com">support@reliastra.com</a> — account,
+            <a href="mailto:support@reliastra.com">support@reliastra.com</a> - account,
             monitoring, evidence and billing questions. Include your organization name
             and, for incident questions, the dependency and window (UTC).
           </p>
           <h2>Sales (Enterprise)</h2>
           <p>
-            <a href="mailto:sales@reliastra.com?subject=Enterprise%20plan">sales@reliastra.com</a> —
+            <a href="mailto:sales@reliastra.com?subject=Enterprise%20plan">sales@reliastra.com</a> -
             custom scale, client isolation, white-label reporting and custom retention.
           </p>
           <h2>Billing</h2>
           <p>
-            <a href="mailto:billing@reliastra.com?subject=Pro%20plan%20pricing">billing@reliastra.com</a> —
+            <a href="mailto:billing@reliastra.com?subject=Pro%20plan%20pricing">billing@reliastra.com</a> -
             subscriptions, invoices and Pro plan pricing.
           </p>
           <h2>Before writing in</h2>

@@ -7,7 +7,7 @@ ImprovMX is **only** for inbound forwarding. **Resend stays for outbound.** Do n
 2. Add domain: `reliastra.com`
 
 ## 2. Destination mailbox
-In ImprovMX dashboard → `reliastra.com` → Forward to: enter `IMPROVMX_FORWARD_TO` (e.g., your Gmail: `secengineerx@gmail.com`). **Make this env-configurable** — do not hardcode in docs.
+In ImprovMX dashboard → `reliastra.com` → Forward to: enter `IMPROVMX_FORWARD_TO` (e.g., your Gmail: `secengineerx@gmail.com`). **Make this env-configurable** - do not hardcode in docs.
 
 ## 3. Create 8 aliases (all forward to same destination)
 - `hello@reliastra.com`
@@ -21,12 +21,12 @@ In ImprovMX dashboard → `reliastra.com` → Forward to: enter `IMPROVMX_FORWAR
 
 ImprovMX → Add Alias → `hello` → destination → Save (repeat).
 
-## 4. DNS — BEFORE changing, document existing Resend records
+## 4. DNS - BEFORE changing, document existing Resend records
 
 In your DNS provider (Cloudflare/Route53/etc.), **export current records**:
 
 **Resend outbound auth (MUST REMAIN):**
-- TXT `send` or root SPF — e.g., `v=spf1 include:amazonses.com ~all` (check Resend Dashboard → Domains → reliastra.com → DNS)
+- TXT `send` or root SPF - e.g., `v=spf1 include:amazonses.com ~all` (check Resend Dashboard → Domains → reliastra.com → DNS)
 - TXT `resend._domainkey` → `p=...` (DKIM 1/2)
 - TXT `resend2._domainkey` → `p=...`
 - TXT `resend3._domainkey` → `p=...` (if shown)
@@ -34,7 +34,7 @@ In your DNS provider (Cloudflare/Route53/etc.), **export current records**:
 
 **Screenshot/export these.** Do not delete.
 
-## 5. MX change — inbound routing
+## 5. MX change - inbound routing
 **Replace** existing MX (if any) with ImprovMX:
 
 ```
@@ -46,7 +46,7 @@ MX    @     mx2.improvmx.com       20        3600
 - If you had MX for Google Workspace/previous mail, **remove it** (you are moving inbound to ImprovMX).
 - **Do NOT** change TXT `resend._domainkey` or SPF include for Resend.
 
-## 6. SPF — merge, not duplicate
+## 6. SPF - merge, not duplicate
 You must have **ONE** SPF TXT at root (`@` or `reliastra.com`).
 
 If you had `v=spf1 include:amazonses.com ~all` and ImprovMX docs suggest `include:_spf.mx.cloudflare.net`, merge:
@@ -85,8 +85,8 @@ For each alias, send from external Gmail to `hello@reliastra.com` etc., check de
 
 ## 12. How they coexist
 - **MX** = where inbound mail is delivered (now ImprovMX)
-- **SPF** = which IPs may *send* as `reliastra.com` (Resend's `amazonses.com`) — MX change does not affect SPF
-- **DKIM** = outbound signature (Resend's `resend._domainkey`) — MX change does not affect
+- **SPF** = which IPs may *send* as `reliastra.com` (Resend's `amazonses.com`) - MX change does not affect SPF
+- **DKIM** = outbound signature (Resend's `resend._domainkey`) - MX change does not affect
 - **Result:** Resend outbound stays authenticated; ImprovMX inbound is separate.
 
 ## 13. Rollback

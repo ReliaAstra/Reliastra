@@ -9,7 +9,7 @@ assessment, geo caching and backend-managed program content.
 Design decisions that are load-bearing here:
 
 * Status columns are plain ``VARCHAR`` rather than PostgreSQL ``ENUM``
-  types, matching the rest of this schema — adding a state stays a code
+  types, matching the rest of this schema - adding a state stays a code
   change instead of an ``ALTER TYPE`` migration.
 * All money is ``BIGINT`` minor units paired with a 3-character
   ``currency``. There is no floating point anywhere in the ledger.
@@ -21,7 +21,7 @@ Design decisions that are load-bearing here:
   ``uq_partner_payout_items_commission`` guarantees a commission can be
   paid at most once.
 * ``partner_commissions`` references its partner and relationship with
-  ``ON DELETE RESTRICT`` — financial history must not vanish because a
+  ``ON DELETE RESTRICT`` - financial history must not vanish because a
   parent row was removed.
 * ``partner_deployment_claims.relationship_id`` and
   ``partner_customer_relationships.claim_id`` reference each other, so that
@@ -49,7 +49,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-#: Drop order for downgrade — children before parents.
+#: Drop order for downgrade - children before parents.
 _TABLES_IN_DROP_ORDER = [
     "partner_payout_items",
     "partner_commission_events",
