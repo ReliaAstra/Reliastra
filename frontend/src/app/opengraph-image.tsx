@@ -38,7 +38,16 @@ export default function OpengraphImage() {
           </div>
           <div style={{ fontSize: 24, letterSpacing: 6, fontWeight: 700 }}>RELIASTRA</div>
         </div>
-        <div style={{ marginTop: 32, fontSize: 64, fontWeight: 800, lineHeight: 1.1 }}>
+        <div
+          style={{
+            marginTop: 32,
+            fontSize: 64,
+            fontWeight: 800,
+            lineHeight: 1.1,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           Know when your dependencies fail.
           <br />
           Prove what happened.
