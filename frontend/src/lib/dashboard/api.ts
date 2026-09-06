@@ -2,6 +2,10 @@
 
 import { getRefreshToken, useAppStore } from '@/stores/app-store';
 import { refreshSession } from '@/lib/auth-refresh';
+import {
+  classifyAuthFailure,
+  logAuthWarning,
+} from '@/lib/session-expiry';
 import { setOrgIdCookie } from '@/lib/auth-cookie';
 import type {
   AlertConfig,
@@ -162,7 +166,20 @@ async function request<T>(
   const orgId = useAppStore.getState().org?.id;
   if (orgId) headers['X-Organization-ID'] = orgId;
 
-  const res = await fetch(`${BASE}${path}`, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, { ...init, headers });
+  } catch (thrown) {
+    // The request never completed. That is NOT an expired session — clearing
+    // the refresh token here would turn an offline moment into a forced
+    // re-login. Logged as `kind=network` so it stays distinguishable from a
+    // 401 in the console.
+    logAuthWarning('request', classifyAuthFailure({ thrown, path }));
+    throw new ApiError(
+      'Network request failed. Check your connection and retry.',
+      0
+    );
+  }
 
   if (res.status === 401 && retry) {
     const refreshed = await refreshSession();
@@ -175,8 +192,12 @@ async function request<T>(
   }
 
   // Session is unrecoverable — clear and let the shell route to sign-in.
+  // Only a 401 reaches here: a 429, a 5xx or a proxy failure falls through to
+  // the typed-error path below and leaves the session alone.
   if (res.status === 401) {
-    useAppStore.getState().sessionExpired();
+    useAppStore.getState().sessionExpired(
+      classifyAuthFailure({ status: 401, path })
+    );
     throw new ApiError('Your session has expired. Please sign in again.', 401);
   }
 
@@ -186,6 +207,12 @@ async function request<T>(
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
+    // Distinguishable from an auth failure: something answered, but not in a
+    // shape this client can read. Never a reason to clear a session.
+    logAuthWarning(
+      'request',
+      classifyAuthFailure({ status: res.status, path, malformed: true })
+    );
     throw new ApiError(`Malformed response (${res.status})`, res.status);
   }
   if (!res.ok) {
@@ -622,8 +649,21 @@ export async function bootstrapSession(): Promise<{
     fetch(`${BASE}/billing/plan`, { headers }),
   ]);
   if (!userRes.ok || !orgRes.ok || !planRes.ok) {
-    if (userRes.status === 401 || orgRes.status === 401 || planRes.status === 401) {
-      useAppStore.getState().sessionExpired();
+    const rejected = [userRes, orgRes, planRes].find((r) => r.status === 401);
+    if (rejected) {
+      useAppStore.getState().sessionExpired(
+        classifyAuthFailure({ status: 401, path: `${BASE}/users/me` })
+      );
+    } else {
+      // A 5xx or a proxy failure during bootstrap is an outage, not an
+      // expiry; log it so it does not get reported as "keeps logging me out".
+      const worst = [userRes, orgRes, planRes].sort(
+        (a, b) => b.status - a.status
+      )[0];
+      logAuthWarning(
+        'bootstrap',
+        classifyAuthFailure({ status: worst.status, path: `${BASE}/users/me` })
+      );
     }
     throw new ApiError('Failed to load session', 502);
   }

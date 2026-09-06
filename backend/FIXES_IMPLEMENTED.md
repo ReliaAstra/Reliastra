@@ -14,7 +14,7 @@ All 40 fixes are implemented. Verification:
 
 Main advanced while this branch was open. The merge resolves the overlaps as follows:
 
-* **`RUN_IN_PROCESS_SCHEDULER`** (new on main): honored. When enabled (default for single-container PaaS), the API lifespan now starts the **Redis ZSET scheduler in consume-inline mode** — due checks execute in-process, each in its own short transaction. The old APScheduler duplicate of Celery Beat is gone (FIX 14). Atomic ZSET claims make the in-process poller safe even if a standalone scheduler or Celery Beat also runs. docker-compose sets it to `false` and uses the dedicated `scheduler` service.
+* **`RUN_IN_PROCESS_SCHEDULER`**: **REMOVED**. The flag described an in-process scheduler that was never present in the code path — `main.py` only logged about it, so setting it to `true` executed zero checks while silencing the warning that said so. Celery Beat is now the single authoritative scheduler, the flag is gone from `config.py`, and `GET /health/checks` fails loudly when Beat, a worker or the broker is not alive.
 * **Idempotency principal** (main's `_idempotency_principal`): adopted — JWT `sub` → `user:{sub}`, API key → `key:{sha256[:32]}`, anonymous → `ip:{ip}`. Combined with this branch's FIX 40 (cache 404/409/422, never 5xx).
 * **Redirect following** (main's `follow_redirects` fix): kept the behavior but implemented it safely — redirects are followed manually with a 5-hop cap and **every hop is re-validated against the SSRF policy and pinned to a freshly validated IP** (blind `follow_redirects=True` would have bypassed FIX 26's pinning on cross-host redirects).
 * **Migrations**: main added `0012_user_admin_fields` / `0013_missing_model_tables` / `0014_open_incident_unique`. This branch's migration was renumbered to `0015_production_hardening` (chained after `0014`) and the user-column additions were dropped (now covered by main's 0012).
@@ -416,3 +416,9 @@ alembic heads                            # 0015_production_hardening (single hea
 ```
 
 `docker-compose up --build`: the compose file was extended with a `scheduler` service and `RUN_IN_PROCESS_SCHEDULER=false` on the API; validated via YAML parse + service wiring. Docker is unavailable in this sandbox so the stack boot is validated by the pytest suite (embedded Postgres + migrations) and the standalone scheduler smoke run.
+
+> **SUPERSEDED.** The `RUN_IN_PROCESS_SCHEDULER=false` env var no longer exists
+> anywhere — the flag was deleted rather than defaulted. `backend/docker-compose.yml`
+> now runs `redis`, `api`, `celery-worker` and `celery-beat` as separate services
+> with healthchecks on the worker and beat, and the whole stack has since been
+> booted and exercised for real. See `docs/checks-operating-model.md`.

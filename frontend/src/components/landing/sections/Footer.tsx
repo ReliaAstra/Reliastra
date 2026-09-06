@@ -4,49 +4,85 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Github } from 'lucide-react';
 import { BrandLogo } from '@/components/landing/shared/BrandLogo';
-import { goTo, scrollToId } from '@/components/landing/theme';
+import {
+  EXTERNAL_LINKS,
+  PUBLIC_ROUTES,
+  RESEARCH_ARTICLES,
+  partnerUrl,
+  researchRoute,
+} from '@/lib/routes';
 
 const ease = [0.25, 0.1, 0.25, 1] as const;
 
-const FOOTER_LINKS = [
+/**
+ * Footer navigation.
+ *
+ * Three correctness rules this list now follows, all of which it previously
+ * broke:
+ *
+ * 1. Every destination is a real URL. The old entries were `<button>`s wired to
+ *    `scrollToId('solution')` and `scrollToId('partners')` — ids that exist
+ *    only inside section components the landing page does not render. Because
+ *    `scrollToId` falls back to scrolling to the top when the id is missing,
+ *    those links were dead but still *looked* like they worked.
+ * 2. Research links are generated from `RESEARCH_ARTICLES`, the same constant
+ *    that produces the `/research/[slug]` routes, so the footer cannot link to
+ *    a slug that 404s.
+ * 3. "Join as partner" goes to partner signup, not `/signup`. `/signup` is the
+ *    customer registration form and never creates a partner profile, so the old
+ *    link silently enrolled visitors as customers instead of partners.
+ */
+const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: 'Product',
     links: [
-      { label: 'Features', action: () => scrollToId('solution') },
-      { label: 'Pricing', action: () => scrollToId('pricing') },
-      { label: 'Track', href: '/track' },
-      { label: 'Partners', action: () => scrollToId('partners') },
+      // 'research' is the section that explains the evidence engine — the
+      // closest thing to a features overview on the page. 'solution' and
+      // 'partners' no longer exist; see LANDING_SECTIONS.
+      { label: 'Features', href: '#research' },
+      { label: 'Pricing', href: '#pricing' },
+      { label: 'Track', href: PUBLIC_ROUTES.track },
+      { label: 'Partners', href: partnerUrl('home') },
     ],
   },
   {
     title: 'Research',
     links: [
-      { label: 'Research Home', href: '/research' },
-      { label: 'The Dependency Gap', href: '/research/the-dependency-gap' },
-      { label: 'Measurement Methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
-      { label: 'Research Agenda', href: '/research/reliastra-research-agenda' },
+      { label: 'Research Home', href: PUBLIC_ROUTES.research },
+      ...RESEARCH_ARTICLES.map((article) => ({
+        label:
+          article.slug === 'the-dependency-gap'
+            ? 'The Dependency Gap'
+            : article.slug === 'how-reliastra-measures-vendor-reliability'
+              ? 'Measurement Methodology'
+              : 'Research Agenda',
+        href: researchRoute(article.slug),
+      })),
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'Support', action: () => goTo('support') },
-      { label: 'Contact', action: () => goTo('support') },
-      { label: 'Join as partner', action: () => goTo('signup') },
+      // Partner support is dual-mode: a public contact form for visitors, the
+      // conversation desk once signed in. Using its URL (rather than a state
+      // navigation) makes it survive a refresh and be shareable.
+      { label: 'Support', href: partnerUrl('support') },
+      { label: 'Contact', href: partnerUrl('support') },
+      { label: 'Join as partner', href: partnerUrl('signup') },
     ],
   },
   {
     title: 'Legal',
     links: [
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Guarantee', action: () => goTo('support') },
+      { label: 'Privacy Policy', href: PUBLIC_ROUTES.privacy },
+      { label: 'Terms of Service', href: PUBLIC_ROUTES.terms },
+      { label: 'Guarantee', href: partnerUrl('support') },
     ],
   },
 ];
 
 const SOCIAL_LINKS = [
-  { icon: Github, href: 'https://github.com/ReliaAstra', label: 'GitHub' },
+  { icon: Github, href: EXTERNAL_LINKS.github, label: 'GitHub' },
 ];
 
 export function Footer() {
@@ -93,21 +129,12 @@ export function Footer() {
               <ul className="space-y-3">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    {'href' in link && link.href ? (
-                      <Link
-                        href={link.href}
-                        className="text-sm text-white/40 transition-colors duration-200 hover:text-white"
-                      >
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={link.action}
-                        className="text-sm text-white/40 transition-colors duration-200 hover:text-white"
-                      >
-                        {link.label}
-                      </button>
-                    )}
+                    <Link
+                      href={link.href}
+                      className="text-sm text-white/40 transition-colors duration-200 hover:text-white"
+                    >
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -120,7 +147,7 @@ export function Footer() {
             © {new Date().getFullYear()} Reliastra, Inc. All rights reserved.
           </p>
           <Link
-            href="/track"
+            href={PUBLIC_ROUTES.track}
             className="text-xs text-white/40 transition-colors hover:text-white"
           >
             System status

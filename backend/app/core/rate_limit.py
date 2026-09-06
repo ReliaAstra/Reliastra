@@ -122,6 +122,13 @@ ip_limiter = SlidingWindowRateLimiter(limit=100, window_seconds=60, key_prefix="
 public_vendor_limiter = SlidingWindowRateLimiter(
     limit=60, window_seconds=60, key_prefix="rl_vendor"
 )
+# Manual check triggering is a diagnostic, not a data path: generous enough to
+# prove the pipeline repeatedly, tight enough that it cannot be used to drive
+# probe traffic at a target or to fill the broker. Keyed per organization, not
+# per IP, so a shared NAT cannot be locked out of its own diagnostics.
+check_trigger_limiter = SlidingWindowRateLimiter(
+    limit=30, window_seconds=60, key_prefix="rl_checkrun"
+)
 
 
 async def enforce_rate_limit(

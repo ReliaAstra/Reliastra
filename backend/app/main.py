@@ -230,25 +230,57 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
 
+async def _report_check_pipeline_requirements() -> None:
+    """State the check pipeline's runtime requirements at startup, and probe them.
+
+    Check scheduling is provided by Celery Beat, and only by Celery Beat: there
+    is no in-process fallback and the API never executes a probe itself. An API
+    running on its own therefore serves every other request normally while
+    executing exactly zero checks — which is why the requirement is logged
+    loudly and the broker is probed, rather than left to be discovered from an
+    empty dashboard hours later.
+    """
+    import asyncio
+
+    from app.infrastructure.celery_app import beat_task_names, probe_broker
+    from app.modules.checks.scheduler_health import sanitize_broker_url
+
+    logger.info(
+        "Check scheduling is provided by Celery Beat. A healthy deployment "
+        "requires Redis, Celery Beat, and at least one Celery worker "
+        "(broker=%s, interval=%ss, beat tasks=%s). The API does not schedule "
+        "or execute checks itself.",
+        sanitize_broker_url(settings.REDIS_URL),
+        settings.CHECK_SCHEDULE_SECONDS,
+        ",".join(beat_task_names()),
+    )
+
+    # Bounded and threaded: kombu is synchronous, and a dead broker must cost
+    # seconds of startup, not minutes.
+    try:
+        broker_ok, broker_detail = await asyncio.wait_for(
+            asyncio.to_thread(probe_broker, 3.0), timeout=6.0
+        )
+    except Exception as exc:  # pragma: no cover - a probe must never block boot
+        broker_ok, broker_detail = False, f"{type(exc).__name__}"
+
+    if broker_ok:
+        logger.info("Celery broker reachable — check dispatch is possible")
+    else:
+        logger.error(
+            "Celery broker UNREACHABLE (%s): checks will NOT execute until "
+            "Redis and a Celery worker are running. GET /health/checks and "
+            "GET /v1/checks/health report this state; dependencies stay due "
+            "and are retried once the broker returns.",
+            broker_detail,
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Reliastra backend starting up...")
     get_engine()
-    # Scheduling is handled entirely by Celery Beat → `schedule_checks` →
-    # `execute_check.delay()`.  No custom scheduler loop, no APScheduler.
-    # The Celery worker container executes the actual probes.
-    # Proof 1: make the operational requirement explicit in logs so a local
-    # `uvicorn` without Beat/worker does not silently appear healthy while
-    # never executing checks.
-    if not settings.RUN_IN_PROCESS_SCHEDULER:
-        logger.info(
-            "In-process scheduler disabled (RUN_IN_PROCESS_SCHEDULER=false) — "
-            "checks require Celery Beat + worker (ENABLE_CELERY=true, REDIS_URL=%s, "
-            "CHECK_SCHEDULE_SECONDS=%s). For single-process dev set "
-            "RUN_IN_PROCESS_SCHEDULER=true or run celery beat+worker alongside the API.",
-            settings.REDIS_URL,
-            settings.CHECK_SCHEDULE_SECONDS,
-        )
+    await _report_check_pipeline_requirements()
     await ensure_admin_service_account()
     yield
     logger.info("Reliastra backend shutting down...")
@@ -386,6 +418,23 @@ def create_app() -> FastAPI:
             checks["redis"] = "unavailable: connection refused"
             overall_status = "degraded"
 
+        # Check-pipeline health is reported here for visibility but does NOT
+        # drive this endpoint's status code. /health answers "can this API
+        # serve requests"; a dead Celery Beat is not fixed by restarting the
+        # API, and failing this probe would make orchestrators restart the API
+        # in a loop for an unrelated outage. The pipeline has its own probe
+        # that does fail: GET /health/checks (alias of /v1/checks/health).
+        try:
+            from app.modules.checks.scheduler_health import read_pipeline_health
+
+            pipeline = await read_pipeline_health()
+            checks["check_pipeline"] = pipeline["status"]
+            checks["check_scheduler"] = pipeline["scheduler"]["status"]
+            checks["check_worker"] = pipeline["worker"]["status"]
+        except Exception as exc:  # pragma: no cover - never break /health
+            logger.debug("check pipeline health unavailable: %s", exc)
+            checks["check_pipeline"] = "unknown"
+
         status_code = 200 if overall_status == "ok" else 503
         payload = {
             "status": overall_status,
@@ -429,6 +478,19 @@ def create_app() -> FastAPI:
     async def readiness_check() -> Response:
         """FIX 13: readiness probe — DB + Redis, cached for 5s."""
         return await _ready_response()
+
+    @app.get("/health/checks", tags=["Health"])
+    async def check_pipeline_probe() -> Response:
+        """Check-pipeline probe — 503 unless Beat, a worker and the broker are alive.
+
+        This is the endpoint to alert on for "checks have silently stopped".
+        It is deliberately separate from ``/health/ready``: restarting the API
+        does not revive a dead Beat, so the two failures must not share a
+        status code. Alias of ``/v1/checks/health``.
+        """
+        from app.modules.checks.router import check_pipeline_health
+
+        return await check_pipeline_health()
 
     @app.get("/metrics", tags=["Observability"])
     async def metrics() -> PlainTextResponse:

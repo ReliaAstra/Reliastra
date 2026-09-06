@@ -98,7 +98,14 @@ Two environment-specific notes: (a) httpx in this sandbox validates against cert
 ### 4.1 Scheduler Architecture — **D-**
 **Current:** Celery Beat every 30 s → `schedule_checks` → **inline** `execute_check` loop (`app/modules/checks/service.py:102-121`), PLUS a second APScheduler inside the API process (`app/infrastructure/scheduler.py:138-147`) started unconditionally from `app/main.py` lifespan. Two schedulers race on the shared `next_check_at` cursor; when aligned, every dependency is probed twice per tick (double egress + double writes). Because checks run inline inside one task, a single 15 s-timeout endpoint blocks the whole queue; measured task duration 53–57 s for ~100 checks vs a 30 s tick → unbounded backlog. No per-dependency backpressure, no circuit breaker, no check-due sharding.
 
-**Fix shipped (partial):** `RUN_IN_PROCESS_SCHEDULER` flag (default true for single-container PaaS; `false` in docker-compose) — removes duplicate scheduling. **Roadmap:** Redis ZSET tick scheduler, one Celery task per check (`execute_check` already exists), per-dependency circuit breaker, staggered jitter on `next_check_at`.
+> **SUPERSEDED — do not act on the line below.** The `RUN_IN_PROCESS_SCHEDULER`
+> flag it describes has been deleted from the codebase. It never implemented an
+> in-process scheduler: `main.py` only logged about it, so `true` executed zero
+> checks while silencing the warning that said so. Celery Beat is now the single
+> authoritative scheduler and `GET /health/checks` fails loudly when Beat, a
+> worker or the broker is not alive. See `docs/checks-operating-model.md`.
+
+**Fix shipped (partial, since superseded):** `RUN_IN_PROCESS_SCHEDULER` flag (default true for single-container PaaS; `false` in docker-compose) — removes duplicate scheduling. **Roadmap:** Redis ZSET tick scheduler, one Celery task per check (`execute_check` already exists), per-dependency circuit breaker, staggered jitter on `next_check_at`.
 
 ### 4.2 Database Connection Management — **C-**
 `pool_size=10, max_overflow=20, pool_timeout=30` (`app/db/session.py:143-146`). A single `AsyncSession` is held for the entire `schedule_checks` task (30–60 s+) while it performs ~100 checks; the request path (`get_db`) also holds a transaction for the whole request. Under concurrency the pool serializes (measured p99 12.9 s at 500 concurrent). The worker's loop-broken sessions leak as **`idle in transaction`** connections. No `max_requests`/recycling, no per-use-case pools.

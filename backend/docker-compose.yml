@@ -49,7 +49,6 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM: noreply@reliastra.com
-      RUN_IN_PROCESS_SCHEDULER: "false"
     depends_on:
       redis:
         condition: service_healthy
@@ -80,6 +79,19 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SMTP_FROM: noreply@reliastra.com
+    healthcheck:
+      # `inspect ping` is answered by the worker itself, so a healthy result
+      # proves both the broker connection and a live consumer. Restricted to
+      # this node so it does not depend on other workers being up.
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A app.infrastructure.celery_app.celery_app inspect ping -d celery@$$HOSTNAME -t 10 | grep -q pong",
+        ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 40s
     depends_on:
       api:
         condition: service_started
@@ -116,3 +128,17 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+    healthcheck:
+      # Beat has no `inspect`. Its liveness proof is the scheduler heartbeat
+      # key, whose TTL is derived from CHECK_SCHEDULE_SECONDS — so mere
+      # existence already means "beat published within the staleness window".
+      # A missing key (stale beat) or an unreachable Redis both fail this.
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import os,sys,redis; sys.exit(0 if redis.from_url(os.environ['REDIS_URL']).get('reliastra:checks:scheduler:last_heartbeat') else 1)\"",
+        ]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 30s

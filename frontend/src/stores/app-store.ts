@@ -13,6 +13,7 @@ import {
   clearCustomerTokens,
   clearAllSessionTokens,
 } from '@/lib/session-storage';
+import { logSessionEnd, type AuthFailure } from '@/lib/session-expiry';
 
 export interface RecentItem {
   href: string;
@@ -58,8 +59,14 @@ interface AppState {
   pushRecent: (item: RecentItem) => void;
   setUnreadCount: (n: number) => void;
   setOnline: (v: boolean) => void;
-  /** 401 after refresh — clear everything and route to sign-in. */
-  sessionExpired: () => void;
+  /**
+   * The session is unrecoverable — clear it and route to sign-in.
+   *
+   * `reason` is required in spirit: it is what makes "logged out"
+   * diagnosable from the browser. It carries a status code and a
+   * machine-readable kind, never a token.
+   */
+  sessionExpired: (reason?: AuthFailure) => void;
   signOut: () => void;
 }
 
@@ -153,7 +160,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     })),
   setUnreadCount: (n) => set({ unreadCount: n }),
   setOnline: (v) => set({ online: v }),
-  sessionExpired: () => {
+  sessionExpired: (reason) => {
+    // Log the failing status before anything is cleared: once the tokens are
+    // gone there is nothing left to explain why this happened. Only a status
+    // code and a kind are logged — never a token, cookie or header.
+    logSessionEnd('request', reason ?? { kind: 'unauthorized', status: 401 });
     // Non-explicit session end: clear only the customer-console keys. The
     // partner/admin surfaces share this backend session, but each owns its
     // own cleanup — wiping their keys here is what previously logged a

@@ -33,6 +33,11 @@ Next.js frontend          frontend/
 Reliastra API             backend/  (FastAPI, /v1/*)
   ↓
 Supabase Postgres · Redis · Celery · Supabase Storage (S3)
+
+> **Check execution requires Postgres, Redis, a Celery worker and Celery Beat.**
+> Checks never run inside the API process, and there is no in-process scheduler
+> or fallback. See [`docs/checks-operating-model.md`](docs/checks-operating-model.md)
+> for the runtime contract, the health endpoint and how to verify a deployment.
   ↓
 Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
 ```

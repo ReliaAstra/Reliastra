@@ -4,21 +4,40 @@ import time
 import urllib.parse
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.circuit_breaker import circuit_breaker
-from app.core.metrics import check_latency, checks_total
+from app.core.exceptions import (
+    ResourceNotFoundException,
+    ServiceUnavailableException,
+    ValidationException,
+)
+from app.core.metrics import (
+    check_latency,
+    checks_dispatch_failures_total,
+    checks_dispatch_skipped_total,
+    checks_scheduled_total,
+    checks_total,
+)
 from app.core.ssrf_protection import (
     pinned_transport_for,
     resolve_pinned_target_async,
 )
 from app.modules.checks.constants import (
+    BLOCKED_BY_SECURITY_POLICY_PREFIX,
     CONSECUTIVE_RECOVERY_CHECKS,
+    INFRASTRUCTURE_STATES,
     QUORUM_MIN_REGIONS,
     QUORUM_WINDOW_SECONDS,
+    REDIRECT_BLOCKED_BY_SECURITY_POLICY_PREFIX,
+    TARGET_STATES,
+    TOO_MANY_REDIRECTS_PREFIX,
+    CheckState,
 )
 from app.modules.checks.models import CheckResult
 from app.modules.checks.repository import CheckRepository
@@ -146,8 +165,51 @@ class CheckService:
         skip enqueue but still advance ``next_check_at`` to avoid a busy loop.
         ``next_check_at`` is advanced **only after successful enqueue** so a
         Redis/broker failure never silently loses a check (Proof 4).
+
+        Two guards keep a broken broker from becoming a hot loop:
+
+        * A broker pre-flight probe runs before the due-dependency scan. With
+          the broker unreachable, a cycle would otherwise attempt one failing
+          publish per due dep/region pair every ``CHECK_SCHEDULE_SECONDS``
+          (up to 500 × regions failed publishes per cycle, each potentially
+          blocking on a connection timeout). The cycle is skipped instead and
+          reported through ``checks_dispatch_failures_total{reason="broker_unavailable"}``.
+        * ``CHECK_DISPATCH_FAIL_FAST`` stops the cycle after the first publish
+          failure, which covers a broker that dies mid-cycle.
+
+        Neither guard advances ``next_check_at``: an undispatched check stays
+        due, so the dependency is retried on the next cycle rather than having
+        a missed probe silently forgiven.
         """
+        from app.infrastructure.redis_client import safe_redis_ping
+        from app.modules.checks.scheduler_health import (
+            is_check_dispatched,
+            record_check_dispatched,
+            record_dispatch_failure,
+            sanitize_broker_url,
+        )
+
         now = datetime.now(timezone.utc)
+
+        # ── Broker pre-flight ───────────────────────────────────────────────
+        # Redis is the broker AND the result backend (see celery_app). If it
+        # is unreachable, nothing can be published, so do not even read the
+        # table: the failure is reported once per cycle, loudly, with a metric
+        # an alert can fire on.
+        if not await safe_redis_ping():
+            checks_dispatch_failures_total.labels(
+                region="*", reason="broker_unavailable"
+            ).inc()
+            logger.error(
+                "Check dispatch skipped: Celery broker/result backend is "
+                "unreachable (REDIS_URL=%s). Due dependencies stay due and "
+                "will be retried on the next Beat cycle "
+                "(CHECK_SCHEDULE_SECONDS=%s). No checks are executing.",
+                sanitize_broker_url(settings.REDIS_URL),
+                settings.CHECK_SCHEDULE_SECONDS,
+            )
+            return 0
+
         due_deps = await self.dep_repository.get_due_dependencies(session, limit=500)
         if not due_deps:
             logger.info("No due dependencies to dispatch")
@@ -171,7 +233,14 @@ class CheckService:
 
         dispatched = 0
         skipped_circuit = 0
+        skipped_inflight = 0
+        dispatch_failures = 0
+        broker_failed = False
         for dep, allow_dispatch in zip(due_deps, breaker_allow):
+            if broker_failed:
+                # Fail-fast: the broker died mid-cycle. Every remaining
+                # dependency stays due for the next cycle.
+                break
             regions = dep.regions or ["us-east", "eu-west"]
             # FIX 8 / Proof 5: respect circuit breaker before dispatch.
             if not allow_dispatch:
@@ -185,6 +254,31 @@ class CheckService:
                 skipped_circuit += 1
                 continue
 
+            # Duplicate-dispatch guard. The previous task for this dependency
+            # was published but has not completed yet — a worker picked it up
+            # and the probe is still running, or the task is still sitting in
+            # the broker waiting to be consumed.
+            #
+            # Republishing anyway would run two concurrent probes against the
+            # same target for the same interval. That is easy to hit when a
+            # target is slow: a probe that takes longer than
+            # CHECK_SCHEDULE_SECONDS would otherwise overlap itself on every
+            # cycle, multiplying load on a dependency that is already
+            # struggling. It cannot happen through a *dead* worker, because
+            # schedule_due_checks is itself a worker task — a dead worker
+            # schedules nothing at all.
+            #
+            # Leaving next_check_at untouched means the dependency is picked
+            # up again as soon as the in-flight marker clears, so no probe is
+            # silently forgiven.
+            if await is_check_dispatched(dep.id):
+                skipped_inflight += 1
+                for region in regions:
+                    checks_dispatch_skipped_total.labels(
+                        region=region, reason="previous_task_in_flight"
+                    ).inc()
+                continue
+
             # Proof 4: only advance next_check_at after every region enqueued ok.
             dispatch_ok = True
             dispatched_for_dep = 0
@@ -194,15 +288,39 @@ class CheckService:
 
                     execute_check_task.delay(str(dep.id), region)
                     dispatched_for_dep += 1
+                    checks_scheduled_total.labels(region=region).inc()
+                    # Best-effort marker: this is what lets the state endpoint
+                    # report "queued" instead of "never checked" while a task
+                    # sits in the broker. A marker write failure must never
+                    # affect the dispatch that just succeeded.
+                    await record_check_dispatched(dep.id, region)
                 except Exception as exc:
-                    logger.warning(
-                        "Failed to enqueue check for dep %s region %s: %s — "
-                        "leaving next_check_at due for retry",
+                    reason = type(exc).__name__
+                    dispatch_failures += 1
+                    checks_dispatch_failures_total.labels(
+                        region=region, reason=reason
+                    ).inc()
+                    # Per-dependency marker so the diagnostic endpoint can tell
+                    # "never probed" apart from "probed dispatch failed".
+                    await record_dispatch_failure(
+                        dep.id, region, reason, str(exc)
+                    )
+                    # Deliberately NOT logging exc_info with request context:
+                    # only the exception type and its own message are safe.
+                    logger.error(
+                        "Failed to enqueue check for dep %s region %s: %s: %s — "
+                        "next_check_at left due (%s) so the next Beat cycle "
+                        "retries it; no CheckResult was written",
                         dep.id,
                         region,
-                        exc,
+                        reason,
+                        str(exc)[:200],
+                        dep.next_check_at.isoformat()
+                        if dep.next_check_at
+                        else "unset",
                     )
                     dispatch_ok = False
+                    broker_failed = settings.CHECK_DISPATCH_FAIL_FAST
                     break
             if dispatch_ok:
                 dep.next_check_at = now + timedelta(
@@ -218,10 +336,14 @@ class CheckService:
         await session.flush()
 
         logger.info(
-            "Dispatched %s checks across %s due dependencies (%s skipped by circuit breaker)",
+            "Dispatched %s checks across %s due dependencies "
+            "(%s skipped by circuit breaker, %s skipped because a previous "
+            "task is still in flight, %s dispatch failures)",
             dispatched,
             len(due_deps),
             skipped_circuit,
+            skipped_inflight,
+            dispatch_failures,
         )
         return dispatched
 
@@ -243,7 +365,7 @@ class CheckService:
             latency_ms=0.0,
             is_up=False,
             status_code=None,
-            error_message=f"URL blocked by security policy: {reason}",
+            error_message=f"{BLOCKED_BY_SECURITY_POLICY_PREFIX}: {reason}",
             quorum_confirmed=False,
         )
         await self._enqueue_observation_outbox(session, result, url, method)
@@ -259,6 +381,17 @@ class CheckService:
         if not dep or not dep.is_active:
             return None
         org_id = dep.org_id
+
+        # Pipeline position: a worker is now running this probe. Cleared once a
+        # result exists; TTL-bounded so a killed worker cannot leave the state
+        # stuck on "executing". Best-effort — never affects the probe.
+        from app.modules.checks.scheduler_health import (
+            clear_check_dispatched,
+            clear_check_executing,
+            record_check_executing,
+        )
+
+        await record_check_executing(dependency_id, region)
         dep_dto = await dependency_service.get_dependency_config_internal(
             session, dependency_id, org_id=org_id
         )
@@ -334,7 +467,7 @@ class CheckService:
                     308,
                 } and response.headers.get("location"):
                     if redirects_followed >= _MAX_REDIRECTS:
-                        redirect_error = f"Too many redirects (> {_MAX_REDIRECTS})"
+                        redirect_error = f"{TOO_MANY_REDIRECTS_PREFIX} (> {_MAX_REDIRECTS})"
                         break
                     next_url = urllib.parse.urljoin(
                         current_url, response.headers["location"]
@@ -342,7 +475,7 @@ class CheckService:
                     try:
                         current_target = await resolve_pinned_target_async(next_url)
                     except ValueError as exc:
-                        redirect_error = f"Redirect blocked by security policy: {exc}"
+                        redirect_error = f"{REDIRECT_BLOCKED_BY_SECURITY_POLICY_PREFIX}: {exc}"
                         break
                     # RFC 7231 §6.4.4: 303 switches the next request to GET.
                     if response.status_code == 303 and current_method in {
@@ -483,7 +616,289 @@ class CheckService:
         checks_total.labels(region=region, status="up" if is_up else "down").inc()
         check_latency.labels(region=region).observe(latency_ms / 1000.0)
 
+        await clear_check_executing(dependency_id)
+        # The task has now been consumed and produced an outcome, so the
+        # scheduler may dispatch this dependency again. Cleared here rather
+        # than at task start so the marker covers the whole in-flight window.
+        await clear_check_dispatched(dependency_id)
         return result
+
+
+    # ── Diagnostics ─────────────────────────────────────────────────────────
+
+    @staticmethod
+    def classify_check_state(
+        *,
+        last_result: CheckResult | None,
+        dispatch_failure: dict[str, Any] | None,
+        markers: dict[str, Any] | None,
+        pipeline_status: str,
+        is_due: bool,
+    ) -> tuple[CheckState, str]:
+        """Decide where a dependency is in the check pipeline.
+
+        Pure function of its inputs so the precedence rules are testable
+        without Redis, a broker or a database.
+
+        The ordering is deliberate. A dependency that has a result *and* a
+        newer dispatch failure reports the dispatch failure, because that is
+        the thing an operator has to act on. A queued or executing probe is
+        reported ahead of "scheduler unavailable", because it proves the
+        pipeline is in fact moving.
+        """
+        markers = markers or {}
+        executing = markers.get("executing")
+        dispatched = markers.get("dispatched")
+
+        last_executed_at = getattr(last_result, "executed_at", None)
+
+        def _failure_is_newer() -> bool:
+            if not dispatch_failure:
+                return False
+            if last_executed_at is None:
+                return True
+            try:
+                failed_at = datetime.fromisoformat(dispatch_failure.get("at", ""))
+            except ValueError:
+                return True
+            if failed_at.tzinfo is None:
+                failed_at = failed_at.replace(tzinfo=timezone.utc)
+            return failed_at >= last_executed_at
+
+        if _failure_is_newer():
+            return CheckState.DISPATCH_FAILED, (
+                "RELIASTRA could not publish this probe to the Celery broker "
+                f"({dispatch_failure.get('reason', 'unknown')}). The dependency "
+                "is still due and will be retried; no probe reached the target."
+            )
+
+        if last_result is not None:
+            message = last_result.error_message or ""
+            if message.startswith(
+                (
+                    BLOCKED_BY_SECURITY_POLICY_PREFIX,
+                    REDIRECT_BLOCKED_BY_SECURITY_POLICY_PREFIX,
+                )
+            ):
+                return CheckState.BLOCKED_BY_SECURITY_POLICY, (
+                    "The probe was refused by RELIASTRA's SSRF policy, not by "
+                    "the target. Loopback, private (RFC1918), link-local and "
+                    "cloud-metadata addresses are never probed."
+                )
+            if last_result.is_up:
+                return CheckState.SUCCESSFUL, (
+                    f"Last probe succeeded ({last_result.latency_ms:.0f} ms)."
+                )
+            return CheckState.TARGET_FAILED, (
+                f"Last probe reached the target and failed: {message or 'unknown error'}"
+            )
+
+        if executing:
+            return CheckState.EXECUTING, (
+                f"A worker is probing region {executing.get('region', 'unknown')} now."
+            )
+
+        if dispatched:
+            return CheckState.QUEUED, (
+                "A probe is queued on the broker waiting for a worker. A queue "
+                "that never drains means no Celery worker is consuming."
+            )
+
+        if pipeline_status != "healthy":
+            return CheckState.SCHEDULER_UNAVAILABLE, (
+                "The check pipeline is not proven alive "
+                f"(pipeline status: {pipeline_status}), so no probe could have "
+                "run. Check Celery Beat, the Celery worker and Redis."
+            )
+
+        if is_due:
+            return CheckState.AWAITING_SCHEDULE, (
+                "The dependency is due and the scheduler is healthy; the probe "
+                "goes out on the next Beat cycle."
+            )
+
+        return CheckState.NEVER_CHECKED, "No probe has run for this dependency yet."
+
+    async def get_check_state(
+        self,
+        session: AsyncSession,
+        dependency_id: uuid.UUID,
+        org_id: uuid.UUID,
+    ) -> dict[str, Any]:
+        """Assemble the diagnostic view for one dependency.
+
+        Answers the question an empty dashboard cannot: is the target down, or
+        did RELIASTRA never get a probe out?
+        """
+        from app.modules.checks.scheduler_health import (
+            read_check_markers,
+            read_dispatch_failure,
+            read_pipeline_health,
+        )
+
+        dep = await self.dep_repository.get_by_id(session, dependency_id)
+        if not dep:
+            raise ResourceNotFoundException("Dependency not found")
+        if dep.org_id != org_id:
+            # Same cross-tenant rule the rest of the module uses: do not
+            # confirm existence of another organization's dependency.
+            logger.warning(
+                "Cross-tenant check-state request dep=%s caller_org=%s",
+                dependency_id,
+                org_id,
+            )
+            raise ResourceNotFoundException("Dependency not found")
+
+        recent = await self.repository.list_for_dependency(
+            session, dependency_id, limit=1
+        )
+        last_result = recent[0] if recent else None
+
+        pipeline = await read_pipeline_health()
+        dispatch_failure = await read_dispatch_failure(dependency_id)
+        markers = await read_check_markers(dependency_id)
+        now = datetime.now(timezone.utc)
+        is_due = bool(dep.next_check_at and dep.next_check_at <= now)
+
+        state, detail = self.classify_check_state(
+            last_result=last_result,
+            dispatch_failure=dispatch_failure,
+            markers=markers,
+            pipeline_status=pipeline["status"],
+            is_due=is_due,
+        )
+
+        return {
+            "dependency_id": str(dependency_id),
+            "state": state.value,
+            "detail": detail,
+            "is_target_problem": state in TARGET_STATES,
+            "is_infrastructure_problem": state in INFRASTRUCTURE_STATES,
+            "is_active": dep.is_active,
+            "next_check_at": dep.next_check_at.isoformat() if dep.next_check_at else None,
+            "is_due": is_due,
+            "check_interval_seconds": dep.check_interval_seconds,
+            "regions": dep.regions or [],
+            "last_result": (
+                {
+                    "executed_at": last_result.executed_at.isoformat(),
+                    "region": last_result.region,
+                    "is_up": last_result.is_up,
+                    "latency_ms": last_result.latency_ms,
+                    "status_code": last_result.status_code,
+                    "error_message": last_result.error_message,
+                }
+                if last_result
+                else None
+            ),
+            "last_dispatch_failure": dispatch_failure,
+            "queued": markers.get("dispatched"),
+            "executing": markers.get("executing"),
+            "pipeline": {
+                "status": pipeline["status"],
+                "scheduler": pipeline["scheduler"]["status"],
+                "worker": pipeline["worker"]["status"],
+                "broker": pipeline["broker"]["status"],
+            },
+        }
+
+    async def trigger_manual_check(
+        self,
+        session: AsyncSession,
+        dependency_id: uuid.UUID,
+        org_id: uuid.UUID,
+        region: str | None = None,
+    ) -> dict[str, Any]:
+        """Enqueue the production ``execute_check`` task on demand.
+
+        A diagnostic, not a second scheduler: it publishes exactly the task
+        Beat would publish, through the same broker, with the same SSRF policy
+        applied by the worker. It never probes inline and never bypasses
+        Celery, so "the manual trigger works" is proof the whole path works.
+
+        ``next_check_at`` is deliberately left untouched — the Beat schedule
+        stays the single authority on when a dependency is next probed.
+        """
+        from app.modules.checks.scheduler_health import (
+            record_check_dispatched,
+            record_dispatch_failure,
+        )
+        from app.modules.checks.tasks import execute_check as execute_check_task
+
+        dep = await self.dep_repository.get_by_id(session, dependency_id)
+        if not dep:
+            raise ResourceNotFoundException("Dependency not found")
+        if dep.org_id != org_id:
+            logger.warning(
+                "Cross-tenant manual check trigger dep=%s caller_org=%s",
+                dependency_id,
+                org_id,
+            )
+            raise ResourceNotFoundException("Dependency not found")
+        if not dep.is_active:
+            raise ValidationException(
+                "Monitoring is paused for this dependency; resume it before "
+                "triggering a check."
+            )
+
+        configured = dep.regions or ["us-east", "eu-west"]
+        if region:
+            if region not in configured:
+                raise ValidationException(
+                    f"Region '{region}' is not configured for this dependency.",
+                    details={"configured_regions": configured},
+                )
+            regions = [region]
+        else:
+            regions = list(configured)
+
+        queued: list[dict[str, Any]] = []
+        for target_region in regions:
+            try:
+                async_result = execute_check_task.delay(str(dep.id), target_region)
+            except Exception as exc:
+                reason = type(exc).__name__
+                checks_dispatch_failures_total.labels(
+                    region=target_region, reason=reason
+                ).inc()
+                await record_dispatch_failure(
+                    dep.id, target_region, reason, str(exc)
+                )
+                logger.error(
+                    "Manual check trigger could not enqueue dep %s region %s: "
+                    "%s: %s",
+                    dep.id,
+                    target_region,
+                    reason,
+                    str(exc)[:200],
+                )
+                # The broker URL stays in the server log above: it is internal
+                # topology and has no place in a tenant-facing error body.
+                raise ServiceUnavailableException(
+                    "The check could not be queued: the Celery broker is "
+                    "unavailable. No probe was executed. Verify Redis and the "
+                    "Celery worker, then retry.",
+                    details={"reason": reason},
+                ) from exc
+            checks_scheduled_total.labels(region=target_region).inc()
+            await record_check_dispatched(dep.id, target_region)
+            queued.append(
+                {
+                    "region": target_region,
+                    "task_id": str(getattr(async_result, "id", "") or ""),
+                    "state": getattr(async_result, "state", None),
+                }
+            )
+
+        return {
+            "dependency_id": str(dep.id),
+            "queued": queued,
+            "regions": regions,
+            "note": (
+                "Queued on the Celery broker. The worker applies the same SSRF "
+                "policy as scheduled checks; next_check_at was not changed."
+            ),
+        }
 
 
 check_service = CheckService()

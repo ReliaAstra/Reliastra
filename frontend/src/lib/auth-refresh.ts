@@ -1,6 +1,12 @@
 'use client';
 
 import { getRefreshToken, storeSessionTokens } from '@/lib/session-storage';
+import {
+  classifyAuthFailure,
+  isSessionInvalid,
+  logAuthWarning,
+  logSessionEnd,
+} from '@/lib/session-expiry';
 
 /**
  * Single-flight refresh, shared by EVERY authenticated surface.
@@ -29,29 +35,66 @@ export const REFRESH_ENDPOINT = '/api/v1/auth/refresh';
 
 let refreshPromise: Promise<RefreshedSession | null> | null = null;
 
+/** Read only the envelope's machine-readable `code` from a failed response. */
+async function readErrorCode(res: Response): Promise<string | undefined> {
+  try {
+    const body = (await res.json()) as { error?: { code?: string } };
+    return body?.error?.code;
+  } catch {
+    return undefined;
+  }
+}
+
 async function doRefresh(): Promise<RefreshedSession | null> {
   const refresh = getRefreshToken();
   if (!refresh) return null;
+
+  let res: Response;
   try {
-    const res = await fetch(REFRESH_ENDPOINT, {
+    res = await fetch(REFRESH_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refresh }),
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      access_token?: string;
-      refresh_token?: string;
-    };
-    if (!data.access_token || !data.refresh_token) return null;
-    storeSessionTokens(data.access_token, data.refresh_token);
-    return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-    };
-  } catch {
+  } catch (thrown) {
+    // Never log the token: only that the call did not complete, and why.
+    logAuthWarning('refresh', classifyAuthFailure({ thrown, path: REFRESH_ENDPOINT }));
     return null;
   }
+
+  if (!res.ok) {
+    const failure = classifyAuthFailure({
+      status: res.status,
+      path: REFRESH_ENDPOINT,
+      code: await readErrorCode(res),
+    });
+    // This is the log line that makes "I keep getting logged out" answerable:
+    // a 429 here is a rate limit, a 502 is the backend being unreachable, and
+    // only a 401 is an actual dead session.
+    if (isSessionInvalid(failure)) {
+      logSessionEnd('refresh', failure);
+    } else {
+      logAuthWarning('refresh', failure);
+    }
+    return null;
+  }
+
+  const data = (await res.json().catch(() => null)) as {
+    access_token?: string;
+    refresh_token?: string;
+  } | null;
+  if (!data?.access_token || !data.refresh_token) {
+    logAuthWarning(
+      'refresh',
+      classifyAuthFailure({ status: res.status, path: REFRESH_ENDPOINT, malformed: true })
+    );
+    return null;
+  }
+  storeSessionTokens(data.access_token, data.refresh_token);
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+  };
 }
 
 /** One refresh attempt, deduplicated across all callers. */

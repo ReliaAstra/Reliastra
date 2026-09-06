@@ -64,10 +64,47 @@ def schedule_checks(request_id: str | None = None) -> int:
     Delegates to ``CheckService.schedule_due_checks`` which reads at most
     500 due dependencies and fires one ``execute_check`` Celery task per
     dep/region pair.
+
+    This is the ONLY thing that schedules checks. It also owns the scheduler
+    heartbeat: a completed cycle proves Beat is alive and reaching the
+    database, and the absence of a fresh heartbeat is how an operator learns
+    that checks have silently stopped.
     """
+    from app.modules.checks.scheduler_health import (
+        record_scheduler_cycle,
+        record_scheduler_heartbeat,
+    )
+
     async def _run(session) -> int:
         from app.modules.checks.service import check_service
-        return await check_service.schedule_due_checks(session)
+
+        dispatched = await check_service.schedule_due_checks(session)
+        # Heartbeat only after a cycle that actually completed. Recording it
+        # before the work would report a healthy scheduler for a cycle that
+        # then failed.
+        if await record_scheduler_heartbeat():
+            record_scheduler_cycle("ok")
+        else:
+            record_scheduler_cycle("redis_unavailable")
+        return dispatched
+
+    return async_task_body(_run)
+
+
+@celery_app.task(name="app.modules.checks.tasks.worker_heartbeat")
+def worker_heartbeat(request_id: str | None = None) -> bool:
+    """Beat-scheduled proof that a worker is consuming from the broker.
+
+    Beat being alive only proves tasks are being *published*. This task is
+    published on the same interval and does nothing but record that some worker
+    picked it up, which closes the gap where Beat is healthy, the broker is
+    healthy, and no worker is running at all — the failure mode that looks
+    exactly like "every monitored vendor is quietly fine".
+    """
+    from app.modules.checks.scheduler_health import record_worker_heartbeat
+
+    async def _run(session) -> bool:
+        return await record_worker_heartbeat()
 
     return async_task_body(_run)
 
