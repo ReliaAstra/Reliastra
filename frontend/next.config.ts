@@ -30,18 +30,43 @@ const nextConfig: NextConfig = {
       "evidence",
       "clients",
     ];
-    return consoleSections.flatMap((section) => [
+    return [
+      // Partner Network is state-routed at /?page=*. File routes /partner and
+      // /partners do not exist, so direct visits 404. Redirect the singular
+      // form users expect onto the canonical partner entry point.
       {
-        source: `/dashboard/${section}`,
-        destination: `/${section}`,
+        source: "/partner",
+        destination: "/?page=home",
         permanent: false,
       },
       {
-        source: `/dashboard/${section}/:path*`,
-        destination: `/${section}/:path*`,
+        source: "/partners",
+        destination: "/?page=home",
         permanent: false,
       },
-    ]);
+      {
+        source: "/partner/:path*",
+        destination: "/?page=home",
+        permanent: false,
+      },
+      {
+        source: "/partners/:path*",
+        destination: "/?page=home",
+        permanent: false,
+      },
+      ...consoleSections.flatMap((section) => [
+        {
+          source: `/dashboard/${section}`,
+          destination: `/${section}`,
+          permanent: false,
+        },
+        {
+          source: `/dashboard/${section}/:path*`,
+          destination: `/${section}/:path*`,
+          permanent: false,
+        },
+      ]),
+    ];
   },
   async headers() {
     return [

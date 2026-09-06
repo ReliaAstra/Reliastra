@@ -1,14 +1,20 @@
 import { usePartnerStore } from '@/stores/partner-store';
+import { partnerUrl } from '@/lib/routes';
 import type { PartnerPage } from '@/types/partner';
+import type { PartnerPublicPage } from '@/lib/routes';
 
 /**
  * Navigation helpers for the marketing landing page.
  *
- * Customer auth is a first-class surface with its own routes; everything
- * else (partner network pages) routes through the partner store.
+ * Customer auth is a first-class surface with its own routes (/login,
+ * /signup); everything else (partner network pages) routes through the
+ * partner store + ?page= query param (see lib/routes partnerUrl).
  */
 export function goTo(page: PartnerPage) {
   if (typeof window !== 'undefined') {
+    // Customer acquisition: landing "Start Free" / "Sign In" must land on the
+    // customer forms, never the partner forms. /signup never creates a partner
+    // profile, so sending partner intent there silently mis-enrols visitors.
     if (page === 'login') {
       window.location.assign('/login');
       return;
@@ -17,11 +23,34 @@ export function goTo(page: PartnerPage) {
       window.location.assign('/signup');
       return;
     }
+    // Partner public pages are state-routed at / — sync the ?page= param so
+    // the destination survives refresh / share. Dashboard pages are excluded
+    // by design (see app/page.tsx publicEntryPages).
+    try {
+      const url = new URL(window.location.href);
+      url.pathname = '/';
+      url.searchParams.set('page', page);
+      window.history.pushState({}, '', url.toString());
+    } catch {
+      // History sync is best-effort; store navigation below still works.
+    }
   }
   usePartnerStore.getState().navigate(page);
   if (typeof window !== 'undefined') {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
+
+/**
+ * Explicit partner-network navigation to a refresh-safe URL.
+ * Use for "Join as partner" / "Partner login" links — never /signup or /login.
+ */
+export function goToPartner(page: PartnerPublicPage) {
+  if (typeof window !== 'undefined') {
+    window.location.assign(partnerUrl(page));
+    return;
+  }
+  usePartnerStore.getState().navigate(page);
 }
 
 export function scrollToId(id: string) {

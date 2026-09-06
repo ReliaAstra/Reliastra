@@ -243,6 +243,29 @@ foreground and cleans up its children on exit. Logs land in `.dev-stack/*.log`.
 
 `CHECK_SCHEDULE_SECONDS=10` shortens the tick for local testing.
 
+### Windows local workers must use `--pool=solo`
+
+Celery prefork (billiard) does not run on Windows: the worker crash-loops
+with `PermissionError: [WinError 5] Access is denied`, Beat keeps publishing
+every `CHECK_SCHEDULE_SECONDS`, and the Redis `celery` list grows (e.g. 2000+
+queued) while `reliastra:checks:scheduler:last_heartbeat` and
+`reliastra:checks:worker:last_heartbeat` stay missing. Probing is then idle
+while the API still answers `/health` 200.
+
+`backend/scripts/dev-stack.sh` auto-selects `--pool=solo` on Git Bash /
+MSYS / Cygwin. Native PowerShell:
+
+```powershell
+cd backend
+.\.venv\Scripts\celery.exe -A app.infrastructure.celery_app.celery_app worker --pool=solo --concurrency=1 --loglevel=info
+.\.venv\Scripts\celery.exe -A app.infrastructure.celery_app.celery_app beat --loglevel=info
+```
+
+Verify with `celery inspect ping`, both heartbeat keys present, and
+`GET /health/checks` (alias `GET /v1/checks/health`) returning 200. Restart
+the API after pulling — a stale API process serves an OpenAPI without those
+routes (404 on both).
+
 ---
 
 ## 8. Production safety notes

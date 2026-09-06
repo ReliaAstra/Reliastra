@@ -4,12 +4,11 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from 'react';
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { adminApi, AdminApiError } from '@/lib/admin-api';
 import type { AdminOverviewResponse } from '@/types/admin';
 import { AdminShell } from '@/components/admin/admin-shell';
@@ -51,13 +50,20 @@ function createAdminQueryClient() {
 function AdminAccessGate({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
   const [accessFailure, setAccessFailure] = useState<'expired' | 'denied' | null>(null);
+
+  // The login page must never be gated: it is the entry point that mints the
+  // session. Gating it causes an infinite loop — overview 401 -> expired event
+  // -> redirect to /admin/login?next=/admin/login -> remount -> overview 401.
+  const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login/');
 
   const overviewQuery = useQuery({
     queryKey: ['admin', 'overview'],
     queryFn: adminApi.overview,
     staleTime: 45_000,
     refetchInterval: 60_000,
+    enabled: !isLoginPage,
   });
 
   // Every admin API request dispatches this event on 401/403. Clearing the
@@ -69,6 +75,13 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
   // customer sign-in. The customer/partner session is never touched here.
   useEffect(() => {
     const onExpired = () => {
+      // Already on the login page — no redirect needed. Redirecting here
+      // creates /admin/login?next=/admin/login and a constant refresh loop.
+      if (window.location.pathname.startsWith('/admin/login')) {
+        queryClient.clear();
+        setAccessFailure('expired');
+        return;
+      }
       queryClient.clear();
       setAccessFailure('expired');
       router.replace(window.location.pathname === '/admin'
@@ -94,6 +107,11 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
       : error instanceof AdminApiError && error.status === 403
         ? 'denied'
         : null);
+
+  // Login route renders on its own — no overview probe, no AdminShell state.
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   if (overviewQuery.isLoading && !errorState) {
     return <AdminShell state="loading">{null}</AdminShell>;

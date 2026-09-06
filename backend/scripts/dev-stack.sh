@@ -312,9 +312,20 @@ start_api() {
 start_worker() {
   [ -n "$CELERY" ] || die "celery not found on PATH or in $VENV — cannot start a worker.
   Check execution requires it (pip install -r requirements.txt)."
-  echo "▶ celery worker (concurrency=$CELERY_CONCURRENCY)"
+  # Windows (Git Bash / MSYS / Cygwin) cannot run Celery prefork: billiard
+  # fails with PermissionError [WinError 5] Access denied and the worker
+  # crash-loops while tasks pile up in Redis (queue depth grows, no worker or
+  # scheduler heartbeat). --pool=solo is the supported local mode there.
+  # Native PowerShell: run the same command manually with --pool=solo.
+  local pool_args=()
+  case "${OSTYPE:-}$(uname -s 2>/dev/null || true)$(uname -o 2>/dev/null || true)" in
+    *msys*|*MSYS*|*mingw*|*MINGW*|*cygwin*|*CYGWIN*|*Msys*)
+      pool_args=(--pool=solo)
+      ;;
+  esac
+  echo "▶ celery worker (concurrency=$CELERY_CONCURRENCY${pool_args:+ pool=${pool_args[*]}})"
   _spawn worker "$STATE_DIR/worker.log" \
-    env bash -c "cd '$BACKEND_DIR'; set -a; . '$STATE_DIR/api.env'; set +a; exec '$CELERY' -A app.infrastructure.celery_app.celery_app worker --loglevel=info --concurrency=$CELERY_CONCURRENCY --without-gossip"
+    env bash -c "cd '$BACKEND_DIR'; set -a; . '$STATE_DIR/api.env'; set +a; exec '$CELERY' -A app.infrastructure.celery_app.celery_app worker --loglevel=info --concurrency=$CELERY_CONCURRENCY ${pool_args[*]:-} --without-gossip"
   if ! wait_for_worker 45; then
     echo "  worker did not answer 'inspect ping'; last lines of its log:" >&2
     tail -n 15 "$STATE_DIR/worker.log" >&2 2>/dev/null || true
