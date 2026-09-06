@@ -8,7 +8,8 @@ import {
   Search, FileText, Layout, Wrench, Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
+import type { PartnerPage } from '@/types/partner';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
@@ -664,13 +665,12 @@ function ResourceDetail({ resource, onClose }: { resource: Resource; onClose: ()
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              onClose();
-              setTimeout(() => {
-                usePartnerStore.getState().navigate(resource.navigate as any);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }, 200);
-            }}
+              onClick={() => {
+                onClose();
+                setTimeout(() => {
+                  navigatePartner(resource.navigate as PartnerPage);
+                }, 200);
+              }}
             className="w-full gap-2"
           >
             View full FAQ page
@@ -834,7 +834,7 @@ function ResourceCard({
 }
 
 export function PageResources() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterOption>('all');
   const [searchQuery, setSearchQuery] = useState('');

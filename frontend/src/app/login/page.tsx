@@ -219,7 +219,7 @@ function CustomerLoginPageContent() {
         <div className="flex items-center justify-between border-t border-rs-border-subtle pt-4">
           <p className="text-xs text-rs-text-tertiary">
             Operating a customer account for an agency?{' '}
-            <Link href="/?page=login" className="text-rs-text-secondary hover:text-rs-text">
+              <Link href="/partner/login" className="text-rs-text-secondary hover:text-rs-text">
               Partner sign-in
             </Link>
           </p>

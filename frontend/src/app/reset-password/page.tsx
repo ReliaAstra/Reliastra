@@ -41,7 +41,7 @@ function ResetPasswordContent() {
           Open the link from your password reset email, or request a new one.
         </p>
         <Button asChild variant="outline" className="mt-2 w-full">
-          <Link href="/?page=forgot-password">Request a new link</Link>
+          <Link href="/partner/forgot-password">Request a new link</Link>
         </Button>
       </div>
     );
@@ -58,7 +58,7 @@ function ResetPasswordContent() {
           All other sessions were signed out. Use your new password to sign in.
         </p>
         <Button asChild className="mt-2 w-full">
-          <Link href="/?page=login">Go to sign in</Link>
+          <Link href="/login">Go to sign in</Link>
         </Button>
       </div>
     );

@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -117,7 +117,7 @@ const sections: PolicySection[] = [
 ];
 
 export function PagePrivacy() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

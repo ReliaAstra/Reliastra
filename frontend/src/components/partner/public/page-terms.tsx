@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 
 const sectionFade = {
   hidden: { opacity: 0, y: 20 },
@@ -138,7 +138,7 @@ const terms: TermSection[] = [
 ];
 
 export function PageTerms() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

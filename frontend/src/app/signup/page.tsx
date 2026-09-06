@@ -216,7 +216,7 @@ export default function CustomerSignupPage() {
         <div className="flex items-center justify-between border-t border-rs-border-subtle pt-4">
           <p className="text-xs text-rs-text-tertiary">
             Distribution or agency partner?{' '}
-            <Link href="/?page=signup" className="text-rs-text-secondary hover:text-rs-text">
+            <Link href="/partner/signup" className="text-rs-text-secondary hover:text-rs-text">
               Apply to the partner network
             </Link>
           </p>

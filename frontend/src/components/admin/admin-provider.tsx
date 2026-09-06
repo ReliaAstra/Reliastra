@@ -56,7 +56,11 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
   // The login page must never be gated: it is the entry point that mints the
   // session. Gating it causes an infinite loop — overview 401 -> expired event
   // -> redirect to /admin/login?next=/admin/login -> remount -> overview 401.
-  const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login/');
+  // `usePathname()` can be null on the very first render; fall back to the
+  // live location so the login page is never misclassified as gated.
+  const currentPath =
+    pathname ?? (typeof window !== 'undefined' ? window.location.pathname : null);
+  const isLoginPage = currentPath === '/admin/login' || currentPath?.startsWith('/admin/login/');
 
   const overviewQuery = useQuery({
     queryKey: ['admin', 'overview'],

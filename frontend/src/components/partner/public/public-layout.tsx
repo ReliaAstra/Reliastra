@@ -90,8 +90,12 @@ function PageContent({ page }: { page: PartnerPage }) {
   }
 }
 
-export function PublicLayout() {
-  const currentPage = usePartnerStore((s) => s.currentPage);
+export function PublicLayout({ page }: { page?: PartnerPage } = {}) {
+  const storePage = usePartnerStore((s) => s.currentPage);
+  // File-routed `/partner/*` pages pass `page` explicitly so the SSR output
+  // is the requested page even before the store syncs. The `/` home shell
+  // omits it and stays store-driven (dashboard SPA + legacy `?page=`).
+  const currentPage = page ?? storePage;
   const isPublicPage = publicPages.includes(currentPage);
 
   // Scroll to top on page change
@@ -109,7 +113,7 @@ export function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <ReferralBanner />
-      <PartnerNav />
+      <PartnerNav activePage={currentPage} />
 
       <main className="flex-1">
         <AnimatePresence mode="wait">

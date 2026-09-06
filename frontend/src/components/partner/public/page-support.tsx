@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { readApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 
@@ -32,7 +33,7 @@ const subjectOptions = [
 ];
 
 export function PageSupport() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
   const user = usePartnerStore((s) => s.user);
 
   const [loading, setLoading] = useState(false);

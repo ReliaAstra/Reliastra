@@ -1,5 +1,10 @@
 import { usePartnerStore } from '@/stores/partner-store';
-import { partnerUrl } from '@/lib/routes';
+import {
+  PARTNER_DASHBOARD_PAGES,
+  isPartnerRouteSlug,
+  partnerRouteUrl,
+  partnerUrl,
+} from '@/lib/routes';
 import type { PartnerPage } from '@/types/partner';
 import type { PartnerPublicPage } from '@/lib/routes';
 
@@ -7,8 +12,9 @@ import type { PartnerPublicPage } from '@/lib/routes';
  * Navigation helpers for the marketing landing page.
  *
  * Customer auth is a first-class surface with its own routes (/login,
- * /signup); everything else (partner network pages) routes through the
- * partner store + ?page= query param (see lib/routes partnerUrl).
+ * /signup). Partner network pages are file-routed at `/partner` and
+ * `/partner/<slug>` (see lib/routes). Partner dashboard pages are
+ * state-routed inside the authenticated `/` shell and have no URLs.
  */
 export function goTo(page: PartnerPage) {
   if (typeof window !== 'undefined') {
@@ -23,20 +29,49 @@ export function goTo(page: PartnerPage) {
       window.location.assign('/signup');
       return;
     }
-    // Partner public pages are state-routed at / — sync the ?page= param so
-    // the destination survives refresh / share. Dashboard pages are excluded
-    // by design (see app/page.tsx publicEntryPages).
-    try {
-      const url = new URL(window.location.href);
-      url.pathname = '/';
-      url.searchParams.set('page', page);
-      window.history.pushState({}, '', url.toString());
-    } catch {
-      // History sync is best-effort; store navigation below still works.
-    }
   }
-  usePartnerStore.getState().navigate(page);
-  if (typeof window !== 'undefined') {
+  navigatePartner(page);
+}
+
+/**
+ * URL-aware navigation for any partner page from any surface.
+ *
+ * - `/partner/*` slugs (public pages + program legal) → canonical URL.
+ * - `landing` → `/`.
+ * - Dashboard pages (and `support` once signed in — the live conversation
+ *   desk) → store navigation, returning to `/` when called from a
+ *   `/partner/*` URL since the dashboard shell only renders there.
+ */
+export function navigatePartner(page: PartnerPage) {
+  const store = usePartnerStore.getState();
+  if (typeof window === 'undefined') {
+    store.navigate(page);
+    return;
+  }
+  if (page === 'landing') {
+    store.navigate(page);
+    if (window.location.pathname !== '/') window.location.assign('/');
+    return;
+  }
+  const authed = store.authStatus === 'authenticated';
+  const onPartnerUrl = window.location.pathname.startsWith('/partner');
+  const isDashboard =
+    (PARTNER_DASHBOARD_PAGES as readonly string[]).includes(page) ||
+    (page === 'support' && authed);
+  if (isDashboard) {
+    store.navigate(page);
+    if (onPartnerUrl) {
+      window.location.assign('/');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    return;
+  }
+  store.navigate(page);
+  const url = isPartnerRouteSlug(page) ? partnerRouteUrl(page) : '/partner';
+  if (window.location.pathname !== url) {
+    window.location.assign(url);
+  } else {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

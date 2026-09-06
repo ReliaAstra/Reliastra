@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { Check, Minus, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -88,7 +88,7 @@ const comparisonRows = [
 ];
 
 export function PagePremium() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

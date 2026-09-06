@@ -37,9 +37,14 @@ const STATIC_ROUTES = new Set<string>([
   ...RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)),
 ]);
 
-const PARTNER_URLS = new Set(
-  PARTNER_PUBLIC_PAGES.map((page) => `/?page=${page}`)
-);
+const PARTNER_URLS = new Set([
+  '/partner',
+  ...PARTNER_PUBLIC_PAGES.filter((page) => page !== 'home').map(
+    (page) => `/partner/${page}`
+  ),
+  '/partner/privacy',
+  '/partner/terms',
+]);
 
 /** Anchors that legitimately point at a section on the landing page. */
 const SECTION_ANCHORS = new Set(
@@ -133,7 +138,7 @@ describe('marketing navigation link integrity', () => {
       /join as partner/i.test(l.label)
     );
     expect(joinAsPartner).toBeDefined();
-    expect(joinAsPartner!.href).toBe('/?page=signup');
+    expect(joinAsPartner!.href).toBe('/partner/signup');
     expect(joinAsPartner!.href).not.toBe(AUTH_ROUTES.signup);
   });
 

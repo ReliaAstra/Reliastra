@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { isEmailNotVerified, readApiError } from '@/lib/api-error';
@@ -23,7 +24,7 @@ const fadeUp = {
 };
 
 export function PageLogin() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');

@@ -7,6 +7,7 @@ import {
   setAdminSessionCookiesProxy,
 } from '@/lib/admin-session-gate';
 import { verifyAdminToken } from '@/lib/admin-token-verify';
+import { isPartnerRouteSlug, partnerRouteUrl } from '@/lib/routes';
 
 /**
  * Server-side gate for the admin surface.
@@ -35,9 +36,11 @@ const ADMIN_PAGE_PREFIX = '/admin';
 const ADMIN_LOGIN_PATH = '/admin/login';
 
 export const config = {
-  // All admin page routes, excluding static assets and the API (the API
-  // route handler has its own cookie-gated enforcement).
-  matcher: ['/admin/:path*'],
+  // Admin page routes (server-gated below) plus the exact `/` path, which
+  // owns exactly one redirect: legacy `/?page=<partner-slug>` query URLs
+  // from the old state-routed partner SPA onto the canonical `/partner/*`
+  // file routes. Nothing else on `/` is touched.
+  matcher: ['/admin/:path*', '/'],
 };
 
 interface RotatedSession {
@@ -104,9 +107,35 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
   const isLoginPage = pathname === ADMIN_LOGIN_PATH || pathname.startsWith(`${ADMIN_LOGIN_PATH}/`);
   const secure = requestIsSecure(req);
 
+  // Legacy partner query URLs → canonical file routes. Only fires for known
+  // partner slugs; every other `/` request (landing, dashboard SPA, unknown
+  // params) passes through untouched. Non-`page` params (e.g. referral
+  // codes) are preserved on the destination.
+  if (!isAdminPage && pathname === '/') {
+    const requested = req.nextUrl.searchParams.get('page');
+    if (requested && isPartnerRouteSlug(requested)) {
+      const url = req.nextUrl.clone();
+      url.pathname = partnerRouteUrl(requested);
+      url.searchParams.delete('page');
+      url.search = url.searchParams.toString() ? `?${url.searchParams.toString()}` : '';
+      return NextResponse.redirect(url, 308);
+    }
+    return NextResponse.next();
+  }
+
   // Already-authenticated visitors (valid access cookie OR a refresh that
   // just succeeded) skip the login page entirely.
   if (isLoginPage) {
+    // Self-heal stale loop bookmarks: `?next=` pointing back at the login
+    // page itself can never be a real destination — drop it server-side so
+    // the URL can never read `/admin/login?next=%2Fadmin%2Flogin`.
+    const nextParam = req.nextUrl.searchParams.get('next');
+    if (nextParam && (nextParam === ADMIN_LOGIN_PATH || nextParam.startsWith(`${ADMIN_LOGIN_PATH}/`) || nextParam.startsWith(`${ADMIN_LOGIN_PATH}?`))) {
+      const url = req.nextUrl.clone();
+      url.searchParams.delete('next');
+      url.search = url.searchParams.toString() ? `?${url.searchParams.toString()}` : '';
+      return NextResponse.redirect(url);
+    }
     const session = await resolveAdminPageSession(req);
     if (session) {
       const url = req.nextUrl.clone();

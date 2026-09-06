@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { ArrowRight, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { CommissionBasisNote } from '../commission-basis-note';
 
 const fadeUp = {
@@ -16,7 +16,7 @@ const fadeUp = {
 };
 
 export function PageCommission() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { cn } from '@/lib/utils';
 import { CommissionBasisNote } from '../commission-basis-note';
 
@@ -301,7 +301,7 @@ function EarningsCalculator() {
 }
 
 export function PageEarn() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

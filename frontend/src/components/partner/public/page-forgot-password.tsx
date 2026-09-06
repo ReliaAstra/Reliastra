@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2, CheckCircle2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { toast } from 'sonner';
 
 const fadeUp = {
@@ -19,7 +19,7 @@ const fadeUp = {
 };
 
 export function PageForgotPassword() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, type FormEvent } from 'react';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Loader2, ShieldAlert } from 'lucide-react';
@@ -36,6 +36,15 @@ function AdminLoginPageContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Self-heal stale loop bookmarks (`?next=/admin/login`, produced by the
+  // old ungated shell): the login page can never be its own destination.
+  // The proxy strips this server-side; this covers client-side arrivals.
+  useEffect(() => {
+    if (next && (next === '/admin/login' || next.startsWith('/admin/login/') || next.startsWith('/admin/login?'))) {
+      router.replace('/admin/login');
+    }
+  }, [next, router]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

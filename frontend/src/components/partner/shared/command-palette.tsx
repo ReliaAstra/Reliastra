@@ -19,6 +19,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import type { PartnerPage } from '@/types/partner';
@@ -51,7 +52,7 @@ export function CommandPalette() {
         { label: 'Settings', page: 'settings', icon: Settings, category: 'Navigation' },
         { label: 'Contact Support', page: 'support', icon: MessageSquare, category: 'Actions' },
         { label: 'Toggle theme', action: () => setTheme(isDark ? 'light' : 'dark'), icon: isDark ? Sun : Moon, category: 'Actions' },
-        { label: 'Sign out', action: () => { setOpen(false); usePartnerStore.getState().reset(); navigate('home'); toast.success('Signed out'); }, icon: LogOut, category: 'Actions' },
+        { label: 'Sign out', action: () => { setOpen(false); usePartnerStore.getState().reset(); navigatePartner('home'); toast.success('Signed out'); }, icon: LogOut, category: 'Actions' },
       ]
     : [
         { label: 'Home', page: 'home', icon: Home, category: 'Navigation' },
@@ -90,11 +91,12 @@ export function CommandPalette() {
       if (item.action) {
         item.action();
       } else if (item.page) {
-        navigate(item.page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // URL-aware: public pages move to their canonical `/partner/*`
+        // address, dashboard pages stay in the `/` shell.
+        navigatePartner(item.page);
       }
     },
-    [navigate]
+    []
   );
 
   // Keyboard shortcut

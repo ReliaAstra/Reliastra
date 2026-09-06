@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
   // under the `(console)` route group, which contributes no URL segment. Links
   // shared or bookmarked as `/dashboard/<section>` therefore 404. Redirect the
   // `/dashboard/*` shape onto the canonical routes instead of dead-ending.
+  //
+  // NOTE: `/partner` and `/partner/*` are REAL file routes (the Partner
+  // Network home and public pages) — they must never be redirected. Legacy
+  // `/?page=<slug>` query URLs are permanently redirected to them by the
+  // proxy (src/proxy.ts), which is the only layer that can match on query.
   async redirects() {
     const consoleSections = [
       "settings",
@@ -31,29 +36,6 @@ const nextConfig: NextConfig = {
       "clients",
     ];
     return [
-      // Partner Network is state-routed at /?page=*. File routes /partner and
-      // /partners do not exist, so direct visits 404. Redirect the singular
-      // form users expect onto the canonical partner entry point.
-      {
-        source: "/partner",
-        destination: "/?page=home",
-        permanent: false,
-      },
-      {
-        source: "/partners",
-        destination: "/?page=home",
-        permanent: false,
-      },
-      {
-        source: "/partner/:path*",
-        destination: "/?page=home",
-        permanent: false,
-      },
-      {
-        source: "/partners/:path*",
-        destination: "/?page=home",
-        permanent: false,
-      },
       ...consoleSections.flatMap((section) => [
         {
           source: `/dashboard/${section}`,

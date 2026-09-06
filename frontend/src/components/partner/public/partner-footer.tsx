@@ -1,68 +1,54 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { ReliastraLogo } from '../shared/reliastra-logo';
-import { usePartnerStore } from '@/stores/partner-store';
-import type { PartnerPage } from '@/types/partner';
 
-const footerSections = [
+const footerSections: { heading: string; links: { label: string; href: string }[] }[] = [
   {
     heading: 'Program',
     links: [
-      { label: 'Overview', page: 'home' as PartnerPage },
-      { label: 'How It Works', page: 'how-it-works' as PartnerPage },
-      { label: 'Commission', page: 'commission' as PartnerPage },
-      { label: 'Earn', page: 'earn' as PartnerPage },
-      { label: 'Resources', page: 'resources' as PartnerPage },
-      { label: 'Premium', page: 'premium' as PartnerPage },
-      { label: 'FAQ', page: 'faq' as PartnerPage },
-      { label: 'Tiers', page: 'tiers' as PartnerPage },
+      { label: 'Overview', href: '/partner' },
+      { label: 'How It Works', href: '/partner/how-it-works' },
+      { label: 'Commission', href: '/partner/commission' },
+      { label: 'Earn', href: '/partner/earn' },
+      { label: 'Resources', href: '/partner/resources' },
+      { label: 'Premium', href: '/partner/premium' },
+      { label: 'FAQ', href: '/partner/faq' },
+      { label: 'Tiers', href: '/partner/tiers' },
     ],
   },
   {
     heading: 'Account',
     links: [
-      { label: 'Join as partner', page: 'signup' as PartnerPage },
-      { label: 'Log in', page: 'login' as PartnerPage },
-      { label: 'Sign up', page: 'signup' as PartnerPage },
+      { label: 'Join as partner', href: '/partner/signup' },
+      { label: 'Log in', href: '/partner/login' },
+      { label: 'Sign up', href: '/partner/signup' },
     ],
   },
   {
     heading: 'Legal',
     links: [
-      { label: 'Privacy', page: 'privacy' as PartnerPage },
-      { label: 'Terms', page: 'terms' as PartnerPage },
+      { label: 'Privacy', href: '/partner/privacy' },
+      { label: 'Terms', href: '/partner/terms' },
     ],
   },
 ];
 
-function FooterLink({ label, page }: { label: string; page: PartnerPage }) {
-  const navigate = usePartnerStore((s) => s.navigate);
-
+function FooterLink({ label, href }: { label: string; href: string }) {
   return (
-    <motion.button
-      onClick={() => {
-        navigate(page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }}
-      whileHover={{ x: 2 }}
-      transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
-      className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
-    >
-      {label}
-    </motion.button>
+    <motion.div whileHover={{ x: 2 }} transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}>
+      <Link
+        href={href}
+        className="text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+      >
+        {label}
+      </Link>
+    </motion.div>
   );
 }
 
 export function PartnerFooter() {
-  const navigate = usePartnerStore((s) => s.navigate);
-
-  const handleLinkClick = (page: PartnerPage) => {
-    navigate(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   return (
     <footer className="mt-auto border-t border-border/60 bg-background">
       {/* Gradient top line */}
@@ -72,25 +58,24 @@ export function PartnerFooter() {
         <div className="grid grid-cols-2 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand column */}
           <div className="col-span-2 sm:col-span-2 lg:col-span-1">
-            <button
-              onClick={() => handleLinkClick('home')}
+            <Link
+              href="/partner"
               className="mb-4 flex items-center transition-opacity hover:opacity-70"
+              aria-label="Partner network home"
             >
               <ReliastraLogo size="sm" />
-            </button>
+            </Link>
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
               A premium partnership program for consultants, agencies, and
               technology advisors. Turn your infrastructure expertise into
               recurring revenue with RELIASTRA.
             </p>
-            <motion.button
-              onClick={() => handleLinkClick('resources')}
-              whileHover={{ x: 2 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] as const }}
+            <Link
+              href="/partner/resources"
               className="mt-4 inline-block text-xs font-medium text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
             >
               Resources →
-            </motion.button>
+            </Link>
           </div>
 
           {/* Link columns */}
@@ -102,7 +87,7 @@ export function PartnerFooter() {
               <ul className="space-y-2.5">
                 {section.links.map((link) => (
                   <li key={`${section.heading}-${link.label}`}>
-                    <FooterLink label={link.label} page={link.page} />
+                    <FooterLink label={link.label} href={link.href} />
                   </li>
                 ))}
               </ul>

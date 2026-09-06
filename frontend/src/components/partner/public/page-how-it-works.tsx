@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { cn } from '@/lib/utils';
 
 const fadeUp = {
@@ -124,7 +124,7 @@ function PulseLine() {
 }
 
 export function PageHowItWorks() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

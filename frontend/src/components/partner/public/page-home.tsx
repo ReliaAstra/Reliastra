@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -13,7 +13,7 @@ import {
   Network,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -26,7 +26,7 @@ const fadeUp = {
 
 // Institutional — no pulsing, no gradients, no cartoon
 export function PageHome() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div className="bg-white text-foreground dark:bg-[#0A0A0F] dark:text-zinc-100">

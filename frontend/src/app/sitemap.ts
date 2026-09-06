@@ -8,8 +8,10 @@ import { fetchTrackedVendors } from '@/lib/track-api';
  *
  * Excludes (deliberately): authenticated console routes, /admin/*, auth
  * pages (/login, /signup, /verify-email, /reset-password), token-scoped
- * shares (/portal/*, /reports/*), /checkout, /api/*, and query-parameter
- * partner URLs (`/?page=*`) — none of which must create index bloat.
+ * shares (/portal/*, /reports/*), /checkout, /api/*, partner auth/support
+ * slugs (/partner/login, /partner/signup, …), and legacy `/?page=*`
+ * query URLs (permanently redirected to `/partner/*` by the proxy) — none
+ * of which must create index bloat.
  * Includes: all canonical marketing/docs/glossary/research pages plus live
  * public vendor pages enumerated from the Track API (with graceful fallback
  * when the API is unreachable at build time).

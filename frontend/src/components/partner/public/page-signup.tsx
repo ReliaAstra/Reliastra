@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { getStoredReferralCode } from './referral-banner';
@@ -24,7 +25,7 @@ const fadeUp = {
 };
 
 export function PageSignup() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

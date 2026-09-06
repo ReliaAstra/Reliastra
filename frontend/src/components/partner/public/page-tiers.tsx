@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'framer-motion';
 import { Check, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import { PARTNER_TIERS } from '@/types/partner';
 import { TierBadge } from '../shared/tier-badge';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ const tierCommissionColor: Record<string, string> = {
 };
 
 export function PageTiers() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = navigatePartner;
 
   return (
     <div>

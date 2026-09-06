@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { usePartnerStore } from '@/stores/partner-store';
+import { navigatePartner } from '@/components/landing/theme';
 import {
   Accordion,
   AccordionContent,
@@ -231,7 +231,7 @@ export function PageFaq() {
             </motion.p>
             <motion.div variants={fadeUp} custom={2} className="mt-6">
               <button
-                onClick={() => usePartnerStore.getState().navigate('support')}
+                onClick={() => navigatePartner('support')}
                 className="inline-flex items-center justify-center min-w-[180px] border border-border bg-background text-foreground px-6 py-2.5 text-xs font-medium uppercase tracking-widest rounded-md hover:bg-muted/80 transition-colors"
               >
                 CONTACT SUPPORT

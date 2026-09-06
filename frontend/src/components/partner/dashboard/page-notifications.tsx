@@ -44,10 +44,13 @@ const EVENT_LABELS: Record<string, string> = {
   partner_marketing: 'Update',
 };
 
-/** Map a backend `action_url` (e.g. `/?page=payouts`) onto in-app navigation. */
+/**
+ * Map a backend `action_url` onto in-app navigation. Accepts the legacy
+ * `/?page=<slug>` shape and the canonical `/partner/<slug>` shape.
+ */
 function pageFromActionUrl(actionUrl?: string | null): PartnerPage | null {
   if (!actionUrl) return null;
-  const match = /[?&]page=([a-z-]+)/.exec(actionUrl);
+  const match = /(?:[?&]page=|\/partner\/)([a-z-]+)/.exec(actionUrl);
   return (match?.[1] as PartnerPage) || null;
 }
 

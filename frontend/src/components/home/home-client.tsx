@@ -52,6 +52,10 @@ export function HomeClient() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Legacy `/?page=*` fallback: the proxy 308-redirects known partner
+    // slugs to `/partner/*` before this runs, so this only fires for
+    // slugs without a file route. Dashboard pages are deliberately excluded
+    // so a shared URL cannot leak into a protected surface.
     const requestedPage = new URLSearchParams(window.location.search).get('page');
     const publicEntryPages: PartnerPage[] = [
       'home',

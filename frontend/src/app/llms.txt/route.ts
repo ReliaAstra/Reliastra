@@ -71,6 +71,9 @@ and the vendor's — so you can tell "we broke it" apart from "they broke it".
 - About: ${SITE_URL}/about
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status
+- Partner Network: ${SITE_URL}/partner
+- How partner referrals work: ${SITE_URL}/partner/how-it-works
+- Partner commissions: ${SITE_URL}/partner/commission
 - Privacy: ${SITE_URL}/privacy
 - Terms: ${SITE_URL}/terms
 

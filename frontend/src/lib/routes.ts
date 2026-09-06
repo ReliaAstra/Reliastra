@@ -22,6 +22,7 @@ export const PUBLIC_ROUTES = {
   incidentEvidence: '/incident-evidence',
   track: '/track',
   pricing: '/pricing',
+  partner: '/partner',
   security: '/security',
   docs: '/docs',
   docsQuickstart: '/docs/quickstart',
@@ -141,12 +142,29 @@ export function isResearchSlug(slug: string): slug is ResearchSlug {
 
 // ── Partner network ─────────────────────────────────────────────────────────
 
+// ── Partner dashboard (state-routed inside the authenticated `/` shell) ─────
+
 /**
- * Partner public pages are state-routed rather than file-routed: the partner
- * experience renders from `usePartnerStore.currentPage` at `/`. The `?page=`
- * entry point is what makes a partner page survive a refresh or a cold load,
- * and `app/page.tsx` only honours it for public pages — dashboard pages are
- * deliberately excluded so a shared URL cannot leak into a protected surface.
+ * Partner dashboard pages have no file routes by design: they render inside
+ * the authenticated home shell, so a shared/bookmarked URL can never leak
+ * into a protected surface. Navigation to them is store-driven (see
+ * `navigatePartner` in `components/landing/theme`).
+ */
+export const PARTNER_DASHBOARD_PAGES = [
+  'dashboard',
+  'referrals',
+  'earnings',
+  'payouts',
+  'notifications',
+  'settings',
+] as const;
+
+/**
+ * Partner pages live at straightforward file routes under `/partner`.
+ * `/partner` is the program home; every other public partner page is
+ * `/partner/<slug>`. The legacy `/?page=<slug>` shape from the old
+ * state-routed SPA is permanently redirected to these URLs by the proxy
+ * (see `src/proxy.ts`), so shared/bookmarked query URLs keep working.
  */
 export const PARTNER_PUBLIC_PAGES = [
   'home',
@@ -158,6 +176,7 @@ export const PARTNER_PUBLIC_PAGES = [
   'commission',
   'faq',
   'tiers',
+  'premium',
   'resources',
   'support',
 ] as const;
@@ -165,14 +184,52 @@ export const PARTNER_PUBLIC_PAGES = [
 export type PartnerPublicPage = (typeof PARTNER_PUBLIC_PAGES)[number];
 
 /**
- * A refresh-safe URL for a partner public page.
+ * Every slug that resolves under `/partner/*`, including the program legal
+ * pages (kept separate from the customer `/privacy` and `/terms` because
+ * they cover referral cookies, attribution windows and commission tracking).
+ */
+export const PARTNER_ROUTE_SLUGS = [
+  ...PARTNER_PUBLIC_PAGES,
+  'privacy',
+  'terms',
+] as const;
+
+export type PartnerRouteSlug = (typeof PARTNER_ROUTE_SLUGS)[number];
+
+/** True for any slug that has a real `/partner/*` route. */
+export function isPartnerRouteSlug(slug: string): slug is PartnerRouteSlug {
+  return (PARTNER_ROUTE_SLUGS as readonly string[]).includes(slug);
+}
+
+/**
+ * Partner slugs that are genuine marketing content and belong in the
+ * sitemap. Auth/support/legal slugs are routable but never indexed.
+ */
+export const PARTNER_INDEXABLE_SLUGS = [
+  'home',
+  'earn',
+  'how-it-works',
+  'commission',
+  'faq',
+  'tiers',
+  'premium',
+  'resources',
+] as const;
+
+/**
+ * A refresh-safe, shareable URL for a partner page.
  *
  * Partner *signup* must use this, not `AUTH_ROUTES.signup`: `/signup` is the
  * customer registration form and never creates a partner profile, so pointing
  * a "join as partner" link there silently enrols the visitor as a customer.
  */
 export function partnerUrl(page: PartnerPublicPage): string {
-  return page === 'home' ? '/?page=home' : `/?page=${page}`;
+  return page === 'home' ? '/partner' : `/partner/${page}`;
+}
+
+/** Canonical URL for any partner route slug (`privacy`/`terms` included). */
+export function partnerRouteUrl(slug: PartnerRouteSlug): string {
+  return slug === 'home' ? '/partner' : `/partner/${slug}`;
 }
 
 // ── External ────────────────────────────────────────────────────────────────

@@ -11,7 +11,14 @@ import {
   softwareAppJsonLd,
   websiteJsonLd,
 } from '@/lib/seo';
-import { RESEARCH_ARTICLES } from '@/lib/routes';
+import {
+  PARTNER_INDEXABLE_SLUGS,
+  PARTNER_ROUTE_SLUGS,
+  RESEARCH_ARTICLES,
+  isPartnerRouteSlug,
+  partnerRouteUrl,
+  partnerUrl,
+} from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
 
@@ -75,6 +82,24 @@ describe('canonical URL architecture', () => {
     }
     for (const slug of Object.keys(RESEARCH_ARTICLE_BODIES)) {
       expect(RESEARCH_ARTICLES.some((a) => a.slug === slug)).toBe(true);
+    }
+  });
+
+  it('uses straightforward /partner URLs, never query-param links', () => {
+    expect(partnerUrl('home')).toBe('/partner');
+    expect(partnerUrl('signup')).toBe('/partner/signup');
+    expect(partnerRouteUrl('privacy')).toBe('/partner/privacy');
+    for (const slug of PARTNER_ROUTE_SLUGS) {
+      expect(isPartnerRouteSlug(slug)).toBe(true);
+      expect(partnerRouteUrl(slug as (typeof PARTNER_ROUTE_SLUGS)[number])).not.toContain('?');
+    }
+    expect(isPartnerRouteSlug('dashboard')).toBe(false);
+    expect(isPartnerRouteSlug('nope')).toBe(false);
+    // Every indexable partner slug has a sitemap entry.
+    const paths = PUBLIC_PAGES.map((p) => p.path);
+    for (const slug of PARTNER_INDEXABLE_SLUGS) {
+      const expected = slug === 'home' ? '/partner' : `/partner/${slug}`;
+      expect(paths).toContain(expected);
     }
   });
 });
