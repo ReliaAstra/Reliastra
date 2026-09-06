@@ -134,57 +134,71 @@ def plaintext_tcp_pg(tmp_path_factory):
     neither exists.
     """
     pg_bin = _find_pg_bin()
-    if pg_bin is None:
-        url = "postgresql+asyncpg://reliastra_test:testpass123@localhost:5432/reliastra_test"
+    if pg_bin is not None:
+        # Binaries exist but may still fail to start (e.g. sandboxed CI
+        # runners) — fall through to the CI service/skip below instead of
+        # erroring the whole module.
         try:
-            with socket.create_connection(("127.0.0.1", 5432), timeout=2):
-                yield url
-                return
-        except OSError:
-            pytest.skip("no PostgreSQL server binaries and no CI DB service")
+            env = _subprocess_env()
+            datadir = tmp_path_factory.mktemp("pg_tcp") / "data"
+            subprocess.run(
+                [
+                    str(pg_bin / "initdb"),
+                    "-D",
+                    str(datadir),
+                    "--auth=trust",
+                    "--username=postgres",
+                ],
+                check=True,
+                capture_output=True,
+                env=env,
+            )
+            port = _free_tcp_port()
+            subprocess.run(
+                [
+                    str(pg_bin / "pg_ctl"),
+                    "-D",
+                    str(datadir),
+                    "-l",
+                    str(datadir / "server.log"),
+                    "-o",
+                    f"-c listen_addresses='127.0.0.1' -p {port} -c ssl=off",
+                    "start",
+                    "-w",
+                    "-t",
+                    "60",
+                ],
+                check=True,
+                capture_output=True,
+                env=env,
+            )
+        except (subprocess.CalledProcessError, OSError) as exc:
+            import warnings
 
-    env = _subprocess_env()
-    datadir = tmp_path_factory.mktemp("pg_tcp") / "data"
-    subprocess.run(
-        [
-            str(pg_bin / "initdb"),
-            "-D",
-            str(datadir),
-            "--auth=trust",
-            "--username=postgres",
-        ],
-        check=True,
-        capture_output=True,
-        env=env,
-    )
-    port = _free_tcp_port()
-    subprocess.run(
-        [
-            str(pg_bin / "pg_ctl"),
-            "-D",
-            str(datadir),
-            "-l",
-            str(datadir / "server.log"),
-            "-o",
-            f"-c listen_addresses='127.0.0.1' -p {port} -c ssl=off",
-            "start",
-            "-w",
-            "-t",
-            "60",
-        ],
-        check=True,
-        capture_output=True,
-        env=env,
-    )
+            warnings.warn(
+                f"embedded TCP postgres unavailable ({exc}); "
+                "falling back to CI postgres service",
+                stacklevel=2,
+            )
+        else:
+            try:
+                yield f"postgresql+asyncpg://postgres@127.0.0.1:{port}/postgres"
+            finally:
+                subprocess.run(
+                    [str(pg_bin / "pg_ctl"), "-D", str(datadir), "stop", "-m", "immediate"],
+                    capture_output=True,
+                    env=env,
+                    check=False,
+                )
+            return
+
+    url = "postgresql+asyncpg://reliastra_test:testpass123@localhost:5432/reliastra_test"
     try:
-        yield f"postgresql+asyncpg://postgres@127.0.0.1:{port}/postgres"
-    finally:
-        subprocess.run(
-            [str(pg_bin / "pg_ctl"), "-D", str(datadir), "stop", "-m", "immediate"],
-            capture_output=True,
-            env=env,
-            check=False,
-        )
+        with socket.create_connection(("127.0.0.1", 5432), timeout=2):
+            yield url
+            return
+    except OSError:
+        pytest.skip("no PostgreSQL server binaries and no CI DB service")
 
 
 def _engine(url: str, ssl_mode: str | None):

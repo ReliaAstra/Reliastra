@@ -81,6 +81,21 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     needs: validate
+    services:
+      postgres:
+        # Plaintext TCP fallback for test_db_connect_args (SSL-mode tests need
+        # TCP; pgserver is unix-socket only and embedded pg_ctl fails on some
+        # runners). Fixture uses it only when embedded startup fails.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: reliastra_test
+          POSTGRES_PASSWORD: testpass123
+          POSTGRES_DB: reliastra_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U reliastra_test"
+          --health-interval=5s --health-timeout=5s --health-retries=5
     steps:
       - uses: actions/checkout@v4
 
