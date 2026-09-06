@@ -317,7 +317,12 @@ def create_app() -> FastAPI:
         title="Reliastra MVP API",
         version="0.1.0",
         description="External dependency intelligence platform API",
-        docs_url="/docs",
+        # Interactive API consoles live off `/docs*` on purpose: the apex
+        # `/docs/*` namespace belongs to the public product documentation
+        # (Next.js, indexed by search engines). The machine-readable spec
+        # stays at the conventional `/openapi.json`.
+        docs_url="/api-docs",
+        redoc_url="/api-redoc",
         openapi_url="/openapi.json",
         lifespan=lifespan,
     )

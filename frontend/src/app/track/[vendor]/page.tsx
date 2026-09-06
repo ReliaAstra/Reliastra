@@ -8,6 +8,8 @@ import {
   type TrackPublicIncident,
 } from '@/lib/track-api';
 import { PreferredSourceSection } from '@/components/seo/preferred-source';
+import { JsonLd } from '@/components/seo/json-ld';
+import { SITE_URL, breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 
 export const revalidate = 60;
 
@@ -38,7 +40,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/track/${name}` },
-    openGraph: { title, description, type: 'website' },
+    openGraph: {
+      title,
+      description,
+      url: `/track/${name}`,
+      type: 'website',
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/opengraph-image'],
+    },
     robots: { index: true, follow: true },
   };
 }
@@ -130,6 +144,25 @@ export default async function VendorTrackPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-white pb-24 dark:bg-[#0A0A0F]">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Track', path: '/track' },
+            { name: displayName, path: `/track/${encodeURIComponent(data.vendor.vendor_name)}` },
+          ]),
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            '@id': canonicalUrl(`/track/${encodeURIComponent(data.vendor.vendor_name)}`),
+            url: canonicalUrl(`/track/${encodeURIComponent(data.vendor.vendor_name)}`),
+            name: `${displayName} status — live uptime, latency & incidents`,
+            description: `Independent, multi-region uptime and incident history for ${displayName}, measured by RELIASTRA.`,
+            isPartOf: { '@id': `${SITE_URL}/#website` },
+            inLanguage: 'en',
+          },
+        ]}
+      />
       {/* Header */}
       <section className="border-b border-zinc-200 bg-[#F8F9FA] py-10 dark:border-white/10 dark:bg-[#131318] md:py-14">
         <div className="mx-auto max-w-[880px] px-6">

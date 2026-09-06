@@ -408,3 +408,15 @@ subscription record.
 Every automated email now ends in one canonical support footer rendered by
 `app/infrastructure/email_layout.py` (see `docs/TRANSACTIONAL_EMAIL.md`). Clients
 and templates must not add their own footer, support address or unsubscribe line.
+
+## Interactive API consoles (tooling paths, no `/v1` contract change)
+
+The apex `/docs/*` namespace now belongs to the public product documentation
+(Next.js, indexed). The interactive consoles moved accordingly; the
+machine-readable spec is unchanged:
+
+| Old | New |
+| --- | --- |
+| `GET /docs` (Swagger UI) | `GET /api-docs` |
+| `GET /redoc` (ReDoc) | `GET /api-redoc` |
+| `GET /openapi.json` | `GET /openapi.json` (unchanged) |

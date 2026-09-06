@@ -1,0 +1,85 @@
+import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
+import { RESEARCH_ARTICLES } from '@/lib/routes';
+
+/**
+ * /llms-full.txt — deeper machine-readable reference: full concept
+ * definitions, docs map, and research index. Complements /llms.txt.
+ */
+export function GET() {
+  const glossary = GLOSSARY_TERMS.map(
+    (g) =>
+      `### ${g.term}\n${g.definition}\nProblem: ${g.problem}\nWhy it matters: ${g.whyItMatters}\nExample: ${g.example}\nRELIASTRA approach: ${g.howReliastra}\nURL: ${SITE_URL}/glossary/${g.slug}`
+  ).join('\n\n');
+
+  const research = RESEARCH_ARTICLES.map(
+    (a) => `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} — ${SITE_URL}/research/${a.slug}`
+  ).join('\n');
+
+  const body = `# RELIASTRA — Full reference (llms-full.txt)
+
+> External Dependency Intelligence. Know when your dependencies fail. Prove what happened.
+> Canonical origin: ${SITE_URL}/ — all URLs below are absolute canonical URLs.
+
+## Product
+
+RELIASTRA monitors third-party endpoints you configure ("dependencies"),
+correlates their failures with your reported incidents, attributes likely
+causes with a deterministic engine, and generates verifiable evidence reports.
+Plans: Free (3 dependencies, 1-minute checks, 24h retention), Pro ($39/mo,
+50 dependencies, 15-second checks, 90-day retention, evidence + attribution +
+API), Enterprise (custom scale, client isolation, white-label).
+
+## Differentiation from uptime monitoring
+
+| Uptime monitoring | RELIASTRA |
+|---|---|
+| Watches your services | Watches your vendors' APIs |
+| Alerts "checkout is down" | Answers "was it you or Stripe?" |
+| Vendor status page as evidence | Independent multi-region probes as evidence |
+| Single-perspective timeline | Your incidents + vendor observations on one timeline |
+| Screenshots for SLA claims | Checksummed, verifiable fault reports for SLA claims |
+
+## Documentation map
+
+- Docs home: ${SITE_URL}/docs
+- Quickstart: ${SITE_URL}/docs/quickstart
+- Monitoring: ${SITE_URL}/docs/monitoring
+- Evidence: ${SITE_URL}/docs/evidence
+- API: ${SITE_URL}/docs/api
+
+## Glossary (canonical definitions)
+
+${glossary}
+
+## Research index
+
+${research}
+
+## Vendor tracking
+
+- Index: ${SITE_URL}/track
+- Detail pattern: ${SITE_URL}/track/{vendor} (only for vendors with real telemetry; empty/fabricated vendors are never generated)
+- Each vendor page exposes: current state, 24h/7d/30d uptime, latency, monitored endpoints with regions, incident history, methodology note, refresh cadence.
+
+## Verification checklist for agents
+
+1. Fetch ${SITE_URL}/ (expect H1 + proposition in initial HTML, no JS required).
+2. Fetch ${SITE_URL}/sitemap.xml (expect canonical HTTPS URLs only).
+3. Fetch ${SITE_URL}/robots.txt (expect private paths disallowed, sitemap listed).
+4. Fetch ${SITE_URL}/llms.txt and ${SITE_URL}/llms-full.txt (expect 200 text/plain).
+5. Fetch a vendor page and confirm uptime/latency/incidents render server-side.
+6. Confirm /login, /admin, /dashboard, /portal/*, /reports/* are noindex / gated.
+7. Validate JSON-LD blocks parse (Organization, WebSite, SoftwareApplication, BreadcrumbList, TechArticle, FAQPage).
+
+## Contact
+
+- support@reliastra.com, sales@reliastra.com, https://github.com/ReliaAstra
+`;
+
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  });
+}

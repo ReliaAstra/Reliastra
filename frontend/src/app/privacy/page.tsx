@@ -4,6 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Privacy Policy — RELIASTRA',
   description: 'How RELIASTRA collects, uses, and protects customer data across its monitoring, evidence, and billing systems.',
+  alternates: { canonical: '/privacy' },
 };
 
 const SECTIONS = [

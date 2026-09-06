@@ -4,6 +4,7 @@ import { AppShell } from '@/components/dashboard/shell/app-shell';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
+  robots: { index: false, follow: false, noarchive: true },
 };
 
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {

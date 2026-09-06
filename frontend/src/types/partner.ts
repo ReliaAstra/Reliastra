@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────
    Types aligned with Reliastra Backend OpenAPI 3.1
-   https://api.reliastra.com/docs
+   https://api.reliastra.com/api-docs
    ───────────────────────────────────────────── */
 
 // ── Auth ───────────────────────────────────────

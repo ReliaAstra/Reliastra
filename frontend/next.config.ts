@@ -77,7 +77,41 @@ const nextConfig: NextConfig = {
           { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "Authorization, Content-Type, X-Organization-ID, Reliastra-Organization, X-Request-ID, Idempotency-Key, X-Requested-With" },
           { key: "Access-Control-Allow-Credentials", value: "true" },
+          // APIs are data, not documents: never index.
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
         ],
+      },
+      // Token-scoped shares and per-customer checkout must never be indexed
+      // even if a URL leaks: defense in depth behind the metadata noindex.
+      {
+        source: "/portal/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+        ],
+      },
+      {
+        source: "/reports/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+        ],
+      },
+      {
+        source: "/checkout/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
+        ],
+      },
+      // llms.txt family: machine-readable, cacheable, plain text.
+      {
+        source: "/llms.txt",
+        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
+      },
+      {
+        source: "/llms-full.txt",
+        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
       },
       {
         source: "/:path*",

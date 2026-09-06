@@ -4,6 +4,7 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Terms of Service — RELIASTRA',
   description: 'The terms governing use of the RELIASTRA dependency monitoring, incident correlation, and evidence platform.',
+  alternates: { canonical: '/terms' },
 };
 
 const SECTIONS = [

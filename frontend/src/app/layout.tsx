@@ -11,39 +11,65 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com'
   ),
   title: {
-    default: "Reliastra — External Dependency Intelligence",
-    template: "%s | Reliastra",
+    default: "RELIASTRA — External Dependency Intelligence",
+    template: "%s | RELIASTRA",
   },
   description:
-    "Monitor third-party APIs independently. When vendors fail, generate timestamped SLA evidence reports to claim credits and prove fault.",
+    "Know when your dependencies fail. Prove what happened. RELIASTRA monitors third-party APIs independently, attributes incidents to the responsible vendor, and generates timestamped SLA evidence.",
   keywords: [
-    "RELIASTRA",
-    "external dependency monitoring",
-    "vendor monitoring",
+    "external dependency intelligence",
+    "third-party dependency monitoring",
+    "vendor outage detection",
+    "incident attribution",
     "SLA evidence",
     "SLA credits",
-    "API monitoring",
-    "uptime monitoring",
-    "incident correlation",
-    "partner program",
-    "recurring commission",
-    "infrastructure intelligence",
+    "API dependency monitoring",
+    "vendor reliability",
+    "outage evidence",
+    "infrastructure evidence",
   ],
+  authors: [{ name: "Reliastra, Inc.", url: "https://reliastra.com" }],
+  creator: "Reliastra, Inc.",
+  publisher: "Reliastra, Inc.",
+  alternates: {
+    canonical: "https://reliastra.com",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: "/logo.svg",
   },
   openGraph: {
-    title: "Reliastra — External Dependency Intelligence",
+    title: "RELIASTRA — External Dependency Intelligence",
     description:
       "Monitor third-party APIs independently. When vendors fail, generate timestamped SLA evidence reports to claim credits and prove fault.",
-    siteName: "Reliastra",
+    url: "https://reliastra.com",
+    siteName: "RELIASTRA",
+    locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "RELIASTRA — External Dependency Intelligence",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Reliastra — External Dependency Intelligence",
+    title: "RELIASTRA — External Dependency Intelligence",
     description:
       "Monitor third-party APIs. Prove vendor failures. Claim SLA credits.",
+    images: ["/opengraph-image"],
   },
 };
 

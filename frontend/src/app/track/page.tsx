@@ -2,16 +2,28 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchTrackedVendors, type TrackVendorListItem } from '@/lib/track-api';
 import { PreferredSourceSection } from '@/components/seo/preferred-source';
+import { JsonLd } from '@/components/seo/json-ld';
+import { breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Track — Public vendor status | RELIASTRA',
   description:
     'Independent, multi-region status for the third-party APIs your product depends on. Uptime, latency and incident history — measured, not self-reported.',
+  alternates: { canonical: '/track' },
+  robots: { index: true, follow: true },
   openGraph: {
     title: 'Track vendor status — RELIASTRA',
     description:
       'Independent, multi-region status for third-party APIs. Uptime, latency and incident history — measured, not self-reported.',
+    url: '/track',
     type: 'website',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'RELIASTRA Track — independent vendor status' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Track vendor status — RELIASTRA',
+    description: 'Independent uptime, latency and incident history — measured, not self-reported.',
+    images: ['/opengraph-image'],
   },
 };
 
@@ -112,6 +124,25 @@ async function VendorsList() {
 export default function TrackIndexPage() {
   return (
     <main className="min-h-screen bg-white pb-24 dark:bg-[#0A0A0F]">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Track', path: '/track' },
+          ]),
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            '@id': canonicalUrl('/track'),
+            url: canonicalUrl('/track'),
+            name: 'Track — Public vendor status',
+            description:
+              'Independent, multi-region status for third-party APIs: uptime, latency and incident history.',
+            isPartOf: { '@id': canonicalUrl('/#website') },
+            inLanguage: 'en',
+          },
+        ]}
+      />
       <section className="border-b border-zinc-200 bg-[#F8F9FA] py-14 dark:border-white/10 dark:bg-[#131318] md:py-20">
         <div className="mx-auto max-w-[880px] px-6">
           <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-cyan-700 dark:text-cyan-400">

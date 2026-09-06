@@ -70,6 +70,7 @@ export default async function ResearchArticlePage({ params }: Params) {
           category: article.category,
           tags: [...article.tags],
           organization: 'Reliastra',
+          path: researchRoute(slug),
         }}
         evidence={content.evidence}
         methodology={content.methodology}

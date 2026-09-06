@@ -36,7 +36,7 @@
 	# (see frontend/src/lib/backend-proxy.ts). A direct `handle /api/* ->
 	# api:8000` would shadow those routes AND 404, because the backend
 	# serves /v1/*, not /api/v1/*. Direct backend consumers use /v1/*,
-	# /health*, /docs* below.
+	# /health*, /openapi.json* and /api-docs* below.
 	handle /v1/* {
 		reverse_proxy reliastra-api:8000
 	}
@@ -49,7 +49,13 @@
 	handle /openapi.json* {
 		reverse_proxy reliastra-api:8000
 	}
-	handle /docs* {
+	# Interactive API consoles. NOTE: `/docs/*` is intentionally NOT proxied
+	# here — that namespace belongs to the public product documentation
+	# (Next.js, served by the catch-all above and indexed by search engines).
+	handle /api-docs* {
+		reverse_proxy reliastra-api:8000
+	}
+	handle /api-redoc* {
 		reverse_proxy reliastra-api:8000
 	}
 

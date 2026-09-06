@@ -1,12 +1,27 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { RESEARCH_ARTICLES, researchRoute, PUBLIC_ROUTES } from '@/lib/routes';
+import { JsonLd } from '@/components/seo/json-ld';
+import { SITE_URL, breadcrumbJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Research — RELIASTRA',
   description:
     'How RELIASTRA measures vendor reliability, what the dependency gap is, and what we publish — and what we deliberately do not.',
   alternates: { canonical: PUBLIC_ROUTES.research },
+  openGraph: {
+    title: 'Research — RELIASTRA',
+    description: 'How RELIASTRA measures vendor reliability, in public.',
+    url: '/research',
+    type: 'website',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'RELIASTRA Research' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Research — RELIASTRA',
+    description: 'How RELIASTRA measures vendor reliability, in public.',
+    images: ['/opengraph-image'],
+  },
 };
 
 /**
@@ -20,6 +35,24 @@ export const metadata: Metadata = {
 export default function ResearchIndexPage() {
   return (
     <main className="min-h-screen bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: 'Home', path: '/' },
+            { name: 'Research', path: '/research' },
+          ]),
+          {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            '@id': `${SITE_URL}/research`,
+            url: `${SITE_URL}/research`,
+            name: 'RELIASTRA Research',
+            description: 'How RELIASTRA measures vendor reliability, in public.',
+            isPartOf: { '@id': `${SITE_URL}/#website` },
+            inLanguage: 'en',
+          },
+        ]}
+      />
       <div className="mx-auto max-w-[720px] px-6 py-16">
         <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400">
           Research

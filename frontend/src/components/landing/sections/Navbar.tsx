@@ -64,6 +64,18 @@ export function Navbar() {
             </button>
           ))}
           <Link
+            href="/product"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
+          >
+            Product
+          </Link>
+          <Link
+            href="/docs"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
+          >
+            Docs
+          </Link>
+          <Link
             href="/research"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#52525B] transition-colors hover:text-[#09090B] dark:text-[#A1A1AA] dark:hover:text-white"
           >

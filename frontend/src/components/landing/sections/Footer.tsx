@@ -36,13 +36,28 @@ const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[
   {
     title: 'Product',
     links: [
-      // 'research' is the section that explains the evidence engine — the
-      // closest thing to a features overview on the page. 'solution' and
-      // 'partners' no longer exist; see LANDING_SECTIONS.
-      { label: 'Features', href: '#research' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'Track', href: PUBLIC_ROUTES.track },
-      { label: 'Partners', href: partnerUrl('home') },
+      { label: 'Product overview', href: PUBLIC_ROUTES.product },
+      {
+        label: 'External Dependency Intelligence',
+        href: PUBLIC_ROUTES.externalDependencyIntelligence,
+      },
+      { label: 'Dependency monitoring', href: PUBLIC_ROUTES.dependencyMonitoring },
+      { label: 'SLA evidence', href: PUBLIC_ROUTES.slaEvidence },
+      { label: 'Incident evidence', href: PUBLIC_ROUTES.incidentEvidence },
+      { label: 'Track vendors', href: PUBLIC_ROUTES.track },
+      { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      { label: 'Documentation', href: PUBLIC_ROUTES.docs },
+      { label: 'Quickstart', href: PUBLIC_ROUTES.docsQuickstart },
+      { label: 'API docs', href: PUBLIC_ROUTES.docsApi },
+      { label: 'Glossary', href: PUBLIC_ROUTES.glossary },
+      { label: 'Research Home', href: PUBLIC_ROUTES.research },
+      { label: 'Status', href: PUBLIC_ROUTES.status },
+      { label: 'Security', href: PUBLIC_ROUTES.security },
     ],
   },
   {
@@ -63,11 +78,12 @@ const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[
   {
     title: 'Company',
     links: [
+      { label: 'About', href: PUBLIC_ROUTES.about },
+      { label: 'Contact', href: PUBLIC_ROUTES.contact },
       // Partner support is dual-mode: a public contact form for visitors, the
       // conversation desk once signed in. Using its URL (rather than a state
       // navigation) makes it survive a refresh and be shareable.
       { label: 'Support', href: partnerUrl('support') },
-      { label: 'Contact', href: partnerUrl('support') },
       { label: 'Join as partner', href: partnerUrl('signup') },
     ],
   },
@@ -89,7 +105,7 @@ export function Footer() {
   return (
     <footer className="border-t border-white/10 bg-[#0A0A0F] pb-10 pt-20">
       <div className="mx-auto max-w-[1200px] px-6 md:px-12">
-        <div className="grid grid-cols-2 gap-12 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-12 md:grid-cols-2 lg:grid-cols-6">
           <motion.div
             className="col-span-2 lg:col-span-1"
             initial={{ opacity: 0, y: 20 }}

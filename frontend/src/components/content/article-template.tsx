@@ -11,6 +11,8 @@ export type ArticleMeta = {
   organization?: string;
   category?: string;
   tags?: string[];
+  /** Canonical article path, e.g. `/research/the-dependency-gap`. */
+  path?: string;
 };
 
 export type RelatedLink = { href: string; label: string; description?: string };
@@ -30,6 +32,7 @@ type Props = {
  * 6 Evidence, 7 Methodology, 8 Related research, 9 Preferred Source CTA, 10 Internal links
  */
 export function ArticleTemplate({ meta, children, evidence, methodology, related, vendorLinks }: Props) {
+  const pageId = `https://reliastra.com${meta.path ?? ''}`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
@@ -39,7 +42,8 @@ export function ArticleTemplate({ meta, children, evidence, methodology, related
     dateModified: meta.updatedAt ?? meta.publishedAt,
     author: meta.author ? { '@type': 'Person', name: meta.author } : { '@type': 'Organization', name: meta.organization ?? 'Reliastra' },
     publisher: { '@type': 'Organization', name: 'Reliastra', logo: { '@type': 'ImageObject', url: 'https://reliastra.com/logo.svg' } },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://reliastra.com` },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': pageId },
+    inLanguage: 'en',
   };
 
   return (
