@@ -148,7 +148,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trivy FS scan (vuln + secret + misconfig)
-        uses: aquasecurity/trivy-action@0.24.0
+        # Pinned to full SHA (zero-trust): tags on this repo were hijacked
+        # in Mar 2026 (infostealer). v0.36.0 is the latest post-incident release.
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -248,7 +250,8 @@ jobs:
           retention-days: 30
 
       - name: Trivy image scan
-        uses: aquasecurity/trivy-action@0.24.0
+        # Pinned to full SHA (zero-trust): see FS scan step above.
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
           format: sarif

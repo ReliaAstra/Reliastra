@@ -1,8 +1,11 @@
 name: CD — Build, Push & Deploy
 
 on:
-  push:
-    branches: [main]
+  # DISABLED 2026-09-06: legacy deployer superseded by deploy-production.yml
+  # (Tailscale + state machine + Supabase, no local postgres). Kept for manual
+  # use only — do NOT re-enable the push trigger (double-deploys + wrong arch).
+  # push:
+  #   branches: [main]
   workflow_dispatch:
     inputs:
       deploy_environment:
