@@ -1,6 +1,15 @@
-# Production runtime — single VPS, extensible to multi-host
+# Production runtime — single VPS (1.6GB RAM), extensible to multi-host
 # Usage: IMAGE_DIGEST=sha256:... docker compose --env-file /opt/reliastra/.env.production -f compose.yml up -d
 # Never `build:` for app services — pull immutable artifact from GHCR.
+#
+# ARCHITECTURE NOTE (2026-09-06): the app image is ALL-IN-ONE — one api
+# container already runs FastAPI (:8000) + Next.js (:3000) + internal Redis +
+# Celery worker + Celery beat under supervisord. There are deliberately NO
+# separate worker/scheduler services: the all-in-one entrypoint ignores
+# `command:` and would boot a second full stack per service (3x beats
+# triple-dispatching, 3x memory → OOM-killer on this box, proven by dmesg).
+# A single beat owns dispatch; the internal worker (concurrency 2) owns
+# execution. If the box grows, scale the api service, not new services.
 
 name: reliastra
 
@@ -47,6 +56,7 @@ services:
       LOG_JSON: "true"
     expose:
       - "8000"
+      - "3000"
     networks:
       - internal
     depends_on:
@@ -58,7 +68,10 @@ services:
       timeout: 5s
       retries: 6
       start_period: 30s
-    read_only: true
+    # NOT read-only: supervisord children need writable /app (celerybeat
+    # schedule, Next.js cache) — only /tmp is tmpfs. Revisit with named
+    # volumes per writer if the image ever drops root startup.
+    read_only: false
     tmpfs:
       - /tmp
     cap_drop:
@@ -69,105 +82,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 512M
-
-  worker:
-    image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
-    container_name: reliastra-worker
-    restart: unless-stopped
-    command: ["celery", "-A", "app.infrastructure.celery_app.celery_app", "worker", "--loglevel=info", "--concurrency=1"]
-    env_file:
-      - /opt/reliastra/.env.production
-    environment:
-      ENVIRONMENT: production
-      LOG_JSON: "true"
-    networks:
-      - internal
-    depends_on:
-      redis:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-    read_only: true
-    tmpfs:
-      - /tmp
-    cap_drop:
-      - ALL
-    healthcheck:
-      # `inspect ping` is answered by the worker itself, so a healthy result
-      # proves both the broker connection and a live consumer. Restricted to
-      # this node so it does not depend on other workers being up.
-      test:
-        [
-          "CMD-SHELL",
-          "celery -A app.infrastructure.celery_app.celery_app inspect ping -d celery@$$HOSTNAME -t 10 | grep -q pong",
-        ]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-      start_period: 40s
-    security_opt:
-      - no-new-privileges:true
-    user: "10001:10001"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
+          cpus: "1.0"
           memory: 768M
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  scheduler:
-    image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
-    container_name: reliastra-scheduler
-    restart: unless-stopped
-    command: ["celery", "-A", "app.infrastructure.celery_app.celery_app", "beat", "--loglevel=info"]
-    env_file:
-      - /opt/reliastra/.env.production
-    environment:
-      ENVIRONMENT: production
-      LOG_JSON: "true"
-    networks:
-      - internal
-    depends_on:
-      redis:
-        condition: service_healthy
-    read_only: true
-    tmpfs:
-      - /tmp
-    cap_drop:
-      - ALL
-    healthcheck:
-      # Beat has no `inspect`. Its liveness proof is the scheduler heartbeat
-      # key, whose TTL is derived from CHECK_SCHEDULE_SECONDS — so mere
-      # existence already means "beat published within the staleness window".
-      # A missing key (stale beat) or an unreachable Redis both fail this.
-      test:
-        [
-          "CMD-SHELL",
-          "python -c \"import os,sys,redis; sys.exit(0 if redis.from_url(os.environ['REDIS_URL']).get('reliastra:checks:scheduler:last_heartbeat') else 1)\"",
-        ]
-      interval: 30s
-      timeout: 15s
-      retries: 3
-      start_period: 30s
-    security_opt:
-      - no-new-privileges:true
-    user: "10001:10001"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
 
   redis:
     image: redis:7-alpine
@@ -179,7 +95,10 @@ services:
     # silently dropping work while the service still looks up. With
     # `noeviction` a full broker fails loudly on write instead, which is what
     # `checks_dispatch_failures_total` and /health/checks report.
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction", "--protected-mode", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction", "--protected-mode", "no"]
+    # protected-mode no is safe: no host ports published (expose only), so
+    # Redis is reachable solely from containers on this isolated network.
+    # `yes` breaks Celery (DENIED, no password set) — do not revert.
     expose:
       - "6379"
     networks:
@@ -191,13 +110,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    read_only: true
+    # NOT read-only/cap-dropped: the redis entrypoint needs setuid to drop
+    # privileges and write access to /data (appendonly). Isolated by network.
     tmpfs:
       - /tmp
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
     deploy:
       resources:
         limits:
@@ -213,8 +129,10 @@ networks:
   public:
     name: reliastra-public
   internal:
+    # NOT `internal: true`: an isolated bridge breaks Docker's embedded DNS
+    # forwarding for external names (Supabase pooler → SERVFAIL). The network
+    # has no published ports except via the proxy, which is isolation enough.
     name: reliastra-internal
-    internal: true
 
 volumes:
   caddy_data:

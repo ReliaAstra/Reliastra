@@ -30,8 +30,14 @@
 		}
 	}
 
-	# Backend API — explicit prefix to avoid accidental exposure
-	handle /api/* {
+	# NOTE: there is intentionally NO `handle /api/*` block. All /api/*
+	# traffic goes to Next.js (catch-all above), whose /api/* route
+	# handlers proxy to the backend with cookie->header auth re-injection
+	# (see frontend/src/lib/backend-proxy.ts). A direct `handle /api/* ->
+	# api:8000` would shadow those routes AND 404, because the backend
+	# serves /v1/*, not /api/v1/*. Direct backend consumers use /v1/*,
+	# /health*, /docs* below.
+	handle /v1/* {
 		reverse_proxy reliastra-api:8000
 	}
 	handle /health* {
