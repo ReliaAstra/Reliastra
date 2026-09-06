@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 import os
 import tempfile
@@ -120,6 +121,28 @@ async def mock_redis() -> AsyncGenerator[fakeredis.aioredis.FakeRedis, None]:
 async def fake_redis(mock_redis: fakeredis.aioredis.FakeRedis) -> AsyncGenerator[fakeredis.aioredis.FakeRedis, None]:
     """Alias for the autouse fakeredis fixture (kept for explicit tests)."""
     yield mock_redis
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def _reset_paystack_http_pool() -> AsyncGenerator[None, None]:
+    """Drop the pooled Paystack client between tests.
+
+    The billing service caches one process-global httpx.AsyncClient
+    (``_paystack_http_client``). Tests patch ``httpx.AsyncClient`` per test
+    with a MockTransport that captures into that test's own dict — but a
+    client built by an EARLIER test keeps serving later tests, so their
+    requests succeed (200) while landing in the wrong capture dict
+    (``KeyError: 'body'``). ASGITransport never runs app lifespan, so nothing
+    else closes the pool. Reset here; production lifespan still owns it.
+    """
+    yield
+    from app.modules.billing import service as billing_service
+
+    client = billing_service._paystack_http_client
+    billing_service._paystack_http_client = None
+    if client is not None:
+        with contextlib.suppress(Exception):
+            await client.aclose()
 
 
 @pytest_asyncio.fixture(scope="function")

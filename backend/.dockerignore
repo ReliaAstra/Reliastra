@@ -22,3 +22,10 @@ dist/
 build/
 *.egg-info/
 .nixpacks.toml
+.venv/
+.venv
+venv/
+__pycache__/
+*.pyc
+*.log
+backend-dev.log

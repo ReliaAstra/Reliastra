@@ -193,6 +193,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase repo for registry refs
+        id: repo
+        # ghcr.io paths must be lowercase; github.repository keeps the
+        # owner's mixed case (ReliaAstra/...) which syft rejects.
+        run: echo "lc=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -231,14 +237,14 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ghcr.io/${{ github.repository }}
+          subject-name: ghcr.io/${{ steps.repo.outputs.lc }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
       - name: Generate SBOM (Syft)
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          image: ghcr.io/${{ steps.repo.outputs.lc }}@${{ steps.build.outputs.digest }}
           format: spdx-json
           output-file: sbom.spdx.json
 
@@ -253,7 +259,7 @@ jobs:
         # Pinned to full SHA (zero-trust): see FS scan step above.
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          image-ref: ghcr.io/${{ steps.repo.outputs.lc }}@${{ steps.build.outputs.digest }}
           format: sarif
           output: trivy-image.sarif
           severity: CRITICAL,HIGH
