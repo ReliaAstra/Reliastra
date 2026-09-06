@@ -176,8 +176,14 @@ def otp_test_harness(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     ``TEST_OTP_CODE`` so the hard gate can be walked end to end. Outbound mail
     is captured in the returned list instead of hitting a real SMTP socket
     (which would otherwise block for the client's 3s timeout on every signup).
+    RESEND_API_KEY is blanked so a developer workstation holding live keys can
+    never send real provider mail from a test run — delivery assertions run
+    against the SMTP-capture fallback path.
     """
+    from app.config import settings as _test_settings
     from app.modules.auth import otp_service as otp_module
+
+    monkeypatch.setattr(_test_settings, "RESEND_API_KEY", None)
 
     monkeypatch.setattr(
         otp_module, "generate_otp_code", lambda *args, **kwargs: TEST_OTP_CODE

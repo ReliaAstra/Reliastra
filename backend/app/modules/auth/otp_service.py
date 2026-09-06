@@ -21,7 +21,6 @@ Security properties:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -33,7 +32,6 @@ from app.core.exceptions import (
     RateLimitExceededException,
     ValidationException,
 )
-from app.infrastructure.email import email_client
 from app.infrastructure.email_layout import escape, render_email
 from app.modules.auth.constants import (
     OTP_EXPIRE_MINUTES,
@@ -155,18 +153,28 @@ class EmailOTPService:
         )
 
         plain, html = _render_otp_email(user.full_name, code)
-        # ``send_email`` is blocking SMTP; never run it on the event loop.
+        # Resend-first with SMTP fallback (never SMTP-only: production has no
+        # local MTA). The code is already persisted above, so a mail failure
+        # must not roll back registration — the user can hit "Resend code".
         try:
-            await asyncio.to_thread(
-                email_client.send_email,
-                to_email=user.email,
+            from app.modules.email_events.sender import send_transactional_email
+
+            ok, _resend_id = await send_transactional_email(
+                session,
+                to=user.email,
                 subject=f"{code} is your Reliastra verification code",
-                body=plain,
-                html_body=html,
+                html=html,
+                text=plain,
+                category="verification",
+                user_id=user.id,
             )
+            if not ok:
+                logger.warning(
+                    "Verification email to user %s not delivered "
+                    "(all providers failed)",
+                    user.id,
+                )
         except Exception:
-            # The code is already persisted. A transient SMTP failure must not
-            # roll back registration — the user can hit "Resend code".
             logger.exception("Failed to send verification code to user %s", user.id)
 
         logger.info("Issued email verification code for user %s", user.id)
