@@ -119,8 +119,13 @@ api_key_limiter = SlidingWindowRateLimiter(
     limit=1000, window_seconds=60, key_prefix="rl_apikey"
 )
 ip_limiter = SlidingWindowRateLimiter(limit=100, window_seconds=60, key_prefix="rl_ip")
+# Public vendor surfaces (landing live-data + /track) fetch detail, timeline
+# and history per vendor in parallel: one page load is ~20 requests (doubled
+# by StrictMode remount), plus a 15s auto-refresh. 60/min self-429s a single
+# localhost client (all local traffic shares one IP key) and single-tab
+# browsing behind NAT. 300/min still caps abuse at 5 rps average.
 public_vendor_limiter = SlidingWindowRateLimiter(
-    limit=60, window_seconds=60, key_prefix="rl_vendor"
+    limit=300, window_seconds=60, key_prefix="rl_vendor"
 )
 # Manual check triggering is a diagnostic, not a data path: generous enough to
 # prove the pipeline repeatedly, tight enough that it cannot be used to drive
