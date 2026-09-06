@@ -170,3 +170,51 @@ describe('robots.txt policy', () => {
     expect(dis.some((d) => d.includes('_next') || d.includes('.css') || d.includes('.js'))).toBe(false);
   });
 });
+
+describe('machine-readable discovery', () => {
+  it('serves llms.txt and llms-full.txt as plain text with absolute URLs', async () => {
+    const llms = await import('@/app/llms.txt/route');
+    const full = await import('@/app/llms-full.txt/route');
+    for (const mod of [llms, full]) {
+      const res: Response = await mod.GET();
+      expect(res.status).toBe(200);
+      expect(res.headers.get('Content-Type')).toContain('text/plain');
+      const body = await res.text();
+      expect(body).toContain('https://reliastra.com/');
+      expect(body).toContain('External Dependency Intelligence');
+    }
+    const body = await (await llms.GET()).text();
+    for (const path of ['/track', '/docs', '/pricing', '/security', '/research', '/partner']) {
+      expect(body).toContain(`https://reliastra.com${path}`);
+    }
+  });
+
+  it('keeps public page titles unique across the IA', () => {
+    // Titles below mirror the `buildMetadata` inputs of indexable pages
+    // (the `| RELIASTRA` template suffix applies at render). Any duplicate
+    // here is a real duplicate-title defect, not a template artifact.
+    const titles = [
+      'RELIASTRA — External Dependency Intelligence',
+      'Product — External Dependency Intelligence platform',
+      'External Dependency Intelligence',
+      'Third-Party Dependency Monitoring',
+      'SLA Evidence & Outage Proof',
+      'Incident Evidence & Outage Attribution',
+      'Track — Public vendor status | RELIASTRA',
+      'Pricing — Free, Pro & Enterprise',
+      'Security — How RELIASTRA protects your data',
+      'Documentation',
+      'Quickstart — First check in minutes',
+      'Monitoring docs — Checks, regions, states',
+      'Evidence docs — Generate, share, verify',
+      'API docs — Programmatic access',
+      'Glossary — Dependency intelligence concepts',
+      'Research — RELIASTRA',
+      'About — Why RELIASTRA exists',
+      'Contact — Talk to RELIASTRA',
+      'Status — Platform health',
+      'Partner Network — Earn recurring revenue',
+    ];
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+});

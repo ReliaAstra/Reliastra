@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Navbar } from '@/components/landing/sections/Navbar';
+import { Navbar, NAV } from '@/components/landing/sections/Navbar';
 import { Footer } from '@/components/landing/sections/Footer';
 import {
   ADMIN_ROUTES,
@@ -147,5 +147,45 @@ describe('marketing navigation link integrity', () => {
     // to non-existent section ids. Every footer entry must now be a real link.
     const footerButtons = footerMarkup.match(/<button\b/gi) ?? [];
     expect(footerButtons).toEqual([]);
+  });
+
+  it('exposes the sitelinks-candidate hierarchy with descriptive labels', () => {
+    // Sitelink candidates must be prominent, stable, crawlable links with
+    // labels that name their destination — never vague "Explore/Solutions".
+    const banned = [/explore/i, /solutions/i, /^platform$/i, /^learn$/i];
+    const flat: { label: string; href: string }[] = [];
+    for (const entry of NAV) {
+      if ('children' in entry) flat.push(...entry.children);
+      else flat.push(entry);
+    }
+    expect(flat.length).toBeGreaterThanOrEqual(10);
+    for (const { label, href } of flat) {
+      for (const pattern of banned) {
+        expect(pattern.test(label)).toBe(false);
+      }
+      expect(
+        STATIC_ROUTES.has(href) || isDynamicVendorRoute(href)
+      ).toBe(true);
+    }
+    // The branded-SERP concept destinations are all present.
+    for (const href of [
+      '/external-dependency-intelligence',
+      '/dependency-monitoring',
+      '/sla-evidence',
+      '/track',
+      '/docs',
+      '/pricing',
+      '/security',
+    ]) {
+      expect(flat.some((l) => l.href === href)).toBe(true);
+    }
+  });
+
+  it('renders dropdown links in static markup (no JS required)', () => {
+    // Dropdown panels are always mounted (visibility-only toggle), so the
+    // hierarchy links exist in the SSR HTML crawlers receive.
+    expect(navMarkup).toContain('/external-dependency-intelligence');
+    expect(navMarkup).toContain('/dependency-monitoring');
+    expect(navMarkup).toContain('/sla-evidence');
   });
 });

@@ -59,10 +59,12 @@ export const metadata: Metadata = {
 /**
  * Homepage — server-rendered for crawlers, interactive after hydration.
  *
- * The interactive partner/console shell lives in `HomeClient`. This server
- * wrapper guarantees the initial HTML already contains the brand, the H1,
- * the proposition, internal links and structured data — no crawler ever
- * receives an empty shell that depends on client-side auth resolution.
+ * The interactive partner/console shell lives in `HomeClient`, which
+ * server-renders the full landing (brand, H1, proposition, links) as the
+ * initial HTML — no crawler ever receives an empty shell that depends on
+ * client-side auth resolution. A `<noscript>` duplicate is deliberately
+ * omitted: the SSR landing already carries the content without JavaScript,
+ * and a second copy would split the page across two H1s.
  */
 export default function Home() {
   return (
@@ -87,14 +89,14 @@ export default function Home() {
           faqJsonLd(HOME_FAQS),
         ]}
       />
-      {/* No-JS / minimal-crawler fallback: same proposition and links, no styling dependency. */}
+      {/* No-JS / minimal-crawler fallback: the SSR landing above already
+          carries H1 + copy + links without JavaScript, so this lists only
+          the canonical destinations as plain links (no second H1). */}
       <noscript>
         <div>
-          <h1>RELIASTRA — External Dependency Intelligence</h1>
           <p>
-            Know when your dependencies fail. Prove what happened. RELIASTRA monitors
-            third-party APIs independently, attributes incidents to the responsible
-            vendor, and generates timestamped SLA evidence.
+            RELIASTRA — External Dependency Intelligence. Know when your
+            dependencies fail. Prove what happened.
           </p>
           <ul>
             <li><a href="/product">Product</a></li>

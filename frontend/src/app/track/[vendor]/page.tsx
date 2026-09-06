@@ -2,13 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
+  fetchTrackedVendors,
   fetchVendorPublicIncidents,
   fetchVendorTrack,
   type TrackDeveloperInfo,
   type TrackPublicIncident,
+  type TrackVendorListItem,
 } from '@/lib/track-api';
 import { PreferredSourceSection } from '@/components/seo/preferred-source';
-import { JsonLd } from '@/components/seo/json-ld';
+import { JsonLd, Breadcrumbs } from '@/components/seo/json-ld';
 import { SITE_URL, breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 
 export const revalidate = 60;
@@ -138,6 +140,22 @@ export default async function VendorTrackPage({ params }: Props) {
     publicIncidents = [];
   }
 
+  // Related vendors for the internal link graph: same category first, never
+  // self, never fabricated — only vendors the Track API actually returns. A
+  // failed catalog fetch renders nothing rather than a broken section.
+  let relatedVendors: TrackVendorListItem[] = [];
+  try {
+    const catalog = await fetchTrackedVendors(100);
+    const others = (catalog.items ?? []).filter(
+      (v) => v.vendor_name.toLowerCase() !== data.vendor.vendor_name.toLowerCase()
+    );
+    const sameCategory = others.filter((v) => v.category === data.vendor.category);
+    const rest = others.filter((v) => v.category !== data.vendor.category);
+    relatedVendors = [...sameCategory, ...rest].slice(0, 5);
+  } catch {
+    relatedVendors = [];
+  }
+
   const state = describeState(data);
   const m24 = Object.values(data.metrics_24h?.metrics ?? {})[0];
   const displayName = data.vendor.display_name;
@@ -199,6 +217,13 @@ export default async function VendorTrackPage({ params }: Props) {
       </section>
 
       <div className="mx-auto max-w-[880px] space-y-8 px-6 pt-8">
+        <Breadcrumbs
+          items={[
+            { name: 'Home', href: '/' },
+            { name: 'Track', href: '/track' },
+            { name: displayName, href: `/track/${encodeURIComponent(data.vendor.vendor_name)}` },
+          ]}
+        />
         {/* Current snapshot */}
         <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
@@ -329,6 +354,44 @@ export default async function VendorTrackPage({ params }: Props) {
 
         {/* Preferred Source — vendor intelligence, subtle, after historical data */}
         <PreferredSourceSection variant="vendor" />
+
+        {/* Related vendors + concepts — the crawlable topical graph */}
+        {(relatedVendors.length > 0) && (
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
+              Related vendors
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {relatedVendors.map((v) => (
+                <Link
+                  key={v.id}
+                  href={`/track/${encodeURIComponent(v.vendor_name)}`}
+                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 transition-colors hover:border-cyan-600 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-400 dark:hover:border-cyan-400 dark:hover:text-cyan-400"
+                >
+                  {v.display_name} status
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <nav aria-label="Related concepts" className="flex flex-wrap gap-2">
+          {[
+            { href: '/research/how-reliastra-measures-vendor-reliability', label: 'Measurement methodology' },
+            { href: '/sla-evidence', label: 'SLA evidence' },
+            { href: '/incident-evidence', label: 'Incident attribution' },
+            { href: '/docs/monitoring', label: 'Monitoring docs' },
+            { href: '/track', label: 'All tracked vendors' },
+          ].map((r) => (
+            <Link
+              key={r.href}
+              href={r.href}
+              className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 transition-colors hover:border-cyan-600 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-400 dark:hover:border-cyan-400 dark:hover:text-cyan-400"
+            >
+              {r.label}
+            </Link>
+          ))}
+        </nav>
 
         {/* CTA */}
         <section className="rounded-xl border border-zinc-200 bg-[#F8F9FA] p-6 dark:border-white/10 dark:bg-[#131318] md:p-8">

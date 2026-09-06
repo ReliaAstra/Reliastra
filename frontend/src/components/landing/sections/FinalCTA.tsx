@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { StatusDot } from '@/components/landing/shared/StatusDot';
 import { cn } from '@/lib/utils';
@@ -50,7 +51,8 @@ export function FinalCTA() {
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8, delay: 0.2, ease }}
         >
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#131318]">
+          {/* Illustrative product preview — mock values, never measured data. */}
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#131318]" aria-hidden="true">
             <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
               <div className="flex gap-1.5">
                 <div className="h-[10px] w-[10px] rounded-full bg-white/10" />
@@ -100,6 +102,25 @@ export function FinalCTA() {
             Start Free Today
           </button>
           <p className="mt-4 text-xs text-white/40">Free plan includes up to 3 dependencies · No credit card required</p>
+          <p className="mt-1 text-[11px] text-white/30">Product preview shown with illustrative data</p>
+          <nav aria-label="Product concepts" className="mx-auto mt-8 flex max-w-2xl flex-wrap items-center justify-center gap-2">
+            {[
+              { href: '/product', label: 'Product' },
+              { href: '/external-dependency-intelligence', label: 'External Dependency Intelligence' },
+              { href: '/dependency-monitoring', label: 'Dependency Monitoring' },
+              { href: '/sla-evidence', label: 'SLA Evidence' },
+              { href: '/track', label: 'Vendor Tracking' },
+              { href: '/docs', label: 'Documentation' },
+            ].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/50 transition-colors hover:border-white/40 hover:text-white"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
         </motion.div>
       </div>
     </section>

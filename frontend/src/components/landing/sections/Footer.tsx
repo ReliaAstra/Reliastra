@@ -36,33 +36,21 @@ const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[
   {
     title: 'Product',
     links: [
-      { label: 'Product overview', href: PUBLIC_ROUTES.product },
+      { label: 'Overview', href: PUBLIC_ROUTES.product },
       {
         label: 'External Dependency Intelligence',
         href: PUBLIC_ROUTES.externalDependencyIntelligence,
       },
-      { label: 'Dependency monitoring', href: PUBLIC_ROUTES.dependencyMonitoring },
-      { label: 'SLA evidence', href: PUBLIC_ROUTES.slaEvidence },
-      { label: 'Incident evidence', href: PUBLIC_ROUTES.incidentEvidence },
-      { label: 'Track vendors', href: PUBLIC_ROUTES.track },
-      { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
+      { label: 'Dependency Monitoring', href: PUBLIC_ROUTES.dependencyMonitoring },
+      { label: 'SLA Evidence', href: PUBLIC_ROUTES.slaEvidence },
+      { label: 'Incident Evidence', href: PUBLIC_ROUTES.incidentEvidence },
+      { label: 'Vendor Tracking', href: PUBLIC_ROUTES.track },
     ],
   },
   {
     title: 'Resources',
     links: [
       { label: 'Documentation', href: PUBLIC_ROUTES.docs },
-      { label: 'Quickstart', href: PUBLIC_ROUTES.docsQuickstart },
-      { label: 'API docs', href: PUBLIC_ROUTES.docsApi },
-      { label: 'Glossary', href: PUBLIC_ROUTES.glossary },
-      { label: 'Research Home', href: PUBLIC_ROUTES.research },
-      { label: 'Status', href: PUBLIC_ROUTES.status },
-      { label: 'Security', href: PUBLIC_ROUTES.security },
-    ],
-  },
-  {
-    title: 'Research',
-    links: [
       { label: 'Research Home', href: PUBLIC_ROUTES.research },
       ...RESEARCH_ARTICLES.map((article) => ({
         label:
@@ -73,6 +61,9 @@ const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[
               : 'Research Agenda',
         href: researchRoute(article.slug),
       })),
+      { label: 'Glossary', href: PUBLIC_ROUTES.glossary },
+      { label: 'Status', href: PUBLIC_ROUTES.status },
+      { label: 'Security', href: PUBLIC_ROUTES.security },
     ],
   },
   {
@@ -80,10 +71,14 @@ const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[
     links: [
       { label: 'About', href: PUBLIC_ROUTES.about },
       { label: 'Contact', href: PUBLIC_ROUTES.contact },
-      // Partner support is dual-mode: a public contact form for visitors, the
-      // conversation desk once signed in. Using its URL (rather than a state
-      // navigation) makes it survive a refresh and be shareable.
       { label: 'Support', href: partnerUrl('support') },
+    ],
+  },
+  {
+    title: 'Business',
+    links: [
+      { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
+      { label: 'Partner Network', href: PUBLIC_ROUTES.partner },
       { label: 'Join as partner', href: partnerUrl('signup') },
     ],
   },
@@ -92,7 +87,6 @@ const FOOTER_LINKS: { title: string; links: { label: string; href: string }[] }[
     links: [
       { label: 'Privacy Policy', href: PUBLIC_ROUTES.privacy },
       { label: 'Terms of Service', href: PUBLIC_ROUTES.terms },
-      { label: 'Guarantee', href: partnerUrl('support') },
     ],
   },
 ];

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchTrackedVendors, type TrackVendorListItem } from '@/lib/track-api';
 import { PreferredSourceSection } from '@/components/seo/preferred-source';
-import { JsonLd } from '@/components/seo/json-ld';
+import { JsonLd, Breadcrumbs } from '@/components/seo/json-ld';
 import { breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 
 export const metadata: Metadata = {
@@ -145,6 +145,12 @@ export default function TrackIndexPage() {
       />
       <section className="border-b border-zinc-200 bg-[#F8F9FA] py-14 dark:border-white/10 dark:bg-[#131318] md:py-20">
         <div className="mx-auto max-w-[880px] px-6">
+          <Breadcrumbs
+            items={[
+              { name: 'Home', href: '/' },
+              { name: 'Track', href: '/track' },
+            ]}
+          />
           <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-cyan-700 dark:text-cyan-400">
             RELIASTRA Track
           </p>

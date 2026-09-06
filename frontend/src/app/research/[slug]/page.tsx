@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArticleTemplate } from '@/components/content/article-template';
+import { Breadcrumbs } from '@/components/seo/json-ld';
 import { RESEARCH_ARTICLES, researchRoute, PUBLIC_ROUTES } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 
@@ -54,6 +55,13 @@ export default async function ResearchArticlePage({ params }: Params) {
   return (
     <main className="min-h-screen bg-white dark:bg-[#0A0A0F]">
       <div className="mx-auto max-w-[720px] px-6 pt-10">
+        <Breadcrumbs
+          items={[
+            { name: 'Home', href: '/' },
+            { name: 'Research', href: PUBLIC_ROUTES.research },
+            { name: article.title, href: researchRoute(slug) },
+          ]}
+        />
         <Link
           href={PUBLIC_ROUTES.research}
           className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#71717A] transition-colors hover:text-[#0891B2] dark:hover:text-[#22D3EE]"
