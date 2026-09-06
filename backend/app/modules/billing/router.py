@@ -67,7 +67,7 @@ class PricingTransparencyResponse(BaseModel):
     product_price: str | None = None
     actual_charge: str | None = None
     payment_provider: str = "Paystack"
-    payment_provider_display: str = "Paystack — secure hosted checkout"
+    payment_provider_display: str = "Paystack - secure hosted checkout"
     currency_label: str = "US Dollars (USD)"
 
 
@@ -99,7 +99,7 @@ class PricingPlanResponse(BaseModel):
     features: dict
     # Billing availability: "self_serve" or "contact_sales".
     billing_availability: str
-    # Enterprise/custom indicators — the UI must route Enterprise to Contact
+    # Enterprise/custom indicators - the UI must route Enterprise to Contact
     # Sales and must never render a numeric price for it.
     is_enterprise: bool = False
     is_custom_pricing: bool = False
@@ -181,7 +181,7 @@ async def get_payment_currency() -> PaymentCurrencyResponse:
     and the billing page all read the same object, so the currency statement a
     prospect sees before signing up cannot differ from the one a customer sees
     at checkout. ``fx_reference`` is the cached market estimate (display
-    only — never a pricing input) and is ``null`` when disabled/unavailable.
+    only - never a pricing input) and is ``null`` when disabled/unavailable.
     """
     return PaymentCurrencyResponse(**await currency_payload())
 
@@ -223,7 +223,7 @@ async def get_billing_transactions(
     current_org: Organization = Depends(get_current_org),
     service: BillingService = Depends(get_bill_service),
 ) -> BillingTransactionsResponse:
-    """Payment history — each row states the ACTUAL charged amount/currency.
+    """Payment history - each row states the ACTUAL charged amount/currency.
 
     These are the figures Paystack reported when collecting, persisted at
     payment time (see ``billing_transactions``). The response also carries the
@@ -249,8 +249,8 @@ async def get_checkout_quote(
     """The authoritative quote behind RELIASTRA's checkout page.
 
     The browser chooses *which* plan and interval it wants to see and receives
-    every other figure — price, charge amount, currency, disclosure, payment
-    methods — already resolved. It is the read half of the same resolution the
+    every other figure - price, charge amount, currency, disclosure, payment
+    methods - already resolved. It is the read half of the same resolution the
     write half (``/billing/initialize``) charges with, so what a customer
     reviews is literally what Paystack is asked to collect, and no screen has to
     derive money from a plan id.
@@ -298,7 +298,7 @@ async def verify_transaction(
     service: BillingService = Depends(get_bill_service),
 ) -> VerifyTransactionResponse:
     # Scoped to the caller's organization and replay-protected inside the
-    # service. Domain exceptions propagate through the global handlers —
+    # service. Domain exceptions propagate through the global handlers -
     # wrapping them here used to leak upstream error details (Paystack
     # bodies, DB messages) to clients.
     return await service.verify_transaction(

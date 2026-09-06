@@ -136,7 +136,7 @@ async function request<T>(
   const headers: HeadersInit = {
     // The admin-only marker doubles as the CSRF guard on the server: a
     // cross-site request cannot set a custom header. Cookies carry the
-    // session. There is NO Authorization header — tokens are HttpOnly.
+    // session. There is NO Authorization header - tokens are HttpOnly.
     [ADMIN_SESSION_MARKER]: '1',
     Accept: 'application/json',
   };

@@ -264,10 +264,10 @@ function CustomerTable({
                     <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{customer.email}</span>
                   </Link>
                 </td>
-                <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">{customer.org_name || '—'}</td>
-                <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">{customer.plan ? humanize(customer.plan) : '—'}</td>
+                <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">{customer.org_name || '-'}</td>
+                <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">{customer.plan ? humanize(customer.plan) : '-'}</td>
                 <td className="px-5 py-4 text-sm font-medium tabular-nums text-slate-800 dark:text-slate-100">{formatAdminCurrency(customer.mrr)}</td>
-                <td className="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{customer.last_activity_at ? formatRelativeTime(customer.last_activity_at) : '—'}</td>
+                <td className="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{customer.last_activity_at ? formatRelativeTime(customer.last_activity_at) : '-'}</td>
                 <td className="px-5 py-4"><StatusPill status={customer.health} /></td>
                 <td className="px-5 py-4 text-right"><Link href={`/admin/customers/${customer.customer_id}`} className="inline-flex size-8 items-center justify-center rounded-md text-slate-400 hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:hover:bg-white/10 dark:hover:text-white" aria-label={`Open ${customer.full_name || customer.email}`}><ArrowRight className="size-3.5" /></Link></td>
               </tr>
@@ -407,7 +407,7 @@ function CustomerProfileHeader({ customer }: { customer: CustomerDetailResponse 
   const metrics = [
     ['Health', <StatusPill key="health" status={customer.health} />],
     ['MRR', formatAdminCurrency(customer.mrr)],
-    ['Plan', customer.plan ? humanize(customer.plan) : '—'],
+    ['Plan', customer.plan ? humanize(customer.plan) : '-'],
     ['Customer since', formatAdminDate(customer.created_at)],
   ];
   return (
@@ -477,8 +477,8 @@ function CustomerOverview({ customer }: { customer: CustomerDetailResponse }) {
         <dl className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-white/10 dark:border-white/10">
           <DetailRow label="Account status" value={<StatusPill status={customer.is_active ? 'active' : 'inactive'} />} />
           <DetailRow label="Email verified" value={customer.is_email_verified ? 'Verified' : 'Not verified'} />
-          <DetailRow label="Authentication" value={customer.auth_provider ? humanize(customer.auth_provider) : '—'} />
-          <DetailRow label="Last activity" value={customer.last_activity_at ? formatRelativeTime(customer.last_activity_at) : '—'} />
+          <DetailRow label="Authentication" value={customer.auth_provider ? humanize(customer.auth_provider) : '-'} />
+          <DetailRow label="Last activity" value={customer.last_activity_at ? formatRelativeTime(customer.last_activity_at) : '-'} />
           <DetailRow label="Logins" value={formatCompactNumber(customer.login_count)} />
         </dl>
         <div className="border-t border-slate-100 bg-slate-50/60 px-5 py-4 dark:border-white/10 dark:bg-white/[0.02]">
@@ -520,10 +520,10 @@ function CustomerBilling({ customer }: { customer: CustomerDetailResponse }) {
       <AdminCard>
         <SectionHeading title="Subscription" subtitle="Server-authoritative billing snapshot" />
         <dl className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-white/10 dark:border-white/10">
-          <DetailRow label="Plan" value={customer.plan ? humanize(customer.plan) : '—'} />
+          <DetailRow label="Plan" value={customer.plan ? humanize(customer.plan) : '-'} />
           <DetailRow label="MRR" value={formatAdminCurrency(customer.mrr)} strong />
           <DetailRow label="Billing status" value={<StatusPill status={customer.billing_status || 'unknown'} />} />
-          <DetailRow label="Subscription ID" value={typeof subscription.id === 'string' ? subscription.id : '—'} mono />
+          <DetailRow label="Subscription ID" value={typeof subscription.id === 'string' ? subscription.id : '-'} mono />
         </dl>
       </AdminCard>
       <AdminCard>
@@ -609,7 +609,7 @@ function CustomerPlanSheet({ open, onOpenChange, customer, onSaved }: { open: bo
     onSuccess: async () => { toast.success('Plan change confirmed by RELIASTRA'); await onSaved(); },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'Could not change plan'),
   });
-  return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent className="w-full overflow-y-auto sm:max-w-lg"><SheetHeader><SheetTitle>Change organization plan</SheetTitle><SheetDescription>The backend accepts the plan value supplied here. Review the impact before submitting a financial change.</SheetDescription></SheetHeader><div className="flex-1 space-y-5 px-4"><div className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600 dark:bg-white/[0.03] dark:text-slate-300">Current plan: <strong>{customer.plan ? humanize(customer.plan) : 'No plan'}</strong> · Current MRR: <strong>{formatAdminCurrency(customer.mrr)}</strong></div><div className="space-y-2"><label htmlFor="customer-plan" className="text-xs font-medium text-slate-700 dark:text-slate-200">New plan</label><Input id="customer-plan" value={plan} onChange={(event) => setPlan(event.target.value)} placeholder="Enter the backend plan identifier" /></div><div className="space-y-2"><label htmlFor="plan-reason" className="text-xs font-medium text-slate-700 dark:text-slate-200">Reason</label><Textarea id="plan-reason" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why is this change needed?" /></div></div><SheetFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={!plan.trim()} onClick={() => { onOpenChange(false); setConfirmOpen(true); }}>Review change</Button></SheetFooter></SheetContent></Sheet><ImpactDialog open={confirmOpen} onOpenChange={setConfirmOpen} title="Confirm organization plan change?" description="The server is authoritative for billing and MRR; the dashboard will refresh after confirmation." what={<>{customer.primary_org?.org_name || customer.email}: {customer.plan ? humanize(customer.plan) : '—'} → {plan.trim()}</>} why={reason.trim() || 'No additional reason supplied.'} impact="This may change the organization’s product entitlements and recurring revenue. The action is audited." confirmLabel="Confirm plan change" reasonRequired={false} onConfirm={() => mutation.mutateAsync()} /></>;
+  return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent className="w-full overflow-y-auto sm:max-w-lg"><SheetHeader><SheetTitle>Change organization plan</SheetTitle><SheetDescription>The backend accepts the plan value supplied here. Review the impact before submitting a financial change.</SheetDescription></SheetHeader><div className="flex-1 space-y-5 px-4"><div className="rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600 dark:bg-white/[0.03] dark:text-slate-300">Current plan: <strong>{customer.plan ? humanize(customer.plan) : 'No plan'}</strong> · Current MRR: <strong>{formatAdminCurrency(customer.mrr)}</strong></div><div className="space-y-2"><label htmlFor="customer-plan" className="text-xs font-medium text-slate-700 dark:text-slate-200">New plan</label><Input id="customer-plan" value={plan} onChange={(event) => setPlan(event.target.value)} placeholder="Enter the backend plan identifier" /></div><div className="space-y-2"><label htmlFor="plan-reason" className="text-xs font-medium text-slate-700 dark:text-slate-200">Reason</label><Textarea id="plan-reason" value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Why is this change needed?" /></div></div><SheetFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button><Button disabled={!plan.trim()} onClick={() => { onOpenChange(false); setConfirmOpen(true); }}>Review change</Button></SheetFooter></SheetContent></Sheet><ImpactDialog open={confirmOpen} onOpenChange={setConfirmOpen} title="Confirm organization plan change?" description="The server is authoritative for billing and MRR; the dashboard will refresh after confirmation." what={<>{customer.primary_org?.org_name || customer.email}: {customer.plan ? humanize(customer.plan) : '-'} → {plan.trim()}</>} why={reason.trim() || 'No additional reason supplied.'} impact="This may change the organization’s product entitlements and recurring revenue. The action is audited." confirmLabel="Confirm plan change" reasonRequired={false} onConfirm={() => mutation.mutateAsync()} /></>;
 }
 
 function CustomerEmailSheet({ open, onOpenChange, customer }: { open: boolean; onOpenChange: (open: boolean) => void; customer: CustomerDetailResponse }) {

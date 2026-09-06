@@ -31,7 +31,7 @@ const terms: TermSection[] = [
     heading: '2. The Partner Program',
     body: [
       'The RELIASTRA Partner Network is a referral-based commission program designed for qualified professionals, agencies, and organizations that wish to promote RELIASTRA’s platform and earn recurring revenue from successful referrals.',
-      'Approved partners earn a flat commission of 30% of the monthly subscription fee paid by each referred customer. This commission is recurring in nature—you continue to earn as long as the referred customer maintains an active subscription with RELIASTRA.',
+      'Approved partners earn a flat commission of 30% of the monthly subscription fee paid by each referred customer. This commission is recurring in nature-you continue to earn as long as the referred customer maintains an active subscription with RELIASTRA.',
       'The commission applies to all subscription tiers offered by RELIASTRA. There is no cap on total earnings; your revenue scales directly with the number and size of your active referrals.',
       'RELIASTRA provides partners with a referral link, a partner dashboard for tracking referrals and commissions, and select marketing resources to support promotional efforts.',
     ],
@@ -100,7 +100,7 @@ const terms: TermSection[] = [
       'RELIASTRA reserves the right to terminate your participation immediately and without prior notice if you materially breach these Terms, engage in fraudulent or abusive activity, or otherwise act in a manner that is detrimental to RELIASTRA’s reputation or business interests.',
       'Upon termination, your referral link will be deactivated and you will no longer be eligible to earn new commissions. Pending commissions that have not yet reached the Payable state at the time of termination will be forfeited.',
       'Commissions that have already reached the Payable or Paid state at the time of termination will be processed and disbursed according to the normal payout schedule, subject to RELIASTRA’s right to withhold or recover any commissions arising from fraudulent or prohibited activity.',
-      'Provisions of these Terms that by their nature should survive termination—including but not limited to intellectual property licenses, limitation of liability, and governing law—shall remain in effect following any termination.',
+      'Provisions of these Terms that by their nature should survive termination-including but not limited to intellectual property licenses, limitation of liability, and governing law-shall remain in effect following any termination.',
     ],
   },
   {
@@ -131,7 +131,7 @@ const terms: TermSection[] = [
   {
     heading: '13. Contact',
     body: [
-      'For questions, concerns, or notices related to these Terms of Service or the RELIASTRA Partner Network, please contact us at: RELIASTRA Inc. — Email: support@reliastra.com',
+      'For questions, concerns, or notices related to these Terms of Service or the RELIASTRA Partner Network, please contact us at: RELIASTRA Inc. - Email: support@reliastra.com',
       'We recommend reviewing these Terms periodically to stay informed of any updates. Your participation in the Program is valued, and we are committed to maintaining a transparent and mutually beneficial partnership.',
     ],
   },

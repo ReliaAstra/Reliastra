@@ -106,7 +106,7 @@ class OverviewSystemSection(BaseModel):
 
 
 class AdminOverviewResponse(BaseModel):
-    """Primary admin bootstrap payload — one request for the home screen."""
+    """Primary admin bootstrap payload - one request for the home screen."""
 
     business: OverviewBusinessSection = Field(default_factory=OverviewBusinessSection)
     growth: OverviewGrowthSection = Field(default_factory=OverviewGrowthSection)
@@ -222,7 +222,7 @@ class CustomerDetailResponse(BaseModel):
 
 
 class CustomerUpdateRequest(BaseModel):
-    """Safe profile-state updates only — no high-impact side effects."""
+    """Safe profile-state updates only - no high-impact side effects."""
 
     full_name: str | None = None
     admin_note: str | None = None
@@ -412,7 +412,7 @@ class SupportOverviewResponse(BaseModel):
 
 
 class SupportTicketWorkspaceResponse(BaseModel):
-    """Complete support workspace — ticket + customer context."""
+    """Complete support workspace - ticket + customer context."""
 
     ticket: dict[str, Any]
     messages: list[dict[str, Any]] = Field(default_factory=list)

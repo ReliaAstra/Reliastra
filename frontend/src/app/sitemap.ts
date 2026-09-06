@@ -10,7 +10,7 @@ import { fetchTrackedVendors } from '@/lib/track-api';
  * pages (/login, /signup, /verify-email, /reset-password), token-scoped
  * shares (/portal/*, /reports/*), /checkout, /api/*, partner auth/support
  * slugs (/partner/login, /partner/signup, …), and legacy `/?page=*`
- * query URLs (permanently redirected to `/partner/*` by the proxy) — none
+ * query URLs (permanently redirected to `/partner/*` by the proxy) - none
  * of which must create index bloat.
  * Includes: all canonical marketing/docs/glossary/research pages plus live
  * public vendor pages enumerated from the Track API (with graceful fallback
@@ -39,7 +39,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
-  // Dynamic vendor pages — only for vendors the API actually returns.
+  // Dynamic vendor pages - only for vendors the API actually returns.
   // Never fabricate vendor URLs: if the API is unreachable, emit the static
   // set only. Vendor detail pages revalidate every 60s; the sitemap lists
   // them so crawlers can discover legitimate telemetry-backed pages.

@@ -44,8 +44,8 @@ Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
 
 Details: [`docs/architecture/OVERVIEW.md`](docs/architecture/OVERVIEW.md).
 
-API contract changes — including the billing/checkout endpoints and their status-code
-semantics — are recorded in
+API contract changes - including the billing/checkout endpoints and their status-code
+semantics - are recorded in
 [`backend/docs/API_CHANGELOG.md`](backend/docs/API_CHANGELOG.md).
 
 The frontend proxies Partner Network calls to the production API at `https://api.reliastra.com/v1`. Override with `RELIASTRA_API_URL` for local or staging backends.
@@ -81,7 +81,7 @@ There is no frontend unit-test script in `package.json`.
 
 ## Backend development
 
-Requires Python 3.11+ and Redis 7+. Persistence is **Supabase Postgres + Supabase Storage (S3)** — there is no local PostgreSQL or MinIO.
+Requires Python 3.11+ and Redis 7+. Persistence is **Supabase Postgres + Supabase Storage (S3)** - there is no local PostgreSQL or MinIO.
 
 ```bash
 cd backend
@@ -101,7 +101,7 @@ cd backend
 docker-compose up -d --build
 ```
 
-That starts Redis, MailHog, the API, and Celery workers. Postgres and object storage are **Supabase only** — set `DATABASE_URL` (Supabase pooler URI) and `SUPABASE_S3_*` in `backend/.env` before compose (see `backend/.env.example`).
+That starts Redis, MailHog, the API, and Celery workers. Postgres and object storage are **Supabase only** - set `DATABASE_URL` (Supabase pooler URI) and `SUPABASE_S3_*` in `backend/.env` before compose (see `backend/.env.example`).
 
 Health check: `GET http://localhost:8000/health`
 
@@ -140,7 +140,7 @@ Or from the repo root: `make test` (backend pytest) and `make lint`.
 
 ## All-in-one container
 
-A single production image runs the entire stack — frontend (:3000), API (:8000), Redis, and Celery worker/beat under `supervisord`:
+A single production image runs the entire stack - frontend (:3000), API (:8000), Redis, and Celery worker/beat under `supervisord`:
 
 ```bash
 docker build -t reliastra-allinone .
@@ -182,4 +182,4 @@ CI is path-aware: changes under `frontend/**` run frontend checks; changes under
 
 ## License
 
-Proprietary — All rights reserved.
+Proprietary - All rights reserved.

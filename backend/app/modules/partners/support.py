@@ -2,7 +2,7 @@
 
 Partners open conversations from their dashboard; those conversations are
 *the same* ``feedback_tickets`` / ``feedback_messages`` rows the admin support
-workspace at ``/v1/admin/support/*`` already works on — there is no separate
+workspace at ``/v1/admin/support/*`` already works on - there is no separate
 partner inbox to keep in sync. A partner ticket is tagged ``source=
 "partner_dashboard"`` and ``category="partner"`` so the admin can filter for it.
 

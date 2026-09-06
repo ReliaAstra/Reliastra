@@ -24,7 +24,7 @@ function makeClient() {
  * Session bootstrap for the console.
  *
  * The refresh token in localStorage is only a convenience to obtain a fresh
- * access token — every entitlement decision (plan, trial, admin) is made by
+ * access token - every entitlement decision (plan, trial, admin) is made by
  * the backend from the resulting JWT. Without a session the console routes
  * to the shared sign-in screen instead of rendering fabricated demo data.
  *
@@ -105,8 +105,8 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
   // Gate the console on a resolved, authenticated session.
   //
   // `hydrated` was written by the bootstrap effect above but never read, so
-  // every console route rendered its full chrome — top bar, sidebar and page
-  // content — to an unauthenticated visitor, and only redirected once the
+  // every console route rendered its full chrome - top bar, sidebar and page
+  // content - to an unauthenticated visitor, and only redirected once the
   // effect fired. Queries were already gated by `useSessionReady()`, so this
   // produced no 401 storm, but it did serve console UI (and its HTML) to
   // anonymous visitors and flash it before bouncing to /login.

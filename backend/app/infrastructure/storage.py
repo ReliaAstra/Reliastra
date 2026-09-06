@@ -17,7 +17,7 @@ class StorageError(RuntimeError):
 
 
 class StorageClient:
-    """Supabase Storage S3 client (boto3 — the only supported backend).
+    """Supabase Storage S3 client (boto3 - the only supported backend).
 
     One provider, one code path: every operation goes through a boto3 S3
     client configured for the Supabase S3-compatible API with path-style
@@ -53,7 +53,7 @@ class StorageClient:
         self._client: Any = None
 
     # ------------------------------------------------------------------
-    # Client initialisation (lazy — never at import time)
+    # Client initialisation (lazy - never at import time)
     # ------------------------------------------------------------------
 
     def _get_client(self) -> Any:
@@ -76,7 +76,7 @@ class StorageClient:
             ]
             if missing:
                 raise StorageError(
-                    "Supabase Storage S3 is not configured — missing: "
+                    "Supabase Storage S3 is not configured - missing: "
                     + ", ".join(missing)
                     + ". Set them from the Supabase dashboard "
                     "(Storage → S3 Access Keys)."
@@ -116,7 +116,7 @@ class StorageClient:
     def ensure_bucket_exists(self) -> None:
         """Verify the configured bucket exists on Supabase Storage.
 
-        Buckets are provisioned in the Supabase dashboard — the app never
+        Buckets are provisioned in the Supabase dashboard - the app never
         auto-creates them.  Raises ``StorageError`` (naming the bucket) when
         the bucket is missing or the store is unreachable (FIX 35).
         """
@@ -141,7 +141,7 @@ class StorageClient:
         object_name: str,
         content_type: str = "application/pdf",
     ) -> str:
-        # FIX 35: raise on any storage failure — no silent local fallback.
+        # FIX 35: raise on any storage failure - no silent local fallback.
         self.ensure_bucket_exists()
         client = self._get_client()
         try:
@@ -175,7 +175,7 @@ class StorageClient:
     # ------------------------------------------------------------------
 
     def download_bytes(self, object_name: str) -> bytes:
-        # FIX 35: raise on any storage failure — no silent local fallback.
+        # FIX 35: raise on any storage failure - no silent local fallback.
         self.ensure_bucket_exists()
         client = self._get_client()
         try:
@@ -194,7 +194,7 @@ class StorageClient:
     # ------------------------------------------------------------------
 
     def get_presigned_url(self, object_name: str, expires_seconds: int = 3600) -> str:
-        # FIX 35: raise on any storage failure — no fake local preview URLs.
+        # FIX 35: raise on any storage failure - no fake local preview URLs.
         self.ensure_bucket_exists()
         client = self._get_client()
         try:

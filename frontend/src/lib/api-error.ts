@@ -4,7 +4,7 @@
  * The backend answers every failure with
  * `{ error: { code, message, details: [{ field, issue }] } }`. Call sites used
  * to do `data.error || 'Signup failed'`, which hands an *object* to
- * `new Error(...)` and renders as "[object Object]" — so real, actionable
+ * `new Error(...)` and renders as "[object Object]" - so real, actionable
  * messages (and the machine-readable codes the OTP flow keys off) were lost.
  */
 

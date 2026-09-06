@@ -1,6 +1,6 @@
 """partner_notification_preferences
 
-Adds ``partner_notification_preferences`` — per-partner delivery preferences
+Adds ``partner_notification_preferences`` - per-partner delivery preferences
 for the partner program's notification system (email copy per event type plus
 the browser/Chrome notification opt-in). In-app notifications are always
 delivered and are therefore not gated by a column here.

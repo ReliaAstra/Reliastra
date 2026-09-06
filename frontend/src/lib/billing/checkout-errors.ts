@@ -1,5 +1,5 @@
 /**
- * Checkout failure states — RELIASTRA's wording, keyed by the backend's reason
+ * Checkout failure states - RELIASTRA's wording, keyed by the backend's reason
  * slug.
  *
  * Why a table instead of showing `error.message`: the customer must never be
@@ -14,7 +14,7 @@
  *
  * The slugs mirror `backend/app/core/checkout_reasons.py` (CheckoutReason);
  * `backend/tests/unit/test_checkout_failure_reasons.py` diffs the two lists,
- * because an unknown slug silently degrades into a generic error — precisely the
+ * because an unknown slug silently degrades into a generic error - precisely the
  * failure mode this table exists to remove.
  *
  * The distinction that drives the design is *has money moved?*. `cancelled` and
@@ -35,7 +35,7 @@ export interface CheckoutFailureCopy {
   /** The single next action. */
   action: string;
   tone: CheckoutOutcomeTone;
-  /** Show "try again" — the same click is safe and meaningful. */
+  /** Show "try again" - the same click is safe and meaningful. */
   retry: boolean;
   /** Offer support contact, because the customer may need a human. */
   support: boolean;
@@ -61,7 +61,7 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   payment_cancelled: {
     title: 'Payment cancelled',
     body: 'You closed the payment window before it completed, so nothing was charged. Your plan is unchanged.',
-    action: 'Continue when you are ready — the amount stays exactly as shown here.',
+    action: 'Continue when you are ready - the amount stays exactly as shown here.',
     tone: 'neutral',
     retry: true,
     support: false,
@@ -76,7 +76,7 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   },
   verification_unavailable: {
     title: 'Confirming your payment',
-    body: 'We could not reach the payment provider to confirm your payment yet. If you completed the charge, it is not lost — every payment is verified automatically.',
+    body: 'We could not reach the payment provider to confirm your payment yet. If you completed the charge, it is not lost - every payment is verified automatically.',
     action: 'Please wait a few minutes and refresh this page. Do not pay again.',
     tone: 'attention',
     retry: false,
@@ -101,7 +101,7 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   payment_pending: {
     title: 'Payment is processing',
     body: 'Your bank is still finalizing this payment. Nothing further is needed from you right now.',
-    action: 'We will activate your plan as soon as it settles — check back shortly.',
+    action: 'We will activate your plan as soon as it settles - check back shortly.',
     tone: 'neutral',
     retry: false,
     support: false,
@@ -181,8 +181,8 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   session_expired: {
     title: 'Your session expired',
     body:
-      'You are no longer signed in, so this step could not be completed. Nothing on your account has changed — and if you had already paid, your payment is not lost: signing back in confirms it and applies it.',
-    action: 'Sign in again and return to checkout — the amount will be exactly as shown here.',
+      'You are no longer signed in, so this step could not be completed. Nothing on your account has changed - and if you had already paid, your payment is not lost: signing back in confirms it and applies it.',
+    action: 'Sign in again and return to checkout - the amount will be exactly as shown here.',
     tone: 'attention',
     retry: false,
     // Deliberately not "try again": the same click fails the same way until the
@@ -201,7 +201,7 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   network_interrupted: {
     title: 'Connection interrupted',
     body: 'We lost the connection to RELIASTRA mid-checkout. We cannot tell from here whether your payment completed.',
-    action: 'Reload this page — if you paid, your plan will activate; otherwise you can try again.',
+    action: 'Reload this page - if you paid, your plan will activate; otherwise you can try again.',
     tone: 'attention',
     retry: false,
     support: false,
@@ -217,7 +217,7 @@ const GENERIC_FAILURE: CheckoutFailureCopy = {
   support: true,
 };
 
-/** Every slug the UI has copy for — asserted against the backend's registry. */
+/** Every slug the UI has copy for - asserted against the backend's registry. */
 export const CHECKOUT_FAILURE_REASONS = Object.keys(CHECKOUT_FAILURE_COPY);
 
 export function failureCopyFor(reason?: string | null): CheckoutFailureCopy {
@@ -228,8 +228,8 @@ export function failureCopyFor(reason?: string | null): CheckoutFailureCopy {
 /**
  * Normalize anything the checkout catches into displayable copy.
  *
- * A 401 is treated as a session expiry wherever it comes from — including the
- * shared API client, which raises its own sentence for it — because the correct
+ * A 401 is treated as a session expiry wherever it comes from - including the
+ * shared API client, which raises its own sentence for it - because the correct
  * action ("sign in again, the amount will not change") is not the generic one.
  * A transport failure (fetch rejecting, no HTTP status at all) is reported as an
  * interruption rather than a refusal, since the customer's payment may have

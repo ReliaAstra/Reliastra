@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Pricing — Free, Pro & Enterprise',
+  title: 'Pricing - Free, Pro & Enterprise',
   description:
     'RELIASTRA pricing: Free (3 dependencies, 1-minute checks), Pro $39/mo (50 dependencies, 15-second checks, evidence + attribution), Enterprise (custom scale, white-label).',
   path: '/pricing',
@@ -79,7 +79,7 @@ export default function PricingPage() {
             <p>
               Paid plans renew monthly until cancelled and are billed through our payment
               provider. Plan limits are enforced server-side. Full terms govern trials,
-              renewals and cancellations — see <a href="/terms">Terms</a> and{' '}
+              renewals and cancellations - see <a href="/terms">Terms</a> and{' '}
               <a href="/privacy">Privacy</a>.
             </p>
             <h2>What to do next</h2>

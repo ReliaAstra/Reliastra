@@ -79,7 +79,7 @@ function NewConversation({
       <h2 className="text-sm font-semibold">Start a conversation</h2>
       <p className="mt-1 text-xs text-muted-foreground">
         Your message goes straight to the RELIASTRA support desk. Replies appear
-        right here — and you&apos;ll get a notification when one arrives.
+        right here - and you&apos;ll get a notification when one arrives.
       </p>
 
       <div className="mt-5 space-y-4">
@@ -361,7 +361,7 @@ export function PageSupportDesk() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Support</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Signed in as {user?.email || 'your partner account'} — we&apos;ll reply
+            Signed in as {user?.email || 'your partner account'} - we&apos;ll reply
             in this dashboard and by email.
           </p>
         </div>

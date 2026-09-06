@@ -17,7 +17,7 @@
         RELIASTRA USERS          hello@, privacy@, legal@, abuse@
 ```
 
-## Outbound — Resend
+## Outbound - Resend
 Central service: `app/infrastructure/email_resend.py` + `app/modules/email_events/sender.py`
 - Default From: `RESEND_FROM_EMAIL=RELIASTRA <noreply@reliastra.com>`
 - Alerts From: `RESEND_ALERTS_FROM_EMAIL=RELIASTRA <alerts@reliastra.com>`
@@ -31,7 +31,7 @@ Central service: `app/infrastructure/email_resend.py` + `app/modules/email_event
 ### EmailClient fallback
 If `RESEND_API_KEY` not set or Resend fails, `email_resend` falls through to `email_client.send_email` via `asyncio.to_thread`. Existing SMTP still works for dev.
 
-## Inbound — ImprovMX
+## Inbound - ImprovMX
 ImprovMX is **not** in the app. It is DNS MX routing:
 `support@reliastra.com → ImprovMX → your Gmail/Workspace`
 

@@ -113,7 +113,7 @@ class Settings(BaseSettings):
         "console is disabled while it is missing. The frontend admin proxy "
         "uses the same value to verify admin session cookies server-side.",
     )
-    # Supabase Storage S3 API — the ONLY object-storage backend.
+    # Supabase Storage S3 API - the ONLY object-storage backend.
     SUPABASE_S3_ENDPOINT: str = Field(
         default="",
         description="Supabase Storage S3 endpoint URL, e.g. "
@@ -124,7 +124,7 @@ class Settings(BaseSettings):
     SUPABASE_S3_REGION: str = Field(
         default="",
         description="Supabase project region (e.g. 'eu-west-3', 'us-east-1'). "
-        "Required — there is no default region.",
+        "Required - there is no default region.",
     )
     SUPABASE_S3_ACCESS_KEY_ID: str | None = Field(
         default=None,
@@ -139,7 +139,7 @@ class Settings(BaseSettings):
     SUPABASE_S3_BUCKET: str = Field(
         default="",
         description="Supabase Storage bucket name. Buckets are created in the "
-        "Supabase dashboard — the app never creates them.",
+        "Supabase dashboard - the app never creates them.",
     )
     SMTP_HOST: str = Field(
         default="localhost",
@@ -201,7 +201,7 @@ class Settings(BaseSettings):
         },
         description="Business-published PAYMENT prices in NGN kobo (minor "
         "units), separate from the USD product price list. Default: "
-        '{"pro": {"monthly": 6000000, "annual": 60000000}} — i.e. ₦60,000 '
+        '{"pro": {"monthly": 6000000, "annual": 60000000}} - i.e. ₦60,000 '
         "per month and ₦600,000 per year, the published NGN prices. These are "
         "explicit operator decisions \u2014 the application never derives them "
         "from an exchange rate. When PAYSTACK_CURRENCY is NGN and a plan is "
@@ -223,7 +223,7 @@ class Settings(BaseSettings):
         description="Explicit `channels` array sent to "
         "POST /transaction/initialize. Unset -> ['card']. Entries that are "
         "not Paystack channels, or that are country-restricted for the active "
-        "currency, are dropped and logged rather than sent — a global customer "
+        "currency, are dropped and logged rather than sent - a global customer "
         "is never shown USSD, Pay with Bank, QR or mobile money. Accepts a "
         'JSON array (["card"]) or a comma list (card) via env.',
     )
@@ -238,7 +238,7 @@ class Settings(BaseSettings):
     # ── SECURE PAYMENT EXPERIENCE (InlineJS popup) ───────────────────────────
     # The transaction is always initialized server-side with the secret key;
     # only the public key and the returned access code reach the browser. No
-    # card number, expiry or CVC is ever posted to RELIASTRA — Paystack's
+    # card number, expiry or CVC is ever posted to RELIASTRA - Paystack's
     # Cards API requires PCI-DSS attestation and RELIASTRA is not a
     # PCI-attested merchant, so the raw-card path is not implemented by design.
     PAYSTACK_INLINE_JS_ENABLED: bool = Field(
@@ -246,7 +246,7 @@ class Settings(BaseSettings):
         description="Complete payment inside RELIASTRA's checkout using "
         "Paystack InlineJS (popup + resumeTransaction with the access code), "
         "so the customer stays on a RELIASTRA page instead of being redirected. "
-        "When false — or if the provider script cannot load — the checkout "
+        "When false - or if the provider script cannot load - the checkout "
         "falls back to the hosted authorization URL.",
     )
     PAYSTACK_INLINE_JS_URL: str = Field(
@@ -256,7 +256,7 @@ class Settings(BaseSettings):
         "code edit.",
     )
 
-    # ── FX REFERENCE (display context ONLY — never a pricing input) ─────────
+    # ── FX REFERENCE (display context ONLY - never a pricing input) ─────────
     # The customer-facing pages may show a reference USD→NGN rate so the gap
     # between the $39 list price and the ₦ payment price is not a mystery.
     # It is labelled an estimate, attributed to a verifiable public source,
@@ -287,7 +287,7 @@ class Settings(BaseSettings):
     FX_REFERENCE_TIMEOUT_SECONDS: float = Field(
         default=4.0,
         description="Hard timeout for the reference-rate fetch. On failure "
-        "the estimate is simply not shown — nothing falls back to a guess.",
+        "the estimate is simply not shown - nothing falls back to a guess.",
     )
     FX_REFERENCE_CACHE_TTL_SECONDS: int = Field(
         default=3600,
@@ -305,7 +305,7 @@ class Settings(BaseSettings):
         default=False,
         description="Whether to negotiate SMTP TLS when supported",
     )
-    # ── Resend — transactional outbound ────────────────────────────────
+    # ── Resend - transactional outbound ────────────────────────────────
     RESEND_API_KEY: SecretStr | None = Field(
         default=None,
         description="Resend API key (re_...). When set, transactional email uses Resend; otherwise falls back to SMTP.",
@@ -364,7 +364,7 @@ class Settings(BaseSettings):
             "Scheduler/worker heartbeat TTL, expressed as a multiple of "
             "CHECK_SCHEDULE_SECONDS. With the default of 4 a 30s interval "
             "gives a 120s TTL: three missed Beat cycles before the pipeline "
-            "reports itself stale. Never hard-code the TTL — a shorter "
+            "reports itself stale. Never hard-code the TTL - a shorter "
             "interval must not instantly read as 'dead'."
         ),
     )
@@ -424,7 +424,7 @@ class Settings(BaseSettings):
     RELIASTRA_AI_API_KEY: SecretStr | None = Field(
         default=None,
         description="Reliastra's own LLM credential. The only value that must "
-        "be supplied to turn AI explanations on — endpoint, model "
+        "be supplied to turn AI explanations on - endpoint, model "
         "and parameters already have production defaults.",
     )
     RELIASTRA_AI_MAX_TOKENS: int = Field(
@@ -460,7 +460,7 @@ class Settings(BaseSettings):
     def _parse_paystack_channels(cls, value: object) -> object:
         """Accept a JSON array or a comma/space list; blank means "use policy".
 
-        ``PAYSTACK_CHECKOUT_CHANNELS=`` must read as *unset* — RELIASTRA then
+        ``PAYSTACK_CHECKOUT_CHANNELS=`` must read as *unset* - RELIASTRA then
         falls back to the card-only default in ``app.core.payment_channels``.
         Reading a blank as an empty list would be the dangerous version: an
         empty ``channels`` array is not "card only", it is Paystack choosing.
@@ -575,7 +575,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _default_ssl_mode_for_supabase(self) -> Settings:
-        """Supabase always serves TLS — default sslmode to require."""
+        """Supabase always serves TLS - default sslmode to require."""
         if self.DATABASE_SSL_MODE:
             return self
         if _is_supabase_postgres_host(_hostname_from_db_url(self.DATABASE_URL)):
@@ -613,7 +613,7 @@ class Settings(BaseSettings):
         password = self.ADMIN_PASSWORD.get_secret_value() if self.ADMIN_PASSWORD else ""
 
         if not username and not password:
-            # Disabled by default — admin console endpoints fail closed.
+            # Disabled by default - admin console endpoints fail closed.
             return self
         if not username or not password:
             raise ValueError(
@@ -794,7 +794,7 @@ class Settings(BaseSettings):
 
     # ── Partner Network / Distribution Infrastructure ────────────────────────
     # Canonical public origin used to build partner referral links. NEVER
-    # hardcode "https://reliastra.com" anywhere in the codebase — read it here.
+    # hardcode "https://reliastra.com" anywhere in the codebase - read it here.
     RELIASTRA_PUBLIC_URL: str = Field(
         default="https://reliastra.com",
         description="Canonical public website origin used to build partner "

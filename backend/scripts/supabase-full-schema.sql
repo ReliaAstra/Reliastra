@@ -1,5 +1,5 @@
 -- =============================================================================
--- RELIASTRA — FULL APPLICATION SCHEMA
+-- RELIASTRA - FULL APPLICATION SCHEMA
 -- =============================================================================
 -- Run this in the Supabase SQL Editor on a FRESH database.
 -- Creates every table, index, and seed data the application requires.
@@ -538,7 +538,7 @@ CREATE INDEX IF NOT EXISTS ix_obs_endpoint_region_ts
 COMMIT;
 
 -- =============================================================================
--- DONE — 24 tables, all indexes, all seed data, all foreign keys.
+-- DONE - 24 tables, all indexes, all seed data, all foreign keys.
 -- =============================================================================
 -- Tables created (in dependency order):
 --   1.  users

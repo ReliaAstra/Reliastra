@@ -136,7 +136,7 @@ class AgencyService:
     ) -> PortfolioResponse:
         """Roll up every client's SLA posture for the agency portal.
 
-        Efficiency: exactly five queries regardless of client count —
+        Efficiency: exactly five queries regardless of client count -
         clients, applications, dependency counts per app, one BULK check-stats
         aggregation across all dependencies, and two grouped incident queries.
         """

@@ -15,7 +15,7 @@ export { ADMIN_ACCESS_COOKIE, ADMIN_REFRESH_COOKIE, requestIsSecure };
  *
  * Kept in a separate module from `admin-backend-proxy.ts` so the proxy can
  * reuse the exact same cookie attributes (Secure/SameSite/Partitioned) as
- * the API route handlers — a mismatch there is what silently discards a
+ * the API route handlers - a mismatch there is what silently discards a
  * session on the preview edge.
  */
 

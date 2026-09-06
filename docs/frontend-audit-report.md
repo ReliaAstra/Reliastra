@@ -1,7 +1,7 @@
 # Frontend production bug audit & remediation
 
 **Date:** 2026-09-06
-**Scope:** full frontend correctness audit — routes, navigation, auth gating,
+**Scope:** full frontend correctness audit - routes, navigation, auth gating,
 error states, SSR, accessibility, production build.
 **Method:** static analysis, a real production build served by `node`, a real
 headless Chromium, and mutation-testing of the guards I added.
@@ -22,7 +22,7 @@ headless Chromium, and mutation-testing of the guards I added.
 | Protected routes | **PASS** | 6 console routes redirect to `/login` in a real browser |
 | Session expiration | **PASS** | 18 vitest cases; `session-expiry.ts` unchanged and still redacts |
 | API calls | **PASS** | 3 proxy bases verified; failed calls are 502 `BACKEND_UNAVAILABLE`, not 404 |
-| Mobile | **PASS** | 390/768/1280/1440 — no horizontal overflow, footer reachable |
+| Mobile | **PASS** | 390/768/1280/1440 - no horizontal overflow, footer reachable |
 | Console | **PASS** | 0 console errors, 0 page errors, 0 hydration errors on 13 routes |
 | Hydration | **PASS (runtime)** | Playwright asserts no hydration text on every public route |
 | Accessibility | **PASS (baseline)** | 0 unnamed buttons, 0 unlabeled inputs, 0 images w/o alt, 1 `h1`, 0 heading jumps |
@@ -66,12 +66,12 @@ $ PW_CHROMIUM_PATH=/tmp/chromium PW_CHROMIUM_LIB_PATH=/tmp/nsslibs \
 `grep` found no `src/app/research/` at all. The footer and navbar linked to
 `/research` plus three specific slugs, and `components/content/article-template.tsx`
 was a complete, unused article template with JSON-LD, evidence and methodology
-sections — so the routes were *intended* and simply never created.
+sections - so the routes were *intended* and simply never created.
 
 Created `/research` (index) and `/research/[slug]` backed by
 `RESEARCH_ARTICLES`, a single constant that drives `generateStaticParams`, the
 index, the footer and the sitemap. The three articles use the existing
-`ArticleTemplate`. Unknown slugs call `notFound()` — a real 404, not a redirect.
+`ArticleTemplate`. Unknown slugs call `notFound()` - a real 404, not a redirect.
 
 Content is methodological and describes behaviour that exists in the codebase
 (scheduling, regional origination, quorum, the SSRF policy, the nine check
@@ -80,7 +80,7 @@ states, evidence checksums, retention). It contains no invented statistics.
 ### 2.2 Footer scrolled to sections that were never rendered
 
 `scrollToId('solution')` and `scrollToId('partners')` targeted ids that exist
-only inside `SolutionSection`/`PartnersSection` — components the landing page
+only inside `SolutionSection`/`PartnersSection` - components the landing page
 does not import. Because `scrollToId` falls back to `window.scrollTo({top:0})`
 when the id is missing, **these were dead links that still looked like they
 worked**.
@@ -96,7 +96,7 @@ Deleted: `SolutionSection`, `PartnersSection`, `FounderSection`,
 
 ### 2.3 "Join as partner" enrolled visitors as customers
 
-`goTo('signup')` resolved to `window.location.assign('/signup')` — the
+`goTo('signup')` resolved to `window.location.assign('/signup')` - the
 **customer** registration form, which posts to `/api/v1/auth/register` and never
 creates a partner profile. The partner form is a separate component that
 registers *and* calls `partnerApi.apply()`.
@@ -112,7 +112,7 @@ anything**. `DashboardProviders` rendered `{children}` unconditionally, so
 `/dashboard` returned the full top bar, sidebar and page content to an anonymous
 visitor and only redirected once the effect fired.
 
-Queries were already gated by `useSessionReady()`, so there was no 401 storm —
+Queries were already gated by `useSessionReady()`, so there was no 401 storm -
 but console UI and its HTML were served to anonymous visitors and flashed before
 the bounce. Now gated on `hydrated && sessionState === 'authenticated'`, using
 the flag that already existed for exactly this purpose.
@@ -120,7 +120,7 @@ the flag that already existed for exactly this purpose.
 ### 2.5 A failed API call rendered as "no data"
 
 Six dashboard pages destructured only `{ data, isLoading }`. On a 500, `data`
-is `undefined`, `isLoading` is false, and the page renders its empty state —
+is `undefined`, `isLoading` is false, and the page renders its empty state -
 exactly the failure mode the brief calls out as critical.
 
 Added `QueryErrorState` (with Retry) and wired it into `dependencies-list`,
@@ -128,7 +128,7 @@ Added `QueryErrorState` (with Retry) and wired it into `dependencies-list`,
 
 Two worse variants in `dependency-detail.tsx`:
 
-- **`?? 100` fabricated a perfect score.** `history?.uptime_percentage ?? row?.uptime_percentage_24h ?? 100` meant a failed history load displayed **100% uptime**. In an SLA-evidence product that reports a vendor as flawless precisely when it could not be measured. Now renders `—`.
+- **`?? 100` fabricated a perfect score.** `history?.uptime_percentage ?? row?.uptime_percentage_24h ?? 100` meant a failed history load displayed **100% uptime**. In an SLA-evidence product that reports a vendor as flawless precisely when it could not be measured. Now renders `-`.
 - **Infinite skeleton.** `if (isLoading || !dep) return <RsSkeleton/>` meant a 404 (deleted dependency) or a 500 shimmered forever with no explanation and no way out.
 
 The check-history table now distinguishes *failed* / *loading* / *genuinely
@@ -153,7 +153,7 @@ from `@/lib/routes`.
 share, research and partner destination. The research slugs and landing section
 ids live there too, so the footer, `generateStaticParams`, the sitemap and the
 link-integrity test all read one list. A route can no longer diverge into a
-stale path — which is precisely how the original 404s happened.
+stale path - which is precisely how the original 404s happened.
 
 ---
 
@@ -167,7 +167,7 @@ What worked: `@sparticuz/chromium` ships a real Chromium binary **inside the npm
 tarball**. It unpacked and launched but needed `libnspr4.so`, `libnss3.so` and
 `libnssutil3.so`. `nm -D` showed only 38 versioned NSS symbols were referenced,
 so I built stub shared objects exporting exactly those (with `NSS_VersionCheck`
-returning success) — Chromium uses BoringSSL for TLS, so NSS is only needed to
+returning success) - Chromium uses BoringSSL for TLS, so NSS is only needed to
 satisfy the dynamic linker for `http://` testing.
 
 Result: a working headless Chromium, driven through the repo's existing
@@ -182,7 +182,7 @@ behaviour.
 
 A test that passes is not evidence until it has been seen to fail.
 
-**vitest nav-link test** — reintroduced the two original bugs (a stale research
+**vitest nav-link test** - reintroduced the two original bugs (a stale research
 slug and `Join as partner → /signup`):
 
 ```
@@ -195,7 +195,7 @@ slug and `Join as partner → /signup`):
 3 failed | 4 passed      → restored → 7 passed
 ```
 
-**Playwright link-integrity test** — injected `/research/a-slug-that-was-never-created`
+**Playwright link-integrity test** - injected `/research/a-slug-that-was-never-created`
 into the footer:
 
 ```
@@ -254,24 +254,24 @@ Three distinct bases, all verified:
 | `/api/admin/*` (`admin-api.ts`) | `api/admin/[...path]` | `/v1/admin/*` |
 | `/api/partners/*` (`partner-api.ts`) | `api/partners/*` → `proxyToBackend` prepends `/v1` | `/v1/partners/*` |
 
-A first static pass reported 48 "unmatched" paths; that was my own error — the
+A first static pass reported 48 "unmatched" paths; that was my own error - the
 matcher assumed a single `/v1` base for all three clients. Re-checking against
 the actual prefixes showed every one resolves.
 
 Live confirmation with the backend down: `/api/v1/vendors`,
 `/api/v1/billing/currency` and `/api/v1/public/analytics/visit` returned
 **502 `BACKEND_UNAVAILABLE`**, not 404. The proxy resolved and the backend was
-absent — the correct classification, and the correct failure to show a user.
+absent - the correct classification, and the correct failure to show a user.
 
 ---
 
 ## 8. Genuinely unresolved
 
-### 8.1 The marketing landing page has no server-rendered content — significant
+### 8.1 The marketing landing page has no server-rendered content - significant
 
 `app/page.tsx` returns a boot splash until a `useEffect` sets `mounted`, because
 `partner-store` is persisted to `localStorage` and SSR cannot read it. The
-production HTML for `/` is 15,473 bytes and contains **only the splash** — no
+production HTML for `/` is 15,473 bytes and contains **only the splash** - no
 hero, navbar, sections, pricing or footer.
 
 ```
@@ -284,7 +284,7 @@ For a marketing site with a sitemap, JSON-LD article templates and a
 not a hydration error (Playwright asserts none on any route) and users are
 unaffected, so I did **not** change it: the fix means altering the marketing
 render path, and the honest way to land that is with a browser watching for
-hydration mismatches across a persisted-store rehydration — a change I would
+hydration mismatches across a persisted-store rehydration - a change I would
 want reviewed rather than shipped at the end of an audit. **This is the highest-
 value remaining item.**
 
@@ -298,9 +298,9 @@ made `?page=support` work and documented the pattern instead.
 
 ### 8.3 Not run this session
 
-- **`e2e/checkout-flow.spec.ts`, `checkout-page.spec.ts`, `pricing-transparency.spec.ts`** — these need the FastAPI backend, Postgres, Redis, the Paystack stand-in and the mail sink. The Python venv at `/home/user/.venv-reliastra` is outside the persisted workspace and was gone this session (`pgserver`, `fastapi`, `celery`, `redis` all missing), so the stack could not be started. They cover checkout and pricing paths this change does not touch, but they were **not** executed and I am not claiming they pass.
-- **Backend `pytest`** — same reason.
-- **Live signup/login/partner registration** — needs the backend. Auth gating was verified in a real browser only for the unauthenticated redirect path.
+- **`e2e/checkout-flow.spec.ts`, `checkout-page.spec.ts`, `pricing-transparency.spec.ts`** - these need the FastAPI backend, Postgres, Redis, the Paystack stand-in and the mail sink. The Python venv at `/home/user/.venv-reliastra` is outside the persisted workspace and was gone this session (`pgserver`, `fastapi`, `celery`, `redis` all missing), so the stack could not be started. They cover checkout and pricing paths this change does not touch, but they were **not** executed and I am not claiming they pass.
+- **Backend `pytest`** - same reason.
+- **Live signup/login/partner registration** - needs the backend. Auth gating was verified in a real browser only for the unauthenticated redirect path.
 
 ### 8.4 Accessibility is a baseline, not a full audit
 

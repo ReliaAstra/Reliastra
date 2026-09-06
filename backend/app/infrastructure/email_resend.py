@@ -73,7 +73,7 @@ def _build_payload(
     correlation_id: str | None,
 ) -> tuple[dict[str, Any], list[str]]:
     recipients = [to] if isinstance(to, str) else to
-    # sanitize tags — only opaque ids, no PII
+    # sanitize tags - only opaque ids, no PII
     safe_tags = tags or []
     # add category tag
     safe_tags = [{"name": "category", "value": category[:64]}] + safe_tags[:9]
@@ -156,7 +156,7 @@ def send_via_resend_sync(
 ) -> tuple[bool, str | None]:
     """Sync version of :func:`send_via_resend` for sync-only call sites.
 
-    Same contract and payload — used by ``EmailClient`` so every SMTP-era
+    Same contract and payload - used by ``EmailClient`` so every SMTP-era
     caller becomes Resend-first without going async. Returns (ok, resend_id).
     Never logs secrets.
     """

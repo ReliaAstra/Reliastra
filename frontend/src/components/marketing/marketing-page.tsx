@@ -7,7 +7,7 @@ export type MarketingLink = { label: string; href: string; description?: string 
 /**
  * Shared shell for indexable marketing/concept/docs pages.
  * One H1 per page (via `title`), logical H2/H3 in children, breadcrumb nav,
- * related internal links, and a consistent CTA — the topical graph in markup.
+ * related internal links, and a consistent CTA - the topical graph in markup.
  */
 export function MarketingPage({
   eyebrow,

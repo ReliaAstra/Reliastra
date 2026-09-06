@@ -184,7 +184,7 @@ class StatusPageService:
         system components. For a platform-wide status page, we may want to show
         incidents tagged with specific root_cause values.
         """
-        # For now, return an empty list — the status page focuses on components.
+        # For now, return an empty list - the status page focuses on components.
         # This can be extended to query platform-wide incidents.
         return []
 

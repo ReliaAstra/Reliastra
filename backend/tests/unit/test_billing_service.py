@@ -66,7 +66,7 @@ async def test_initialize_payment(monkeypatch):
     # The payer address is resolved from organization membership, not taken from
     # the request, so the identity lookups are stubbed to answer as they would
     # for a real member. (tests/integration/test_checkout_flow.py covers the
-    # refusal for an address that belongs to no member — this test is about the
+    # refusal for an address that belongs to no member - this test is about the
     # amount.)
     from app.modules.organizations.repository import OrganizationRepository
     from app.modules.users.repository import UserRepository

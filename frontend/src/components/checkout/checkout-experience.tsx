@@ -53,7 +53,7 @@ import { PaymentMethodPanel } from './payment-method-panel';
  *                    │          │         └──────────┴─────────┴──→ failed
  *                    └── signed-out            └── unavailable
  *
- * `success` is reachable only from a `verified: true` answer from our backend —
+ * `success` is reachable only from a `verified: true` answer from our backend -
  * never from the provider's callback and never from the browser being redirected
  * back. A redirect is a navigation, not a receipt.
  *
@@ -62,7 +62,7 @@ import { PaymentMethodPanel } from './payment-method-panel';
  * If the browser leaves for the hosted fallback and returns with
  * `?reference=…`, the page goes straight to `verifying` and finishes the same
  * way. A mobile browser that discards the tab during the hand-off lands on the
- * same path — which is the point: the reference outlives the page.
+ * same path - which is the point: the reference outlives the page.
  */
 
 export type CheckoutPhase =
@@ -225,7 +225,7 @@ export function CheckoutExperience() {
           });
           setPhase('success');
           // Put the reference in the address bar. A confirmation the customer
-          // cannot reload is a confirmation they cannot trust — and without it,
+          // cannot reload is a confirmation they cannot trust - and without it,
           // a refresh would land back on the review step, one click from paying
           // for a period they have already bought. `replaceState` rather than a
           // router navigation: this page must not re-render (or re-quote) as a
@@ -257,7 +257,7 @@ export function CheckoutExperience() {
         if (!alive()) return;
         // Losing the session while confirming a payment must not look like the
         // payment failed. The reference is still in the URL, so signing back in
-        // lands here and finishes the verification it started — the route into
+        // lands here and finishes the verification it started - the route into
         // the signed-out screen is deliberate, and it says so.
         if (error instanceof ApiError && error.status === 401) {
           setPhase('signed-out');
@@ -311,7 +311,7 @@ export function CheckoutExperience() {
       }
       // A repricing while this page sat open is the one failure where the
       // figures on screen are known to be wrong, so the quote is discarded
-      // rather than offered back for another attempt — retry has to re-price
+      // rather than offered back for another attempt - retry has to re-price
       // before it can re-offer a CTA.
       if (error instanceof ApiError && error.reason === 'quote_stale') {
         setQuote(null);
@@ -331,7 +331,7 @@ export function CheckoutExperience() {
         accessCode: created.access_code,
         callbacks: {
           onSuccess: (response) => {
-            // Not proof of payment — a prompt to ask the backend. Entitlement
+            // Not proof of payment - a prompt to ask the backend. Entitlement
             // is decided by verification, never by this callback.
             void verify(response.reference || created.reference);
           },
@@ -437,6 +437,7 @@ export function CheckoutExperience() {
             if (phase !== 'review') return;
             setIntervalState(next);
           }}
+          onRefresh={() => void loadQuote(interval)}
         />
       </div>
 
@@ -446,6 +447,10 @@ export function CheckoutExperience() {
         handingOff={handingOff}
         session={session}
         onContinue={continueToPayment}
+        // The live-rate retry re-prices from the backend: the same quote call
+        // that prices the charge also re-resolves the FX reference from its
+        // source, so one action covers both.
+        onRefreshQuote={() => void loadQuote(interval)}
       />
     </div>
   );

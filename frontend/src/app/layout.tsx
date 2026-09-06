@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com'
   ),
   title: {
-    default: "RELIASTRA — External Dependency Intelligence",
+    default: "RELIASTRA - External Dependency Intelligence",
     template: "%s | RELIASTRA",
   },
   description:
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     icon: "/logo.svg",
   },
   openGraph: {
-    title: "RELIASTRA — External Dependency Intelligence",
+    title: "RELIASTRA - External Dependency Intelligence",
     description:
       "Monitor third-party APIs independently. When vendors fail, generate timestamped SLA evidence reports to claim credits and prove fault.",
     url: "https://reliastra.com",
@@ -60,13 +60,13 @@ export const metadata: Metadata = {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "RELIASTRA — External Dependency Intelligence",
+        alt: "RELIASTRA - External Dependency Intelligence",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "RELIASTRA — External Dependency Intelligence",
+    title: "RELIASTRA - External Dependency Intelligence",
     description:
       "Monitor third-party APIs. Prove vendor failures. Claim SLA credits.",
     images: ["/opengraph-image"],
@@ -92,7 +92,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
-        {/* Google Preferred Sources — publisher.js loaded once, async, non-blocking */}
+        {/* Google Preferred Sources - publisher.js loaded once, async, non-blocking */}
         <Script
           src="https://news.google.com/swg/js/v1/publisher.js"
           strategy="afterInteractive"

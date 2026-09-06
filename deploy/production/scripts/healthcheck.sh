@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# healthcheck.sh — liveness vs readiness
+# healthcheck.sh - liveness vs readiness
 # Usage: ./healthcheck.sh --timeout 120
 #
 # NOTE: the api container publishes NO host ports by design (only the proxy

@@ -9,7 +9,7 @@ These lock down behaviour that was previously broken:
 * a dependency going down produces a notification the customer can actually
   see in the product (the alert channels used to be email/Slack/PagerDuty/
   webhook only, so an org with no configured channel heard nothing at all);
-* the inbox belongs to one person — another user, and an organization API
+* the inbox belongs to one person - another user, and an organization API
   key, must not be able to read it.
 """
 
@@ -27,8 +27,8 @@ from tests.helpers import register_and_verify
 async def _register(async_client, email, full_name):
     """Create an account and clear the email-verification hard gate.
 
-    ``POST /v1/auth/register`` issues no tokens any more — the session only
-    exists after the OTP step — so this goes through the shared helper.
+    ``POST /v1/auth/register`` issues no tokens any more - the session only
+    exists after the OTP step - so this goes through the shared helper.
     """
     body = await register_and_verify(
         async_client,
@@ -112,7 +112,7 @@ async def test_public_form_links_an_existing_account(async_client, db_session):
         "/v1/support/tickets",
         json={
             "name": "Linked User",
-            # Deliberately different case — matching must be case-insensitive.
+            # Deliberately different case - matching must be case-insensitive.
             "email": "Linked@Example.com",
             "subject": "Billing question",
             "message": "I was charged twice for the same month.",
@@ -176,7 +176,7 @@ async def test_reply_to_unlinked_ticket_is_emailed(async_client, db_session, moc
 
     res = await async_client.post(
         f"/v1/admin/support/tickets/{row.id}/reply",
-        json={"body": "Yes — gRPC health checks are supported.", "is_internal_note": False},
+        json={"body": "Yes - gRPC health checks are supported.", "is_internal_note": False},
         headers=admin["headers"],
     )
     assert res.status_code == 200, res.text

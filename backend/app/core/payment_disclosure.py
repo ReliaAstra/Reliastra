@@ -1,9 +1,9 @@
-"""Payment-disclosure composition — display layer, never a pricing input.
+"""Payment-disclosure composition - display layer, never a pricing input.
 
 ``app.core.payment_pricing`` resolves what is charged. This module wraps that
 resolution with everything a *screen* additionally shows: the canonical
 disclosure paragraph (already inside ``currency_info``) and the cached FX
-reference estimate. The separation is deliberate — modules on the charge path
+reference estimate. The separation is deliberate - modules on the charge path
 (``payment_pricing``, ``permissions``) must not import FX code, while request
 handlers building responses import it from here. A guard test in
 ``tests/unit/test_payment_pricing_catalog.py`` enforces the direction.

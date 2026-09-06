@@ -107,12 +107,12 @@ export function ArticleTemplate({ meta, children, evidence, methodology, related
         </section>
       )}
 
-      {/* 9 Preferred Source CTA — after meaningful research, before related vendor links */}
+      {/* 9 Preferred Source CTA - after meaningful research, before related vendor links */}
       <div className="mt-10">
         <PreferredSourceSection variant="research" />
       </div>
 
-      {/* 10 Internal links — vendor tracking, docs */}
+      {/* 10 Internal links - vendor tracking, docs */}
       {vendorLinks && vendorLinks.length > 0 && (
         <nav className="mt-8 flex flex-wrap gap-2">
           {vendorLinks.map((v) => (

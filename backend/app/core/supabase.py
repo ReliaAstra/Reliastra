@@ -100,7 +100,7 @@ async def verify_supabase_token(
         return None
 
     if jwt_secret:
-        # HS256 — verify using the shared JWT secret
+        # HS256 - verify using the shared JWT secret
         try:
             payload = pyjwt.decode(
                 token,
@@ -114,7 +114,7 @@ async def verify_supabase_token(
             logger.debug("Supabase HS256 verification failed: %s", exc)
             return None
 
-    # RS256 — verify using JWKS
+    # RS256 - verify using JWKS
     try:
         keys = await _fetch_jwks(supabase_url)
         if not keys:
@@ -135,7 +135,7 @@ async def verify_supabase_token(
             except Exception:
                 continue
 
-        logger.debug("Supabase RS256 verification failed — no matching key")
+        logger.debug("Supabase RS256 verification failed - no matching key")
         return None
     except Exception as exc:
         logger.warning("Supabase token verification error: %s", exc)
@@ -147,10 +147,10 @@ def map_supabase_user(payload: dict[str, Any]) -> dict[str, Any]:
 
     Fields:
 
-    * ``email`` — from ``email`` or ``user_metadata.email``
-    * ``full_name`` — from ``user_metadata.full_name`` or ``user_metadata.name``
-    * ``sub`` — the Supabase user UUID (maps to external_auth_id)
-    * ``is_email_verified`` — from ``email_verified`` or
+    * ``email`` - from ``email`` or ``user_metadata.email``
+    * ``full_name`` - from ``user_metadata.full_name`` or ``user_metadata.name``
+    * ``sub`` - the Supabase user UUID (maps to external_auth_id)
+    * ``is_email_verified`` - from ``email_verified`` or
       ``app_metadata.email_verified``
     """
     user_meta = payload.get("user_metadata") or {}

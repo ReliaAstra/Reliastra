@@ -2,7 +2,7 @@
 
 AI explanations are now produced by the LLM Reliastra operates, configured
 through platform environment variables (RELIASTRA_AI_*). Organizations no
-longer register providers, endpoints, models or API keys — the only tenant
+longer register providers, endpoints, models or API keys - the only tenant
 control left is an opt-out flag on the organization itself.
 
 Revision ID: 0020_platform_managed_ai

@@ -21,13 +21,13 @@ import {
  * be stranded:
  *
  *   1. **Entry.** Every paid-plan action in the product must arrive at
- *      RELIASTRA's own checkout with the plan and interval already chosen — not
+ *      RELIASTRA's own checkout with the plan and interval already chosen - not
  *      start a payment from inside a modal, and not open a provider tab that the
  *      customer then has to find their way back from. The upgrade dialog's job
  *      ends at handing over intent.
  *
- *   2. **Return.** A customer who comes back to a signed-in session — from the
- *      provider's hosted page, from an email link, or by pressing reload — must
+ *   2. **Return.** A customer who comes back to a signed-in session - from the
+ *      provider's hosted page, from an email link, or by pressing reload - must
  *      land on a state that tells them the truth about their payment. That
  *      includes the older `?pay_ref=` links already sitting in people's browser
  *      history and in sent receipts: the route changed, the link did not.
@@ -69,7 +69,7 @@ test.describe('checkout entry and return', () => {
       CONTRACT.notice,
     );
 
-    // Choosing PRO opens the checkout — it does not pay from here. The dialog is
+    // Choosing PRO opens the checkout - it does not pay from here. The dialog is
     // RELIASTRA's, the payment is Paystack's, and the review step belongs to the
     // page whose URL the customer can go back to.
     await dialog.getByRole('button', { name: /upgrade to pro/i }).click();
@@ -85,6 +85,12 @@ test.describe('checkout entry and return', () => {
     await expect(page.locator('[data-testid="checkout-review-plan"]')).toContainText(/RELIASTRA Pro/);
     // No payment has been started by arriving here.
     expect(await lastPaystackInit(request)).toBeNull();
+
+    // The pre-payment gate: the live exchange rate must be verified from its
+    // public source before the continue control unlocks at all.
+    await expect(page.locator('[data-testid="checkout-continue"]')).toBeEnabled({
+      timeout: 60_000,
+    });
 
     // Pay, from the checkout page, on the checkout page's own terms.
     await page.locator('[data-testid="checkout-continue"]').click();
@@ -153,7 +159,7 @@ test.describe('checkout entry and return', () => {
     /**
      * Checkout is organization-scoped: the quote is priced against an account and
      * the receipt has to arrive in somebody's mailbox. A visitor with no
-     * workspace therefore goes to signup — a checkout they could only be turned
+     * workspace therefore goes to signup - a checkout they could only be turned
      * away from is a worse first impression than an honest queue.
      */
     await page.goto('/#pricing', { waitUntil: 'domcontentloaded' });
@@ -171,7 +177,7 @@ test.describe('checkout entry and return', () => {
     /**
      * `?pay_ref=` predates this checkout page: it is in sent receipts, in browser
      * history, and in tabs left open over a weekend. It must not become a dead
-     * link or — worse — a second chance to pay. Visiting it with a paid reference
+     * link or - worse - a second chance to pay. Visiting it with a paid reference
      * verifies that reference and reports what was actually collected.
      */
     const email = `e2e-payref-${Date.now()}@reliastra.dev`;

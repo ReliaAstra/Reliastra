@@ -41,7 +41,7 @@ export function ReferralLinkCard({ link, size = 'default', showLabel = true, cla
       try {
         await navigator.share({
           title: 'Join RELIASTRA',
-          text: 'Check out RELIASTRA — infrastructure intelligence for critical operations.',
+          text: 'Check out RELIASTRA - infrastructure intelligence for critical operations.',
           url: link,
         });
       } catch {
@@ -49,7 +49,7 @@ export function ReferralLinkCard({ link, size = 'default', showLabel = true, cla
       }
     } else {
       handleCopy();
-      toast.success('Link copied — share it with your network');
+      toast.success('Link copied - share it with your network');
     }
   };
 

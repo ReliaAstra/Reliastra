@@ -5,7 +5,7 @@
  * rather than showing a spinner: the page keeps its shape and the customer can
  * read the heading and the method copy while the figures resolve.
  *
- * Placeholders are bars, never numbers. A shimmer that renders `₦—` or a
+ * Placeholders are bars, never numbers. A shimmer that renders `₦-` or a
  * guessed amount would be the exact thing this checkout forbids: a figure on
  * screen that the backend did not publish.
  */

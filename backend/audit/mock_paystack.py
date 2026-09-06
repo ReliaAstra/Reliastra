@@ -26,7 +26,7 @@ Environment:
                        exactly what upstream was told to charge
   FX_NGN_RATE          the static USD->NGN reference rate (default 1650.00)
 
-The mock deliberately charges nothing — it exists so the surrounding product
+The mock deliberately charges nothing - it exists so the surrounding product
 (UI -> API -> provider request -> verification -> persisted transaction)
 can be verified for real, including the amount and currency invariance.
 """
@@ -79,7 +79,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/transaction/initialize":
             ref = f"mock-ref-{uuid.uuid4().hex[:16]}"
             # Record exactly what the merchant (RELIASTRA backend) asked
-            # Paystack to charge — amount in minor units + currency. Tests
+            # Paystack to charge - amount in minor units + currency. Tests
             # assert this equals what the customer saw on screen.
             record = {
                 "reference": ref,
@@ -123,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/reset":
             # Tests call this for isolation, so it must clear EVERY record of
-            # what happened — including the capture log that `/capture` reads.
+            # what happened - including the capture log that `/capture` reads.
             # Truncating only the in-memory transactions would leave a previous
             # test's initialize call as "the latest", which is exactly the kind
             # of stale assertion that makes an e2e suite lie.
@@ -137,7 +137,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200, {"status": True, "reset": True})
             return
         if self.path.startswith("/outcome/"):
-            # POST /outcome/<reference>/<success|failed|pending> — lets a test
+            # POST /outcome/<reference>/<success|failed|pending> - lets a test
             # decide what the provider will report when RELIASTRA verifies.
             parts = self.path.rsplit("/", 2)
             ref, wanted = parts[-2], parts[-1]
@@ -178,7 +178,7 @@ class Handler(BaseHTTPRequestHandler):
                         "status": reported,
                         "amount": record.get("amount"),
                         # The provider reports the currency it was told to
-                        # charge — the exact figure the customer was shown.
+                        # charge - the exact figure the customer was shown.
                         "currency": record.get("currency") or "NGN",
                         "paid_at": now.isoformat(),
                         "transaction_date": (now - timedelta(minutes=1)).isoformat(),
@@ -212,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
             currency = record.get("currency") or "NGN"
             amount_major = f"{(amount or 0) / 100:,.2f}"
             # Paystack returns the customer to the transaction's own
-            # callback_url — which RELIASTRA sets to its checkout page — so the
+            # callback_url - which RELIASTRA sets to its checkout page - so the
             # harness follows that value instead of hardcoding a route. That is
             # what makes a redirect-based test exercise the real resume path.
             return_to = record.get("callback_url") or f"{FRONTEND_URL}/checkout"
@@ -230,14 +230,14 @@ display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0
 h1{{font-size:16px;margin:0 0 16px}} .amt{{font-size:26px;font-weight:700;margin:8px 0}}
 button{{width:100%;padding:13px;border-radius:8px;border:0;font-weight:600;cursor:pointer;margin-top:8px}}
 small{{color:#8fa3bf}}</style></head>
-<body><div class="card"><h1>Paystack &mdash; mock hosted checkout</h1>
+<body><div class="card"><h1>Paystack - mock hosted checkout</h1>
 <p>You are about to pay</p><p class="amt">{currency} {amount_major}</p>
 <p>reference <code>{ref}</code></p>
 <p><small>channels: {record.get("channels") or "card"}</small></p>
 <button id="pay" style="background:#0AA87F;color:#fff">Pay {currency} {amount_major}</button>
 <button id="decline" style="background:#7f1d1d;color:#fff">Simulate decline</button>
 <button id="cancel" style="background:transparent;color:#8fa3bf;border:1px solid #23406b">Cancel</button>
-<p><small>Test harness &mdash; returns to RELIASTRA, which verifies server-side.</small></p></div>
+<p><small>Test harness - returns to RELIASTRA, which verifies server-side.</small></p></div>
 <script>
 var BASE = {json.dumps(return_to)};
 var REF = {json.dumps(ref)};
@@ -263,9 +263,9 @@ setTimeout(function() {{ location.reload(); }}, 60000);
             return
         if self.path.startswith("/v1/inline.js") or self.path.startswith("/v2/inline.js"):
             # A stand-in for Paystack's InlineJS (v1 + v2). It is the *contract* the
-            # product integrates against — `new PaystackPop()` with
+            # product integrates against - `new PaystackPop()` with
             # `checkout({accessCode})` / `resumeTransaction(accessCode, {...})`
-            # — not an emulation of their UI: RELIASTRA's own code (script
+            # - not an emulation of their UI: RELIASTRA's own code (script
             # loading, callback wiring, verify-on-success) is what is exercised.
             self._html(
                 200,

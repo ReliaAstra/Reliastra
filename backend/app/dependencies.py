@@ -28,8 +28,8 @@ def _require_verified_email(user: "User") -> None:
     """Hard gate: an unverified address cannot hold an authenticated session.
 
     Defence in depth. ``/auth/login`` already refuses to mint tokens for an
-    unverified account, but a token minted before verification was enforced —
-    or by any future code path that forgets the check — dies here too.
+    unverified account, but a token minted before verification was enforced -
+    or by any future code path that forgets the check - dies here too.
     """
     # Imported lazily: ``app.modules.auth`` imports this module transitively,
     # so a top-level import would be circular.

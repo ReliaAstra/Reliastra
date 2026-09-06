@@ -1,4 +1,4 @@
-# CI/CD — Source → Artifact → Release
+# CI/CD - Source → Artifact → Release
 
 ## Artifact lifecycle
 ```
@@ -17,7 +17,7 @@ All jobs `timeout-minutes`, `concurrency: cancel-in-progress`, pinned actions `v
 ## CD `.github/workflows/deploy-production.yml`
 - Trigger: `workflow_run: CI success on main` or `workflow_dispatch` with `commit_sha`/`image_digest` (for rollback/promote).
 - `concurrency: production-deploy` (no cancel, queue).
-- `environment: production` — GitHub Environment protection (required reviewers, branch protection). Secrets scoped to this env.
+- `environment: production` - GitHub Environment protection (required reviewers, branch protection). Secrets scoped to this env.
 - **resolve**: determine `commit_sha` + `image_ref` (`:sha-<sha>`), create GH deployment (audit).
 - **deploy**: `tailscale/github-action` (oauth `tag:ci`) → `tailscale ping` → `ssh reliastra-deploy@100.x` (least-privilege key, `known_hosts` pinned) → `preflight.sh` → `deploy.sh --commit --image --timeout 600` → `smoke-test.sh`.
 - Artifacts: `deploy.log` uploaded, deployment status `success/failure` via `chrnorm/deployment-status`.

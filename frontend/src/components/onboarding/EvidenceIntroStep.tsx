@@ -70,7 +70,7 @@ export function EvidenceIntroStep({ onNext }: { onNext: () => void }) {
         {hasReal ? (
           <div className="rounded-[10px] border border-rs-border-subtle bg-rs-base p-4">
             <div className="flex items-center justify-between">
-              <span className="rs-label">Latest incident — real</span>
+              <span className="rs-label">Latest incident - real</span>
               <span className="rounded-full bg-rs-up-bg px-2 py-0.5 text-[11px] font-medium text-rs-up">Live</span>
             </div>
             <ul className="mt-3 space-y-2">
@@ -93,18 +93,18 @@ export function EvidenceIntroStep({ onNext }: { onNext: () => void }) {
           <div>
             <div className="rounded-[10px] border border-rs-border-subtle bg-rs-base p-4">
               <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-300">
-                Example investigation — clearly labelled demonstration
+                Example investigation - clearly labelled demonstration
               </span>
-              <h3 className="mt-3 text-sm font-semibold text-rs-text">Stripe API — 9 min degradation, 2026-05-12</h3>
+              <h3 className="mt-3 text-sm font-semibold text-rs-text">Stripe API - 9 min degradation, 2026-05-12</h3>
               <p className="mt-1 text-xs leading-relaxed text-rs-text-tertiary">
                 This is demonstration data, not from your infrastructure. It shows exactly what you’ll receive when a real incident occurs.
               </p>
               <div className="mt-4 space-y-2 text-sm">
                 {[
-                  ['14:02 UTC', 'Multi-region latency spike (>800 ms) — eu-west, us-east'],
-                  ['14:04 UTC', 'Quorum confirmed — 3 regions agree, incident opened (major)'],
-                  ['14:07 UTC', 'Regional comparison — eu-west degraded, us-west unaffected'],
-                  ['14:11 UTC', 'Evidence generated — SHA256 checksummed, JSON + PDF'],
+                  ['14:02 UTC', 'Multi-region latency spike (>800 ms) - eu-west, us-east'],
+                  ['14:04 UTC', 'Quorum confirmed - 3 regions agree, incident opened (major)'],
+                  ['14:07 UTC', 'Regional comparison - eu-west degraded, us-west unaffected'],
+                  ['14:11 UTC', 'Evidence generated - SHA256 checksummed, JSON + PDF'],
                 ].map(([t, d]) => (
                   <div key={t} className="flex gap-3">
                     <span className="rs-mono shrink-0 text-xs font-medium text-rs-text-tertiary">{t}</span>
@@ -144,7 +144,7 @@ export function EvidenceIntroStep({ onNext }: { onNext: () => void }) {
             )}
 
             <div className="mt-5 flex justify-end">
-              <RsButton onClick={() => { analytics.evidenceViewed({ source: 'onboarding_example' }); onNext(); }}>Continue — I understand the flow</RsButton>
+              <RsButton onClick={() => { analytics.evidenceViewed({ source: 'onboarding_example' }); onNext(); }}>Continue - I understand the flow</RsButton>
             </div>
           </div>
         )}

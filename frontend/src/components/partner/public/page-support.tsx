@@ -68,20 +68,20 @@ export function PageSupport() {
 
       if (!res.ok) {
         // `data.error` is the `{ code, message, details }` envelope, not a
-        // string — passing it to `new Error()` rendered "[object Object]".
+        // string - passing it to `new Error()` rendered "[object Object]".
         const apiError = await readApiError(res, 'Submission failed');
         throw new Error(apiError.message);
       }
 
       setSubmitted(true);
-      toast.success('Support request submitted — we\'ll respond within 24 hours');
+      toast.success('Support request submitted - we\'ll respond within 24 hours');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg.includes('reach') || msg.includes('fetch')) {
         setFieldError('Unable to reach RELIASTRA. Check your connection and try again.');
       } else {
         setFieldError(msg || 'Unable to submit your request. Please try again.');
-        toast.error('Failed to submit — please try again');
+        toast.error('Failed to submit - please try again');
       }
     } finally {
       setLoading(false);

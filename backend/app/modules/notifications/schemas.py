@@ -72,7 +72,7 @@ class AlertTestResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # In-dashboard inbox
 #
-# Every authenticated human — normal customer, agency operator, partner —
+# Every authenticated human - normal customer, agency operator, partner -
 # reads the same ``in_app_notifications`` fan-out through these endpoints.
 # They are deliberately NOT org-scoped: a notification belongs to a person.
 # ---------------------------------------------------------------------------

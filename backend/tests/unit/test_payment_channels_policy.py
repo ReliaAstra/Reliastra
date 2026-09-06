@@ -2,7 +2,7 @@
 
 RELIASTRA sells to customers worldwide, but Paystack's rails are national: card
 works in every market, while ``bank``, ``ussd``, ``qr``, ``mobile_money`` and
-``bank_transfer`` work only where Paystack supports them — Nigeria above all. A
+``bank_transfer`` work only where Paystack supports them - Nigeria above all. A
 checkout that shows a Nigerian bank transfer to a customer in Berlin is not a
 cosmetic bug: it is a payment screen that cannot be completed, and a product
 that looks like it was configured for one country and shipped to all of them.
@@ -12,7 +12,7 @@ it. These tests hold the four properties that matter:
 
 * card is the only method a global customer is offered, by default, with no
   configuration;
-* widening is fail-closed — an unknown token, an empty list, or a market the
+* widening is fail-closed - an unknown token, an empty list, or a market the
   transaction currency does not serve can never reach Paystack;
 * no surface can present a method the policy has not enabled, and no *request*
   can add one;
@@ -133,7 +133,7 @@ def test_currency_table_only_promises_rails_that_work_there():
 
 @pytest.mark.parametrize("junk", ["not_a_channel", "paypal", "paypal,bitcoin"])
 def test_unknown_configuration_is_dropped_not_forwarded(junk, monkeypatch):
-    """A typo must not become a Paystack error page — or a method nobody checked.
+    """A typo must not become a Paystack error page - or a method nobody checked.
 
     Values this deployment does not recognise are discarded and reported through
     ``channel_policy_summary``; the checkout continues on card, because the safe
@@ -148,7 +148,7 @@ def test_unknown_configuration_is_dropped_not_forwarded(junk, monkeypatch):
 
 def test_a_blank_setting_reads_as_unset(monkeypatch):
     """``PAYSTACK_CHECKOUT_CHANNELS=`` is an operator writing nothing, not an
-    operator asking for nothing — so it falls back to the default rather than
+    operator asking for nothing - so it falls back to the default rather than
     producing an empty (and therefore wide-open) request."""
     monkeypatch.setattr(settings, "PAYSTACK_CHECKOUT_CHANNELS", [""])
     assert checkout_channels() == ["card"]
@@ -176,7 +176,7 @@ def test_opt_in_widens_only_inside_the_currency_it_belongs_to(monkeypatch):
     Mobile money is enabled for a GHS deployment because that is where the rail
     works; asking for it in Naira changes nothing, because RELIASTRA's NGN
     customers are international cardholders. Neither reading is a judgement about
-    Nigeria — it is what a checkout can honestly offer the people in front of it.
+    Nigeria - it is what a checkout can honestly offer the people in front of it.
     """
     monkeypatch.setattr(settings, "PAYSTACK_ENABLE_LOCAL_CHANNELS", True)
 
@@ -302,7 +302,7 @@ def test_a_payment_is_never_held_for_a_field_we_cannot_read(channel):
     Paystack has not always populated this field, and its vocabulary has changed
     before. A customer who genuinely paid must not be locked out of their
     subscription because one display field of a provider response differs from
-    what we expected — the guard exists to catch a rail we refused to offer, not
+    what we expected - the guard exists to catch a rail we refused to offer, not
     to punish a schema we do not control.
     """
     acceptable, reason = settled_channel_is_acceptable(channel)
@@ -388,7 +388,7 @@ def test_no_frontend_surface_hard_codes_a_channel_list():
     """Method availability is answered by the quote, never by a constant.
 
     A literal ``['card']`` in the checkout UI would keep offering a global
-    experience after an operator narrowed or widened the policy — the two would
+    experience after an operator narrowed or widened the policy - the two would
     disagree about what the customer may pay with, and only one of them would be
     the transaction actually opened at Paystack.
     """

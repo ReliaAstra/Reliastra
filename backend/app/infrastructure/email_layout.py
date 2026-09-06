@@ -15,8 +15,8 @@ into N templates, and each new template silently started without it.
 Contract
 --------
 * ONE canonical support footer paragraph (:data:`TRANSACTIONAL_SUPPORT_FOOTER`).
-* It renders in the email's *footer region* — visually separated from the
-  message body by a rule and a tinted band — never inside ``.body``, so it can
+* It renders in the email's *footer region* - visually separated from the
+  message body by a rule and a tinted band - never inside ``.body``, so it can
   never sit under (or dilute) security-critical instructions such as
   "we will never ask for your password" or a link/code expiry note.
 * It appears **exactly once** per email, in both the HTML and the plain-text
@@ -44,7 +44,7 @@ from app.config import settings
 # ── Canonical copy ──────────────────────────────────────────────────────────
 
 #: The single source of truth for the transactional support footer. Do not
-#: restate this paragraph in a template — import it.
+#: restate this paragraph in a template - import it.
 TRANSACTIONAL_SUPPORT_FOOTER = (
     "We truly value your trust and continued support. Should you experience any "
     "issues, require clarification, or need assistance with your account, please "
@@ -54,7 +54,7 @@ TRANSACTIONAL_SUPPORT_FOOTER = (
 )
 
 BRAND = "Reliastra"
-BRAND_TAGLINE = "Reliastra — External Dependency Intelligence"
+BRAND_TAGLINE = "Reliastra - External Dependency Intelligence"
 SUPPORT_EMAIL = "support@reliastra.com"
 
 #: Sentinel that marks the canonical footer region. Used to guarantee the
@@ -136,7 +136,7 @@ def footer_html(
 
     ``note_html`` / ``unsubscribe_html`` are *additive* legal or preference
     lines (kept below the support paragraph so the support message stays the
-    prominent part of the footer). Never put message content here — content
+    prominent part of the footer). Never put message content here - content
     belongs in :func:`content_html`.
     """
     parts = [
@@ -248,7 +248,7 @@ def render_email(
     unsubscribe_text: str = "",
     preheader: str = "",
 ) -> tuple[str, str]:
-    """Render ``(plain_text, html_body)`` — the signature every template uses."""
+    """Render ``(plain_text, html_body)`` - the signature every template uses."""
     return (
         render_text(
             body_text=body_text,

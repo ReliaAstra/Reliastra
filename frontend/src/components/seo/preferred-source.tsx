@@ -36,7 +36,7 @@ export function PreferredSourceButton({ lang = 'en', className }: PreferredSourc
     >
       {/* Google enhances this div when publisher.js loads */}
       <div {...({ 'google-add-preferred-source-btn': '' } as any)} data-theme={theme} data-lang={lang} />
-      {/* Fallback for no-JS / script blocked — invisible when JS enhances */}
+      {/* Fallback for no-JS / script blocked - invisible when JS enhances */}
       <noscript>
         <a
           href="https://news.google.com/"
@@ -62,7 +62,7 @@ const COPY: Record<NonNullable<PreferredSourceSectionProps['variant']>, { eyebro
     eyebrow: 'Independent research',
     title: 'Follow independent infrastructure research',
     // Trust-based: reader preference, not ranking hack
-    body: 'If you find RELIASTRA’s independent infrastructure intelligence useful, add us as a Preferred Source — you’ll see future incident analysis and dependency research more often when you search.',
+    body: 'If you find RELIASTRA’s independent infrastructure intelligence useful, add us as a Preferred Source - you’ll see future incident analysis and dependency research more often when you search.',
   },
   incident: {
     eyebrow: 'Incident intelligence',
@@ -83,7 +83,7 @@ const COPY: Record<NonNullable<PreferredSourceSectionProps['variant']>, { eyebro
 
 /**
  * Smart, on-brand CTA around Google's official control.
- * Subtle, high-trust, compact — brutalist/premium, not popup.
+ * Subtle, high-trust, compact - brutalist/premium, not popup.
  */
 export function PreferredSourceSection({ variant = 'generic', lang, className }: PreferredSourceSectionProps) {
   const copy = COPY[variant] ?? COPY.generic;
@@ -140,7 +140,7 @@ export function PreferredSourceSection({ variant = 'generic', lang, className }:
         <PreferredSourceButton lang={lang} />
       </div>
       <p className="mt-2 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
-        Powered by Google — you choose your sources.
+        Powered by Google - you choose your sources.
       </p>
     </section>
   );

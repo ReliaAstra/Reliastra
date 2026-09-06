@@ -24,13 +24,13 @@ const fadeUp = {
   }),
 };
 
-// Institutional — no pulsing, no gradients, no cartoon
+// Institutional - no pulsing, no gradients, no cartoon
 export function PageHome() {
   const navigate = navigatePartner;
 
   return (
     <div className="bg-white text-foreground dark:bg-[#0A0A0F] dark:text-zinc-100">
-      {/* ===== HERO — institutional, precise ===== */}
+      {/* ===== HERO - institutional, precise ===== */}
       <section className="relative border-b border-zinc-200 dark:border-white/[0.08]">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#E4E4E7_1px,transparent_1px),linear-gradient(to_bottom,#E4E4E7_1px,transparent_1px)] bg-[size:48px_48px] opacity-[0.04] dark:opacity-[0.05]" aria-hidden />
         <div className="relative mx-auto max-w-[1120px] px-6 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:px-8 lg:pb-24 lg:pt-24">
@@ -46,7 +46,7 @@ export function PageHome() {
             </motion.h1>
 
             <motion.p initial="hidden" animate="visible" variants={fadeUp} custom={2} className="mt-5 max-w-[640px] text-[15px] leading-[1.6] text-zinc-600 dark:text-zinc-400 sm:text-[16px]">
-              RELIASTRA works with technical creators and publishers who cover cloud infrastructure, reliability, cybersecurity, DevOps, SaaS, and modern software systems — and whose audiences expect technical accuracy.
+              RELIASTRA works with technical creators and publishers who cover cloud infrastructure, reliability, cybersecurity, DevOps, SaaS, and modern software systems - and whose audiences expect technical accuracy.
             </motion.p>
 
             <motion.div initial="hidden" animate="visible" variants={fadeUp} custom={3} className="mt-8 flex flex-wrap items-center gap-3">
@@ -66,7 +66,7 @@ export function PageHome() {
         </div>
       </section>
 
-      {/* ===== TRUST / CREDIBILITY — This company exists ===== */}
+      {/* ===== TRUST / CREDIBILITY - This company exists ===== */}
       <section className="border-b border-zinc-200 bg-[#FAFAFA] dark:border-white/[0.06] dark:bg-[#0F0F12]">
         <div className="mx-auto max-w-[1120px] px-6 py-14 sm:px-8 sm:py-16 lg:px-8">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -74,13 +74,13 @@ export function PageHome() {
               <p className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">Institutional credibility</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-zinc-900 dark:text-white">Built as infrastructure, not marketing.</h2>
             </div>
-            <p className="max-w-[420px] text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">RELIASTRA is real infrastructure software — not an affiliate platform with a product attached.</p>
+            <p className="max-w-[420px] text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">RELIASTRA is real infrastructure software - not an affiliate platform with a product attached.</p>
           </div>
 
           <div className="grid gap-px overflow-hidden rounded-xl border border-zinc-200 bg-zinc-200 dark:border-white/10 dark:bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: Network, title: 'Independent multi-region monitoring', desc: 'Continuous checks from distributed probes. Not self-reported status pages.' },
-              { icon: BarChart3, title: 'Public tracking', desc: 'Live vendor status, uptime and incident history at /track — measured, not marketed.' },
+              { icon: BarChart3, title: 'Public tracking', desc: 'Live vendor status, uptime and incident history at /track - measured, not marketed.' },
               { icon: FileCheck2, title: 'Verifiable evidence', desc: 'Timestamped, checksummed SLA reports with incident correlation.' },
               { icon: BookOpen, title: 'Technical documentation', desc: 'Product docs, methodology notes, and integration guides.' },
               { icon: Code2, title: 'API availability', desc: 'Programmatic access for checks, incidents, and evidence where your plan allows.' },
@@ -110,7 +110,7 @@ export function PageHome() {
             <p className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">Why this partnership exists</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-zinc-900 dark:text-white">Technical audiences care about what actually happens inside the infrastructure they depend on.</h2>
             <p className="mt-4 max-w-prose text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              Teams choosing databases, queues, auth providers, and cloud services don&apos;t need another uptime monitor. They need independent intelligence they can trust — and a publisher who can explain what it means for real systems.
+              Teams choosing databases, queues, auth providers, and cloud services don&apos;t need another uptime monitor. They need independent intelligence they can trust - and a publisher who can explain what it means for real systems.
             </p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 dark:border-white/10 dark:bg-white/[0.03]">
@@ -120,7 +120,7 @@ export function PageHome() {
                 <li key={t} className="flex gap-3"><span className="mt-2 h-px w-4 shrink-0 bg-zinc-300 dark:bg-white/20" aria-hidden />{t}</li>
               ))}
             </ul>
-            <p className="mt-5 border-t border-zinc-200 pt-4 font-mono text-xs text-zinc-500 dark:border-white/10 dark:text-zinc-500">You are positioned as an independent technical publisher using a serious product — not a salesperson.</p>
+            <p className="mt-5 border-t border-zinc-200 pt-4 font-mono text-xs text-zinc-500 dark:border-white/10 dark:text-zinc-500">You are positioned as an independent technical publisher using a serious product - not a salesperson.</p>
           </div>
         </div>
       </section>
@@ -129,15 +129,15 @@ export function PageHome() {
       <section className="border-y border-zinc-200 bg-[#FAFAFA] dark:border-white/[0.06] dark:bg-[#0F0F12]">
         <div className="mx-auto max-w-[1120px] px-6 py-14 sm:px-8 sm:py-16 lg:px-8">
           <p className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-500">What partners receive</p>
-          <h2 className="mt-2 max-w-2xl text-2xl font-semibold tracking-[-0.02em] text-zinc-900 dark:text-white">A professional partner account — restrained, not promotional.</h2>
+          <h2 className="mt-2 max-w-2xl text-2xl font-semibold tracking-[-0.02em] text-zinc-900 dark:text-white">A professional partner account - restrained, not promotional.</h2>
           <div className="mt-8 grid gap-px overflow-hidden rounded-xl border border-zinc-200 bg-zinc-200 dark:border-white/10 dark:bg-white/10 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { k: 'Revenue', v: 'Recurring commission for qualified referrals (30% of subscription, 90-day attribution, minimum payout, payable after hold).' },
-              { k: 'Professional Partner Account', v: 'Dedicated dashboard for attribution, referrals, and earnings — isolated per partner, audited.' },
+              { k: 'Professional Partner Account', v: 'Dedicated dashboard for attribution, referrals, and earnings - isolated per partner, audited.' },
               { k: 'Product Access', v: 'Appropriate access so you can genuinely understand and demonstrate RELIASTRA.' },
               { k: 'Research / Data Access', v: 'Where appropriate: infrastructure observations, reports, and materials useful for technical content.' },
-              { k: 'Partner Resources', v: 'Product assets, screenshots, technical explanations, briefs, and approved messaging — editorial integrity required.' },
-              { k: 'Direct Relationship', v: 'Qualified partners have direct access to RELIASTRA — partnership, technical, and research discussions.' },
+              { k: 'Partner Resources', v: 'Product assets, screenshots, technical explanations, briefs, and approved messaging - editorial integrity required.' },
+              { k: 'Direct Relationship', v: 'Qualified partners have direct access to RELIASTRA - partnership, technical, and research discussions.' },
             ].map((c) => (
               <div key={c.k} className="bg-white p-6 dark:bg-[#131318]">
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{c.k}</h3>
@@ -158,7 +158,7 @@ export function PageHome() {
               <span className="font-mono text-[11px] tracking-[0.14em] text-zinc-600 dark:text-zinc-400">DIRECT RELATIONSHIP</span>
             </div>
             <h2 className="mt-4 text-2xl font-semibold tracking-[-0.02em] text-zinc-900 dark:text-white">A direct relationship with RELIASTRA.</h2>
-            <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">RELIASTRA is not an anonymous affiliate system. Approved partners have a human point of contact for the relationship — not a ticket queue.</p>
+            <p className="mt-3 max-w-prose text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">RELIASTRA is not an anonymous affiliate system. Approved partners have a human point of contact for the relationship - not a ticket queue.</p>
           </div>
           <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-white/10 dark:bg-[#131318]">
             <p className="font-mono text-xs uppercase tracking-[0.16em] text-zinc-500">Qualified partners have direct access for</p>
@@ -176,7 +176,7 @@ export function PageHome() {
       <section className="border-y border-zinc-200 bg-white dark:border-white/[0.06] dark:bg-[#0A0A0F]">
         <div className="mx-auto max-w-[1120px] px-6 py-14 sm:px-8 sm:py-16 lg:px-8">
           <h2 className="text-xl font-semibold tracking-[-0.02em] text-zinc-900 dark:text-white">Professional placement. Editorial integrity matters.</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Your credibility is an asset. RELIASTRA reinforces it — never encourages unsupported claims. Sponsorship must be clearly disclosed.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Your credibility is an asset. RELIASTRA reinforces it - never encourages unsupported claims. Sponsorship must be clearly disclosed.</p>
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { t: 'Technical articles', d: 'Editorial references with context' },
@@ -243,7 +243,7 @@ export function PageHome() {
         </div>
       </section>
 
-      {/* ===== COMMISSION — clear, professional ===== */}
+      {/* ===== COMMISSION - clear, professional ===== */}
       <section className="border-y border-zinc-200 bg-white dark:border-white/[0.06] dark:bg-[#0A0A0F]">
         <div className="mx-auto max-w-[1120px] px-6 py-14 sm:px-8 sm:py-16 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
@@ -260,11 +260,11 @@ export function PageHome() {
               <div className="grid grid-cols-1 divide-y divide-zinc-200 dark:divide-white/10">
                 {[
                   ['Attribution', '90-day cookie / link window'],
-                  ['Recurring vs one-time', 'Recurring — as long as referral remains paying customer'],
+                  ['Recurring vs one-time', 'Recurring - as long as referral remains paying customer'],
                   ['When payable', 'After 30-day hold and minimum payout threshold'],
-                  ['Payout method', 'Partner dashboard — bank / payout destination on file'],
-                  ['Self-referrals', 'Excluded — no commission on your own signups'],
-                  ['Fraud / abuse', 'Excluded — automated, bulk, or fraudulent referrals void'],
+                  ['Payout method', 'Partner dashboard - bank / payout destination on file'],
+                  ['Self-referrals', 'Excluded - no commission on your own signups'],
+                  ['Fraud / abuse', 'Excluded - automated, bulk, or fraudulent referrals void'],
                   ['Eligibility', 'Applies to Pro plan referrals; terms may evolve, see Partner Agreement'],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-6 px-5 py-3.5">
@@ -305,13 +305,13 @@ export function PageHome() {
         </p>
       </section>
 
-      {/* ===== FINAL CTA — restrained, premium ===== */}
+      {/* ===== FINAL CTA - restrained, premium ===== */}
       <section className="border-t border-zinc-200 bg-zinc-900 text-white dark:border-white/[0.06] dark:bg-[#0F0F12]">
         <div className="mx-auto max-w-[1120px] px-6 py-14 sm:px-8 sm:py-16 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-400">A professional relationship</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em]">Build with evidence. Publish with confidence.</h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">Join technical publishers who bring credible infrastructure intelligence to their audiences — and earn recurring revenue for doing so.</p>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">Join technical publishers who bring credible infrastructure intelligence to their audiences - and earn recurring revenue for doing so.</p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Button size="lg" onClick={() => navigate('signup')} className="h-11 rounded-[10px] bg-white px-7 text-sm font-medium text-zinc-900 hover:bg-zinc-100">
                 Apply to the RELIASTRA Partner Program

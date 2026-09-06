@@ -1,8 +1,8 @@
-# Observability — Health, Deploy, Logs
+# Observability - Health, Deploy, Logs
 
 ## Health
-- `GET /health/live` — liveness: process alive? Always 200 if uvicorn running. No DB/Redis.
-- `GET /health/ready` + `GET /health` (compat) — readiness: DB `SELECT 1` + `redis ping` → 200 ok else 503 degraded. `healthcheck.sh` requires `live=ok && ready=200 && proxy 200` within 120s (poll 5s, 6 retries).
+- `GET /health/live` - liveness: process alive? Always 200 if uvicorn running. No DB/Redis.
+- `GET /health/ready` + `GET /health` (compat) - readiness: DB `SELECT 1` + `redis ping` → 200 ok else 503 degraded. `healthcheck.sh` requires `live=ok && ready=200 && proxy 200` within 120s (poll 5s, 6 retries).
 - Uvicorn `healthcheck` in `compose.yml` uses `/health/live` with `start_period 30s`.
 
 ## Deploy observability
@@ -18,7 +18,7 @@ States: `SUCCESS | FAILED | ROLLED_BACK | ROLLBACK_FAILED | BLOCKED`.
 Logs: `/opt/reliastra/logs/deploy-<sha>.log`, `compose-up-<sha>.log`, `migrate-<sha>.log` (30d, 100M cap, truncated).
 
 ## Metrics
-- `GET /metrics` (Prometheus) — `reliastra_*` counters already in app (see `backend/docs/observability`).
+- `GET /metrics` (Prometheus) - `reliastra_*` counters already in app (see `backend/docs/observability`).
 - Caddy access logs `json` to stdout, `docker logs`.
 
 ## Audit

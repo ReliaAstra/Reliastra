@@ -29,7 +29,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /build
 
 # Install dependencies first for layer caching. Dev deps are REQUIRED for
-# the build (tailwind/postcss/typescript) — do not set NODE_ENV=production
+# the build (tailwind/postcss/typescript) - do not set NODE_ENV=production
 # before this step.
 COPY frontend/package.json frontend/bun.lock ./
 RUN npm install --no-audit --no-fund
@@ -69,7 +69,7 @@ RUN python -m venv --copies /opt/venv && \
 # ── Stage 3: Runtime ────────────────────────────────────────────────────────
 FROM python:3.12.7-slim
 
-# Pinned runtime deps — update via `docker buildx imagetools inspect` and CI provenance
+# Pinned runtime deps - update via `docker buildx imagetools inspect` and CI provenance
 # Node.js 20 (frontend), Redis (broker/cache), supervisord (process manager),
 # curl (healthchecks), gosu (privilege drop)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -133,7 +133,7 @@ HEALTHCHECK --interval=15s --timeout=10s --start-period=120s --retries=8 \
 
 # Labels for provenance (also set by CI metadata-action)
 LABEL org.opencontainers.image.title="reliastra" \
-      org.opencontainers.image.description="Reliastra — external dependency intelligence" \
+      org.opencontainers.image.description="Reliastra - external dependency intelligence" \
       org.opencontainers.image.source="https://github.com/ReliaAstra/Reliastra"
 
 ENTRYPOINT ["/app/scripts/entrypoint-all.sh"]

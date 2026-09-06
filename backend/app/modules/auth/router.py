@@ -93,7 +93,7 @@ async def logout(
     await service.logout(db, body.refresh_token)
 
 
-# ── Email Verification (OTP — signup hard gate) ───────────────────
+# ── Email Verification (OTP - signup hard gate) ───────────────────
 
 
 @router.post("/verify-otp", response_model=VerifyOtpResponse)
@@ -157,7 +157,7 @@ async def resend_otp(
     return SendOtpResponse(**result)
 
 
-# ── Email Verification (magic link — legacy/alternative) ──────────
+# ── Email Verification (magic link - legacy/alternative) ──────────
 
 
 @router.post("/send-verification", status_code=status.HTTP_200_OK)

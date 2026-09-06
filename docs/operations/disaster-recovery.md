@@ -1,4 +1,4 @@
-# Disaster Recovery — Rollback vs Recovery
+# Disaster Recovery - Rollback vs Recovery
 
 ```
 Rollback  → revert application release (previous image)

@@ -29,7 +29,7 @@ async def ensure_admin_service_account() -> bool:
     """
     if not settings.admin_console_enabled:
         logger.info(
-            "ADMIN_USERNAME/ADMIN_PASSWORD not configured — admin console "
+            "ADMIN_USERNAME/ADMIN_PASSWORD not configured - admin console "
             "disabled"
         )
         return False

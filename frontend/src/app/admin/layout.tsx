@@ -5,7 +5,7 @@ import { AdminWorkspace } from '@/components/admin/admin-provider';
 // through the live access gate, whose first act is a backend-authorized
 // overview call (require_system_admin). Static HTML here would render the
 // chrome of an admin surface to anyone who knows the URL, even though no
-// data is included — dynamic rendering keeps that surface server-gated too.
+// data is included - dynamic rendering keeps that surface server-gated too.
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {

@@ -1,7 +1,7 @@
 import { SITE_URL } from '@/lib/seo';
 
 /**
- * /llms.txt — concise machine-readable description of RELIASTRA.
+ * /llms.txt - concise machine-readable description of RELIASTRA.
  * Absolute HTTPS URLs. No marketing hype, no fabricated stats.
  */
 const BODY = `# RELIASTRA
@@ -19,8 +19,8 @@ deterministic engine, and generates cryptographically verifiable SLA evidence
 reports (checksummed, bound to your organization).
 
 RELIASTRA is NOT generic uptime monitoring. Uptime monitoring watches YOUR
-infrastructure. RELIASTRA watches YOUR VENDORS — from outside both your stack
-and the vendor's — so you can tell "we broke it" apart from "they broke it".
+infrastructure. RELIASTRA watches YOUR VENDORS - from outside both your stack
+and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 ## Who it serves
 
@@ -81,7 +81,7 @@ and the vendor's — so you can tell "we broke it" apart from "they broke it".
 
 One scheduler dispatches one check task per dependency per region through a
 message broker to workers. Every result carries its region. A single failed
-request is never an incident — quorum across regions inside a short window is
+request is never an incident - quorum across regions inside a short window is
 required, and recovery needs consecutive successes. Targets are resolved and
 validated against an SSRF policy (private/loopback/link-local/metadata
 addresses rejected and recorded as policy blocks, never as vendor outages).
@@ -93,7 +93,7 @@ Missed probes are never backfilled. Retention follows the plan (24h Free,
 - Fixed small set of origins: cannot separate vendor-wide from unobserved geographies.
 - Server-to-server responses only; not end-user experience.
 - Authenticated checks use customer-supplied credentials; a rotation can present as a target failure.
-- Public Track pages show aggregated posture only for vendors made public — never customer endpoints.
+- Public Track pages show aggregated posture only for vendors made public - never customer endpoints.
 
 ## Contact
 

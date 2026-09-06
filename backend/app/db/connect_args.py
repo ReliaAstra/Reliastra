@@ -78,7 +78,7 @@ def build_ssl_connect_args(
             # server that may not support it.  Fail safe (boot-safe) with
             # asyncpg's advisory default and say so loudly.
             logger.warning(
-                "Unknown DATABASE_SSL_MODE %r — treating as 'prefer' "
+                "Unknown DATABASE_SSL_MODE %r - treating as 'prefer' "
                 "(SSL when available, plaintext fallback). Supported modes: %s.",
                 ssl_mode,
                 ", ".join(SUPPORTED_SSL_MODES),

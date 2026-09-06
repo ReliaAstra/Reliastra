@@ -38,7 +38,7 @@ export function goTo(page: PartnerPage) {
  *
  * - `/partner/*` slugs (public pages + program legal) → canonical URL.
  * - `landing` → `/`.
- * - Dashboard pages (and `support` once signed in — the live conversation
+ * - Dashboard pages (and `support` once signed in - the live conversation
  *   desk) → store navigation, returning to `/` when called from a
  *   `/partner/*` URL since the dashboard shell only renders there.
  */
@@ -78,7 +78,7 @@ export function navigatePartner(page: PartnerPage) {
 
 /**
  * Explicit partner-network navigation to a refresh-safe URL.
- * Use for "Join as partner" / "Partner login" links — never /signup or /login.
+ * Use for "Join as partner" / "Partner login" links - never /signup or /login.
  */
 export function goToPartner(page: PartnerPublicPage) {
   if (typeof window !== 'undefined') {

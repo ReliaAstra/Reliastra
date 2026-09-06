@@ -1,9 +1,9 @@
-# Check execution — phase 2 engineering report
+# Check execution - phase 2 engineering report
 
 **Date:** 2026-09-05
 **Scope:** make RELIASTRA's check execution production-ready
-**Verdict:** the real runtime path was booted and exercised end to end — Beat →
-broker → worker → probe → `CheckResult` — including the failure path. See §7 and §8.
+**Verdict:** the real runtime path was booted and exercised end to end - Beat →
+broker → worker → probe → `CheckResult` - including the failure path. See §7 and §8.
 
 ---
 
@@ -32,14 +32,14 @@ superseded (§6).
 ### 1.2 Nothing could tell an outage apart from an unexecuted probe
 
 `CheckResult` rows were the only signal. No row meant either *"the vendor is
-down"* or *"RELIASTRA never ran the probe"* — indistinguishable, and both render
+down"* or *"RELIASTRA never ran the probe"* - indistinguishable, and both render
 as an empty chart. This is the symptom that makes an operator distrust the
 whole product.
 
 ### 1.3 Session teardown could not explain itself
 
 `sessionExpired()` logged nothing distinguishing a 401 from a 429, a 502 from a
-network failure, or a malformed body from a real expiry — so a transient proxy
+network failure, or a malformed body from a real expiry - so a transient proxy
 error was silently indistinguishable from a dead session, and a refresh token
 could be destroyed for a reason nobody could read out of a log.
 
@@ -49,7 +49,7 @@ could be destroyed for a reason nobody could read out of a log.
 
 ### 2.1 Celery + Redis are first-class and the only path
 
-`backend/app/infrastructure/celery_app.py` — audited and hardened:
+`backend/app/infrastructure/celery_app.py` - audited and hardened:
 
 - explicit broker **and** result backend, both from `settings.REDIS_URL`
 - stable, fully-qualified task names; `test_no_task_name_is_registered_twice`
@@ -71,8 +71,8 @@ $ grep -Rni "apscheduler|BackgroundScheduler|schedule\.every" backend/app fronte
 ```
 
 `schedule_due_checks` is invoked only by the `schedule_checks` Celery task.
-`execute_check` is published from exactly two places — the scheduler and the
-manual trigger — and both call the **same** task. The API never probes inline.
+`execute_check` is published from exactly two places - the scheduler and the
+manual trigger - and both call the **same** task. The API never probes inline.
 
 ### 2.2 Scheduler + worker heartbeats
 
@@ -89,7 +89,7 @@ manual trigger — and both call the **same** task. The API never probes inline.
 Every TTL is **derived from config**, not hard-coded.
 `test_heartbeat_ttl_is_derived_from_the_schedule_interval` is parametrized over
 `CHECK_SCHEDULE_SECONDS ∈ {5, 10, 30, 120, 900}` and asserts both the derivation
-formula and two invariants (TTL ≥ 2 × interval, TTL ≥ 60 s) — comparing the
+formula and two invariants (TTL ≥ 2 × interval, TTL ≥ 60 s) - comparing the
 property to the same settings values it reads would also pass for a constant,
 which is precisely the mistake being guarded against.
 
@@ -100,7 +100,7 @@ Reports `scheduler`, `worker` and `broker` independently as
 `healthy | degraded | unavailable`, and returns **HTTP 503** unless healthy.
 `broker.queue_depth` is included because a rising depth with a healthy broker is
 the clearest possible "nothing is consuming" signal. No broker address or
-credential appears in the response — `sanitize_broker_url()` is log-only, and
+credential appears in the response - `sanitize_broker_url()` is log-only, and
 `test_health_payload_exposes_no_broker_address` asserts the payload contains
 neither the host nor the password.
 
@@ -109,7 +109,7 @@ neither the host nor the password.
 `CheckState` (new enum in `constants.py`) gives nine nameable states:
 `never_checked`, `awaiting_scheduled_execution`, `queued`, `executing`,
 `successful`, `target_failed`, `blocked_by_security_policy`, `dispatch_failed`,
-`scheduler_unavailable` — surfaced through `GET /v1/checks/state/{id}` with
+`scheduler_unavailable` - surfaced through `GET /v1/checks/state/{id}` with
 `is_target_problem`, `is_infrastructure_problem` and a `pipeline` block.
 
 The `error_message` prefixes are now named constants used by **both** the
@@ -124,7 +124,7 @@ service.py:478    redirect_error = f"{REDIRECT_BLOCKED_...}: {exc}"
 service.py:679    (classifier reads the same constants)
 ```
 
-`constants.py` is purely additive — 61 insertions, 0 deletions; the three
+`constants.py` is purely additive - 61 insertions, 0 deletions; the three
 pre-existing quorum constants are untouched.
 
 **SSRF was not modified.** `resolve_pinned_target_async` and the policy are
@@ -135,14 +135,14 @@ unavailability and from scheduler unavailability.
 
 `checks_dispatch_failures_total{region,reason}` increments on every failed
 `execute_check.delay()`. The log line carries dependency id, region, exception
-type and a truncated message — never a token, auth header or probe payload.
+type and a truncated message - never a token, auth header or probe payload.
 
 `next_check_at` is **not** advanced and **no `CheckResult` is written**. A probe
 that never happened must never appear in history.
 
 ### 2.6 Manual trigger
 
-`POST /v1/checks/run` — authenticated, authorized, rate-limited per
+`POST /v1/checks/run` - authenticated, authorized, rate-limited per
 organization. Publishes the same `execute_check` task, returns **202** with the
 queued task ids, and returns **503 with a `reason`** when the broker refuses.
 No duplicated probe logic, no SSRF bypass, no inline execution.
@@ -150,7 +150,7 @@ No duplicated probe logic, no SSRF bypass, no inline execution.
 ### 2.7 Metrics actually reach Prometheus
 
 Check counters are incremented **in the worker**, never in the API. Before this
-change the API's `/metrics` published *zero* `reliastra_*` series — verified
+change the API's `/metrics` published *zero* `reliastra_*` series - verified
 live: `curl -s /metrics | grep -c "^reliastra_"` → `0`. A counter nobody can
 scrape is not observability.
 
@@ -169,7 +169,7 @@ so no call site can interpolate a token into a log line, and `redact()` strips
 bearer tokens, `authorization:`/`cookie:` values and JWTs.
 
 `isSessionInvalid()` is true **only** for `unauthorized` and `no_session`. A 403
-whose `code` is not an auth code is resource authorization, not a dead session —
+whose `code` is not an auth code is resource authorization, not a dead session -
 that guard is what stops a 429 or a 5xx from destroying a valid refresh token.
 
 ### 2.9 Dev stack
@@ -222,7 +222,7 @@ Two were mine.
 ### 4.1 `task_queues` killed the worker at startup (mine)
 
 Setting `celery_app.conf.task_queues = ("celery",)` raises
-`AttributeError: 'str' object has no attribute 'name'` at worker boot — Celery
+`AttributeError: 'str' object has no attribute 'name'` at worker boot - Celery
 needs kombu `Queue` objects there. Fixed with `task_default_queue` +
 `task_create_missing_queues`, plus a comment saying never pass names.
 
@@ -237,7 +237,7 @@ Fixed by capturing output then matching.
 
 Production Redis ran `--maxmemory 128mb --maxmemory-policy allkeys-lru`. Redis
 **is the broker** here: under pressure LRU evicts least-recently-used keys,
-which includes queued check tasks and the heartbeat keys — losing work while the
+which includes queued check tasks and the heartbeat keys - losing work while the
 service still looks healthy. Changed to `noeviction` (fail loudly on write,
 which is what the dispatch-failure metric and `/health/checks` report) and
 raised the limit to 256mb.
@@ -245,7 +245,7 @@ raised the limit to 256mb.
 ### 4.4 Worker and Beat had no healthchecks
 
 Neither `backend/docker-compose.yml` nor `deploy/production/compose.yml` had one,
-so an orchestrator would restart a wedged API but never notice a dead worker —
+so an orchestrator would restart a wedged API but never notice a dead worker -
 precisely the failure mode this whole phase is about. Both files now define
 healthchecks, and production also gained resource limits and log rotation for
 the worker, scheduler and Redis.
@@ -280,20 +280,20 @@ distinct execute_check targets: 0
 ```
 
 Zero `execute_check` messages. `schedule_checks` is *itself* a worker task, so a
-dead worker schedules nothing at all — the growth was Beat's periodic ticks
+dead worker schedules nothing at all - the growth was Beat's periodic ticks
 backing up. Those already carried `expires` and are discarded on delivery, so
 there was no unbounded-growth defect on that path.
 
 What I did with that:
 
 - **Corrected the false comment** in `service.py` to describe the case the guard
-  actually covers — a worker that is alive but slower than
+  actually covers - a worker that is alive but slower than
   `CHECK_SCHEDULE_SECONDS`, where a probe would otherwise overlap itself every
   cycle and multiply load on a target already struggling. The guard is
   legitimate for that and is tested; it is simply not what I observed.
 - **Closed the one real gap** the inspection exposed: `process_outbox` had no
   `expires`, so a backlog of identical outbox drains would all execute. Added.
-- **Locked it in with a test** — `test_periodic_tasks_expire_so_a_broker_backlog_drains_as_no_ops`
+- **Locked it in with a test** - `test_periodic_tasks_expire_so_a_broker_backlog_drains_as_no_ops`
   fails if any sub-60 s schedule lacks `expires`.
 - The guard then fired **3 times in the live path** during a worker restart, so
   it is exercised, not theoretical.
@@ -302,7 +302,7 @@ What I did with that:
 
 ## 6. Documentation
 
-New: **`docs/checks-operating-model.md`** — required runtime components, the
+New: **`docs/checks-operating-model.md`** - required runtime components, the
 verification commands, the health endpoint, the nine states, the manual trigger,
 failure semantics, metrics, dev stack, production safety notes.
 
@@ -313,8 +313,8 @@ Two historical documents claimed `RUN_IN_PROCESS_SCHEDULER` was a working
 escape hatch. Both were false and both are now annotated as superseded rather
 than silently deleted:
 
-- `backend/audit/reliastra_production_audit.md:101` — *"Fix shipped (partial)"*
-- `backend/FIXES_IMPLEMENTED.md:418` — *"`RUN_IN_PROCESS_SCHEDULER=false` on the API"*
+- `backend/audit/reliastra_production_audit.md:101` - *"Fix shipped (partial)"*
+- `backend/FIXES_IMPLEMENTED.md:418` - *"`RUN_IN_PROCESS_SCHEDULER=false` on the API"*
 
 ---
 
@@ -377,7 +377,7 @@ the base commit `0857083`:
 
 Plus: duplicate-dispatch guard, in-flight marker clearing, periodic-task expiry,
 and cross-process metric aggregation (a real subprocess writes the sample, the
-parent renders it — the production path, not a stand-in).
+parent renders it - the production path, not a stand-in).
 
 ### Lint
 
@@ -400,7 +400,7 @@ migrations, Paystack mock, mail sink, API, worker (`inspect ping → pong`), Bea
 (heartbeat present in Redis).
 
 Registered a real user (OTP read from the mail sink), created a dependency on
-`https://pypi.org/simple/` — a public, non-private IPv6 host, so SSRF passes
+`https://pypi.org/simple/` - a public, non-private IPv6 host, so SSRF passes
 without being weakened:
 
 ```
@@ -456,7 +456,7 @@ baseline   /health/checks=200  scheduler=healthy  worker=healthy  broker=healthy
 ```
 
 The endpoint degrades to **503** once the derived TTL lapses. The dependency's
-own state stayed `successful` — its last probe genuinely succeeded — but the
+own state stayed `successful` - its last probe genuinely succeeded - but the
 response carried `pipeline.status = degraded`, so the UI can say both true
 things at once instead of showing an empty chart:
 
@@ -485,7 +485,7 @@ The 51-message backlog drained to zero and probing resumed on its own.
 
 Stated plainly, none of them verified end to end here:
 
-1. **Docker was never run.** `docker compose config` was not executed — Docker
+1. **Docker was never run.** `docker compose config` was not executed - Docker
    is unavailable in this sandbox. Both compose files parse as valid YAML and
    the healthcheck *commands* were run against the live stack, but the container
    wiring itself (image, `PATH`, `$$HOSTNAME` expansion, `depends_on` ordering)
@@ -493,12 +493,12 @@ Stated plainly, none of them verified end to end here:
 2. **Prometheus was never scraped.** Multiprocess aggregation is proven by a
    real subprocess test and by the live `/metrics` output, but no scraper has
    read it, and `PROMETHEUS_MULTIPROC_DIR` is not yet set in
-   `deploy/production/compose.yml` or the production env file — only in
+   `deploy/production/compose.yml` or the production env file - only in
    `dev-stack.sh`. It must be added, and cleared on worker restart, before
    worker metrics appear in production.
 3. **The 3 pre-existing test failures** in billing/checkout remain. Unrelated to
    this work, but the suite is not green.
-4. **`http_requests_total` is defined but never incremented** anywhere — a
+4. **`http_requests_total` is defined but never incremented** anywhere - a
    pre-existing dead metric I did not touch.
 5. **Single-region Redis** in production. It is the broker, the result backend
    and the heartbeat store; if it dies, checks stop. The system now *reports*

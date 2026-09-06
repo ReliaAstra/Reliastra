@@ -1,4 +1,4 @@
-"""Public, unauthenticated referral resolution — ``GET /v1/public/referral/{code}``.
+"""Public, unauthenticated referral resolution - ``GET /v1/public/referral/{code}``.
 
 This is the single entry point for ``https://reliastra.com/r/{code}``. It is
 deliberately tiny: validate the code, resolve the partner, count the click,
@@ -24,7 +24,7 @@ from app.modules.referrals.repository import ReferralCodeRepository
 
 logger = logging.getLogger(__name__)
 
-public_partners_router = APIRouter(prefix="/v1", tags=["Partners — Public"])
+public_partners_router = APIRouter(prefix="/v1", tags=["Partners - Public"])
 
 #: Generous on purpose: a partner's launch traffic must not 429 real visitors.
 _resolve_limiter = SlidingWindowRateLimiter(
@@ -49,7 +49,7 @@ async def resolve_referral(
 ) -> ReferralResolveResponse:
     """Validate a referral code and return signup attribution metadata.
 
-    The destination is always a relative path — a crafted ``to`` cannot be
+    The destination is always a relative path - a crafted ``to`` cannot be
     turned into an open redirect.
     """
     await enforce_rate_limit(request, _resolve_limiter)

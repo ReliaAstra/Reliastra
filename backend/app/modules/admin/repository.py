@@ -229,7 +229,7 @@ class AdminBusinessRepository:
         mrr = sum(get_plan_price_usd(row.plan) * row.cnt for row in plan_rows)
 
         # Simple churn: orgs with inactive subscription that were active 7 days ago
-        churned_7d = 0  # Approximation — would need historical snapshot data
+        churned_7d = 0  # Approximation - would need historical snapshot data
 
         return {
             "total_users": total_users,
@@ -306,7 +306,7 @@ class AdminBusinessRepository:
         from app.modules.users.models import User
 
         thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-        # Derive activity from owner users — Organization has no last_activity_at column.
+        # Derive activity from owner users - Organization has no last_activity_at column.
         query = (
             select(
                 Organization.id,

@@ -66,8 +66,8 @@ export function PartnerPayoutQueue() {
     onSuccess: async (_data, variables) => {
       toast.success(
         variables.action === 'mark_paid'
-          ? 'Payout marked paid — the partner has been notified'
-          : 'Payout marked failed — the balance was returned to the partner'
+          ? 'Payout marked paid - the partner has been notified'
+          : 'Payout marked failed - the balance was returned to the partner'
       );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['admin', 'partners'] }),
@@ -86,7 +86,7 @@ export function PartnerPayoutQueue() {
     <AdminCard>
       <SectionHeading
         title="Payout queue"
-        subtitle="Partners waiting to be paid — send the money, then record it here"
+        subtitle="Partners waiting to be paid - send the money, then record it here"
       />
       <div className="border-t border-slate-100 dark:border-white/10">
         {query.isLoading && <SectionSkeleton lines={4} />}

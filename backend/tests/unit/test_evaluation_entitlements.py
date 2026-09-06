@@ -92,7 +92,7 @@ async def test_active_evaluation_allows_evidence_generation():
 
     # Service imports OrganizationRepository inside the method, so patch there
     with patch("app.modules.organizations.repository.OrganizationRepository.get_by_id", new=AsyncMock(return_value=org)):
-        # Should NOT raise — effective plan is Pro
+        # Should NOT raise - effective plan is Pro
         await evidence_service._enforce_evidence_entitlement(AsyncMock(), org.id)  # type: ignore[arg-type]
     assert get_effective_plan_for_org(org) == "pro"
 
@@ -218,7 +218,7 @@ def test_expired_evaluation_uses_server_time_not_client_time():
     assert is_evaluation_active(org, now=now) is False
     # The only correct remaining is 0 as per server
     assert evaluation_days_remaining(org, now=now) == 0
-    # Even with client time, if we were to mistakenly use client time, it would appear active — prove server is authoritative
+    # Even with client time, if we were to mistakenly use client time, it would appear active - prove server is authoritative
     assert is_evaluation_active(org, now=client_claimed_now) is True  # would be true if we trusted client
     # But our entitlement layer always uses server now (default), so it stays expired
     assert is_evaluation_active(org) is False
@@ -298,7 +298,7 @@ def test_local_storage_cannot_reactivate():
     # Re-trial attempt: creating a new evaluation window client-side would require DB write
     # Our repository.create is the only place that can create evaluation, and it sets evaluation_used
     # A client cannot call OrganizationRepository.update with evaluation fields via PATCH
-    # (only name/ai_explanations_enabled are allowed) — verified via OrganizationUpdateRequest model
+    # (only name/ai_explanations_enabled are allowed) - verified via OrganizationUpdateRequest model
 
 
 def test_browser_clock_manipulation_fails():

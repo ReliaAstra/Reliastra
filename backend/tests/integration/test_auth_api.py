@@ -8,7 +8,7 @@ PASSWORD = "Secret123!"
 
 @pytest.mark.asyncio
 async def test_auth_endpoints(async_client):
-    # Register — the hard gate means NO tokens are issued here.
+    # Register - the hard gate means NO tokens are issued here.
     reg_res = await async_client.post(
         "/v1/auth/register",
         json={
@@ -122,7 +122,7 @@ async def test_wrong_code_is_rejected_and_burns_attempts(async_client):
         else:
             assert "TOO_MANY_ATTEMPTS" in issues
 
-    # The correct code no longer works — the record was burned.
+    # The correct code no longer works - the record was burned.
     res = await async_client.post(
         "/v1/auth/verify-otp",
         json={"email": email, "code": TEST_OTP_CODE},
@@ -243,7 +243,7 @@ async def test_verified_account_cannot_be_reverified_for_a_free_session(
     """Regression: /verify-otp must never mint a session for a bad code.
 
     An early-return for already-verified users meant any caller could POST
-    {email, "000000"} for a verified account and be handed real tokens —
+    {email, "000000"} for a verified account and be handed real tokens -
     an authentication bypass requiring only a known email address.
     """
     email = "bypass@reliastra.com"

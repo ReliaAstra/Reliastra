@@ -4,17 +4,17 @@ Dead dependencies previously consumed worker capacity: every scheduled check
 spent a full ``timeout_seconds`` waiting on an endpoint that never answers.
 The breaker collapses that load:
 
-* **closed**   — checks dispatch normally.
-* **open**     — after ``FAILURE_THRESHOLD`` (3) consecutive failures, checks
+* **closed**   - checks dispatch normally.
+* **open**     - after ``FAILURE_THRESHOLD`` (3) consecutive failures, checks
   are no longer dispatched. A half-open probe is attempted at most once per
   ``HALF_OPEN_INTERVAL_SECONDS`` (60s).
-* **half-open** — a probe succeeded; the breaker requires
+* **half-open** - a probe succeeded; the breaker requires
   ``SUCCESS_THRESHOLD`` (2) consecutive successes before closing again.
 
 State is a small JSON document per dependency under ``reliastra:circuit:<id>``.
 The half-open probe uses a ``SETNX`` lease so multiple scheduler instances
 never fire duplicate probes. Every operation fails open (dispatch is allowed)
-when Redis is unavailable — a Redis outage must not silence all monitoring.
+when Redis is unavailable - a Redis outage must not silence all monitoring.
 """
 
 from __future__ import annotations

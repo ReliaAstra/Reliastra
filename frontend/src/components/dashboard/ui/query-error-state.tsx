@@ -17,8 +17,8 @@ interface Props {
  *
  * These two must never look the same. Before this existed, pages such as the
  * dependency list destructured only `{ data, isLoading }` from their query, so
- * a 500 produced `data === undefined` and the page rendered its empty state —
- * "No dependencies yet" — for an account that actually had dependencies. For an
+ * a 500 produced `data === undefined` and the page rendered its empty state -
+ * "No dependencies yet" - for an account that actually had dependencies. For an
  * infrastructure product that is the worst possible failure mode: the user is
  * told their system is fine when in fact we could not ask it.
  *
@@ -28,7 +28,7 @@ interface Props {
  */
 export function QueryErrorState({
   title = 'Unable to load this data',
-  body = 'The request failed. Your data may still be there — this is a problem reaching the API, not an empty account.',
+  body = 'The request failed. Your data may still be there - this is a problem reaching the API, not an empty account.',
   onRetry,
   retrying = false,
 }: Props) {

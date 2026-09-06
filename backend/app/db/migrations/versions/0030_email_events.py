@@ -1,4 +1,4 @@
-"""email events — Resend webhook reliability
+"""email events - Resend webhook reliability
 
 Revision ID: 0030_email_events
 Revises: 0029_billing_tx_attribution

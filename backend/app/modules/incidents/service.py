@@ -126,7 +126,7 @@ class IncidentService:
             )
             if incident:
                 logger.info(
-                    "Lost incident creation race for dep %s — reusing existing incident %s",
+                    "Lost incident creation race for dep %s - reusing existing incident %s",
                     dependency_id, incident.id,
                 )
                 return incident

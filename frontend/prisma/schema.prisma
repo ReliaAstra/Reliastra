@@ -58,7 +58,7 @@ model Commission {
   partner  Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 }
 
-/// DEPRECATED — write path retired, kept only so existing rows are not dropped.
+/// DEPRECATED - write path retired, kept only so existing rows are not dropped.
 ///
 /// `POST /api/support` used to write here and nothing ever read it, so every
 /// web-form message went unanswered. Submissions now go to the backend

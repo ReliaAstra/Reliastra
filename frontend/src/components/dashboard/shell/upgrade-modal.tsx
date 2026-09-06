@@ -8,6 +8,7 @@ import { PLANS, annualPrice, dependencyLabel, getPlan, intervalLabel, monthlyPri
 import { cn } from '@/lib/utils';
 import { RsButton } from '../ui/button';
 import {
+  FxReferencePanel,
   PaymentCurrencyNotice,
   PlanPaymentSummary,
 } from '@/components/billing/PaymentCurrencyNotice';
@@ -20,24 +21,31 @@ import {
 
 function Feature({ ok, children }: { ok: boolean | string; children: string }) {
   return (
-    <div className="flex items-center justify-between py-1.5 text-[13px]">
-      <span className="text-rs-text-secondary">{children}</span>
-      <span className={cn('font-mono text-xs', ok ? 'text-rs-text' : 'text-rs-text-tertiary')}>
-        {typeof ok === 'string' ? ok : ok ? 'Yes' : '—'}
+    <div className="flex items-baseline justify-between gap-2 py-1.5 text-[13px]">
+      <span className="shrink-0 text-rs-text-secondary">{children}</span>
+      {/* Values are short on purpose: an unbreakable unit that never wraps
+          into a second line and collides with the label beside it. */}
+      <span
+        className={cn(
+          'whitespace-nowrap text-right font-mono text-xs',
+          ok ? 'text-rs-text' : 'text-rs-text-tertiary'
+        )}
+      >
+        {typeof ok === 'string' ? ok : ok ? 'Yes' : '-'}
       </span>
     </div>
   );
 }
 
 /**
- * Plan chooser — the entry point into RELIASTRA's checkout.
+ * Plan chooser - the entry point into RELIASTRA's checkout.
  *
  * This dialog answers one question (which plan, on which interval) and then
  * hands off: selecting a paid plan routes to `/checkout`, where the quote, the
  * currency disclosure, the payment methods enabled for a global customer and the
  * Paystack hand-off all live. It used to run the payment itself, which meant two
  * screens each believed they were the last thing a customer read before money
- * moved — and only one of them was the screen the backend priced.
+ * moved - and only one of them was the screen the backend priced.
  *
  * Enterprise stays "Contact Sales" and Free stays the default tier: neither is
  * chargeable through self-serve, so neither is offered a checkout at all. The
@@ -80,8 +88,8 @@ export function UpgradeModal() {
    * Enter RELIASTRA's checkout.
    *
    * The chooser used to price and launch the payment itself. That made two
-   * screens responsible for the same promise — the amount a customer is
-   * charged — and every copy of it a place pricing could drift. So this carries
+   * screens responsible for the same promise - the amount a customer is
+   * charged - and every copy of it a place pricing could drift. So this carries
    * intent only (plan + interval) and `/checkout` resolves everything else from
    * the backend: the quote, the payment methods enabled for a global customer,
    * the provider hand-off and the verification that decides entitlement.
@@ -100,7 +108,7 @@ export function UpgradeModal() {
       role="dialog"
     >
       <div
-        className="rs-modal-panel-xl rs-modal-in flex max-h-[90vh] w-full max-w-[900px] flex-col overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated shadow-rs-modal"
+        className="rs-modal-panel-xl rs-modal-in flex max-h-[90vh] w-full max-w-[1040px] flex-col overflow-hidden rounded-xl border border-rs-border-subtle bg-rs-elevated shadow-rs-modal"
         onClick={(e) => e.stopPropagation()}
         role="document"
         aria-labelledby="pricing-title"
@@ -127,9 +135,14 @@ export function UpgradeModal() {
           </>
         </div>
 
-        <>
-            {/* Billing interval toggle — changes the ACTUAL amount charged. */}
-            <div className="flex shrink-0 items-center justify-center gap-3 px-6 pb-2">
+        {/* One scroll area owns everything below the title. The card row used
+            to be the only shrinkable flex child, so on short viewports the
+            panel squeezed it and the tallest card overflowed its own frame.
+            Scrolling the whole body keeps every card exactly as tall as its
+            content, on any viewport. */}
+        <div className="flex-1 overflow-y-auto rs-scrollbar">
+            {/* Billing interval toggle - changes the ACTUAL amount charged. */}
+            <div className="flex items-center justify-center gap-3 px-6 pb-3">
               <button
                 type="button"
                 onClick={() => setInterval('monthly')}
@@ -152,7 +165,10 @@ export function UpgradeModal() {
               </button>
             </div>
 
-            <div className="flex gap-3 overflow-x-auto px-5 pb-4 rs-scrollbar md:px-6">
+            {/* Grid, not a horizontal scroller: the three tiers are the whole
+                decision, so at desktop width all three are visible at once
+                and stretch to equal height. On narrow screens they stack. */}
+            <div className="grid gap-4 px-5 pb-4 md:grid-cols-3 md:px-6">
               {PLANS.map((p) => {
                 const isCurrent = p.id === current.id;
                 const isPopular = p.id === 'pro';
@@ -163,14 +179,15 @@ export function UpgradeModal() {
                   <div
                     key={p.id}
                     className={cn(
-                      'relative flex min-w-[172px] flex-1 flex-col rounded-xl border p-4',
+                      'relative flex flex-col rounded-xl border p-4',
+                      isPopular && 'pt-5',
                       isPopular
                         ? 'border-2 border-rs-brand bg-[rgba(37,99,235,0.03)]'
                         : 'border-rs-border-subtle bg-rs-elevated'
                     )}
                   >
                     {isPopular && (
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-rs-brand px-2.5 py-1 text-[11px] font-semibold text-white">
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-rs-brand px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm ring-2 ring-rs-elevated">
                         Most Popular
                       </span>
                     )}
@@ -212,7 +229,9 @@ export function UpgradeModal() {
                       <Feature ok={p.clientGroups}>Client groups</Feature>
                       <Feature ok={p.whiteLabel}>White-label</Feature>
                     </div>
-                    <div className="mt-4">
+                    {/* mt-auto pins the action to the card's base so all three
+                        CTAs sit on the same line no matter the card's height. */}
+                    <div className="mt-auto pt-4">
                       {isCurrent ? (
                         <button
                           disabled
@@ -249,11 +268,13 @@ export function UpgradeModal() {
               })}
             </div>
 
-            {/* Plan information → currency disclosure → payment CTA. The
-                disclosure lives inside the flow, above the button that would
-                start it, so it cannot be skipped. */}
-            <div className="px-5 pb-2 md:px-6" data-testid="upgrade-currency-notice">
+            {/* Plan information → currency disclosure → live rate reference.
+                The disclosure lives inside the flow, above the button that
+                would start it, so it cannot be skipped - and the sourced rate
+                beside it answers "what rate is this?" before checkout. */}
+            <div className="space-y-3 px-5 pb-2 md:px-6" data-testid="upgrade-currency-notice">
               <PaymentCurrencyNotice info={currency} heading="Billing currency" />
+              <FxReferencePanel info={currency} />
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-t border-rs-border-subtle px-6 py-4 text-xs text-rs-text-tertiary">
@@ -264,30 +285,8 @@ export function UpgradeModal() {
               <span>Cancel anytime</span>
               <span>Questions? support@reliastra.com</span>
             </div>
-        </>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function Row({
-  label,
-  children,
-  last,
-}: {
-  label: string;
-  children: React.ReactNode;
-  last?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex items-baseline justify-between gap-4 py-2 text-[13px]',
-        !last && 'border-b border-rs-border-subtle'
-      )}
-    >
-      <dt className="shrink-0 text-rs-text-tertiary">{label}</dt>
-      <dd className="min-w-0 text-right break-words">{children}</dd>
     </div>
   );
 }
@@ -316,7 +315,7 @@ export function EvidenceGateModal() {
       >
         <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Pro feature</h2>
         <p className="mt-2 text-sm leading-relaxed text-rs-text-secondary">
-          Generate verifiable SLA evidence backed by multi-region checks — the artifact you attach
+          Generate verifiable SLA evidence backed by multi-region checks - the artifact you attach
           to a refund request or executive postmortem.
         </p>
         <div className="mt-6 flex items-center gap-3">

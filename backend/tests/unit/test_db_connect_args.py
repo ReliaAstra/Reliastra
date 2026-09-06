@@ -96,7 +96,7 @@ def test_pooler_compat_disables_statement_cache():
 
 # ── Live engine tests against a PLAINTEXT TCP PostgreSQL ─────────────────────
 # pgserver (the main conftest database) listens on a unix socket only, where
-# asyncpg skips SSL negotiation entirely — so SSL semantics need TCP.
+# asyncpg skips SSL negotiation entirely - so SSL semantics need TCP.
 
 
 def _find_pg_bin() -> Path | None:
@@ -127,7 +127,7 @@ def _subprocess_env() -> dict:
 
 @pytest.fixture(scope="module")
 def plaintext_tcp_pg(tmp_path_factory):
-    """Plaintext PostgreSQL over TCP — exercises real SSLRequest negotiation.
+    """Plaintext PostgreSQL over TCP - exercises real SSLRequest negotiation.
 
     Starts a throwaway cluster when server binaries are available, otherwise
     falls back to the CI postgres service (also plaintext); skips when
@@ -136,7 +136,7 @@ def plaintext_tcp_pg(tmp_path_factory):
     pg_bin = _find_pg_bin()
     if pg_bin is not None:
         # Binaries exist but may still fail to start (e.g. sandboxed CI
-        # runners) — fall through to the CI service/skip below instead of
+        # runners) - fall through to the CI service/skip below instead of
         # erroring the whole module.
         try:
             env = _subprocess_env()
@@ -233,7 +233,7 @@ async def test_require_mode_fails_against_plaintext_postgres(plaintext_tcp_pg):
     """Documents why the standalone entrypoint must manage local TLS.
 
     Against a plaintext server (initdb default), a strict mode fails with
-    "rejected SSL upgrade" — exactly the deployment incident.  The entrypoint
+    "rejected SSL upgrade" - exactly the deployment incident.  The entrypoint
     enables SSL on the bootstrapped cluster and pins the in-container
     processes to 'prefer' so this can never recur.
     """
@@ -250,8 +250,8 @@ async def test_require_mode_fails_against_plaintext_postgres(plaintext_tcp_pg):
 async def test_build_engine_with_prefer_uses_default_engine_path():
     """Smoke: the production engine builder works with 'prefer' set.
 
-    (Runs against the conftest pgserver instance — a unix socket where
-    asyncpg skips SSL — so this guards the build_engine() wiring itself.)
+    (Runs against the conftest pgserver instance - a unix socket where
+    asyncpg skips SSL - so this guards the build_engine() wiring itself.)
     """
     settings.DATABASE_SSL_MODE = "prefer"
     engine = build_engine()

@@ -95,7 +95,7 @@ export function LiveVendorGrid() {
               Live measurements are temporarily unavailable.
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-white/30">
-              We only show real probe data — never placeholders. Please retry in a moment.
+              We only show real probe data - never placeholders. Please retry in a moment.
             </p>
             <button
               onClick={() => refetch()}
@@ -110,7 +110,7 @@ export function LiveVendorGrid() {
           <div className="rounded-2xl border border-white/5 bg-[#131318] px-6 py-16 text-center">
             <p className="text-sm font-medium text-white">Public monitoring fleet initializing</p>
             <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-white/40">
-              Independent probes are warming up. Vendor cards appear as soon as the first regional checks complete —
+              Independent probes are warming up. Vendor cards appear as soon as the first regional checks complete -
               typically within a minute of deployment.
             </p>
           </div>
@@ -135,7 +135,7 @@ export function LiveVendorGrid() {
                 >
                   <Link
                     href={`/track/${vendor.vendor_name}`}
-                    aria-label={`${vendor.display_name} status: ${sCfg.label} — open Track page`}
+                    aria-label={`${vendor.display_name} status: ${sCfg.label} - open Track page`}
                     className="block rounded-2xl border border-white/5 bg-[#131318] p-6 transition-all duration-300 hover:-translate-y-4 hover:border-[#0891B2]/20 hover:shadow-[0_0_0_1px_#0891B2,0_0_60px_rgba(8,145,178,0.12)]"
                   >
                   <div className="mb-6 flex items-center justify-between">

@@ -1,7 +1,7 @@
 """Celery task that flushes API-key ``last_used_at`` timestamps (FIX 21).
 
 Authentication no longer writes ``UPDATE api_keys SET last_used_at`` on every
-request — that write amplified every API-key-authenticated call into a write
+request - that write amplified every API-key-authenticated call into a write
 transaction on the hot path. Instead ``authenticate_key`` records the
 timestamp in Redis (``apikey:last_used:<id>``, 5-minute TTL) and this beat
 task drains those keys back into PostgreSQL every 5 minutes.

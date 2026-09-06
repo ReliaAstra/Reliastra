@@ -40,13 +40,13 @@ export function EvidenceReportPreview() {
               <div className="flex justify-between text-xs">
                 <span className="text-[#52525B] dark:text-[#A1A1AA]">Latency</span>
                 <span className="font-semibold text-[#09090B] dark:text-[#FAFAFA]">
-                  {vendor.latency_ms != null ? `${vendor.latency_ms} ms` : '—'}
+                  {vendor.latency_ms != null ? `${vendor.latency_ms} ms` : '-'}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-[#52525B] dark:text-[#A1A1AA]">24h uptime</span>
                 <span className="font-semibold text-[#09090B] dark:text-[#FAFAFA]">
-                  {vendor.uptime_24h != null ? `${vendor.uptime_24h.toFixed(2)}%` : '—'}
+                  {vendor.uptime_24h != null ? `${vendor.uptime_24h.toFixed(2)}%` : '-'}
                 </span>
               </div>
             </div>

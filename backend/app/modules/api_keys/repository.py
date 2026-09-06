@@ -21,7 +21,7 @@ class ApiKeyRepository:
     async def get_by_hashed_key(
         session: AsyncSession, hashed_key: str
     ) -> ApiKey | None:
-        """Exact-match lookup — only valid for deterministic hashes (legacy
+        """Exact-match lookup - only valid for deterministic hashes (legacy
         SHA-256). bcrypt hashes must be located via ``list_by_prefix``."""
         query = select(ApiKey).where(
             ApiKey.hashed_key == hashed_key,

@@ -57,7 +57,7 @@ class BillingTransaction(UUIDMixin, TimestampMixin, Base):
 
     This table is the audit answer to "what did this customer really pay?".
     ``charged_amount_minor``/``charged_currency`` are copied from Paystack's
-    verification response — the provider's own numbers, never a recomputed
+    verification response - the provider's own numbers, never a recomputed
     price. ``product_amount_minor``/``product_currency`` record the USD list
     price the checkout was quoting at the time, so a receipt can restate the
     full transparency triple long after either price list changed.
@@ -111,8 +111,8 @@ class BillingTransaction(UUIDMixin, TimestampMixin, Base):
     )
     # When RELIASTRA confirmed this charge with the provider, as opposed to
     # ``paid_at`` (the provider's own timestamp for when the money moved). The
-    # two differ whenever verification lands late — a webhook retry, an offline
-    # customer who returned to the confirmation page — and a dispute needs both.
+    # two differ whenever verification lands late - a webhook retry, an offline
+    # customer who returned to the confirmation page - and a dispute needs both.
     verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

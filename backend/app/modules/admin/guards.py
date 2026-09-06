@@ -37,7 +37,7 @@ async def require_system_admin(
 
     Customer/partner access tokens, Supabase tokens, refresh tokens, and API
     keys are all rejected (an admin token is signed by a different secret, so
-    a normal ``decode_token`` call also fails on it — the two families cannot
+    a normal ``decode_token`` call also fails on it - the two families cannot
     cross-authenticate). The returned ``User`` is the service account seeded
     from ``ADMIN_SERVICE_EMAIL``; it exists only for FK integrity and can
     never be signed into (random password, blocked).

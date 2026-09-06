@@ -20,19 +20,19 @@ type Props = { params: Promise<{ vendor: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { vendor } = await params;
   const name = decodeURIComponent(vendor);
-  let title = `${name} status — RELIASTRA Track`;
+  let title = `${name} status - RELIASTRA Track`;
   let description = `Independent, multi-region uptime and incident history for ${name}, measured by RELIASTRA.`;
 
   try {
     const data = await fetchVendorTrack(name);
     if (data) {
       const display = data.vendor.display_name;
-      title = `${display} status — live uptime, latency & incidents`;
+      title = `${display} status - live uptime, latency & incidents`;
       description =
         `${display} is ${describeState(data).label.toLowerCase()} right now. ` +
         `${fmtUptime(data.uptime_7d)} uptime over 7 days and ${fmtUptime(data.uptime_30d)} over 30 days, measured by RELIASTRA's independent regional probes.`;
     } else {
-      title = `${name} — not tracked`;
+      title = `${name} - not tracked`;
     }
   } catch {
     // Keep generic metadata if the API is unavailable.
@@ -62,29 +62,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtUptime(v: number | null | undefined): string {
-  if (v == null || !Number.isFinite(v)) return '—';
+  if (v == null || !Number.isFinite(v)) return '-';
   return `${v.toFixed(2)}%`;
 }
 
 function fmtLatency(ms: number | null | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return '—';
+  if (ms == null || !Number.isFinite(ms)) return '-';
   return `${Math.round(ms)}ms`;
 }
 
 function fmtWhen(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   try {
     const d = new Date(iso);
     return d.toLocaleString('en-US', {
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
     }) + ' UTC';
   } catch {
-    return '—';
+    return '-';
   }
 }
 
 function fmtDuration(seconds: number | null): string {
-  if (seconds == null || !Number.isFinite(seconds)) return '—';
+  if (seconds == null || !Number.isFinite(seconds)) return '-';
   const mins = Math.round(seconds / 60);
   if (mins < 60) return `${mins} min`;
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
@@ -141,7 +141,7 @@ export default async function VendorTrackPage({ params }: Props) {
   }
 
   // Related vendors for the internal link graph: same category first, never
-  // self, never fabricated — only vendors the Track API actually returns. A
+  // self, never fabricated - only vendors the Track API actually returns. A
   // failed catalog fetch renders nothing rather than a broken section.
   let relatedVendors: TrackVendorListItem[] = [];
   try {
@@ -174,7 +174,7 @@ export default async function VendorTrackPage({ params }: Props) {
             '@type': 'WebPage',
             '@id': canonicalUrl(`/track/${encodeURIComponent(data.vendor.vendor_name)}`),
             url: canonicalUrl(`/track/${encodeURIComponent(data.vendor.vendor_name)}`),
-            name: `${displayName} status — live uptime, latency & incidents`,
+            name: `${displayName} status - live uptime, latency & incidents`,
             description: `Independent, multi-region uptime and incident history for ${displayName}, measured by RELIASTRA.`,
             isPartOf: { '@id': `${SITE_URL}/#website` },
             inLanguage: 'en',
@@ -210,7 +210,7 @@ export default async function VendorTrackPage({ params }: Props) {
               ? fmtWhen(data.current_status.timestamp)
               : data.vendor.last_check_at
                 ? fmtWhen(data.vendor.last_check_at)
-                : '—'}
+                : '-'}
             {' · '}measured independently across regions
           </p>
         </div>
@@ -352,10 +352,10 @@ export default async function VendorTrackPage({ params }: Props) {
           )}
         </section>
 
-        {/* Preferred Source — vendor intelligence, subtle, after historical data */}
+        {/* Preferred Source - vendor intelligence, subtle, after historical data */}
         <PreferredSourceSection variant="vendor" />
 
-        {/* Related vendors + concepts — the crawlable topical graph */}
+        {/* Related vendors + concepts - the crawlable topical graph */}
         {(relatedVendors.length > 0) && (
           <section>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">

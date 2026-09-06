@@ -29,7 +29,7 @@ export function GrowthPage() {
       <AdminPageHeader
         eyebrow="Business / Growth"
         title="Growth"
-        description="Acquisition, activation, conversion, and retention — with the biggest drop made obvious."
+        description="Acquisition, activation, conversion, and retention - with the biggest drop made obvious."
         actions={<DateRangeControl className="md:hidden" />}
       />
       {overviewQuery.isLoading && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{Array.from({ length: 5 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-card" />)}</div>}
@@ -106,10 +106,10 @@ function GrowthInterpretation({ overview, funnel }: { overview?: Awaited<ReturnT
     <AdminCard>
       <SectionHeading title="Operator readout" subtitle="The decision-level context behind the funnel" />
       <div className="divide-y divide-slate-100 border-t border-slate-100 dark:divide-white/10 dark:border-white/10">
-        <ReadoutRow label="Acquisition" value={overview ? `${formatCompactNumber(overview.signups)} signups` : '—'} detail={overview ? periodLabel(overview.period) : 'Waiting for growth overview'} />
-        <ReadoutRow label="Activation" value={monitoringStage ? `${formatCompactNumber(monitoringStage.count)} monitoring` : '—'} detail="Organizations that reached the monitoring portion of the funnel" />
-        <ReadoutRow label="Conversion" value={paidStage ? `${formatCompactNumber(paidStage.count)} paid` : '—'} detail={overview ? `${formatPercent(overview.conversion_rate)} paid / organization conversion` : 'Waiting for growth overview'} />
-        <ReadoutRow label="MRR growth" value={overview ? formatPercent(overview.mrr_growth, { sign: true }) : '—'} detail="Historical MRR movement is currently supplied by the revenue view" />
+        <ReadoutRow label="Acquisition" value={overview ? `${formatCompactNumber(overview.signups)} signups` : '-'} detail={overview ? periodLabel(overview.period) : 'Waiting for growth overview'} />
+        <ReadoutRow label="Activation" value={monitoringStage ? `${formatCompactNumber(monitoringStage.count)} monitoring` : '-'} detail="Organizations that reached the monitoring portion of the funnel" />
+        <ReadoutRow label="Conversion" value={paidStage ? `${formatCompactNumber(paidStage.count)} paid` : '-'} detail={overview ? `${formatPercent(overview.conversion_rate)} paid / organization conversion` : 'Waiting for growth overview'} />
+        <ReadoutRow label="MRR growth" value={overview ? formatPercent(overview.mrr_growth, { sign: true }) : '-'} detail="Historical MRR movement is currently supplied by the revenue view" />
       </div>
     </AdminCard>
   );

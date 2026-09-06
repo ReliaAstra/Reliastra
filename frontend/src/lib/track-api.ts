@@ -106,7 +106,7 @@ export async function fetchTrackedVendors(limit = 60): Promise<TrackVendorsPage>
 }
 
 /**
- * Single aggregate call for one vendor — detail, current status, 24h
+ * Single aggregate call for one vendor - detail, current status, 24h
  * metrics, recent incidents, and 7d/30d uptime in one request.
  * Returns null for a 404 so callers can render "unknown vendor".
  */

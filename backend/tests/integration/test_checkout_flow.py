@@ -13,7 +13,7 @@ Coverage, in the order the customer meets it:
   a card-only channel array, and no provider plan code;
 * a client that volunteers an amount, a currency or a method is ignored or
   refused, never obeyed;
-* verification is what activates a subscription — cross-organization, replayed,
+* verification is what activates a subscription - cross-organization, replayed,
   underpaid, wrong-currency and unsupported-channel payments all end in a
   classified refusal with the plan unchanged;
 * the persisted record states what was charged (amount, currency, reference,
@@ -73,7 +73,7 @@ def _provider_is_configured(monkeypatch):
     """Checkout is offered only when a provider can actually be reached.
 
     The test settings deliberately ship without Paystack credentials, and the
-    quote gates on them — correctly, since a page that promises a payment it
+    quote gates on them - correctly, since a page that promises a payment it
     cannot take is worse than one that says so. These tests are about the quote
     and the transaction, so they configure the pair the way a deployment would.
     """
@@ -505,8 +505,8 @@ async def test_a_payment_for_another_organization_cannot_be_applied(
 ):
     """The reference is not an entitlement token.
 
-    Verification checks the payment belongs to the caller's organization — via
-    the metadata the transaction was opened with, and via the customer record —
+    Verification checks the payment belongs to the caller's organization - via
+    the metadata the transaction was opened with, and via the customer record -
     before anything is activated, so a reference seen elsewhere buys nothing.
     """
     other = await _second_organization(async_client)
@@ -599,7 +599,7 @@ async def test_payment_over_an_unoffered_channel_is_not_activated(
 ):
     """A bank transfer that arrived for a card-only plan is a support case.
 
-    The customer is not punished for it — nothing is silently dropped — but the
+    The customer is not punished for it - nothing is silently dropped - but the
     subscription is not flipped either, because the price of a local rail and
     the price of an international card charge are not the same transaction.
     """
@@ -663,7 +663,7 @@ async def test_provider_channel_we_cannot_read_still_activates(
 async def test_metadata_arriving_as_a_json_string_still_provisions(
     async_client, auth_data, monkeypatch
 ):
-    """Paystack echoes ``metadata`` back as it was sent — sometimes as a string.
+    """Paystack echoes ``metadata`` back as it was sent - sometimes as a string.
 
     Parsing it defensively is not optional: a payment that has cleared and then
     throws on the way into the database is money taken and a plan not delivered.
@@ -708,7 +708,7 @@ async def test_history_states_what_was_charged_even_after_a_repricing(
     """A repricing must not rewrite what somebody already paid.
 
     The stored row is the provider's figure, so history stays truthful after the
-    business changes its price list — which is the whole reason the transaction
+    business changes its price list - which is the whole reason the transaction
     table records the charge instead of the UI re-deriving it.
     """
     reference = f"ref_repriced_{_uuid.uuid4().hex[:8]}"
@@ -771,7 +771,7 @@ async def test_a_provider_answer_and_a_provider_failure_are_never_the_same_state
     """404 means "no such payment"; 500/timeout means "we do not know yet".
 
     Collapsing them into one error is how a checkout ends up telling a customer
-    their payment failed when it may have succeeded — the sentence that causes a
+    their payment failed when it may have succeeded - the sentence that causes a
     second payment. So the two states are asserted to differ in status, in reason
     and in what they promise about the money.
     """

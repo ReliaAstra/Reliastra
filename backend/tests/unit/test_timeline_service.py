@@ -111,7 +111,7 @@ class TestAssociateIncidents:
                 "obs_count": 5,
             }
         ]
-        # Incident from 60 minutes ago to 55 minutes ago — does NOT overlap bucket at -5m
+        # Incident from 60 minutes ago to 55 minutes ago - does NOT overlap bucket at -5m
         inc_id = uuid.uuid4()
         incidents = [
             (inc_id, now - timedelta(minutes=60), now - timedelta(minutes=55))
@@ -131,7 +131,7 @@ class TestAssociateIncidents:
             }
         ]
         inc_id = uuid.uuid4()
-        # Open incident (resolved_at=None) — should still overlap
+        # Open incident (resolved_at=None) - should still overlap
         incidents = [
             (inc_id, now - timedelta(minutes=10), None)
         ]

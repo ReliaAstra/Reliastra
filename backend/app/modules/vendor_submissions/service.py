@@ -321,14 +321,14 @@ class VendorSubmissionService:
         try:
             async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
                 resp = await client.head(url)
-                # Accept any 2xx/3xx/4xx — just verify the server responds
+                # Accept any 2xx/3xx/4xx - just verify the server responds
                 logger.debug("URL validation HEAD %s → %d", url, resp.status_code)
         except httpx.TimeoutException:
             logger.warning("URL validation timed out for %s", url)
-            # Timeout is not fatal — the URL might still be valid
+            # Timeout is not fatal - the URL might still be valid
         except Exception as exc:
             logger.warning("URL validation failed for %s: %s", url, exc)
-            # Fail open — network issues shouldn't block submissions
+            # Fail open - network issues shouldn't block submissions
 
     @staticmethod
     async def _log_lead_capture(
@@ -371,7 +371,7 @@ class VendorSubmissionService:
     ) -> None:
         """Send a submission confirmation email to the submitter."""
         try:
-            subject = f"Reliastra — Vendor Submission Received: {display_name}"
+            subject = f"Reliastra - Vendor Submission Received: {display_name}"
             body_text = (
                 f"Hello,\n\n"
                 f"Thank you for submitting '{display_name}' ({vendor_name}) to Reliastra.\n\n"
@@ -416,7 +416,7 @@ class VendorSubmissionService:
         """Send an approval / rejection notification email to the submitter."""
         try:
             if status == "approved":
-                subject = f"Reliastra — Vendor Approved: {display_name}"
+                subject = f"Reliastra - Vendor Approved: {display_name}"
                 heading = "Vendor submission approved"
                 body_text = (
                     f"Hello,\n\n"
@@ -435,7 +435,7 @@ class VendorSubmissionService:
                     "<p>Thank you for contributing to better infrastructure visibility.</p>"
                 )
             else:
-                subject = f"Reliastra — Vendor Submission Update: {display_name}"
+                subject = f"Reliastra - Vendor Submission Update: {display_name}"
                 heading = "Vendor submission update"
                 reason_text = reason or "No additional details provided."
                 body_text = (

@@ -38,7 +38,7 @@ def retention_cleanup(retention_days: int | None = None) -> int:
     custom plans (retention == None) are never pruned here.
 
     ``retention_days`` is accepted for back-compat with the beat schedule but
-    is now ignored for the effective calculation — it only sets an upper bound
+    is now ignored for the effective calculation - it only sets an upper bound
     safety cap when no plan-specific retention can be resolved.
     """
 

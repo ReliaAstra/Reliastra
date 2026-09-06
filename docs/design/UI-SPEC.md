@@ -3,7 +3,7 @@
 **Source of truth:** `frontend/src/app/globals.css`. This document is the
 human-readable contract; if code and doc disagree, fix the doc.
 
-Design personality: **calm instrument panel** — Stripe's data clarity,
+Design personality: **calm instrument panel** - Stripe's data clarity,
 Linear's density, Vercel's restraint. Decoration budget is spent on exactly
 three things: status color, one brand gradient, and depth via borders (never
 heavy shadows).
@@ -12,7 +12,7 @@ heavy shadows).
 
 ## 1. Color system (exact values)
 
-### 1.1 Semantic tokens — LIGHT theme (`.dark` absent)
+### 1.1 Semantic tokens - LIGHT theme (`.dark` absent)
 
 | Token | Hex | Usage |
 |---|---|---|
@@ -33,11 +33,11 @@ heavy shadows).
 | `--rs-degraded` | `#D97706` | Degraded / warning |
 | `--rs-down` | `#DC2626` | Down / critical / destructive |
 
-### 1.2 Semantic tokens — DARK theme (`.dark`)
+### 1.2 Semantic tokens - DARK theme (`.dark`)
 
 | Token | Hex | Usage |
 |---|---|---|
-| `--rs-base` | `#0B0F19` | Canvas — deep navy, never `#000` |
+| `--rs-base` | `#0B0F19` | Canvas - deep navy, never `#000` |
 | `--rs-elevated` | `#111726` | Cards, tables, popovers |
 | `--rs-hover` | `#182136` | Hover fills |
 | `--rs-active` | `#202B44` | Pressed states |
@@ -85,7 +85,7 @@ Pulse only while incident is **open**, never on historical rows.
 ## 2. Typography
 
 Font stack: `Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`
-Mono: `"SFMono-Regular", Consolas, Menlo, monospace` — used for ALL numbers,
+Mono: `"SFMono-Regular", Consolas, Menlo, monospace` - used for ALL numbers,
 IDs, codes, URLs (`INC-1842`, `99.97%`, `182 ms`, endpoint URLs).
 
 | Role | Size/line | Weight | Tracking | Token class |
@@ -111,12 +111,12 @@ right-align all numeric table columns.
   main content `pt-[72px]` mobile / `[88px]` desktop; max content width
   1152px (`max-w-6xl`) centered.
 - **Borders over shadows:** `1px solid --rs-border-subtle` everywhere;
-  shadow only for floating layers — popover/dropdown `0 8px 24px rgb(11 15 25 / .12)`
+  shadow only for floating layers - popover/dropdown `0 8px 24px rgb(11 15 25 / .12)`
   (dark: `/ .5`); modal adds backdrop `rgb(11 15 25 / .5)`.
 - **Grid pattern (hero/404 ambience):** 44px cells, `--rs-border-subtle`
   lines, masked with radial fade from top.
 
-## 4. Components — exact specs
+## 4. Components - exact specs
 
 ### Buttons (RsButton)
 | Variant | Rest | Hover | Text |
@@ -145,7 +145,7 @@ chevron-right 16px tertiary in last cell.
 
 ### Trial banner (conversion centerpiece)
 `rounded-xl border brand@25%`, background `linear-gradient(135deg, brand-subtle, transparent)`,
-padding 20px. Left: Sparkles icon + "Professional Trial — 14 days, every
+padding 20px. Left: Sparkles icon + "Professional Trial - 14 days, every
 feature unlocked" semibold 14px; support line explains carry-over; progress
 track h‑6px max-w‑md. Right column: days-left `font-mono 24px bold`
 (`--rs-down` when ≤3) + primary button "Keep Professional". Dismiss X top-right,
@@ -181,7 +181,20 @@ pre-payment confirmation step, and the billing page.
   must not introduce horizontal scroll, and must stay inside the modal's own
   scroll area (the panel caps at `90vh`).
 - The copy describes the **current state** and makes no promise about a future
-  USD switch beyond "we are actively working towards it".
+  USD switch beyond "we are awaiting confirmation".
+- **FX reference is a pre-payment verification, not a footnote.** Whenever the
+  charge settles in a different currency than the price list, the checkout
+  quote must carry a rate fetched server-side from a public, verifiable source
+  (`app/core/fx_reference.py`, default open.er-api.com). `FxReferencePanel`
+  renders it with the source name, the source's own quote timestamp, the
+  retrieval time, and a **"Verify this rate"** link to the raw source URL so a
+  customer can reproduce the number themselves. When a product price is in
+  context the panel adds a labelled live-conversion line
+  ("...at this rate = ... (reference only; your charge is the published price)"),
+  which may never replace the backend-published charge.
+- **Gate.** On the checkout review, the "Continue to secure payment" button is
+  disabled until that verified rate exists; a failed fetch shows a plain
+  "not verified yet" status with a re-check action instead of a guess.
 
 ### Toasts (Sonner)
 Bottom-right, `rounded-lg bg elevated border subtle shadow-popover`;
@@ -235,8 +248,8 @@ data line + "Powered by Reliastra" (hidden in print).
 ## 8. Don'ts
 
 1. No pure black/white surfaces in dark mode; no pure grays without blue undertone.
-2. No drop shadows on static cards — borders only.
-3. No spinners for data loads — skeletons shaped like content.
+2. No drop shadows on static cards - borders only.
+3. No spinners for data loads - skeletons shaped like content.
 4. No decorative gradients inside the product dashboard (gradient lives in
    marketing + 404 only).
 5. No color-only status; no red except genuine failure/critical/money-loss.

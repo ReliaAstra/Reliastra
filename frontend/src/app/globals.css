@@ -4,9 +4,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Reliastra Enterprise UI — Design System v1.0
+   Reliastra Enterprise UI - Design System v1.0
    Source of truth: this file. Spec lives alongside in docs, but tokens here win.
-   Personality: calm instrument panel — Stripe clarity, Linear density, Vercel restraint.
+   Personality: calm instrument panel - Stripe clarity, Linear density, Vercel restraint.
    Decoration budget: status color, one brand gradient, depth via borders (never heavy shadows).
    ────────────────────────────────────────────────────────────────────────── */
 
@@ -44,7 +44,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Product-dashboard semantic tokens — theme-aware */
+  /* Product-dashboard semantic tokens - theme-aware */
   --color-rs-base: var(--rs-base);
   --color-rs-elevated: var(--rs-elevated);
   --color-rs-hover: var(--rs-hover);
@@ -91,13 +91,13 @@
 
 /* ── Light theme (default) ─────────────────────────────────────────────── */
 :root {
-  /* Font stacks — Inter for UI, SFMono for numbers/IDs/codes/URLs */
+  /* Font stacks - Inter for UI, SFMono for numbers/IDs/codes/URLs */
   --font-geist-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 
-  /* Geometry — per spec: cards/xl 12px, buttons/inputs/lg 10px, chips 9999px */
-  --radius: 0.625rem; /* 10px — buttons/inputs/lg */
-  --radius-xl: 0.75rem; /* 12px — cards/xl */
+  /* Geometry - per spec: cards/xl 12px, buttons/inputs/lg 10px, chips 9999px */
+  --radius: 0.625rem; /* 10px - buttons/inputs/lg */
+  --radius-xl: 0.75rem; /* 12px - cards/xl */
   --radius-full: 9999px;
 
   /* shadcn fallbacks */
@@ -133,7 +133,7 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* ── Product dashboard — LIGHT (premium enterprise) — exact spec values ── */
+  /* ── Product dashboard - LIGHT (premium enterprise) - exact spec values ── */
   --rs-base: #F7F8FA; /* app canvas */
   --rs-elevated: #FFFFFF; /* cards, tables, popovers, sheets */
   --rs-hover: #F1F3F7; /* row hover, ghost hover, skeleton fill */
@@ -152,7 +152,7 @@
   --rs-degraded: #D97706; /* degraded / warning */
   --rs-down: #DC2626; /* down / critical / destructive */
 
-  /* Fixed accents — theme-independent values */
+  /* Fixed accents - theme-independent values */
   --rs-brand-gradient: linear-gradient(92deg, #2563EB 0%, #7C3AED 55%, #0891B2 100%);
   --rs-cyan: #0891B2; /* landing cyan light */
   --rs-chart-1: #2563EB;
@@ -169,7 +169,7 @@
   --rs-brand-border-25: rgb(37 99 235 / 0.25);
   --rs-brand-border-20: rgb(37 99 235 / 0.20);
 
-  /* Shadows — only for floating layers per spec */
+  /* Shadows - only for floating layers per spec */
   --rs-shadow-popover: 0 8px 24px rgb(11 15 25 / .12);
   --rs-shadow-modal: 0 16px 48px rgb(11 15 25 / .18);
   --rs-backdrop: rgb(11 15 25 / .5);
@@ -180,7 +180,7 @@
   --rs-motion-slow: 300ms ease-out;
 }
 
-/* ── Dark theme — layered navy, never pure black ───────────────────────── */
+/* ── Dark theme - layered navy, never pure black ───────────────────────── */
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -214,7 +214,7 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* Dark — rich enterprise navy, never blank black */
+  /* Dark - rich enterprise navy, never blank black */
   --rs-base: #0B0F19; /* deep navy, never #000 */
   --rs-elevated: #111726; /* cards, tables, popovers */
   --rs-hover: #182136; /* hover fills */
@@ -233,7 +233,7 @@
   --rs-degraded: #FBBF24;
   --rs-down: #F87171;
 
-  /* Fixed accents — dark variants */
+  /* Fixed accents - dark variants */
   --rs-cyan: #22D3EE; /* landing cyan dark */
   --rs-chart-1: #60A5FA;
   --rs-chart-2: #2DD4BF;
@@ -254,7 +254,7 @@
   --rs-backdrop: rgb(11 15 25 / .5);
 }
 
-/* ── Base layer — accessibility floor ─────────────────────────────────── */
+/* ── Base layer - accessibility floor ─────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -273,21 +273,21 @@
     font-feature-settings: "ss01" 0;
   }
 
-  /* Focus visible everywhere — 2px ring, 2px offset, never removed */
+  /* Focus visible everywhere - 2px ring, 2px offset, never removed */
   :focus-visible {
     outline: 2px solid var(--rs-focus);
     outline-offset: 2px;
     border-radius: 2px;
   }
 
-  /* Hit targets ≥40×40 — enforced via min sizes on interactive elements */
+  /* Hit targets ≥40×40 - enforced via min sizes on interactive elements */
   button,
   [role="button"],
   a {
     min-height: 0;
   }
 
-  /* Premium scrollbar — 6px */
+  /* Premium scrollbar - 6px */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -303,19 +303,19 @@
     background: var(--rs-text-tertiary);
   }
 
-  /* Selection — brand subtle */
+  /* Selection - brand subtle */
   ::selection {
     background: var(--rs-brand-subtle);
     color: var(--rs-text);
   }
 
-  /* Placeholder — tertiary per spec */
+  /* Placeholder - tertiary per spec */
   ::placeholder {
     color: var(--rs-text-tertiary);
   }
 }
 
-/* Reduced motion — collapse to 0.01ms */
+/* Reduced motion - collapse to 0.01ms */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -325,7 +325,7 @@
   }
 }
 
-/* ── Product shell — .rs-app ──────────────────────────────────────────── */
+/* ── Product shell - .rs-app ──────────────────────────────────────────── */
 .rs-app {
   background:
     radial-gradient(1200px 400px at 50% -10%, var(--rs-brand-subtle), transparent 70%),
@@ -411,7 +411,7 @@
   font-family: "SFMono-Regular", Consolas, Menlo, monospace;
 }
 
-/* Roles — exact spec */
+/* Roles - exact spec */
 .rs-page-title {
   font-size: 24px;
   line-height: 32px;
@@ -483,7 +483,7 @@
   letter-spacing: 0.02em;
 }
 
-/* Numbers NEVER change width — always mono, tabular alignment */
+/* Numbers NEVER change width - always mono, tabular alignment */
 .rs-mono,
 .rs-numeric {
   font-family: "SFMono-Regular", Consolas, Menlo, monospace;
@@ -502,7 +502,7 @@
   border-radius: 12px; /* xl per spec */
   border: 1px solid var(--rs-border-subtle);
   background: var(--rs-elevated);
-  /* No drop shadows on static cards — borders only (Don't #2) */
+  /* No drop shadows on static cards - borders only (Don't #2) */
 }
 
 .rs-card-padded {
@@ -513,14 +513,14 @@
 }
 
 .rs-button-radius {
-  border-radius: 10px; /* lg per spec — buttons/inputs */
+  border-radius: 10px; /* lg per spec - buttons/inputs */
 }
 
 .rs-chip {
   border-radius: 9999px;
 }
 
-/* Spacing rhythm — 4px base — utilities */
+/* Spacing rhythm - 4px base - utilities */
 .rs-page-padding {
   padding: 16px;
 }
@@ -536,7 +536,7 @@
   gap: 16px;
 }
 
-/* Borders over shadows — default hairline */
+/* Borders over shadows - default hairline */
 .rs-border-subtle {
   border: 1px solid var(--rs-border-subtle);
 }
@@ -544,7 +544,7 @@
   border: 1px solid var(--rs-border);
 }
 
-/* Grid pattern (hero/404 ambience) — 44px cells, subtle lines, radial fade from top */
+/* Grid pattern (hero/404 ambience) - 44px cells, subtle lines, radial fade from top */
 .grid-pattern {
   background-image:
     linear-gradient(to right, var(--rs-border-subtle) 1px, transparent 1px),
@@ -554,9 +554,9 @@
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
 }
 
-/* ── Components — exact specs ─────────────────────────────────────────── */
+/* ── Components - exact specs ─────────────────────────────────────────── */
 
-/* Buttons (RsButton) — variants + sizes per spec */
+/* Buttons (RsButton) - variants + sizes per spec */
 .rs-button {
   display: inline-flex;
   align-items: center;
@@ -634,7 +634,7 @@
   filter: brightness(0.92); /* darken 8% */
 }
 
-/* Sizes — sm h-28 px-10 text-12, md h-36 px-14 text-13/14, lg h-40 px-20 text-14 */
+/* Sizes - sm h-28 px-10 text-12, md h-36 px-14 text-13/14, lg h-40 px-20 text-14 */
 .rs-button-sm {
   height: 28px;
   padding-inline: 10px;
@@ -664,7 +664,7 @@
   padding: 0;
 }
 
-/* Stat/KPI card — rounded-xl border subtle bg elevated p-20px */
+/* Stat/KPI card - rounded-xl border subtle bg elevated p-20px */
 .rs-stat-card {
   border-radius: 12px;
   border: 1px solid var(--rs-border-subtle);
@@ -679,7 +679,7 @@
 .rs-stat-icon-tile {
   width: 36px;
   height: 36px;
-  border-radius: 8px; /* lg per spec — rounded-lg */
+  border-radius: 8px; /* lg per spec - rounded-lg */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -764,7 +764,7 @@
   text-decoration: underline;
 }
 
-/* Tables — desktop-only ≥1024px; below stacked cards */
+/* Tables - desktop-only ≥1024px; below stacked cards */
 .rs-table-wrap {
   overflow: hidden;
   border-radius: 12px;
@@ -826,7 +826,7 @@
   flex-shrink: 0;
 }
 
-/* Trial banner — conversion centerpiece */
+/* Trial banner - conversion centerpiece */
 .rs-trial-banner {
   border-radius: 12px;
   border: 1px solid var(--rs-brand-border-25);
@@ -953,7 +953,7 @@
   max-width: 56rem; /* for pricing table */
 }
 
-/* Toasts (Sonner) — bottom-right, rounded-lg bg elevated border subtle shadow-popover */
+/* Toasts (Sonner) - bottom-right, rounded-lg bg elevated border subtle shadow-popover */
 .rs-toaster [data-sonner-toast] {
   border-radius: 8px;
   background: var(--rs-elevated);
@@ -969,7 +969,7 @@
   color: var(--rs-down);
 }
 
-/* Inputs — h-36px bg --rs-input border subtle rounded-lg px-12 text-sm */
+/* Inputs - h-36px bg --rs-input border subtle rounded-lg px-12 text-sm */
 .rs-input {
   height: 36px;
   width: 100%;
@@ -1018,7 +1018,7 @@
   color: var(--rs-down);
 }
 
-/* Status mapping — single source of truth */
+/* Status mapping - single source of truth */
 .rs-status-dot {
   width: 8px;
   height: 8px;
@@ -1096,7 +1096,7 @@
   animation: rs-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Brand gradient — marketing hero, 404 headline only (Don't #4) */
+/* Brand gradient - marketing hero, 404 headline only (Don't #4) */
 .text-gradient-brand {
   background: var(--rs-brand-gradient);
   -webkit-background-clip: text;
@@ -1104,7 +1104,7 @@
   color: transparent;
 }
 
-/* Uptime bar fill — reuses up/degraded/down tokens */
+/* Uptime bar fill - reuses up/degraded/down tokens */
 .rs-uptime-bar {
   height: 4px;
   border-radius: 9999px;
@@ -1189,7 +1189,7 @@
   to { transform: translateX(100%); opacity: 0; }
 }
 
-/* ── Research figures — restrained data motion (reduced-motion collapses
+/* ── Research figures - restrained data motion (reduced-motion collapses
    durations globally, see @media rule above) ───────────────────────────── */
 @keyframes rs-figure-pulse {
   0%, 100% { opacity: 1; }
@@ -1209,7 +1209,7 @@
   border-radius: 3px;
 }
 
-/* ── Tables — hover + transitions ───────────────────────────────────────── */
+/* ── Tables - hover + transitions ───────────────────────────────────────── */
 .rs-app table tbody tr {
   transition: background-color var(--rs-motion-fast);
 }
@@ -1217,7 +1217,7 @@
   background: var(--rs-hover);
 }
 
-/* ── Print — public portal light-first, print-safe ──────────────────────── */
+/* ── Print - public portal light-first, print-safe ──────────────────────── */
 @media print {
   .rs-no-print {
     display: none !important;
@@ -1268,7 +1268,7 @@
   box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
 }
 
-/* ── Floating layers — popover/dropdown shadow per spec ─────────────────── */
+/* ── Floating layers - popover/dropdown shadow per spec ─────────────────── */
 .rs-popover,
 .rs-dropdown,
 [data-radix-popper-content-wrapper] [data-slot="dropdown-menu-content"],
@@ -1288,10 +1288,10 @@
 }
 
 /* ── Don'ts enforcement (documentation via CSS comments) ──────────────────
-   1. No pure black/white surfaces in dark mode — enforced via tokens (deep navy)
-   2. No drop shadows on static cards — .rs-card has border only, no shadow
-   3. No spinners for data loads — use .rs-skeleton shaped like content
-   4. No decorative gradients inside product dashboard — gradient lives in marketing + 404 only (.text-gradient-brand)
-   5. No color-only status — always dot + label word in badges (.rs-badge includes dot)
-   6. No new fonts, no letterspacing on body text, no justify — enforced via base styles
+   1. No pure black/white surfaces in dark mode - enforced via tokens (deep navy)
+   2. No drop shadows on static cards - .rs-card has border only, no shadow
+   3. No spinners for data loads - use .rs-skeleton shaped like content
+   4. No decorative gradients inside product dashboard - gradient lives in marketing + 404 only (.text-gradient-brand)
+   5. No color-only status - always dot + label word in badges (.rs-badge includes dot)
+   6. No new fonts, no letterspacing on body text, no justify - enforced via base styles
    ────────────────────────────────────────────────────────────────────────── */

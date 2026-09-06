@@ -42,7 +42,7 @@ export function PageLogin() {
     const store = usePartnerStore.getState();
     store.setTokens(accessToken, refreshToken);
 
-    // Get current user info — UserResponse (snake_case, not wrapped)
+    // Get current user info - UserResponse (snake_case, not wrapped)
     const meRes = await fetch('/api/auth/me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -53,7 +53,7 @@ export function PageLogin() {
     // screen. Keep the stored tokens so a reload self-heals, and leave the
     // user on the sign-in form to retry.
     if (!meRes.ok) {
-      toast.error('Could not load your profile — please try again.');
+      toast.error('Could not load your profile - please try again.');
       return;
     }
 
@@ -81,18 +81,18 @@ export function PageLogin() {
       navigate('dashboard');
     } else if (partnerRes.status === 404) {
       // Not a partner yet: activation is free, idempotent server-side, and
-      // requires no consent beyond the program terms — do it automatically so
+      // requires no consent beyond the program terms - do it automatically so
       // the user lands on the dashboard instead of a dead-end "apply" step.
       try {
         const profile = await partnerApi.apply({ agree_terms: true });
         store.setPartner(mapPartnerProfile(profile));
         toast.success('Welcome to the Partner Network');
       } catch {
-        toast.error('Could not activate your partner account — try again from the dashboard.');
+        toast.error('Could not activate your partner account - try again from the dashboard.');
       }
       navigate('dashboard');
     } else {
-      toast.error('Could not load your partner profile — try again from the dashboard.');
+      toast.error('Could not load your partner profile - try again from the dashboard.');
       navigate('dashboard');
     }
   };
@@ -117,7 +117,7 @@ export function PageLogin() {
     setLoading(true);
 
     try {
-      // Login — returns { access_token, refresh_token, token_type, expires_in }
+      // Login - returns { access_token, refresh_token, token_type, expires_in }
       const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,12 +135,12 @@ export function PageLogin() {
         // code, so go straight to the code step rather than showing an error.
         if (isEmailNotVerified(apiError)) {
           setPendingEmail(email);
-          toast.info('Verify your email to continue — we sent you a code');
+          toast.info('Verify your email to continue - we sent you a code');
           return;
         }
 
         setFieldError(apiError.message);
-        toast.error('Invalid credentials — try again');
+        toast.error('Invalid credentials - try again');
         return;
       }
 
@@ -148,7 +148,7 @@ export function PageLogin() {
       await completeSignIn(tokens.access_token, tokens.refresh_token);
     } catch {
       setFieldError("We couldn't reach RELIASTRA. Check your connection and try again.");
-      toast.error('Connection failed — check your network');
+      toast.error('Connection failed - check your network');
     } finally {
       setLoading(false);
     }

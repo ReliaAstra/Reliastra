@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Preflight — verify host and release are safe to deploy
+# Preflight - verify host and release are safe to deploy
 # Usage: sudo ./preflight.sh --commit <sha> --image <ref> [--timeout 120]
 set -euo pipefail
 
@@ -96,7 +96,7 @@ if [[ -f "$STATE_DIR/current.json" ]]; then
   cur=$(jq -r .commit "$STATE_DIR/current.json" 2>/dev/null || echo "unknown")
   echo "current release: $cur"
   if [[ "$cur" == "$COMMIT" ]]; then
-    echo "IDEMPOTENT: $COMMIT already current — safe to converge"
+    echo "IDEMPOTENT: $COMMIT already current - safe to converge"
   fi
 fi
 
@@ -106,7 +106,7 @@ if docker compose -f /opt/reliastra/compose.yml ps 2>&1 | grep -qi "deploy"; the
 fi
 
 echo "PRECHECK OK"
-# Hold lock for caller — do not unlock here; deploy.sh will inherit fd 9
+# Hold lock for caller - do not unlock here; deploy.sh will inherit fd 9
 # To allow deploy.sh to hold it, we create a marker
 touch /run/reliastra-preflight-ok
 echo "$COMMIT $IMAGE" > /run/reliastra-preflight-ok

@@ -8,7 +8,7 @@ Responsibilities:
 * handle refunds / chargebacks / churn,
 * expose balance summaries.
 
-Commission is only ever created from a *confirmed* billing event — never
+Commission is only ever created from a *confirmed* billing event - never
 from a signup or a subscription that has not yet been paid for.
 """
 
@@ -167,7 +167,7 @@ class CommissionService:
     ) -> int:
         """Reverse all commissions tied to a refunded/charge-backed payment.
 
-        The original commission rows are never deleted — their status is set
+        The original commission rows are never deleted - their status is set
         to ``reversed`` and ``reversal_reason`` recorded. Returns the number
         of commissions reversed.
         """
@@ -223,7 +223,7 @@ class CommissionService:
     async def handle_churn(
         self, session: AsyncSession, organization_id: uuid.UUID
     ) -> None:
-        """Mark the referred customer as churned — future commission stops.
+        """Mark the referred customer as churned - future commission stops.
 
         Historical commissions remain valid; only future accrual stops.
         """

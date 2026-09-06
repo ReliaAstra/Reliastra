@@ -36,7 +36,7 @@ export function NotificationBell({
   const items = inbox.data?.items ?? [];
   const unread = inbox.data?.unread ?? 0;
 
-  // Keep the store's count honest — other surfaces read `unreadCount`, and it
+  // Keep the store's count honest - other surfaces read `unreadCount`, and it
   // was previously seeded with a hardcoded 2 and never refreshed.
   useEffect(() => {
     setUnread(unread);

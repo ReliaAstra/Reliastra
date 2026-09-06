@@ -54,7 +54,7 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
   const [accessFailure, setAccessFailure] = useState<'expired' | 'denied' | null>(null);
 
   // The login page must never be gated: it is the entry point that mints the
-  // session. Gating it causes an infinite loop — overview 401 -> expired event
+  // session. Gating it causes an infinite loop - overview 401 -> expired event
   // -> redirect to /admin/login?next=/admin/login -> remount -> overview 401.
   // `usePathname()` can be null on the very first render; fall back to the
   // live location so the login page is never misclassified as gated.
@@ -75,11 +75,11 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
   // from remaining visible after a session expires.
   //
   // The admin session is a SEPARATE security domain (HttpOnly admin cookies),
-  // so "expired" routes to the dedicated /admin/login — never to the shared
+  // so "expired" routes to the dedicated /admin/login - never to the shared
   // customer sign-in. The customer/partner session is never touched here.
   useEffect(() => {
     const onExpired = () => {
-      // Already on the login page — no redirect needed. Redirecting here
+      // Already on the login page - no redirect needed. Redirecting here
       // creates /admin/login?next=/admin/login and a constant refresh loop.
       if (window.location.pathname.startsWith('/admin/login')) {
         queryClient.clear();
@@ -112,7 +112,7 @@ function AdminAccessGate({ children }: { children: ReactNode }) {
         ? 'denied'
         : null);
 
-  // Login route renders on its own — no overview probe, no AdminShell state.
+  // Login route renders on its own - no overview probe, no AdminShell state.
   if (isLoginPage) {
     return <>{children}</>;
   }

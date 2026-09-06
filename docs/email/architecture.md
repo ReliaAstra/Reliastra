@@ -17,7 +17,7 @@
         RELIASTRA USERS          etc. → designated mailbox
 ```
 
-## Outbound — Resend
+## Outbound - Resend
 - Central service: `app/infrastructure/email_resend.py` + `app/modules/email_events/sender.py`
 - All transactional email flows through `send_transactional_email()` which writes `EmailRecord` with `resend_id`.
 - Default From: `RELIASTRA <noreply@reliastra.com>` (`RESEND_FROM_EMAIL`)
@@ -26,7 +26,7 @@
 - Tags: `category`, `org_id`, `template`, `correlation_id` (opaque, no PII)
 - Fallback: SMTP via `EmailClient` if `RESEND_API_KEY` missing (dev) or Resend fails
 
-## Inbound — ImprovMX
+## Inbound - ImprovMX
 - No app SMTP server. MX → ImprovMX → forwarding to `IMPROVMX_FORWARD_TO` (configurable, not hardcoded).
 - Aliases: hello, support, partners, security, privacy, legal, billing, abuse → same destination
 - See `docs/email/improvmx-setup.md` for DNS

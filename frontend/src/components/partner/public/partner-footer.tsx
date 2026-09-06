@@ -105,7 +105,7 @@ export function PartnerFooter() {
           </p>
           <div className="flex items-center gap-5">
             {/* Social profiles: only the canonical GitHub organization is
-                linked. No per-network handles are invented here — entity
+                linked. No per-network handles are invented here - entity
                 consistency (see lib/seo SITE_ORG) beats icon count. */}
             <div className="flex items-center gap-3">
               <a

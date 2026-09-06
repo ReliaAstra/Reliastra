@@ -11,7 +11,7 @@ if [ -z "${DATABASE_URL:-}" ]; then
     exit 1
 fi
 
-# SQLite and local Postgres are unsupported — fail fast with a clear message.
+# SQLite and local Postgres are unsupported - fail fast with a clear message.
 case "${DATABASE_URL}" in
     sqlite:*|sqlite+*|*"sqlite://"*)
         echo "[init] FATAL: SQLite is not supported. Use Supabase Postgres." >&2

@@ -28,7 +28,7 @@ async def test_verify_invalid():
 
 @pytest.mark.asyncio
 async def test_delivery_state_no_downgrade():
-    # Pure rank test — no DB needed
+    # Pure rank test - no DB needed
     from app.modules.email_events.service import STATE_RANK
 
     def rank(s): return STATE_RANK.get(s, 0)

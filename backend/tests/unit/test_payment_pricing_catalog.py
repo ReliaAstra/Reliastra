@@ -11,7 +11,7 @@ These tests lock the commercial invariants of the billing refactor:
   (Product price / Actual charge / Payment provider);
 * the mandated disclosure sentence is this exact wording, on the backend and
   (via the drift guard in ``test_transactional_email_footer``) the frontend;
-* nothing in the pricing path can consult an exchange rate — the FX reference
+* nothing in the pricing path can consult an exchange rate - the FX reference
   is display-only by construction.
 """
 
@@ -56,7 +56,7 @@ def test_canonical_usd_price_list():
     assert PLAN_PRICES_USD["free"] == 0
     assert PLAN_PRICES_USD["pro"] == 39
     assert PLAN_ANNUAL_PRICES_USD["pro"] == 390
-    assert PLAN_ANNUAL_PRICES_USD["enterprise"] is None  # custom — never a number
+    assert PLAN_ANNUAL_PRICES_USD["enterprise"] is None  # custom - never a number
     assert PLAN_BILLING_AVAILABILITY["enterprise"] == "contact_sales"
     assert PLAN_BILLING_AVAILABILITY["pro"] == "self_serve"
 
@@ -76,7 +76,7 @@ def test_default_ngn_catalog_is_explicit_not_usd_minor_units():
     """The published defaults are business decisions, not USD figures reused.
 
     A deployment that "forgot" to translate would charge 3,900 kobo (₦39!) as
-    Naira — this test exists to make sure that number can never reappear as a
+    Naira - this test exists to make sure that number can never reappear as a
     payment price.
     """
     assert settings.PAYSTACK_NGN_PLAN_PRICES == {
@@ -119,7 +119,7 @@ def test_usd_deployment_charges_the_product_price_directly(monkeypatch):
     monkeypatch.setattr(settings, "PAYSTACK_CURRENCY", "USD")
     monthly = resolve_payment_price("pro", MONTHLY)
     assert monthly.payment_currency == "USD"
-    assert monthly.payment_amount == 3900  # cents — same currency as the list
+    assert monthly.payment_amount == 3900  # cents - same currency as the list
     assert monthly.is_configured is True
     assert checkout_ready() is True
     # With matching currencies there is nothing to disclose.
@@ -168,8 +168,8 @@ def test_mandated_disclosure_sentence():
     assert (
         NGN_CURRENCY_NOTICE
         == "RELIASTRA's plans are priced in USD. Our current Paystack payment "
-        "flow processes payments in NGN. We are working toward enabling USD "
-        "payment options for our global customers."
+        "flow processes payments in NGN. We are awaiting confirmation of "
+        "additional payment options for international customers."
     )
     assert CURRENCY_NOTICES["NGN"] == NGN_CURRENCY_NOTICE
     # The sentence names all three facts: USD pricing, NGN charging, USD future.
@@ -226,7 +226,7 @@ def test_price_resolution_never_imports_or_reads_fx(relative, banned):
         elif isinstance(node, ast.ImportFrom) and node.module:
             imported.add(node.module)
     assert not any(any(b in name for b in banned) for name in imported), (
-        f"{relative} must not import the FX layer — rates are display "
+        f"{relative} must not import the FX layer - rates are display "
         "context and can never feed a charge."
     )
     # No call into the FX module anywhere in the pricing-path source.

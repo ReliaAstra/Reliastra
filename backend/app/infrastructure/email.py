@@ -31,10 +31,10 @@ class EmailClient:
         *,
         category: str = "transactional",
     ) -> bool:
-        """SYNC — call via ``asyncio.to_thread`` from async code.
+        """SYNC - call via ``asyncio.to_thread`` from async code.
 
         Resend-first: when ``RESEND_API_KEY`` is configured the message goes
-        through Resend (the only supported production path — there is no
+        through Resend (the only supported production path - there is no
         local MTA in production). SMTP is strictly a fallback for local
         development (MailHog) and hermetic tests. No caller sends SMTP-only.
         """
@@ -105,7 +105,7 @@ class EmailClient:
         body: str,
         html_body: str | None = None,
     ) -> bool:
-        """Async wrapper — runs the blocking SMTP call in a thread pool."""
+        """Async wrapper - runs the blocking SMTP call in a thread pool."""
         return await asyncio.to_thread(
             self.send_email,
             to_email,

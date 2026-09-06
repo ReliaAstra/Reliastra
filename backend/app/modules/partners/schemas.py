@@ -48,7 +48,7 @@ class PartnerProfileResponse(BaseModel):
     created_at: datetime
     payout_method: str | None = None
     #: Masked (``0x71C7…9F2a``). The full address is never returned to the
-    #: browser — it is stored encrypted and only revealed to a system admin
+    #: browser - it is stored encrypted and only revealed to a system admin
     #: through an audited endpoint at settlement time.
     wallet_address: str | None = None
     payout_network: str | None = None
@@ -56,7 +56,7 @@ class PartnerProfileResponse(BaseModel):
     bank_details: dict | None = None
     #: One-line masked summary, ready to display.
     payout_destination: str | None = None
-    #: Last destination change — drives the payout cool-down.
+    #: Last destination change - drives the payout cool-down.
     payout_details_updated_at: datetime | None = None
 
 
@@ -66,7 +66,7 @@ class PartnerDashboardResponse(BaseModel):
     signups: int
     active_paid_customers: int
     monthly_commission_minor: int
-    #: Everything earned but not yet paid — includes commissions still inside
+    #: Everything earned but not yet paid - includes commissions still inside
     #: the hold period and commissions already reserved by an open payout.
     #: This is an *informational* figure, never the withdrawable amount.
     pending_commission_minor: int
@@ -240,7 +240,7 @@ class AdminPayoutItem(BaseModel):
     #: ``crypto_usdc`` | ``crypto_usdt`` | ``bank`` | ``None`` when the partner
     #: has not configured a destination yet.
     payout_method: str | None = None
-    #: Where the money has to be sent, ready to display in the payout queue —
+    #: Where the money has to be sent, ready to display in the payout queue -
     #: bank account numbers are masked to the last four digits.
     payout_destination: str | None = None
 
@@ -261,7 +261,7 @@ class PartnerStatsResponse(BaseModel):
     monthly_commission_minor: int
     total_commission_paid_minor: int
     pending_commission_minor: int
-    #: Payouts awaiting settlement — the admin's actual to-do list.
+    #: Payouts awaiting settlement - the admin's actual to-do list.
     pending_payout_count: int = 0
     pending_payout_minor: int = 0
     currency: str
@@ -373,7 +373,7 @@ class PartnerTicketDetailResponse(BaseModel):
 
 
 class AdminPayoutDestinationRevealResponse(BaseModel):
-    """Full, payable destination — returned only to a system admin, audited."""
+    """Full, payable destination - returned only to a system admin, audited."""
 
     partner_id: uuid.UUID
     partner_email: str | None = None

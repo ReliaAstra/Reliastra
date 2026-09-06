@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
-  // Allow Arena live preview host (e2b) to fetch dev resources — fixes "stuck at loading UI"
+  // Allow Arena live preview host (e2b) to fetch dev resources - fixes "stuck at loading UI"
   // Next.js 15+ blocks cross-origin dev asset requests by default.
   allowedDevOrigins: [
     // Local tooling (a headless browser, curl, a second container) commonly
@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   // `/dashboard/*` shape onto the canonical routes instead of dead-ending.
   //
   // NOTE: `/partner` and `/partner/*` are REAL file routes (the Partner
-  // Network home and public pages) — they must never be redirected. Legacy
+  // Network home and public pages) - they must never be redirected. Legacy
   // `/?page=<slug>` query URLs are permanently redirected to them by the
   // proxy (src/proxy.ts), which is the only layer that can match on query.
   async redirects() {
@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
     ];
     return [
       // "Vendor Tracking" is the public label for the Track experience, but
-      // the canonical route is `/track` — redirect instead of duplicating.
+      // the canonical route is `/track` - redirect instead of duplicating.
       {
         source: "/vendor-tracking",
         destination: "/track",
@@ -117,7 +117,7 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "X-Frame-Options", value: "ALLOWALL" },
-          // Preferred Sources publisher.js — narrowest allow for Google's script
+          // Preferred Sources publisher.js - narrowest allow for Google's script
           {
             key: "Content-Security-Policy",
             value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://news.google.com; connect-src 'self' https://news.google.com; frame-src https://news.google.com;",

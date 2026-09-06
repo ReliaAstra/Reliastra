@@ -46,7 +46,7 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
     """A RELIASTRA user who has opted into the referral program.
 
     One partner per user. The partner links to the user's existing
-    ``referral_codes`` row — there is exactly one canonical referral link
+    ``referral_codes`` row - there is exactly one canonical referral link
     per partner, and it is the same identity used by the PLG referral flow.
     """
 
@@ -70,7 +70,7 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
         String(20), nullable=False, default="active", index=True
     )
     #: Simple lifetime counter powering the dashboard "clicks" metric. It is
-    #: a counter, not an analytics platform — no per-click rows are stored.
+    #: a counter, not an analytics platform - no per-click rows are stored.
     click_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # ── Payout destination ─────────────────────────────────────────────────
@@ -81,7 +81,7 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
     #: ``bank`` it is left ``None`` and the structured account lives in
     #: ``bank_details``.
     #:
-    #: Stored **Fernet-encrypted** (``enc:v1:`` prefix) — read and written
+    #: Stored **Fernet-encrypted** (``enc:v1:`` prefix) - read and written
     #: through :mod:`app.modules.partners.destination`, never directly. The
     #: column is widened because ciphertext is longer than the address.
     wallet_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -93,7 +93,7 @@ class PartnerProfile(UUIDMixin, TimestampMixin, Base):
     #: "swift_bic"}``. Kept as JSON so the shape can evolve without a
     #: migration.
     #:
-    #: Stored encrypted as ``{"__enc__": "enc:v1:…"}`` — always read through
+    #: Stored encrypted as ``{"__enc__": "enc:v1:…"}`` - always read through
     #: :mod:`app.modules.partners.destination`.
     bank_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     #: When the destination was last changed. Drives the payout cool-down: a
@@ -166,7 +166,7 @@ class PartnerCommission(UUIDMixin, TimestampMixin, Base):
         nullable=True,
         index=True,
     )
-    #: Idempotency anchor — the billing provider's transaction reference.
+    #: Idempotency anchor - the billing provider's transaction reference.
     billing_event_id: Mapped[str] = mapped_column(String(200), nullable=False)
     #: Settlement bucket, ``YYYY-MM``.
     period: Mapped[str] = mapped_column(String(7), nullable=False)
@@ -228,7 +228,7 @@ class PartnerNotificationPreference(UUIDMixin, TimestampMixin, Base):
 
     In-app notifications are always delivered (they are the partner's audit
     trail of what happened); these flags only gate the *email* copy plus the
-    browser-push opt-in. A missing row means "all defaults on" — the service
+    browser-push opt-in. A missing row means "all defaults on" - the service
     creates one lazily on first read or write.
     """
 

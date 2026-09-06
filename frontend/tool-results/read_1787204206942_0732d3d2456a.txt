@@ -89,7 +89,7 @@
     89→        },
     90→        {
     91→          type: 'tip',
-    92→          content: 'When creating referral materials, use the RELIASTRA brand colors as accents only. Your own brand identity should remain primary — the goal is subtle co-branding, not a full rebrand.',
+    92→          content: 'When creating referral materials, use the RELIASTRA brand colors as accents only. Your own brand identity should remain primary - the goal is subtle co-branding, not a full rebrand.',
     93→        },
     94→      ],
     95→    },
@@ -128,7 +128,7 @@
    128→        },
    129→        {
    130→          type: 'paragraph',
-   131→          content: 'Don\'t lead with the commission. Lead with the problem RELIASTRA solves. Frame it as: "I found something that addresses [specific pain point] we talked about." Let the product speak for itself — your role is to make the introduction.',
+   131→          content: 'Don\'t lead with the commission. Lead with the problem RELIASTRA solves. Frame it as: "I found something that addresses [specific pain point] we talked about." Let the product speak for itself - your role is to make the introduction.',
    132→        },
    133→        {
    134→          type: 'tip',
@@ -140,7 +140,7 @@
    140→        },
    141→        {
    142→          type: 'paragraph',
-   143→          content: 'After sharing your link, wait 5-7 days before following up. A simple "Did you get a chance to look at RELIASTRA? Happy to walk through it" is sufficient. Avoid more than two follow-ups — if they\'re not interested, move on.',
+   143→          content: 'After sharing your link, wait 5-7 days before following up. A simple "Did you get a chance to look at RELIASTRA? Happy to walk through it" is sufficient. Avoid more than two follow-ups - if they\'re not interested, move on.',
    144→        },
    145→        {
    146→          type: 'heading',
@@ -185,9 +185,9 @@
    185→          type: 'list',
    186→          content: 'Three pillars of the platform:',
    187→          items: [
-   188→            'TRACK — Full incident timeline with automated evidence collection from connected tools',
-   189→            'CORRELATE — Cross-system dependency mapping reveals root causes across services',
-   190→            'PROVE — Actionable compliance reports and stakeholder-ready incident summaries',
+   188→            'TRACK - Full incident timeline with automated evidence collection from connected tools',
+   189→            'CORRELATE - Cross-system dependency mapping reveals root causes across services',
+   190→            'PROVE - Actionable compliance reports and stakeholder-ready incident summaries',
    191→          ],
    192→        },
    193→        {
@@ -196,7 +196,7 @@
    196→        },
    197→        {
    198→          type: 'paragraph',
-   199→          content: 'RELIASTRA integrates with common infrastructure tooling via webhooks and APIs. Typical setup takes under 30 minutes. No agents or sidecars required — it works with your existing observability stack.',
+   199→          content: 'RELIASTRA integrates with common infrastructure tooling via webhooks and APIs. Typical setup takes under 30 minutes. No agents or sidecars required - it works with your existing observability stack.',
    200→        },
    201→        {
    202→          type: 'code',
@@ -210,7 +210,7 @@
    210→        },
    211→        {
    212→          type: 'tip',
-   213→          content: 'When prospects ask technical questions you can\'t answer, direct them to support@reliastra.com or the RELIASTRA documentation. You don\'t need to be a product expert — you need to be a trusted introducer.',
+   213→          content: 'When prospects ask technical questions you can\'t answer, direct them to support@reliastra.com or the RELIASTRA documentation. You don\'t need to be a product expert - you need to be a trusted introducer.',
    214→        },
    215→      ],
    216→    },
@@ -272,11 +272,11 @@
    272→          type: 'list',
    273→          content: 'Core partner API endpoints:',
    274→          items: [
-   275→            'GET /v1/referrals — List all referrals with status and earnings',
-   276→            'GET /v1/commissions — Commission history with period breakdown',
-   277→            'GET /v1/payouts — Payout status and payment history',
-   278→            'GET /v1/stats — Summary statistics for dashboard widgets',
-   279→            'POST /v1/referrals/attribution — Manually attribute a referral',
+   275→            'GET /v1/referrals - List all referrals with status and earnings',
+   276→            'GET /v1/commissions - Commission history with period breakdown',
+   277→            'GET /v1/payouts - Payout status and payment history',
+   278→            'GET /v1/stats - Summary statistics for dashboard widgets',
+   279→            'POST /v1/referrals/attribution - Manually attribute a referral',
    280→          ],
    281→        },
    282→        {
@@ -312,7 +312,7 @@
    312→          content: 'Best for warm contacts who have expressed infrastructure challenges.',
    313→          templateData: {
    314→            subject: 'Found something for your incident management workflow',
-   315→            body: 'Hi [Name],\n\nFollowing up on our conversation about [specific pain point]. I\'ve been using a tool called RELIASTRA that handles exactly this — it tracks incidents across systems and produces the correlation reports you mentioned needing.\n\nWorth a look: [your referral link]\n\nHappy to share more about my experience with it if useful.\n\nBest,\n[Your name]',
+   315→            body: 'Hi [Name],\n\nFollowing up on our conversation about [specific pain point]. I\'ve been using a tool called RELIASTRA that handles exactly this - it tracks incidents across systems and produces the correlation reports you mentioned needing.\n\nWorth a look: [your referral link]\n\nHappy to share more about my experience with it if useful.\n\nBest,\n[Your name]',
    316→          },
    317→        },
    318→        {
@@ -324,7 +324,7 @@
    324→          content: 'Best for sharing in Slack communities, Discord servers, or email lists.',
    325→          templateData: {
    326→            subject: 'Tool recommendation: cross-system incident correlation',
-   327→            body: 'Hey everyone — wanted to share a tool I\'ve been using for incident tracking and cross-system correlation. RELIASTRA connects to your existing monitoring stack and builds dependency maps automatically.\n\nThe evidence-based reporting has been particularly useful for our compliance audits.\n\nIf you want to check it out: [your referral link]\n\nHappy to answer questions about my setup.',
+   327→            body: 'Hey everyone - wanted to share a tool I\'ve been using for incident tracking and cross-system correlation. RELIASTRA connects to your existing monitoring stack and builds dependency maps automatically.\n\nThe evidence-based reporting has been particularly useful for our compliance audits.\n\nIf you want to check it out: [your referral link]\n\nHappy to answer questions about my setup.',
    328→          },
    329→        },
    330→        {
@@ -336,7 +336,7 @@
    336→          content: 'Best for consultants and agencies recommending to clients.',
    337→          templateData: {
    338→            subject: 'Incident management recommendation for [Client Name]',
-   339→            body: 'Hi [Name],\n\nDuring our recent assessment, I identified an opportunity to improve your incident response workflow. I\'d recommend evaluating RELIASTRA — it provides the cross-system correlation and audit-ready reporting that aligns with your compliance requirements.\n\nYou can explore the platform here: [your referral link]\n\nI\'m happy to facilitate an introduction to their team if you\'d like.\n\nRegards,\n[Your name]',
+   339→            body: 'Hi [Name],\n\nDuring our recent assessment, I identified an opportunity to improve your incident response workflow. I\'d recommend evaluating RELIASTRA - it provides the cross-system correlation and audit-ready reporting that aligns with your compliance requirements.\n\nYou can explore the platform here: [your referral link]\n\nI\'m happy to facilitate an introduction to their team if you\'d like.\n\nRegards,\n[Your name]',
    340→          },
    341→        },
    342→        {

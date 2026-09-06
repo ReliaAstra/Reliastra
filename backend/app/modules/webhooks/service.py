@@ -80,7 +80,7 @@ class WebhookService:
     ) -> httpx.Response:
         """POST *body* to *url* through an SSRF-pinned transport.
 
-        The URL is re-validated and re-pinned AT SEND TIME — validating only
+        The URL is re-validated and re-pinned AT SEND TIME - validating only
         at creation leaves a DNS-rebinding window where a hostname that was
         public when saved resolves to an internal IP when delivered. The
         connection is pinned to a freshly validated public IP (TLS/SNI still
@@ -135,7 +135,7 @@ class WebhookService:
             return None
         if webhook.secret_hash.startswith("gAAAAA"):  # Fernet-encrypted
             return self._decrypt_secret(webhook.secret_hash)
-        # Legacy SHA-256 hashed secret — log a warning and use the hash
+        # Legacy SHA-256 hashed secret - log a warning and use the hash
         # itself (the old broken behaviour).  Consumers who configured a
         # webhook before this fix will need to re-enter their secret.
         logger.warning(

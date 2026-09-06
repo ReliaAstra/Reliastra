@@ -1799,7 +1799,7 @@ class AdminControlPlaneService:
         now = _now()
         overall = "healthy"
 
-        # API — if we are serving this request, API is up
+        # API - if we are serving this request, API is up
         api = ComponentHealth(status="healthy", latency_ms=0.0, last_checked=now)
 
         # Database
@@ -1854,7 +1854,7 @@ class AdminControlPlaneService:
         scheduler = ComponentHealth(status=worker_status, last_checked=now)
         check_engine = ComponentHealth(status=worker_status, last_checked=now)
 
-        # Billing / email / storage — configuration presence checks
+        # Billing / email / storage - configuration presence checks
         from app.config import settings
 
         billing_ok = bool(getattr(settings, "PAYSTACK_SECRET_KEY", "") or "")
@@ -1864,7 +1864,7 @@ class AdminControlPlaneService:
             message=None if billing_ok else "Billing provider not configured",
         )
         smtp_host = getattr(settings, "SMTP_HOST", "") or ""
-        # localhost is the default dev value — treat as unknown in that case
+        # localhost is the default dev value - treat as unknown in that case
         email_cfg = bool(smtp_host) and smtp_host not in ("localhost", "127.0.0.1")
         email = ComponentHealth(
             status="healthy" if email_cfg else "unknown",

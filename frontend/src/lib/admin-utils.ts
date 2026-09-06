@@ -8,7 +8,7 @@ export const ADMIN_PERIODS: Array<{ value: AdminPeriod; label: string }> = [
 ];
 
 export function formatAdminCurrency(value: number | null | undefined, currency = 'USD', compact = false) {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
@@ -18,12 +18,12 @@ export function formatAdminCurrency(value: number | null | undefined, currency =
 }
 
 export function formatMinorCurrency(value: number | null | undefined, currency = 'USD') {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
   return formatAdminCurrency(value / 100, currency);
 }
 
 export function formatCompactNumber(value: number | null | undefined) {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
   return new Intl.NumberFormat('en-US', {
     notation: Math.abs(value) > 999 ? 'compact' : 'standard',
     maximumFractionDigits: 1,
@@ -31,21 +31,21 @@ export function formatCompactNumber(value: number | null | undefined) {
 }
 
 export function formatPercent(value: number | null | undefined, options: { sign?: boolean; fractionDigits?: number } = {}) {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
   const fractionDigits = options.fractionDigits ?? 1;
   const prefix = options.sign && value > 0 ? '+' : '';
   return `${prefix}${value.toFixed(fractionDigits)}%`;
 }
 
 export function formatRatioPercent(value: number | null | undefined, fractionDigits = 0) {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
   return `${(value * 100).toFixed(fractionDigits)}%`;
 }
 
 export function formatAdminDate(value?: string | null, includeTime = false) {
-  if (!value) return '—';
+  if (!value) return '-';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '—';
+  if (Number.isNaN(date.getTime())) return '-';
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
@@ -57,10 +57,10 @@ export function formatAdminDate(value?: string | null, includeTime = false) {
 }
 
 export function formatRelativeTime(value?: string | null) {
-  if (!value) return '—';
+  if (!value) return '-';
   const date = new Date(value);
   const elapsed = Date.now() - date.getTime();
-  if (Number.isNaN(elapsed)) return '—';
+  if (Number.isNaN(elapsed)) return '-';
   const seconds = Math.max(0, Math.round(elapsed / 1000));
   if (seconds < 10) return 'just now';
   if (seconds < 60) return `${seconds}s ago`;
@@ -74,7 +74,7 @@ export function formatRelativeTime(value?: string | null) {
 }
 
 export function humanize(value?: string | null) {
-  if (!value) return '—';
+  if (!value) return '-';
   return value
     .replace(/[_-]/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());

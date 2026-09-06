@@ -4,7 +4,7 @@ The entire economic model is one sentence: a partner shares one referral
 link; a customer signs up through it and subscribes; the partner earns a
 recurring commission while the customer stays subscribed.
 
-No commission math lives in routers — it all lives here and in
+No commission math lives in routers - it all lives here and in
 :mod:`app.modules.partners.commissions`.
 """
 
@@ -156,7 +156,7 @@ class PartnerService:
         profile = await self.profile_repo.get_by_user_id(session, user_id)
         if profile is None:
             raise ResourceNotFoundException(
-                "Partner profile not found — activate the referral program first"
+                "Partner profile not found - activate the referral program first"
             )
         return profile
 
@@ -176,7 +176,7 @@ class PartnerService:
 
         Crypto methods require a wallet address (and optionally a network);
         bank transfers require structured ``bank_details``. Clearing a
-        method is not supported through this endpoint — a partner may switch
+        method is not supported through this endpoint - a partner may switch
         methods, which replaces the destination wholesale.
 
         This is the highest-risk write in the program: whoever controls the
@@ -191,8 +191,8 @@ class PartnerService:
             raise ResourceNotFoundException("User not found")
 
         # Re-authenticate password-based accounts. Federated accounts (Supabase
-        # / OAuth) have no local password to check — their identity provider
-        # already gates the session — so they are exempt rather than locked out.
+        # / OAuth) have no local password to check - their identity provider
+        # already gates the session - so they are exempt rather than locked out.
         if user.password_hash:
             if not body.current_password:
                 raise ValidationException(
@@ -205,7 +205,7 @@ class PartnerService:
         had_destination = bool(profile.payout_method)
 
         # Assign directly (rather than via ``profile_repo.update``) because a
-        # method switch must clear the previously configured destination —
+        # method switch must clear the previously configured destination -
         # e.g. ``bank`` → ``crypto_usdc`` has to null out ``bank_details`` and
         # vice-versa, and the repo's ``update`` helper skips ``None`` values.
         if body.payout_method in ("crypto_usdc", "crypto_usdt"):
@@ -251,7 +251,7 @@ class PartnerService:
             user_id=user_id,
             resource_type="partner",
             resource_id=str(profile.id),
-            # Never write the destination itself into the audit payload — the
+            # Never write the destination itself into the audit payload - the
             # masked summary is enough to reconstruct what happened.
             payload={
                 "payout_method": body.payout_method,
@@ -347,7 +347,7 @@ class PartnerService:
             session, profile.id, statuses=["paid"]
         )
 
-        # The withdrawable figure is *not* ``pending`` — that sum includes
+        # The withdrawable figure is *not* ``pending`` - that sum includes
         # commissions still inside the hold period and commissions already
         # reserved by an open payout. Only released, unreserved commissions
         # can actually be paid out.

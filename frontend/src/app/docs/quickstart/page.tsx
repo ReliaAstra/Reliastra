@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Quickstart — First check in minutes',
+  title: 'Quickstart - First check in minutes',
   description:
     'Create an organization, add your first dependency, and read your first observations. The fastest path to independent vendor evidence.',
   path: '/docs/quickstart',
@@ -53,7 +53,7 @@ export default function QuickstartPage() {
         <Prose>
           <h2>1. Create an organization</h2>
           <p>
-            <a href="/signup">Sign up</a>. A 14-day Pro trial starts automatically —
+            <a href="/signup">Sign up</a>. A 14-day Pro trial starts automatically -
             every feature, every region, no card. Verify your email when prompted;
             unverified addresses cannot hold a session.
           </p>
@@ -61,7 +61,7 @@ export default function QuickstartPage() {
           <p>
             Paste an endpoint URL you are authorized to test, choose the HTTP method
             and expected response, pick regions and a check interval (Free: 1 minute;
-            Pro: down to 15 seconds). Only monitor systems you own or operate — see{' '}
+            Pro: down to 15 seconds). Only monitor systems you own or operate - see{' '}
             <a href="/terms">acceptable use</a>.
           </p>
           <h2>3. Read your first observations</h2>
@@ -73,7 +73,7 @@ export default function QuickstartPage() {
           <h2>4. Correlate your first incident</h2>
           <p>
             When your service degrades, log the incident window and compare it against
-            the dependency timeline. Overlap across regions is the attribution signal —
+            the dependency timeline. Overlap across regions is the attribution signal -
             see <a href="/incident-evidence">incident evidence</a>.
           </p>
           <h2>Next</h2>

@@ -5,7 +5,7 @@
  * look identical from the UI, and until now they were identical in the code
  * too: every failure on the auth path collapsed into one "your session has
  * expired" message with nothing logged. That made the single most common
- * support report — "I keep getting logged out" — undiagnosable from the
+ * support report - "I keep getting logged out" - undiagnosable from the
  * browser.
  *
  * This module is the one place that decides what an auth failure *means*, and
@@ -18,13 +18,13 @@
 
 /** Why an authenticated request or a refresh attempt failed. */
 export type AuthFailureKind =
-  /** 401/403 — the server rejected the session. This one is terminal. */
+  /** 401/403 - the server rejected the session. This one is terminal. */
   | 'unauthorized'
-  /** 429 — too many requests. Transient; the session is still valid. */
+  /** 429 - too many requests. Transient; the session is still valid. */
   | 'rate_limited'
-  /** 5xx — the server failed. Transient; the session is still valid. */
+  /** 5xx - the server failed. Transient; the session is still valid. */
   | 'server_error'
-  /** 502 from the Next proxy — the backend was unreachable. Transient. */
+  /** 502 from the Next proxy - the backend was unreachable. Transient. */
   | 'proxy_unavailable'
   /** Any other 4xx. */
   | 'client_error'
@@ -39,7 +39,7 @@ export interface AuthFailure {
   kind: AuthFailureKind;
   /** HTTP status when there was a response. */
   status?: number;
-  /** Request path — never a query string, which can carry identifiers. */
+  /** Request path - never a query string, which can carry identifiers. */
   path?: string;
   /** The API envelope's machine-readable code, e.g. `TOKEN_EXPIRED`. */
   code?: string;
@@ -140,12 +140,12 @@ export function logSessionEnd(
   const message = `[session] ended at ${stage}: ${describeAuthFailure(failure)}`;
   const safe = redact(detail);
   if (isSessionInvalid(failure)) {
-    console.warn(safe ? `${message} — ${safe}` : message);
+    console.warn(safe ? `${message} - ${safe}` : message);
   } else {
     // Not a dead session: say so explicitly, because the UI is about to show
     // "signed out" and the distinction is the whole point of this module.
     console.warn(
-      `${message} — session is still valid; this was a transient failure, ` +
+      `${message} - session is still valid; this was a transient failure, ` +
         'not an expiry'
     );
   }
@@ -159,7 +159,7 @@ export function logAuthWarning(
 ): void {
   const message = `[session] ${stage} failed: ${describeAuthFailure(failure)}`;
   const safe = redact(detail);
-  console.warn(safe ? `${message} — ${safe}` : message);
+  console.warn(safe ? `${message} - ${safe}` : message);
 }
 
 /**
@@ -173,7 +173,7 @@ export function redact(value: string | undefined | null): string | undefined {
   return value
     .replace(/(bearer\s+)[A-Za-z0-9\-._~+/]+=*/gi, '$1[redacted]')
     // Header values can legitimately contain spaces ("Basic dXNlcjpwdw=="), so
-    // these must consume up to the `;` delimiter — stopping at whitespace
+    // these must consume up to the `;` delimiter - stopping at whitespace
     // would leave the credential itself in the log line.
     .replace(/(authorization:\s*)[^;]*/gi, '$1[redacted]')
     .replace(/(cookie:\s*)[^;]*/gi, '$1[redacted]')
@@ -181,7 +181,7 @@ export function redact(value: string | undefined | null): string | undefined {
     .slice(0, 300);
 }
 
-/** Keep only the path portion — query strings can carry identifiers. */
+/** Keep only the path portion - query strings can carry identifiers. */
 function safePath(path: string | undefined): string | undefined {
   if (!path) return undefined;
   const withoutQuery = path.split('?')[0];

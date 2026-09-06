@@ -48,7 +48,7 @@ class DashboardService:
             if not dep.is_active:
                 status = "paused"
             elif total_checks == 0 or up_pct is None:
-                # No check data in the window — never present stale silence as
+                # No check data in the window - never present stale silence as
                 # "operational". The UI renders this as an explicit unknown state.
                 status = "unknown"
                 up_pct = None
@@ -93,7 +93,7 @@ class DashboardService:
     async def get_vendor_status(
         self, session: AsyncSession, org_id: uuid.UUID
     ) -> list[VendorDetailResponse]:
-        # FIX 22: bulk vendor details — a single observation query across all
+        # FIX 22: bulk vendor details - a single observation query across all
         # vendor endpoints instead of per-vendor detail calls.
         return await vendor_service.get_vendor_details_bulk(session)
 

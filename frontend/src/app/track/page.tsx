@@ -6,23 +6,23 @@ import { JsonLd, Breadcrumbs } from '@/components/seo/json-ld';
 import { breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Track — Public vendor status | RELIASTRA',
+  title: 'Track - Public vendor status | RELIASTRA',
   description:
-    'Independent, multi-region status for the third-party APIs your product depends on. Uptime, latency and incident history — measured, not self-reported.',
+    'Independent, multi-region status for the third-party APIs your product depends on. Uptime, latency and incident history - measured, not self-reported.',
   alternates: { canonical: '/track' },
   robots: { index: true, follow: true },
   openGraph: {
-    title: 'Track vendor status — RELIASTRA',
+    title: 'Track vendor status - RELIASTRA',
     description:
-      'Independent, multi-region status for third-party APIs. Uptime, latency and incident history — measured, not self-reported.',
+      'Independent, multi-region status for third-party APIs. Uptime, latency and incident history - measured, not self-reported.',
     url: '/track',
     type: 'website',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'RELIASTRA Track — independent vendor status' }],
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'RELIASTRA Track - independent vendor status' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Track vendor status — RELIASTRA',
-    description: 'Independent uptime, latency and incident history — measured, not self-reported.',
+    title: 'Track vendor status - RELIASTRA',
+    description: 'Independent uptime, latency and incident history - measured, not self-reported.',
     images: ['/opengraph-image'],
   },
 };
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 function formatWhen(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   try {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60_000);
@@ -40,7 +40,7 @@ function formatWhen(iso: string | null): string {
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.floor(hrs / 24)}d ago`;
   } catch {
-    return '—';
+    return '-';
   }
 }
 
@@ -135,7 +135,7 @@ export default function TrackIndexPage() {
             '@type': 'WebPage',
             '@id': canonicalUrl('/track'),
             url: canonicalUrl('/track'),
-            name: 'Track — Public vendor status',
+            name: 'Track - Public vendor status',
             description:
               'Independent, multi-region status for third-party APIs: uptime, latency and incident history.',
             isPartOf: { '@id': canonicalUrl('/#website') },
@@ -158,7 +158,7 @@ export default function TrackIndexPage() {
             Independent status for the services you depend on
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Uptime, latency and incidents for third-party APIs — measured by RELIASTRA&apos;s
+            Uptime, latency and incidents for third-party APIs - measured by RELIASTRA&apos;s
             regional probes, not self-reported by the vendor.
           </p>
         </div>

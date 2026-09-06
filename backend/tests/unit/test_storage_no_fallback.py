@@ -1,6 +1,6 @@
 """Tests for FIX 35: the storage client raises instead of falling back.
 
-The storage layer is Supabase Storage (S3) via boto3 only — there is no
+The storage layer is Supabase Storage (S3) via boto3 only - there is no
 second backend, no auto-detection, and no local-filesystem fallback.  These
 tests assert that every failure mode raises ``StorageError`` so Celery tasks
 retry instead of silently succeeding.
@@ -15,7 +15,7 @@ VALID_ENDPOINT = "https://abcxyz.supabase.co/storage/v1/s3"
 
 
 def _unconfigured_client() -> StorageClient:
-    """A client with explicitly empty config — no Supabase S3 credentials."""
+    """A client with explicitly empty config - no Supabase S3 credentials."""
     return StorageClient(
         endpoint="", access_key="", secret_key="", bucket="", region=""
     )
@@ -60,7 +60,7 @@ def test_presigned_url_raises_when_client_unconfigured():
 
 
 class _FakeS3Client:
-    """Minimal boto3-shaped fake — no network involved."""
+    """Minimal boto3-shaped fake - no network involved."""
 
     def head_bucket(self, Bucket):
         return None

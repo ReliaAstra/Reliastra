@@ -91,7 +91,7 @@ Every 4xx/5xx body is:
 
 Checkout rejections use the same envelope with `code: "CHECKOUT_FAILED"` and the reason
 in `details[0]`: `{ "field": "reason", "issue": "quote_stale" }`. The status is
-meaningful — `409` rejected on policy or state (retrying as sent cannot succeed), `403`
+meaningful - `409` rejected on policy or state (retrying as sent cannot succeed), `403`
 the reference belongs to another organization, `503` the provider could not be reached,
 which is the only case worth retrying. `422` is never used for a checkout rejection.
 
@@ -111,7 +111,7 @@ The private founding customer program is retired. The following endpoints are
 | `GET /v1/admin/business/founding-customers` |
 
 `GET /v1/billing/plan` no longer returns `is_founding_customer`,
-`founding_discount_pct` or `discounted_price_usd` — every organization is
+`founding_discount_pct` or `discounted_price_usd` - every organization is
 charged the published plan price (`price_usd`).
 
 ## Admin control plane (2026-08)
@@ -171,7 +171,7 @@ are unchanged.
 
 ## Billing currency (added)
 
-`GET /v1/billing/currency` — public, no auth — is the single source every payment
+`GET /v1/billing/currency` - public, no auth - is the single source every payment
 surface reads:
 
 ```json
@@ -181,7 +181,7 @@ surface reads:
   "payment_currency_name": "Nigerian Naira (NGN)",
   "payment_symbol": "\u20a6",
   "differs_from_product_currency": true,
-  "notice": "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are working toward enabling USD payment options for our global customers.",
+  "notice": "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
   "checkout_ready": true,
   "plan_payment_amounts": { "pro": { "monthly": "\u20a660,000.00 (NGN)", "annual": "\u20a6600,000.00 (NGN)" } },
   "payment_provider": "Paystack",
@@ -205,14 +205,14 @@ surface reads:
 `checkout_ready: false` means no payment price is published for a self-serve plan:
 clients must not offer a live "continue to payment" action, and must show
 `notice` regardless. `plan_payment_amounts` carries **pre-formatted, ready-made
-strings** — clients render them verbatim and never compute a currency figure
+strings** - clients render them verbatim and never compute a currency figure
 locally. Do not fall back to a hardcoded amount when this request fails: show the
 disclosure without a number.
 
 `fx_reference` is **display-only context**: a market estimate, labelled as an
 estimate, attributed to a verifiable source and timestamped. It is *never* used
 to determine what is charged (the charge is the published payment price), and it
-is `null` when disabled or unavailable — clients hide the reference rather than
+is `null` when disabled or unavailable - clients hide the reference rather than
 inventing one. `GET /v1/pricing/fx-reference` returns the same object.
 
 ## Pricing
@@ -225,8 +225,8 @@ price is unpublished), `product_price_display`,
 `payment_provider`, `payment_provider_display`, `currency_label`) and
 `checkout_ready`. `price_usd` / `price_annual_usd` are
 unchanged: they remain RELIASTRA's canonical **product** list prices in USD.
-Every RELIASTRA-owned payment screen must render the transparency triple —
-Product price / Actual charge / Payment provider — verbatim from these fields.
+Every RELIASTRA-owned payment screen must render the transparency triple -
+Product price / Actual charge / Payment provider - verbatim from these fields.
 
 `/v1/pricing` is the marketing view. For a payment, read
 `GET /v1/billing/checkout/quote` instead: it is the only response that also carries the
@@ -239,7 +239,7 @@ Checkout is **RELIASTRA-owned**: the plan summary, both currency figures, the pa
 method list and the billing state are ours, and Paystack only processes the card. A client
 reads one endpoint and sends what it read back, unchanged.
 
-`GET /v1/billing/checkout/quote?plan=<plan>&interval=<monthly|annual>` — authenticated —
+`GET /v1/billing/checkout/quote?plan=<plan>&interval=<monthly|annual>` - authenticated -
 is the only authoritative source for what a payment will cost:
 
 ```json
@@ -252,7 +252,7 @@ is the only authoritative source for what a payment will cost:
   "payment_provider": "Paystack",
   "payment_provider_display": "Paystack \u2014 secure hosted checkout",
   "period_word": "month",
-  "currency_notice": "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are working toward enabling USD payment options for our global customers.",
+  "currency_notice": "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
   "fx_reference": { "available": true, "rate": 1650.0, "\u2026": "\u2026" },
   "channels": ["card"],
   "payment_methods": [{ "id": "international_card", "channel": "card",
@@ -270,7 +270,7 @@ is the only authoritative source for what a payment will cost:
   `unavailable_message`, so a client renders a considered state instead of an error page.
   Enterprise is arranged with Sales and is never priced through self-serve checkout.
 - `payment_amount_minor` / `payment_amount_display` are the **exact** figures handed to the
-  provider — render them verbatim, never compute them. `price_token` fingerprints
+  provider - render them verbatim, never compute them. `price_token` fingerprints
   (plan, interval, amount, currency).
 - `currency_notice` is canonical disclosure copy; treat it as server-supplied text.
 - `fx_reference` is display-only context: a labelled, attributed, timestamped estimate, or
@@ -304,7 +304,7 @@ and the stored transaction cannot disagree:
   Paystack `plan` code: supplying one invalidates `amount`, so the customer would be
   charged whatever the provider has stored rather than what RELIASTRA displayed.
 
-`POST /v1/billing/verify?reference=<ref>` is the only call that can activate a plan — a
+`POST /v1/billing/verify?reference=<ref>` is the only call that can activate a plan - a
 browser callback is never sufficient:
 
 ```json
@@ -319,7 +319,7 @@ browser callback is never sufficient:
 
 `verified: true` means verified **and applied**: status, amount, currency and organization
 association all matched and the payment was recorded as it actually happened.
-Re-verifying the same reference is idempotent — `verified: true, activated: false`, no
+Re-verifying the same reference is idempotent - `verified: true, activated: false`, no
 double entitlement and no error. A second payment for a period already covered is kept,
 not discarded, and reported as `duplicate_payment: true`. Anything else comes back as
 `verified: false` with a `reason` slug and `reason_message`
@@ -334,19 +334,19 @@ Stable, machine-readable and safe to branch on; the customer-facing wording live
 | Slug | Status |
 | --- | --- |
 | `price_not_configured`, `payment_method_unavailable`, `plan_not_self_serve`, `quote_stale`, `transaction_not_found`, `transaction_not_paid`, `amount_below_plan_price`, `currency_mismatch`, `payment_channel_not_supported`, `organization_mismatch` | `409` |
-| `organization_mismatch` — verifying another organization's reference | `403` |
+| `organization_mismatch` - verifying another organization's reference | `403` |
 | `paystack_unavailable`, `verification_unavailable` | `503` |
 
 A reference the provider does not know is `409 transaction_not_found`, **not** `503`: the
 provider answered, it just had nothing to say, so retrying indefinitely is wrong. The
-remaining slugs arrive inside `200` verify responses or are derived client-side —
+remaining slugs arrive inside `200` verify responses or are derived client-side -
 `payment_cancelled`, `card_declined`, `authentication_required`, `payment_pending`,
 `payment_replayed`, `duplicate_payment`, `session_expired`, `network_interrupted`.
 
 ### Payment channels
 
 `channels` on both the quote and the initialize response is the array handed to the
-provider — `["card"]` for global checkout — and the same array is re-applied to the
+provider - `["card"]` for global checkout - and the same array is re-applied to the
 InlineJS call, because the SDK otherwise defaults to every channel enabled on the account.
 Resolution is fail-closed: unset means **card only**, not "everything"; unknown channel
 names are dropped; country-restricted rails are excluded unless explicitly enabled *and*
@@ -371,7 +371,7 @@ the URL. A customer returning mid-confirmation is never asked to pay again.
 
 ## Payment history (added)
 
-`GET /v1/billing/transactions` — authenticated, organization-scoped — returns
+`GET /v1/billing/transactions` - authenticated, organization-scoped - returns
 one row per collected payment, persisted verbatim from the provider's
 verification report when the money moved:
 
@@ -400,7 +400,7 @@ Migration `0029_billing_tx_attribution` adds `user_id` (who paid on behalf of th
 organization; `SET NULL` if that user goes), `verified_at` (when our server-side
 verification succeeded) and `duplicate` (a later payment for a period already covered).
 `period_end` is the provider's own next-payment date when it supplies one and `null`
-otherwise — it is never inferred; the covered period shown to customers comes from the
+otherwise - it is never inferred; the covered period shown to customers comes from the
 subscription record.
 
 ## Transactional email

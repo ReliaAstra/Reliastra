@@ -1,4 +1,4 @@
-name: CI — Backend Lint, Scan & Test
+name: CI - Backend Lint, Scan & Test
 
 on:
   pull_request:

@@ -60,7 +60,7 @@ interface AppState {
   setUnreadCount: (n: number) => void;
   setOnline: (v: boolean) => void;
   /**
-   * The session is unrecoverable — clear it and route to sign-in.
+   * The session is unrecoverable - clear it and route to sign-in.
    *
    * `reason` is required in spirit: it is what makes "logged out"
    * diagnosable from the browser. It carries a status code and a
@@ -163,11 +163,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   sessionExpired: (reason) => {
     // Log the failing status before anything is cleared: once the tokens are
     // gone there is nothing left to explain why this happened. Only a status
-    // code and a kind are logged — never a token, cookie or header.
+    // code and a kind are logged - never a token, cookie or header.
     logSessionEnd('request', reason ?? { kind: 'unauthorized', status: 401 });
     // Non-explicit session end: clear only the customer-console keys. The
     // partner/admin surfaces share this backend session, but each owns its
-    // own cleanup — wiping their keys here is what previously logged a
+    // own cleanup - wiping their keys here is what previously logged a
     // customer out of everything after a single surface's 401.
     if (typeof window !== 'undefined') {
       clearCustomerTokens();

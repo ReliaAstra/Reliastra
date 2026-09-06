@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 
 /**
- * Billing — every number comes from the backend's authoritative
+ * Billing - every number comes from the backend's authoritative
  * ``GET /v1/billing/plan`` (plan, effective plan, evaluation state, limits)
  * plus live dependency usage. The evaluation is never computed client-side.
  * The page renders the 14-day full-access evaluation, conversion preview,
@@ -51,7 +51,7 @@ export function BillingPage() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const { data: deps } = useDependencies();
   // Payment history feeds the table below. The hook must run unconditionally
-  // — the component has a loading early-return further down, and a hook after
+  // - the component has a loading early-return further down, and a hook after
   // it would change the hook count between renders (React error boundary).
   const {
     data: txData,
@@ -79,7 +79,7 @@ export function BillingPage() {
     // No "alive" flag here on purpose: in StrictMode (and any dev re-run that
     // cleans up the first effect) the cleanup lands before the request
     // resolves, and an liveness check would silently drop a SUCCESSFUL
-    // verification — the customer paid and saw nothing. The checkedRef guard
+    // verification - the customer paid and saw nothing. The checkedRef guard
     // above is what keeps this single-flight; a setState after unmount is a
     // no-op in React 18, so the response is always applied when it arrives.
     void api
@@ -134,7 +134,7 @@ export function BillingPage() {
       </div>
 
       {/* Returning from the provider: the exact charge, restated from the
-          gateway's own figures — never from a catalog re-read. */}
+          gateway's own figures - never from a catalog re-read. */}
       {paid && (
         <section
           className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50/70 p-5 dark:border-emerald-900/40 dark:bg-emerald-950/20"
@@ -148,7 +148,7 @@ export function BillingPage() {
             />
             <div className="min-w-0">
               <h2 className="text-sm font-semibold text-rs-text">
-                Payment confirmed — your plan is active
+                Payment confirmed - your plan is active
               </h2>
               <dl className="mt-3 grid grid-cols-1 gap-x-8 gap-y-1.5 text-[13px] sm:grid-cols-2">
                 <div className="flex justify-between gap-4 sm:justify-start">
@@ -164,7 +164,7 @@ export function BillingPage() {
                 <div className="flex justify-between gap-4 sm:justify-start">
                   <dt className="text-rs-text-tertiary">Product price</dt>
                   <dd className="font-mono text-rs-text">
-                    {paid.product_price_display ?? '—'}
+                    {paid.product_price_display ?? '-'}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-4 sm:justify-start">
@@ -199,7 +199,7 @@ export function BillingPage() {
                   this page can never imply the card is charged USD. */}
               <span>
                 {underlying.priceMonthly == null
-                  ? 'Custom pricing — Contact Sales'
+                  ? 'Custom pricing - Contact Sales'
                   : `$${underlying.priceMonthly}/mo list price`}
               </span>
               {underlying.priceMonthly != null && (
@@ -286,7 +286,7 @@ export function BillingPage() {
           <FxReferencePanel info={currency} className="mt-3" />
         </div>
 
-        {/* Evaluation entitlement overlay — full product, not a cheap tier */}
+        {/* Evaluation entitlement overlay - full product, not a cheap tier */}
         {trialActive && !isPaid && (
           <div className="mt-5 rounded-lg border border-rs-brand/25 bg-rs-brand-subtle p-4">
             <div className="flex items-center gap-2">
@@ -297,11 +297,11 @@ export function BillingPage() {
             </div>
             <p className="mt-1.5 text-[13px] leading-relaxed text-rs-text-secondary">
               You have <strong>14 days of full access</strong> to explore RELIASTRA without feature
-              restrictions — every capability across paid tiers is available. No card required.
+              restrictions - every capability across paid tiers is available. No card required.
               {daysLeft > 0 ? (
                 <>
                   {' '}<strong>{daysLeft} day{daysLeft === 1 ? '' : 's'}</strong> remaining
-                  {daysLeft <= 3 ? ' — trial ends soon' : ''}.
+                  {daysLeft <= 3 ? ' - trial ends soon' : ''}.
                 </>
               ) : null}{' '}
               Your configuration and history will be preserved; paid capabilities simply pause at
@@ -350,7 +350,7 @@ export function BillingPage() {
           </div>
         )}
 
-        {/* Evaluation ended on free — clear, meaningful fallback */}
+        {/* Evaluation ended on free - clear, meaningful fallback */}
         {!trialActive && underlying.id === 'free' && (
           <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20">
             <p className="text-sm font-semibold text-rs-text">Your full-access evaluation has ended.</p>
@@ -367,11 +367,11 @@ export function BillingPage() {
                   <strong className="text-rs-text">{fallback.dependencies_paused_if_expired}</strong> paused (preserved)
                 </li>
                 <li>
-                  • Advanced evidence reports —{' '}
+                  • Advanced evidence reports -{' '}
                   {fallback.evidence_available ? 'paused until upgrade' : 'unavailable on Free'}
                 </li>
                 <li>
-                  • Extended retention — {fallback.retention_days_current} → {fallback.retention_days_free} day
+                  • Extended retention - {fallback.retention_days_current} → {fallback.retention_days_free} day
                 </li>
                 <li>
                   • Team: {fallback.team_members} member{fallback.team_members === 1 ? '' : 's'} (Free allows{' '}
@@ -456,7 +456,7 @@ export function BillingPage() {
         </dl>
       </section>
 
-      {/* Payment method — no data source yet, so the honest state is rendered */}
+      {/* Payment method - no data source yet, so the honest state is rendered */}
       <section className="mb-6 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
         <div className="flex items-center justify-between">
           <div>
@@ -465,7 +465,7 @@ export function BillingPage() {
             </div>
             <p className="mt-2 text-sm text-rs-text-secondary">
             Card details are held by {paymentProviderName(currency)}, never by RELIASTRA. No
-            card on file — trials do not require one.
+            card on file - trials do not require one.
           </p>
           </div>
           <RsButton variant="secondary" onClick={() => openUpgrade()}>
@@ -474,7 +474,7 @@ export function BillingPage() {
         </div>
       </section>
 
-      {/* What this plan includes — mirrors backend PLAN_FEATURES semantics */}
+      {/* What this plan includes - mirrors backend PLAN_FEATURES semantics */}
       <section className="mb-6 rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
         <h2 className="text-sm font-semibold text-rs-text">
           {trialActive ? 'Included during your Pro trial' : `Included in ${underlying.name}`}
@@ -517,7 +517,7 @@ export function BillingPage() {
         </ul>
       </section>
 
-      {/* Payment history — the charges as the provider settled them. Rows
+      {/* Payment history - the charges as the provider settled them. Rows
           read from the persisted transaction (actual charged amount and
           currency) alongside the USD product price quoted at the time. */}
       <section className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
@@ -582,7 +582,7 @@ export function BillingPage() {
           <EmptyState
             icon={<FileText size={32} />}
             title="No payments yet"
-            body="Receipts appear here the moment a payment settles. Every entry shows the amount actually charged and the currency it was charged in — not a re-derived price."
+            body="Receipts appear here the moment a payment settles. Every entry shows the amount actually charged and the currency it was charged in - not a re-derived price."
             actionLabel="View plans"
             onAction={() => openUpgrade()}
             helpLabel="How does billing work?"

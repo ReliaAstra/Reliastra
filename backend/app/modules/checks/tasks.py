@@ -98,7 +98,7 @@ def worker_heartbeat(request_id: str | None = None) -> bool:
     Beat being alive only proves tasks are being *published*. This task is
     published on the same interval and does nothing but record that some worker
     picked it up, which closes the gap where Beat is healthy, the broker is
-    healthy, and no worker is running at all — the failure mode that looks
+    healthy, and no worker is running at all - the failure mode that looks
     exactly like "every monitored vendor is quietly fine".
     """
     from app.modules.checks.scheduler_health import record_worker_heartbeat

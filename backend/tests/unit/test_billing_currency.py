@@ -126,7 +126,7 @@ async def test_annual_checkout_charges_390_not_monthly():
 @pytest.mark.asyncio
 async def test_monthly_amount_does_not_clear_annual_checkout():
     """$39 (monthly) offered against an annual transaction must be rejected
-    as an undersized amount — the annual billing bug the other way around."""
+    as an undersized amount - the annual billing bug the other way around."""
     org_id = uuid.uuid4()
     service = _service(_result(org_id, currency="USD", amount=3900, interval="annual"))
     with (

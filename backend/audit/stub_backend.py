@@ -9,7 +9,7 @@ shapes:
   * TokenResponse    { access_token, refresh_token, token_type, expires_in }
   * customer JWT family signed with SECRET_KEY (type=access / type=refresh)
   * admin JWT family signed with ADMIN_TOKEN_SECRET (aud=reliastra-admin,
-    type=admin_access / admin_refresh) — same value the Next proxy verifies.
+    type=admin_access / admin_refresh) - same value the Next proxy verifies.
 
 This file is intentionally self-contained (single stdlib dependency: pyjwt is
 used if available, otherwise a hand-rolled HS256 JWT). It is NOT part of the

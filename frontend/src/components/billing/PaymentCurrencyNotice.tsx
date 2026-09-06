@@ -9,7 +9,7 @@ import {
   fxReference,
   isCheckoutReady,
   paymentAmountFor,
-  paymentProviderDisplay,
+  paymentProviderName,
   type FxReference,
   type PaymentCurrencyInfo,
 } from '@/lib/billing/currency';
@@ -19,13 +19,13 @@ import {
  *
  * ONE file owns every RELIASTRA-owned sentence a customer sees before, during
  * and after a payment. Pricing grid, upgrade modal, pre-payment confirmation,
- * billing page — they all import from here, so no surface can paraphrase,
+ * billing page - they all import from here, so no surface can paraphrase,
  * miniaturize or skip the disclosure.
  *
  * Design intent (product spec §9/§10): the currency explanation is an
  * *informational* note, not a warning. Muted tinted container, info glyph, no
- * red, no alarm. The currency name is always real text — never conveyed by a
- * symbol or a colour alone — and blocks are marked up so assistive tech
+ * red, no alarm. The currency name is always real text - never conveyed by a
+ * symbol or a colour alone - and blocks are marked up so assistive tech
  * announces them as notes/tables.
  */
 
@@ -42,12 +42,12 @@ import {
  * Every figure is a backend-resolved string ({@linkcode paymentAmountFor}):
  * the charge line is literally the minor-unit amount the API sends to
  * Paystack, formatted server-side. When no payment price has been published
- * the charge line states that honestly — the component never derives a
+ * the charge line states that honestly - the component never derives a
  * number, and neither may any caller.
  *
  * `emphasis`:
- * - `card` — compact block for pricing cards and plan choosers;
- * - `panel` — full-framed version for the checkout review and billing page.
+ * - `card` - compact block for pricing cards and plan choosers;
+ * - `panel` - full-framed version for the checkout review and billing page.
  */
 export function PlanPaymentSummary({
   info,
@@ -67,7 +67,10 @@ export function PlanPaymentSummary({
 }) {
   const charged = paymentAmountFor(info, plan, interval);
   const checkoutReady = isCheckoutReady(info);
-  const provider = paymentProviderDisplay(info);
+  // The compact triple shows the processor's name; the longer
+  // "secure hosted checkout" phrasing belongs to the checkout review,
+  // where the full line has room.
+  const provider = paymentProviderName(info);
   const periodWord = interval === 'annual' ? 'year' : 'month';
 
   const rows = (
@@ -127,7 +130,7 @@ export function PlanPaymentSummary({
       {!isCheckoutReady(info) ? (
         <p className="text-[11px] font-medium text-[#71717A] dark:text-[#8A8A93]">
           Our {info?.payment_currency_name ?? 'NGN'} price for this plan is being
-          confirmed — billing will set it up directly.
+          confirmed - billing will set it up directly.
         </p>
       ) : null}
     </div>
@@ -158,13 +161,17 @@ function TransparencyRow({
       <dt className="shrink-0 text-[11px] font-medium uppercase tracking-[0.04em] text-[#71717A] dark:text-[#8A8A93]">
         {label}
       </dt>
-      <dd className="min-w-0 text-right text-[12px] leading-snug break-words">
-        {value}
-        {hint ? (
-          <span className="ml-1 text-[11px] text-[#A1A1AA] dark:text-[#71717A]">
-            {hint}
-          </span>
-        ) : null}
+      <dd className="min-w-0 text-right text-[12px] leading-snug">
+        {/* The figure and its unit stay one unbreakable unit: a wrapped
+            "₦60,000.00 (NGN) per month" is how amounts get misread. */}
+        <span className="whitespace-nowrap">
+          {value}
+          {hint ? (
+            <span className="ml-1 text-[11px] text-[#A1A1AA] dark:text-[#71717A]">
+              {hint}
+            </span>
+          ) : null}
+        </span>
       </dd>
     </div>
   );
@@ -220,21 +227,29 @@ export function PaymentCurrencyNotice({
  * estimate; the source is named and linked so the figure is verifiable; the
  * retrieval time is shown; and the disclaimer makes plain that the charge was
  * not computed from this rate. If the payload is missing or stale-but-absent,
- * the whole panel is omitted — never replaced with a guessed number.
+ * the whole panel is omitted - never replaced with a guessed number.
  */
 export function FxReferencePanel({
   info,
   fx: fxOverride,
+  contextAmountMinor,
   className,
 }: {
   info?: PaymentCurrencyInfo | null;
   /**
    * A reference resolved elsewhere (the checkout quote carries its own), used
    * instead of reading one off `info`. Kept as an input rather than a second
-   * component so there is exactly one rendering of this panel — and exactly one
+   * component so there is exactly one rendering of this panel - and exactly one
    * place its labelling can be weakened.
    */
   fx?: FxReference | null;
+  /**
+   * Optional product price (in minor units of `fx.source_currency`) so the
+   * panel can show what THAT price converts to at the live rate. Purely
+   * contextual: it is computed client-side, labelled a reference, and can never
+   * replace the backend-published charge.
+   */
+  contextAmountMinor?: number | null;
   className?: string;
 }) {
   // Both sources pass one validity gate: a rate is displayed only if it is a
@@ -244,6 +259,7 @@ export function FxReferencePanel({
   );
   if (!fx) return null;
   const retrievedAt = formatFxTimestamp(fx.retrieved_at);
+  const contextLine = formatContextConversion(fx, contextAmountMinor);
 
   return (
     <aside
@@ -259,10 +275,21 @@ export function FxReferencePanel({
         <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#71717A] dark:text-[#8A8A93]">
           {fx.label}
         </p>
-        <p className="font-mono text-[12px] font-medium text-[#09090B] dark:text-[#FAFAFA]">
+        <p
+          className="font-mono text-[12px] font-medium text-[#09090B] dark:text-[#FAFAFA]"
+          data-testid="fx-rate-line"
+        >
           {formatFxRate(fx)}
         </p>
       </div>
+      {contextLine ? (
+        <p
+          className="mt-1 font-mono text-[11.5px] leading-relaxed text-[#3F3F46] dark:text-[#C7C7D1]"
+          data-testid="fx-conversion-line"
+        >
+          {contextLine}
+        </p>
+      ) : null}
       <p className="mt-1 text-[11px] leading-relaxed text-[#71717A] dark:text-[#8A8A93]">
         Source:{' '}
         <a
@@ -276,12 +303,62 @@ export function FxReferencePanel({
         </a>
         {fx.source_timestamp ? ` · quoted ${fx.source_timestamp}` : ''}
         {retrievedAt ? ` · fetched ${retrievedAt}` : ''}
+        {fx.source_url ? (
+          <>
+            {' · '}
+            <a
+              href={fx.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[#0891B2] underline-offset-2 hover:underline dark:text-[#22D3EE]"
+              data-testid="fx-verify-link"
+            >
+              Verify this rate
+            </a>
+          </>
+        ) : null}
       </p>
       <p className="mt-0.5 text-[11px] leading-relaxed text-[#71717A] dark:text-[#8A8A93]">
         {fx.disclaimer}
       </p>
     </aside>
   );
+}
+
+/**
+ * The live-conversion context line: what the product price becomes at the
+ * fetched rate. Always framed as a reference ("at this rate ..."), so the
+ * published charge can never be read as a client-side computation.
+ */
+function formatContextConversion(
+  fx: FxReference,
+  amountMinor?: number | null
+): string | null {
+  if (amountMinor == null || !Number.isFinite(amountMinor) || amountMinor <= 0) {
+    return null;
+  }
+  const amount = amountMinor / 100;
+  const converted = amount * fx.rate;
+  try {
+    const baseFmt = new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency: fx.source_currency,
+      maximumFractionDigits: 2,
+    });
+    const targetFmt = new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency: fx.payment_currency,
+      maximumFractionDigits: 2,
+    });
+    return (
+      `Live conversion check: ${baseFmt.format(amount)} ${fx.source_currency} at this rate = ` +
+      `${targetFmt.format(converted)} ${fx.payment_currency} (reference only; ` +
+      `your charge is the published price)`
+    );
+  } catch {
+    // A currency the runtime cannot format is not a reason to hide the rate.
+    return null;
+  }
 }
 
 function formatFxTimestamp(iso: string | null | undefined): string | null {

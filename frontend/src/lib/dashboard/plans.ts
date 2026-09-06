@@ -1,7 +1,7 @@
 import type { PlanId } from './types';
 
 /**
- * Plan metadata — mirrors backend ``app.core.permissions`` exactly.
+ * Plan metadata - mirrors backend ``app.core.permissions`` exactly.
  *
  * The BACKEND is the single source of truth for enforcement (dependency
  * limits, check intervals, retention, team limits, feature flags). This
@@ -191,7 +191,7 @@ export function intervalLabel(seconds: number | null | undefined): string {
 
 export function dependencyLabel(count: number | null | undefined): string {
   if (count == null) return 'Custom';
-  return `${count} monitored dependencies`;
+  return `${count} monitored`;
 }
 
 export function seatLabel(count: number | null | undefined): string {

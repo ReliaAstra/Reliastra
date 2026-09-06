@@ -66,7 +66,7 @@ class ResendWebhookService:
             # In dev/test without secret, allow but warn (never in production)
             if settings.ENVIRONMENT == "production":
                 return False
-            logger.warning("RESEND_WEBHOOK_SECRET missing — skipping verification (dev only)")
+            logger.warning("RESEND_WEBHOOK_SECRET missing - skipping verification (dev only)")
             return True
         if not svix_id or not svix_timestamp or not svix_signature:
             return False
@@ -79,7 +79,7 @@ class ResendWebhookService:
             return False
         to_sign = f"{svix_id}.{svix_timestamp}.{raw.decode('utf-8')}".encode()
         expected = base64.b64encode(hmac.new(key, to_sign, hashlib.sha256).digest()).decode()
-        # svix_signature is like "v1,<b64> v1,<b64>" — compare any
+        # svix_signature is like "v1,<b64> v1,<b64>" - compare any
         for part in svix_signature.split():
             if "," in part:
                 _, sig = part.split(",", 1)
@@ -135,7 +135,7 @@ class ResendWebhookService:
             logger.info("duplicate webhook %s already processed", event_id)
             return "duplicate"
 
-        # Async state update — do inline for now, but also queue Celery for heavy work
+        # Async state update - do inline for now, but also queue Celery for heavy work
         await self._apply_state(db, evt)
         # Queue background
         try:

@@ -1,11 +1,11 @@
-"""Admin API for the Partner Referral program — ``/v1/admin/partners/*``.
+"""Admin API for the Partner Referral program - ``/v1/admin/partners/*``.
 
 Every route depends on :func:`require_system_admin`. Mutations carry the
 ``@audit_log`` decorator (writes to ``admin_audit_logs``) and the services
 additionally write domain audit entries to ``audit_logs``.
 
-The admin panel answers five questions — who, customers, money, payout,
-control — and nothing more.
+The admin panel answers five questions - who, customers, money, payout,
+control - and nothing more.
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ from app.modules.users.models import User
 from app.modules.users.repository import UserRepository
 
 admin_partners_router = APIRouter(
-    prefix="/v1/admin/partners", tags=["Admin — Partners"]
+    prefix="/v1/admin/partners", tags=["Admin - Partners"]
 )
 
 
@@ -532,8 +532,8 @@ async def reveal_payout_destination(
     """Return the payable wallet address / bank account in the clear.
 
     Everything else in the admin API shows a masked destination. This is the
-    one place the real value is handed over — immediately before an admin
-    sends money — and every call is written to both audit trails so a leak has
+    one place the real value is handed over - immediately before an admin
+    sends money - and every call is written to both audit trails so a leak has
     a name and a timestamp attached to it.
     """
     profile = await PartnerProfileRepository.get_by_id(db, partner_id)
@@ -620,7 +620,7 @@ async def notify_partners(
 
     Every recipient always gets the in-app notification (it shows up in their
     dashboard's notification page). The email copy additionally respects each
-    partner's own preference for this category — a partner who turned
+    partner's own preference for this category - a partner who turned
     announcement emails off still sees the item in-app.
     """
     if body.audience == "selected":

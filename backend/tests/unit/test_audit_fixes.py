@@ -302,7 +302,7 @@ def test_enterprise_plan_not_self_serve():
     from app.core.permissions import Plan
     from app.modules.billing.service import PLAN_AMOUNTS
 
-    # Enterprise routes to Contact Sales — not a self-serve checkout amount.
+    # Enterprise routes to Contact Sales - not a self-serve checkout amount.
     assert Plan.ENTERPRISE.value not in PLAN_AMOUNTS
     assert all(v > 0 for v in PLAN_AMOUNTS.values())
 
@@ -312,7 +312,7 @@ def test_paystack_currency_setting_exists():
 
     # The merchant account processes in Nigerian Naira. This one setting is
     # what checkout sends, what the verify gate expects and what every
-    # customer-facing disclosure renders — so it must never drift.
+    # customer-facing disclosure renders - so it must never drift.
     assert getattr(settings, "PAYSTACK_CURRENCY", "").strip().upper() == "NGN"
 
 

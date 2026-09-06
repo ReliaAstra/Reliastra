@@ -54,7 +54,7 @@ async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker)
         "app.modules.checks.service.pinned_transport_for",
         return_value=httpx.AsyncHTTPTransport(),
     )
-    # FIX 35: storage failures raise — stub uploads in the test harness.
+    # FIX 35: storage failures raise - stub uploads in the test harness.
     mocker.patch(
         "app.modules.evidence.service.storage_client.upload_bytes",
         return_value="evidence/x.pdf",

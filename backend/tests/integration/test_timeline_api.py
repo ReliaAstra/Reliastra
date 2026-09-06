@@ -262,7 +262,7 @@ async def test_timeline_single_region(async_client, db_session):
         minutes_ago=2,
         latency_ms=9999.0,
         status_code=200,
-        region="eu-west-1",  # different region — should be excluded
+        region="eu-west-1",  # different region - should be excluded
     )
     await db_session.commit()
 
