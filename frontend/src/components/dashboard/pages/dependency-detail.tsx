@@ -24,14 +24,21 @@ import { formatLatency, formatUptime, regionLabel, timeAgo } from '@/lib/dashboa
 import { StatusBadge } from '../ui/status-badge';
 import { RsButton } from '../ui/button';
 import { RsSkeleton } from '../ui/skeleton';
+import { QueryErrorState } from '../ui/query-error-state';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { retentionLabel } from '@/lib/dashboard/plans';
 
 export function DependencyDetailPage({ id }: { id: string }) {
-  const { data: dep, isLoading } = useDependency(id);
-  const { data: history } = useDependencyHistory(id);
-  const { data: results } = useDependencyResults(id);
+  const { data: dep, isLoading, isError: depError, refetch: refetchDep } = useDependency(id);
+  const { data: history, isError: historyError } = useDependencyHistory(id);
+  const {
+    data: results,
+    isLoading: resultsLoading,
+    isError: resultsError,
+    isFetching: resultsFetching,
+    refetch: refetchResults,
+  } = useDependencyResults(id);
   const { data: latency } = useLatency(id);
   const { data: health } = useHealth();
   const del = useDeleteDependency();
@@ -46,13 +53,41 @@ export function DependencyDetailPage({ id }: { id: string }) {
     label: format(new Date(p.timestamp), 'HH:mm'),
   })) ?? [];
 
-  if (isLoading || !dep) {
+  if (isLoading) {
     return <RsSkeleton className="h-64 w-full" />;
   }
 
+  // Previously `if (isLoading || !dep)` returned a skeleton, so a 404 (deleted
+  // dependency) or a 500 rendered an endless shimmer with no explanation and no
+  // way out. Those are different failures and now say so.
+  if (depError || !dep) {
+    return (
+      <QueryErrorState
+        title="Unable to load this dependency"
+        body="It may have been deleted, or the API could not be reached. Nothing about the dependency itself has changed."
+        onRetry={() => refetchDep()}
+      />
+    );
+  }
+
   const stats = [
-    { label: 'Uptime', value: formatUptime(history?.uptime_percentage ?? row?.uptime_percentage_24h ?? 100) },
-    { label: 'Avg latency', value: `${Math.round(history?.avg_latency_ms ?? row?.avg_latency_ms_24h ?? 0)}ms` },
+    // A failed history load must not render as a perfect score. This is an SLA
+    // product: defaulting a missing uptime figure to 100% would report a
+    // vendor as flawless precisely when we could not measure it.
+    {
+      label: 'Uptime',
+      value:
+        historyError && history?.uptime_percentage == null
+          ? '—'
+          : formatUptime(history?.uptime_percentage ?? row?.uptime_percentage_24h ?? 0),
+    },
+    {
+      label: 'Avg latency',
+      value:
+        historyError && history?.avg_latency_ms == null
+          ? '—'
+          : `${Math.round(history?.avg_latency_ms ?? row?.avg_latency_ms_24h ?? 0)}ms`,
+    },
     { label: 'Total checks', value: history?.total_checks ?? 0 },
     { label: 'Total up', value: history?.total_up ?? 0 },
     { label: 'Total down', value: history?.total_down ?? 0 },
@@ -145,7 +180,36 @@ export function DependencyDetailPage({ id }: { id: string }) {
             </tr>
           </thead>
           <tbody>
-            {(results ?? []).map((r, i, arr) => (
+            {resultsError ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10">
+                  <QueryErrorState
+                    title="Unable to load check history"
+                    body="The checks may exist — this request to the API failed. Retry, and if it keeps failing treat the gap as unmeasured rather than as healthy."
+                    onRetry={() => refetchResults()}
+                    retrying={resultsFetching}
+                  />
+                </td>
+              </tr>
+            ) : resultsLoading && !results ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-10">
+                  <RsSkeleton className="h-32 w-full" />
+                </td>
+              </tr>
+            ) : !results?.length ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center text-sm text-rs-text-tertiary"
+                >
+                  No checks recorded yet. Checks run on the configured interval;
+                  if none appear, the pipeline — not this dependency — is the
+                  thing to investigate.
+                </td>
+              </tr>
+            ) : (
+              (results ?? []).map((r, i, arr) => (
               <tr key={r.id} className={cn('h-14', i !== arr.length - 1 && 'border-b border-rs-border-subtle')}>
                 <td className="px-4 text-sm text-rs-text">{regionLabel(r.region)}</td>
                 <td className="px-4 text-xs text-rs-text-tertiary">{timeAgo(r.executed_at)}</td>
@@ -161,7 +225,8 @@ export function DependencyDetailPage({ id }: { id: string }) {
                   {r.quorum_confirmed ? <Check size={16} className="text-rs-up" /> : <X size={16} className="text-rs-down" />}
                 </td>
               </tr>
-            ))}
+              ))
+            )}
           </tbody>
         </table>
       </div>

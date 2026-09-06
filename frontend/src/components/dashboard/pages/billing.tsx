@@ -25,6 +25,7 @@ import {
 import { usePaymentCurrency } from '@/lib/billing/use-payment-currency';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '../ui/empty-state';
+import { QueryErrorState } from '../ui/query-error-state';
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -52,7 +53,12 @@ export function BillingPage() {
   // Payment history feeds the table below. The hook must run unconditionally
   // — the component has a loading early-return further down, and a hook after
   // it would change the hook count between renders (React error boundary).
-  const { data: txData } = useBillingTransactions();
+  const {
+    data: txData,
+    isError: txError,
+    isFetching: txFetching,
+    refetch: refetchTx,
+  } = useBillingTransactions();
 
   // ── Returned from the provider? Confirm the exact charge here, once. ────
   // Paystack redirects with ?pay_ref=<reference>. Verifying through our own
@@ -521,7 +527,15 @@ export function BillingPage() {
             Charged in {currencyLabel(currency)} · processed by {paymentProviderDisplay(currency)}
           </p>
         </div>
-        {transactions.length > 0 ? (
+        {txError && !transactions.length ? (
+          // A failed request must not read as "no payments yet": on a billing
+          // page that tells a paying customer they have no receipts.
+          <QueryErrorState
+            title="Unable to load payment history"
+            onRetry={() => refetchTx()}
+            retrying={txFetching}
+          />
+        ) : transactions.length > 0 ? (
           <div className="divide-y divide-rs-border-subtle">
             {transactions.map((tx) => (
               <div

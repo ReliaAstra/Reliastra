@@ -356,10 +356,25 @@ class Settings(BaseSettings):
         ge=15,
         description="Hard time limit (seconds) for Celery tasks. The worker process is killed after this.",
     )
-    RUN_IN_PROCESS_SCHEDULER: bool = Field(
-        default=False,
-        description="When true, the API process also polls due checks. "
-        "Keep false when Celery Beat + workers own scheduling.",
+    CHECK_SCHEDULER_HEARTBEAT_MULTIPLIER: float = Field(
+        default=4.0,
+        ge=2.0,
+        le=20.0,
+        description=(
+            "Scheduler/worker heartbeat TTL, expressed as a multiple of "
+            "CHECK_SCHEDULE_SECONDS. With the default of 4 a 30s interval "
+            "gives a 120s TTL: three missed Beat cycles before the pipeline "
+            "reports itself stale. Never hard-code the TTL — a shorter "
+            "interval must not instantly read as 'dead'."
+        ),
+    )
+    CHECK_DISPATCH_FAIL_FAST: bool = Field(
+        default=True,
+        description=(
+            "Stop dispatching the rest of the current scheduling cycle after "
+            "the first enqueue failure. Without this, a broker that dies "
+            "mid-cycle costs one failed publish per remaining dependency."
+        ),
     )
     TRUSTED_PROXY_HOPS: int = Field(
         default=1,
@@ -837,6 +852,20 @@ class Settings(BaseSettings):
         """Derive a 32-byte url-safe base64-encoded key from SECRET_KEY for Fernet encryption."""
         key_hash = hashlib.sha256(self.SECRET_KEY.encode("utf-8")).digest()
         return base64.urlsafe_b64encode(key_hash)
+
+    @property
+    def check_heartbeat_ttl_seconds(self) -> int:
+        """Liveness TTL for the scheduler/worker heartbeats.
+
+        Derived from the scheduling interval so it can never drift out of sync
+        with it: a heartbeat written once per Beat cycle must survive several
+        missed cycles before the pipeline declares itself stale, and a longer
+        interval must not be read as a dead scheduler.
+        """
+        return max(
+            int(self.CHECK_SCHEDULE_SECONDS * self.CHECK_SCHEDULER_HEARTBEAT_MULTIPLIER),
+            60,
+        )
 
 
 settings = Settings()

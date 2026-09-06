@@ -9,12 +9,13 @@ import { useEvidence } from '@/lib/dashboard/queries';
 import { formatDate, reportCode } from '@/lib/dashboard/format';
 import { RsButton } from '../ui/button';
 import { EmptyState } from '../ui/empty-state';
+import { QueryErrorState } from '../ui/query-error-state';
 import { TableSkeleton } from '../ui/skeleton';
 import { Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function EvidenceLibraryPage() {
-  const { data, isLoading } = useEvidence();
+  const { data, isLoading, isError, isFetching, refetch } = useEvidence();
   const plan = useAppStore((s) => s.plan);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const router = useRouter();
@@ -55,6 +56,12 @@ export function EvidenceLibraryPage() {
         </div>
       ) : isLoading ? (
         <TableSkeleton />
+      ) : isError ? (
+        <QueryErrorState
+          title="Unable to load evidence reports"
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
       ) : !data?.length ? (
         <EmptyState
           icon={<FileText size={32} />}

@@ -30,10 +30,10 @@ from app.infrastructure.redis_client import set_test_redis
 from app.main import app
 from tests.helpers import TEST_OTP_CODE, register_and_verify
 
-# Tests run like docker-compose: the standalone scheduler owns the queue, so
-# the in-process (PaaS) scheduler must stay off — otherwise background ticks
-# would probe test dependencies with real HTTP calls mid-assertion.
-settings.RUN_IN_PROCESS_SCHEDULER = False
+# Check scheduling is owned exclusively by Celery Beat, which does not run
+# during tests, so no background tick can probe a test dependency with a real
+# HTTP call mid-assertion. Tests that need dispatch drive it explicitly
+# (task_always_eager or a patched `.delay`).
 
 logger = logging.getLogger(__name__)
 

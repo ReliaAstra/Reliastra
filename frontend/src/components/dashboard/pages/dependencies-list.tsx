@@ -10,11 +10,12 @@ import { formatLatency, formatUptime, timeAgo } from '@/lib/dashboard/format';
 import { StatusBadge } from '../ui/status-badge';
 import { RsButton } from '../ui/button';
 import { EmptyState } from '../ui/empty-state';
+import { QueryErrorState } from '../ui/query-error-state';
 import { TableSkeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 
 export function DependenciesListPage() {
-  const { data: deps, isLoading } = useDependencies();
+  const { data: deps, isLoading, isError, isFetching, refetch } = useDependencies();
   const { data: health } = useHealth();
   const del = useDeleteDependency();
   const setAdd = useAppStore((s) => s.setAddDependencyOpen);
@@ -50,6 +51,14 @@ export function DependenciesListPage() {
 
       {isLoading ? (
         <TableSkeleton />
+      ) : isError ? (
+        // A failed request must not render as an empty account: this page
+        // previously showed "No dependencies yet" for a 500.
+        <QueryErrorState
+          title="Unable to load dependencies"
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
       ) : !rows.length ? (
         <EmptyState
           icon={<Link2 size={32} />}

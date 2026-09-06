@@ -5,12 +5,13 @@ import { AlertTriangle } from 'lucide-react';
 import { useIncidents } from '@/lib/dashboard/queries';
 import { incidentCode, timeAgo } from '@/lib/dashboard/format';
 import { EmptyState } from '../ui/empty-state';
+import { QueryErrorState } from '../ui/query-error-state';
 import { TableSkeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 export function IncidentsListPage() {
-  const { data, isLoading } = useIncidents(undefined, 50);
+  const { data, isLoading, isError, isFetching, refetch } = useIncidents(undefined, 50);
   const router = useRouter();
 
   return (
@@ -23,6 +24,12 @@ export function IncidentsListPage() {
       </div>
       {isLoading ? (
         <TableSkeleton rows={6} />
+      ) : isError ? (
+        <QueryErrorState
+          title="Unable to load incidents"
+          onRetry={() => refetch()}
+          retrying={isFetching}
+        />
       ) : !data?.length ? (
         <EmptyState
           icon={<AlertTriangle size={32} />}

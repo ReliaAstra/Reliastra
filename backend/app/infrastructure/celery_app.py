@@ -103,16 +103,68 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     task_soft_time_limit=settings.CELERY_TASK_SOFT_TIME_LIMIT,
     task_time_limit=settings.CELERY_TASK_TIME_LIMIT,
+    # ── Explicit queue + broker behaviour ───────────────────────────────────
+    # The queue name is part of the observability contract (the health probe
+    # reports its depth), so it is pinned rather than inherited from a default.
+    # ``task_queues`` is deliberately NOT set: it must hold kombu ``Queue``
+    # objects, and passing names makes the worker die at startup with
+    # "'str' object has no attribute 'name'". ``task_default_queue`` plus
+    # ``task_create_missing_queues`` declares the same queue correctly.
+    task_default_queue="celery",
+    task_create_missing_queues=True,
+    # ``acks_late`` plus this: a worker killed mid-probe returns the task to
+    # the queue instead of losing it. Re-execution is idempotent by
+    # construction — each probe writes one CheckResult row keyed on its own
+    # uuid, so a duplicate is a duplicate observation, not corruption.
+    task_reject_on_worker_lost=True,
+    # Broker connection handling: bounded and fast. Celery's defaults retry a
+    # dead broker for minutes inside a Beat tick, which is exactly the window
+    # in which the pipeline looks alive while doing nothing.
+    broker_connection_retry=True,
+    broker_connection_max_retries=3,
+    broker_connection_timeout=5,
+    broker_transport_options={
+        "visibility_timeout": max(int(settings.CELERY_TASK_TIME_LIMIT * 2), 300),
+        "socket_connect_timeout": 5,
+        "socket_timeout": 5,
+    },
+    result_backend_transport_options={
+        "socket_connect_timeout": 5,
+        "socket_timeout": 5,
+        "retry_on_timeout": True,
+    },
+    # Check results are persisted in Postgres, so broker-stored task results
+    # are only useful for immediate inspection.
+    result_expires=3600,
+    # Recycle prefork children so a leaked httpx/asyncpg connection cannot
+    # accumulate forever in a long-lived worker.
+    worker_max_tasks_per_child=1000,
+    worker_send_task_events=True,
+    task_send_sent_event=True,
     beat_schedule={
         # Interval is env-configurable (CHECK_SCHEDULE_SECONDS).
         "schedule-checks-periodic": {
             "task": "app.modules.checks.tasks.schedule_checks",
+            "schedule": float(settings.CHECK_SCHEDULE_SECONDS),
+            # A scheduling tick that runs late is worthless: it would describe
+            # the world as of a moment that has already passed, and a backlog
+            # of them would stampede the broker when it recovers.
+            "options": {"expires": max(int(settings.CHECK_SCHEDULE_SECONDS * 2), 60)},
+        },
+        # Worker liveness. Published on the same interval as the scheduler so
+        # "Beat is alive" and "a worker consumes" are separately observable.
+        "worker-heartbeat": {
+            "task": "app.modules.checks.tasks.worker_heartbeat",
             "schedule": float(settings.CHECK_SCHEDULE_SECONDS),
             "options": {"expires": max(int(settings.CHECK_SCHEDULE_SECONDS * 2), 60)},
         },
         "observation-outbox-process": {
             "task": "app.modules.observations.tasks.process_outbox",
             "schedule": 10.0,
+            # Same reasoning as the two above: a backlog of identical outbox
+            # drains is pure waste, and the newest one processes everything
+            # the older ones would have.
+            "options": {"expires": 60},
         },
         "retention-cleanup-monthly": {
             "task": "app.modules.observations.tasks.retention_cleanup",
@@ -230,3 +282,38 @@ def _on_worker_process_init(**kwargs):
         async_tasks._reset_for_fork()
     except Exception as exc:  # pragma: no cover
         logger.debug("_reset_for_fork failed: %s", exc, exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# Bounded broker probe.
+#
+# Used at API startup and by the check-health diagnostics so "the broker is
+# down" is a fact the process knows about, rather than something discovered
+# three scheduling cycles later from an empty dashboard. Deliberately bounded:
+# kombu's default retry behaviour would block a startup hook for minutes
+# against an unreachable Redis.
+# ---------------------------------------------------------------------------
+def probe_broker(timeout: float = 5.0) -> tuple[bool, str]:
+    """Return ``(reachable, detail)`` for the configured broker.
+
+    Never raises. ``detail`` carries only an exception type and message — no
+    broker URL, which may contain credentials.
+    """
+    conn = None
+    try:
+        conn = celery_app.connection_for_write()
+        conn.ensure_connection(max_retries=0, timeout=timeout)
+        return True, "ok"
+    except Exception as exc:
+        return False, f"{type(exc).__name__}: {str(exc)[:200]}"
+    finally:
+        if conn is not None:
+            try:
+                conn.release()
+            except Exception:  # pragma: no cover - release must not raise
+                pass
+
+
+def beat_task_names() -> list[str]:
+    """Task names referenced by the Beat schedule."""
+    return [entry["task"] for entry in celery_app.conf.beat_schedule.values()]

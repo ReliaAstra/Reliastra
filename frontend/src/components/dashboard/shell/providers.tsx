@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 import { getRefreshToken, useAppStore } from '@/stores/app-store';
 import { api, restoreSession } from '@/lib/dashboard/api';
+import { BootSplash } from '@/components/shared/boot-splash';
 
 function makeClient() {
   return new QueryClient({
@@ -38,6 +39,7 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
   const setSession = useAppStore((s) => s.setSession);
   const setOnline = useAppStore((s) => s.setOnline);
   const sessionState = useAppStore((s) => s.sessionState);
+  const hydrated = useAppStore((s) => s.hydrated);
   const bootstrapped = useRef(false);
   const enterDemoMode = useAppStore((s) => s.enterDemoMode);
 
@@ -99,6 +101,22 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
       window.removeEventListener('offline', off);
     };
   }, [setOnline]);
+
+  // Gate the console on a resolved, authenticated session.
+  //
+  // `hydrated` was written by the bootstrap effect above but never read, so
+  // every console route rendered its full chrome — top bar, sidebar and page
+  // content — to an unauthenticated visitor, and only redirected once the
+  // effect fired. Queries were already gated by `useSessionReady()`, so this
+  // produced no 401 storm, but it did serve console UI (and its HTML) to
+  // anonymous visitors and flash it before bouncing to /login.
+  //
+  // While the session resolves, or while an unauthenticated redirect is in
+  // flight, render the splash instead. Children never mount, so their hooks
+  // never run.
+  if (!hydrated || sessionState !== 'authenticated') {
+    return <BootSplash />;
+  }
 
   return (
     <QueryClientProvider client={client}>

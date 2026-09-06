@@ -11,6 +11,7 @@ import {
   clearPartnerTokens,
 } from '@/lib/session-storage';
 import { refreshSession } from '@/lib/auth-refresh';
+import { BootSplash } from '@/components/shared/boot-splash';
 import type { PartnerPage } from '@/types/partner';
 
 const dashboardPages: PartnerPage[] = [
@@ -46,7 +47,17 @@ export default function Home() {
   // the shared sign-in screen and return them to `/admin` afterward.
   useEffect(() => {
     const requestedPage = new URLSearchParams(window.location.search).get('page');
-    const publicEntryPages: PartnerPage[] = ['home', 'login', 'signup', 'forgot-password'];
+    // 'support' is included because it is dual-mode and the landing footer
+    // links to it: unauthenticated visitors get the public contact form,
+    // signed-in partners get the conversation desk. `isDashboardRoute` makes
+    // that split, so the URL cannot reach a protected surface anonymously.
+    const publicEntryPages: PartnerPage[] = [
+      'home',
+      'login',
+      'signup',
+      'forgot-password',
+      'support',
+    ];
     if (requestedPage && publicEntryPages.includes(requestedPage as PartnerPage)) {
       navigate(requestedPage as PartnerPage);
     }
@@ -157,23 +168,7 @@ export default function Home() {
 
   if (!mounted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]">
-        <div className="flex items-center gap-3">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="animate-pulse text-[#0891B2] dark:text-[#22D3EE]"
-          >
-            <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="font-mono text-xs tracking-widest uppercase text-[#09090B] dark:text-[#FAFAFA]">
-            RELIASTRA
-          </span>
-        </div>
-      </div>
+      <BootSplash />
     );
   }
 
@@ -199,23 +194,7 @@ export default function Home() {
     // Authenticated without an identity is a broken state the effect above
     // repairs; render the boot splash rather than a blank page in the interim.
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]">
-        <div className="flex items-center gap-3">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="animate-pulse text-[#0891B2] dark:text-[#22D3EE]"
-          >
-            <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="font-mono text-xs tracking-widest uppercase text-[#09090B] dark:text-[#FAFAFA]">
-            RELIASTRA
-          </span>
-        </div>
-      </div>
+      <BootSplash />
     );
   }
 
