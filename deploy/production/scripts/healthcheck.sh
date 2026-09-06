@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # healthcheck.sh — liveness vs readiness
 # Usage: ./healthcheck.sh --timeout 120
+#
+# NOTE: the api container publishes NO host ports by design (only the proxy
+# binds 80/443), so backend probes must run INSIDE the container network
+# namespace via `docker exec`. Host-local curl to :8000/:3000 always fails
+# (connection refused) and must not be used here.
 set -euo pipefail
 
 TIMEOUT=120
@@ -13,26 +18,26 @@ done
 
 echo "healthcheck timeout=${TIMEOUT}s"
 
+API_EXEC=(docker exec reliastra-api curl)
+
 # Wait for api container healthy
 deadline=$(( $(date +%s) + TIMEOUT ))
 while (( $(date +%s) < deadline )); do
   # Docker health (if defined)
   api_health=$(docker inspect --format='{{.State.Health.Status}}' reliastra-api 2>/dev/null || echo "unknown")
-  # Direct liveness
-  if curl -fsS --max-time 5 http://127.0.0.1:8000/health/live >/dev/null 2>&1; then
+  # Direct liveness (inside container netns)
+  if "${API_EXEC[@]}" -fsS --max-time 5 http://127.0.0.1:8000/health/live >/dev/null 2>&1; then
     live="ok"
   else
     live="fail"
   fi
   # Readiness (DB+Redis)
-  ready_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:8000/health/ready || echo "000")
+  ready_code=$("${API_EXEC[@]}" -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:8000/health/ready || echo "000")
   # Also check /health (back-compat)
-  health_code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:8000/health || echo "000")
-  # Check proxy -> frontend
+  health_code=$("${API_EXEC[@]}" -s -o /dev/null -w "%{http_code}" --max-time 5 http://127.0.0.1:8000/health || echo "000")
+  # Check proxy -> frontend (proxy DOES bind host ports)
   proxy_ok="fail"
-  if curl -fsS --max-time 5 http://127.0.0.1:3000 >/dev/null 2>&1; then
-    proxy_ok="ok"
-  elif curl -fsS --max-time 5 http://127.0.0.1:80 >/dev/null 2>&1; then
+  if curl -fsS --max-time 5 http://127.0.0.1:80 >/dev/null 2>&1; then
     proxy_ok="ok"
   fi
 
