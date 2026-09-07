@@ -47,13 +47,13 @@ export const metadata: Metadata = {
     url: SITE_URL + '/',
     siteName: 'RELIASTRA',
     type: 'website',
-    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: 'RELIASTRA - External Dependency Intelligence' }],
+    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'RELIASTRA - External Dependency Intelligence' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'RELIASTRA - External Dependency Intelligence',
     description: 'Monitor third-party APIs. Prove vendor failures. Claim SLA credits.',
-    images: [`${SITE_URL}/opengraph-image`],
+    images: [`${SITE_URL}/opengraph-image.png`],
   },
 };
 

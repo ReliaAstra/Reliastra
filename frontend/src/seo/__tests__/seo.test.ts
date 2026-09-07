@@ -113,7 +113,12 @@ describe('metadata system', () => {
     });
     expect(m.alternates.canonical).toBe('https://reliastra.com/sla-evidence');
     expect(m.openGraph.url).toBe('https://reliastra.com/sla-evidence');
-    expect(m.openGraph.images[0].url).toContain('opengraph-image');
+    expect(m.openGraph.images[0]).toMatchObject({
+      url: 'https://reliastra.com/opengraph-image.png',
+      width: 1200,
+      height: 630,
+    });
+    expect(m.twitter.images).toEqual(['https://reliastra.com/opengraph-image.png']);
     expect(m.twitter.card).toBe('summary_large_image');
     expect(m.robots.index).toBe(true);
   });

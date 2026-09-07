@@ -76,7 +76,7 @@ export function canonicalUrl(path: string): string {
  */
 export function buildMetadata(input: SeoPageInput): Metadata {
   const url = canonicalUrl(input.path);
-  const image = input.image ?? `${SITE_URL}/opengraph-image`;
+  const image = input.image ?? `${SITE_URL}/opengraph-image.png`;
   const robots = input.noindex
     ? { index: false, follow: false, noarchive: true }
     : { index: true, follow: true };

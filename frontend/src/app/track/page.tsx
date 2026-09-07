@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/opengraph-image.png',
         width: 1200,
         height: 630,
         alt: 'RELIASTRA public infrastructure observatory',
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Public infrastructure observatory - RELIASTRA',
     description: 'Independent availability, latency and incident history for third-party APIs.',
-    images: ['/opengraph-image'],
+    images: ['/opengraph-image.png'],
   },
 };
 

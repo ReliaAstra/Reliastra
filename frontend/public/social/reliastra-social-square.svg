@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <title>RELIASTRA — External Dependency Intelligence</title>
+  <desc>Silver futuristic wordmark on black. Know when your dependencies fail. Prove what happened. reliastra.com</desc>
+  <defs>
+    <radialGradient id="ambient"><stop stop-color="#1b253c" stop-opacity=".65"/><stop offset="1" stop-color="#020305" stop-opacity="0"/></radialGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".5" stop-color="#e6e8ec"/><stop offset="1" stop-color="#b4bac4"/></linearGradient>
+    <linearGradient id="rule"><stop stop-color="#202734"/><stop offset=".5" stop-color="#667084"/><stop offset="1" stop-color="#202734"/></linearGradient>
+    <filter id="glow" x="-20%" y="-100%" width="140%" height="300%"><feGaussianBlur stdDeviation="16"/></filter>
+  </defs>
+  <rect width="100%" height="100%" fill="#020305"/>
+  <ellipse cx="540" cy="327" rx="669.6" ry="370" fill="url(#ambient)"/>
+  <g font-family="DejaVu Sans, sans-serif" text-anchor="middle">
+    <text x="540" y="148" font-size="17" letter-spacing="4.3" fill="#a8b0bf">EXTERNAL DEPENDENCY INTELLIGENCE</text>
+    <g transform="translate(80 292) scale(0.9028459273797841)">
+      <g fill="#a5b6dc" opacity=".24" filter="url(#glow)"><g transform="translate(0 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(127 0)"><path d="M0 0H100V13H0ZM0 28H100V41H0ZM0 57H100V70H0Z"/></g><g transform="translate(254 0)"><path d="M0 0H15V57H85V70H14Q0 70 0 56Z"/></g><g transform="translate(366 0)"><path d="M0 0H15V70H0Z"/></g><g transform="translate(408 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g><g transform="translate(536 0)"><path d="M100 0H23Q0 0 0 21Q0 42 23 42H77Q87 42 87 50Q87 57 77 57H3V70H77Q101 70 101 49Q101 29 78 29H24Q14 29 14 21Q14 13 24 13H100Z"/></g><g transform="translate(664 0)"><path d="M0 0H100V13H57V70H43V13H0Z"/></g><g transform="translate(791 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(918 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g></g>
+      <g fill="url(#silver)"><g transform="translate(0 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(127 0)"><path d="M0 0H100V13H0ZM0 28H100V41H0ZM0 57H100V70H0Z"/></g><g transform="translate(254 0)"><path d="M0 0H15V57H85V70H14Q0 70 0 56Z"/></g><g transform="translate(366 0)"><path d="M0 0H15V70H0Z"/></g><g transform="translate(408 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g><g transform="translate(536 0)"><path d="M100 0H23Q0 0 0 21Q0 42 23 42H77Q87 42 87 50Q87 57 77 57H3V70H77Q101 70 101 49Q101 29 78 29H24Q14 29 14 21Q14 13 24 13H100Z"/></g><g transform="translate(664 0)"><path d="M0 0H100V13H57V70H43V13H0Z"/></g><g transform="translate(791 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(918 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g></g>
+    </g>
+    <text x="540" y="537" font-size="48" letter-spacing="-1.7" fill="#f3f4f6">Know when your dependencies fail.</text>
+    <text x="540" y="612" font-size="48" letter-spacing="-1.7" fill="#f3f4f6">Prove what happened.</text>
+    <text x="540" y="721" font-size="21" letter-spacing=".3" fill="#9ba5b5">Independent monitoring. Timestamped SLA evidence.</text>
+    <path d="M80 973H1000" stroke="url(#rule)"/>
+    <text x="540" y="1022" font-size="18" letter-spacing="2" fill="#c8cdd6">reliastra.com</text>
+  </g>
+</svg>
