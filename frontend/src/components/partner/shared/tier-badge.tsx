@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { TierInfo } from '@/types/partner';
 
@@ -46,9 +46,9 @@ const tierStyles: Record<string, { border: string; icon: string; text: string; g
     glow: 'shadow-[0_0_8px_rgba(202,138,4,0.1)] dark:shadow-[0_0_8px_rgba(250,204,21,0.1)]',
   },
   platinum: {
-    border: 'border-zinc-500/40 dark:border-zinc-300/30',
-    icon: 'text-zinc-800 dark:text-zinc-100',
-    text: 'text-zinc-800 dark:text-zinc-100',
+    border: 'border-[var(--ob-line-3)]/40 dark:border-[var(--ob-line-2)]/30',
+    icon: 'text-[var(--ob-text-2)] dark:text-[var(--ob-text)]',
+    text: 'text-[var(--ob-text-2)] dark:text-[var(--ob-text)]',
     glow: 'shadow-[0_0_8px_rgba(63,63,70,0.08)] dark:shadow-[0_0_8px_rgba(161,161,170,0.08)]',
   },
 };
@@ -139,7 +139,11 @@ function TierIcon({ tier, className }: { tier: TierInfo; className?: string }) {
 export function TierBadge({ tier, size = 'md', className }: TierBadgeProps) {
   const config = sizeConfig[size];
   const style = tierStyles[tier.tier];
-  const isAnimated = tier.tier === 'gold' || tier.tier === 'platinum';
+  // The badge breathes only for the two top tiers, and never when the visitor
+  // has asked for reduced motion - it is decoration, not state.
+  const reducedMotion = useReducedMotion();
+  const isAnimated =
+    !reducedMotion && (tier.tier === 'gold' || tier.tier === 'platinum');
 
   return (
     <motion.span

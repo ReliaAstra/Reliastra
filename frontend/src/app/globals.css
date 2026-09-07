@@ -153,7 +153,11 @@
   --rs-down: #DC2626; /* down / critical / destructive */
 
   /* Fixed accents - theme-independent values */
-  --rs-brand-gradient: linear-gradient(92deg, #2563EB 0%, #7C3AED 55%, #0891B2 100%);
+  /* The purple-bearing marketing gradient was retired with the public
+     redesign: the public site has one accent (--ob-signal) and no gradient
+     text anywhere. The token is kept as a flat brand blue so any residual
+     console reference degrades to a solid colour rather than breaking. */
+  --rs-brand-gradient: var(--rs-brand);
   --rs-cyan: #0891B2; /* landing cyan light */
   --rs-chart-1: #2563EB;
   --rs-chart-2: #0D9488;
@@ -1096,12 +1100,11 @@
   animation: rs-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Brand gradient - marketing hero, 404 headline only (Don't #4) */
+/* Retired. Gradient text is banned across the public site; this rule remains
+   only so any stale class name renders as legible solid brand colour instead
+   of transparent text. */
 .text-gradient-brand {
-  background: var(--rs-brand-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--rs-brand);
 }
 
 /* Uptime bar fill - reuses up/degraded/down tokens */
@@ -1232,10 +1235,7 @@
     border: 1px solid var(--rs-border-subtle) !important;
   }
   .text-gradient-brand {
-    background: none !important;
     color: var(--rs-text) !important;
-    -webkit-background-clip: unset !important;
-    background-clip: unset !important;
   }
 }
 
@@ -1291,7 +1291,1200 @@
    1. No pure black/white surfaces in dark mode - enforced via tokens (deep navy)
    2. No drop shadows on static cards - .rs-card has border only, no shadow
    3. No spinners for data loads - use .rs-skeleton shaped like content
-   4. No decorative gradients inside product dashboard - gradient lives in marketing + 404 only (.text-gradient-brand)
+   4. No decorative gradients anywhere - the public site has one flat accent
+      (--ob-signal) and the console has none
    5. No color-only status - always dot + label word in badges (.rs-badge includes dot)
    6. No new fonts, no letterspacing on body text, no justify - enforced via base styles
    ────────────────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   RELIASTRA · OBSIDIAN INFRASTRUCTURE
+   Public-site design system. Scope class: `.ob`.
+
+   Why a second scope: the `rs-*` system above is the authenticated product
+   (light-first, blue, dense instrument panel). The public site is a different
+   job - cinematic, editorial, one deliberate identity, never theme-switched.
+   Keeping them in separate scopes means a marketing change can never alter a
+   dashboard surface, and vice versa.
+
+   Rules encoded here:
+   - Four greys, four text weights, one signal colour. Nothing else.
+   - Radius is 2-3px. Cards are the exception, not the layout unit.
+   - Depth comes from hairlines, not shadows or glass.
+   - Colour is used to report system state, never to decorate.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Surfaces - obsidian */
+  --ob-void: #08090A;      /* page ground, hero letterboxing */
+  --ob-base: #0D0F10;      /* default section surface */
+  --ob-raised: #111416;    /* alternating band, table fill */
+  --ob-elevated: #181B1D;  /* input, hover, inset panel */
+
+  /* Text */
+  --ob-text: #F2F2EE;      /* headlines, primary */
+  --ob-text-2: #D6D8D5;    /* body */
+  --ob-text-3: #94999D;    /* secondary, captions */
+  --ob-text-4: #666B70;    /* labels, disabled, metadata */
+
+  /* Lines */
+  --ob-line: rgba(242, 242, 238, 0.09);
+  --ob-line-2: rgba(242, 242, 238, 0.16);
+  --ob-line-3: rgba(242, 242, 238, 0.28);
+
+  /* One operational accent: industrial amber. Signal, not decoration. */
+  --ob-signal: #D9A441;
+  --ob-signal-dim: #A87F32;
+  --ob-signal-wash: rgba(217, 164, 65, 0.10);
+
+  /* System state. These exist to report health, and for no other reason. */
+  --ob-healthy: #57A773;
+  --ob-healthy-wash: rgba(87, 167, 115, 0.12);
+  --ob-degraded: #D9A441;
+  --ob-degraded-wash: rgba(217, 164, 65, 0.12);
+  --ob-critical: #C8544C;
+  --ob-critical-wash: rgba(200, 84, 76, 0.12);
+  --ob-unknown: #666B70;
+
+  /* Type stacks. No webfont is fetched at build time - the site must render
+     identically offline and in restricted networks. The stacks below resolve
+     to a serious grotesk on every mainstream OS and degrade predictably. */
+  --ob-font-sans:
+    "Inter Tight", "Inter var", Inter, "SF Pro Text", -apple-system,
+    BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto,
+    "Helvetica Neue", "Liberation Sans", Arial, sans-serif;
+  --ob-font-mono:
+    "JetBrains Mono", "SFMono-Regular", "SF Mono", ui-monospace, Menlo,
+    Consolas, "Liberation Mono", monospace;
+
+  /* Rhythm */
+  --ob-gutter: 24px;
+  --ob-measure: 68ch;
+}
+
+@media (min-width: 768px) {
+  :root { --ob-gutter: 40px; }
+}
+@media (min-width: 1280px) {
+  :root { --ob-gutter: 64px; }
+}
+
+@theme inline {
+  --color-ob-void: var(--ob-void);
+  --color-ob-base: var(--ob-base);
+  --color-ob-raised: var(--ob-raised);
+  --color-ob-elevated: var(--ob-elevated);
+  --color-ob-text: var(--ob-text);
+  --color-ob-text-2: var(--ob-text-2);
+  --color-ob-text-3: var(--ob-text-3);
+  --color-ob-text-4: var(--ob-text-4);
+  --color-ob-line: var(--ob-line);
+  --color-ob-line-2: var(--ob-line-2);
+  --color-ob-line-3: var(--ob-line-3);
+  --color-ob-signal: var(--ob-signal);
+  --color-ob-healthy: var(--ob-healthy);
+  --color-ob-degraded: var(--ob-degraded);
+  --color-ob-critical: var(--ob-critical);
+  --font-ob-sans: var(--ob-font-sans);
+  --font-ob-mono: var(--ob-font-mono);
+}
+
+/* ── Scope root ─────────────────────────────────────────────────────────── */
+
+.ob {
+  background-color: var(--ob-void);
+  color: var(--ob-text-2);
+  font-family: var(--ob-font-sans);
+  font-feature-settings: "cv05" 1, "ss01" 1, "kern" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.ob ::selection {
+  background: var(--ob-signal);
+  color: var(--ob-void);
+}
+
+/* ── shadcn/radix token bridge ─────────────────────────────────────────────
+   Surfaces that still use shadcn primitives (the partner network shell, the
+   OTP input, dialogs) must not render as a light-theme island inside the dark
+   public site. Rather than rewriting twenty component files, the semantic
+   tokens those primitives consume are remapped to Obsidian values for any
+   subtree marked `.ob`.
+
+   This is scoped to `.ob` only: the authenticated console and admin surfaces
+   never carry the class, so their theming is completely untouched. */
+.ob {
+  --background: var(--ob-void);
+  --foreground: var(--ob-text);
+  --card: var(--ob-base);
+  --card-foreground: var(--ob-text);
+  --popover: var(--ob-raised);
+  --popover-foreground: var(--ob-text);
+  --primary: var(--ob-signal);
+  --primary-foreground: var(--ob-void);
+  --secondary: var(--ob-base);
+  --secondary-foreground: var(--ob-text);
+  --muted: var(--ob-base);
+  --muted-foreground: var(--ob-text-4);
+  --accent: var(--ob-raised);
+  --accent-foreground: var(--ob-text);
+  --destructive: var(--ob-critical);
+  --border: var(--ob-line);
+  --input: var(--ob-line-2);
+  --ring: var(--ob-signal);
+  --radius: 2px;
+}
+
+/* Focus is never removed and never subtle: keyboard operators are the
+   primary audience for an infrastructure product. */
+.ob :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--ob-signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.ob-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  background: var(--ob-signal);
+  color: var(--ob-void);
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.ob-skip:focus {
+  left: 12px;
+  top: 12px;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+
+.ob-container {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: var(--ob-gutter);
+}
+
+.ob-container-narrow {
+  width: 100%;
+  max-width: 980px;
+  margin-inline: auto;
+  padding-inline: var(--ob-gutter);
+}
+
+.ob-container-read {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  padding-inline: var(--ob-gutter);
+}
+
+.ob-section {
+  padding-block: 88px;
+}
+@media (min-width: 768px) {
+  .ob-section { padding-block: 120px; }
+}
+@media (min-width: 1280px) {
+  .ob-section { padding-block: 152px; }
+}
+
+.ob-section-tight { padding-block: 64px; }
+@media (min-width: 768px) {
+  .ob-section-tight { padding-block: 88px; }
+}
+
+.ob-hairline { border-top: 1px solid var(--ob-line); }
+
+/* ── Typography ─────────────────────────────────────────────────────────── */
+
+.ob-display {
+  font-size: clamp(2.75rem, 9.5vw, 8rem);
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  color: var(--ob-text);
+  text-wrap: balance;
+}
+
+.ob-h1 {
+  font-size: clamp(2.125rem, 5.5vw, 3.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  color: var(--ob-text);
+  text-wrap: balance;
+}
+
+.ob-h2 {
+  font-size: clamp(1.75rem, 3.6vw, 2.875rem);
+  line-height: 1.08;
+  letter-spacing: -0.026em;
+  font-weight: 600;
+  color: var(--ob-text);
+  text-wrap: balance;
+}
+
+.ob-h3 {
+  font-size: clamp(1.1875rem, 1.9vw, 1.5rem);
+  line-height: 1.24;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+  color: var(--ob-text);
+}
+
+.ob-h4 {
+  font-size: 1rem;
+  line-height: 1.4;
+  letter-spacing: -0.008em;
+  font-weight: 600;
+  color: var(--ob-text);
+}
+
+.ob-lede {
+  font-size: clamp(1.0625rem, 1.45vw, 1.3125rem);
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+  color: var(--ob-text-3);
+  max-width: 62ch;
+}
+
+.ob-body {
+  font-size: 0.9375rem;
+  line-height: 1.68;
+  color: var(--ob-text-3);
+  max-width: var(--ob-measure);
+}
+
+.ob-body-lg {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--ob-text-2);
+  max-width: var(--ob-measure);
+}
+
+.ob-small {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ob-text-4);
+}
+
+/* Small uppercase technical label. Used for section indices, field labels,
+   data captions - never for sentences. */
+.ob-label {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+  font-weight: 500;
+}
+
+.ob-label-signal { color: var(--ob-signal); }
+
+.ob-mono {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
+  letter-spacing: -0.01em;
+}
+
+/* Data figures: tabular so columns of numbers align down the page. */
+.ob-figure {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--ob-text);
+  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
+  line-height: 1;
+}
+
+.ob-link {
+  color: var(--ob-text-2);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ob-line-2);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.ob-link:hover {
+  color: var(--ob-text);
+  border-color: var(--ob-signal);
+}
+
+/* ── Buttons - three, and only three ────────────────────────────────────── */
+
+.ob-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding-inline: 26px;
+  border-radius: 2px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease,
+    border-color 160ms ease;
+}
+.ob-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ob-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+.ob-btn-primary {
+  background: var(--ob-text);
+  color: var(--ob-void);
+}
+.ob-btn-primary:hover:not(:disabled) { background: #FFFFFF; }
+
+.ob-btn-signal {
+  background: var(--ob-signal);
+  color: var(--ob-void);
+}
+.ob-btn-signal:hover:not(:disabled) { background: #E8B457; }
+
+.ob-btn-outline {
+  background: transparent;
+  color: var(--ob-text);
+  border-color: var(--ob-line-3);
+}
+.ob-btn-outline:hover:not(:disabled) {
+  border-color: var(--ob-text);
+  background: rgba(242, 242, 238, 0.04);
+}
+
+.ob-btn-sm { height: 38px; padding-inline: 16px; font-size: 0.75rem; }
+.ob-btn-block { width: 100%; }
+
+/* ── Forms ──────────────────────────────────────────────────────────────── */
+
+.ob-field-label {
+  display: block;
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-text-3);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.ob-input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding-inline: 14px;
+  background: var(--ob-elevated);
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  color: var(--ob-text);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.ob-input::placeholder { color: var(--ob-text-4); }
+.ob-input:hover:not(:focus) { border-color: var(--ob-line-3); }
+.ob-input:focus {
+  outline: none;
+  border-color: var(--ob-signal);
+  background: var(--ob-raised);
+  box-shadow: inset 0 0 0 1px var(--ob-signal);
+}
+.ob-input[aria-invalid="true"] {
+  border-color: var(--ob-critical);
+}
+.ob-input[aria-invalid="true"]:focus {
+  box-shadow: inset 0 0 0 1px var(--ob-critical);
+  border-color: var(--ob-critical);
+}
+
+.ob-help {
+  margin-top: 7px;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--ob-text-4);
+}
+.ob-help[data-error="true"] { color: var(--ob-critical); }
+
+/* ── Alerts - status reporting, not decoration ──────────────────────────── */
+
+.ob-alert {
+  border-left: 2px solid var(--ob-line-3);
+  background: rgba(242, 242, 238, 0.03);
+  padding: 12px 16px;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ob-text-2);
+}
+.ob-alert-error {
+  border-left-color: var(--ob-critical);
+  background: var(--ob-critical-wash);
+}
+.ob-alert-ok {
+  border-left-color: var(--ob-healthy);
+  background: var(--ob-healthy-wash);
+}
+.ob-alert-note {
+  border-left-color: var(--ob-signal);
+  background: var(--ob-signal-wash);
+}
+
+/* ── Surfaces - used sparingly; a border is usually enough ──────────────── */
+
+.ob-panel {
+  background: var(--ob-raised);
+  border: 1px solid var(--ob-line);
+  border-radius: 3px;
+}
+
+.ob-inset {
+  background: var(--ob-base);
+  border: 1px solid var(--ob-line);
+  border-radius: 3px;
+}
+
+/* ── Status indicators ──────────────────────────────────────────────────── */
+
+.ob-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: var(--ob-unknown);
+}
+.ob-dot[data-state="healthy"] { background: var(--ob-healthy); }
+.ob-dot[data-state="degraded"] { background: var(--ob-degraded); }
+.ob-dot[data-state="critical"] { background: var(--ob-critical); }
+
+.ob-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ob-text-3);
+}
+.ob-state[data-state="healthy"] { color: var(--ob-healthy); }
+.ob-state[data-state="degraded"] { color: var(--ob-degraded); }
+.ob-state[data-state="critical"] { color: var(--ob-critical); }
+
+/* Live pulse. One element, one animation, collapses under reduced-motion. */
+.ob-live::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: 0;
+  animation: ob-ping 2.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ob-ping {
+  0% { transform: scale(0.7); opacity: 0.6; }
+  80%, 100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* ── Editorial prose (research articles, legal, docs) ───────────────────── */
+
+.ob-prose {
+  color: var(--ob-text-2);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+.ob-prose > * + * { margin-top: 1.35em; }
+.ob-prose h2 {
+  margin-top: 2.6em;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  color: var(--ob-text);
+  text-wrap: balance;
+}
+.ob-prose h3 {
+  margin-top: 2em;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ob-text);
+}
+.ob-prose h2 + *, .ob-prose h3 + * { margin-top: 0.8em; }
+.ob-prose p { max-width: 68ch; }
+.ob-prose strong { color: var(--ob-text); font-weight: 600; }
+.ob-prose a {
+  color: var(--ob-text);
+  text-decoration: underline;
+  text-decoration-color: var(--ob-signal);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.ob-prose a:hover { color: var(--ob-signal); }
+.ob-prose ul, .ob-prose ol { padding-left: 1.15em; max-width: 68ch; }
+.ob-prose li { margin-top: 0.5em; }
+.ob-prose ul > li { list-style: none; position: relative; }
+.ob-prose ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1em;
+  top: 0.75em;
+  width: 5px;
+  height: 1px;
+  background: var(--ob-signal);
+}
+.ob-prose ol > li { list-style: decimal; }
+.ob-prose ol > li::marker {
+  color: var(--ob-text-4);
+  font-family: var(--ob-font-mono);
+  font-size: 0.85em;
+}
+.ob-prose blockquote {
+  border-left: 2px solid var(--ob-signal);
+  padding-left: 1.25em;
+  color: var(--ob-text);
+  font-size: 1.1875rem;
+  line-height: 1.6;
+}
+.ob-prose code {
+  font-family: var(--ob-font-mono);
+  font-size: 0.875em;
+  background: var(--ob-elevated);
+  border: 1px solid var(--ob-line);
+  border-radius: 2px;
+  padding: 0.1em 0.35em;
+  color: var(--ob-text);
+}
+.ob-prose pre {
+  background: var(--ob-void);
+  border: 1px solid var(--ob-line);
+  border-radius: 3px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+.ob-prose pre code { background: none; border: 0; padding: 0; }
+.ob-prose hr { border: 0; border-top: 1px solid var(--ob-line); margin: 2.5em 0; }
+.ob-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.ob-prose th {
+  text-align: left;
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+  font-weight: 500;
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--ob-line-2);
+}
+.ob-prose td {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid var(--ob-line);
+  vertical-align: top;
+}
+
+/* ── Cinematic image treatment ──────────────────────────────────────────── */
+
+/* Photography is desaturated and darkened so type always wins the contrast
+   fight. The scrim is a flat gradient to black - not a colour wash. */
+.ob-photo {
+  filter: saturate(0.55) contrast(1.05) brightness(0.82);
+}
+.ob-scrim-bottom {
+  background: linear-gradient(
+    to top,
+    var(--ob-void) 0%,
+    rgba(8, 9, 10, 0.92) 22%,
+    rgba(8, 9, 10, 0.55) 52%,
+    rgba(8, 9, 10, 0.25) 78%,
+    rgba(8, 9, 10, 0.35) 100%
+  );
+}
+.ob-scrim-left {
+  background: linear-gradient(
+    to right,
+    rgba(8, 9, 10, 0.95) 0%,
+    rgba(8, 9, 10, 0.75) 40%,
+    rgba(8, 9, 10, 0.25) 75%,
+    rgba(8, 9, 10, 0.15) 100%
+  );
+}
+
+/* Engineering rule marks: a 1px measure tick, used to separate data rows. */
+.ob-ticks {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--ob-line) 0 1px,
+    transparent 1px 12px
+  );
+  height: 1px;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+@keyframes ob-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.ob-rise {
+  animation: ob-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ob-rise-1 { animation-delay: 80ms; }
+.ob-rise-2 { animation-delay: 160ms; }
+.ob-rise-3 { animation-delay: 240ms; }
+.ob-rise-4 { animation-delay: 320ms; }
+
+/* Slow, almost-imperceptible drift on hero imagery: the only ambient motion
+   on the whole site, and it reads as a camera move, not an effect. */
+@keyframes ob-drift {
+  from { transform: scale(1.06) translate3d(0, 0, 0); }
+  to { transform: scale(1.13) translate3d(0, -1.2%, 0); }
+}
+.ob-drift {
+  animation: ob-drift 42s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ob *,
+  .ob *::before,
+  .ob *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ob-drift { transform: scale(1.06); }
+  .ob-rise { opacity: 1; transform: none; }
+}
+
+/* ── Print: research articles must survive being printed for a review ───── */
+@media print {
+  .ob { background: #fff; color: #000; }
+  .ob-no-print { display: none !important; }
+  .ob-prose, .ob-prose * { color: #000 !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OPERATIONAL EVIDENCE CONSOLE  ·  .obc
+   ──────────────────────────────────────────────────────────────────────────
+   The authenticated application. It shares the Obsidian palette, typeface and
+   button language with the public site so it is recognisably the same company,
+   but its composition is the opposite: the marketing surface is editorial and
+   spacious, this is dense and instrumented.
+
+   Rules that differ from the public layer:
+   -  Density first. Row height 40px, section gap 32px, gutter 20/28px. White
+      space separates concepts; it never pads a card.
+   -  There are no cards. Structure comes from 1px rules and background steps.
+      `.obc-panel` is a bordered region, not a floating tile - no radius above
+      2px, no shadow, ever.
+   -  Colour is state. Green/amber/red/grey mean operational/degraded/critical/
+      unknown and nothing else. Amber is also the single brand accent, which is
+      why it doubles as "degraded" - a deliberate collision: the accent colour
+      of this product is the colour of something needing attention.
+   -  Numbers are mono and right-aligned so columns compare vertically.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.obc {
+  --obc-void: #08090A;
+  --obc-base: #0D0F10;
+  --obc-raised: #111416;
+  --obc-elevated: #151819;
+
+  --obc-text: #F2F2EE;
+  --obc-text-2: #D5D7D5;
+  --obc-text-3: #969B9F;
+  --obc-text-4: #686D71;
+
+  --obc-line: rgba(242, 242, 238, 0.08);
+  --obc-line-2: rgba(242, 242, 238, 0.14);
+  --obc-line-3: rgba(242, 242, 238, 0.24);
+
+  --obc-signal: #D9A441;
+  --obc-signal-wash: rgba(217, 164, 65, 0.10);
+
+  --obc-ok: #57A773;
+  --obc-ok-wash: rgba(87, 167, 115, 0.12);
+  --obc-warn: #D9A441;
+  --obc-warn-wash: rgba(217, 164, 65, 0.12);
+  --obc-crit: #C8544C;
+  --obc-crit-wash: rgba(200, 84, 76, 0.12);
+  --obc-idle: #686D71;
+  --obc-idle-wash: rgba(104, 109, 113, 0.14);
+
+  --obc-row: 40px;
+  --obc-gutter: 20px;
+  --obc-rail: 232px;
+  --obc-bar: 52px;
+
+  background: var(--obc-void);
+  color: var(--obc-text);
+  font-family: var(--ob-font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  .obc { --obc-gutter: 28px; }
+}
+
+/* ── Typography ───────────────────────────────────────────────────────── */
+
+.obc-title {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+  color: var(--obc-text);
+}
+.obc-h2 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--obc-text);
+}
+.obc-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--obc-text-4);
+  font-family: var(--ob-font-sans);
+}
+.obc-body { font-size: 0.8125rem; line-height: 1.55; color: var(--obc-text-3); }
+.obc-mono {
+  font-family: var(--ob-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+/** A measured value: mono, tabular, sized for scanning down a column. */
+.obc-figure {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--obc-text);
+}
+.obc-unit { font-size: 0.6875rem; color: var(--obc-text-4); margin-left: 0.2em; }
+
+.obc-link { color: var(--obc-text-2); text-decoration: none; border-bottom: 1px solid var(--obc-line-3); }
+.obc-link:hover { color: var(--obc-signal); border-bottom-color: var(--obc-signal); }
+
+/* ── Structure ────────────────────────────────────────────────────────── */
+
+.obc-page { padding: 0 var(--obc-gutter) 72px; }
+.obc-section { margin-top: 32px; }
+.obc-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--obc-line-2);
+}
+
+/* A bordered region. Not a card: 2px radius, no shadow, no hover lift. */
+.obc-panel { border: 1px solid var(--obc-line); border-radius: 2px; background: var(--obc-base); }
+.obc-inset { background: var(--obc-raised); border-radius: 2px; }
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+
+.obc-table { width: 100%; border-collapse: collapse; }
+.obc-table thead th {
+  height: 30px;
+  padding: 0 12px;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--obc-text-4);
+  border-bottom: 1px solid var(--obc-line-2);
+  white-space: nowrap;
+  background: var(--obc-void);
+}
+.obc-table tbody td {
+  height: var(--obc-row);
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  color: var(--obc-text-2);
+  border-bottom: 1px solid var(--obc-line);
+  white-space: nowrap;
+}
+.obc-table tbody tr:hover td { background: var(--obc-raised); }
+.obc-table tbody tr[data-active='true'] td { background: var(--obc-crit-wash); }
+.obc-num { text-align: right; font-family: var(--ob-font-mono); font-variant-numeric: tabular-nums; color: var(--obc-text); }
+.obc-table th.obc-num { text-align: right; }
+/* Sortable header affordance - a real <button> inside the th. */
+.obc-sort {
+  display: inline-flex; align-items: center; gap: 4px;
+  font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer;
+}
+.obc-sort:hover { color: var(--obc-text-2); }
+.obc-sort[aria-sort='ascending'], .obc-sort[aria-sort='descending'] { color: var(--obc-signal); }
+
+/* ── State ────────────────────────────────────────────────────────────── */
+
+.obc-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; display: inline-block; }
+.obc-state { display: inline-flex; align-items: center; gap: 7px; font-size: 0.75rem; color: var(--obc-text-2); white-space: nowrap; }
+.obc-state[data-state='ok']      .obc-dot { background: var(--obc-ok); }
+.obc-state[data-state='warn']    .obc-dot { background: var(--obc-warn); }
+.obc-state[data-state='crit']    .obc-dot { background: var(--obc-crit); }
+.obc-state[data-state='idle']    .obc-dot { background: var(--obc-idle); }
+.obc-state[data-state='crit']    { color: #E58C85; }
+.obc-state[data-state='warn']    { color: #E3BE7A; }
+
+/* A live incident pulses - slowly, once every 2.4s, and never under
+   prefers-reduced-motion. It is the only animation in the console. */
+@keyframes obc-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.obc-live .obc-dot { animation: obc-breathe 2.4s ease-in-out infinite; }
+
+/* ── Controls ─────────────────────────────────────────────────────────── */
+
+.obc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 32px; padding: 0 13px;
+  border: 1px solid var(--obc-line-2); border-radius: 2px;
+  background: transparent; color: var(--obc-text-2);
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+.obc-btn:hover { border-color: var(--obc-line-3); color: var(--obc-text); background: var(--obc-raised); }
+.obc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.obc-btn-primary {
+  background: var(--obc-signal); border-color: var(--obc-signal); color: #17130A; font-weight: 600;
+}
+.obc-btn-primary:hover { background: #E4B155; border-color: #E4B155; color: #17130A; }
+.obc-btn-sm { height: 26px; padding: 0 9px; font-size: 0.6875rem; }
+
+.obc-field-label {
+  display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--obc-text-4); margin-bottom: 6px;
+}
+.obc-input {
+  width: 100%; height: 34px; padding: 0 10px;
+  background: var(--obc-elevated); color: var(--obc-text);
+  border: 1px solid var(--obc-line-2); border-radius: 2px;
+  font-size: 0.8125rem;
+}
+.obc-input::placeholder { color: var(--obc-text-4); }
+.obc-input:focus { outline: none; border-color: var(--obc-signal); }
+
+/* ── Focus ────────────────────────────────────────────────────────────── */
+
+.obc :is(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--obc-signal);
+  outline-offset: 1px;
+  border-radius: 1px;
+}
+
+/* ── Skeleton ─────────────────────────────────────────────────────────── */
+
+@keyframes obc-scan { 0% { opacity: 0.35; } 50% { opacity: 0.7; } 100% { opacity: 0.35; } }
+.obc-skel { background: var(--obc-raised); border-radius: 1px; animation: obc-scan 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .obc-live .obc-dot, .obc-skel { animation: none !important; }
+}
+
+/* ── Sparkline / chart chrome ─────────────────────────────────────────── */
+
+.obc-axis { font-family: var(--ob-font-mono); font-size: 9px; fill: var(--obc-text-4); }
+.obc-grid { stroke: var(--obc-line); stroke-width: 1; }
+.obc-thresh { stroke: var(--obc-warn); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
+
+/* ── Scrollbars: thin, neutral, always visible on dense surfaces ──────── */
+.obc-scroll { scrollbar-width: thin; scrollbar-color: var(--obc-line-3) transparent; }
+.obc-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.obc-scroll::-webkit-scrollbar-thumb { background: var(--obc-line-3); border-radius: 0; }
+.obc-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PUBLIC INFRASTRUCTURE OBSERVATORY  ·  .obs
+   ──────────────────────────────────────────────────────────────────────────
+   The third design language. `.ob` is the cinematic public site, `.obc` is the
+   dense authenticated console; this is the public *record* of an external
+   dependency - a technical publication that happens to be live.
+
+   It sits inside `.ob` (same palette, same type stacks, same footer), and adds
+   only what a measurement record needs:
+
+   -  A numbered spine. Every section carries an index, like a report, so the
+      page reads as a document rather than a feed of widgets.
+   -  Instrument type. Figures are mono, tabular, right-aligned and carry their
+      unit as a separate muted glyph, because a latency and a percentage must
+      never look like the same kind of number.
+   -  Rules, not cards. A row is 1px above and 1px below. Nothing floats.
+   -  Motion is evidence of measurement: a cadence hairline that advances with
+      real elapsed time, and nothing else. No pulse, no glow, no particles.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.obs {
+  --obs-row: 38px;
+  --obs-band: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Masthead ─────────────────────────────────────────────────────────── */
+
+.obs-name {
+  font-size: clamp(3.25rem, 13.5vw, 11.5rem);
+  line-height: 0.84;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  color: var(--ob-text);
+  overflow-wrap: anywhere;
+}
+
+.obs-descriptor {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ob-text-3);
+}
+
+/* State word: large, plain, never colour-only (always paired with a dot and
+   the qualifying sentence beneath it). */
+.obs-state {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.obs-state[data-state='healthy'] { color: var(--ob-healthy); }
+.obs-state[data-state='degraded'] { color: var(--ob-degraded); }
+.obs-state[data-state='critical'] { color: var(--ob-critical); }
+.obs-state[data-state='unknown'] { color: var(--ob-text-3); }
+/* The state word is the largest coloured element on the page, so its dot has
+   to scale with it or the pairing reads as a typo rather than as a status. */
+.obs-state > .ob-dot { width: 9px; height: 9px; }
+
+/* In a table cell the same component has to sit on a 13px baseline. Declared
+   as a class, not a utility: `.obs-state` is a plain selector later in the
+   sheet than Tailwind's layers, so an arbitrary font-size utility would lose
+   to it and the word would silently render at display size. */
+.obs-state-sm {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  gap: 8px;
+}
+.obs-state-sm > .ob-dot { width: 6px; height: 6px; }
+
+/* ── Section spine ────────────────────────────────────────────────────── */
+
+.obs-section {
+  border-top: 1px solid var(--ob-line-2);
+  /* Anchored jumps (#telemetry, #incidents) must not land under the sticky
+     observatory bar. */
+  scroll-margin-top: 72px;
+}
+
+.obs-head {
+  display: grid;
+  gap: 10px 24px;
+  padding-block: 20px 26px;
+}
+@media (min-width: 900px) {
+  .obs-head {
+    grid-template-columns: 92px minmax(0, 1fr) minmax(0, 400px);
+    align-items: start;
+    padding-block: 26px 34px;
+  }
+}
+
+.obs-index {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--ob-signal);
+  padding-top: 6px;
+}
+
+.obs-h {
+  font-size: clamp(1.125rem, 2.1vw, 1.4375rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--ob-text);
+}
+
+.obs-note {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ob-text-3);
+}
+
+/* ── Instrument figures ───────────────────────────────────────────────── */
+
+.obs-num {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-text);
+  letter-spacing: -0.01em;
+}
+.obs-num-lg { font-size: clamp(1.5rem, 3vw, 2.125rem); line-height: 1.05; }
+.obs-num-md { font-size: 1.0625rem; line-height: 1.2; }
+.obs-num-sm { font-size: 0.8125rem; line-height: 1.3; }
+.obs-unit {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--ob-text-4);
+  margin-left: 4px;
+}
+.obs-void { color: var(--ob-text-4); font-style: normal; }
+
+/* ── Ruled data rows ──────────────────────────────────────────────────── */
+
+.obs-rows { display: flex; flex-direction: column; }
+.obs-row {
+  display: grid;
+  align-items: center;
+  gap: 4px 16px;
+  border-top: 1px solid var(--ob-line);
+  padding-block: 11px;
+  min-height: var(--obs-row);
+}
+.obs-rows > .obs-row:last-child { border-bottom: 1px solid var(--ob-line); }
+.obs-rowhead {
+  display: none;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+@media (min-width: 768px) {
+  .obs-rowhead { display: grid; }
+  .obs-row { padding-block: 0; }
+}
+a.obs-row { transition: background-color 140ms ease; }
+a.obs-row:hover { background: rgba(242, 242, 238, 0.03); }
+
+.obs-r { text-align: right; }
+
+/* ── Range / region switcher ──────────────────────────────────────────── */
+
+.obs-switch { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--ob-line-2); border-radius: 2px; }
+.obs-switch > * + * { border-left: 1px solid var(--ob-line-2); }
+.obs-tab {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding-inline: 12px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ob-text-3);
+  transition: color 120ms ease, background-color 120ms ease;
+}
+.obs-tab:hover { color: var(--ob-text); background: rgba(242, 242, 238, 0.04); }
+@media (max-width: 640px) {
+  /* Region codes are long; the control has to fit a 375px screen without
+     clipping a label, so it loses padding before it loses characters. */
+  .obs-tab { padding-inline: 9px; font-size: 0.625rem; letter-spacing: 0.08em; }
+}
+.obs-tab[aria-current='true'] {
+  color: var(--ob-void);
+  background: var(--ob-text);
+}
+
+/* ── Plot chrome ──────────────────────────────────────────────────────── */
+
+.obs-axis {
+  font-family: var(--ob-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  fill: var(--ob-text-4);
+}
+.obs-grid { stroke: rgba(242, 242, 238, 0.07); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-grid-strong { stroke: rgba(242, 242, 238, 0.14); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-thresh { stroke: var(--ob-signal); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.55; }
+.obs-trace { fill: none; stroke: var(--ob-text); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+.obs-trace-fill { fill: rgba(242, 242, 238, 0.05); stroke: none; }
+.obs-fail { stroke: var(--ob-critical); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-incident-band { fill: rgba(200, 84, 76, 0.13); }
+.obs-cursor { stroke: var(--ob-signal); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-plot { touch-action: pan-y; }
+.obs-plot:focus-visible { outline: 2px solid var(--ob-signal); outline-offset: 2px; }
+
+/* Availability strip beneath the trace: one column per bucket. */
+.obs-strip-ok { fill: var(--ob-healthy); opacity: 0.55; }
+.obs-strip-fail { fill: var(--ob-critical); }
+.obs-strip-none { fill: rgba(242, 242, 238, 0.10); }
+
+/* ── Cadence hairline: the only motion on the page ────────────────────── */
+
+.obs-cadence {
+  position: relative;
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--ob-line-2);
+  overflow: hidden;
+}
+.obs-cadence > i {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: block;
+  background: var(--ob-signal);
+  transition: width 900ms linear;
+}
+
+/* Label colour variants. These are declared here, after `.ob-label`, because
+   a Tailwind arbitrary colour utility loses to a plain class selector defined
+   later in the sheet - so a label that must read as signal or as critical gets
+   a class rather than a utility that silently does nothing. */
+.obs-label-signal { color: var(--ob-signal); }
+.obs-label-crit { color: var(--ob-critical); }
+.obs-label-ok { color: var(--ob-healthy); }
+.obs-label-text { color: var(--ob-text-2); }
+
+/* ── Horizontal scrollers ─────────────────────────────────────────────────
+   A wide table inside `overflow-x: auto` still contributes its full width to
+   the root scroll area in Chromium, so the page itself scrolls sideways on a
+   phone even though the table is correctly clipped. `contain: paint` stops
+   that at the scroller, which is the only element that should scroll. */
+.ob-scroll-x {
+  overflow-x: auto;
+  contain: paint;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ob-line-3) transparent;
+}
+.ob-scroll-x::-webkit-scrollbar { height: 8px; }
+.ob-scroll-x::-webkit-scrollbar-thumb { background: var(--ob-line-3); }
+.ob-scroll-x::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Geographic plot ──────────────────────────────────────────────────── */
+
+.obs-geo-grid { stroke: rgba(242, 242, 238, 0.06); stroke-width: 1; }
+.obs-geo-axis { stroke: rgba(242, 242, 238, 0.13); stroke-width: 1; }
+.obs-geo-mark { stroke: var(--ob-text); stroke-width: 1; }
+.obs-geo-label {
+  font-family: var(--ob-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  fill: var(--ob-text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .obs-cadence > i { transition: none; }
+}

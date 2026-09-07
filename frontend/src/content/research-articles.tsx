@@ -19,19 +19,19 @@ export type ResearchArticleBody = {
   related: RelatedLink[];
 };
 
-const P = ({ children }: { children: ReactNode }) => (
-  <p className="mt-4 leading-relaxed text-[#52525B] dark:text-[#A1A1AA]">{children}</p>
-);
+/**
+ * Semantic-only wrappers.
+ *
+ * These used to carry hard-coded colour and spacing classes, which meant the
+ * article body could never be restyled without editing every paragraph of
+ * every article. Typography now comes from the `.ob-prose` block in
+ * globals.css, so the content file contains content and nothing else.
+ */
+const P = ({ children }: { children: ReactNode }) => <p>{children}</p>;
 
-const H = ({ children }: { children: ReactNode }) => (
-  <h2 className="mt-10 text-2xl font-semibold tracking-tight text-[#09090B] dark:text-[#FAFAFA]">
-    {children}
-  </h2>
-);
+const H = ({ children }: { children: ReactNode }) => <h2>{children}</h2>;
 
-const LI = ({ children }: { children: ReactNode }) => (
-  <li className="leading-relaxed text-[#52525B] dark:text-[#A1A1AA]">{children}</li>
-);
+const LI = ({ children }: { children: ReactNode }) => <li>{children}</li>;
 
 export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
   'the-dependency-gap': {
@@ -52,7 +52,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           own dashboards, and the vendor&rsquo;s status page. That comparison is
           weaker than it feels, for three reasons.
         </P>
-        <ul className="mt-4 list-disc space-y-2 pl-6">
+        <ul>
           <LI>
             A status page describes intent, not behaviour. It is updated by
             humans, after the fact, and it is scoped to the incidents the vendor
@@ -99,7 +99,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
       </>
     ),
     evidence: (
-      <ul className="list-disc space-y-2 pl-6 text-sm text-[#52525B] dark:text-[#A1A1AA]">
+      <ul>
         <LI>
           Every observation is written with its regional origin, so a single
           region&rsquo;s network path cannot masquerade as a vendor-wide outage.
@@ -124,7 +124,6 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         behind the observations it refers to is documented separately in{' '}
         <a
           href={researchRoute('how-reliastra-measures-vendor-reliability')}
-          className="text-[#0891B2] underline underline-offset-4 dark:text-[#22D3EE]"
         >
           How RELIASTRA measures vendor reliability
         </a>
@@ -215,7 +214,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           we never ran the probe. Those are different facts with different
           owners, so each dependency carries an explicit state:
         </P>
-        <ul className="mt-4 list-disc space-y-1 pl-6">
+        <ul>
           <LI>
             <strong>Target problems</strong> - the probe reached the vendor and
             it failed, or was refused by the security policy.
@@ -237,7 +236,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
       </>
     ),
     evidence: (
-      <ul className="list-disc space-y-2 pl-6 text-sm text-[#52525B] dark:text-[#A1A1AA]">
+      <ul>
         <LI>
           Each stored result records its region, outcome, status code, latency
           and execution time.
@@ -299,7 +298,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </P>
 
         <H>What we will publish</H>
-        <ul className="mt-4 list-disc space-y-2 pl-6">
+        <ul>
           <LI>
             <strong>Methodology.</strong> How checks are scheduled, origination,
             retries, quorum rules, and the failure taxonomy. This is the
@@ -319,7 +318,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </ul>
 
         <H>What we will not publish</H>
-        <ul className="mt-4 list-disc space-y-2 pl-6">
+        <ul>
           <LI>
             Anything that identifies a customer, their endpoints, or their
             configured checks. Public material shows aggregated posture only.
@@ -338,7 +337,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </ul>
 
         <H>Standing rules</H>
-        <ul className="mt-4 list-disc space-y-2 pl-6">
+        <ul>
           <LI>
             Every published figure states its window, its origin set and how
             outcomes were classified.
@@ -365,7 +364,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
       </>
     ),
     evidence: (
-      <ul className="list-disc space-y-2 pl-6 text-sm text-[#52525B] dark:text-[#A1A1AA]">
+      <ul>
         <LI>
           Published figures are derived from the same retained observation
           history that customers see in their own console - there is no separate
@@ -384,7 +383,6 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         publish is documented in{' '}
         <a
           href={researchRoute('how-reliastra-measures-vendor-reliability')}
-          className="text-[#0891B2] underline underline-offset-4 dark:text-[#22D3EE]"
         >
           How RELIASTRA measures vendor reliability
         </a>

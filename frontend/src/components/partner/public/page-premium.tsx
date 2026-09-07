@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check, Minus, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -279,7 +279,7 @@ export function PagePremium() {
       </section>
 
       {/* ===== DARK CTA ===== */}
-      <section className="border-t border-border/40 bg-neutral-950 text-neutral-50">
+      <section className="border-t border-border/40 bg-[var(--ob-void)] text-[var(--ob-text)]">
         <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
           <motion.div
             initial="hidden"
@@ -297,7 +297,7 @@ export function PagePremium() {
             <motion.p
               variants={fadeUp}
               custom={1}
-              className="mb-10 text-base leading-relaxed text-neutral-400"
+              className="mb-10 text-base leading-relaxed text-[var(--ob-text-3)]"
             >
               Apply for premium partnership and start earning more from day one.
             </motion.p>
@@ -309,7 +309,7 @@ export function PagePremium() {
               <Button
                 size="lg"
                 onClick={() => navigate('signup')}
-                className="gap-2 bg-neutral-50 text-neutral-950 hover:bg-neutral-200 px-8"
+                className="gap-2 bg-[var(--ob-base)] text-[var(--ob-text)] hover:bg-[var(--ob-elevated)] px-8"
               >
                 APPLY NOW
                 <ArrowRight className="size-4" />
@@ -318,7 +318,7 @@ export function PagePremium() {
                 size="lg"
                 variant="outline"
                 onClick={() => navigate('support')}
-                className="gap-2 border-neutral-700 text-neutral-300 hover:bg-neutral-800 hover:text-neutral-50 px-8"
+                className="gap-2 border-[var(--ob-line-2)] text-[var(--ob-text-3)] hover:bg-[var(--ob-elevated)] hover:text-[var(--ob-text)] px-8"
               >
                 CONTACT SALES
               </Button>

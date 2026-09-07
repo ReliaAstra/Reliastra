@@ -42,7 +42,7 @@ export function PreferredSourceButton({ lang = 'en', className }: PreferredSourc
           href="https://news.google.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-zinc-500 underline"
+          className="ob-small underline underline-offset-4"
         >
           Follow Reliastra on Google News
         </a>
@@ -122,24 +122,26 @@ export function PreferredSourceSection({ variant = 'generic', lang, className }:
       ref={sectionRef}
       aria-labelledby={titleId}
       className={[
-        // Premium, subtle, aligned with RELIASTRA track/vendor cards
-        'rounded-xl border border-zinc-200 bg-[#F8F9FA] p-6 dark:border-white/10 dark:bg-[#131318]',
+        // Hairline block, not a card: consistent with every other module on
+        // the public site.
+        'border-t border-[var(--ob-line)] pt-6',
         className ?? '',
       ].join(' ')}
     >
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-500">
-        {copy.eyebrow}
-      </p>
-      <h2 id={titleId} className="mt-2 text-sm font-semibold tracking-tight text-zinc-900 dark:text-white">
+      <p className="ob-label">{copy.eyebrow}</p>
+      <h2
+        id={titleId}
+        className="mt-3 text-[15px] font-semibold tracking-[-0.01em] text-[var(--ob-text)]"
+      >
         {copy.title}
       </h2>
-      <p className="mt-1.5 max-w-prose text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+      <p className="mt-2 max-w-[68ch] text-[13.5px] leading-[1.65] text-[var(--ob-text-3)]">
         {copy.body}
       </p>
-      <div className="mt-4">
+      <div className="mt-5">
         <PreferredSourceButton lang={lang} />
       </div>
-      <p className="mt-2 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
+      <p className="ob-small mt-3">
         Powered by Google - you choose your sources.
       </p>
     </section>

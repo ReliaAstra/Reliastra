@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { IncidentDetailPage } from '@/components/dashboard/pages/incident-detail';
+import { IncidentRecordPage } from '@/components/console/pages/incident-record';
 
 export default function Page() {
   const params = useParams<{ id: string }>();
-  return <IncidentDetailPage id={params.id} />;
+  return <IncidentRecordPage id={params.id} />;
 }

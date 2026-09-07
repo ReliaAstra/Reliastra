@@ -371,11 +371,16 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(billing_router)
     app.include_router(api_keys_router)
-    # AGENCY TEMPORARILY DISABLED - backend code preserved in
-    # app/modules/agencies/ but the API is not exposed to customers
-    # until the dashboard-first onboarding and client hierarchy UX
-    # are ready.  Re-enable by uncommenting the line below.
-    # app.include_router(agencies_router)
+    # Agency mode. Mounted as of the multi-client operations console: the
+    # condition the previous comment set out (a real client hierarchy UX and
+    # a dashboard-first onboarding) is now met, so the module that was always
+    # preserved in app/modules/agencies/ is exposed again.
+    #
+    # Authorization is unchanged: every route is org-scoped through
+    # get_current_org, and both writes carry require_admin. Visibility of the
+    # surface is a separate concern, gated client-side on
+    # Organization.has_agency_mode.
+    app.include_router(agencies_router)
     app.include_router(verification_router)
     app.include_router(referrals_router)
     app.include_router(webhooks_router)

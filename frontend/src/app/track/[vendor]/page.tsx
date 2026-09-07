@@ -1,441 +1,404 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+
 import {
+  DEFAULT_WINDOW,
   fetchTrackedVendors,
-  fetchVendorPublicIncidents,
-  fetchVendorTrack,
-  type TrackDeveloperInfo,
-  type TrackPublicIncident,
+  fetchVendorDetail,
+  fetchVendorRecord,
+  isTrackWindow,
+  regionsOf,
+  TELEMETRY_RANGES,
   type TrackVendorListItem,
+  type TrackWindow,
 } from '@/lib/track-api';
-import { PreferredSourceSection } from '@/components/seo/preferred-source';
-import { JsonLd, Breadcrumbs } from '@/components/seo/json-ld';
-import { SITE_URL, breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
+import {
+  availability,
+  deriveState,
+  latency,
+  NO_OBSERVATION,
+  utcStamp,
+  windowLabel,
+} from '@/lib/observatory/format';
+import { regionInfo } from '@/lib/observatory/regions';
+import { canonicalUrl, breadcrumbJsonLd } from '@/lib/seo';
+import { JsonLd } from '@/components/seo/json-ld';
+import { PUBLIC_ROUTES, SHARE_ROUTES } from '@/lib/routes';
+import { Breadcrumb } from '@/components/site/primitives';
+import { ObservatoryShell, RecordSection } from '@/components/observatory/primitives';
+import {
+  CurrentObservationSection,
+  DependencyInfoSection,
+  DistinctionSection,
+  EvidenceSection,
+  IncidentsSection,
+  Masthead,
+  MethodologySection,
+  NetworkSection,
+  RecordCTA,
+  RecordUnavailable,
+  RelatedSection,
+  StateSection,
+} from '@/components/observatory/record-sections';
+import { mergeIncidents } from '@/lib/observatory/incidents';
+import {
+  TelemetryControls,
+  TelemetryPanel,
+  TelemetrySkeleton,
+} from '@/components/observatory/telemetry-panel';
+import { RegionPlot } from '@/components/observatory/region-plot';
+
+/**
+ * The public record for one observed dependency.
+ *
+ * Composition notes:
+ *  - Server-rendered end to end. The only client code is the elapsed-time
+ *    readout, the chart cursor and the evidence request form; all three
+ *    hydrate around content that is already in the HTML.
+ *  - The telemetry series lives in its own Suspense boundary keyed by
+ *    window+region, so switching range streams a new chart into a page that
+ *    never unmounts.
+ *  - Range and region are URL state, which makes every view of this record a
+ *    shareable and crawlable address.
+ */
 
 export const revalidate = 60;
 
-type Props = { params: Promise<{ vendor: string }> };
+interface PageProps {
+  params: Promise<{ vendor: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+const one = (v: string | string[] | undefined): string | undefined =>
+  Array.isArray(v) ? v[0] : v;
+
+/* ── Metadata ───────────────────────────────────────────────────────────── */
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { vendor } = await params;
-  const name = decodeURIComponent(vendor);
-  let title = `${name} status - RELIASTRA Track`;
-  let description = `Independent, multi-region uptime and incident history for ${name}, measured by RELIASTRA.`;
-
+  let detail: Awaited<ReturnType<typeof fetchVendorDetail>> = null;
   try {
-    const data = await fetchVendorTrack(name);
-    if (data) {
-      const display = data.vendor.display_name;
-      title = `${display} status - live uptime, latency & incidents`;
-      description =
-        `${display} is ${describeState(data).label.toLowerCase()} right now. ` +
-        `${fmtUptime(data.uptime_7d)} uptime over 7 days and ${fmtUptime(data.uptime_30d)} over 30 days, measured by RELIASTRA's independent regional probes.`;
-    } else {
-      title = `${name} - not tracked`;
-    }
+    detail = await fetchVendorDetail(vendor);
   } catch {
-    // Keep generic metadata if the API is unavailable.
+    detail = null;
   }
+
+  const path = SHARE_ROUTES.trackVendor(vendor);
+  const url = canonicalUrl(path);
+
+  if (!detail) {
+    return {
+      title: 'Dependency record - RELIASTRA observatory',
+      description:
+        'Independently measured availability, latency and incident history for third-party APIs, observed from multiple regions by RELIASTRA.',
+      alternates: { canonical: url },
+      robots: { index: false, follow: true },
+    };
+  }
+
+  const name = detail.display_name;
+  const regions = regionsOf(detail);
+  const title = `${name} status and reliability record - independently measured`;
+  const description =
+    `Independent, multi-region observation of ${name}. Availability, latency, incident history ` +
+    `and published evidence measured by RELIASTRA probes` +
+    (regions.length ? ` from ${regions.join(', ')}` : '') +
+    `, not taken from ${name}'s status page.`;
 
   return {
     title,
     description,
-    alternates: { canonical: `/track/${name}` },
+    alternates: { canonical: url },
+    robots: { index: true, follow: true },
+    keywords: [
+      `${name} status`,
+      `${name} outage`,
+      `${name} api latency`,
+      `${name} uptime`,
+      'independent monitoring',
+      'external dependency intelligence',
+    ],
     openGraph: {
-      title,
+      title: `${name} - independently measured reliability record`,
       description,
-      url: `/track/${name}`,
-      type: 'website',
-      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: title }],
+      url,
+      type: 'article',
+      images: [
+        {
+          url: '/opengraph-image',
+          width: 1200,
+          height: 630,
+          alt: `RELIASTRA observation record for ${name}`,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: `${name} - independently measured reliability record`,
       description,
       images: ['/opengraph-image'],
     },
-    robots: { index: true, follow: true },
   };
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+/* ── Page ───────────────────────────────────────────────────────────────── */
 
-function fmtUptime(v: number | null | undefined): string {
-  if (v == null || !Number.isFinite(v)) return '-';
-  return `${v.toFixed(2)}%`;
-}
+export default async function VendorRecordPage({ params, searchParams }: PageProps) {
+  const { vendor } = await params;
+  const sp = await searchParams;
 
-function fmtLatency(ms: number | null | undefined): string {
-  if (ms == null || !Number.isFinite(ms)) return '-';
-  return `${Math.round(ms)}ms`;
-}
+  const windowParam = one(sp.window);
+  const win: TrackWindow =
+    isTrackWindow(windowParam) && TELEMETRY_RANGES.includes(windowParam)
+      ? windowParam
+      : DEFAULT_WINDOW;
 
-function fmtWhen(iso: string | null): string {
-  if (!iso) return '-';
+  let record;
   try {
-    const d = new Date(iso);
-    return d.toLocaleString('en-US', {
-      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
-    }) + ' UTC';
+    record = await fetchVendorRecord(vendor);
   } catch {
-    return '-';
-  }
-}
-
-function fmtDuration(seconds: number | null): string {
-  if (seconds == null || !Number.isFinite(seconds)) return '-';
-  const mins = Math.round(seconds / 60);
-  if (mins < 60) return `${mins} min`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
-}
-
-function describeState(d: TrackDeveloperInfo): {
-  label: string;
-  dot: string;
-  text: string;
-  bg: string;
-  border: string;
-} {
-  // Prefer the vendor's own recent_status; fall back to the latest probe.
-  const s = (d.vendor.recent_status || '').toLowerCase();
-  if (s === 'down') return { label: 'Down', dot: 'bg-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-900/40' };
-  if (s === 'degraded') return { label: 'Degraded', dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-900/40' };
-  if (s === 'operational') return { label: 'Operational', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-900/40' };
-  const up = d.current_status?.is_up;
-  if (up === false) return { label: 'Down', dot: 'bg-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-900/40' };
-  if (up === true) return { label: 'Operational', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-900/40' };
-  return { label: 'Unknown', dot: 'bg-zinc-400 dark:bg-zinc-600', text: 'text-zinc-600 dark:text-zinc-400', bg: 'bg-zinc-100 dark:bg-white/5', border: 'border-zinc-200 dark:border-white/10' };
-}
-
-function severityLabel(s: string): string {
-  switch ((s || '').toLowerCase()) {
-    case 'critical': return 'Critical';
-    case 'major': return 'Major';
-    case 'minor': return 'Minor';
-    default: return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Incident';
-  }
-}
-
-// ── Page ─────────────────────────────────────────────────────────────────────
-
-export default async function VendorTrackPage({ params }: Props) {
-  const { vendor: rawName } = await params;
-  const name = decodeURIComponent(rawName);
-
-  let data: TrackDeveloperInfo | null;
-  try {
-    data = await fetchVendorTrack(name);
-  } catch {
-    return <ServiceUnavailable name={name} />;
-  }
-
-  if (!data) notFound();
-
-  let publicIncidents: TrackPublicIncident[] = [];
-  try {
-    const gate = await fetchVendorPublicIncidents(name);
-    publicIncidents = gate.incidents ?? [];
-  } catch {
-    publicIncidents = [];
-  }
-
-  // Related vendors for the internal link graph: same category first, never
-  // self, never fabricated - only vendors the Track API actually returns. A
-  // failed catalog fetch renders nothing rather than a broken section.
-  let relatedVendors: TrackVendorListItem[] = [];
-  try {
-    const catalog = await fetchTrackedVendors(100);
-    const others = (catalog.items ?? []).filter(
-      (v) => v.vendor_name.toLowerCase() !== data.vendor.vendor_name.toLowerCase()
+    return (
+      <ObservatoryShell>
+        <RecordUnavailable vendorName={vendor} />
+      </ObservatoryShell>
     );
-    const sameCategory = others.filter((v) => v.category === data.vendor.category);
-    const rest = others.filter((v) => v.category !== data.vendor.category);
-    relatedVendors = [...sameCategory, ...rest].slice(0, 5);
-  } catch {
-    relatedVendors = [];
   }
 
-  const state = describeState(data);
-  const m24 = Object.values(data.metrics_24h?.metrics ?? {})[0];
-  const displayName = data.vendor.display_name;
+  if (!record) notFound();
+
+  const { detail, regions } = record;
+
+  // The API defaults the timeline to us-east-1. If this dependency is not
+  // observed from there, defaulting would draw an empty chart for a vendor
+  // that has plenty of data - so the first declared region is used instead.
+  const requested = one(sp.region);
+  const selectedRegion =
+    requested && regions.includes(requested)
+      ? requested
+      : regions.length && !regions.includes('us-east-1')
+        ? regions[0]
+        : regions.includes('us-east-1')
+          ? 'us-east-1'
+          : undefined;
+
+  // The freshest observation across every region, which is what "last
+  // observation" means on a multi-region record.
+  const observationTimes = [
+    detail.last_check_at,
+    ...record.regionObservations.map((r) => r.current?.timestamp ?? null),
+  ].filter((t): t is string => !!t);
+  const lastObservation =
+    observationTimes.length > 0
+      ? observationTimes.reduce((a, b) => (Date.parse(a) >= Date.parse(b) ? a : b))
+      : null;
+
+  const freshest =
+    record.regionObservations
+      .map((r) => r.current)
+      .filter((c): c is NonNullable<typeof c> => !!c && !!c.timestamp)
+      .sort((a, b) => Date.parse(b.timestamp!) - Date.parse(a.timestamp!))[0] ?? null;
+
+  const verdict = deriveState(detail.recent_status, freshest);
+
+  const cadenceSeconds =
+    record.regionObservations.map((r) => r.cadenceSeconds).find((c) => !!c) ?? null;
+
+  const incidents = mergeIncidents(record.incidents, record.publicIncidents);
+  const published = (record.publicIncidents ?? []).filter((p) => p.has_evidence_report);
+
+  let catalog: TrackVendorListItem[] = [];
+  try {
+    catalog = (await fetchTrackedVendors(24)).items;
+  } catch {
+    catalog = [];
+  }
+
+  const m24 = record.metrics?.metrics?.['24h'] ?? null;
+  const m30 = record.metrics?.metrics?.['30d'] ?? null;
+  const basePath = SHARE_ROUTES.trackVendor(detail.vendor_name);
+
+  const regionMarks = record.regionObservations.map((r) => ({
+    info: regionInfo(r.region),
+    state: (r.current?.is_up === true
+      ? 'healthy'
+      : r.current?.is_up === false
+        ? 'critical'
+        : 'unknown') as 'healthy' | 'critical' | 'unknown',
+    label: r.current?.latency_ms ? `${latency(r.current.latency_ms)} ms` : 'no observation',
+  }));
 
   return (
-    <main className="min-h-screen bg-white pb-24 dark:bg-[#0A0A0F]">
+    <ObservatoryShell>
       <JsonLd
         data={[
           breadcrumbJsonLd([
             { name: 'Home', path: '/' },
-            { name: 'Track', path: '/track' },
-            { name: displayName, path: `/track/${encodeURIComponent(data.vendor.vendor_name)}` },
+            { name: 'Observatory', path: PUBLIC_ROUTES.track },
+            { name: detail.display_name, path: basePath },
           ]),
           {
             '@context': 'https://schema.org',
+            '@type': 'Dataset',
+            '@id': `${canonicalUrl(basePath)}#dataset`,
+            name: `${detail.display_name} availability and latency observations`,
+            description: `Independent multi-region observations of ${detail.display_name}'s public endpoints: availability, response latency and incident history measured by RELIASTRA.`,
+            url: canonicalUrl(basePath),
+            license: canonicalUrl(PUBLIC_ROUTES.terms),
+            isAccessibleForFree: true,
+            creator: { '@type': 'Organization', name: 'RELIASTRA', url: canonicalUrl('/') },
+            spatialCoverage: regions.length ? regions.join(', ') : undefined,
+            variableMeasured: [
+              { '@type': 'PropertyValue', name: 'Availability', unitText: 'percent' },
+              { '@type': 'PropertyValue', name: 'Response latency', unitText: 'ms' },
+            ],
+            dateModified: lastObservation ?? undefined,
+          },
+          {
+            '@context': 'https://schema.org',
             '@type': 'WebPage',
-            '@id': canonicalUrl(`/track/${encodeURIComponent(data.vendor.vendor_name)}`),
-            url: canonicalUrl(`/track/${encodeURIComponent(data.vendor.vendor_name)}`),
-            name: `${displayName} status - live uptime, latency & incidents`,
-            description: `Independent, multi-region uptime and incident history for ${displayName}, measured by RELIASTRA.`,
-            isPartOf: { '@id': `${SITE_URL}/#website` },
+            '@id': canonicalUrl(basePath),
+            url: canonicalUrl(basePath),
+            name: `${detail.display_name} reliability record`,
+            isPartOf: { '@id': canonicalUrl('/#website') },
             inLanguage: 'en',
+            about: { '@type': 'Thing', name: detail.display_name },
           },
         ]}
       />
-      {/* Header */}
-      <section className="border-b border-zinc-200 bg-[#F8F9FA] py-10 dark:border-white/10 dark:bg-[#131318] md:py-14">
-        <div className="mx-auto max-w-[880px] px-6">
-          <Link
-            href="/track"
-            className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-700 transition-colors hover:text-cyan-600 dark:text-cyan-400"
-          >
-            ← RELIASTRA Track
-          </Link>
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white md:text-4xl">
-              {displayName}
-            </h1>
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] uppercase tracking-wide ${state.bg} ${state.border} ${state.text}`}>
-              <span className={`relative size-1.5 rounded-full ${state.dot}`}>
-                {state.label !== 'Unknown' && state.label !== 'Down' && (
-                  <span className="absolute inset-0 animate-ping rounded-full opacity-60" />
-                )}
-              </span>
-              {state.label}
-            </span>
+
+      <div className="border-b border-[var(--ob-line)] bg-[var(--ob-void)]">
+        <div className="ob-container py-3">
+          <Breadcrumb
+            items={[
+              { name: 'Home', href: '/' },
+              { name: 'Observatory', href: PUBLIC_ROUTES.track },
+              { name: detail.display_name, href: basePath },
+            ]}
+          />
+        </div>
+      </div>
+
+      <Masthead
+        record={record}
+        verdict={verdict}
+        lastObservation={lastObservation}
+        cadenceSeconds={cadenceSeconds}
+      />
+
+      {/* Crawlable summary. Everything in this paragraph is composed from the
+          record above; there is no marketing sentence in it. */}
+      <section aria-labelledby="summary-h" className="obs-section bg-[var(--ob-base)]">
+        <div className="ob-container py-10 md:py-14">
+          <h2 id="summary-h" className="sr-only">
+            Summary of this record
+          </h2>
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-16">
+            <p className="max-w-[68ch] text-[14.5px] leading-[1.75] text-[var(--ob-text-2)]">
+              {detail.display_name} is a {detail.category.replace(/[-_]/g, ' ')} dependency under
+              continuous observation by RELIASTRA. Requests are issued to its public endpoints from{' '}
+              {regions.length ? regions.join(', ') : 'RELIASTRA observation regions'}
+              {cadenceSeconds ? ` about every ${cadenceSeconds} seconds per region` : ''}, and every
+              response is stored with its latency, status code and timestamp. The last observation
+              recorded was {utcStamp(lastObservation) ?? NO_OBSERVATION}.
+            </p>
+            <p className="max-w-[68ch] text-[14.5px] leading-[1.75] text-[var(--ob-text-2)]">
+              Over the last 24 hours RELIASTRA recorded{' '}
+              {m24 ? m24.total_observations.toLocaleString('en-US') : 'no'} observations, an
+              availability of {availability(m24?.uptime_percentage, m24?.total_observations)} and a
+              mean response of {latency(m24?.avg_latency_ms)} ms; over 30 days,{' '}
+              {availability(m30?.uptime_percentage, m30?.total_observations)}.{' '}
+              {incidents.length
+                ? `${incidents.length} incident record${incidents.length === 1 ? '' : 's'} ${
+                    incidents.length === 1 ? 'has' : 'have'
+                  } been opened against this dependency, ${
+                    published.length ? `${published.length} with published evidence.` : 'none with published evidence yet.'
+                  }`
+                : 'No incident has been opened against this dependency.'}{' '}
+              Availability, latency and incident history below are measured, not reported by the
+              vendor.
+            </p>
           </div>
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-            {data.vendor.category ? `${data.vendor.category} · ` : ''}
-            Last probe{' '}
-            {data.current_status?.timestamp
-              ? fmtWhen(data.current_status.timestamp)
-              : data.vendor.last_check_at
-                ? fmtWhen(data.vendor.last_check_at)
-                : '-'}
-            {' · '}measured independently across regions
-          </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-[880px] space-y-8 px-6 pt-8">
-        <Breadcrumbs
-          items={[
-            { name: 'Home', href: '/' },
-            { name: 'Track', href: '/track' },
-            { name: displayName, href: `/track/${encodeURIComponent(data.vendor.vendor_name)}` },
-          ]}
-        />
-        {/* Current snapshot */}
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[
-            { label: 'Uptime 24h', value: fmtUptime(m24?.uptime_percentage), mono: true },
-            { label: 'Avg latency 24h', value: fmtLatency(data.avg_latency_24h), mono: true },
-            { label: 'Uptime 7d', value: fmtUptime(data.uptime_7d), mono: true },
-            { label: 'Uptime 30d', value: fmtUptime(data.uptime_30d), mono: true },
-          ].map((m) => (
-            <div key={m.label} className="rounded-xl border border-zinc-200 p-4 dark:border-white/10">
-              <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-zinc-500">{m.label}</p>
-              <p className="mt-2 font-mono text-xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                {m.value}
-              </p>
-            </div>
+      <CurrentObservationSection record={record} />
+
+      <StateSection record={record} verdict={verdict} lastObservation={lastObservation} />
+
+      <RecordSection
+        index="03"
+        id="telemetry"
+        title="Historical telemetry"
+        note={
+          <>
+            Every point is the mean latency of the observations inside one bucket, at the
+            resolution the measurement API aggregates to for the selected range. Failed buckets
+            break the line; incident windows are shaded. Ranges are limited to the windows the API
+            can aggregate.
+          </>
+        }
+        aside={
+          <TelemetryControls
+            basePath={basePath}
+            window={win}
+            region={selectedRegion}
+            regions={regions}
+          />
+        }
+      >
+        <Suspense key={`${win}:${selectedRegion ?? 'default'}`} fallback={<TelemetrySkeleton />}>
+          <TelemetryPanel
+            vendor={detail.vendor_name}
+            window={win}
+            region={selectedRegion}
+            metrics={record.metrics}
+            publicIncidents={record.publicIncidents}
+          />
+        </Suspense>
+        <p className="ob-small mt-6">
+          Viewing {windowLabel(win)}
+          {selectedRegion ? ` from ${selectedRegion}` : ''}. Other ranges:{' '}
+          {TELEMETRY_RANGES.filter((r) => r !== win).map((r, i, arr) => (
+            <span key={r}>
+              <Link
+                href={`${basePath}?window=${r}${selectedRegion ? `&region=${selectedRegion}` : ''}#telemetry`}
+                className="ob-link"
+              >
+                {windowLabel(r)}
+              </Link>
+              {i < arr.length - 1 ? ', ' : '.'}
+            </span>
           ))}
-        </section>
-
-        {/* Endpoints under measurement */}
-        {data.vendor.endpoints?.length > 0 && (
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-              Monitored endpoints
-            </h2>
-            <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10">
-              {data.vendor.endpoints.map((ep) => (
-                <div key={ep.id} className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 last:border-b-0 dark:border-white/10">
-                  <span className="min-w-0 truncate font-mono text-xs text-zinc-700 dark:text-zinc-300">
-                    {ep.endpoint_url}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    {ep.regions.map((r) => (
-                      <span key={r} className="rounded border border-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:border-white/15 dark:text-zinc-500">
-                        {r}
-                      </span>
-                    ))}
-                    <span
-                      className={`size-1.5 rounded-full ${
-                        ep.health_status === 'operational'
-                          ? 'bg-emerald-500'
-                          : ep.health_status === 'degraded'
-                            ? 'bg-amber-500'
-                            : ep.health_status === 'down'
-                              ? 'bg-red-500'
-                              : 'bg-zinc-400 dark:bg-zinc-600'
-                      }`}
-                      aria-label={ep.health_status}
-                    />
-                  </span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-2 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
-              p95 latency 24h: {fmtLatency(data.p95_latency_24h)}
-              {data.current_status?.status_code != null ? ` · last HTTP ${data.current_status.status_code}` : ''}
-            </p>
-          </section>
-        )}
-
-        {/* Public incidents */}
-        <section>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-            Incident history
-          </h2>
-
-          {publicIncidents.length === 0 && data.recent_incidents.length === 0 ? (
-            <div className="rounded-xl border border-zinc-200 p-8 text-center dark:border-white/10">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">No incidents recorded</p>
-              <p className="mx-auto mt-1 max-w-sm text-xs text-zinc-500">
-                Either this service has been reliable during the observation window, or monitoring
-                coverage has not yet captured an outage.
-              </p>
-            </div>
-          ) : (
-            <>
-              {publicIncidents.length > 0 ? (
-                <div className="overflow-hidden rounded-xl border border-zinc-200 dark:border-white/10">
-                  {publicIncidents.map((inc) => (
-                    <article key={inc.incident_id} className="border-b border-zinc-200 px-5 py-4 last:border-b-0 dark:border-white/10">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={`size-2 shrink-0 rounded-full ${
-                              inc.status === 'open'
-                                ? 'bg-red-500'
-                                : inc.severity === 'critical'
-                                  ? 'bg-red-400'
-                                  : inc.severity === 'major'
-                                    ? 'bg-amber-500'
-                                    : 'bg-zinc-400 dark:bg-zinc-600'
-                            }`}
-                          />
-                          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            {inc.title}
-                          </h3>
-                        </div>
-                        <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
-                          {severityLabel(inc.severity)} · {fmtDuration(
-                            inc.duration_minutes != null ? inc.duration_minutes * 60 : null
-                          )}
-                        </span>
-                      </div>
-                      <p className="mt-1.5 font-mono text-[11px] text-zinc-500">
-                        {fmtWhen(inc.started_at)}
-                        {inc.resolved_at ? ` → ${fmtWhen(inc.resolved_at)}` : ' → ongoing'}
-                        {inc.max_latency_ms != null ? ` · peak latency ${fmtLatency(inc.max_latency_ms)}` : ''}
-                      </p>
-                      {inc.has_evidence_report && (
-                        <a
-                          href={inc.download_token ? `/portal/${inc.download_token}` : '/track'}
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-cyan-700 hover:underline dark:text-cyan-400"
-                        >
-                          View evidence report →
-                        </a>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-zinc-200 p-6 text-sm text-zinc-600 dark:border-white/10 dark:text-zinc-400">
-                  Recent observations recorded {data.recent_incidents.length} event
-                  {data.recent_incidents.length === 1 ? '' : 's'}; verified public incident reports
-                  will appear here as they are published.
-                </div>
-              )}
-            </>
-          )}
-        </section>
-
-        {/* Preferred Source - vendor intelligence, subtle, after historical data */}
-        <PreferredSourceSection variant="vendor" />
-
-        {/* Related vendors + concepts - the crawlable topical graph */}
-        {(relatedVendors.length > 0) && (
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-900 dark:text-zinc-100">
-              Related vendors
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {relatedVendors.map((v) => (
-                <Link
-                  key={v.id}
-                  href={`/track/${encodeURIComponent(v.vendor_name)}`}
-                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 transition-colors hover:border-cyan-600 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-400 dark:hover:border-cyan-400 dark:hover:text-cyan-400"
-                >
-                  {v.display_name} status
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <nav aria-label="Related concepts" className="flex flex-wrap gap-2">
-          {[
-            { href: '/research/how-reliastra-measures-vendor-reliability', label: 'Measurement methodology' },
-            { href: '/sla-evidence', label: 'SLA evidence' },
-            { href: '/incident-evidence', label: 'Incident attribution' },
-            { href: '/docs/monitoring', label: 'Monitoring docs' },
-            { href: '/track', label: 'All tracked vendors' },
-          ].map((r) => (
-            <Link
-              key={r.href}
-              href={r.href}
-              className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-600 transition-colors hover:border-cyan-600 hover:text-cyan-700 dark:border-white/10 dark:text-zinc-400 dark:hover:border-cyan-400 dark:hover:text-cyan-400"
-            >
-              {r.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* CTA */}
-        <section className="rounded-xl border border-zinc-200 bg-[#F8F9FA] p-6 dark:border-white/10 dark:bg-[#131318] md:p-8">
-          <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
-            Depend on {displayName}?
-          </h2>
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            RELIASTRA watches it for you around the clock, correlates its failures with your own
-            incidents, and produces verifiable SLA evidence when it breaks your users&apos; experience.
-          </p>
-          <Link
-            href="/"
-            className="mt-5 inline-block rounded-[10px] bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            Start monitoring free
-          </Link>
-        </section>
-
-        <p className="pt-2 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
-          Data refreshed every minute · powered by reliastra.com
         </p>
-      </div>
-    </main>
-  );
-}
+      </RecordSection>
 
-function ServiceUnavailable({ name }: { name: string }) {
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-6 dark:bg-[#0A0A0F]">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">
-          Status temporarily unavailable
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-          The RELIASTRA measurement network could not be reached while loading {name}.
-          Please refresh in a moment.
-        </p>
-        <Link
-          href="/track"
-          className="mt-6 inline-block rounded-[10px] border border-zinc-300 px-5 py-2.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50 dark:border-white/20 dark:text-zinc-200 dark:hover:bg-white/5"
-        >
-          Back to Track
-        </Link>
-      </div>
-    </main>
+      <NetworkSection record={record}>
+        <RegionPlot regions={regionMarks} className="hidden max-w-[980px] md:flex" />
+      </NetworkSection>
+
+      <IncidentsSection
+        incidents={incidents}
+        unavailable={record.incidents === null && record.publicIncidents === null}
+        vendorName={detail.display_name}
+      />
+
+      <EvidenceSection
+        published={published}
+        vendorName={detail.vendor_name}
+        unavailable={record.publicIncidents === null}
+      />
+
+      <MethodologySection record={record} cadenceSeconds={cadenceSeconds} />
+
+      <DistinctionSection vendorName={detail.display_name} />
+
+      <DependencyInfoSection record={record} />
+
+      <RelatedSection vendors={catalog} currentVendor={detail.vendor_name} />
+
+      <RecordCTA vendorName={detail.display_name} />
+    </ObservatoryShell>
   );
 }

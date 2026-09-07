@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { PARTNER_TIERS } from '@/types/partner';
 import { TierBadge } from '../shared/tier-badge';
 import { cn } from '@/lib/utils';
@@ -18,16 +18,16 @@ const fadeUp = {
 };
 
 const tierCardBorder: Record<string, string> = {
-  bronze: 'border-amber-700/30 dark:border-amber-500/20',
-  silver: 'border-slate-500/30 dark:border-slate-400/20',
-  gold: 'border-yellow-600/30 dark:border-yellow-400/20',
+  bronze: 'border-[var(--ob-signal)]/30',
+  silver: 'border-[var(--ob-line-2)]',
+  gold: 'border-yellow-600/30',
   platinum: 'border-foreground/20',
 };
 
 const tierCommissionColor: Record<string, string> = {
-  bronze: 'text-amber-800 dark:text-amber-300',
-  silver: 'text-slate-800 dark:text-slate-200',
-  gold: 'text-yellow-700 dark:text-yellow-300',
+  bronze: 'text-[var(--ob-signal)]',
+  silver: 'text-[var(--ob-text-2)]',
+  gold: 'text-yellow-700',
   platinum: 'text-foreground',
 };
 

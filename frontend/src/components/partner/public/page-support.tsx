@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { usePartnerStore } from '@/stores/partner-store';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { readApiError } from '@/lib/api-error';
 import { toast } from 'sonner';
 
@@ -170,7 +170,7 @@ export function PageSupport() {
                 <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-5 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400"
+                  className="mb-5 rounded-md border border-[var(--ob-critical)] bg-[var(--ob-critical-wash)] px-3 py-2 text-sm text-[var(--ob-critical)]"
                 >
                   {fieldError}
                 </motion.div>

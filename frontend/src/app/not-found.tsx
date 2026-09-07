@@ -1,63 +1,97 @@
 import Link from 'next/link';
+import { SiteShell } from '@/components/site/site-shell';
+import { Container } from '@/components/site/primitives';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 export const metadata = {
-  title: 'Page not found',
+  title: 'Signal lost - 404',
   robots: { index: false, follow: true },
 };
 
+/**
+ * 404.
+ *
+ * An infrastructure company's error page should read like an infrastructure
+ * error: a status code, an accurate statement of what happened, and a route
+ * back. No apology, no emoji, no illustration.
+ *
+ * Two things the previous version got wrong are fixed here:
+ * - Its primary CTA pointed at `/dashboard`, a protected route. An anonymous
+ *   visitor who hit a bad link was sent to a login redirect. The primary
+ *   action is now the public homepage.
+ * - It rendered with no header and no footer, so a lost visitor had no
+ *   navigation at all. It now renders inside the standard site shell.
+ *
+ * The copy is also technically honest: a 404 from the web tier says nothing
+ * about the state of the measurement network, and the page says exactly that
+ * rather than claiming everything is "operational".
+ */
 export default function RootNotFound() {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F7F8FA] px-6 text-[#0B1220] dark:bg-[#0B0F19] dark:text-[#F8FAFC]">
-      {/* Ambient grid + glow, matching the product shell */}
-      <div className="grid-pattern pointer-events-none absolute inset-0" aria-hidden />
-      <div
-        className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[42rem] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
-        style={{
-          background:
-            'radial-gradient(closest-side, rgba(37,99,235,0.35), transparent)',
-        }}
-        aria-hidden
-      />
-
-      <div className="relative w-full max-w-md text-center">
-        <div className="mx-auto mb-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-rs-border-subtle bg-white shadow-sm dark:bg-[#111726]">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" className="text-[#2563EB]">
-            <rect x="2" y="2" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#69748A] dark:text-[#6B7893]">
-          Error 404
-        </p>
-        <h1 className="mt-3 text-4xl font-bold tracking-[-0.03em] sm:text-5xl">
-          This page went{' '}
-          <span className="text-gradient-brand">offline</span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-sm text-[15px] leading-relaxed text-[#3F4A5C] dark:text-[#A5B0C2]">
-          The page you are looking for does not exist or was moved.
-          Your dependencies are still being monitored - nothing is down on our side.
-        </p>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            href="/dashboard"
-            className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-[#2563EB] px-5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] sm:w-auto"
+    <SiteShell>
+      <Container className="flex min-h-[62vh] flex-col justify-center py-20">
+        <div className="max-w-[62ch]">
+          <p
+            className="ob-mono text-[13px] text-[var(--ob-signal)]"
+            aria-hidden
           >
-            Go to dashboard
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-[#D5DAE2] bg-white px-5 text-sm font-medium text-[#0B1220] transition-colors hover:bg-[#F1F3F7] dark:border-[#313F58] dark:bg-transparent dark:text-[#F8FAFC] dark:hover:bg-[#182136] sm:w-auto"
-          >
-            Back to home
-          </Link>
-        </div>
+            HTTP 404
+          </p>
 
-        <p className="mt-10 font-mono text-xs text-[#69748A] dark:text-[#6B7893]">
-          status: <span className="text-[#059669]">operational</span> · route: not found · your monitors: unaffected
-        </p>
-      </div>
-    </main>
+          <h1 className="ob-display mt-5">
+            Signal
+            <br />
+            lost.
+          </h1>
+
+          <p className="ob-lede mt-8">
+            The requested resource could not be located. The link may be
+            outdated, the path may have been renamed, or the address may
+            contain a typo.
+          </p>
+
+          <p className="ob-body mt-4 max-w-[58ch]">
+            This response comes from the web tier only. It carries no
+            information about the state of the measurement network or of any
+            monitored dependency.
+          </p>
+
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <Link href="/" className="ob-btn ob-btn-signal">
+              Return to RELIASTRA
+            </Link>
+            <Link href={PUBLIC_ROUTES.track} className="ob-btn ob-btn-outline">
+              Public dependency index
+            </Link>
+          </div>
+
+          <nav
+            aria-label="Common destinations"
+            className="mt-14 border-t border-[var(--ob-line)] pt-7"
+          >
+            <p className="ob-label mb-4">Common destinations</p>
+            <ul className="grid gap-x-12 gap-y-2.5 sm:grid-cols-2">
+              {[
+                [PUBLIC_ROUTES.product, 'Product'],
+                [PUBLIC_ROUTES.pricing, 'Pricing'],
+                [PUBLIC_ROUTES.research, 'Research'],
+                [PUBLIC_ROUTES.docs, 'Documentation'],
+                [PUBLIC_ROUTES.contact, 'Contact'],
+                [AUTH_ROUTES.login, 'Sign in'],
+              ].map(([href, label]) => (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className="text-[14.5px] text-[var(--ob-text-3)] transition-colors hover:text-[var(--ob-signal)]"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </Container>
+    </SiteShell>
   );
 }

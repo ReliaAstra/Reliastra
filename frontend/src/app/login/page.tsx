@@ -3,17 +3,30 @@
 import { Suspense, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { BrandMark } from '@/components/auth/brand-mark';
+import {
+  AuthAlert,
+  AuthShell,
+  AuthSubmit,
+  Field,
+} from '@/components/site/auth/auth-shell';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
 import { readApiError, isEmailNotVerified } from '@/lib/api-error';
+import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Error messages shown to the visitor.
+ *
+ * Both authentication failures — unknown address and wrong password — map to
+ * the SAME sentence. That is deliberate and must stay: distinguishing them
+ * turns the sign-in form into an account-enumeration oracle.
+ */
 const ERRORS: Record<string, string> = {
   'Invalid email or password': 'Email or password is incorrect.',
-  'User account is disabled': 'This account has been deactivated. Contact support.',
+  'User account is disabled':
+    'This account has been deactivated. Contact support to restore access.',
 };
 
 function CustomerLoginPageContent() {
@@ -56,7 +69,7 @@ function CustomerLoginPageContent() {
         // instead of showing a misleading "wrong password" message.
         if (isEmailNotVerified(apiError)) {
           router.push(
-            `/verify-email?email=${encodeURIComponent(email.trim())}`
+            `${AUTH_ROUTES.verifyEmail}?email=${encodeURIComponent(email.trim())}`
           );
           return;
         }
@@ -89,7 +102,7 @@ function CustomerLoginPageContent() {
           : '/dashboard';
       router.push(destination);
     } catch {
-      setError('Could not reach Reliastra. Check your connection and retry.');
+      setError('Could not reach RELIASTRA. Check your connection and retry.');
     } finally {
       setLoading(false);
     }
@@ -98,7 +111,7 @@ function CustomerLoginPageContent() {
   async function handleForgot(e: FormEvent) {
     e.preventDefault();
     if (!email.trim()) {
-      setError('Enter your email first, then press "Forgot password".');
+      setError('Enter your email address first, then choose “Forgot password”.');
       return;
     }
     setError(null);
@@ -111,159 +124,106 @@ function CustomerLoginPageContent() {
     } catch {
       /* anti-enumeration: identical message regardless */
     }
+    // Identical confirmation whether or not the address exists.
     setNotice('If that address has an account, a reset link is on its way.');
   }
 
   return (
-    <div className="rs-app flex min-h-screen">
-      {/* Form column */}
-      <div className="flex w-full flex-col px-6 py-8 lg:w-[480px] lg:shrink-0 lg:px-14">
-        <Link href="/" aria-label="Reliastra home" className="inline-flex items-center gap-2.5">
-          <BrandMark size={26} />
+    <AuthShell
+      eyebrow="Customer sign in"
+      title="Sign in to RELIASTRA"
+      intro="External dependency intelligence, incident attribution and reliability evidence for your organization."
+      footer={
+        <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+          Operating client accounts as an agency or MSP?{' '}
+          <Link href={partnerUrl('login')} className="ob-link">
+            Partner sign-in
+          </Link>
+        </p>
+      }
+    >
+      {notice && <AuthAlert tone="ok">{notice}</AuthAlert>}
+      {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+      <form
+        onSubmit={handleSubmit}
+        className={notice || error ? 'mt-6 flex flex-col gap-5' : 'flex flex-col gap-5'}
+        noValidate
+      >
+        <Field
+          id="email"
+          label="Work email"
+          type="email"
+          autoComplete="email"
+          autoFocus
+          required
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <div className="flex flex-col">
+          <div className="flex items-baseline justify-between gap-4">
+            <label htmlFor="password" className="ob-field-label">
+              Password
+            </label>
+            <button
+              type="button"
+              onClick={handleForgot}
+              className="mb-2 text-[12px] font-medium text-[var(--ob-text-4)] underline decoration-[var(--ob-line-3)] underline-offset-4 transition-colors hover:text-[var(--ob-signal)]"
+            >
+              Forgot password
+            </button>
+          </div>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            className="ob-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        <AuthSubmit loading={loading} loadingLabel="Signing in…">
+          Sign in
+        </AuthSubmit>
+      </form>
+
+      <p className="mt-7 text-[13.5px] text-[var(--ob-text-3)]">
+        New to RELIASTRA?{' '}
+        <Link href={AUTH_ROUTES.signup} className="ob-link">
+          Create an organization
         </Link>
-
-        <div className="flex flex-1 items-center">
-          <div className="w-full max-w-sm">
-            <p className="rs-eyebrow">Customer sign in</p>
-            <h1 className="rs-page-title mt-2">Sign in to Reliastra</h1>
-            <p className="rs-secondary-body mt-2">
-              External dependency intelligence, incident attribution, and SLA
-              evidence for your organization.
-            </p>
-
-            {notice && (
-              <div
-                role="status"
-                className="mt-6 rounded-[10px] border border-rs-up/25 bg-rs-up-bg px-4 py-3 text-[13px] leading-relaxed text-rs-up"
-              >
-                {notice}
-              </div>
-            )}
-            {error && (
-              <div
-                role="alert"
-                className="mt-6 rounded-[10px] border border-rs-down/25 bg-rs-down-bg px-4 py-3 text-[13px] leading-relaxed text-rs-down"
-              >
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
-              <div>
-                <label htmlFor="email" className="rs-label mb-1.5 block">
-                  Work email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  autoFocus
-                  className="rs-input"
-                  placeholder="you@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <div className="mb-1.5 flex items-baseline justify-between">
-                  <label htmlFor="password" className="rs-label">
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleForgot}
-                    className="text-xs font-medium text-rs-text-tertiary transition-colors hover:text-rs-brand"
-                  >
-                    Forgot password
-                  </button>
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  className="rs-input"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="rs-button rs-button-primary rs-button-lg w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Signing in…
-                  </>
-                ) : (
-                  <>
-                    Sign in
-                    <ArrowRight size={16} aria-hidden />
-                  </>
-                )}
-              </button>
-            </form>
-
-            <p className="rs-secondary-body mt-6">
-              New to Reliastra?{' '}
-              <Link href="/signup" className="font-medium text-rs-brand hover:underline">
-                Create an organization
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-rs-border-subtle pt-4">
-          <p className="text-xs text-rs-text-tertiary">
-            Operating a customer account for an agency?{' '}
-              <Link href="/partner/login" className="text-rs-text-secondary hover:text-rs-text">
-              Partner sign-in
-            </Link>
-          </p>
-        </div>
-      </div>
-
-      {/* Proof column */}
-      <aside className="relative hidden flex-1 border-l border-rs-border-subtle bg-rs-elevated lg:block">
-        <div className="grid-pattern absolute inset-0" aria-hidden />
-        <div className="relative flex h-full flex-col justify-between p-14">
-          <div className="rs-mono text-xs text-rs-text-tertiary">
-            reliastra.com/console
-          </div>
-          <div className="max-w-lg">
-            <p className="rs-eyebrow">Why teams switch</p>
-            <h2 className="mt-3 text-[28px] font-semibold leading-tight tracking-[-0.02em] text-rs-text">
-              When the vendor is down, the record is already on your side.
-            </h2>
-            <dl className="mt-10 space-y-6">
-              {[
-                ['Independent regions', 'Every dependency checked from multiple regions with quorum confirmation.'],
-                ['Deterministic attribution', 'Incidents correlated to vendor behavior with confidence levels - not guesswork.'],
-                ['Evidence you can submit', 'Timestamped, checksummed SLA reports accepted by major cloud vendors.'],
-              ].map(([term, desc]) => (
-                <div key={term} className="border-l-2 border-rs-border pl-4">
-                  <dt className="text-sm font-semibold text-rs-text">{term}</dt>
-                  <dd className="rs-secondary-body mt-1">{desc}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <div className="rs-mono text-xs text-rs-text-tertiary">
-            SOC 2-aligned controls · Data retention per plan
-          </div>
-        </div>
-      </aside>
-    </div>
+      </p>
+      <p className="mt-3 text-[12.5px] leading-[1.6] text-[var(--ob-text-4)]">
+        By signing in you agree to the{' '}
+        <Link href={PUBLIC_ROUTES.terms} className="ob-link">
+          Terms of Service
+        </Link>{' '}
+        and{' '}
+        <Link href={PUBLIC_ROUTES.privacy} className="ob-link">
+          Privacy Policy
+        </Link>
+        .
+      </p>
+    </AuthShell>
   );
 }
 
 export default function CustomerLoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>}>
+    <Suspense fallback={<AuthBootFallback />}>
       <CustomerLoginPageContent />
     </Suspense>
+  );
+}
+
+function AuthBootFallback() {
+  return (
+    <div className="ob flex min-h-screen items-center justify-center px-6">
+      <p className="ob-label text-[var(--ob-text-4)]">Loading sign-in…</p>
+    </div>
   );
 }

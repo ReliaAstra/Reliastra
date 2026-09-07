@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { DashboardProviders } from '@/components/dashboard/shell/providers';
-import { AppShell } from '@/components/dashboard/shell/app-shell';
+import { ConsoleShell } from '@/components/console/console-shell';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardProviders>
-      <AppShell>{children}</AppShell>
+      <ConsoleShell>{children}</ConsoleShell>
     </DashboardProviders>
   );
 }

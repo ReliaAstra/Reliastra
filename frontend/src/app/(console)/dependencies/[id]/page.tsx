@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { DependencyDetailPage } from '@/components/dashboard/pages/dependency-detail';
+import { DependencyRecordPage } from '@/components/console/pages/dependency-record';
 
 export default function Page() {
   const params = useParams<{ id: string }>();
-  return <DependencyDetailPage id={params.id} />;
+  return <DependencyRecordPage id={params.id} />;
 }

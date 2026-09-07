@@ -165,7 +165,9 @@ test.describe('checkout entry and return', () => {
     await page.goto('/#pricing', { waitUntil: 'domcontentloaded' });
     const cta = page.locator('[data-testid="pricing-cta-pro"]');
     await expect(cta).toBeVisible({ timeout: 30_000 });
-    await cta.getByRole('button').click();
+    // The CTA is a real anchor, not a scripted button: it must work without
+    // JavaScript and be crawlable.
+    await cta.getByRole('link').click();
     await page.waitForURL(/\/signup/, { timeout: 30_000 });
     expect(page.url()).not.toContain('checkout');
   });

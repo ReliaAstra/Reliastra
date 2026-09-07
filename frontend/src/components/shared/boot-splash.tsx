@@ -1,47 +1,28 @@
 /**
  * Boot splash shown while session state is being resolved.
  *
- * Previously this markup was inlined twice in `app/page.tsx`. It now also
- * guards the console route group, where it replaces the previous behaviour of
- * rendering the entire dashboard chrome to an unauthenticated visitor and only
- * redirecting afterwards.
+ * It guards the console route group and the marketing entry point, so it is
+ * the very first thing a returning operator sees. It is therefore rendered in
+ * the product's own palette — void background, restrained signal rule — and
+ * not in the default light theme with a cyan checkmark, which belonged to no
+ * part of RELIASTRA. There is no spinner: a two-second wait does not need
+ * animation to be legible, and reduced-motion users get the same thing.
  */
 export function BootSplash() {
   return (
     <div
       role="status"
       aria-live="polite"
-      className="flex min-h-screen items-center justify-center bg-white text-[#09090B] dark:bg-[#0A0A0F] dark:text-[#FAFAFA]"
+      className="flex min-h-screen items-center justify-center bg-[#08090A] px-6 text-[#F2F2EE]"
     >
-      <div className="flex items-center gap-3">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-          className="animate-pulse text-[#0891B2] dark:text-[#22D3EE]"
-        >
-          <rect
-            x="2"
-            y="2"
-            width="20"
-            height="20"
-            rx="4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M8 12L11 15L16 9"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="font-mono text-xs tracking-widest uppercase">
+      <div className="text-center">
+        <p className="text-[13px] font-semibold uppercase tracking-[0.34em] text-[#F2F2EE]">
           RELIASTRA
-        </span>
+        </p>
+        <div className="mx-auto mt-4 h-px w-24 bg-[#D9A441]" />
+        <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.16em] text-[#666B70]">
+          Restoring session
+        </p>
       </div>
       <span className="sr-only">Loading</span>
     </div>

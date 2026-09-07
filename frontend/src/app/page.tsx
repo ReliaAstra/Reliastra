@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { HomeClient } from '@/components/home/home-client';
+import { HomeLanding } from '@/components/site/home/home-landing';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
   SITE_URL,
@@ -111,7 +112,7 @@ export default function Home() {
           </ul>
         </div>
       </noscript>
-      <HomeClient />
+      <HomeClient landing={<HomeLanding />} />
     </>
   );
 }

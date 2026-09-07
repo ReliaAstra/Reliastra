@@ -82,3 +82,8 @@ local-*
 
 # Local dev-stack state (postgres cluster, redis, logs) - never committed
 backend/.dev-stack/
+
+# ── Visual QA artefacts (rendered screenshots, local only) ────────────
+frontend/.qa/
+frontend/test-results/
+frontend/playwright-report/

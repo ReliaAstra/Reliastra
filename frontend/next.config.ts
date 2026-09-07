@@ -6,6 +6,14 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
+  // Cinematic photography is the public site's heaviest asset class. AVIF/WebP
+  // negotiation plus an explicit quality allow-list keeps the hero under
+  // control on mobile without hand-exporting derivatives.
+  images: {
+    formats: ["image/avif", "image/webp"],
+    qualities: [70, 75, 82],
+    deviceSizes: [360, 420, 640, 828, 1080, 1280, 1600, 1920, 2560],
+  },
   // Allow Arena live preview host (e2b) to fetch dev resources - fixes "stuck at loading UI"
   // Next.js 15+ blocks cross-origin dev asset requests by default.
   allowedDevOrigins: [

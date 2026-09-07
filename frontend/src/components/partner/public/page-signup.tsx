@@ -1,28 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 import { usePartnerStore } from '@/stores/partner-store';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { getStoredReferralCode } from './referral-banner';
 import { getSignupAttribution } from '@/lib/attribution';
 import { readApiError } from '@/lib/api-error';
 import { VerifyOtpStep, type VerifiedSession } from './verify-otp-step';
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 16 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.07, duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const },
-  }),
-};
+import {
+  AuthAlert,
+  AuthSubmit,
+  Field,
+} from '@/components/site/auth/auth-shell';
+import { partnerRouteUrl, partnerUrl } from '@/lib/routes';
 
 export function PageSignup() {
   const navigate = navigatePartner;
@@ -122,73 +115,60 @@ export function PageSignup() {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center px-4 py-8">
-      <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-0 rounded-lg border border-border/60 overflow-hidden">
-        {/* LEFT: Value proposition */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          className="hidden lg:flex flex-col justify-between p-10 bg-neutral-950 text-neutral-50"
-        >
-          <div>
-            <motion.div variants={fadeUp} custom={0} className="flex items-center gap-2 mb-12">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="font-mono text-xs font-semibold tracking-widest uppercase">
-                RELIASTRA Partner Network
-              </span>
-            </motion.div>
-
-            <motion.h2 variants={fadeUp} custom={1} className="text-3xl font-bold tracking-tight leading-tight mb-4">
-              Start earning with RELIASTRA.
-            </motion.h2>
-            <motion.p variants={fadeUp} custom={2} className="text-base leading-relaxed text-neutral-400">
-              Share RELIASTRA with someone who needs it. When they become a paying customer, you earn 30% every month they remain subscribed.
-            </motion.p>
-          </div>
-
-          <motion.div variants={fadeUp} custom={3} className="mt-12">
-            <div className="flex items-center gap-4 text-sm text-neutral-500">
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>30% recurring</span>
+    <div className="ob-container">
+      <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:gap-20">
+        {/* Terms of the programme, stated before the form - the only claims
+            here are the ones the commission page and program terms make. */}
+        <div className="order-2 lg:order-1 lg:border-r lg:border-[var(--ob-line)] lg:pr-20">
+          <p className="ob-label">Partner network</p>
+          <h2 className="ob-h2 mt-4 max-w-[18ch]">
+            Recommend the evidence layer. Earn while it runs.
+          </h2>
+          <p className="ob-body mt-5 max-w-[52ch]">
+            Refer a team that depends on services it does not control. When
+            they subscribe, you earn a share of that subscription for as long
+            as it stays active.
+          </p>
+          <dl className="mt-10 max-w-[52ch]">
+            {[
+              [
+                '30% recurring',
+                'Of the monthly subscription fee, every month the referred customer remains subscribed.',
+              ],
+              [
+                'No caps, no tiers on rate',
+                'The commission rate does not decrease as volume grows.',
+              ],
+              [
+                'Monthly payouts',
+                'Subject to the hold period, reversal rules and payout minimum set out in the commission terms.',
+              ],
+            ].map(([term, desc]) => (
+              <div key={term} className="border-t border-[var(--ob-line)] py-5">
+                <dt className="text-[14.5px] font-semibold tracking-[-0.01em] text-[var(--ob-text)]">
+                  {term}
+                </dt>
+                <dd className="mt-1.5 text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
+                  {desc}
+                </dd>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>No caps</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>Monthly payouts</span>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+            ))}
+          </dl>
+          <p className="ob-small mt-6">
+            Full detail:{' '}
+            <Link href={partnerUrl('commission')} className="ob-link">
+              commission structure
+            </Link>{' '}
+            and{' '}
+            <Link href={partnerRouteUrl('terms')} className="ob-link">
+              program terms
+            </Link>
+            .
+          </p>
+        </div>
 
-        {/* RIGHT: Form */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          className="p-6 sm:p-10 bg-background"
-        >
-          {/* Mobile logo */}
-          <motion.div variants={fadeUp} custom={0} className="mb-8 lg:hidden">
-            <button
-              onClick={() => navigate('home')}
-              className="flex items-center gap-2 transition-opacity hover:opacity-70"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="2" y="2" width="20" height="20" rx="4" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="font-mono text-xs font-semibold tracking-widest uppercase text-foreground">
-                RELIASTRA
-              </span>
-            </button>
-          </motion.div>
-
+        {/* Form */}
+        <div className="order-1 w-full max-w-[400px] lg:order-2">
           {pendingEmail ? (
             <VerifyOtpStep
               email={pendingEmail}
@@ -198,118 +178,97 @@ export function PageSignup() {
             />
           ) : (
             <>
-          <motion.div variants={fadeUp} custom={1} className="mb-8">
-            <h1 className="text-xl font-semibold text-foreground">Start earning with RELIASTRA.</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create your account to get started.
-            </p>
-            {referralCode && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-3 flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/30 px-3 py-2"
-              >
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                <span className="text-xs text-emerald-800 dark:text-emerald-300">
-                  Referred by <span className="font-mono font-medium">{referralCode}</span>
-                </span>
-              </motion.div>
-            )}
-          </motion.div>
+              <p className="ob-label text-[var(--ob-signal)]">Apply</p>
+              <h1 className="ob-h2 mt-4 text-[clamp(1.75rem,4vw,2.25rem)]">
+                Create a partner account.
+              </h1>
+              <p className="ob-body mt-4 text-[14.5px]">
+                Applying to the partner network does not create a monitoring
+                account. To monitor your own dependencies,{' '}
+                <Link href="/signup" className="ob-link">
+                  start monitoring
+                </Link>{' '}
+                instead.
+              </p>
 
-          {/* Error */}
-          {fieldError && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-700 dark:text-red-400"
-            >
-              {fieldError}
-            </motion.div>
-          )}
-
-          <motion.form variants={fadeUp} custom={2} onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="signup-name" className="text-xs font-mono uppercase tracking-wider">
-                Name
-              </Label>
-              <Input
-                id="signup-name"
-                type="text"
-                placeholder="Jane Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="signup-email" className="text-xs font-mono uppercase tracking-wider">
-                Email
-              </Label>
-              <Input
-                id="signup-email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="signup-password" className="text-xs font-mono uppercase tracking-wider">
-                Password
-              </Label>
-              <Input
-                id="signup-password"
-                type="password"
-                placeholder="Min. 8 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </div>
-
-            <Button type="submit" disabled={loading} className="w-full mt-6">
-              {loading ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                <>
-                  CREATE ACCOUNT
-                  <ArrowRight className="size-4" />
-                </>
+              {referralCode && (
+                <div className="mt-6">
+                  <AuthAlert tone="note">
+                    Referred by{' '}
+                    <span className="ob-mono text-[var(--ob-text-2)]">
+                      {referralCode}
+                    </span>
+                    . Your application will be attributed to this partner.
+                  </AuthAlert>
+                </div>
               )}
-            </Button>
-          </motion.form>
 
-          <motion.div variants={fadeUp} custom={3} className="mt-6">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <button
-                onClick={() => navigate('login')}
-                className="font-medium text-foreground underline-offset-4 transition-colors hover:underline"
-              >
-                Sign in
-              </button>
-            </p>
-          </motion.div>
+              {fieldError && (
+                <div className="mt-6">
+                  <AuthAlert tone="error">{fieldError}</AuthAlert>
+                </div>
+              )}
 
-          <motion.div variants={fadeUp} custom={4} className="mt-4">
-            <button
-              onClick={() => navigate('home')}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="size-3" />
-              Back to Partner Network
-            </button>
-          </motion.div>
+              <form onSubmit={handleSubmit} className="mt-9 flex flex-col gap-6">
+                <Field
+                  id="partner-signup-name"
+                  label="Full name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  required
+                />
+                <Field
+                  id="partner-signup-email"
+                  label="Work email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  inputMode="email"
+                  required
+                />
+                <Field
+                  id="partner-signup-password"
+                  label="Password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  hint="At least 8 characters."
+                />
+
+                <AuthSubmit loading={loading} loadingLabel="Creating account…">
+                  Create partner account
+                </AuthSubmit>
+
+                <p className="ob-help">
+                  We email a verification code before the account becomes
+                  active. By continuing you accept the{' '}
+                  <Link href={partnerRouteUrl('terms')} className="ob-link">
+                    program terms
+                  </Link>{' '}
+                  and{' '}
+                  <Link href={partnerRouteUrl('privacy')} className="ob-link">
+                    privacy notice
+                  </Link>
+                  .
+                </p>
+              </form>
+
+              <p className="ob-small mt-8 border-t border-[var(--ob-line)] pt-6">
+                Already a partner?{' '}
+                <Link href={partnerUrl('login')} className="ob-link">
+                  Sign in
+                </Link>
+                .
+              </p>
             </>
           )}
-        </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from './api';
@@ -119,6 +119,30 @@ export function useEvidence() {
   const ready = useSessionReady();
   return useQuery({ queryKey: keys.evidence, queryFn: api.evidence, enabled: ready });
 }
+/**
+ * A single evidence record. Separate from `useEvidence()` so the record page
+ * can be opened directly (or refreshed) without the library being in cache.
+ */
+export function useEvidenceRecord(id: string) {
+  const ready = useSessionReady();
+  return useQuery({
+    queryKey: keys.evidenceItem(id),
+    queryFn: () => api.evidenceById(id),
+    enabled: Boolean(id) && ready,
+  });
+}
+
+export function useRegenerateEvidence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.regenerateEvidence(id),
+    onSuccess: (record) => {
+      qc.setQueryData(keys.evidenceItem(record.id), record);
+      qc.invalidateQueries({ queryKey: keys.evidence });
+    },
+  });
+}
+
 export function useMe() {
   return useQuery({ queryKey: keys.me, queryFn: api.me });
 }
@@ -177,6 +201,30 @@ export function useApplications(clientId: string | null | undefined, enabled = t
     queryFn: () => api.applications(clientId as string),
     enabled: Boolean(clientId) && enabled && ready,
   });
+}
+
+/**
+ * Every application across every client.
+ *
+ * There is no org-wide applications endpoint - the API exposes them per
+ * client - so this fans out one cached request per client. That is what makes
+ * the `dependency → application → client` join possible on the portfolio
+ * page, and the results are shared with the per-client views by query key.
+ */
+export function useAllApplications(clientIds: string[], enabled = true) {
+  const ready = useSessionReady();
+  const results = useQueries({
+    queries: clientIds.map((id) => ({
+      queryKey: keys.clientApplications(id),
+      queryFn: () => api.applications(id),
+      enabled: enabled && ready,
+    })),
+  });
+  return {
+    data: results.flatMap((r) => r.data ?? []),
+    isLoading: results.some((r) => r.isLoading),
+    isError: results.some((r) => r.isError),
+  };
 }
 
 export function useCreateClient() {

@@ -1,7 +1,7 @@
 'use client';
 
-import { AgencyOnboardingPage } from '@/components/dashboard/pages/agency-onboarding';
+import { ClientSetupSequence } from '@/components/sequence/client-setup';
 
 export default function Page() {
-  return <AgencyOnboardingPage />;
+  return <ClientSetupSequence />;
 }

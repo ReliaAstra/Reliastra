@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { navigatePartner } from '@/components/landing/theme';
+import { navigatePartner } from '@/components/partner/public/navigation';
 import { CommissionBasisNote } from '../commission-basis-note';
 
 const fadeUp = {
@@ -172,7 +172,7 @@ export function PageCommission() {
 
                 {/* Row 3: You continue earning */}
                 <div className="flex justify-center">
-                  <div className="rounded-md border border-emerald-500/30 bg-emerald-50/30 px-6 py-3 text-center">
+                  <div className="rounded-md border border-[var(--ob-healthy)]/30 bg-[var(--ob-healthy-wash)] px-6 py-3 text-center">
                     <p className="text-sm font-semibold text-foreground">
                       You continue earning
                     </p>

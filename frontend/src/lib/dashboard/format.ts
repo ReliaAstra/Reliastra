@@ -1,14 +1,27 @@
 import { formatDistanceToNowStrict, format } from 'date-fns';
 
+/**
+ * Short human-quotable codes.
+ *
+ * `slice(0, 4)` after stripping only dashes produced collisions and garbage
+ * on non-UUID identifiers: three different evidence rows with ids `ev_a1`,
+ * `ev_a2`, `ev_a3` all rendered as `RPT-EV_A`, because the underscore
+ * survived and the discriminating character was past position four. Strip
+ * every non-alphanumeric and take the LAST characters, which is where entropy
+ * actually lives in both UUIDs and prefixed ids.
+ */
+function shortCode(id: string, length = 4): string {
+  const compact = id.replace(/[^a-z0-9]/gi, '').toUpperCase();
+  return compact.slice(-length) || compact || '0000';
+}
+
 export function incidentCode(id: string, displayId?: string): string {
   if (displayId) return displayId;
-  const compact = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `INC-${compact}`;
+  return `INC-${shortCode(id)}`;
 }
 
 export function reportCode(id: string): string {
-  const compact = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `RPT-${compact}`;
+  return `RPT-${shortCode(id)}`;
 }
 
 export function timeAgo(iso: string | null | undefined): string {
@@ -71,14 +84,27 @@ export function confidenceFromScore(score: number): 'HIGH' | 'MEDIUM' | 'LOW' {
   return 'LOW';
 }
 
+/**
+ * Region codes appear in two forms: the four values a dependency can be
+ * configured with (`us-east`), and the zone a worker recorded an observation
+ * from (`us-east-1`). Both must read as the same place, so a trailing zone
+ * index is normalised away before lookup and printed back afterwards.
+ */
 export function regionLabel(code: string): string {
   const map: Record<string, string> = {
     'us-east': 'US East',
     'us-west': 'US West',
     'eu-west': 'EU West',
+    'eu-central': 'EU Central',
     'ap-south': 'AP South',
     'ap-southeast': 'AP Southeast',
+    'ap-northeast': 'AP Northeast',
     'sa-east': 'SA East',
+    'af-south': 'AF South',
+    'me-south': 'ME South',
   };
-  return map[code] || code;
+  if (map[code]) return map[code];
+  const zoned = /^(.*)-(\d+)$/.exec(code);
+  if (zoned && map[zoned[1]]) return `${map[zoned[1]]} ${zoned[2]}`;
+  return code;
 }

@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { usePartnerStore } from '@/stores/partner-store';
-import { PageLanding } from '@/components/landing/page-landing';
 import { PublicLayout } from '@/components/partner/public/public-layout';
 import { DashboardLayout } from '@/components/partner/dashboard/dashboard-layout';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
@@ -40,8 +39,16 @@ function isDashboardRoute(page: PartnerPage, authenticated: boolean): boolean {
  * full public landing as the default SSR output and only swaps to the
  * authenticated dashboard after the client has proven a session. Crawlers
  * and first-time visitors always receive meaningful, indexable HTML.
+ *
+ * The landing arrives as a `landing` prop rather than an import. That is
+ * deliberate: `HomeClient` is a client component, and importing the landing
+ * here would drag the entire marketing composition - twelve sections of
+ * static copy - into the client bundle and force it through hydration.
+ * Passed as a prop, the landing stays a pure server tree (and can therefore
+ * do its own server-side data fetching, which the public-intelligence
+ * section needs), while this component keeps only the session logic.
  */
-export function HomeClient() {
+export function HomeClient({ landing }: { landing: ReactNode }) {
   const currentPage = usePartnerStore((s) => s.currentPage);
   const authStatus = usePartnerStore((s) => s.authStatus);
   const user = usePartnerStore((s) => s.user);
@@ -157,7 +164,7 @@ export function HomeClient() {
   // ── SSR / pre-hydration: always emit the full public landing so crawlers
   // receive H1 + copy + internal links in the initial HTML. ──
   if (!mounted) {
-    return <PageLanding />;
+    return <>{landing}</>;
   }
 
   const isPublicPage = !isDashboardRoute(
@@ -166,7 +173,7 @@ export function HomeClient() {
   );
 
   if (currentPage === 'landing') {
-    return <PageLanding />;
+    return <>{landing}</>;
   }
 
   if (isPublicPage) {
@@ -179,11 +186,11 @@ export function HomeClient() {
     }
     // Authenticated without identity: show landing (crawlable) while the
     // repair effect demotes the broken session - never a blank page.
-    return <PageLanding />;
+    return <>{landing}</>;
   }
 
   if (isDashboardRoute(currentPage, false)) {
-    return <PageLanding />;
+    return <>{landing}</>;
   }
 
   return <PublicLayout />;

@@ -1,6 +1,6 @@
 'use client';
 
-import { SettingsPage } from '@/components/dashboard/pages/settings';
+import { SettingsPage } from '@/components/console/pages/settings';
 
 export default function Page() {
   return <SettingsPage />;

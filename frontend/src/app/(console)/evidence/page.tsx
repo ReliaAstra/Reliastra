@@ -1,7 +1,7 @@
 'use client';
 
-import { EvidenceLibraryPage } from '@/components/dashboard/pages/evidence-library';
+import { EvidencePage } from '@/components/console/pages/evidence';
 
 export default function Page() {
-  return <EvidenceLibraryPage />;
+  return <EvidencePage />;
 }

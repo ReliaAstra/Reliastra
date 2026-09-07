@@ -354,8 +354,12 @@ export interface PaymentMethod {
 
 export interface AgencyClient {
   id: string;
+  /** Present on the API response; absent from some older mock rows. */
+  org_id?: string;
   name: string;
   description?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AgencyApplication {

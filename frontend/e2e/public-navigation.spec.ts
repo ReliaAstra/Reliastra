@@ -25,13 +25,35 @@ import { expect, test, type Page } from '@playwright/test';
 
 const PUBLIC_ROUTES = [
   '/',
+  '/product',
+  '/external-dependency-intelligence',
+  '/dependency-monitoring',
+  '/sla-evidence',
+  '/incident-evidence',
   '/track',
+  '/pricing',
   '/research',
   '/research/the-dependency-gap',
   '/research/how-reliastra-measures-vendor-reliability',
   '/research/reliastra-research-agenda',
+  '/glossary',
+  '/docs',
+  '/docs/quickstart',
+  '/docs/monitoring',
+  '/docs/evidence',
+  '/docs/api',
+  '/about',
+  '/contact',
+  '/status',
+  '/security',
   '/privacy',
   '/terms',
+  '/partner',
+  '/partner/how-it-works',
+  '/partner/commission',
+  '/partner/login',
+  '/partner/signup',
+  '/partner/forgot-password',
   '/signup',
   '/login',
   '/verify-email',
@@ -39,13 +61,23 @@ const PUBLIC_ROUTES = [
   '/support',
 ];
 
-/** Sections the canonical landing composition must contain, in this order. */
+/**
+ * Sections the canonical homepage composition must contain, in this order.
+ * Mirrors `LANDING_SECTIONS` in `src/lib/routes.ts`; the unit test asserts the
+ * header/footer only anchor at ids from that list, and this asserts the ids
+ * are actually rendered.
+ */
 const LANDING_SECTION_IDS = [
+  'top',
+  'problem',
+  'how-it-works',
+  'chain',
   'evidence',
-  'live',
   'research',
-  'comparison',
+  'public-intelligence',
+  'partners',
   'pricing',
+  'reference',
 ];
 
 const PROTECTED_ROUTES = [
@@ -58,10 +90,13 @@ const PROTECTED_ROUTES = [
 ];
 
 const VIEWPORTS = [
+  { name: 'mobile-375', width: 375, height: 812 },
   { name: 'mobile-390', width: 390, height: 844 },
   { name: 'tablet-768', width: 768, height: 1024 },
+  { name: 'tablet-1024', width: 1024, height: 1366 },
   { name: 'laptop-1280', width: 1280, height: 800 },
   { name: 'desktop-1440', width: 1440, height: 900 },
+  { name: 'desktop-1920', width: 1920, height: 1080 },
 ];
 
 interface Captured {

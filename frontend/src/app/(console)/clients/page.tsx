@@ -1,7 +1,7 @@
 'use client';
 
-import { ClientsPage } from '@/components/dashboard/pages/clients';
+import { AgencyPortfolioPage } from '@/components/agency/portfolio';
 
 export default function Page() {
-  return <ClientsPage />;
+  return <AgencyPortfolioPage />;
 }
