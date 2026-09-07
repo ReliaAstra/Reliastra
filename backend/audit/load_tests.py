@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reliastra load & stress tests — Scenarios A–F.
+"""Reliastra load & stress tests - Scenarios A–F.
 
 Requires a live stack. Emits results to audit/results/load_results.json.
 """
@@ -216,7 +216,7 @@ async def scenario_f() -> None:
     rows = psql("INSERT INTO check_results (id, executed_at, dependency_id, org_id, region, latency_ms, status_code, is_up, error_message, quorum_confirmed) "
                 f"SELECT gen_random_uuid(), {future}, '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 'us-east', 1.0, 200, true, NULL, false RETURNING id;")
     record("F: future-dated insert (with DEFAULT partition)", "pass" if rows else "fail",
-           f"insert returned row: {rows[:1]} — landed in DEFAULT partition")
+           f"insert returned row: {rows[:1]} - landed in DEFAULT partition")
 
     # Show what happens WITHOUT a DEFAULT partition
     out = subprocess.run(

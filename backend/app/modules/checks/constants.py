@@ -16,7 +16,7 @@ BLOCKED_BY_SECURITY_POLICY_PREFIX: str = "URL blocked by security policy"
 REDIRECT_BLOCKED_BY_SECURITY_POLICY_PREFIX: str = (
     "Redirect blocked by security policy"
 )
-#: Too many redirect hops — an endpoint problem, not a policy rejection.
+#: Too many redirect hops - an endpoint problem, not a policy rejection.
 TOO_MANY_REDIRECTS_PREFIX: str = "Too many redirects"
 
 
@@ -40,7 +40,7 @@ class CheckState(str, Enum):
     SUCCESSFUL = "successful"
     #: Last probe reached the target and it failed (status/timeout/error).
     TARGET_FAILED = "target_failed"
-    #: Last probe was refused by the SSRF policy — an endpoint configuration
+    #: Last probe was refused by the SSRF policy - an endpoint configuration
     #: problem, never a vendor outage.
     BLOCKED_BY_SECURITY_POLICY = "blocked_by_security_policy"
     #: RELIASTRA tried to publish the probe and could not (broker down, ...).

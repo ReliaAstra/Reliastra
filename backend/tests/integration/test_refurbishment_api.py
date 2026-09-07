@@ -37,7 +37,7 @@ async def test_agency_ai_and_dashboard_endpoints(
     # The agency API is currently unmounted: ``agencies_router`` is commented
     # out in ``app/main.py``. The module (and these routes) is preserved and
     # comes back by uncommenting one line, at which point these two become
-    # 201 assertions again — see commit 9199e5b.
+    # 201 assertions again - see commit 9199e5b.
     client_response = await async_client.post(
         "/v1/clients",
         headers=headers,

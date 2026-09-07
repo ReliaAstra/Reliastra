@@ -49,7 +49,7 @@ export function FirstValueStep({
         <p className="rs-eyebrow">Step 4 · First value</p>
         <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-rs-text">Reliastra is now observing this dependency.</h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-rs-text-secondary">
-          Independent checks run from multiple regions. This is the first real observation — not a synthetic demo.
+          Independent checks run from multiple regions. This is the first real observation - not a synthetic demo.
         </p>
       </div>
 
@@ -57,7 +57,7 @@ export function FirstValueStep({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-rs-text">{dep?.name ?? 'Your dependency'}</div>
-            <div className="mt-1 truncate font-mono text-xs text-rs-text-tertiary">{dep?.endpoint_url ?? '—'}</div>
+            <div className="mt-1 truncate font-mono text-xs text-rs-text-tertiary">{dep?.endpoint_url ?? '-'}</div>
             <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-rs-up/20 bg-rs-up-bg px-2.5 py-1 text-xs font-medium text-rs-up">
               <span className="h-1.5 w-1.5 rounded-full bg-rs-up rs-pulse-degraded" /> Monitoring active
             </div>
@@ -71,15 +71,15 @@ export function FirstValueStep({
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Metric icon={Activity} label="HTTP status" value={result ? String(result.status_code ?? '—') : health ? '200' : '—'} sub={result ? (result.is_up ? 'up' : 'down') : 'checking'} />
-          <Metric icon={Signal} label="Response time" value={result ? `${formatLatency(result.latency_ms)} ms` : health ? `${formatLatency(health.avg_latency_ms_24h ?? 0)} ms` : '—'} sub="p50 last check" />
+          <Metric icon={Activity} label="HTTP status" value={result ? String(result.status_code ?? '-') : health ? '200' : '-'} sub={result ? (result.is_up ? 'up' : 'down') : 'checking'} />
+          <Metric icon={Signal} label="Response time" value={result ? `${formatLatency(result.latency_ms)} ms` : health ? `${formatLatency(health.avg_latency_ms_24h ?? 0)} ms` : '-'} sub="p50 last check" />
           <Metric icon={Globe} label="Observed from" value={dep?.regions ? dep.regions.join(' · ') : 'us-east · eu-west'} sub="independent regions" />
           <Metric icon={Clock} label="Check interval" value={`${dep?.check_interval_seconds ?? 60}s`} sub="quorum in 60s window" />
         </div>
 
         {!hasObservation && (
           <p className="mt-4 text-xs leading-relaxed text-rs-text-tertiary">
-            First observation appears within one interval. No data is fabricated — this screen updates live when the next check completes.
+            First observation appears within one interval. No data is fabricated - this screen updates live when the next check completes.
           </p>
         )}
       </div>
@@ -87,12 +87,12 @@ export function FirstValueStep({
       <div className="mt-6 rounded-[10px] border border-rs-brand/20 bg-rs-brand-subtle px-4 py-3">
         <p className="text-sm font-medium text-rs-text">Why this matters</p>
         <p className="mt-1 text-[13px] leading-relaxed text-rs-text-secondary">
-          <span className="font-medium text-rs-text">Monitoring tells you something is wrong.</span> Reliastra helps you establish independent evidence about what happened and whether an external dependency contributed — with regional comparison, timeline, and checksummed report.
+          <span className="font-medium text-rs-text">Monitoring tells you something is wrong.</span> Reliastra helps you establish independent evidence about what happened and whether an external dependency contributed - with regional comparison, timeline, and checksummed report.
         </p>
       </div>
 
       <div className="mt-6 flex justify-end">
-        <RsButton onClick={onNext}>{hasObservation ? 'Continue' : 'Continue — I understand'}</RsButton>
+        <RsButton onClick={onNext}>{hasObservation ? 'Continue' : 'Continue - I understand'}</RsButton>
       </div>
     </div>
   );

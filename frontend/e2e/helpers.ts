@@ -4,17 +4,17 @@ import { expect, type APIRequestContext, type Page } from '@playwright/test';
 export const PAYSTACK_MOCK = process.env.E2E_PAYSTACK_URL ?? 'http://127.0.0.1:9200';
 export const MAIL_SINK = process.env.E2E_MAILHOG_URL ?? 'http://127.0.0.1:8025';
 
-/** The published, contractual pricing — asserted, never read from the UI. */
+/** The published, contractual pricing - asserted, never read from the UI. */
 export const CONTRACT = {
   productAmountDisplay: '$39.00 (USD)',
   productAmountMinor: 3900,
   productCurrency: 'USD',
   actualChargeDisplay: '₦60,000.00 (NGN)',
-  paymentAmountMinor: 6_000_000, // kobo — set independently, NOT 3900 converted
+  paymentAmountMinor: 6_000_000, // kobo - set independently, NOT 3900 converted
   paymentCurrency: 'NGN',
   provider: 'Paystack',
   notice:
-    "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are working toward enabling USD payment options for our global customers.",
+    "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
   annualProductDisplay: '$390.00 (USD)',
   annualChargeDisplay: '₦600,000.00 (NGN)',
   annualAmountMinor: 60_000_000,
@@ -36,7 +36,7 @@ export function decodeMailRaw(raw: string): string {
       const text = Buffer.from(m[1].replace(/\s+/g, ''), 'base64').toString('utf8');
       if (/reliastra/i.test(text)) out.push(text);
     } catch {
-      /* not valid base64 — a body that needed no encoding */
+      /* not valid base64 - a body that needed no encoding */
     }
   }
   if (!out.length) {
@@ -72,7 +72,7 @@ export async function waitForOtp(request: APIRequestContext, email: string): Pro
       for (const msg of body.messages ?? []) {
         if (String(msg.to).toLowerCase() !== email.toLowerCase()) continue;
         // The subject leads with the code ("347668 is your Reliastra
-        // verification code") — the most reliable source; the decoded body
+        // verification code") - the most reliable source; the decoded body
         // is the fallback.
         const fromSubject = decodeMimeWords(String(msg.subject ?? '')).match(/\b(\d{6})\b/);
         if (fromSubject) return fromSubject[1];
@@ -122,7 +122,7 @@ export async function signIn(page: Page, email: string, password: string): Promi
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   // Fill-hydration race: on a cold dev server the static form accepts input
   // before React hydrates, and hydration then re-renders the controlled
-  // inputs with their store values — wiping a just-typed address. Fill, and
+  // inputs with their store values - wiping a just-typed address. Fill, and
   // only proceed once the values have SURVIVED a settle tick.
   for (let attempt = 0; attempt < 6; attempt++) {
     await page.fill('#email', email);
@@ -150,7 +150,7 @@ export async function signIn(page: Page, email: string, password: string): Promi
   }
   // Let the app settle before any hard navigation: the dashboard bootstrap
   // rotates the refresh token, and unloading the document mid-response would
-  // leave the rotated value unpersisted — the next page load would then reuse
+  // leave the rotated value unpersisted - the next page load would then reuse
   // the spent token and the backend's reuse detection would revoke the
   // session family. A human who clicks fast enough can hit this too; the
   // journey must not trip over it, so wait for quiescence.
@@ -167,7 +167,7 @@ export async function signIn(page: Page, email: string, password: string): Promi
 
 /**
  * What the stand-in recorded of the `transaction/initialize` call RELIASTRA
- * actually made — the authoritative answer to "what did we ask to be charged",
+ * actually made - the authoritative answer to "what did we ask to be charged",
  * as opposed to what the page displayed.
  */
 export interface PaystackInitCapture {
@@ -198,7 +198,7 @@ export async function lastPaystackInit(request: APIRequestContext): Promise<Pays
  *
  * The hosted page and the popup both end up here, because "the bank declined
  * it" is not something a test can arrange by clicking a real bank. Setting the
- * outcome — rather than stubbing Paystack inside the app — keeps the customer's
+ * outcome - rather than stubbing Paystack inside the app - keeps the customer's
  * path identical to production's: RELIASTRA still verifies server-side and is
  * still the only thing that decides whether the plan activates.
  */
@@ -228,7 +228,7 @@ export async function resetPaystackMock(request: APIRequestContext): Promise<voi
  * missing inline spacing between adjacent inline runs of innerText. */
 export function expectTextContains(text: string, ...needles: string[]) {
   // Strip ALL whitespace: innerText glues adjacent inline runs together
-  // ("…(NGN)per month") and CSS uppercases labels — we assert content, not
+  // ("…(NGN)per month") and CSS uppercases labels - we assert content, not
   // typography.
   const hay = text.toLowerCase().replace(/\s+/g, '');
   for (const needle of needles) {

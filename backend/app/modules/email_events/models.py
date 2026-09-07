@@ -13,7 +13,7 @@ from app.db.base import Base, TimestampMixin, UUIDMixin
 class EmailRecord(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "email_records"
 
-    # Resend email ID (re_...) — unique when present
+    # Resend email ID (re_...) - unique when present
     resend_id: Mapped[str | None] = mapped_column(
         String(64), unique=True, nullable=True, index=True
     )

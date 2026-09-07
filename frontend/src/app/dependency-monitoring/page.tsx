@@ -37,7 +37,7 @@ export default function DependencyMonitoringPage() {
       <MarketingPage
         eyebrow="Capability"
         title="Third-party dependency monitoring"
-        lede="Any HTTP endpoint — Stripe, Auth0, Twilio, Cloudflare, OpenAI, AWS — checked on a fixed interval from independent regions, with incidents declared by quorum."
+        lede="Any HTTP endpoint - Stripe, Auth0, Twilio, Cloudflare, OpenAI, AWS - checked on a fixed interval from independent regions, with incidents declared by quorum."
         breadcrumbs={crumbs}
         related={[
           { label: 'Live vendor status', href: '/track', description: 'Aggregated posture for public vendors.' },
@@ -50,7 +50,7 @@ export default function DependencyMonitoringPage() {
           <h2>Who this is for</h2>
           <p>
             Teams whose product depends on external APIs, SaaS webhooks, auth providers or
-            cloud endpoints — and who currently learn about vendor degradation from users,
+            cloud endpoints - and who currently learn about vendor degradation from users,
             not from monitoring.
           </p>
           <h2>What it covers</h2>
@@ -65,12 +65,12 @@ export default function DependencyMonitoringPage() {
             <li><strong>Scheduled, not sampled on demand:</strong> one task per dependency per region per interval, via broker to workers.</li>
             <li><strong>Separate origins:</strong> each region resolves and connects independently; every result carries its region.</li>
             <li><strong>Quorum verdicts:</strong> multi-region failures inside a short window declare an incident; consecutive successes clear it.</li>
-            <li><strong>Validated targets:</strong> SSRF policy rejects private/loopback/link-local/metadata addresses — recorded as policy blocks, never as vendor outages.</li>
+            <li><strong>Validated targets:</strong> SSRF policy rejects private/loopback/link-local/metadata addresses - recorded as policy blocks, never as vendor outages.</li>
             <li><strong>Explicit states:</strong> target problems, infrastructure problems and transitional states are distinct, because they have different owners.</li>
           </ul>
           <h2>What a missed probe means</h2>
           <p>
-            If the scheduler, broker or a worker is unavailable, checks do not run — and
+            If the scheduler, broker or a worker is unavailable, checks do not run - and
             the system reports that. A missed probe is never backfilled with a synthesised
             result. An observation that did not happen must never appear in a history you
             intend to rely on.

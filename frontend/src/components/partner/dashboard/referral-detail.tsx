@@ -61,13 +61,13 @@ export function ReferralDetailDrawer({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Mail className="size-4 text-muted-foreground" />
-                  <span className="font-mono text-sm">{data.masked_email || '—'}</span>
+                  <span className="font-mono text-sm">{data.masked_email || '-'}</span>
                   <StatusBadge status={data.status} />
                 </div>
                 {data.organization_name && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Building2 className="size-4" />
-                    {data.organization_name} · {data.plan || '—'}
+                    {data.organization_name} · {data.plan || '-'}
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
@@ -84,7 +84,7 @@ export function ReferralDetailDrawer({
                   <div>
                     <p className="text-xs text-muted-foreground">Partner code</p>
                     <p className="font-mono flex items-center gap-1">
-                      <Link2 className="size-3" /> {data.partner_referral_code || '—'}
+                      <Link2 className="size-3" /> {data.partner_referral_code || '-'}
                     </p>
                   </div>
                   <div>

@@ -130,7 +130,7 @@ async def test_state_endpoint_separates_our_pipeline_from_the_target(
     assert res.status_code == 200, res.text
     state = res.json()
     # Nothing has probed it and the pipeline is not proven alive, so the honest
-    # answer is an infrastructure state — never "successful".
+    # answer is an infrastructure state - never "successful".
     assert state["state"] != CheckState.SUCCESSFUL.value
     assert state["last_result"] is None
     assert state["is_target_problem"] is False

@@ -30,9 +30,9 @@ This guide provides frontend and dashboard developers with complete integration 
 ## 2. Authentication & Session Lifecycle
 
 The platform supports **Triple Authentication**:
-1. **Email/Password** — traditional registration and login with bcrypt-hashed passwords.
-2. **Google OAuth 2.0** — one-click sign-up/sign-in via Google account.
-3. **GitHub OAuth 2.0** — one-click sign-up/sign-in via GitHub account.
+1. **Email/Password** - traditional registration and login with bcrypt-hashed passwords.
+2. **Google OAuth 2.0** - one-click sign-up/sign-in via Google account.
+3. **GitHub OAuth 2.0** - one-click sign-up/sign-in via GitHub account.
 4. **API Keys** (`rel_...`) for automated CI/CD and script integrations.
 
 All human-facing auth methods (email, Google, GitHub) return the same JWT token pair (`access_token` + `refresh_token`). OAuth flows also return additional user metadata (`is_new_user`, `user_id`, `email`, `full_name`).
@@ -99,7 +99,7 @@ Revokes the refresh token in Redis and PostgreSQL.
 {
   "refresh_token": "eyJhbGciOiJIUzI1NiIsIn..."
 }
-// Response (204 No Content — empty body)
+// Response (204 No Content - empty body)
 ```
 
 ### 2.3 Google OAuth 2.0 Flow
@@ -210,8 +210,8 @@ Sends a verification email with a one-time link to the user's inbox. **Rate limi
   "email": "admin@reliastra.dev"
 }
 
-// Error (404) — if no account exists with this email
-// Error (400, EMAIL_ALREADY_VERIFIED) — if email is already verified
+// Error (404) - if no account exists with this email
+// Error (400, EMAIL_ALREADY_VERIFIED) - if email is already verified
 ```
 
 #### **POST /v1/auth/verify-email**
@@ -228,9 +228,9 @@ Consumes the token from the verification link and marks the user's email as veri
   "is_email_verified": true
 }
 
-// Error (422, INVALID_TOKEN) — token not found
-// Error (422, TOKEN_ALREADY_USED) — token was already consumed
-// Error (422, TOKEN_EXPIRED) — token expired (> 60 minutes)
+// Error (422, INVALID_TOKEN) - token not found
+// Error (422, TOKEN_ALREADY_USED) - token was already consumed
+// Error (422, TOKEN_EXPIRED) - token expired (> 60 minutes)
 ```
 
 **Frontend implementation:**
@@ -242,7 +242,7 @@ Consumes the token from the verification link and marks the user's email as veri
 
 ### 2.6 Password Reset Flow
 
-The password reset flow uses anti-enumeration — the same generic message is returned whether or not the email exists in the database, preventing attackers from discovering which emails are registered.
+The password reset flow uses anti-enumeration - the same generic message is returned whether or not the email exists in the database, preventing attackers from discovering which emails are registered.
 
 #### **POST /v1/auth/forgot-password**
 Sends a password reset email if an account exists with the given email. **Rate limited.** All previous unexpired tokens for this user are automatically revoked.
@@ -252,7 +252,7 @@ Sends a password reset email if an account exists with the given email. **Rate l
   "email": "admin@reliastra.dev"
 }
 
-// Response (200 OK) — ALWAYS returns this, even if email doesn't exist
+// Response (200 OK) - ALWAYS returns this, even if email doesn't exist
 {
   "message": "If an account with this email exists, a password reset link has been sent."
 }
@@ -272,22 +272,22 @@ Consumes the token from the reset link and sets the new password.
   "message": "Password has been reset successfully. You can now log in with your new password."
 }
 
-// Validation Error (422) — password must be at least 8 characters
-// Error (422, INVALID_TOKEN) — token not found
-// Error (422, TOKEN_ALREADY_USED) — token was already consumed
-// Error (422, TOKEN_EXPIRED) — token expired (> 15 minutes)
+// Validation Error (422) - password must be at least 8 characters
+// Error (422, INVALID_TOKEN) - token not found
+// Error (422, TOKEN_ALREADY_USED) - token was already consumed
+// Error (422, TOKEN_EXPIRED) - token expired (> 15 minutes)
 ```
 
 **Frontend implementation:**
 1. On the "Forgot Password" page, collect the email and call `POST /v1/auth/forgot-password`.
-2. Always show the success message ("Check your inbox") regardless of the response — do not reveal whether the email exists.
+2. Always show the success message ("Check your inbox") regardless of the response - do not reveal whether the email exists.
 3. The email contains a link to `{FRONTEND_BASE_URL}/reset-password?token={token}`.
 4. On the reset password page, extract the token from the URL, collect the new password (with confirmation), and call `POST /v1/auth/reset-password`.
 5. On success, redirect to the login page with a success flash message.
 
 ### 2.7 Account Linking Across Providers
 
-All three auth methods (email, Google, GitHub) are unified by **email address**. If a user registers with `admin@reliastra.dev` via email and later signs in with Google using the same email, the Google identity is linked to the existing account — no duplicate is created. The same applies for GitHub.
+All three auth methods (email, Google, GitHub) are unified by **email address**. If a user registers with `admin@reliastra.dev` via email and later signs in with Google using the same email, the Google identity is linked to the existing account - no duplicate is created. The same applies for GitHub.
 
 **Frontend UX recommendations:**
 - On the login page, show "Continue with Google" and "Continue with GitHub" buttons alongside the email/password form.
@@ -547,7 +547,7 @@ Returns uptime and latency metrics for charting.
 
 Returns aggregated time-series data for the **Reliastra Public Reliability Graph**. This is the primary data source for rendering latency, availability, and incident markers on the frontend timeline visualization.
 
-**Public endpoint** — no authentication required. Subject to public vendor rate limits.
+**Public endpoint** - no authentication required. Subject to public vendor rate limits.
 
 #### Query Parameters
 
@@ -632,11 +632,11 @@ Returns aggregated time-series data for the **Reliastra Public Reliability Graph
 
 The `points` array is designed for direct rendering into three visual layers:
 
-1. **Latency Graph** — Plot `points[].avg_latency_ms` on the Y-axis against `points[].timestamp` on the X-axis. Use `observation_count` to indicate data density (thicker line or opacity for higher counts).
+1. **Latency Graph** - Plot `points[].avg_latency_ms` on the Y-axis against `points[].timestamp` on the X-axis. Use `observation_count` to indicate data density (thicker line or opacity for higher counts).
 
-2. **Availability Graph** — Plot `points[].is_up` as a binary state (1/0) or as a colored background band. Green for `is_up: true`, red for `is_up: false`.
+2. **Availability Graph** - Plot `points[].is_up` as a binary state (1/0) or as a colored background band. Green for `is_up: true`, red for `is_up: false`.
 
-3. **Incident Markers** — For any point where `incident_id` is not `null`, render a visible marker (e.g., vertical line, shaded region, or icon) on the timeline. Cross-reference with the `/incidents` endpoint for incident details.
+3. **Incident Markers** - For any point where `incident_id` is not `null`, render a visible marker (e.g., vertical line, shaded region, or icon) on the timeline. Cross-reference with the `/incidents` endpoint for incident details.
 
 #### Polling Recommendation
 
@@ -893,7 +893,7 @@ export const handleGoogleCallback = async () => {
   const savedState = sessionStorage.getItem("google_oauth_state");
 
   if (!code) throw new Error("No authorization code received from Google");
-  if (returnedState !== savedState) throw new Error("OAuth state mismatch — possible CSRF");
+  if (returnedState !== savedState) throw new Error("OAuth state mismatch - possible CSRF");
 
   sessionStorage.removeItem("google_oauth_state");
   return await exchangeGoogleCode(code);
@@ -926,7 +926,7 @@ export const handleGitHubCallback = async () => {
   const savedState = sessionStorage.getItem("github_oauth_state");
 
   if (!code) throw new Error("No authorization code received from GitHub");
-  if (returnedState !== savedState) throw new Error("OAuth state mismatch — possible CSRF");
+  if (returnedState !== savedState) throw new Error("OAuth state mismatch - possible CSRF");
 
   sessionStorage.removeItem("github_oauth_state");
   return await exchangeGitHubCode(code);
@@ -1022,7 +1022,7 @@ export interface ResetPasswordResponse {
 
 /**
  * Requests a password reset email. Always returns a generic success message
- * (anti-enumeration — does not reveal whether the email exists). Rate limited.
+ * (anti-enumeration - does not reveal whether the email exists). Rate limited.
  */
 export const forgotPassword = async (email: string): Promise<ForgotPasswordResponse> => {
   const { data } = await apiClient.post<ForgotPasswordResponse>("/auth/forgot-password", { email });

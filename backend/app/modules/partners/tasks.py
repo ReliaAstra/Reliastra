@@ -2,7 +2,7 @@
 
 Only what is actually necessary: a single idempotent job that promotes
 commissions whose hold period has elapsed from ``pending`` to ``payable``.
-Commission creation itself is event-driven — it happens inside the billing
+Commission creation itself is event-driven - it happens inside the billing
 webhook when a payment is confirmed.
 """
 

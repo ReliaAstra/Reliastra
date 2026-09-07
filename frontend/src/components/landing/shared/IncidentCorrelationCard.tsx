@@ -67,7 +67,7 @@ export function IncidentCorrelationCard() {
               </div>
               <div className="shrink-0 text-right">
                 <p className="font-mono text-[15px] font-semibold text-[#09090B] dark:text-[#FAFAFA]">
-                  {v.latency_ms != null ? `${v.latency_ms}ms` : '—'}
+                  {v.latency_ms != null ? `${v.latency_ms}ms` : '-'}
                 </p>
                 <p className={`text-[11px] font-medium capitalize ${color}`}>
                   {v.status.replace(/_/g, ' ')}

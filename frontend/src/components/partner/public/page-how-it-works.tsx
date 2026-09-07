@@ -58,7 +58,7 @@ const steps = [
     number: '04',
     title: 'EARN 30% EVERY MONTH',
     description:
-      'When someone subscribes through your link, you earn 30% of their monthly subscription — for as long as they stay.',
+      'When someone subscribes through your link, you earn 30% of their monthly subscription - for as long as they stay.',
     accent: true,
   },
 ];

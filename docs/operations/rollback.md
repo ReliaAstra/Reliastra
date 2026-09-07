@@ -20,7 +20,7 @@ It **never** downgrades DB:
 new app stopped → previous image verified (still in GHCR) → previous app started → health+smoke → report ROLLED_BACK
 DB left intact, operator notified
 ```
-If migration was `expand` (additive), rollback is safe. If heads contained `drop_column/drop_table`, `deploy.sh` logs WARN and operator must decide — auto-rollback will still restore previous app but DB will have extra column (harmless) not missing column.
+If migration was `expand` (additive), rollback is safe. If heads contained `drop_column/drop_table`, `deploy.sh` logs WARN and operator must decide - auto-rollback will still restore previous app but DB will have extra column (harmless) not missing column.
 
 ## Manual rollback
 ```bash
@@ -41,4 +41,4 @@ curl -fsS http://127.0.0.1:8000/health/ready | jq
 `ROLLBACK_FAILED` → escalate: inspect `docker logs reliastra-api --tail 100`, `alembic current`, `df -h`, `free -m`, `/opt/reliastra/logs/deploy-<sha>.log`. Do NOT run `alembic downgrade` blindly. Restore from `backups/pre-<sha>.sql.gz` or Supabase PITR only after confirming data loss.
 
 ## Idempotency
-`rollback.sh` twice is safe — second finds `current == previous` and converges.
+`rollback.sh` twice is safe - second finds `current == previous` and converges.

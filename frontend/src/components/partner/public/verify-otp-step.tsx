@@ -26,7 +26,7 @@ type Props = {
   email: string;
   /** Called with the session issued by a successful verification. */
   onVerified: (session: VerifiedSession) => void | Promise<void>;
-  /** Back link — returns to the signup or login form. */
+  /** Back link - returns to the signup or login form. */
   onBack?: () => void;
   backLabel?: string;
   title?: string;
@@ -81,7 +81,7 @@ export function VerifyOtpStep({
         });
         if (!res.ok) {
           const apiError = await readApiError(res, 'Could not send a new code.');
-          // 429 means a code is already in flight — that is not a failure the
+          // 429 means a code is already in flight - that is not a failure the
           // user needs to act on, they just have to wait.
           if (!silent) toast.error(apiError.message);
           setCooldown(RESEND_COOLDOWN_SECONDS);
@@ -140,7 +140,7 @@ export function VerifyOtpStep({
   const handleChange = (value: string) => {
     setCode(value);
     if (error) setError(null);
-    // Submit as soon as the last digit lands — no extra click needed.
+    // Submit as soon as the last digit lands - no extra click needed.
     if (value.length === CODE_LENGTH && submittedRef.current !== value) {
       void submit(value);
     }

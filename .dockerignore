@@ -19,7 +19,7 @@ frontend/public/screenshots/
 *.sqlite3
 *.png
 
-# Environment files — secrets never enter the build context
+# Environment files - secrets never enter the build context
 **/.env
 **/.env.*
 !**/.env.example

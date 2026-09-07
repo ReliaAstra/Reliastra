@@ -96,7 +96,7 @@ class OrganizationService:
         update_kwargs = {}
         if request.name is not None:
             update_kwargs["name"] = request.name
-        # Tenants may only opt in/out of AI explanations — the model,
+        # Tenants may only opt in/out of AI explanations - the model,
         # endpoint and credential belong to Reliastra.
         if request.ai_explanations_enabled is not None:
             update_kwargs["ai_explanations_enabled"] = request.ai_explanations_enabled
@@ -198,7 +198,7 @@ class OrganizationService:
         if not member or member.org_id != org_id:
             raise ResourceNotFoundException("Organization member not found")
 
-        # Prevent demoting the last owner — removal is guarded the same way
+        # Prevent demoting the last owner - removal is guarded the same way
         # below. Without this check an org could end up with zero owners,
         # bricking every require_owner gate (billing, keys, member mgmt).
         if member.role == Role.OWNER.value and request.role.value != Role.OWNER.value:

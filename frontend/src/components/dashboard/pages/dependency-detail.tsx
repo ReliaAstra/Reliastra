@@ -78,14 +78,14 @@ export function DependencyDetailPage({ id }: { id: string }) {
       label: 'Uptime',
       value:
         historyError && history?.uptime_percentage == null
-          ? '—'
+          ? '-'
           : formatUptime(history?.uptime_percentage ?? row?.uptime_percentage_24h ?? 0),
     },
     {
       label: 'Avg latency',
       value:
         historyError && history?.avg_latency_ms == null
-          ? '—'
+          ? '-'
           : `${Math.round(history?.avg_latency_ms ?? row?.avg_latency_ms_24h ?? 0)}ms`,
     },
     { label: 'Total checks', value: history?.total_checks ?? 0 },
@@ -185,7 +185,7 @@ export function DependencyDetailPage({ id }: { id: string }) {
                 <td colSpan={6} className="px-4 py-10">
                   <QueryErrorState
                     title="Unable to load check history"
-                    body="The checks may exist — this request to the API failed. Retry, and if it keeps failing treat the gap as unmeasured rather than as healthy."
+                    body="The checks may exist - this request to the API failed. Retry, and if it keeps failing treat the gap as unmeasured rather than as healthy."
                     onRetry={() => refetchResults()}
                     retrying={resultsFetching}
                   />
@@ -204,7 +204,7 @@ export function DependencyDetailPage({ id }: { id: string }) {
                   className="px-4 py-10 text-center text-sm text-rs-text-tertiary"
                 >
                   No checks recorded yet. Checks run on the configured interval;
-                  if none appear, the pipeline — not this dependency — is the
+                  if none appear, the pipeline - not this dependency - is the
                   thing to investigate.
                 </td>
               </tr>

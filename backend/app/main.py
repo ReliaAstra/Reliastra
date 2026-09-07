@@ -169,7 +169,7 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
                 # durably in the database (e.g. commissions are unique on
                 # payment_reference), which is the real correctness boundary.
                 logger.warning(
-                    "Idempotency lock store unavailable — processing %s %s "
+                    "Idempotency lock store unavailable - processing %s %s "
                     "without single-flight protection",
                     request.method,
                     request.url.path,
@@ -236,7 +236,7 @@ async def _report_check_pipeline_requirements() -> None:
     Check scheduling is provided by Celery Beat, and only by Celery Beat: there
     is no in-process fallback and the API never executes a probe itself. An API
     running on its own therefore serves every other request normally while
-    executing exactly zero checks — which is why the requirement is logged
+    executing exactly zero checks - which is why the requirement is logged
     loudly and the broker is probed, rather than left to be discovered from an
     empty dashboard hours later.
     """
@@ -265,7 +265,7 @@ async def _report_check_pipeline_requirements() -> None:
         broker_ok, broker_detail = False, f"{type(exc).__name__}"
 
     if broker_ok:
-        logger.info("Celery broker reachable — check dispatch is possible")
+        logger.info("Celery broker reachable - check dispatch is possible")
     else:
         logger.error(
             "Celery broker UNREACHABLE (%s): checks will NOT execute until "
@@ -371,7 +371,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(billing_router)
     app.include_router(api_keys_router)
-    # AGENCY TEMPORARILY DISABLED — backend code preserved in
+    # AGENCY TEMPORARILY DISABLED - backend code preserved in
     # app/modules/agencies/ but the API is not exposed to customers
     # until the dashboard-first onboarding and client hierarchy UX
     # are ready.  Re-enable by uncommenting the line below.
@@ -472,7 +472,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health/live", tags=["Health"])
     async def liveness_check() -> dict[str, Any]:
-        """FIX 13: cheap liveness probe — no DB/Redis access."""
+        """FIX 13: cheap liveness probe - no DB/Redis access."""
         return {
             "status": "ok",
             "service": "reliastra-backend",
@@ -481,12 +481,12 @@ def create_app() -> FastAPI:
 
     @app.get("/health/ready", tags=["Health"])
     async def readiness_check() -> Response:
-        """FIX 13: readiness probe — DB + Redis, cached for 5s."""
+        """FIX 13: readiness probe - DB + Redis, cached for 5s."""
         return await _ready_response()
 
     @app.get("/health/checks", tags=["Health"])
     async def check_pipeline_probe() -> Response:
-        """Check-pipeline probe — 503 unless Beat, a worker and the broker are alive.
+        """Check-pipeline probe - 503 unless Beat, a worker and the broker are alive.
 
         This is the endpoint to alert on for "checks have silently stopped".
         It is deliberately separate from ``/health/ready``: restarting the API

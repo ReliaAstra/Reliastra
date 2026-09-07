@@ -156,7 +156,7 @@ class BillingRepository:
     ) -> Subscription:
         # Every field is a named parameter on purpose. This constructor used to
         # take **periods and read two keys out of it, which silently discarded
-        # billing_interval — an annual customer was created on the monthly
+        # billing_interval - an annual customer was created on the monthly
         # default, so the interval they paid for was not the interval recorded.
         subscription = Subscription(
             organization_id=org_id,

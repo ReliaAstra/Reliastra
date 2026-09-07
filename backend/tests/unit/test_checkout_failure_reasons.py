@@ -12,7 +12,7 @@ These tests pin the seam from both sides:
 * every reason the backend can emit has customer-facing copy;
 * every copy entry is keyed by a reason that exists (no dead wording);
 * wording about money agrees with the backend's own classification of whether a
-  charge may already have happened — the distinction between "you were not
+  charge may already have happened - the distinction between "you were not
   charged, try again" and "we are still checking, do not pay again" is what
   prevents a double payment;
 * the copy never leaks a provider implementation detail, and never asks a human
@@ -65,8 +65,8 @@ NO_CHARGE_PHRASES = (
 def _entries(source: str) -> dict[str, dict[str, object]]:
     """Parse ``CHECKOUT_FAILURE_COPY`` without pretending to be a TS compiler.
 
-    The object literal is machine-generated-looking by design — one entry per
-    reason, one field per line — which makes a line-oriented read reliable. It
+    The object literal is machine-generated-looking by design - one entry per
+    reason, one field per line - which makes a line-oriented read reliable. It
     fails loudly (assertion) rather than silently if the shape changes, because
     a parser that quietly finds nothing would quietly assert nothing.
     """
@@ -74,7 +74,7 @@ def _entries(source: str) -> dict[str, dict[str, object]]:
     end = source.index("\n};", start)
     body = source[start:end]
     keys = list(re.finditer(r"^  ([a-z_]+): \{$", body, re.M))
-    assert keys, "no copy entries parsed — the object shape changed"
+    assert keys, "no copy entries parsed - the object shape changed"
     entries: dict[str, dict[str, object]] = {}
     for index, match in enumerate(keys):
         stop = keys[index + 1].start() if index + 1 < len(keys) else len(body)
@@ -146,7 +146,7 @@ def test_every_reason_is_reachable(copy_entries):
     """Each slug is either raised somewhere or documented as client-derived.
 
     Guards against the quiet failure mode where a reason is added to the enum,
-    given a sentence in the UI, and never actually produced — the state it
+    given a sentence in the UI, and never actually produced - the state it
     describes then never happens, and a real one lands on generic copy.
     """
     sources = "\n".join(
@@ -183,7 +183,7 @@ def test_money_classification_and_wording_agree(copy_entries):
 
     ``MONEY_MAY_HAVE_MOVED_REASONS`` is the backend's answer to "is a charge
     outstanding?". A reason in that set is one where the customer may already
-    have paid — so its sentence must never state that nothing was taken, and
+    have paid - so its sentence must never state that nothing was taken, and
     must never imply the same click is free. Getting this wrong is how a
     customer pays twice, or a company explains a charge it cannot see.
     """
@@ -208,7 +208,7 @@ def test_no_charge_promises_only_for_settled_reasons(copy_entries):
             continue
         assert slug in AMOUNT_NEUTRAL_REASONS, (
             f"{slug} promises the customer nothing was charged, but the backend "
-            "does not classify it as amount-neutral — a claim we cannot keep"
+            "does not classify it as amount-neutral - a claim we cannot keep"
         )
         assert slug not in MONEY_MAY_HAVE_MOVED_REASONS
 
@@ -287,7 +287,7 @@ def test_exception_carries_the_slug_the_ui_switches_on():
     assert error.reason == CheckoutReason.DECLINED
     assert error.code == "CHECKOUT_FAILED"
     # 409, not 422: nothing the customer typed is wrong, so the client must not
-    # be told to fix its input — and must not be told a retry could help.
+    # be told to fix its input - and must not be told a retry could help.
     assert error.status_code == 409
     assert error.details[0] == {"field": "reason", "issue": CheckoutReason.DECLINED}
     assert {"field": "reference", "issue": "ref-1"} in error.details
@@ -315,7 +315,7 @@ def test_reason_sets_stay_in_the_backend(core_source):
     """The classification is decided once, server-side.
 
     If the UI ever grew its own copy of these sets, the two would disagree about
-    whether a customer was charged — and the disagreement would show up as
+    whether a customer was charged - and the disagreement would show up as
     wording, not as a failing test. So the sets live here and nowhere else.
     """
     assert "AMOUNT_NEUTRAL_REASONS" in core_source

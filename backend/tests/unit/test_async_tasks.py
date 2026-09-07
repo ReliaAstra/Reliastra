@@ -32,7 +32,7 @@ def test_run_async_inside_loop_uses_shared_worker():
 
     first, second = asyncio.run(main())
     assert first == second == "ok"
-    # Both probes ran on the same worker thread AND the same event loop —
+    # Both probes ran on the same worker thread AND the same event loop -
     # no per-call thread/loop churn (the old ThreadPoolExecutor-per-call bug).
     assert len(observed) == 2
     assert observed[0] == observed[1]

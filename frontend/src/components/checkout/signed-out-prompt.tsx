@@ -8,8 +8,8 @@ import { CHECKOUT_FAILURE_COPY } from '@/lib/billing/checkout-errors';
 /**
  * Sign-in, without losing the checkout.
  *
- * A customer who reached checkout — perhaps from a link in an email, perhaps
- * after a session timeout while paying — is shown the way in with their intent
+ * A customer who reached checkout - perhaps from a link in an email, perhaps
+ * after a session timeout while paying - is shown the way in with their intent
  * preserved in the return URL. Redirecting them to a bare login page with no
  * context is how checkouts are abandoned; the amount they were about to pay
  * should still be on screen when they come back.
@@ -30,7 +30,7 @@ export function SignedOutPrompt({ interval }: { interval: 'monthly' | 'annual' }
 
   // A payment in flight is a different truth from a page that was never
   // started: here we cannot say "nothing was charged", because we do not know
-  // that yet — only verification does. So the session-expiry wording, which is
+  // that yet - only verification does. So the session-expiry wording, which is
   // written to be accurate in both directions, is used instead.
   const copy = reference ? CHECKOUT_FAILURE_COPY.session_expired : null;
 

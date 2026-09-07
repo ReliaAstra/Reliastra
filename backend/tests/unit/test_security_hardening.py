@@ -87,5 +87,5 @@ def test_fernet_roundtrip_and_decrypt_failure():
     assert encrypted is not None
     assert decrypt_jsonb(encrypted) == payload
     assert decrypt_jsonb(None) is None
-    # Corrupt ciphertext must not raise — callers get a safe empty dict.
+    # Corrupt ciphertext must not raise - callers get a safe empty dict.
     assert decrypt_jsonb("gAAAAA-not-a-valid-fernet-token") == {}

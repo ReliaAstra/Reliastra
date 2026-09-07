@@ -51,7 +51,7 @@ export function FinalCTA() {
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8, delay: 0.2, ease }}
         >
-          {/* Illustrative product preview — mock values, never measured data. */}
+          {/* Illustrative product preview - mock values, never measured data. */}
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#131318]" aria-hidden="true">
             <div className="flex items-center gap-2 border-b border-white/5 px-4 py-3">
               <div className="flex gap-1.5">

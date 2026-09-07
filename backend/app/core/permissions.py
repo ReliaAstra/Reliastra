@@ -47,7 +47,7 @@ class Plan(str, Enum):
 # ── Canonical Plan Identifiers ──────────────────────────────────────────────
 # The ONLY customer-facing plan identifiers. Use these everywhere in backend
 # and frontend. Legacy names (starter/standard/professional/agency) must NOT
-# leak into customer-facing pricing — they survive only inside the legacy
+# leak into customer-facing pricing - they survive only inside the legacy
 # adapter mapping below.
 CANONICAL_PLANS: set[str] = {Plan.FREE.value, Plan.PRO.value, Plan.ENTERPRISE.value}
 
@@ -78,7 +78,7 @@ PLAN_DISPLAY_NAMES: dict[str, str] = {
 PLAN_PRICES_USD: dict[str, int] = {
     Plan.FREE.value: 0,
     Plan.PRO.value: 39,
-    Plan.ENTERPRISE.value: 0,  # custom — not a real list price
+    Plan.ENTERPRISE.value: 0,  # custom - not a real list price
 }
 
 # Annual prices in USD. Enterprise is custom => None.
@@ -124,7 +124,7 @@ PLAN_RETENTION_DAYS: dict[str, int | None] = {
     Plan.ENTERPRISE.value: None,
 }
 
-# Plan feature flags — used by the public pricing endpoint and frontend.
+# Plan feature flags - used by the public pricing endpoint and frontend.
 PLAN_FEATURES: dict[str, dict] = {
     Plan.FREE.value: {
         "custom_endpoint_urls": True,
@@ -200,7 +200,7 @@ PLAN_ANNUAL_AMOUNTS: dict[str, int] = {
 # ── 14-Day Full-Access Trial ──────────────────────────────────────────────
 # Every new organization receives 14 days of full RELIASTRA capabilities
 # (PRO limits). The trial is entirely DERIVED from the organization's
-# created_at — it requires no migration, no flag, and no background job to be
+# created_at - it requires no migration, no flag, and no background job to be
 # correct. It expires automatically: while created_at + 14 days > now the
 # effective plan is PRO; afterwards the effective plan is whatever is stored.
 # There is no separate "trial" plan.
@@ -289,7 +289,7 @@ def is_evaluation_active(org: object, now: datetime | None = None) -> bool:
     """True while the organization is inside its 14-day trial window.
 
     Evaluation is only applicable while the stored plan is Free. A paid plan
-    is always authoritative — it never needs a trial overlay. Server time
+    is always authoritative - it never needs a trial overlay. Server time
     (now) is authoritative; client clocks are never trusted.
     """
     if org is None:

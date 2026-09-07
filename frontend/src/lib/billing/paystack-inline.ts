@@ -1,5 +1,5 @@
 /**
- * Paystack InlineJS — the provider's secure payment experience, launched from
+ * Paystack InlineJS - the provider's secure payment experience, launched from
  * inside RELIASTRA's checkout page.
  *
  * What this is for: the transaction is created by RELIASTRA's backend with the
@@ -11,7 +11,7 @@
  * the charge understandable. They see our screen; Paystack sees the card.
  *
  * What this is explicitly NOT: a card form. RELIASTRA never collects a card
- * number, expiry or CVC — not here, not anywhere. Paystack's own Cards API is
+ * number, expiry or CVC - not here, not anywhere. Paystack's own Cards API is
  * gated on the merchant holding PCI-DSS attestation (an Attestation of
  * Compliance issued by a QSA), which RELIASTRA does not, so "custom checkout"
  * here means *our* surrounding experience with *their* payment surface. The
@@ -22,14 +22,14 @@
  * policy, an offline laptop, an ad blocker), this reports "unavailable" and
  * the caller falls back to the hosted `authorization_url` redirect. A customer
  * must always have a working path to pay, and a blocked third-party script is
- * their environment's constraint — not a reason to lose the sale.
+ * their environment's constraint - not a reason to lose the sale.
  */
 
 /** Callbacks Paystack invokes on the transaction it is handling. */
 export interface PaystackTransactionCallbacks {
   /** Customer finished successfully. Verify the reference server-side. */
   onSuccess?: (response: { reference: string; id?: number; message?: string }) => void;
-  /** The checkout UI opened (not a payment event — never activate on this). */
+  /** The checkout UI opened (not a payment event - never activate on this). */
   onLoad?: (response: { id: number; accessCode: string }) => void;
   /** The customer closed the payment window. */
   onCancel?: () => void;
@@ -122,7 +122,7 @@ export function loadPaystackInline(scriptUrl: string): Promise<PaystackConstruct
     const onLoad = () => {
       const ctor = window.PaystackPop ?? null;
       if (!ctor) {
-        // Script loaded but global not present — treat as failure and evict
+        // Script loaded but global not present - treat as failure and evict
         // so a provider-side change can be retried.
         loading.delete(scriptUrl);
       }
@@ -147,7 +147,7 @@ export function loadPaystackInline(scriptUrl: string): Promise<PaystackConstruct
  *
  * Returns `true` when the popup was launched and `false` when the caller must
  * fall back to a redirect. `resumeTransaction` is used rather than
- * `newTransaction` because the transaction — amount, currency, channels —
+ * `newTransaction` because the transaction - amount, currency, channels -
  * already exists and was decided server-side; re-supplying those numbers in the
  * browser would hand the client exactly the pricing authority the whole
  * checkout is built to deny it.

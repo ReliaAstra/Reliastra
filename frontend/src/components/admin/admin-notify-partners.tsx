@@ -34,8 +34,8 @@ type Target =
  * Compose a notification to partners.
  *
  * Delivery is two-channel: every recipient gets the in-app notification that
- * appears on their dashboard's Notifications page, and — unless the admin
- * turns the email copy off, or the partner opted out of that category — an
+ * appears on their dashboard's Notifications page, and - unless the admin
+ * turns the email copy off, or the partner opted out of that category - an
  * email as well.
  */
 export function NotifyPartnersDialog({
@@ -154,7 +154,7 @@ export function NotifyPartnersDialog({
               </Select>
               <p className="text-[11px] text-slate-500">
                 {category === 'marketing'
-                  ? 'Marketing emails are opt-in — most partners will only see this in-app.'
+                  ? 'Marketing emails are opt-in - most partners will only see this in-app.'
                   : 'Announcement emails are on by default for partners.'}
               </p>
             </div>

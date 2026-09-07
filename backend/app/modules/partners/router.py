@@ -1,4 +1,4 @@
-"""Partner-facing API — ``/v1/partners/*``.
+"""Partner-facing API - ``/v1/partners/*``.
 
 Every route is scoped to the authenticated user's own partner account. The
 partner is resolved server-side from the JWT; no endpoint accepts a
@@ -91,7 +91,7 @@ async def apply(
 ) -> PartnerProfileResponse:
     """Opt into the referral program and get a referral link.
 
-    Idempotent — an existing partner receives their current profile.
+    Idempotent - an existing partner receives their current profile.
     """
     await enforce_rate_limit(request, _apply_limiter)
     return await partner_service.activate_partner(db, current_user, body.agree_terms)
@@ -261,7 +261,7 @@ async def request_payout(
 ) -> PayoutItem:
     """Create a pending payout for the partner's entire payable balance.
 
-    The request is *administratively settled* in v1 — an admin still marks the
+    The request is *administratively settled* in v1 - an admin still marks the
     payout paid. A payout destination must be configured first (see
     ``PUT /v1/partners/payout-settings``).
     """
@@ -403,8 +403,8 @@ async def update_notification_preferences(
 ) -> NotificationPreferencesResponse:
     """Persist which events send an email, and the browser-push opt-in.
 
-    In-app notifications are always delivered — they are the partner's record
-    of what happened — so there is no switch to turn them off.
+    In-app notifications are always delivered - they are the partner's record
+    of what happened - so there is no switch to turn them off.
     """
     prefs = await partner_notification_service.update_preferences(
         db, current_user.id, body.model_dump(exclude_none=True)

@@ -1,4 +1,4 @@
-"""Payment pricing — PRODUCT PRICE (USD) versus PAYMENT PRICE (Paystack).
+"""Payment pricing - PRODUCT PRICE (USD) versus PAYMENT PRICE (Paystack).
 
 Two distinct concepts, deliberately kept separate:
 
@@ -9,7 +9,7 @@ Two distinct concepts, deliberately kept separate:
 
 ``PAYMENT PRICING``
     The amount actually sent to Paystack, in the *processing currency*
-    (``settings.PAYSTACK_CURRENCY`` — NGN for the current merchant account).
+    (``settings.PAYSTACK_CURRENCY`` - NGN for the current merchant account).
     This is a business-defined price the operator publishes
     (``settings.PAYSTACK_NGN_PLAN_PRICES``); it is **not** derived from the USD
     list price.
@@ -33,7 +33,7 @@ Rules this module enforces
   so what the customer sees is literally what is sent to Paystack.
 
 When the processing currency *is* USD, the payment price defaults to the
-product price in minor units (``PLAN_AMOUNTS``) — i.e. a USD deployment keeps
+product price in minor units (``PLAN_AMOUNTS``) - i.e. a USD deployment keeps
 its historical behaviour with no extra configuration.
 """
 
@@ -87,27 +87,28 @@ ANNUAL = "annual"
 #: explicitly on every payment surface so a customer always knows who is
 #: taking the money and in what currency.
 PAYMENT_PROVIDER = "Paystack"
-PAYMENT_PROVIDER_DISPLAY = "Paystack — secure hosted checkout"
+PAYMENT_PROVIDER_DISPLAY = "Paystack - secure hosted checkout"
 
 #: Canonical, customer-facing disclosure shown next to every RELIASTRA payment
 #: decision while the processing currency is Naira. One version for the whole
-#: product — never restate it in a page or a component. This is the mandated
+#: product - never restate it in a page or a component. This is the mandated
 #: transparency wording: what the price list says, what Paystack charges, and
-#: what is coming next. It must not be softened, shortened or paraphrased in
+#: what is pending confirmation. It must not be softened, shortened or
+#: paraphrased in
 #: a surface; the copy-guard tests diff this string against the frontend and
 #: the transactional emails.
 NGN_CURRENCY_NOTICE = (
     "RELIASTRA's plans are priced in USD. Our current Paystack payment flow "
-    "processes payments in NGN. We are working toward enabling USD payment "
-    "options for our global customers."
+    "processes payments in NGN. We are awaiting confirmation of additional "
+    "payment options for international customers."
 )
 
 #: Mandatory heading above the FX reference wherever one is displayed. A rate
 #: without these words is how a customer comes to believe the charge was
-#: converted at that rate — which it never is.
+#: converted at that rate - which it never is.
 FX_REFERENCE_DISCLAIMER = (
     "Exchange rate shown is a market reference estimate only. It is provided "
-    "for context and is never used to determine your actual charge — the "
+    "for context and is never used to determine your actual charge - the "
     "amount billed by Paystack is the published NGN price above."
 )
 
@@ -154,7 +155,7 @@ def currency_name(code: str) -> str:
 def format_money(minor_units: int | None, currency: str) -> str:
     """Render a minor-unit amount as ``\u20a660,000.00 (NGN)``.
 
-    The ISO code is always part of the output — a bare symbol is not acceptable
+    The ISO code is always part of the output - a bare symbol is not acceptable
     here: screen readers, plain-text email clients and forwarded receipts must
     receive the currency as text, and ``\u20a6`` must never be mistaken for ``$``.
     """
@@ -306,7 +307,7 @@ def minimum_product_amount(plan: str, interval: str = MONTHLY) -> int | None:
     """The smallest payment that covers the plan, in payment-currency minor units.
 
     Used by webhook/verify integrity checks. It is the *published payment
-    price* — not the USD list price — because that is what a correctly
+    price* - not the USD list price - because that is what a correctly
     configured checkout collects.
     """
     amount = resolve_payment_price(plan, interval).payment_amount
@@ -328,7 +329,7 @@ class PaymentPriceNotConfigured(RuntimeError):
 #: Canonical disclosures per processing currency. A currency only gets a notice
 #: once the business has written and approved its wording: ``None`` means "no
 #: disclosure is defined for this currency", never "reuse the NGN paragraph".
-#: USD is absent deliberately — when Paystack charges in the same currency the
+#: USD is absent deliberately - when Paystack charges in the same currency the
 #: price list uses, there is nothing to explain, and showing a currency warning
 #: would itself be misleading.
 CURRENCY_NOTICES: dict[str, str] = {
@@ -347,7 +348,7 @@ def currency_mismatch() -> bool:
 
 
 def self_serve_plans() -> list[str]:
-    """Plans RELIASTRA charges for on self-serve — the only ones that can have
+    """Plans RELIASTRA charges for on self-serve - the only ones that can have
     a payment price. Free is never charged, Enterprise is Contact Sales."""
     return sorted(
         plan
@@ -360,8 +361,8 @@ def checkout_ready() -> bool:
     """Are payment prices published for every self-serve plan/interval?
 
     A pricing page must not offer "Upgrade to Pro" for a currency it cannot
-    price: with no published amount, checkout would either fail mid-flow or —
-    worse — charge the USD minor-unit figure as Naira.
+    price: with no published amount, checkout would either fail mid-flow or -
+    worse - charge the USD minor-unit figure as Naira.
     """
     if not currency_mismatch():
         return True
@@ -376,7 +377,7 @@ def published_payment_amounts() -> dict[str, dict[str, str]]:
     """``plan -> interval -> display`` for every published payment price.
 
     Only amounts the business actually published appear. A pricing card must
-    never compose a Naira figure itself — if it is not in this map, the card
+    never compose a Naira figure itself - if it is not in this map, the card
     states the currency without inventing a number.
     """
     out: dict[str, dict[str, str]] = {}
@@ -428,8 +429,8 @@ def transparency_lines(
         Actual charge:     ₦60,000.00 (NGN)
         Payment provider:  Paystack
 
-    ``actual_charge`` is the *published payment price* — the integer that is
-    sent to Paystack — never a number the caller composes itself. It is
+    ``actual_charge`` is the *published payment price* - the integer that is
+    sent to Paystack - never a number the caller composes itself. It is
     ``None`` when no payment price has been published (and the surface then
     states the currency without a figure). ``product_price`` is ``None`` for
     custom-priced plans, which route to Contact Sales instead of checkout.

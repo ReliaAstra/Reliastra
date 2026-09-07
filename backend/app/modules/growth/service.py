@@ -172,7 +172,7 @@ class GrowthService:
         }
 
     # ------------------------------------------------------------------
-    # Private helpers — raw SQLAlchemy queries against existing tables
+    # Private helpers - raw SQLAlchemy queries against existing tables
     # ------------------------------------------------------------------
 
     @staticmethod

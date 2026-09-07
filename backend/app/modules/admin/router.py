@@ -92,12 +92,12 @@ logger = logging.getLogger(__name__)
 
 
 # =============================================================================
-# Overview / Attention / Search — admin home bootstrap
+# Overview / Attention / Search - admin home bootstrap
 # =============================================================================
 
 overview_router = APIRouter(
     prefix="/v1/admin",
-    tags=["Admin — Overview"],
+    tags=["Admin - Overview"],
 )
 
 
@@ -193,12 +193,12 @@ async def get_admin_abandoned_checkouts(
 
 
 # =============================================================================
-# Customers — operational customer control plane
+# Customers - operational customer control plane
 # =============================================================================
 
 customers_router = APIRouter(
     prefix="/v1/admin/customers",
-    tags=["Admin — Customers"],
+    tags=["Admin - Customers"],
 )
 
 
@@ -429,7 +429,7 @@ async def get_customer_activity(
 
 revenue_router = APIRouter(
     prefix="/v1/admin/revenue",
-    tags=["Admin — Revenue"],
+    tags=["Admin - Revenue"],
 )
 
 
@@ -477,12 +477,12 @@ async def get_revenue_attention(
 
 
 # =============================================================================
-# Growth (canonical — consolidates analytics + growth modules)
+# Growth (canonical - consolidates analytics + growth modules)
 # =============================================================================
 
 growth_cp_router = APIRouter(
     prefix="/v1/admin/growth",
-    tags=["Admin — Growth"],
+    tags=["Admin - Growth"],
 )
 
 
@@ -551,7 +551,7 @@ async def get_growth_referrals(
 
 product_router = APIRouter(
     prefix="/v1/admin/product",
-    tags=["Admin — Product"],
+    tags=["Admin - Product"],
 )
 
 
@@ -627,7 +627,7 @@ async def get_product_activation(
 
 support_router = APIRouter(
     prefix="/v1/admin/support",
-    tags=["Admin — Support"],
+    tags=["Admin - Support"],
 )
 
 
@@ -787,7 +787,7 @@ async def bulk_update_tickets(
 
 communications_router = APIRouter(
     prefix="/v1/admin/communications",
-    tags=["Admin — Communications"],
+    tags=["Admin - Communications"],
 )
 
 
@@ -1000,7 +1000,7 @@ async def update_announcement(
 
 operations_router = APIRouter(
     prefix="/v1/admin/operations",
-    tags=["Admin — Operations"],
+    tags=["Admin - Operations"],
 )
 
 
@@ -1105,7 +1105,7 @@ async def check_engines_legacy(
 
 audit_router = APIRouter(
     prefix="/v1/admin/audit-log",
-    tags=["Admin — Audit Log"],
+    tags=["Admin - Audit Log"],
 )
 
 
@@ -1165,12 +1165,12 @@ async def list_audit_logs(
 
 
 # =============================================================================
-# DEPRECATED — Business (→ overview / revenue / customers)
+# DEPRECATED - Business (→ overview / revenue / customers)
 # =============================================================================
 
 business_router = APIRouter(
     prefix="/v1/admin/business",
-    tags=["Admin — Business (deprecated)"],
+    tags=["Admin - Business (deprecated)"],
     deprecated=True,
 )
 
@@ -1231,12 +1231,12 @@ async def get_churn_signals(
 
 
 # =============================================================================
-# DEPRECATED — Analytics (→ growth / product)
+# DEPRECATED - Analytics (→ growth / product)
 # =============================================================================
 
 analytics_router = APIRouter(
     prefix="/v1/admin/analytics",
-    tags=["Admin — Analytics (deprecated)"],
+    tags=["Admin - Analytics (deprecated)"],
     deprecated=True,
 )
 
@@ -1321,12 +1321,12 @@ async def get_engagement(
 
 
 # =============================================================================
-# DEPRECATED — Users (→ customers)
+# DEPRECATED - Users (→ customers)
 # =============================================================================
 
 users_router = APIRouter(
     prefix="/v1/admin/users",
-    tags=["Admin — Users (deprecated)"],
+    tags=["Admin - Users (deprecated)"],
     deprecated=True,
 )
 
@@ -1516,7 +1516,7 @@ async def get_active_announcements(
 
 
 # =============================================================================
-# Main Admin Router — aggregates all sub-routers
+# Main Admin Router - aggregates all sub-routers
 # =============================================================================
 
 admin_router = APIRouter(

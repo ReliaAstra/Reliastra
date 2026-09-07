@@ -3,7 +3,7 @@ import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 
 export const metadata = buildMetadata({
-  title: 'Security — How RELIASTRA protects your data',
+  title: 'Security - How RELIASTRA protects your data',
   description:
     'Encryption, SSRF-safe probing, session controls, organization isolation, and evidence integrity: how RELIASTRA keeps monitoring data yours.',
   path: '/security',
@@ -28,7 +28,7 @@ export default function SecurityPage() {
             '@type': 'WebPage',
             '@id': canonicalUrl('/security'),
             url: canonicalUrl('/security'),
-            name: 'Security — How RELIASTRA protects your data',
+            name: 'Security - How RELIASTRA protects your data',
             isPartOf: { '@id': canonicalUrl('/#website') },
             inLanguage: 'en',
           },
@@ -37,7 +37,7 @@ export default function SecurityPage() {
       <MarketingPage
         eyebrow="Trust"
         title="Security: your monitoring data stays yours"
-        lede="Encryption everywhere, SSRF-safe probing, organization isolation, and evidence integrity — the controls behind an evidence platform."
+        lede="Encryption everywhere, SSRF-safe probing, organization isolation, and evidence integrity - the controls behind an evidence platform."
         breadcrumbs={crumbs}
         related={[
           { label: 'Privacy Policy', href: '/privacy', description: 'What we collect and why.' },
@@ -57,14 +57,14 @@ export default function SecurityPage() {
           <p>
             Before any check request leaves, the target is resolved and validated
             against an SSRF policy that rejects private, loopback, link-local and
-            metadata addresses. Blocked targets are recorded as configuration problems —
-            never as vendor outages — and no request is sent.
+            metadata addresses. Blocked targets are recorded as configuration problems -
+            never as vendor outages - and no request is sent.
           </p>
           <h2>Isolation</h2>
           <p>
             Organizations are strictly isolated: dependencies, incidents, evidence and
             credentials are scoped per organization and enforced server-side. Public
-            Track pages show aggregated posture for vendors made public only — never
+            Track pages show aggregated posture for vendors made public only - never
             customer endpoints, headers or credentials.
           </p>
           <h2>Evidence integrity</h2>

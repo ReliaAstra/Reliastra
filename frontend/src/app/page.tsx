@@ -34,34 +34,34 @@ const HOME_FAQS = [
 ];
 
 export const metadata: Metadata = {
-  title: 'RELIASTRA — External Dependency Intelligence',
+  title: 'RELIASTRA - External Dependency Intelligence',
   description:
     'Know when your dependencies fail. Prove what happened. RELIASTRA monitors third-party APIs independently, attributes incidents to the responsible vendor, and generates timestamped SLA evidence.',
   alternates: { canonical: canonicalUrl('/') },
   robots: { index: true, follow: true },
   openGraph: {
-    title: 'RELIASTRA — External Dependency Intelligence',
+    title: 'RELIASTRA - External Dependency Intelligence',
     description:
       'Monitor third-party APIs independently. When vendors fail, generate timestamped SLA evidence reports to claim credits and prove fault.',
     url: SITE_URL + '/',
     siteName: 'RELIASTRA',
     type: 'website',
-    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: 'RELIASTRA — External Dependency Intelligence' }],
+    images: [{ url: `${SITE_URL}/opengraph-image`, width: 1200, height: 630, alt: 'RELIASTRA - External Dependency Intelligence' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RELIASTRA — External Dependency Intelligence',
+    title: 'RELIASTRA - External Dependency Intelligence',
     description: 'Monitor third-party APIs. Prove vendor failures. Claim SLA credits.',
     images: [`${SITE_URL}/opengraph-image`],
   },
 };
 
 /**
- * Homepage — server-rendered for crawlers, interactive after hydration.
+ * Homepage - server-rendered for crawlers, interactive after hydration.
  *
  * The interactive partner/console shell lives in `HomeClient`, which
  * server-renders the full landing (brand, H1, proposition, links) as the
- * initial HTML — no crawler ever receives an empty shell that depends on
+ * initial HTML - no crawler ever receives an empty shell that depends on
  * client-side auth resolution. A `<noscript>` duplicate is deliberately
  * omitted: the SSR landing already carries the content without JavaScript,
  * and a second copy would split the page across two H1s.
@@ -79,7 +79,7 @@ export default function Home() {
             '@type': 'WebPage',
             '@id': canonicalUrl('/'),
             url: canonicalUrl('/'),
-            name: 'RELIASTRA — External Dependency Intelligence',
+            name: 'RELIASTRA - External Dependency Intelligence',
             description:
               'Monitor third-party APIs independently, attribute incidents, and generate SLA evidence.',
             isPartOf: { '@id': `${SITE_URL}/#website` },
@@ -95,7 +95,7 @@ export default function Home() {
       <noscript>
         <div>
           <p>
-            RELIASTRA — External Dependency Intelligence. Know when your
+            RELIASTRA - External Dependency Intelligence. Know when your
             dependencies fail. Prove what happened.
           </p>
           <ul>

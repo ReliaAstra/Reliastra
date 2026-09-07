@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
  * backend records a commission in the currency the referred customer is
  * actually charged. Rather than restating prices in both currencies on every
  * partner screen, these surfaces say what they are computed from and where the
- * real money moves — using the same `/billing/currency` answer the customer
+ * real money moves - using the same `/billing/currency` answer the customer
  * surfaces read, so the note cannot contradict them.
  *
  * It renders nothing when there is nothing to explain: if the processing
@@ -33,7 +33,7 @@ export function CommissionBasisNote({ className }: { className?: string }) {
       <span>
         Figures here are computed from the Pro list price in US Dollars (USD). A
         commission is recorded in the currency the referred customer is charged
-        in — currently {currencyLabel(currency)} — and payouts are reported in
+        in - currently {currencyLabel(currency)} - and payouts are reported in
         that currency.
       </span>
     </p>

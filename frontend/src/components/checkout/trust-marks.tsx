@@ -10,7 +10,7 @@ import { Fingerprint, Lock, ServerCog } from 'lucide-react';
  * where the money is being taken, and that what they were quoted is what is
  * charged. What is deliberately absent: a wall of badges for certifications
  * RELIASTRA does not hold, PCI-scramble icons that mean nothing, and "256-bit
- * encryption" boilerplate — trust copy that cannot be verified reads as noise
+ * encryption" boilerplate - trust copy that cannot be verified reads as noise
  * to this buyer and cheapens the claims that can be.
  */
 export function TrustMarks() {
@@ -18,7 +18,7 @@ export function TrustMarks() {
     <div className="border-t border-rs-border-subtle bg-rs-base px-5 py-4">
       <ul className="grid gap-2.5 sm:grid-cols-3 lg:grid-cols-1">
         <Mark icon={Lock} title="Card details stay with Paystack" body="RELIASTRA never receives your card number, expiry or CVC." />
-        <Mark icon={Fingerprint} title="Amount fixed before you pay" body="The charge above is the amount sent to the provider — no conversion at the last step." />
+        <Mark icon={Fingerprint} title="Amount fixed before you pay" body="The charge above is the amount sent to the provider - no conversion at the last step." />
         <Mark icon={ServerCog} title="Verified on our servers" body="Your plan activates after Paystack confirms the payment to us, not when a window closes." />
       </ul>
     </div>

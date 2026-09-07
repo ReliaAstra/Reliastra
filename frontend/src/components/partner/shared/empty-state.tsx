@@ -19,7 +19,7 @@ function NetworkGraph() {
         <line x1="80" y1="22" x2="130" y2="78" stroke="currentColor" strokeWidth="1" />
         <line x1="30" y1="78" x2="130" y2="78" stroke="currentColor" strokeWidth="1" />
 
-        {/* Node 1 — top center, pulsing */}
+        {/* Node 1 - top center, pulsing */}
         <motion.circle
           cx="80"
           cy="22"
@@ -44,10 +44,10 @@ function NetworkGraph() {
           />
         </circle>
 
-        {/* Node 2 — bottom left */}
+        {/* Node 2 - bottom left */}
         <circle cx="30" cy="78" r="5" fill="currentColor" opacity="0.25" />
 
-        {/* Node 3 — bottom right */}
+        {/* Node 3 - bottom right */}
         <circle cx="130" cy="78" r="5" fill="currentColor" opacity="0.25" />
       </svg>
     </div>

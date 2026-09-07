@@ -9,7 +9,7 @@ Canonical control-plane endpoints live under the admin module:
     GET /v1/admin/product/vendors
 
 These legacy routes remain for backward compatibility and are marked deprecated.
-The old ``/funnel`` path is intentionally NOT re-registered here — the
+The old ``/funnel`` path is intentionally NOT re-registered here - the
 canonical admin growth funnel owns that path under require_system_admin.
 """
 

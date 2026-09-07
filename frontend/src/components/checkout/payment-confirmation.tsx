@@ -14,7 +14,7 @@ import type { VerifiedPayment } from './checkout-experience';
  * actually collected, the currency it collected it in, and the USD price the
  * checkout quoted. Those figures are read back from the persisted transaction,
  * so this screen states what happened rather than re-deriving what should have
- * happened — and it will still say the same thing next month after a repricing,
+ * happened - and it will still say the same thing next month after a repricing,
  * because the record is history and not a recomputation.
  */
 export function PaymentConfirmation({
@@ -74,9 +74,9 @@ export function PaymentConfirmation({
           <dl className="mt-5 divide-y divide-rs-border-subtle border-y border-rs-border-subtle">
             <Line label="Plan" value={`RELIASTRA ${displayPlan}`} />
             <Line label="Billing" value={interval === 'annual' ? 'Annual' : 'Monthly'} />
-            <Line label="Commercial price" value={product ?? '—'} />
-            <Line label="Amount charged" value={charged ?? '—'} mono />
-            <Line label="Payment currency" value={currencyName ?? '—'} />
+            <Line label="Commercial price" value={product ?? '-'} />
+            <Line label="Amount charged" value={charged ?? '-'} mono />
+            <Line label="Payment currency" value={currencyName ?? '-'} />
             <Line label="Payment provider" value={quote?.payment_provider_display ?? quote?.payment_provider ?? 'Paystack'} />
             {verified?.reference ? (
               <Line label="Reference" value={verified.reference} mono />

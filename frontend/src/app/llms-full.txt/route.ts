@@ -2,7 +2,7 @@ import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
 import { RESEARCH_ARTICLES } from '@/lib/routes';
 
 /**
- * /llms-full.txt — deeper machine-readable reference: full concept
+ * /llms-full.txt - deeper machine-readable reference: full concept
  * definitions, docs map, and research index. Complements /llms.txt.
  */
 export function GET() {
@@ -12,13 +12,13 @@ export function GET() {
   ).join('\n\n');
 
   const research = RESEARCH_ARTICLES.map(
-    (a) => `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} — ${SITE_URL}/research/${a.slug}`
+    (a) => `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} - ${SITE_URL}/research/${a.slug}`
   ).join('\n');
 
-  const body = `# RELIASTRA — Full reference (llms-full.txt)
+  const body = `# RELIASTRA - Full reference (llms-full.txt)
 
 > External Dependency Intelligence. Know when your dependencies fail. Prove what happened.
-> Canonical origin: ${SITE_URL}/ — all URLs below are absolute canonical URLs.
+> Canonical origin: ${SITE_URL}/ - all URLs below are absolute canonical URLs.
 
 ## Product
 

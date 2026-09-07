@@ -1,12 +1,15 @@
 'use client';
 
+import { RefreshCw } from 'lucide-react';
+
 import type { CheckoutQuote } from '@/lib/dashboard/api';
+import { usableFxReference } from '@/lib/billing/currency';
 import { FxReferencePanel } from '@/components/billing/PaymentCurrencyNotice';
 import { cn } from '@/lib/utils';
 
 /**
  * What the customer is buying, what it costs, and what will actually leave
- * their account — on one screen, before anything happens.
+ * their account - on one screen, before anything happens.
  *
  * Three rules this component obeys, because the whole checkout is built on them:
  *
@@ -27,10 +30,13 @@ export function OrderSummary({
   quote,
   interval,
   onIntervalChange,
+  onRefresh,
 }: {
   quote: CheckoutQuote;
   interval: 'monthly' | 'annual';
   onIntervalChange: (next: 'monthly' | 'annual') => void;
+  /** Re-quotes from the backend, re-running the live FX resolution. */
+  onRefresh: () => void;
 }) {
   const periodWord = quote.period_word ?? (interval === 'annual' ? 'year' : 'month');
 
@@ -61,14 +67,14 @@ export function OrderSummary({
           <IntervalToggle interval={interval} onChange={onIntervalChange} />
         </div>
 
-        {/* The two prices, side by side and equal in weight — because to the
+        {/* The two prices, side by side and equal in weight - because to the
             customer they are equally true. Presenting the charged amount small
             and grey, or only inside the provider, is the pattern this checkout
             exists to avoid. */}
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <PriceCard
             label="RELIASTRA price"
-            value={quote.product_price_display ?? '—'}
+            value={quote.product_price_display ?? '-'}
             sub={`Billed per ${periodWord} in ${quote.product_currency}`}
           />
           <PriceCard
@@ -104,7 +110,7 @@ export function OrderSummary({
         ) : null}
       </section>
 
-      <CurrencyExplanation quote={quote} />
+      <CurrencyExplanation quote={quote} onRefresh={onRefresh} />
     </div>
   );
 }
@@ -118,10 +124,23 @@ export function OrderSummary({
  * object. If the backend ever has nothing to disclose (charging in the price
  * list's own currency) the section is omitted entirely rather than replaced with
  * a generic reassurance.
+ *
+ * When the charge settles in a different currency than the price list, the
+ * live rate the backend fetched from its public source is shown here (rate,
+ * source, timestamps, and a link to verify the source yourself) - and when it
+ * could not be fetched, the section says so plainly instead of pretending the
+ * question was never asked.
  */
-function CurrencyExplanation({ quote }: { quote: CheckoutQuote }) {
-  const fx = quote.fx_reference;
-  if (!quote.currency_notice && !fx) return null;
+function CurrencyExplanation({
+  quote,
+  onRefresh,
+}: {
+  quote: CheckoutQuote;
+  onRefresh: () => void;
+}) {
+  const fx = usableFxReference(quote.fx_reference);
+  const fxRequired = quote.payment_currency !== quote.product_currency;
+  if (!quote.currency_notice && !fx && !fxRequired) return null;
 
   return (
     <section
@@ -152,7 +171,39 @@ function CurrencyExplanation({ quote }: { quote: CheckoutQuote }) {
         <FieldLabel>Collected by</FieldLabel>
         <FieldValue>{quote.payment_provider_display ?? quote.payment_provider}</FieldValue>
       </dl>
-      <FxReferencePanel className="mt-4" fx={fx} />
+      <FxReferencePanel
+        className="mt-4"
+        fx={fx}
+        contextAmountMinor={quote.product_amount_minor}
+      />
+      {fxRequired && !fx ? (
+        <div
+          className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-3"
+          role="status"
+          aria-live="polite"
+          data-testid="checkout-fx-pending"
+        >
+          <p className="text-[12px] font-semibold text-rs-text">
+            Live {quote.product_currency} to {quote.payment_currency} rate not
+            verified yet
+          </p>
+          <p className="mt-1 text-[11.5px] leading-relaxed text-rs-text-secondary">
+            The public source did not answer on the last check, so the
+            conversion behind this charge has no verifiable figure to show.
+            Payment cannot start until the rate is fetched - no guessed
+            numbers, ever.
+          </p>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-rs-border bg-rs-elevated px-2.5 py-1.5 text-[12px] font-medium text-rs-text transition-colors hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+            data-testid="checkout-fx-retry"
+          >
+            <RefreshCw size={12} aria-hidden="true" />
+            Re-check live rate
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

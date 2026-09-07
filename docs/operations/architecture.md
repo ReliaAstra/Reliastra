@@ -1,4 +1,4 @@
-# Architecture — Source → Artifact → Production
+# Architecture - Source → Artifact → Production
 
 ## Overview
 ```
@@ -7,12 +7,12 @@ Developer → GitHub (PR → CI) → GHCR (immutable @sha256) → Tailscale (100
 Single VPS today, extensible to multi-host, managed DB/Redis, external storage, staging, blue/green, multi-region without rewriting `commit → digest → release`.
 
 ## Trust boundaries
-- **Workstation untrusted** for prod admin — no public SSH.
-- **GitHub** — control plane, may deploy via least-privilege `reliastra-deploy` over Tailscale only.
-- **GHCR** — distribution plane, immutable `ghcr.io/reliastra/reliastra@sha256:...`.
-- **Tailscale** — admin network (`tailscale0` 100.64/10), ACL `tag:prod:22` only for `autogroup:admin` and `tag:ci`.
-- **VPS** — execution env, assumed exposed to app threats, host firewall + container hardening.
-- **Containers** — workloads, receive only required secrets, `read_only`, `no-new-privileges`, `cap_drop: ALL`, `user: 10001`, no `privileged`, no `host` net, no `docker.sock`.
+- **Workstation untrusted** for prod admin - no public SSH.
+- **GitHub** - control plane, may deploy via least-privilege `reliastra-deploy` over Tailscale only.
+- **GHCR** - distribution plane, immutable `ghcr.io/reliastra/reliastra@sha256:...`.
+- **Tailscale** - admin network (`tailscale0` 100.64/10), ACL `tag:prod:22` only for `autogroup:admin` and `tag:ci`.
+- **VPS** - execution env, assumed exposed to app threats, host firewall + container hardening.
+- **Containers** - workloads, receive only required secrets, `read_only`, `no-new-privileges`, `cap_drop: ALL`, `user: 10001`, no `privileged`, no `host` net, no `docker.sock`.
 
 ## Release model
 `commit SHA (40 hex) + image digest + workflow_run + timestamp + deployer` stored in `/opt/reliastra/state/current.json` and GH deployment. `latest` never used in prod. `build once, promote same digest` to staging then prod via different `.env`.

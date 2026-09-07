@@ -40,7 +40,7 @@ function FeatureRow({ label, ok }: { label: string; ok: boolean }) {
 
 export function PricingSection() {
   const [interval, setInterval] = useState<'monthly' | 'annual'>('monthly');
-  // "What currency will I actually be charged in?" — resolved by the same
+  // "What currency will I actually be charged in?" - resolved by the same
   // backend source of truth that prices the Paystack transaction, so this
   // section can never advertise a currency checkout does not use.
   const { currency } = usePaymentCurrency();
@@ -165,7 +165,7 @@ export function PricingSection() {
                 )}
 
                 {/* The USD figure above is the list price; this is the
-                    mandatory transparency triple — product price, the amount
+                    mandatory transparency triple - product price, the amount
                     actually charged through Paystack, and the provider. Every
                     wording lives in one shared component (billing/
                     PaymentCurrencyNotice) so no surface can drift. */}

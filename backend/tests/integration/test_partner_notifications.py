@@ -36,7 +36,7 @@ async def _register(async_client, email, full_name, ref_code=None):
     }
     if ref_code:
         payload["ref_code"] = ref_code
-    # Registration is gated on email verification — walk the OTP flow.
+    # Registration is gated on email verification - walk the OTP flow.
     body = await register_and_verify(async_client, payload)
     return {
         "token": body["tokens"]["access_token"],

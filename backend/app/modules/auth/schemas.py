@@ -152,7 +152,7 @@ class VerifyOtpRequest(BaseModel):
 
 
 class VerifyOtpResponse(BaseModel):
-    """Successful verification logs the user in — tokens are issued here."""
+    """Successful verification logs the user in - tokens are issued here."""
 
     message: str = "Email verified. Welcome to Reliastra."
     is_email_verified: bool = True

@@ -7,8 +7,8 @@
  * the shared sign-in flow keeps the bearer token in memory/localStorage.
  * Some preview edge proxies strip the `Authorization` (and other custom)
  * headers from browser requests, which silently turns every authenticated
- * API call into a 401 — login/refresh still succeed because they carry no
- * bearer header — the classic "signed in, then immediately signed out"
+ * API call into a 401 - login/refresh still succeed because they carry no
+ * bearer header - the classic "signed in, then immediately signed out"
  * symptom.
  *
  * Cookies are normalised by edge proxies, so the access token (and the

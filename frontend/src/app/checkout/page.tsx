@@ -6,7 +6,7 @@ import { CheckoutSkeleton } from '@/components/checkout/checkout-skeleton';
 export const dynamic = 'force-dynamic';
 
 /**
- * `/checkout` — RELIASTRA's payment surface.
+ * `/checkout` - RELIASTRA's payment surface.
  *
  * The page takes a plan and a billing interval from the query string and
  * nothing else. It is not a security boundary and does not pretend to be one:

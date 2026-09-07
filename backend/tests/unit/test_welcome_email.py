@@ -2,8 +2,8 @@
 
 With email-verification enforcement, registration itself only issues the OTP
 code; the *welcome* email fires at the moment the address is successfully
-verified — via the OTP code (``EmailOTPService.verify_code``) or the legacy
-magic link (``EmailAuthService.verify_email``) — exactly once, and a broken
+verified - via the OTP code (``EmailOTPService.verify_code``) or the legacy
+magic link (``EmailAuthService.verify_email``) - exactly once, and a broken
 SMTP layer can never block signup or verification.
 """
 
@@ -210,7 +210,7 @@ async def test_link_verification_already_verified_does_not_welcome(mocker):
         id=uuid.uuid4(),
         email="ada@acme.io",
         full_name="Ada Lovelace",
-        is_email_verified=True,  # already verified — no second welcome
+        is_email_verified=True,  # already verified - no second welcome
     )
     user_repo.get_by_id = AsyncMock(return_value=user)
     user_repo.update = AsyncMock()

@@ -48,7 +48,7 @@ except:
 
 echo ""
 echo "========================================================================"
-echo "LIVE CHECK: Reliastra Backend — $(date)"
+echo "LIVE CHECK: Reliastra Backend - $(date)"
 echo "========================================================================"
 echo ""
 

@@ -64,7 +64,7 @@ export function OnboardingShell({
 
   return (
     <div className="rs-app min-h-screen bg-rs-base">
-      {/* Top bar — minimal, enterprise, not marketing */}
+      {/* Top bar - minimal, enterprise, not marketing */}
       <header className="sticky top-0 z-30 border-b border-rs-border-subtle bg-rs-base/90 backdrop-blur supports-[backdrop-filter]:bg-rs-base/80">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/dashboard" className="inline-flex items-center gap-2.5">
@@ -93,7 +93,7 @@ export function OnboardingShell({
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="min-w-0">{children}</div>
-          {/* Context panel — explains why, not just what */}
+          {/* Context panel - explains why, not just what */}
           <aside className="hidden lg:block">
             <div className="sticky top-[88px] space-y-4">
               <div className="rounded-xl border border-rs-border-subtle bg-rs-elevated p-5">
@@ -103,7 +103,7 @@ export function OnboardingShell({
                 </h3>
                 <p className="mt-2 text-[13px] leading-relaxed text-rs-text-secondary">
                   Reliastra checks your dependencies from <span className="font-medium text-rs-text">multiple regions</span> with quorum confirmation.
-                  When regions agree a vendor is degraded, we create an incident with deterministic attribution and checksummed evidence — independent of your application logs.
+                  When regions agree a vendor is degraded, we create an incident with deterministic attribution and checksummed evidence - independent of your application logs.
                 </p>
                 <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                   {[
@@ -124,7 +124,7 @@ export function OnboardingShell({
                 <ul className="mt-3 space-y-2 text-[13px] leading-relaxed text-rs-text-secondary">
                   <li className="flex gap-2">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-rs-brand" />
-                    <span><span className="font-medium text-rs-text">Every check is independent</span> — not your APM, not the vendor’s status page.</span>
+                    <span><span className="font-medium text-rs-text">Every check is independent</span> - not your APM, not the vendor’s status page.</span>
                   </li>
                   <li className="flex gap-2">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-rs-brand" />
@@ -132,7 +132,7 @@ export function OnboardingShell({
                   </li>
                   <li className="flex gap-2">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-rs-brand" />
-                    <span>Your data is <span className="font-medium text-rs-text">preserved on downgrade</span> — paused, never deleted.</span>
+                    <span>Your data is <span className="font-medium text-rs-text">preserved on downgrade</span> - paused, never deleted.</span>
                   </li>
                 </ul>
               </div>
@@ -140,7 +140,7 @@ export function OnboardingShell({
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/30 dark:bg-amber-950/20">
                 <p className="text-xs font-semibold text-rs-text">14-day full-access evaluation</p>
                 <p className="mt-1 text-xs leading-relaxed text-rs-text-secondary">
-                  Pro limits (50 deps, 90d retention, evidence, API) — no card. Your evaluation is server-time authoritative.
+                  Pro limits (50 deps, 90d retention, evidence, API) - no card. Your evaluation is server-time authoritative.
                 </p>
               </div>
             </div>

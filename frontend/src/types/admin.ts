@@ -458,7 +458,7 @@ export interface PartnerStatsResponse {
   monthly_commission_minor: number;
   total_commission_paid_minor: number;
   pending_commission_minor: number;
-  /** Payouts awaiting settlement — the admin's actual to-do list. */
+  /** Payouts awaiting settlement - the admin's actual to-do list. */
   pending_payout_count: number;
   pending_payout_minor: number;
   currency: string;
@@ -511,7 +511,7 @@ export interface AdminPayoutItem {
   paid_at?: string | null;
   payout_method?: string | null;
   /**
-   * Ready-to-use destination for settlement — bank account numbers are masked
+   * Ready-to-use destination for settlement - bank account numbers are masked
    * to the last four digits by the backend.
    */
   payout_destination?: string | null;
@@ -529,7 +529,7 @@ export interface AdminPayoutDestinationReveal {
   bank_details?: Record<string, string> | null;
   payout_destination?: string | null;
   payout_details_updated_at?: string | null;
-  /** True while the post-change hold is still running — do not pay yet. */
+  /** True while the post-change hold is still running - do not pay yet. */
   in_cooldown: boolean;
 }
 

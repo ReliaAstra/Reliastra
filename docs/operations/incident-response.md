@@ -1,4 +1,4 @@
-# Incident Response — Production
+# Incident Response - Production
 
 ## Triage (Tailscale)
 ```bash

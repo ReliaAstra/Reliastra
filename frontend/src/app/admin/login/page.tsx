@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
  * (ADMIN_USERNAME / ADMIN_PASSWORD, kept in the backend environment, never
  * in the database and never attached to a user account) for a session that
  * lives in HttpOnly admin cookies. The customer/partner token is never
- * involved — and the admin token can never be used on customer surfaces.
+ * involved - and the admin token can never be used on customer surfaces.
  */
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -191,7 +191,7 @@ function AdminLoginPageContent() {
             </h2>
             <dl className="mt-10 space-y-6">
               {[
-                ['Dedicated credentials', 'Operator username and password kept in deployment secrets — never a user row.'],
+                ['Dedicated credentials', 'Operator username and password kept in deployment secrets - never a user row.'],
                 ['Isolated sessions', 'Admin tokens cannot be used on customer surfaces, and customer tokens are rejected here.'],
                 ['Every action audited', 'Sign-ins, sign-outs, and privileged operations land on the admin audit trail.'],
               ].map(([term, desc]) => (

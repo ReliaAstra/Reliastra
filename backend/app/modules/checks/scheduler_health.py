@@ -20,7 +20,7 @@ independently:
     Written by ``schedule_checks`` after a completed Beat cycle. Absent/stale
     means Beat is not running (or cannot reach the DB).
 ``worker``
-    Written by a worker when it executes ``worker_heartbeat`` — a task Beat
+    Written by a worker when it executes ``worker_heartbeat`` - a task Beat
     enqueues on the same interval. This is the only signal that proves the
     *whole* path Beat → broker → worker is flowing; Beat can be healthy while
     no worker consumes a thing.
@@ -113,7 +113,7 @@ async def _write_heartbeat(key: str, label: str) -> bool:
         # A heartbeat that cannot be written is itself an incident: the
         # pipeline may be running fine while becoming invisible.
         logger.warning(
-            "Could not write %s heartbeat to Redis (key=%s ttl=%ss) — "
+            "Could not write %s heartbeat to Redis (key=%s ttl=%ss) - "
             "scheduler health will read as unavailable",
             label,
             key,
@@ -355,7 +355,7 @@ async def is_check_dispatched(dependency_id: Any) -> bool:
     whose previous task has not completed yet and leaves it due.
 
     A Redis read failure returns False (dispatch normally) rather than silently
-    freezing every dependency — the queue-depth signal in ``/health/checks``
+    freezing every dependency - the queue-depth signal in ``/health/checks``
     still reports the underlying outage.
     """
     from app.infrastructure.redis_client import safe_redis_exists

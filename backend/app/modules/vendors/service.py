@@ -48,7 +48,7 @@ _RESOLUTION_SECONDS: dict[str, int] = {
     "6h": 21600,
 }
 
-# Cache TTL (seconds) keyed by window — shorter for recent data
+# Cache TTL (seconds) keyed by window - shorter for recent data
 _CACHE_TTL: dict[str, int] = {
     "1h": 10,
     "6h": 15,
@@ -98,7 +98,7 @@ class VendorService:
         """FIX 22: build the vendor status board with 2 queries total.
 
         One query for all public vendors, one batched query for the latest
-        observations across every vendor endpoint — instead of N vendors ×
+        observations across every vendor endpoint - instead of N vendors ×
         detail calls.
         """
         vendors = await self.repository.list_public(session)
@@ -393,7 +393,7 @@ class VendorService:
         6. Assemble response and cache it.
 
         This method is wrapped in a top-level safety net so that it
-        NEVER raises an unhandled exception — it will always return a
+        NEVER raises an unhandled exception - it will always return a
         valid ``VendorTimelineResponse`` (possibly empty) to prevent
         public-facing 500 errors.
         """
@@ -437,7 +437,7 @@ class VendorService:
         resolution: str = "auto",
         region: str | None = None,
     ) -> VendorTimelineResponse:
-        """Internal implementation — may raise on unexpected errors."""
+        """Internal implementation - may raise on unexpected errors."""
         # --- 1. Validate ------------------------------------------------
         if window not in _WINDOW_HOURS:
             raise ValidationException(

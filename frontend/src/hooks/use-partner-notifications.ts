@@ -24,13 +24,13 @@ function readSeen(): Set<string> {
 function writeSeen(ids: Set<string>) {
   if (typeof window === 'undefined') return;
   try {
-    // Keep the list bounded — only recent ids matter for de-duplication.
+    // Keep the list bounded - only recent ids matter for de-duplication.
     window.localStorage.setItem(
       SEEN_STORAGE_KEY,
       JSON.stringify(Array.from(ids).slice(-200))
     );
   } catch {
-    /* storage full or unavailable — de-duplication degrades, nothing breaks */
+    /* storage full or unavailable - de-duplication degrades, nothing breaks */
   }
 }
 
@@ -44,7 +44,7 @@ export function browserNotificationPermission(): BrowserPermission {
 /**
  * Ask the browser for notification permission.
  *
- * Must be called from a user gesture (a click) — Chrome ignores permission
+ * Must be called from a user gesture (a click) - Chrome ignores permission
  * prompts that are not user-initiated.
  */
 export async function requestBrowserNotifications(): Promise<BrowserPermission> {
@@ -63,8 +63,8 @@ export async function requestBrowserNotifications(): Promise<BrowserPermission> 
 /**
  * Partner notification feed.
  *
- * Polls the backend every 20s and — when the partner has both enabled browser
- * notifications in Settings and granted the Chrome permission — raises a
+ * Polls the backend every 20s and - when the partner has both enabled browser
+ * notifications in Settings and granted the Chrome permission - raises a
  * desktop notification for each newly arrived unread item. The in-app feed is
  * always the source of truth; the desktop popup is a mirror of it, which is
  * why nothing is ever shown twice (ids are remembered in localStorage).
@@ -123,7 +123,7 @@ export function usePartnerNotifications(options?: { browserEnabled?: boolean }) 
           notification.close();
         };
       } catch {
-        /* some browsers require a service worker — silently skip */
+        /* some browsers require a service worker - silently skip */
       }
       seen.add(item.id);
     });

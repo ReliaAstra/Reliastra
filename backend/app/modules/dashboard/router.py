@@ -41,7 +41,7 @@ async def get_latency_timeseries(
 ) -> list[LatencyPointResponse]:
     """Customer latency series for charting.
 
-    Reads ``check_results`` — the authoritative, synchronously-written record
+    Reads ``check_results`` - the authoritative, synchronously-written record
     of every customer check. (Observations feed the public vendor network and
     are drained asynchronously; they must never be the source for a customer's
     own latency chart.)

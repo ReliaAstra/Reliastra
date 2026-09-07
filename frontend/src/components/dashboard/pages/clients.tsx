@@ -35,7 +35,7 @@ import { TableSkeleton } from '@/components/dashboard/ui/skeleton';
 import { StatusBadge } from '@/components/dashboard/ui/status-badge';
 import { cn } from '@/lib/utils';
 
-// ── Plan gate — Client workspaces are exclusive to Enterprise ──────────────
+// ── Plan gate - Client workspaces are exclusive to Enterprise ──────────────
 
 function AgencyGate() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
@@ -391,7 +391,7 @@ export function ClientsPage() {
         <EmptyState
           icon={<Users size={32} />}
           title="Could not load the agency portfolio"
-          body="The API returned an error. Retry in a moment — or contact support if this persists."
+          body="The API returned an error. Retry in a moment - or contact support if this persists."
           actionLabel="Retry"
           onAction={() => refetch()}
         />

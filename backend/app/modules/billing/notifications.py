@@ -1,4 +1,4 @@
-"""Billing & subscription emails — rendered through the shared transactional layout.
+"""Billing & subscription emails - rendered through the shared transactional layout.
 
 Every message here inherits :mod:`app.infrastructure.email_layout`, which owns
 the canonical support-and-appreciation footer, so billing can never ship an
@@ -8,7 +8,7 @@ Currency discipline
 -------------------
 No price string in this module is hardcoded. Product prices come from
 ``app.core.permissions`` and payment amounts from
-``app.core.payment_pricing`` — the same two sources the checkout used — so a
+``app.core.payment_pricing`` - the same two sources the checkout used - so a
 receipt can never contradict what Paystack actually collected. Receipts state
 the *charged* amount and its ISO currency code in words (``NGN 60,000.00 NGN``
 style output from :func:`format_money`), never a bare symbol.
@@ -74,7 +74,7 @@ class PaymentSummary:
 
     @property
     def provider_label(self) -> str:
-        """Who actually took the money — always named on payment documents."""
+        """Who actually took the money - always named on payment documents."""
         return PAYMENT_PROVIDER
 
     @property
@@ -216,7 +216,7 @@ async def send_subscription_confirmed_email(
     )
     return await _send(
         to_email=to_email,
-        subject=f"RELIASTRA {payment.plan_name} — subscription confirmed",
+        subject=f"RELIASTRA {payment.plan_name} - subscription confirmed",
         body=plain,
         html=html,
     )
@@ -254,11 +254,11 @@ The Reliastra Team
         # Mandatory transparency triple: list price, the amount really
         # collected, and the processor that collected it.
         ("Product price", payment.product_price_label or "Custom"),
-        ("Actual charge", payment.charged_label or "—"),
+        ("Actual charge", payment.charged_label or "-"),
         ("Payment provider", payment.provider_label),
         ("Charged currency", payment.currency),
-        ("Payment reference", payment.reference or "—"),
-        ("Date", _day(payment.paid_at) if payment.paid_at else "—"),
+        ("Payment reference", payment.reference or "-"),
+        ("Date", _day(payment.paid_at) if payment.paid_at else "-"),
     ]
     if payment.period_label:
         rows.append(("Billing period", payment.period_label))
@@ -277,7 +277,7 @@ The Reliastra Team
         "email and our team will resolve it.</p>"
     )
     return render_email(
-        heading=f"Payment receipt — {payment.plan_name}",
+        heading=f"Payment receipt - {payment.plan_name}",
         body_html=body_html,
         body_text=body_text,
         preheader=f"{payment.charged_label or 'Receipt'} for your RELIASTRA subscription",
@@ -292,7 +292,7 @@ async def send_payment_receipt_email(
     )
     return await _send(
         to_email=to_email,
-        subject=f"RELIASTRA receipt — {payment.charged_label or payment.plan_name}",
+        subject=f"RELIASTRA receipt - {payment.charged_label or payment.plan_name}",
         body=plain,
         html=html,
     )
@@ -320,7 +320,7 @@ Your {payment.plan_name} subscription for {org_name} renews in {days_left} day{'
 {product_line}Payment provider: {payment.provider_label}
 Billing currency: {payment.currency}
 
-Your payment method is charged automatically — no action is needed. To change plan or cancel before then: {frontend_url('/settings/billing')}
+Your payment method is charged automatically - no action is needed. To change plan or cancel before then: {frontend_url('/settings/billing')}
 
 Best regards,
 The Reliastra Team
@@ -409,7 +409,7 @@ Hello {user_name},
 Your {days_left} day{'s' if days_left == 1 else ''} of full RELIASTRA access for {org_name} {'ends tomorrow' if days_left <= 1 else f'end in {days_left} days'}.
 
 {price_line + '.' if price_line else ''}
-Your configuration and history are preserved either way — nothing is deleted.
+Your configuration and history are preserved either way - nothing is deleted.
 
 Keep full access: {upgrade_url}
 
@@ -422,7 +422,7 @@ The Reliastra Team
         f"RELIASTRA access for {escape(org_name)} "
         f"{'ends tomorrow' if days_left <= 1 else f'end in {days_left} days'}.</p>"
         + (f'<div class="panel"><p class="note" style="margin:0">{escape(price_line)}.</p></div>' if price_line else "")
-        + "<p>Your configuration and history are preserved either way — nothing is deleted.</p>"
+        + "<p>Your configuration and history are preserved either way - nothing is deleted.</p>"
         f'<p style="text-align: center;"><a href="{upgrade_url}" class="button">Keep full access</a></p>'
     )
     return render_email(

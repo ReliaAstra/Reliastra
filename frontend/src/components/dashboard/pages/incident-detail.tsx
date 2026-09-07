@@ -92,7 +92,7 @@ export function IncidentDetailPage({ id }: { id: string }) {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-rs-text">
-            {incident.title || `${incident.vendor || code} — ${incident.severity} · ${incident.root_cause.replace('_', ' ')}`}
+            {incident.title || `${incident.vendor || code} - ${incident.severity} · ${incident.root_cause.replace('_', ' ')}`}
           </h1>
           {incident.description && (
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-rs-text-secondary">
@@ -219,7 +219,7 @@ export function IncidentDetailPage({ id }: { id: string }) {
               <div className="mt-3 text-sm text-rs-text-secondary">{card.metric}</div>
               <div className="mt-1 font-mono text-[28px] font-bold text-rs-text">
                 {chart.length === 0 ? (
-                  <span className="text-lg font-medium text-rs-text-tertiary">—</span>
+                  <span className="text-lg font-medium text-rs-text-tertiary">-</span>
                 ) : card.key === 'yours' ? (
                   '3.1x'
                 ) : (
@@ -229,7 +229,7 @@ export function IncidentDetailPage({ id }: { id: string }) {
               <div className="mt-4 flex h-[120px] items-center justify-center">
                 {chart.length === 0 ? (
                   <p className="max-w-[16rem] text-center text-xs leading-relaxed text-rs-text-tertiary">
-                    Insufficient data — charts populate as checks accumulate during the incident.
+                    Insufficient data - charts populate as checks accumulate during the incident.
                   </p>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">

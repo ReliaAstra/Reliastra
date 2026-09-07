@@ -4,7 +4,7 @@ Locks the contract the UX standard requires:
 
 * every automated email renders the canonical support-and-appreciation footer,
 * exactly once, in both the HTML and the plain-text part,
-* inside a footer region — never inside the message body,
+* inside a footer region - never inside the message body,
 * while the message's own content (links, codes, security instructions) stays
   intact above it,
 * and the copy has exactly one definition per tier (see the frontend
@@ -274,7 +274,7 @@ def test_alert_channel_email_carries_the_footer():
 def test_footer_region_has_the_brand_and_support_address():
     html = footer_html()
     assert "support@reliastra.com" in html
-    assert "Reliastra — External Dependency Intelligence" in html
+    assert "Reliastra - External Dependency Intelligence" in html
 
 
 def test_unsubscribe_note_is_optional_and_appended_once():

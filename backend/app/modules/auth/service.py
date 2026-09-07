@@ -118,7 +118,7 @@ class AuthService:
         # Process referral if ref_code provided
         if request.ref_code:
             # Bind the commissionable partner referral. Reuses the existing
-            # ``ref_code`` identity — one code, one partner, one customer.
+            # ``ref_code`` identity - one code, one partner, one customer.
             # Attribution must never be able to fail a registration, so any
             # error here is logged and swallowed.
             try:
@@ -158,7 +158,7 @@ class AuthService:
 
         # HARD GATE: no tokens are issued at registration. The account exists
         # but is inert until the emailed 6-digit code is submitted to
-        # /v1/auth/verify-otp. Issuing the code is best-effort — a dead SMTP
+        # /v1/auth/verify-otp. Issuing the code is best-effort - a dead SMTP
         # server must not roll back a successful signup, and the user can
         # always hit "Resend code".
         try:
@@ -209,7 +209,7 @@ class AuthService:
         if not user.is_active:
             raise UnauthorizedException("User account is disabled")
 
-        # HARD GATE: correct credentials are not enough — the address must be
+        # HARD GATE: correct credentials are not enough - the address must be
         # proven. Runs *after* the password check so the response cannot be
         # used to enumerate which addresses are registered.
         if not user.is_email_verified:
@@ -259,7 +259,7 @@ class AuthService:
         # share this single JWT session, so the same refresh token can be
         # spent by parallel callers in the same tick. Without serialization
         # two requests can both observe the pre-rotation state and mint
-        # parallel sequences — the reuse detector then kills the family and
+        # parallel sequences - the reuse detector then kills the family and
         # signs everyone out with a valid session.
         lock = self._refresh_locks.setdefault(user_id, asyncio.Lock())
         async with lock:
@@ -279,7 +279,7 @@ class AuthService:
         # FIX 28 (corrected): reuse detection must run BEFORE the revoked
         # short-circuit. Rotation marks the previous token ``is_revoked``,
         # so a replayed rotated token used to die on that early exit without
-        # ever reaching the family-revocation branch — the exact theft
+        # ever reaching the family-revocation branch - the exact theft
         # signal this exists for. Now ANY already-revoked token, or any
         # token whose sequence is below the family's latest, is treated as
         # replay.
@@ -300,7 +300,7 @@ class AuthService:
             cached = self._grace_cache.get(str(family))
             if cached is not None and now - cached[1] <= grace:
                 logger.info(
-                    "Refresh token reuse for family %s within grace window — "
+                    "Refresh token reuse for family %s within grace window - "
                     "returning the last issued pair",
                     family,
                 )
@@ -317,11 +317,11 @@ class AuthService:
             if not recent_rotation:
                 await self.auth_repository.revoke_family(session, family)
                 # Persist BEFORE raising: get_db() rolls back on exception,
-                # so an uncommitted revocation would make this 401 a lie —
+                # so an uncommitted revocation would make this 401 a lie -
                 # the family stays live and the theft signal is lost.
                 await session.commit()
                 logger.warning(
-                    "Refresh token reuse detected for family %s — family revoked",
+                    "Refresh token reuse detected for family %s - family revoked",
                     family,
                 )
                 raise UnauthorizedException(
@@ -329,14 +329,14 @@ class AuthService:
                 )
             logger.info(
                 "Refresh token reuse for family %s within grace window "
-                "(recent rotation) — rotating without family revocation",
+                "(recent rotation) - rotating without family revocation",
                 family,
             )
 
         user = await self.user_repository.get_by_id(session, user_id)
         if not user or not user.is_active:
             raise UnauthorizedException("User account not found or disabled")
-        # A session can only be extended while the gate is still satisfied —
+        # A session can only be extended while the gate is still satisfied -
         # e.g. an admin un-verifying an account kills its refresh chain.
         if not user.is_email_verified:
             await self.auth_repository.revoke_family(session, family)

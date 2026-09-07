@@ -186,7 +186,7 @@ function CountryBars({ countries }: { countries: CountrySlice[] }) {
   if (!countries.length) {
     return (
       <p className="px-5 py-8 text-center text-sm text-slate-500 sm:px-6">
-        No geography data yet — countries appear once the visit beacon receives traffic.
+        No geography data yet - countries appear once the visit beacon receives traffic.
       </p>
     );
   }
@@ -214,7 +214,7 @@ function CountryBars({ countries }: { countries: CountrySlice[] }) {
   );
 }
 
-// ── Abandoned checkouts — THE outreach table ────────────────────────────────
+// ── Abandoned checkouts - THE outreach table ────────────────────────────────
 
 function AbandonedTable({ leads }: { leads: AbandonedCheckoutLead[] }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -223,7 +223,7 @@ function AbandonedTable({ leads }: { leads: AbandonedCheckoutLead[] }) {
     return (
       <p className="px-5 py-8 text-center text-sm text-slate-500 sm:px-6">
         No abandoned checkouts right now. Every organization that reached
-        checkout has completed payment — or their lead expired.
+        checkout has completed payment - or their lead expired.
       </p>
     );
   }
@@ -246,7 +246,7 @@ function AbandonedTable({ leads }: { leads: AbandonedCheckoutLead[] }) {
             {leads.map((lead) => (
               <tr key={lead.org_id} className="transition-colors hover:bg-slate-50 dark:hover:bg-white/[0.03]">
                 <td className="max-w-[220px] truncate px-5 py-3.5 font-medium text-slate-800 dark:text-slate-100">
-                  {lead.email || '—'}
+                  {lead.email || '-'}
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <button
@@ -268,12 +268,12 @@ function AbandonedTable({ leads }: { leads: AbandonedCheckoutLead[] }) {
                   ${(lead.amount_minor / 100).toFixed(2)}
                 </td>
                 <td className="px-5 py-3.5 text-right text-xs text-amber-600 dark:text-amber-400">
-                  {lead.started_at ? formatRelativeTime(lead.started_at) : '—'}
+                  {lead.started_at ? formatRelativeTime(lead.started_at) : '-'}
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <a
                     href={`mailto:${lead.email}?subject=${encodeURIComponent(
-                      "Finish setting up Reliastra — your checkout is waiting"
+                      "Finish setting up Reliastra - your checkout is waiting"
                     )}&body=${encodeURIComponent(
                       `Hi,\n\nI noticed you started upgrading to the ${lead.plan} plan but didn't complete checkout. Happy to help if something got in the way.\n\nRef: ${lead.reference}\n`
                     )}`}
@@ -301,7 +301,7 @@ function AbandonedTable({ leads }: { leads: AbandonedCheckoutLead[] }) {
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-white/10">
               <span className="text-xs capitalize text-slate-500">
-                {lead.plan} · {lead.started_at ? formatRelativeTime(lead.started_at) : '—'}
+                {lead.plan} · {lead.started_at ? formatRelativeTime(lead.started_at) : '-'}
               </span>
               <a
                 href={`mailto:${lead.email}?subject=${encodeURIComponent('Finish setting up Reliastra')}`}
@@ -336,7 +336,7 @@ export function AdminAnalyticsPanel() {
     <AdminCard>
       <SectionHeading
         title="Traffic & conversion"
-        subtitle="Visitors, geography and the path to paying — updated every 2 minutes"
+        subtitle="Visitors, geography and the path to paying - updated every 2 minutes"
         action={
           <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400">
             {query.data ? `window ${query.data.window_days}d` : ''}

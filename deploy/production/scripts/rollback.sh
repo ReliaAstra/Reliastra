@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# rollback.sh — restore previous known-good application release
+# rollback.sh - restore previous known-good application release
 # Usage: sudo ./rollback.sh [--reason health|smoke|manual]
 # Never auto-downgrades DB.
 set -euo pipefail
@@ -41,13 +41,13 @@ if [[ "$PREV_DIGEST" != "null" && "$PREV_DIGEST" != "unknown" && -n "$PREV_DIGES
   fi
 fi
 
-# Config compatibility — ensure .env still valid
+# Config compatibility - ensure .env still valid
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "ROLLBACK FAIL: $ENV_FILE missing" >&2
   exit 1
 fi
 
-# Restore — do NOT downgrade DB
+# Restore - do NOT downgrade DB
 echo "rollback: restoring app image (DB left intact)"
 export IMAGE_REF="$PREV_IMAGE"
 export IMAGE_DIGEST="$PREV_DIGEST"

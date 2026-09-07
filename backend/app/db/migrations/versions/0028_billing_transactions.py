@@ -1,11 +1,11 @@
-"""Persisted billing transactions — the actual charged amount and currency.
+"""Persisted billing transactions - the actual charged amount and currency.
 
 Adds ``billing_transactions``: one row per collected payment, recording both
 sides of the pricing contract exactly as they stood at payment time:
 
-* ``product_currency``/``product_amount_minor`` — the USD list price the
+* ``product_currency``/``product_amount_minor`` - the USD list price the
   checkout quoted (e.g. 3900 = $39.00);
-* ``charged_currency``/``charged_amount_minor`` — what Paystack reported
+* ``charged_currency``/``charged_amount_minor`` - what Paystack reported
   collecting, in its own figures (e.g. 6000000 = ₦60,000.00 NGN).
 
 Receipts, the billing page and finance reconciliation read this table rather

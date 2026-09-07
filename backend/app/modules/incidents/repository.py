@@ -93,7 +93,7 @@ class IncidentRepository:
         result = await session.execute(query)
         return list(result.scalars().all())
 
-    # Allowed update fields for Incident — any key not in this set is silently
+    # Allowed update fields for Incident - any key not in this set is silently
     # ignored so callers (even internal ones) cannot overwrite protected columns
     # like `org_id`, `dependency_id`, `created_at` via setattr.
     _UPDATABLE_FIELDS = {

@@ -1,4 +1,4 @@
-# Partner payouts, notifications & support — how it works
+# Partner payouts, notifications & support - how it works
 
 Covers the partner payout lifecycle, the notification system (in-app, email,
 browser), and the live partner ↔ admin support desk. Supersedes the
@@ -9,7 +9,7 @@ under [Known limitations](#known-limitations).
 
 ## 1. Payout destination
 
-**Partner** — Dashboard → Settings → Payout Info picks `crypto_usdc`,
+**Partner** - Dashboard → Settings → Payout Info picks `crypto_usdc`,
 `crypto_usdt` or `bank` and saves via `PUT /v1/partners/payout-settings`.
 Stored on `partner_profiles` (`payout_method`, `wallet_address`,
 `payout_network`, `bank_details` JSONB). Crypto requires a wallet address;
@@ -24,7 +24,7 @@ secret material (`app/modules/partners/destination.py`):
 * **Encrypted at rest.** `wallet_address` is Fernet ciphertext with an
   `enc:v1:` prefix; `bank_details` holds `{"__enc__": "enc:v1:…"}` inside the
   same JSONB column. Rows written before this change are plaintext and are
-  read transparently, then encrypted on the partner's next save — migration
+  read transparently, then encrypted on the partner's next save - migration
   `0023` only widens the column and adds `payout_details_updated_at`, so no
   live payout data is rewritten in place.
 * **Masked by default.** Partner responses and the admin list / detail / queue
@@ -34,7 +34,7 @@ secret material (`app/modules/partners/destination.py`):
   (`current_password`). Federated accounts, which have no local password, are
   exempt rather than locked out.
 * **Announced.** A change always emails the partner and raises a high-priority
-  in-app notice — the one notification that ignores preferences, because it is
+  in-app notice - the one notification that ignores preferences, because it is
   their only out-of-band signal that someone moved their money.
 * **Cool-down.** Payouts to a freshly changed destination are refused for
   `PARTNER_PAYOUT_DESTINATION_COOLDOWN_HOURS` (default 24, `0` disables), so a
@@ -44,7 +44,7 @@ secret material (`app/modules/partners/destination.py`):
   admin UI exposes it as a *Reveal to pay* button (with copy-to-clipboard and a
   warning when the destination is still inside its cool-down).
 
-**Admin** — `/admin/partners/{id}` shows a *Payout destination* card with the
+**Admin** - `/admin/partners/{id}` shows a *Payout destination* card with the
 wallet/network or the bank fields, and the destination is repeated inside the
 "Mark payout paid" confirmation so nobody settles blind. The **payout queue**
 on `/admin/partners` (see below) also carries it, so a settlement never
@@ -52,7 +52,7 @@ requires opening a partner's page.
 
 ## 2. Payout lifecycle
 
-Settlement is still **manual and off-platform** — there is no crypto sender or
+Settlement is still **manual and off-platform** - there is no crypto sender or
 bank API. What the code guarantees is the ledger:
 
 | Step | What happens | Where |
@@ -68,15 +68,15 @@ Requesting requires a configured destination and a balance at or above
 
 ### Payout queue
 
-Payout requests used to be invisible — the endpoint existed but nothing
+Payout requests used to be invisible - the endpoint existed but nothing
 rendered it, so an admin had to open partners one by one to notice someone was
 waiting. `/admin/partners` now leads with:
 
 * an **Awaiting payout** metric (`pending_payout_count` / `pending_payout_minor`
   on `GET /v1/admin/partners/stats`);
 * a **Payout queue** listing every open request with the partner, the amount,
-  how long it has waited, and the destination to send to — bank numbers masked
-  to the last four digits — with *Mark paid* (requires a transaction reference)
+  how long it has waited, and the destination to send to - bank numbers masked
+  to the last four digits - with *Mark paid* (requires a transaction reference)
   and *Mark failed* inline. Refreshes every 30s.
 
 ### Bugs fixed
@@ -93,7 +93,7 @@ waiting. `/admin/partners` now leads with:
    figure and explains the rest ("Also earned: $X still in the hold period · $Y
    reserved by a payout in progress").
 3. **Failed payouts stranded the money.** `mark_failed` called the repository
-   helper with `payout_id=None`, and that helper skips `None` values — so the
+   helper with `payout_id=None`, and that helper skips `None` values - so the
    reservation was never cleared and the commissions became permanently
    unpayable. The reservation is now cleared directly on the model.
 4. **Every support ticket response 500'd.** `FeedbackTicketResponse` validated
@@ -102,7 +102,7 @@ waiting. `/admin/partners` now leads with:
 
 ## 3. Notifications
 
-One service — `app/modules/partners/notifications.py` — writes an **in-app**
+One service - `app/modules/partners/notifications.py` - writes an **in-app**
 notification (always) and an **email** copy (per preference). Storage reuses
 the platform's `in_app_notifications` / `in_app_notification_deliveries`
 tables, so there is no parallel partner-only feed.
@@ -111,10 +111,10 @@ tables, so there is no parallel partner-only feed.
 
 | Event | Trigger | Recipient |
 |---|---|---|
-| `partner_referral_signup` | someone registers with the referral code (`bind_referral`) | partner — referred address is masked (`n***@example.com`) |
+| `partner_referral_signup` | someone registers with the referral code (`bind_referral`) | partner - referred address is masked (`n***@example.com`) |
 | `partner_commission_earned` | a referred customer is billed (`record_payment`) | partner |
 | `partner_payout_requested` | payout created | partner |
-| `partner_payout_paid` | admin marks paid | partner — includes destination (bank masked to last 4) + tx reference |
+| `partner_payout_paid` | admin marks paid | partner - includes destination (bank masked to last 4) + tx reference |
 | `partner_payout_failed` | admin marks failed | partner |
 | `partner_support_reply` | admin replies to a ticket (never for internal notes) | partner |
 | `partner_announcement` / `partner_marketing` | admin broadcast | selected partners |
@@ -124,12 +124,12 @@ payout being marked paid.
 
 ### Channels
 
-* **In-app** — `GET /v1/partners/notifications` (+ `/unread-count`, `/read`,
+* **In-app** - `GET /v1/partners/notifications` (+ `/unread-count`, `/read`,
   `DELETE /{id}`). Dashboard has a bell with an unread badge in the top bar and
   a full **Notifications** page in the sidebar. Polled every 20s.
-* **Email** — SMTP via `email_client`, subject prefixed `[RELIASTRA Partners]`,
+* **Email** - SMTP via `email_client`, subject prefixed `[RELIASTRA Partners]`,
   with a deep link back to the dashboard.
-* **Browser (Chrome)** — the dashboard raises `Notification(...)` for newly
+* **Browser (Chrome)** - the dashboard raises `Notification(...)` for newly
   arrived unread items when the partner has both flipped the Settings switch
   (`browser_enabled`, persisted server-side) and granted the browser
   permission. Ids already popped are remembered in `localStorage`, and the
@@ -142,7 +142,7 @@ payout being marked paid.
 `partner_notification_preferences` table (migration `0022`, which also merges
 the two 0021 heads). Settings → Notifications is now wired to it: one switch
 for browser notifications and one per email category (referrals, commissions,
-payouts, support replies, announcements, marketing — marketing off by default).
+payouts, support replies, announcements, marketing - marketing off by default).
 In-app delivery is deliberately not switchable: it is the partner's record of
 what happened.
 
@@ -159,7 +159,7 @@ partner detail page. Both audited (`admin_audit_logs` + `audit_logs`).
 ## 5. Live support desk
 
 Partner conversations are the **same** `feedback_tickets` / `feedback_messages`
-rows the admin support workspace already uses — there is no second inbox to
+rows the admin support workspace already uses - there is no second inbox to
 keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
 `category="partner"`, numbered `PN-XXXXXXXX`.
 
@@ -169,7 +169,7 @@ keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
   is a chat thread that polls every **5s**.
 * Admin: the existing `/admin/support` workspace, now polling every **8s**.
   Replying notifies the partner (in-app + email).
-* Internal notes (`is_internal_note=true`) are staff-only — never returned to
+* Internal notes (`is_internal_note=true`) are staff-only - never returned to
   the partner and never notified.
 * A partner reply re-opens a resolved ticket and bumps it back up the queue.
 * Ownership is enforced server-side: another partner requesting the thread gets
@@ -183,13 +183,13 @@ keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
   machine.
 * **Browser notifications need an open tab.** They use the Notification API,
   not Web Push with a service worker, so no VAPID keys or push subscriptions
-  are required — but nothing is delivered while the dashboard is closed. Email
+  are required - but nothing is delivered while the dashboard is closed. Email
   covers that case.
 * **Encryption is only as good as `SECRET_KEY`.** The Fernet key is derived
   from it, so rotating `SECRET_KEY` without re-encrypting makes existing
-  destinations unreadable (they fail closed — masked as empty — rather than
+  destinations unreadable (they fail closed - masked as empty - rather than
   leaking). A rotation routine is not implemented.
-* `PartnerTicketItem.unread_admin_messages` is always `0` — per-message read
+* `PartnerTicketItem.unread_admin_messages` is always `0` - per-message read
   receipts are not tracked; the notification feed covers "you have a reply".
 
 ## Tests

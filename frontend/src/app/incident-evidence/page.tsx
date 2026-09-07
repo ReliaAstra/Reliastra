@@ -37,7 +37,7 @@ export default function IncidentEvidencePage() {
       <MarketingPage
         eyebrow="Capability"
         title="Incident evidence & outage attribution"
-        lede="Your site went down. Was it you, or your vendors? Correlated timelines give the answer — with confidence levels, not guesswork."
+        lede="Your site went down. Was it you, or your vendors? Correlated timelines give the answer - with confidence levels, not guesswork."
         breadcrumbs={crumbs}
         related={[
           { label: 'SLA evidence', href: '/sla-evidence', description: 'From attribution to credit-ready reports.' },
@@ -50,14 +50,14 @@ export default function IncidentEvidencePage() {
           <h2>Who this is for</h2>
           <p>
             On-call engineers, incident commanders and platform teams who need to route
-            an active incident to the right owner in minutes — your codebase or a
-            specific vendor — and defend that routing in the postmortem.
+            an active incident to the right owner in minutes - your codebase or a
+            specific vendor - and defend that routing in the postmortem.
           </p>
           <h2>The core problem</h2>
           <p>
             An outage you caused and an outage your vendor caused look identical from
             inside your own monitoring. Both present as your service failing. Opening
-            two tabs — your dashboard and the vendor’s status page — is weaker than it
+            two tabs - your dashboard and the vendor’s status page - is weaker than it
             feels: the status page is human-written, approximate, and owned by the
             counterparty.
           </p>
@@ -65,7 +65,7 @@ export default function IncidentEvidencePage() {
           <ul>
             <li><strong>Shared timeline:</strong> your incident window and the dependency’s independent observations on one axis.</li>
             <li><strong>Quorum verdicts:</strong> multi-region failures confirm vendor-side degradation; single-region disagreement suggests a path problem.</li>
-            <li><strong>Confidence levels:</strong> the engine reports how strongly the timelines overlap — never a bare “vendor did it.”</li>
+            <li><strong>Confidence levels:</strong> the engine reports how strongly the timelines overlap - never a bare “vendor did it.”</li>
             <li><strong>No causation claims:</strong> correlated failure is strong evidence for where to look first, not proof of cause.</li>
           </ul>
           <h2>Practical example</h2>

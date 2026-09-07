@@ -1,8 +1,9 @@
 'use client';
 
-import { Check, Loader2, Lock, ShieldCheck } from 'lucide-react';
+import { Check, Loader2, Lock, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import type { CheckoutQuote } from '@/lib/dashboard/api';
+import { formatFxRate, usableFxReference } from '@/lib/billing/currency';
 import type { CheckoutPhase } from './checkout-experience';
 import { TrustMarks } from './trust-marks';
 import { cn } from '@/lib/utils';
@@ -12,8 +13,8 @@ import { cn } from '@/lib/utils';
  *
  * Its job is that nothing after it is unexpected: the exact charge, the
  * currency, the method, the provider and the interval are restated in the
- * customer's own terms, and the button says what clicking it does — opens
- * Paystack's secure payment experience — instead of implying the payment is
+ * customer's own terms, and the button says what clicking it does - opens
+ * Paystack's secure payment experience - instead of implying the payment is
  * finished here.
  *
  * Methods are rendered from `quote.payment_methods`, which the backend derives
@@ -21,7 +22,7 @@ import { cn } from '@/lib/utils';
  * "more options" affordance: a global customer is shown international card,
  * because that is the rail Paystack supports everywhere and the only one this
  * transaction is opened with. A Nigerian-only method (USSD, Pay with Bank, QR)
- * cannot appear here by editing a component — it would have to be enabled in the
+ * cannot appear here by editing a component - it would have to be enabled in the
  * backend policy first, and that change is deliberate and per-currency.
  */
 export function PaymentMethodPanel({
@@ -30,17 +31,29 @@ export function PaymentMethodPanel({
   handingOff,
   session,
   onContinue,
+  onRefreshQuote,
 }: {
   quote: CheckoutQuote;
   phase: CheckoutPhase;
   handingOff: boolean;
   session: { reference?: string; amount_display?: string | null } | null;
   onContinue: () => void;
+  /** Re-fetches the quote, which re-runs the backend's live FX resolution. */
+  onRefreshQuote: () => void;
 }) {
   const methods = quote.payment_methods ?? [];
   const busy = phase === 'preparing' || phase === 'verifying';
   const paying = phase === 'paying';
   const blocked = !quote.checkout_enabled || methods.length === 0;
+
+  // Live-rate gate: whenever the charge settles in a different currency than
+  // the price list, the customer must see a sourced, timestamped rate before
+  // the continue button exists as an option. The quote resolves it from a
+  // verifiable public source server-side; an absent reference (source down,
+  // fetch failed) is treated as "not yet verified", never skipped.
+  const fx = usableFxReference(quote.fx_reference);
+  const fxRequired = quote.payment_currency !== quote.product_currency;
+  const fxBlocked = fxRequired && !fx;
 
   const ctaLabel =
     phase === 'preparing'
@@ -79,7 +92,7 @@ export function PaymentMethodPanel({
             ) : null}
           </ul>
 
-          {/* Final review — the promise restated one last time, in the same
+          {/* Final review - the promise restated one last time, in the same
               words the backend used everywhere else on this flow. */}
           <div className="rounded-xl border border-rs-border-subtle bg-rs-base px-4 py-3.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">
@@ -99,7 +112,7 @@ export function PaymentMethodPanel({
               />
               <ReviewRow
                 label="Commercial price"
-                value={quote.product_price_display ?? '—'}
+                value={quote.product_price_display ?? '-'}
               />
               <ReviewRow
                 label="Payment currency"
@@ -107,7 +120,7 @@ export function PaymentMethodPanel({
               />
               <ReviewRow
                 label="Amount to be charged"
-                value={quote.payment_amount_display ?? '—'}
+                value={quote.payment_amount_display ?? '-'}
                 strong
                 dataTestId="checkout-review-amount"
               />
@@ -121,13 +134,13 @@ export function PaymentMethodPanel({
           <button
             type="button"
             onClick={onContinue}
-            disabled={busy || paying || blocked}
+            disabled={busy || paying || blocked || fxBlocked}
             className={cn(
               'group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5',
               'text-[14px] font-semibold transition-all',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-brand focus-visible:ring-offset-2 focus-visible:ring-offset-rs-elevated',
               'disabled:cursor-not-allowed',
-              blocked
+              blocked || fxBlocked
                 ? 'border border-rs-border-subtle bg-rs-base text-rs-text-tertiary'
                 : 'bg-rs-brand text-white hover:bg-rs-brand-hover active:scale-[0.995] disabled:opacity-80'
             )}
@@ -148,6 +161,44 @@ export function PaymentMethodPanel({
             ) : null}
           </button>
 
+          {fxBlocked ? (
+            <div
+              className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5"
+              role="status"
+              aria-live="polite"
+              data-testid="checkout-fx-blocked"
+            >
+              <p className="text-[12px] font-semibold text-rs-text">
+                Live exchange rate not verified yet
+              </p>
+              <p className="mt-1 text-[11.5px] leading-relaxed text-rs-text-secondary">
+                Before you pay we fetch the live {quote.product_currency} to{' '}
+                {quote.payment_currency} rate from a public source, so the
+                conversion behind the charge is transparent and checkable. It
+                could not be verified just now - nothing will start until it
+                can.
+              </p>
+              <button
+                type="button"
+                onClick={onRefreshQuote}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-rs-border bg-rs-elevated px-2.5 py-1.5 text-[12px] font-medium text-rs-text transition-colors hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+                data-testid="checkout-fx-retry-button"
+              >
+                <RefreshCw size={12} aria-hidden="true" />
+                Re-check live rate
+              </button>
+            </div>
+          ) : null}
+
+          {fx && fxRequired ? (
+            <p
+              className="text-center text-[11px] leading-relaxed text-rs-text-tertiary"
+              data-testid="checkout-fx-verified"
+            >
+              Live rate verified: {formatFxRate(fx)} via {fx.provider}
+            </p>
+          ) : null}
+
           {session?.reference ? (
             <p className="text-center text-[11px] leading-relaxed text-rs-text-tertiary">
               Reference <span className="font-mono">{session.reference}</span>
@@ -162,7 +213,7 @@ export function PaymentMethodPanel({
             >
               {handingOff
                 ? 'Opening the secure payment page. We will confirm your plan the moment you are back.'
-                : 'A secure Paystack window is open. Finish your card details there — RELIASTRA never sees them.'}
+                : 'A secure Paystack window is open. Finish your card details there - RELIASTRA never sees them.'}
             </p>
           ) : null}
 

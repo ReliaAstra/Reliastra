@@ -424,7 +424,7 @@ function CustomerSignals({
           <span className="bg-rose-500" style={{ width: `${churnedPct}%` }} />
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <SignalLegend label="Steady" value={active > 0 ? formatPercent(steadyPct, { fractionDigits: 0 }) : '—'} color="bg-emerald-500" />
+          <SignalLegend label="Steady" value={active > 0 ? formatPercent(steadyPct, { fractionDigits: 0 }) : '-'} color="bg-emerald-500" />
           <SignalLegend label="At risk" value={formatCompactNumber(atRisk)} color="bg-amber-500" />
           <SignalLegend label="Churn signals" value={formatCompactNumber(churned)} color="bg-rose-500" />
         </div>
@@ -510,7 +510,7 @@ function RecentCustomers() {
                         <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{customer.org_name || customer.email}</span>
                       </Link>
                     </td>
-                    <td className="px-5 py-3.5 text-sm text-slate-600 dark:text-slate-300">{customer.plan ? humanize(customer.plan) : '—'}</td>
+                    <td className="px-5 py-3.5 text-sm text-slate-600 dark:text-slate-300">{customer.plan ? humanize(customer.plan) : '-'}</td>
                     <td className="px-5 py-3.5 text-sm font-medium tabular-nums text-slate-800 dark:text-slate-100">{formatAdminCurrency(customer.mrr)}</td>
                     <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400">{formatAdminDate(customer.created_at)}</td>
                     <td className="px-5 py-3.5"><StatusPill status={customer.health} /></td>

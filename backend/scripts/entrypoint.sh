@@ -13,7 +13,7 @@ if [ -z "${DATABASE_URL:-}" ]; then
 fi
 
 # The previous single-container image overrode DATABASE_URL to an
-# in-container PostgreSQL cluster. Reliastra no longer ships a database —
+# in-container PostgreSQL cluster. Reliastra no longer ships a database -
 # SQLite and local Postgres are unsupported.
 case "${DATABASE_URL}" in
     sqlite:*|sqlite+*|*"sqlite://"*)

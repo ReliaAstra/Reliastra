@@ -1,8 +1,8 @@
 """Public (unauthenticated) support intake.
 
 The marketing site's "Contact support" form posts here. Submissions become
-ordinary ``feedback_tickets`` rows — the *same* table the admin support
-workspace at ``/v1/admin/support/*`` reads — so a web form message lands in
+ordinary ``feedback_tickets`` rows - the *same* table the admin support
+workspace at ``/v1/admin/support/*`` reads - so a web form message lands in
 the live admin queue instead of a write-only side table nobody reads.
 
 Two properties matter:
@@ -35,7 +35,7 @@ from app.modules.admin.service import admin_feedback_service
 
 logger = logging.getLogger(__name__)
 
-public_support_router = APIRouter(prefix="/v1/support", tags=["Support — Public"])
+public_support_router = APIRouter(prefix="/v1/support", tags=["Support - Public"])
 
 #: 10 anonymous submissions per 10 minutes per IP. Tight enough to blunt
 #: form spam, loose enough that a real visitor retrying is never blocked.
@@ -54,7 +54,7 @@ class PublicSupportTicketRequest(BaseModel):
 
 
 class PublicSupportTicketResponse(BaseModel):
-    """Deliberately minimal — an anonymous caller must not learn internals."""
+    """Deliberately minimal - an anonymous caller must not learn internals."""
 
     success: bool = True
     ticket_number: str

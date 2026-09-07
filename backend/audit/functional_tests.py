@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reliastra deep functional test suite — exercises the FULL public API surface.
+"""Reliastra deep functional test suite - exercises the FULL public API surface.
 
 Runs against a live stack (uvicorn + celery worker + celery beat + PG + Redis).
 Emits a pass/fail table to stdout and a JSON artifact to audit/results/.
@@ -298,7 +298,7 @@ def main() -> None:
     r = req("GET", f"/v1/orgs/{org_id}/dependencies", headers={"Authorization": f"ApiKey {full_key}"})
     check("API key auth (Authorization: ApiKey) works", r.status_code == 200, f"status={r.status_code}", group=g)
 
-    # Cross-tenant: viewer's org (none) — API key must not grant other orgs
+    # Cross-tenant: viewer's org (none) - API key must not grant other orgs
     r = req("POST", "/v1/orgs", json={"name": "viewer org"}, headers=bearer(viewer_tok))
     viewer_org = r.json().get("id", "") if r.status_code == 201 else ""
     r = req("GET", f"/v1/orgs/{viewer_org}/dependencies", headers={"X-API-Key": full_key})

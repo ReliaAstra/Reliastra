@@ -36,24 +36,24 @@ class PaymentCurrencyResponse(BaseModel):
     processing currency, so self-serve checkout must not be offered."""
     plan_payment_amounts: dict[str, dict[str, str]] = {}
     """``plan -> interval -> formatted amount`` for published payment prices.
-    Absent means unpublished — the UI then states the currency without showing
+    Absent means unpublished - the UI then states the currency without showing
     a figure, because no figure may be derived client-side."""
     payment_provider: str = "Paystack"
     """Who actually takes the money. Part of the mandatory transparency
     triple (product price / actual charge / payment provider)."""
-    payment_provider_display: str = "Paystack — secure hosted checkout"
+    payment_provider_display: str = "Paystack - secure hosted checkout"
     fx_reference: dict | None = None
     """Market reference estimate (rate, source, timestamps, disclaimer) shown
     *beside* prices for context. Display-only: it is never consulted to
-    determine a charge. ``None`` when disabled or unavailable — surfaces then
+    determine a charge. ``None`` when disabled or unavailable - surfaces then
     omit the estimate rather than inventing one."""
 
 
 class BillingTransactionResponse(BaseModel):
     """One collected payment, as recorded at the time it happened.
 
-    Both sides are carried — the USD product price that was quoted and the
-    amount/currency the provider actually charged — so a receipt can restate
+    Both sides are carried - the USD product price that was quoted and the
+    amount/currency the provider actually charged - so a receipt can restate
     the full transparency triple from history without re-deriving anything.
     """
 
@@ -279,12 +279,12 @@ class VerifyTransactionResponse(BaseModel):
     period_word: str | None = None
     # ``reason`` is a machine-readable CheckoutReason slug;
     # ``reason_message`` is RELIASTRA's own sentence for it. The UI switches on
-    # the slug and prints the message — it never forwards a provider string.
+    # the slug and prints the message - it never forwards a provider string.
     reason: str | None = None
     reason_message: str | None = None
     # True when verification flipped this organization onto the paid plan;
     # False for an idempotent re-verification of a payment already applied.
     activated: bool = False
     # A second valid payment for a period already covered. Applied, and shown
-    # honestly — never silently swallowed.
+    # honestly - never silently swallowed.
     duplicate_payment: bool = False

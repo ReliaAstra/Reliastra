@@ -7,7 +7,7 @@ from app.core.permissions import Plan, Role
 
 class OrganizationCreateRequest(BaseModel):
     name: str
-    # FIX 34: slug validation — lowercase letters, digits and hyphens only.
+    # FIX 34: slug validation - lowercase letters, digits and hyphens only.
     slug: str | None = Field(
         default=None, pattern=r"^[a-z0-9-]+$", min_length=1, max_length=50
     )
@@ -21,7 +21,7 @@ class OrganizationUpdateRequest(BaseModel):
     # NOTE: Plan changes are NOT allowed here. Plan upgrades/downgrades
     # must go through the billing service (verify_transaction / webhook).
     # An org admin setting ``plan: \"pro\"`` via PATCH would bypass
-    # payment entirely — see P0-2 security audit finding.
+    # payment entirely - see P0-2 security audit finding.
 
 
 class OrganizationResponse(BaseModel):

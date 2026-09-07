@@ -29,7 +29,7 @@ def _install_write_tracking() -> None:
     every non-SELECT statement executed through a session sets a flag in
     ``session.info``; ``get_db`` consults it to decide commit vs rollback.
 
-    Events are registered on the sync ``Session`` class — ``AsyncSession``
+    Events are registered on the sync ``Session`` class - ``AsyncSession``
     wraps a sync session and forwards these ORM events.
     """
 
@@ -87,7 +87,7 @@ def _strip_sslmode_from_url(url: str) -> str:
 def _build_connect_args(pooler_compat: bool = False) -> dict:
     """Build asyncpg ``connect_args`` with SSL and pooler compatibility.
 
-    asyncpg expects an ``ssl.SSLContext`` object — it does **not** read
+    asyncpg expects an ``ssl.SSLContext`` object - it does **not** read
     ``sslmode`` from the connection URL.  We detect the desired mode from
     the ``DATABASE_SSL_MODE`` setting (or from the raw URL query string as
     a fallback) and translate it via :func:`app.db.connect_args`.
@@ -157,7 +157,7 @@ def build_engine() -> AsyncEngine:
         engine_kwargs["connect_args"] = connect_args
 
     logger.info(
-        "Creating async engine — backend=postgresql, ssl=%s, pooler_compat=%s",
+        "Creating async engine - backend=postgresql, ssl=%s, pooler_compat=%s",
         bool(connect_args and connect_args.get("ssl")) if connect_args else False,
         pooler_compat,
     )

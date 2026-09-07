@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
  * Connects to the Reliastra backend through the Next.js API proxy
  * (`/api/v1/vendors` → backend `/v1/vendors`). Public endpoints require no
  * auth. If the backend is unreachable the section renders an explicit
- * "unavailable" state — fabricated status on a monitoring product's own
+ * "unavailable" state - fabricated status on a monitoring product's own
  * landing page would undermine exactly what it sells.
  */
 

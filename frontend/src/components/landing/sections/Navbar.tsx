@@ -21,13 +21,13 @@ export type NavEntry =
   | { label: string; children: NavChild[] };
 
 /**
- * Primary navigation — the sitelinks-candidate hierarchy in markup.
+ * Primary navigation - the sitelinks-candidate hierarchy in markup.
  *
  * Product → the category pillar and its capabilities; Resources → docs and
  * proof; Company → trust surfaces; plus Pricing and live vendor tracking.
  * Every entry is a real link (crawlable without JavaScript); dropdowns open
  * on hover AND focus/click so keyboard and touch users get the same map.
- * Labels name their destinations — no "Explore / Solutions / Platform".
+ * Labels name their destinations - no "Explore / Solutions / Platform".
  */
 export const NAV: NavEntry[] = [  {
     label: 'Product',
@@ -87,7 +87,7 @@ function NavDropdown({ entry }: { entry: Extract<NavEntry, { children: NavChild[
       </button>
       {/* Always rendered (never conditionally mounted): the links exist in
           the SSR HTML for crawlers and no-JS clients. Tabbing into the panel
-          triggers focus-within, which reveals it — no tabindex games needed. */}
+          triggers focus-within, which reveals it - no tabindex games needed. */}
       <nav
         aria-label={`${entry.label} submenu`}
         className={cn(

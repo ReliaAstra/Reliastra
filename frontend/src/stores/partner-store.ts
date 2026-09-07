@@ -67,7 +67,7 @@ interface PartnerStore {
 
   // Reset
   logout: () => void;
-  /** Alias of {@link logout} — several components call `reset()`. */
+  /** Alias of {@link logout} - several components call `reset()`. */
   reset: () => void;
 }
 

@@ -5,12 +5,12 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { SITE_URL, breadcrumbJsonLd } from '@/lib/seo';
 
 export const metadata: Metadata = {
-  title: 'Research — RELIASTRA',
+  title: 'Research - RELIASTRA',
   description:
-    'How RELIASTRA measures vendor reliability, what the dependency gap is, and what we publish — and what we deliberately do not.',
+    'How RELIASTRA measures vendor reliability, what the dependency gap is, and what we publish - and what we deliberately do not.',
   alternates: { canonical: PUBLIC_ROUTES.research },
   openGraph: {
-    title: 'Research — RELIASTRA',
+    title: 'Research - RELIASTRA',
     description: 'How RELIASTRA measures vendor reliability, in public.',
     url: '/research',
     type: 'website',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Research — RELIASTRA',
+    title: 'Research - RELIASTRA',
     description: 'How RELIASTRA measures vendor reliability, in public.',
     images: ['/opengraph-image'],
   },
@@ -64,7 +64,7 @@ export default function ResearchIndexPage() {
           RELIASTRA produces reliability records that customers take into
           commercial conversations with their vendors. That only works if the
           method is inspectable. Everything below describes how the product
-          actually behaves — not a marketing summary of it.
+          actually behaves - not a marketing summary of it.
         </p>
 
         <nav aria-label="Research articles" className="mt-12 space-y-4">

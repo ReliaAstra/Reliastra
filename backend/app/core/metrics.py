@@ -4,22 +4,22 @@ Exposed at ``GET /metrics`` (see ``app/main.py``). All instruments are
 process-local counters/histograms; Prometheus scrapes every instance.
 
 Metrics:
-* ``reliastra_checks_total{region,status}``      — probe outcomes
+* ``reliastra_checks_total{region,status}``      - probe outcomes
   (``status`` is ``up`` / ``down`` / ``blocked``; this is the
-  "checks_executed_total" / "checks_failed_total" pair — ``down`` and
+  "checks_executed_total" / "checks_failed_total" pair - ``down`` and
   ``blocked`` are the failure states, and they are deliberately separate so an
   SSRF rejection is never counted as an endpoint outage)
-* ``reliastra_check_latency_seconds{region}``    — probe latency
-* ``reliastra_checks_scheduled_total{region}``   — probes handed to the broker
-* ``reliastra_checks_dispatch_failures_total{region,reason}`` — probes the
+* ``reliastra_check_latency_seconds{region}``    - probe latency
+* ``reliastra_checks_scheduled_total{region}``   - probes handed to the broker
+* ``reliastra_checks_dispatch_failures_total{region,reason}`` - probes the
   scheduler could NOT hand to the broker (broker down, serialization, ...).
   A non-zero rate here means checks are silently not running.
-* ``reliastra_check_scheduler_cycles_total{result}`` — Beat scheduling cycles
-* ``reliastra_incidents_total{action}``          — incidents opened/resolved
-* ``reliastra_celery_tasks_total{task,status}``  — Celery task completions
-* ``reliastra_http_requests_total{method,status}``— inbound HTTP requests
-* ``reliastra_ai_generation_total{provider_type,status}`` — AI explanation attempts
-* ``reliastra_ai_generation_latency_seconds{provider_type}`` — AI latency
+* ``reliastra_check_scheduler_cycles_total{result}`` - Beat scheduling cycles
+* ``reliastra_incidents_total{action}``          - incidents opened/resolved
+* ``reliastra_celery_tasks_total{task,status}``  - Celery task completions
+* ``reliastra_http_requests_total{method,status}``- inbound HTTP requests
+* ``reliastra_ai_generation_total{provider_type,status}`` - AI explanation attempts
+* ``reliastra_ai_generation_latency_seconds{provider_type}`` - AI latency
 """
 
 from __future__ import annotations
@@ -123,14 +123,14 @@ def render_metrics() -> bytes:
     """Render the current Prometheus exposition text.
 
     Check-pipeline counters are incremented inside Celery workers, never in
-    the API process — ``schedule_due_checks`` and ``execute_check`` both run in
+    the API process - ``schedule_due_checks`` and ``execute_check`` both run in
     a worker. Without multiprocess collection the API's ``/metrics`` would
     therefore publish an empty set of check metrics forever, and a counter
     nobody can scrape is not observability.
 
     When ``PROMETHEUS_MULTIPROC_DIR`` is set (worker, Beat and API all point at
     the same directory), every process writes its samples there and any one of
-    them can serve the aggregate — so the existing ``/metrics`` endpoint on the
+    them can serve the aggregate - so the existing ``/metrics`` endpoint on the
     API reports the whole fleet with no extra port. When it is unset the
     process-local registry is used, exactly as before.
     """

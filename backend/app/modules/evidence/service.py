@@ -152,7 +152,7 @@ class EvidenceService:
         except Exception:
             org = None
         if org is None:
-            # Mocked session in unit tests without DB — let the test's own
+            # Mocked session in unit tests without DB - let the test's own
             # mocking decide; but if session looks like a mock, skip gate.
             try:
                 from unittest.mock import MagicMock as _MM
@@ -163,7 +163,7 @@ class EvidenceService:
                 pass
             raise ResourceNotFoundException("Organization not found")
         if not isinstance(getattr(org, "plan", None), str):
-            return  # mocked org without real plan — skip for unit test compat
+            return  # mocked org without real plan - skip for unit test compat
         effective = get_effective_plan_for_org(org)
         if not PLAN_FEATURES.get(effective, {}).get("evidence_generation"):
             raise ForbiddenException(
@@ -317,7 +317,7 @@ class EvidenceService:
             "generated_at": generated_at.isoformat(),
         }
         # Create the DB record FIRST so that a failed S3 upload leaves a
-        # record that can be regenerated (P2-6 fix — dual-write compensation).
+        # record that can be regenerated (P2-6 fix - dual-write compensation).
         report = await self.repository.create(
             session=session,
             org_id=incident.org_id,

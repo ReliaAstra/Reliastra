@@ -5,7 +5,7 @@ Root cause these tests lock down: the old `safe_redis_set_nx` caught Redis
 connection errors internally and returned False, so "key already exists" and
 "Redis is unreachable" were indistinguishable. Callers that tried to fail
 open with `except Exception: return True` had unreachable except-branches and
-all failed CLOSED — Paystack payments were dropped as "duplicates" (with a
+all failed CLOSED - Paystack payments were dropped as "duplicates" (with a
 200, so no retry), every alert was suppressed, and fresh idempotency keys
 returned 409.
 """

@@ -11,7 +11,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: str
     is_active: bool
-    #: Signup email verification is a hard gate — an authenticated session
+    #: Signup email verification is a hard gate - an authenticated session
     #: cannot exist unless this is true. Exposed so clients can render
     #: account state without a second call.
     is_email_verified: bool = False

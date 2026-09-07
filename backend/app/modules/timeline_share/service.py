@@ -72,7 +72,7 @@ class TimelineShareService:
             cached_bytes, cached_ts = cached
             if time.monotonic() - cached_ts < _PNG_CACHE_TTL_SECONDS:
                 return cached_bytes, "image/png"
-            # Expired — evict
+            # Expired - evict
             del _png_cache[cache_key]
 
         # --- Fetch timeline data via vendor service ---
@@ -158,7 +158,7 @@ class TimelineShareService:
     ) -> None:
         """Record an analytics event when a shared timeline is viewed.
 
-        This is a fire-and-forget method — errors are logged but not raised.
+        This is a fire-and-forget method - errors are logged but not raised.
         """
         try:
             await TimelineShareRepository.create_share(
@@ -317,7 +317,7 @@ class TimelineShareService:
         )
         ax_latency.set_ylabel("Latency (ms)", fontsize=9, color=_TEXT_COLOR)
         ax_latency.set_title(
-            f"{display_name} — Status Timeline (last {window})",
+            f"{display_name} - Status Timeline (last {window})",
             fontsize=14,
             color=_TEXT_COLOR,
             fontweight="bold",

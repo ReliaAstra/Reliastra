@@ -28,7 +28,7 @@ export function ValidationStep({
     async function poll() {
       try {
         setStatus('checking');
-        setDetail('Checking endpoint — validating URL and region reachability…');
+        setDetail('Checking endpoint - validating URL and region reachability…');
         // Small delay so the UI step is perceivable and not flashing
         await new Promise((r) => setTimeout(r, 900));
         if (cancelled) return;
@@ -39,7 +39,7 @@ export function ValidationStep({
 
         if (!latest) {
           setStatus('awaiting');
-          setDetail('Monitoring configured — awaiting first observation (next tick)…');
+          setDetail('Monitoring configured - awaiting first observation (next tick)…');
           // retry in a few seconds
           timer = setTimeout(() => setAttempt((a) => a + 1), 3000);
           return;
@@ -47,7 +47,7 @@ export function ValidationStep({
 
         if (latest.is_up) {
           setStatus('monitoring');
-          setDetail(`Connection successful — ${latest.status_code ?? 200} from ${latest.region}. Monitoring is active.`);
+          setDetail(`Connection successful - ${latest.status_code ?? 200} from ${latest.region}. Monitoring is active.`);
           return;
         }
 
@@ -57,18 +57,18 @@ export function ValidationStep({
           setDetail(msg);
         } else if (/auth/i.test(msg) || latest.status_code === 401 || latest.status_code === 403) {
           setStatus('auth');
-          setDetail('Authentication required — endpoint returned 401/403. Check headers or allow anonymous health endpoint.');
+          setDetail('Authentication required - endpoint returned 401/403. Check headers or allow anonymous health endpoint.');
         } else if (latest.status_code && latest.status_code >= 400) {
           setStatus('unreachable');
           setDetail(`Endpoint returned ${latest.status_code}. Expected 200. Check the URL or expected status codes.`);
         } else {
           setStatus('unreachable');
-          setDetail(msg || 'Endpoint unreachable — check the URL, DNS, and that it is public.');
+          setDetail(msg || 'Endpoint unreachable - check the URL, DNS, and that it is public.');
         }
       } catch (e: any) {
         if (!cancelled) {
           setStatus('unreachable');
-          setDetail(e?.message || 'Validation failed — retry or edit the dependency.');
+          setDetail(e?.message || 'Validation failed - retry or edit the dependency.');
         }
       }
     }
@@ -141,7 +141,7 @@ export function ValidationStep({
           Edit dependency
         </RsButton>
         <RsButton onClick={onValidated} disabled={!isOk && status !== 'awaiting'}>
-          {status === 'awaiting' ? 'Continue — monitoring active' : isOk ? 'Continue' : 'Continue anyway'}
+          {status === 'awaiting' ? 'Continue - monitoring active' : isOk ? 'Continue' : 'Continue anyway'}
         </RsButton>
       </div>
     </div>

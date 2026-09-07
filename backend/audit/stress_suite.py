@@ -1,4 +1,4 @@
-"""Reliastra production readiness — load & stress suite (STEP 3).
+"""Reliastra production readiness - load & stress suite (STEP 3).
 
 Scenarios A-H. Each scenario returns a structured finding with the observed
 failure mode and the measured threshold.
@@ -141,7 +141,7 @@ def scenario_a() -> None:
         f"is awaited in-line in a single `for dep ... for region` loop sharing "
         f"ONE AsyncSession, so cycle time grows linearly with dependency count "
         f"and the 30s interval is missed. Probes are also emitted at the fixed "
-        f"30s beat, not the configured 10s interval — sub-30s intervals are "
+        f"30s beat, not the configured 10s interval - sub-30s intervals are "
         f"silently unhonoured."
     )
     finding("A: Scheduler saturation", res, sev, detail, {
@@ -279,7 +279,7 @@ def scenario_c() -> None:
         f"fresh DNS lookup + TCP handshake + TLS handshake and the pool is "
         f"discarded on exit. Measured {per_req_ms:.0f}ms per probe with a "
         f"per-request client vs {pooled_ms:.0f}ms with a reused pooled client "
-        f"— {overhead:.0f}ms ({pct:.0f}%) of every recorded latency_ms is "
+        f"- {overhead:.0f}ms ({pct:.0f}%) of every recorded latency_ms is "
         f"connection setup, not vendor latency. This means the latency SLA "
         f"numbers Reliastra sells are inflated by handshake cost, and socket "
         f"churn scales linearly with probe volume (TIME_WAIT accumulation)."
@@ -349,7 +349,7 @@ def scenario_d() -> None:
         f"{len(ids)} distinct org id(s) and {created_rows} DB rows. "
         f"CROSS-TENANT REPLAY: user B sending user A's key received "
         f"HTTP {rb.status_code} and "
-        f"{'A COPY OF USER A ORG — CONFIRMED TENANT DATA LEAK' if leaked else 'a distinct response'}. "
+        f"{'A COPY OF USER A ORG - CONFIRMED TENANT DATA LEAK' if leaked else 'a distinct response'}. "
         f"The cache key is built as f'idempotency:{{idempotency_key}}' "
         f"(app/main.py:76) with NO user/org in the key, and the cached value is "
         f"the full response body. There is also no in-flight lock (no SETNX): "
@@ -386,7 +386,7 @@ def scenario_e() -> None:
         "regions": ["us-east", "eu-west"]}, headers=h)
     dep_id = r.json()["id"]
 
-    # Drive both regions concurrently, in separate sessions, repeatedly —
+    # Drive both regions concurrently, in separate sessions, repeatedly -
     # exactly what a multi-worker deployment does.
     import asyncio
 
@@ -483,7 +483,7 @@ def scenario_f() -> None:
         f"{'FAILED: ' + out if insert_failed else 'SUCCEEDED and landed in ' + landed}. "
         f"So partitioning is declared but non-functional: because a DEFAULT "
         f"partition catches everything, there is no 'no partition found' error "
-        f"— instead 100% of rows accumulate in one physical table. That is worse "
+        f"- instead 100% of rows accumulate in one physical table. That is worse "
         f"than the expected failure: the platform gets none of the pruning, "
         f"vacuum or O(1) drop-old-data benefits it was designed for, the team "
         f"gets no signal that partition management is missing, and once rows are "
@@ -535,7 +535,7 @@ def scenario_g() -> None:
         f"handle_webhook raises UnauthorizedException when the signature is "
         f"missing and uses hmac.compare_digest for constant-time comparison "
         f"(billing/service.py:332-345), so forged upgrade events are rejected. "
-        f"Residual risk: verification depends on PAYSTACK_SECRET_KEY being set — "
+        f"Residual risk: verification depends on PAYSTACK_SECRET_KEY being set - "
         f"the deployment default is an empty string, and there is no replay "
         f"protection (no event-id dedupe / timestamp window), so a captured "
         f"valid webhook can be replayed indefinitely."

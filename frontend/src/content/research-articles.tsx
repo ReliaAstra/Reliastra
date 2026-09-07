@@ -5,7 +5,7 @@ import type { RelatedLink } from '@/components/content/article-template';
 /**
  * Body copy for `/research/[slug]`.
  *
- * Every claim here describes behaviour that exists in the codebase — check
+ * Every claim here describes behaviour that exists in the codebase - check
  * scheduling, quorum rules, the SSRF policy, the check-state taxonomy, evidence
  * checksums and retention. Nothing is a projection, a benchmark or a statistic
  * we cannot reproduce. Where we do not have data we say so rather than
@@ -65,7 +65,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           </LI>
           <LI>
             The record is not yours. When you ask for a service credit, the
-            vendor&rsquo;s own page is the evidence — and it was written by the
+            vendor&rsquo;s own page is the evidence - and it was written by the
             counterparty.
           </LI>
         </ul>
@@ -81,8 +81,8 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </P>
         <P>
           RELIASTRA checks each configured endpoint on a fixed interval and
-          writes every observation — latency, status code, regional origin and
-          outcome — to a retained history. When your own incident window
+          writes every observation - latency, status code, regional origin and
+          outcome - to a retained history. When your own incident window
           overlaps a period in which the dependency was independently observed
           failing, that overlap is a fact about two measured timelines rather
           than an inference from a status page.
@@ -105,8 +105,8 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           region&rsquo;s network path cannot masquerade as a vendor-wide outage.
         </LI>
         <LI>
-          Observations are retained per plan — from 24 hours on Free up to 90
-          days on Pro, with custom retention on Enterprise — and pruned by
+          Observations are retained per plan - from 24 hours on Free up to 90
+          days on Pro, with custom retention on Enterprise - and pruned by
           scheduled jobs rather than kept indefinitely.
         </LI>
         <LI>
@@ -157,7 +157,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           Every number RELIASTRA shows comes from an HTTP request that something
           made, at a recorded time, from a recorded place. This page describes
           how those requests are scheduled, how the results are interpreted, and
-          — more importantly — the cases we deliberately refuse to call an
+          - more importantly - the cases we deliberately refuse to call an
           outage.
         </P>
 
@@ -172,7 +172,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </P>
         <P>
           If the scheduler, the broker or a worker is unavailable, checks simply
-          do not run — and the system reports that. A missed probe is never
+          do not run - and the system reports that. A missed probe is never
           backfilled with a synthesised result, because an observation that did
           not happen must never appear in a history you intend to rely on.
         </P>
@@ -188,8 +188,8 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         <H>3. Quorum, not a single failed request</H>
         <P>
           A single failed request is not an incident. Declaring one requires a
-          quorum — failures observed across more than one region inside a short
-          correlation window — and recovery likewise requires consecutive
+          quorum - failures observed across more than one region inside a short
+          correlation window - and recovery likewise requires consecutive
           successful checks before a dependency is marked healthy again. The
           window and the region count are fixed, small integers rather than
           tunable dials, so the same evidence produces the same verdict
@@ -217,15 +217,15 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </P>
         <ul className="mt-4 list-disc space-y-1 pl-6">
           <LI>
-            <strong>Target problems</strong> — the probe reached the vendor and
+            <strong>Target problems</strong> - the probe reached the vendor and
             it failed, or was refused by the security policy.
           </LI>
           <LI>
-            <strong>Infrastructure problems</strong> — dispatch failed, or the
+            <strong>Infrastructure problems</strong> - dispatch failed, or the
             scheduler was not proven alive, so no probe could have run.
           </LI>
           <LI>
-            <strong>Transitional</strong> — never checked, awaiting schedule,
+            <strong>Transitional</strong> - never checked, awaiting schedule,
             queued, or executing.
           </LI>
         </ul>
@@ -368,7 +368,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
       <ul className="list-disc space-y-2 pl-6 text-sm text-[#52525B] dark:text-[#A1A1AA]">
         <LI>
           Published figures are derived from the same retained observation
-          history that customers see in their own console — there is no separate
+          history that customers see in their own console - there is no separate
           analytics pipeline with different rules.
         </LI>
         <LI>

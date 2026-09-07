@@ -54,7 +54,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              // Hit targets ≥40×40 — h-12 mobile (48px) per spec, lg:h-10 (40px)
+              // Hit targets ≥40×40 - h-12 mobile (48px) per spec, lg:h-10 (40px)
               'relative mb-0.5 flex h-12 items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150 lg:h-10',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2',
               active

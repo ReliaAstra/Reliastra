@@ -4,15 +4,15 @@
 the money. Three columns complete the record the way a billing dispute and a
 customer receipt both need it:
 
-* ``user_id`` — which person authorized the purchase, when it came through an
+* ``user_id`` - which person authorized the purchase, when it came through an
   authenticated checkout. ``SET NULL``: deleting a seat must never delete or
   reassign the financial record of what the organization paid.
-* ``verified_at`` — when RELIASTRA confirmed the charge with Paystack, which
+* ``verified_at`` - when RELIASTRA confirmed the charge with Paystack, which
   differs from ``paid_at`` (the provider's own timestamp) whenever
   verification arrives late: a webhook retry, a customer who closed the tab and
   returned the next day. Both timestamps are needed to reconstruct what happened
   in what order.
-* ``duplicate`` — a second collected payment for a period already covered. It is
+* ``duplicate`` - a second collected payment for a period already covered. It is
   applied (the customer paid, so they keep the plan) but never invisible.
 
 Revision ID: 0029_billing_tx_attribution

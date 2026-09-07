@@ -36,7 +36,7 @@ export default function RootNotFound() {
         </h1>
         <p className="mx-auto mt-4 max-w-sm text-[15px] leading-relaxed text-[#3F4A5C] dark:text-[#A5B0C2]">
           The page you are looking for does not exist or was moved.
-          Your dependencies are still being monitored — nothing is down on our side.
+          Your dependencies are still being monitored - nothing is down on our side.
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">

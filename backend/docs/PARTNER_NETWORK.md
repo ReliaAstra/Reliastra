@@ -4,7 +4,7 @@ Backend infrastructure for the RELIASTRA partner program: partner accounts,
 referral attribution, an immutable commission ledger, payouts, lead
 introductions, deployment claims, fraud review and country analytics.
 
-This document covers the parts a reader cannot get from the OpenAPI spec —
+This document covers the parts a reader cannot get from the OpenAPI spec -
 the model, the invariants and the reasoning. Every endpoint is documented in
 `docs/openapi.json` (57 partner/geo paths) and served at `/docs`.
 
@@ -21,7 +21,7 @@ collected** from the customer:
 | `deploy`    | 30%  | Recurring while active      | They implemented Reliastra for the customer. Requires a reviewed claim. |
 | `create`    | 25%  | Recurring while active      | They built something on the platform. Requires a reviewed claim. |
 | `introduce` | 15%  | Year 1 only, one-time basis | Warm introduction that converts. |
-| `resell`    | 0%   | —                           | Compensated by wholesale margin, not platform commission. |
+| `resell`    | 0%   | -                           | Compensated by wholesale margin, not platform commission. |
 
 Rates live in configuration (`PARTNER_RATE_*_BPS`), are expressed in basis
 points, and are served to clients from `GET /v1/public/partner-program` so
@@ -62,8 +62,8 @@ email is byte-identical to one in a test.
 
 This is **separate from** the existing PLG referral programme
 (`{FRONTEND_BASE_URL}/ref/{code}`, `referral_codes` / `referrals`), which is
-untouched. The two answer different questions — peer rewards versus
-commissionable partner ownership — and a user can arrive through both.
+untouched. The two answer different questions - peer rewards versus
+commissionable partner ownership - and a user can arrive through both.
 
 ### The flow
 
@@ -73,7 +73,7 @@ commissionable partner ownership — and a user can arrive through both.
    `partner_visitor_id` on `POST /v1/auth/register`.
 3. Registration binds the attribution to the new user and organisation.
 4. The first collected payment promotes that attribution into a
-   `partner_customer_relationships` row — the durable, revenue-bearing link
+   `partner_customer_relationships` row - the durable, revenue-bearing link
    the commission engine reads.
 
 **Last eligible touch wins**, inside a configurable 90-day window. Earlier
@@ -81,7 +81,7 @@ touches are marked `superseded` rather than deleted: rows carry
 `model`, `position` and `weight_bps`, so moving to a linear or
 position-based model later is a weight recalculation, not a migration.
 
-Attribution can never fail a registration — any error is logged and
+Attribution can never fail a registration - any error is logged and
 swallowed. Self-referral is detected and voided at bind time.
 
 UTM parameters are captured on the click and the attribution touch for
@@ -107,7 +107,7 @@ pending ──(30-day hold elapses)──> payable ──(payout)──> paid
   original is never edited or deleted, so a partner's history stays
   legible and `SUM(amount_minor)` is always their true balance.
 * A partial refund reverses proportionally at the original rate and leaves
-  the original standing — some of it was genuinely earned.
+  the original standing - some of it was genuinely earned.
 * Reversing an already-*paid* commission is allowed; the negative entry is
   recovered from the next payout rather than being written off.
 * Reversals land in the **current** period, so a closed month is never
@@ -134,7 +134,7 @@ so any future reader can reconstruct exactly why a number was paid.
 
 ## 4. Payouts
 
-Payouts extend the existing `PaystackClient` with transfer endpoints — there
+Payouts extend the existing `PaystackClient` with transfer endpoints - there
 is no second payment abstraction and no second billing system.
 
 * **Amounts are derived, never supplied.** The total is summed from payable
@@ -154,7 +154,7 @@ is no second payment abstraction and no second billing system.
 
 Account details are Fernet-encrypted at rest via the platform's existing
 `encrypt_jsonb`. Responses expose only a masked label and the last four
-characters, and the raw number is never logged — not even at DEBUG.
+characters, and the raw number is never logged - not even at DEBUG.
 
 ---
 
@@ -175,13 +175,13 @@ churn (20), identity clustering (18), disposable email (15), velocity
 anomalies (15), click flooding (10), unverified claims (10), geo mismatch
 (5). Weights are additive and clamped to 100.
 
-Every rule requires enough volume to be meaningful — flagging someone over
+Every rule requires enough volume to be meaningful - flagging someone over
 two data points is how you lose good partners.
 
 Bands: 0–29 low, 30–59 medium, 60–79 high, 80–100 critical.
 
-**Scores never act alone.** A high score *holds* commissions — the money
-stays in the ledger, fully recoverable — and opens a flag for a human. No
+**Scores never act alone.** A high score *holds* commissions - the money
+stays in the ledger, fully recoverable - and opens a flag for a human. No
 score suspends a partner, bans a user or reverses money by itself. An admin
 resolves each flag with an explicit action, and that action is *executed*,
 not merely recorded, so a flag's stated outcome always matches reality.
@@ -193,7 +193,7 @@ not merely recorded, so a flag's stated outcome always matches reality.
 * Referred-customer emails are masked at **every** tier
   (`j•••e@acme.com`). There is no unmasked variant for partners.
 * No cross-partner access anywhere. Ownership is part of the SQL `WHERE`
-  clause, not a post-hoc check, and unauthorised access returns **404** —
+  clause, not a post-hoc check, and unauthorised access returns **404** -
   the existence of another partner's resource is itself information.
 * No endpoint accepts a client-supplied `partner_id`. The partner is always
   resolved server-side from the authenticated principal.
@@ -212,7 +212,7 @@ Country-level only, from a local MaxMind GeoLite2 `.mmdb` read through
 postcode and coordinates are available in the database and are deliberately
 not extracted or stored.
 
-A missing database degrades to "unknown" and logs once — geo is analytics
+A missing database degrades to "unknown" and logs once - geo is analytics
 and must never be able to break a click. Lookups are cached in
 `geo_ip_cache` keyed by hashed IP, negative results included.
 
@@ -237,7 +237,7 @@ eight registered in `celery_app.beat_schedule`:
 | `partner_tier_evaluation` | daily 05:00 | Recomputes earned tiers from ledger metrics. Promotion only. |
 | `fraud_analysis` | daily 05:30 | Scores active partners, raises flags. |
 
-Automatic **demotion is deliberately not implemented** — lowering a
+Automatic **demotion is deliberately not implemented** - lowering a
 partner's standing is a relationship decision, so it stays an explicit admin
 action.
 
@@ -249,7 +249,7 @@ action.
 customer count and lifetime revenue.
 
 Tiers unlock **capabilities** (co-marketing, custom terms, dedicated
-support). They are **never** a commission multiplier — rates are per method
+support). They are **never** a commission multiplier - rates are per method
 and identical at every tier, which is what keeps the economics predictable.
 The `agency` tier reflects a business relationship rather than volume, so
 automation never assigns or removes it.
@@ -288,7 +288,7 @@ MAXMIND_CACHE_TTL_SECONDS=86400
 ```
 app/modules/partners/
   constants.py      Enums, state-transition graphs, fraud weights, tier rules
-  economics.py      Pure commission arithmetic — no I/O, exhaustively tested
+  economics.py      Pure commission arithmetic - no I/O, exhaustively tested
   links.py          ReferralLinkService: the only place a URL is built
   utils.py          Codes, keyed hashes, masking, bot heuristics
   models.py         22 tables
@@ -312,7 +312,7 @@ Migration: `0016_partner_network` (additive; no existing table altered).
 
 ## 12. Rate limits
 
-Link resolution is deliberately generous — 1200/min per IP. A launch
+Link resolution is deliberately generous - 1200/min per IP. A launch
 campaign or an email blast from one corporate NAT must not start 429-ing
 real visitors. Validation probes get 600/min. Directory browsing, which can
 enumerate, gets the standard public 60/min. Applications are 5/hour and

@@ -28,7 +28,7 @@ export function CompletionStep({ onFinish }: { onFinish: () => void }) {
           <p className="rs-eyebrow">Onboarding complete</p>
           <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em] text-rs-text">Reliastra is ready.</h2>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-rs-text-secondary">
-            You&apos;re now building an independent external reliability record for your critical infrastructure. No synthetic data was used — every number below is real.
+            You&apos;re now building an independent external reliability record for your critical infrastructure. No synthetic data was used - every number below is real.
           </p>
         </div>
       </div>
@@ -44,7 +44,7 @@ export function CompletionStep({ onFinish }: { onFinish: () => void }) {
           <div className="flex gap-2">
             <ShieldCheck size={16} className="mt-0.5 text-rs-brand" />
             <div>
-              <div className="text-sm font-medium text-rs-text">Independent evidence collection — active</div>
+              <div className="text-sm font-medium text-rs-text">Independent evidence collection - active</div>
               <div className="text-xs leading-relaxed text-rs-text-tertiary">
                 Checks are checksummed and timestamped per region. When quorum fails, an incident with deterministic attribution is opened.
               </div>
@@ -62,13 +62,13 @@ export function CompletionStep({ onFinish }: { onFinish: () => void }) {
         </div>
 
         <p className="mt-4 text-xs leading-relaxed text-rs-text-tertiary">
-          Tip: Keep this running for 30 minutes and invite one teammate — that’s when most teams first say <span className="font-medium text-rs-text">“I see why we need this.”</span>
+          Tip: Keep this running for 30 minutes and invite one teammate - that’s when most teams first say <span className="font-medium text-rs-text">“I see why we need this.”</span>
         </p>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div className="text-xs text-rs-text-tertiary">
-          Next: explore your <span className="font-medium text-rs-text">Reliability Overview</span> — health, incidents, and vendor posture.
+          Next: explore your <span className="font-medium text-rs-text">Reliability Overview</span> - health, incidents, and vendor posture.
         </div>
         <RsButton
           onClick={() => {

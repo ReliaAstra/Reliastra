@@ -48,7 +48,7 @@ from app.modules.dependencies.service import dependency_service
 
 logger = logging.getLogger(__name__)
 
-# FIX 2: module-level pooled HTTP client — one pool shared by every check
+# FIX 2: module-level pooled HTTP client - one pool shared by every check
 # instead of a fresh httpx.AsyncClient() (and fresh TCP/TLS handshakes) per
 # probe. Used for IP-literal targets; hostname targets use the pinned
 # transports from ssrf_protection (which keep their own pooled connections).
@@ -96,7 +96,7 @@ class CheckService:
         The observation is written to ``observation_outbox`` in the SAME
         transaction as the check result. A separate Celery task
         (``app.modules.observations.tasks.process_outbox``) drains the outbox
-        every 10s — the evidence stream can never silently lose events, and a
+        every 10s - the evidence stream can never silently lose events, and a
         failing observation write can never roll back the check result.
         """
         from app.modules.observations.models import OutboxEvent
@@ -161,7 +161,7 @@ class CheckService:
         for each dep/region pair.  Each check runs in its own Celery worker, so
         a slow endpoint never blocks other probes.
 
-        Circuit breaker (FIX 8) is consulted before dispatch — open circuits
+        Circuit breaker (FIX 8) is consulted before dispatch - open circuits
         skip enqueue but still advance ``next_check_at`` to avoid a busy loop.
         ``next_check_at`` is advanced **only after successful enqueue** so a
         Redis/broker failure never silently loses a check (Proof 4).
@@ -255,7 +255,7 @@ class CheckService:
                 continue
 
             # Duplicate-dispatch guard. The previous task for this dependency
-            # was published but has not completed yet — a worker picked it up
+            # was published but has not completed yet - a worker picked it up
             # and the probe is still running, or the task is still sitting in
             # the broker waiting to be consumed.
             #
@@ -265,7 +265,7 @@ class CheckService:
             # CHECK_SCHEDULE_SECONDS would otherwise overlap itself on every
             # cycle, multiplying load on a dependency that is already
             # struggling. It cannot happen through a *dead* worker, because
-            # schedule_due_checks is itself a worker task — a dead worker
+            # schedule_due_checks is itself a worker task - a dead worker
             # schedules nothing at all.
             #
             # Leaving next_check_at untouched means the dependency is picked
@@ -308,7 +308,7 @@ class CheckService:
                     # Deliberately NOT logging exc_info with request context:
                     # only the exception type and its own message are safe.
                     logger.error(
-                        "Failed to enqueue check for dep %s region %s: %s: %s — "
+                        "Failed to enqueue check for dep %s region %s: %s: %s - "
                         "next_check_at left due (%s) so the next Beat cycle "
                         "retries it; no CheckResult was written",
                         dep.id,
@@ -384,7 +384,7 @@ class CheckService:
 
         # Pipeline position: a worker is now running this probe. Cleared once a
         # result exists; TTL-bounded so a killed worker cannot leave the state
-        # stuck on "executing". Best-effort — never affects the probe.
+        # stuck on "executing". Best-effort - never affects the probe.
         from app.modules.checks.scheduler_health import (
             clear_check_dispatched,
             clear_check_executing,
@@ -410,7 +410,7 @@ class CheckService:
         error_message: str | None = None
 
         # SSRF protection: block requests to private/internal IPs and pin the
-        # connection to a validated public IP (FIX 26 — DNS-rebinding safe).
+        # connection to a validated public IP (FIX 26 - DNS-rebinding safe).
         try:
             pinned_target = await resolve_pinned_target_async(url)
         except ValueError as exc:
@@ -581,7 +581,7 @@ class CheckService:
                 # Recovery quorum: the most recent N results must ALL be
                 # successful and span at least QUORUM_MIN_REGIONS distinct
                 # regions (N = consecutive checks per region x min regions).
-                # This is a genuine consecutiveness requirement — flapping
+                # This is a genuine consecutiveness requirement - flapping
                 # successes inside the window keep the incident open. The N
                 # last results are read regardless of the 60s quorum window:
                 # slow check intervals must still be able to recover.
@@ -816,7 +816,7 @@ class CheckService:
         applied by the worker. It never probes inline and never bypasses
         Celery, so "the manual trigger works" is proof the whole path works.
 
-        ``next_check_at`` is deliberately left untouched — the Beat schedule
+        ``next_check_at`` is deliberately left untouched - the Beat schedule
         stays the single authority on when a dependency is next probed.
         """
         from app.modules.checks.scheduler_health import (

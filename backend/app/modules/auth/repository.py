@@ -238,7 +238,7 @@ class AuthRepository:
     async def get_last_email_verification_code(
         session: AsyncSession, user_id: uuid.UUID
     ) -> EmailVerificationCode | None:
-        """Most recent code of any state — used for the resend cooldown."""
+        """Most recent code of any state - used for the resend cooldown."""
         query = (
             select(EmailVerificationCode)
             .where(EmailVerificationCode.user_id == user_id)

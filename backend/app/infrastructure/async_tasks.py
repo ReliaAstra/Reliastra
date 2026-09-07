@@ -122,7 +122,7 @@ def _reset_for_fork() -> None:
     """Clear cached loops/engines after a Celery prefork (Proof 6).
 
     Celery's prefork pool forks the parent process. The child inherits the
-    parent's globals but only the forking thread survives — a cached
+    parent's globals but only the forking thread survives - a cached
     ``_process_loop`` created in the parent is bound to the parent's loop
     and its asyncpg pool is broken (``Task got Future attached to a different
     loop`` → ``schedule_checks`` silently returns 0). The parent's
@@ -194,7 +194,7 @@ def async_task_body(coro_factory: Any) -> Any:
     the task's work. Session lifecycle (commit/rollback) is handled here.
 
     * Inside a running loop (eager tests/dev): the body runs on the shared
-      worker thread whose loop owns a dedicated engine — loop affinity for
+      worker thread whose loop owns a dedicated engine - loop affinity for
       asyncpg connections is preserved.
     * Outside a loop (Celery workers): the body runs on the process-cached
       loop using the global engine.

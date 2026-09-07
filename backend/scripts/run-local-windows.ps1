@@ -1,4 +1,4 @@
-# RELIASTRA local Windows stack — one API, one worker, one Beat.
+# RELIASTRA local Windows stack - one API, one worker, one Beat.
 #
 # Why this script exists: check execution needs all three processes, and
 # duplicates actively harm the deployment (two APIs fight over :8000, two

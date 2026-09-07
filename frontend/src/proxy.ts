@@ -20,7 +20,7 @@ import { isPartnerRouteSlug, partnerRouteUrl } from '@/lib/routes';
  *   2. if the access cookie is expired but the refresh cookie is valid,
  *      rotates the session against the backend and rewrites both cookies so
  *      the visitor continues uninterrupted;
- *   3. otherwise redirects to the dedicated `/admin/login` page — the
+ *   3. otherwise redirects to the dedicated `/admin/login` page - the
  *      customer/partner sign-in is never offered to the control plane.
  *
  * Assets under `/_next/*` are not matched, so bundles and fonts stay
@@ -127,7 +127,7 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
   // just succeeded) skip the login page entirely.
   if (isLoginPage) {
     // Self-heal stale loop bookmarks: `?next=` pointing back at the login
-    // page itself can never be a real destination — drop it server-side so
+    // page itself can never be a real destination - drop it server-side so
     // the URL can never read `/admin/login?next=%2Fadmin%2Flogin`.
     const nextParam = req.nextUrl.searchParams.get('next');
     if (nextParam && (nextParam === ADMIN_LOGIN_PATH || nextParam.startsWith(`${ADMIN_LOGIN_PATH}/`) || nextParam.startsWith(`${ADMIN_LOGIN_PATH}?`))) {

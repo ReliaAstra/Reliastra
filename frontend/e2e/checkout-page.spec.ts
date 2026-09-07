@@ -22,7 +22,7 @@ import {
  * number Paystack reports collecting, the number written into the payment
  * record and the number in the receipt email are ONE fact, arriving at each
  * surface from the backend. Every test below therefore looks at the page AND at
- * `/capture` — the stand-in's record of the upstream call — because a checkout
+ * `/capture` - the stand-in's record of the upstream call - because a checkout
  * can display a perfect figure while requesting a different one.
  *
  * The failure states are held to the same standard as the success: each one
@@ -62,7 +62,7 @@ test.describe('the checkout page', () => {
     await signIn(page, email, PASSWORD);
     await openCheckout(page);
 
-    // The plan the backend says this page is for — not a string the route made up.
+    // The plan the backend says this page is for - not a string the route made up.
     await expect(page.locator('[data-testid="checkout-review-plan"]')).toContainText(/RELIASTRA Pro/);
 
     // Both figures, labelled, and never merged into one.
@@ -138,10 +138,16 @@ test.describe('the checkout page', () => {
       await route.continue();
     });
 
+    // The pre-payment gate: the live exchange rate must be verified from its
+    // public source before the continue control unlocks at all.
+    await expect(page.locator('[data-testid="checkout-continue"]')).toBeEnabled({
+      timeout: 60_000,
+    });
+
     await page.locator('[data-testid="checkout-continue"]').click();
 
     // RELIASTRA opened the transaction and the customer completes it in the
-    // provider's own experience — no card field is ever rendered by us.
+    // provider's own experience - no card field is ever rendered by us.
     await expect(overlay(page)).toBeVisible({ timeout: 60_000 });
     expect(await page.locator('input[name*="card" i], input#card-number').count()).toBe(0);
     for (const body of toReliastra) {
@@ -194,7 +200,7 @@ test.describe('the checkout page', () => {
     expect(plan.plan).toBe('pro');
     expect(plan.billing_interval).toBe('monthly');
 
-    // The persisted record — what the billing page and any future dispute read.
+    // The persisted record - what the billing page and any future dispute read.
     const txRes = await request.get('/api/v1/billing/transactions', {
       headers: { Authorization: `Bearer ${accessToken}`, 'X-Organization-ID': organizationId },
     });
@@ -323,7 +329,7 @@ test.describe('the checkout page', () => {
     expect(actions).toMatch(/refresh/i);
     expect(actions).not.toMatch(/try again|pay again/i);
 
-    // When it clears, the same reference activates the plan — no re-payment.
+    // When it clears, the same reference activates the plan - no re-payment.
     await setPaystackOutcome(request, init!.reference, 'success');
     await failure.locator('[data-testid="checkout-refresh"]').click();
     await expect(page.locator('[data-testid="checkout-confirmation"]')).toBeVisible({
@@ -352,7 +358,7 @@ test.describe('the checkout page', () => {
     await expect(prompt).toBeVisible({ timeout: 60_000 });
     const link = prompt.getByRole('link', { name: /sign in/i });
     await expect(link).toBeVisible();
-    // The intent survives the round trip — including the interval, which is a
+    // The intent survives the round trip - including the interval, which is a
     // different price.
     const next = new URL((await link.getAttribute('href'))!, page.url()).searchParams.get('next');
     expect(next).toContain('/checkout');
@@ -411,7 +417,7 @@ test.describe('the checkout page', () => {
      * *backend* where the provider library lives. If a deployment points Paystack
      * somewhere else and the page still reached js.paystack.co, every other test
      * in this file would be asserting the behaviour of a script the product never
-     * configured — and in production the reverse would mean the checkout silently
+     * configured - and in production the reverse would mean the checkout silently
      * depends on a domain an operator has no control over.
      */
     const seen: string[] = [];

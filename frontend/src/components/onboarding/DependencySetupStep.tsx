@@ -13,11 +13,11 @@ import { getPlan } from '@/lib/dashboard/plans';
 type Preset = { id: string; name: string; url: string; note: string };
 
 const PRESETS: Preset[] = [
-  { id: 'stripe', name: 'Stripe', url: 'https://api.stripe.com/health', note: 'Payment provider — high blast radius' },
-  { id: 'openai', name: 'OpenAI', url: 'https://api.openai.com/v1/models', note: 'AI platform — availability matters' },
-  { id: 'github', name: 'GitHub', url: 'https://api.github.com', note: 'Source & auth — critical path' },
-  { id: 'auth0', name: 'Auth0', url: 'https://auth0.com', note: 'Identity — login dependency' },
-  { id: 'twilio', name: 'Twilio', url: 'https://api.twilio.com', note: 'Messaging — user-facing' },
+  { id: 'stripe', name: 'Stripe', url: 'https://api.stripe.com/health', note: 'Payment provider - high blast radius' },
+  { id: 'openai', name: 'OpenAI', url: 'https://api.openai.com/v1/models', note: 'AI platform - availability matters' },
+  { id: 'github', name: 'GitHub', url: 'https://api.github.com', note: 'Source & auth - critical path' },
+  { id: 'auth0', name: 'Auth0', url: 'https://auth0.com', note: 'Identity - login dependency' },
+  { id: 'twilio', name: 'Twilio', url: 'https://api.twilio.com', note: 'Messaging - user-facing' },
   { id: 'supabase', name: 'Supabase', url: 'https://supabase.com', note: 'Database / auth' },
   { id: 'cloudflare', name: 'Cloudflare', url: 'https://www.cloudflareflare.com/cdn-cgi/trace', note: 'Edge / CDN' },
   { id: 'vercel', name: 'Vercel', url: 'https://vercel.com', note: 'Hosting / edge' },
@@ -103,11 +103,11 @@ export function DependencySetupStep({ onCreated }: { onCreated: (id: string) => 
           Connect your first critical dependency.
         </h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-rs-text-secondary">
-          We&apos;re about to start building your independent reliability evidence. Pick a preset or paste any HTTPS endpoint you depend on.  <span className="font-medium text-rs-text">Recommended settings are applied automatically</span> — you can adjust them later.
+          We&apos;re about to start building your independent reliability evidence. Pick a preset or paste any HTTPS endpoint you depend on.  <span className="font-medium text-rs-text">Recommended settings are applied automatically</span> - you can adjust them later.
         </p>
       </div>
 
-      {/* Presets — provider suggestions, not integrations */}
+      {/* Presets - provider suggestions, not integrations */}
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
           <span className="rs-label">Quick presets</span>
@@ -217,7 +217,7 @@ export function DependencySetupStep({ onCreated }: { onCreated: (id: string) => 
 
       <div className="mt-6 flex items-center justify-between border-t border-rs-border-subtle pt-5">
         <p className="hidden text-xs text-rs-text-tertiary sm:block">
-          Monitoring starts on the next tick — typically within 60 seconds.
+          Monitoring starts on the next tick - typically within 60 seconds.
         </p>
         <RsButton onClick={handleCreate} disabled={loading} aria-busy={loading}>
           {loading ? (

@@ -15,7 +15,7 @@ Never `drop_column` in same release that stops reading it.
 4. `alembic upgrade head` with `timeout 180`. On fail → `FAILED` (production preserved, no new current).
 
 ## Rollback
-`rollback.sh` **never** runs `alembic downgrade`. It restores previous **app image** only, DB stays at migrated schema (expand ensures old app still works). If migration was destructive (contract) and rollback would break, `deploy.sh` already warned and operator must decide — auto-rollback will still try app revert but DB remains, and `healthcheck` will tell if incompatible (`ROLLBACK_FAILED` → escalate).
+`rollback.sh` **never** runs `alembic downgrade`. It restores previous **app image** only, DB stays at migrated schema (expand ensures old app still works). If migration was destructive (contract) and rollback would break, `deploy.sh` already warned and operator must decide - auto-rollback will still try app revert but DB remains, and `healthcheck` will tell if incompatible (`ROLLBACK_FAILED` → escalate).
 
 ## Backup vs Rollback
 - `previous.json` + GHCR digest = app rollback

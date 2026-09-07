@@ -89,7 +89,7 @@ SMTP_FROM=noreply@reliastra.com
 PAYSTACK_SECRET_KEY=
 PAYSTACK_PUBLIC_KEY=
 EOF
-    echo -e "${GREEN}.env.production created — EDIT IT before first deploy!${NC}"
+    echo -e "${GREEN}.env.production created - EDIT IT before first deploy!${NC}"
     echo -e "${RED}IMPORTANT: Change SECRET_KEY and set DATABASE_URL to your Supabase Postgres URI${NC}"
 else
     echo -e "${GREEN}.env.production already exists.${NC}"
