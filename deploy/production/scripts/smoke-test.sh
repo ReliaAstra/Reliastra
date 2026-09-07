@@ -26,12 +26,13 @@ if ! timeout "$TIMEOUT" bash -c 'docker exec reliastra-api curl -fsS --max-time 
 fi
 echo "smoke: openapi OK"
 
-# 2. Public vendor list (no auth) — should 200 even if empty
-code=$("${API_EXEC[@]}" -s -o /dev/null -w "%{http_code}" --max-time 10 http://127.0.0.1:8000/v1/public/vendors || echo "000")
-if [[ "$code" != "200" && "$code" != "401" ]]; then
-  # Depending on impl, may be 200 public. Allow 401 if behind auth.
-  echo "smoke WARN: /v1/public/vendors $code"
+# 2. Public vendor list (no auth) — must 200 (canonical public route)
+code=$("${API_EXEC[@]}" -s -o /dev/null -w "%{http_code}" --max-time 10 "http://127.0.0.1:8000/v1/vendors?limit=1" || echo "000")
+if [[ "$code" != "200" ]]; then
+  echo "smoke FAIL: /v1/vendors $code (public catalog unreachable)" >&2
+  exit 1
 fi
+echo "smoke: public vendors OK"
 
 # 3. Frontend renders (200) via the proxy (only host-port listener)
 if ! curl -fsS --max-time 10 http://127.0.0.1:80 >/dev/null; then
