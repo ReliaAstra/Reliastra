@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan } from '@/lib/dashboard/plans';
 import { initials } from '@/lib/dashboard/format';
-import { useInbox, useMarkInboxRead } from '@/lib/dashboard/queries';
+import { useClients, useInbox, useMarkInboxRead } from '@/lib/dashboard/queries';
 import { timeAgo } from '@/lib/dashboard/format';
 import { cn } from '@/lib/utils';
 
@@ -27,8 +27,9 @@ const LABELS: Record<string, string> = {
   dependencies: 'Dependencies',
   incidents: 'Incidents',
   evidence: 'Evidence',
-  clients: 'Agency portfolio',
-  onboarding: 'Onboarding',
+  clients: 'Client environments',
+  onboarding: 'Configuration',
+  reports: 'Reports',
   settings: 'Settings',
   billing: 'Billing',
   support: 'Support',
@@ -148,6 +149,110 @@ function Inbox() {
   );
 }
 
+/**
+ * Client scope.
+ *
+ * Agency operators work in two different scopes and must never be unsure
+ * which one they are in: AGENCY means every client, CLIENT means one. The
+ * indicator states the current scope in words, and switching is a real
+ * navigation — there is no invisible filter that silently changes what the
+ * other pages mean.
+ *
+ * It renders only for organizations the backend flagged `has_agency_mode`.
+ */
+function ClientScope() {
+  const org = useAppStore((s) => s.org);
+  const pathname = usePathname();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const agency = Boolean(org?.has_agency_mode);
+  const clients = useClients(agency);
+
+  if (!agency) return null;
+
+  const match = pathname.match(/^\/clients\/([^/]+)/);
+  const activeId = match && match[1] !== 'onboarding' ? match[1] : null;
+  const active = clients.data?.find((c) => c.id === activeId) ?? null;
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-7 items-center gap-2 border border-[var(--obc-line-2)] px-2.5 text-[12px] text-[var(--obc-text-2)] hover:border-[var(--obc-line-3)]"
+      >
+        <span className="obc-label">{activeId ? 'Client' : 'Agency'}</span>
+        <span className="max-w-[180px] truncate text-[var(--obc-text)]">
+          {activeId ? (active?.name ?? 'Environment') : (org?.name ?? 'All clients')}
+        </span>
+        <span aria-hidden className="text-[var(--obc-text-4)]">
+          ▾
+        </span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
+          <div
+            role="menu"
+            className="absolute left-0 top-9 z-50 w-64 border border-[var(--obc-line-2)] bg-[var(--obc-base)]"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                router.push('/clients');
+              }}
+              className="block w-full border-b border-[var(--obc-line)] px-3 py-2.5 text-left"
+            >
+              <span className="obc-label">Agency scope</span>
+              <span className="mt-0.5 block truncate text-[12.5px] text-[var(--obc-text)]">
+                All client environments
+              </span>
+            </button>
+            <div className="max-h-[300px] overflow-y-auto">
+              {(clients.data ?? []).map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setOpen(false);
+                    router.push(`/clients/${c.id}`);
+                  }}
+                  className={cn(
+                    'block w-full px-3 py-2 text-left text-[12.5px] hover:bg-[var(--obc-raised)]',
+                    c.id === activeId
+                      ? 'text-[var(--obc-text)]'
+                      : 'text-[var(--obc-text-2)]'
+                  )}
+                >
+                  {c.name}
+                  {c.id === activeId && <span className="sr-only"> (current scope)</span>}
+                </button>
+              ))}
+              {!clients.data?.length && (
+                <p className="px-3 py-2.5 text-[12px] text-[var(--obc-text-4)]">
+                  No client environments yet.
+                </p>
+              )}
+            </div>
+            <Link
+              href="/clients/onboarding"
+              onClick={() => setOpen(false)}
+              className="block border-t border-[var(--obc-line)] px-3 py-2 text-[12.5px] text-[var(--obc-text-2)] hover:bg-[var(--obc-raised)]"
+            >
+              Add client environment
+            </Link>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Account() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
@@ -244,6 +349,7 @@ export function ConsoleTopBar() {
       </nav>
 
       <div className="flex items-center gap-2.5">
+        <ClientScope />
         {evaluating && daysLeft > 0 && (
           <button
             type="button"

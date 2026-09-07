@@ -28,7 +28,10 @@ const ORG = {
   name: 'Northwind Systems',
   slug: 'northwind',
   plan: 'pro',
-  has_agency_mode: false,
+  // Agency mode is on by default so the multi-client console can be built and
+  // exercised. PATCH /v1/orgs/current mutates this object, which is how the
+  // e2e suite flips the capability off and asserts the not-enabled state.
+  has_agency_mode: true,
   ai_explanations_enabled: false,
   created_at: iso(190 * DAY),
   updated_at: iso(2 * DAY),
@@ -89,16 +92,17 @@ const REGIONS = ['eu-west-1', 'us-east-1', 'ap-south-1'];
  * to be judged against degraded and unknown rows, not only healthy ones.
  */
 const DEPS = [
-  ['dep_stripe', 'Stripe Payments', 'https://api.stripe.com/v1/charges', 'operational', 99.98, 214, 1 * MIN, 1440],
-  ['dep_auth0', 'Auth0 Tenant', 'https://northwind.eu.auth0.com/userinfo', 'degraded', 98.41, 1284, 2 * MIN, 1438],
-  ['dep_s3', 'Object Storage', 'https://s3.eu-west-1.amazonaws.com', 'operational', 100, 88, 1 * MIN, 1440],
-  ['dep_twilio', 'Twilio Messaging', 'https://api.twilio.com/2010-04-01', 'down', 91.07, 0, 40_000, 1201],
-  ['dep_openai', 'Model API', 'https://api.openai.com/v1/models', 'operational', 99.76, 640, 3 * MIN, 1436],
-  ['dep_pg', 'Managed Postgres', 'https://pg-eu-1.northwind.internal/health', 'operational', 99.99, 42, 1 * MIN, 1440],
-  ['dep_cf', 'Cloudflare Edge', 'https://cdn.northwind.systems/healthz', 'operational', 99.95, 31, 2 * MIN, 1439],
-  ['dep_sendgrid', 'Transactional Email', 'https://api.sendgrid.com/v3/scopes', 'unknown', null, 0, null, 0],
-].map(([id, name, url, status, uptime, latency, lastCheckAgo, checks]) => ({
+  ['dep_stripe', 'Stripe Payments', 'https://api.stripe.com/v1/charges', 'operational', 99.98, 214, 1 * MIN, 1440, 'app_kestrel_checkout'],
+  ['dep_auth0', 'Auth0 Tenant', 'https://northwind.eu.auth0.com/userinfo', 'degraded', 98.41, 1284, 2 * MIN, 1438, 'app_meridian_portal'],
+  ['dep_s3', 'Object Storage', 'https://s3.eu-west-1.amazonaws.com', 'operational', 100, 88, 1 * MIN, 1440, 'app_meridian_clinical'],
+  ['dep_twilio', 'Twilio Messaging', 'https://api.twilio.com/2010-04-01', 'down', 91.07, 0, 40_000, 1201, 'app_kestrel_checkout'],
+  ['dep_openai', 'Model API', 'https://api.openai.com/v1/models', 'operational', 99.76, 640, 3 * MIN, 1436, 'app_atlas_core'],
+  ['dep_pg', 'Managed Postgres', 'https://pg-eu-1.northwind.internal/health', 'operational', 99.99, 42, 1 * MIN, 1440, 'app_meridian_clinical'],
+  ['dep_cf', 'Cloudflare Edge', 'https://cdn.northwind.systems/healthz', 'operational', 99.95, 31, 2 * MIN, 1439, 'app_atlas_core'],
+  ['dep_sendgrid', 'Transactional Email', 'https://api.sendgrid.com/v3/scopes', 'unknown', null, 0, null, 0, null],
+].map(([id, name, url, status, uptime, latency, lastCheckAgo, checks, applicationId]) => ({
   id,
+  application_id: applicationId,
   name,
   endpoint_url: url,
   current_status: status,
@@ -111,7 +115,7 @@ const DEPS = [
 const depFull = (d) => ({
   id: d.id,
   org_id: ORG.id,
-  application_id: null,
+  application_id: d.application_id ?? null,
   name: d.name,
   endpoint_url: d.endpoint_url,
   method: 'GET',
@@ -427,6 +431,9 @@ function latencySeries(hours = 24, base = 200, spikeAt = null) {
   return points;
 }
 
+/** How many times a newly created monitor's results have been polled. */
+const FIRST_READS = {};
+
 function checkResults(depId, status) {
   const rows = [];
   for (let i = 0; i < 40; i++) {
@@ -448,6 +455,109 @@ function checkResults(depId, status) {
   return rows;
 }
 
+/* ── Agency hierarchy ──────────────────────────────────────────────────────
+   Mirrors app/modules/agencies: clients own applications, applications own
+   dependencies, and the portfolio rolls those up. `Verdant Energy` exists to
+   reproduce the trap in the real service - a client with no monitors comes
+   back as uptime 100.0 with zero dependencies, which the console must render
+   as "insufficient data" rather than as perfect availability. */
+
+const CLIENTS = [
+  ['cli_meridian', 'Meridian Health', 'Regulated telehealth platform', 240],
+  ['cli_kestrel', 'Kestrel Commerce', 'Marketplace, checkout and payouts', 180],
+  ['cli_atlas', 'Atlas Freight', 'Logistics and tracking APIs', 96],
+  ['cli_verdant', 'Verdant Energy', 'Onboarding - no monitors configured yet', 6],
+].map(([id, name, description, ageDays]) => ({
+  id,
+  org_id: ORG.id,
+  name,
+  description,
+  created_at: iso(ageDays * DAY),
+  updated_at: iso(2 * DAY),
+}));
+
+const APPLICATIONS = [
+  ['app_meridian_portal', 'cli_meridian', 'Patient Portal', 'Public web and mobile entry point'],
+  ['app_meridian_clinical', 'cli_meridian', 'Clinical API', 'Records, scheduling and messaging'],
+  ['app_kestrel_checkout', 'cli_kestrel', 'Checkout', 'Cart, payment and receipt path'],
+  ['app_atlas_core', 'cli_atlas', 'Core Platform', 'Tracking, routing and notifications'],
+].map(([id, client_id, name, description]) => ({
+  id,
+  org_id: ORG.id,
+  client_id,
+  name,
+  description,
+  created_at: iso(120 * DAY),
+  updated_at: iso(5 * DAY),
+}));
+
+const appById = (id) => APPLICATIONS.find((a) => a.id === id);
+const clientOfDependency = (dep) => appById(dep.application_id)?.client_id ?? null;
+
+/** The same rollup rule as AgencyService._rollup_status. */
+function rollupStatus(uptime, open, critical) {
+  if (critical > 0) return 'critical';
+  if (open > 0 || uptime < 99.0) return 'degraded';
+  return 'operational';
+}
+
+function portfolio() {
+  const clients = CLIENTS.map((client) => {
+    const apps = APPLICATIONS.filter((a) => a.client_id === client.id);
+    const deps = DEPS.filter((d) => apps.some((a) => a.id === d.application_id));
+    const measured = deps.filter((d) => d.uptime_percentage_24h != null);
+    const incidents = INCIDENTS.filter(
+      (i) => !i.resolved_at && deps.some((d) => d.id === i.dependency_id)
+    );
+    const lastIncident = INCIDENTS.filter((i) =>
+      deps.some((d) => d.id === i.dependency_id)
+    ).sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at))[0];
+
+    // Matches the service exactly, including the empty-window behaviour.
+    const uptime = measured.length
+      ? Number((measured.reduce((n, d) => n + d.uptime_percentage_24h, 0) / measured.length).toFixed(3))
+      : 100.0;
+    const latency = measured.length
+      ? Number((measured.reduce((n, d) => n + (d.avg_latency_ms_24h || 0), 0) / measured.length).toFixed(1))
+      : 0.0;
+    const critical = incidents.filter((i) => i.severity === 'critical').length;
+
+    return {
+      id: client.id,
+      name: client.name,
+      description: client.description,
+      application_count: apps.length,
+      dependency_count: deps.length,
+      uptime_24h: uptime,
+      avg_latency_ms: latency,
+      open_incidents: incidents.length,
+      critical_incidents: critical,
+      last_incident_at: lastIncident?.started_at ?? null,
+      status: rollupStatus(uptime, incidents.length, critical),
+    };
+  });
+
+  const measuredAll = DEPS.filter(
+    (d) => d.application_id && d.uptime_percentage_24h != null
+  );
+  return {
+    org_name: ORG.name,
+    generated_at: new Date().toISOString(),
+    share_token: `${ORG.id}.qafixtureportfoliotoken00000000`,
+    clients,
+    totals: {
+      clients: clients.length,
+      dependencies: clients.reduce((n, c) => n + c.dependency_count, 0),
+      avg_uptime_24h: measuredAll.length
+        ? Number((measuredAll.reduce((n, d) => n + d.uptime_percentage_24h, 0) / measuredAll.length).toFixed(3))
+        : 100.0,
+      open_incidents: clients.reduce((n, c) => n + c.open_incidents, 0),
+      clients_needing_attention: clients.filter((c) => c.status !== 'operational').length,
+    },
+    unassigned_monitors: DEPS.filter((d) => !d.application_id).length,
+  };
+}
+
 const PRICING = {
   plans: [
     { plan: 'free', display_name: 'Free', description: 'Observation for a small stack.', tag: null, price_usd: 0, price_annual_usd: 0, max_dependencies: 3, max_team_members: 1, min_check_interval_seconds: 300, data_retention_days: 7, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$0.00 (USD)' },
@@ -461,7 +571,7 @@ const routes = [
   ['POST', /^\/v1\/auth\/refresh$/, () => ({ access_token: 'qa-access-token', refresh_token: 'qa-refresh-token', token_type: 'bearer', expires_in: 3600 })],
   ['GET', /^\/v1\/orgs$/, () => [ORG]],
   ['GET', /^\/v1\/orgs\/current$/, () => ORG],
-  ['PATCH', /^\/v1\/orgs\/current$/, () => ORG],
+  ['PATCH', /^\/v1\/orgs\/current$/, (m, url, body) => Object.assign(ORG, body ?? {})],
   ['GET', /^\/v1\/users\/me$/, () => USER],
   ['GET', /^\/v1\/billing\/plan$/, () => PLAN],
   ['GET', /^\/v1\/pricing$/, () => PRICING],
@@ -534,14 +644,68 @@ const routes = [
   }],
   ['GET', /^\/v1\/dependencies\/([^/]+)\/results$/, (m) => {
     const d = DEPS.find((x) => x.id === m[1]);
-    return d ? checkResults(d.id, d.current_status) : { __status: 404 };
+    if (!d) return { __status: 404 };
+    // A freshly created monitor has not been scheduled yet on the first read.
+    // The second read returns its first real observations, which is exactly
+    // the transition the activation surface has to render.
+    if (d.id.startsWith('dep_created')) {
+      FIRST_READS[d.id] = (FIRST_READS[d.id] ?? 0) + 1;
+      if (FIRST_READS[d.id] < 2) return [];
+      return checkResults(d.id, 'operational').slice(0, 3);
+    }
+    return checkResults(d.id, d.current_status);
   }],
   ['GET', /^\/v1\/dependencies\/([^/]+)$/, (m) => {
     const d = DEPS.find((x) => x.id === m[1]);
     return d ? depFull(d) : { __status: 404 };
   }],
   ['GET', /^\/v1\/evidence$/, () => EVIDENCE],
-  ['GET', /^\/v1\/evidence\/([^/]+)$/, (m) => EVIDENCE.find((e) => e.id === m[1]) ?? { __status: 404 }],
+  ['GET', /^\/v1\/evidence\/([^/]+)$/, (m) => {
+    const report = EVIDENCE.find((e) => e.id === m[1]);
+    if (!report) return { __status: 404 };
+    // The real endpoint returns a signed, expiring URL alongside the record.
+    return { ...report, download_url: `http://127.0.0.1:${PORT}/v1/evidence/${report.id}/file` };
+  }],
+  ['POST', /^\/v1\/evidence\/([^/]+)\/regenerate$/, (m) =>
+    EVIDENCE.find((e) => e.id === m[1])
+      ? { ...EVIDENCE.find((e) => e.id === m[1]), generated_at: new Date().toISOString(), __status: 201 }
+      : { __status: 404 }],
+
+  // ── Dependency mutation, for the configuration sequence ────────────────
+  ['POST', /^\/v1\/dependencies$/, (m, url, body) => {
+    // A deterministic failure path, so the sequence's error handling can be
+    // exercised without breaking anything else.
+    if ((body?.name ?? '').toUpperCase() === 'FAILME') return { __status: 422 };
+    const created = {
+      id: `dep_created_${DEPS.length}`,
+      application_id: body?.application_id ?? null,
+      name: body?.name ?? 'New dependency',
+      endpoint_url: body?.endpoint_url ?? 'https://example.com/health',
+      current_status: 'unknown',
+      uptime_percentage_24h: null,
+      avg_latency_ms_24h: 0,
+      last_check_at: null,
+      total_checks_24h: 0,
+    };
+    DEPS.push(created);
+    return { ...depFull(created), __status: 201 };
+  }],
+  ['PATCH', /^\/v1\/dependencies\/([^/]+)$/, (m, url, body) => {
+    const dep = DEPS.find((d) => d.id === m[1]);
+    if (!dep) return { __status: 404 };
+    if (body && 'application_id' in body) dep.application_id = body.application_id;
+    if (body?.name) dep.name = body.name;
+    return depFull(dep);
+  }],
+  ['POST', /^\/v1\/notifications\/configs$/, (m, url, body) => ({
+    id: `alc_${Math.random().toString(36).slice(2, 7)}`,
+    org_id: ORG.id,
+    channel_type: body?.channel_type ?? 'email',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    __status: 201,
+  })],
   ['GET', /^\/v1\/notifications\/configs$/, () => [
     { id: 'alc_1', org_id: ORG.id, channel_type: 'email', is_active: true, created_at: iso(80 * DAY), updated_at: iso(80 * DAY) },
     { id: 'alc_2', org_id: ORG.id, channel_type: 'slack', is_active: true, created_at: iso(40 * DAY), updated_at: iso(40 * DAY) },
@@ -659,10 +823,61 @@ const routes = [
     format: 'pdf',
     note: 'QA fixture: the real endpoint streams a signed PDF.',
   })],
-  ['GET', /^\/v1\/clients$/, () => []],
-  ['GET', /^\/v1\/agency\/portfolio$/, () => ({ __status: 404 })],
+  ['GET', /^\/v1\/clients$/, () => (ORG.has_agency_mode ? CLIENTS : CLIENTS)],
+  ['POST', /^\/v1\/clients$/, (m, url, body) => {
+    const created = {
+      id: `cli_${Math.random().toString(36).slice(2, 8)}`,
+      org_id: ORG.id,
+      name: body?.name ?? 'New client',
+      description: body?.description ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    CLIENTS.push(created);
+    ORG.has_agency_mode = true;
+    return { ...created, __status: 201 };
+  }],
+  ['GET', /^\/v1\/clients\/([^/]+)\/applications$/, (m) =>
+    CLIENTS.some((c) => c.id === m[1])
+      ? APPLICATIONS.filter((a) => a.client_id === m[1])
+      : { __status: 404 }],
+  ['POST', /^\/v1\/clients\/([^/]+)\/applications$/, (m, url, body) => {
+    if (!CLIENTS.some((c) => c.id === m[1])) return { __status: 404 };
+    const created = {
+      id: `app_${Math.random().toString(36).slice(2, 8)}`,
+      org_id: ORG.id,
+      client_id: m[1],
+      name: body?.name ?? 'New application',
+      description: body?.description ?? null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    APPLICATIONS.push(created);
+    return { ...created, __status: 201 };
+  }],
+  ['GET', /^\/v1\/agency\/portfolio$/, () => portfolio()],
   ['GET', /^\/v1\/partners\/support\/tickets$/, () => ({ items: [], page: 1, page_size: 50, total: 0 })],
 ];
+
+/** Collect and JSON-parse a request body; `null` when there is none. */
+function readBody(req) {
+  return new Promise((resolve) => {
+    if (req.method === 'GET' || req.method === 'HEAD') return resolve(null);
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+      if (raw.length > 1_000_000) req.destroy();
+    });
+    req.on('end', () => {
+      try {
+        resolve(raw ? JSON.parse(raw) : null);
+      } catch {
+        resolve(null);
+      }
+    });
+    req.on('error', () => resolve(null));
+  });
+}
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -671,14 +886,22 @@ const server = createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,PUT,DELETE,OPTIONS');
   if (req.method === 'OPTIONS') return res.writeHead(204).end();
 
+  const payload = await readBody(req);
+
   for (const [method, pattern, handler] of routes) {
     if (req.method !== method) continue;
     const m = url.pathname.match(pattern);
     if (!m) continue;
-    const body = handler(m, url);
+    const body = handler(m, url, payload);
     const status = body && body.__status ? body.__status : 200;
     res.writeHead(status, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify(status === 200 ? body : { error: { code: 'NOT_FOUND', message: 'Not found' } }));
+    if (status >= 400) {
+      return res.end(
+        JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } })
+      );
+    }
+    const { __status, ...rest } = body ?? {};
+    return res.end(JSON.stringify(Array.isArray(body) ? body : rest));
   }
 
   res.writeHead(404, { 'Content-Type': 'application/json' });

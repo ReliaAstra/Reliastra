@@ -24,10 +24,20 @@ import { AppErrorBoundary } from '../dashboard/shell/error-boundary';
  * button hovering over live telemetry is decoration, and the product is
  * single-theme by design.
  */
+/**
+ * Configuration sequences render their own focused shell. They are still
+ * authenticated routes inside this group (so they keep the providers, the
+ * session guard and the error boundary), but they must not be wrapped in the
+ * console rail: during setup the rail points at surfaces that have no data in
+ * them yet.
+ */
+const SEQUENCE_ROUTES = ['/onboarding', '/clients/onboarding'];
+
 export function ConsoleShell({ children }: { children: ReactNode }) {
   const online = useAppStore((s) => s.online);
   const pathname = usePathname();
   const pushRecent = useAppStore((s) => s.pushRecent);
+  const isSequence = SEQUENCE_ROUTES.includes(pathname);
 
   useEffect(() => {
     const labels: Record<string, string> = {
@@ -41,6 +51,15 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
     const label = labels[pathname] || pathname.split('/').filter(Boolean).slice(-1)[0];
     if (label) pushRecent({ href: pathname, label });
   }, [pathname, pushRecent]);
+
+  if (isSequence) {
+    return (
+      <AppErrorBoundary>
+        {children}
+        <UpgradeModal />
+      </AppErrorBoundary>
+    );
+  }
 
   return (
     <AppErrorBoundary>

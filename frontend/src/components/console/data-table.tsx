@@ -45,6 +45,7 @@ export function DataTable<T>({
   caption,
   emptyLabel = 'No records',
   initialSort,
+  stackBelow = 'lg',
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -56,6 +57,11 @@ export function DataTable<T>({
   caption: string;
   emptyLabel?: string;
   initialSort?: { key: string; dir: 'asc' | 'desc' };
+  /**
+   * Viewport at which the grid appears. Eight columns do not fit a 1024px
+   * tablet, so wide tables stay in record form until `xl`.
+   */
+  stackBelow?: 'lg' | 'xl';
 }) {
   const router = useRouter();
   const [sort, setSort] = useState(initialSort ?? null);
@@ -91,7 +97,12 @@ export function DataTable<T>({
   return (
     <>
       {/* Dense table — laptop and up */}
-      <div className="hidden border border-[var(--obc-line)] lg:block">
+      <div
+        className={cn(
+          'hidden border border-[var(--obc-line)]',
+          stackBelow === 'xl' ? 'xl:block' : 'lg:block'
+        )}
+      >
         <table className="obc-table table-fixed">
           <caption className="sr-only">{caption}</caption>
           <thead>
@@ -142,9 +153,23 @@ export function DataTable<T>({
                   onClick={href ? () => router.push(href) : undefined}
                   className={cn(href && 'cursor-pointer')}
                 >
-                  {columns.map((c) => (
+                  {columns.map((c, i) => (
                     <td key={c.key} className={cn(c.numeric && 'obc-num')}>
-                      {c.render(row)}
+                      {/* The first cell carries a real link when the row is a
+                          record: the whole `<tr>` is clickable for a mouse,
+                          but a keyboard user needs something focusable, and a
+                          re-implemented onKeyDown is not that. */}
+                      {href && i === 0 ? (
+                        <a
+                          href={href}
+                          className="block focus-visible:outline-none"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {c.render(row)}
+                        </a>
+                      ) : (
+                        c.render(row)
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -155,7 +180,12 @@ export function DataTable<T>({
       </div>
 
       {/* Record stack — phone and tablet. Same fields, no sideways scroll. */}
-      <ul className="divide-y divide-[var(--obc-line)] border border-[var(--obc-line)] lg:hidden">
+      <ul
+        className={cn(
+          'divide-y divide-[var(--obc-line)] border border-[var(--obc-line)]',
+          stackBelow === 'xl' ? 'xl:hidden' : 'lg:hidden'
+        )}
+      >
         {sorted.map((row) => {
           const href = rowHref?.(row);
           const [first, ...rest] = columns.filter((c) => !c.mobileHidden);

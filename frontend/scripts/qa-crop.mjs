@@ -25,6 +25,12 @@ const ctx = await browser.newContext({
   viewport: { width, height: width < 700 ? 900 : 1000 },
   deviceScaleFactor: 1, colorScheme: 'dark',
 });
+// A signed-in console session, same contract as qa-shot --auth.
+if (argv.includes('--auth')) {
+  await ctx.addInitScript(() => {
+    localStorage.setItem('reliastra_refresh_token', 'qa-refresh-token');
+  });
+}
 const page = await ctx.newPage();
 await page.goto(`${BASE}${route}`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(900);

@@ -18,6 +18,16 @@ import { cn } from '@/lib/utils';
  * there is no invented section. `Agency` appears only for organizations the
  * backend has actually flagged `has_agency_mode`, instead of being a
  * permanently visible dead end.
+ *
+ * Two entries are worth explaining:
+ *
+ * -  `Reports` is a real route over `GET /v1/evidence`: the artifact side of
+ *    evidence (files, checksums, signed downloads) as distinct from the
+ *    incident side. It was left out of the previous pass because nothing
+ *    backed it; it is here now because something does.
+ * -  `Research` links the public research index and is marked as leaving the
+ *    console, because there is no authenticated research capability in the
+ *    backend and inventing an in-app one would be a hollow page.
  */
 /** Primary destinations surfaced directly in the mobile bar. */
 const PRIMARY = [
@@ -38,11 +48,17 @@ const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?
   },
   {
     label: 'Evidence',
-    items: [{ href: '/evidence', label: 'Evidence records' }],
+    items: [
+      { href: '/evidence', label: 'Evidence records' },
+      { href: '/reports', label: 'Reports' },
+    ],
   },
   {
-    label: 'Clients',
-    items: [{ href: '/clients', label: 'Agency portfolio', agencyOnly: true }],
+    label: 'Agency',
+    items: [
+      { href: '/clients', label: 'Client environments', agencyOnly: true },
+      { href: '/clients/onboarding', label: 'Add client environment', agencyOnly: true },
+    ],
   },
   {
     label: 'Account',
@@ -174,6 +190,35 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         );
       })}
+
+      {/* Reference. The public research index is the real destination — there
+          is no authenticated research capability in the backend, and a link
+          that leaves the console is marked as one rather than faked into it. */}
+      <div>
+        <p className="obc-label mb-2 px-3">Reference</p>
+        <ul>
+          {[
+            { href: '/research', label: 'Research' },
+            { href: '/docs', label: 'Documentation' },
+          ].map((item) => (
+            <li key={item.href}>
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onNavigate}
+                className="flex h-9 items-center gap-1.5 px-3 text-[13px] text-[var(--obc-text-3)] transition-colors hover:bg-[var(--obc-raised)] hover:text-[var(--obc-text-2)]"
+              >
+                {item.label}
+                <span aria-hidden className="text-[var(--obc-text-4)]">
+                  ↗
+                </span>
+                <span className="sr-only">(opens the public site in a new tab)</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     </nav>
   );
 }

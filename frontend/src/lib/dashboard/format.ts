@@ -84,14 +84,27 @@ export function confidenceFromScore(score: number): 'HIGH' | 'MEDIUM' | 'LOW' {
   return 'LOW';
 }
 
+/**
+ * Region codes appear in two forms: the four values a dependency can be
+ * configured with (`us-east`), and the zone a worker recorded an observation
+ * from (`us-east-1`). Both must read as the same place, so a trailing zone
+ * index is normalised away before lookup and printed back afterwards.
+ */
 export function regionLabel(code: string): string {
   const map: Record<string, string> = {
     'us-east': 'US East',
     'us-west': 'US West',
     'eu-west': 'EU West',
+    'eu-central': 'EU Central',
     'ap-south': 'AP South',
     'ap-southeast': 'AP Southeast',
+    'ap-northeast': 'AP Northeast',
     'sa-east': 'SA East',
+    'af-south': 'AF South',
+    'me-south': 'ME South',
   };
-  return map[code] || code;
+  if (map[code]) return map[code];
+  const zoned = /^(.*)-(\d+)$/.exec(code);
+  if (zoned && map[zoned[1]]) return `${map[zoned[1]]} ${zoned[2]}`;
+  return code;
 }

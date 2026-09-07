@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from './api';
@@ -201,6 +201,30 @@ export function useApplications(clientId: string | null | undefined, enabled = t
     queryFn: () => api.applications(clientId as string),
     enabled: Boolean(clientId) && enabled && ready,
   });
+}
+
+/**
+ * Every application across every client.
+ *
+ * There is no org-wide applications endpoint - the API exposes them per
+ * client - so this fans out one cached request per client. That is what makes
+ * the `dependency → application → client` join possible on the portfolio
+ * page, and the results are shared with the per-client views by query key.
+ */
+export function useAllApplications(clientIds: string[], enabled = true) {
+  const ready = useSessionReady();
+  const results = useQueries({
+    queries: clientIds.map((id) => ({
+      queryKey: keys.clientApplications(id),
+      queryFn: () => api.applications(id),
+      enabled: enabled && ready,
+    })),
+  });
+  return {
+    data: results.flatMap((r) => r.data ?? []),
+    isLoading: results.some((r) => r.isLoading),
+    isError: results.some((r) => r.isError),
+  };
 }
 
 export function useCreateClient() {
