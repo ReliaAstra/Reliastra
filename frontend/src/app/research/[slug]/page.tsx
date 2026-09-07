@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       siteName: 'RELIASTRA',
       images: [
         {
-          url: `${SITE_URL}/opengraph-image`,
+          url: `${SITE_URL}/opengraph-image.png`,
           width: 1200,
           height: 630,
           alt: article.title,
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       card: 'summary_large_image',
       title: article.title,
       description: article.summary,
-      images: [`${SITE_URL}/opengraph-image`],
+      images: [`${SITE_URL}/opengraph-image.png`],
     },
   };
 }

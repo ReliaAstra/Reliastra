@@ -127,7 +127,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       images: [
         {
-          url: '/opengraph-image',
+          url: '/opengraph-image.png',
           width: 1200,
           height: 630,
           alt: `RELIASTRA observation record for ${name}`,
@@ -138,7 +138,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title: `${name} - independently measured reliability record`,
       description,
-      images: ['/opengraph-image'],
+      images: ['/opengraph-image.png'],
     },
   };
 }

@@ -44,6 +44,12 @@ const nextConfig: NextConfig = {
       "clients",
     ];
     return [
+      // Preserve previously shared URLs after moving to a static social image.
+      {
+        source: "/opengraph-image",
+        destination: "/opengraph-image.png",
+        permanent: true,
+      },
       // "Vendor Tracking" is the public label for the Track experience, but
       // the canonical route is `/track` - redirect instead of duplicating.
       {

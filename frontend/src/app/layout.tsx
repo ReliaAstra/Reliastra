@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/opengraph-image.png",
         width: 1200,
         height: 630,
         alt: "RELIASTRA - External Dependency Intelligence",
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     title: "RELIASTRA - External Dependency Intelligence",
     description:
       "Monitor third-party APIs. Prove vendor failures. Claim SLA credits.",
-    images: ["/opengraph-image"],
+    images: ["/opengraph-image.png"],
   },
 };
 
