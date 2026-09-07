@@ -2214,3 +2214,277 @@
 .obc-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
 .obc-scroll::-webkit-scrollbar-thumb { background: var(--obc-line-3); border-radius: 0; }
 .obc-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PUBLIC INFRASTRUCTURE OBSERVATORY  ·  .obs
+   ──────────────────────────────────────────────────────────────────────────
+   The third design language. `.ob` is the cinematic public site, `.obc` is the
+   dense authenticated console; this is the public *record* of an external
+   dependency - a technical publication that happens to be live.
+
+   It sits inside `.ob` (same palette, same type stacks, same footer), and adds
+   only what a measurement record needs:
+
+   -  A numbered spine. Every section carries an index, like a report, so the
+      page reads as a document rather than a feed of widgets.
+   -  Instrument type. Figures are mono, tabular, right-aligned and carry their
+      unit as a separate muted glyph, because a latency and a percentage must
+      never look like the same kind of number.
+   -  Rules, not cards. A row is 1px above and 1px below. Nothing floats.
+   -  Motion is evidence of measurement: a cadence hairline that advances with
+      real elapsed time, and nothing else. No pulse, no glow, no particles.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.obs {
+  --obs-row: 38px;
+  --obs-band: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Masthead ─────────────────────────────────────────────────────────── */
+
+.obs-name {
+  font-size: clamp(3.25rem, 13.5vw, 11.5rem);
+  line-height: 0.84;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  color: var(--ob-text);
+  overflow-wrap: anywhere;
+}
+
+.obs-descriptor {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ob-text-3);
+}
+
+/* State word: large, plain, never colour-only (always paired with a dot and
+   the qualifying sentence beneath it). */
+.obs-state {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 14px;
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.obs-state[data-state='healthy'] { color: var(--ob-healthy); }
+.obs-state[data-state='degraded'] { color: var(--ob-degraded); }
+.obs-state[data-state='critical'] { color: var(--ob-critical); }
+.obs-state[data-state='unknown'] { color: var(--ob-text-3); }
+/* The state word is the largest coloured element on the page, so its dot has
+   to scale with it or the pairing reads as a typo rather than as a status. */
+.obs-state > .ob-dot { width: 9px; height: 9px; }
+
+/* In a table cell the same component has to sit on a 13px baseline. Declared
+   as a class, not a utility: `.obs-state` is a plain selector later in the
+   sheet than Tailwind's layers, so an arbitrary font-size utility would lose
+   to it and the word would silently render at display size. */
+.obs-state-sm {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  gap: 8px;
+}
+.obs-state-sm > .ob-dot { width: 6px; height: 6px; }
+
+/* ── Section spine ────────────────────────────────────────────────────── */
+
+.obs-section {
+  border-top: 1px solid var(--ob-line-2);
+  /* Anchored jumps (#telemetry, #incidents) must not land under the sticky
+     observatory bar. */
+  scroll-margin-top: 72px;
+}
+
+.obs-head {
+  display: grid;
+  gap: 10px 24px;
+  padding-block: 20px 26px;
+}
+@media (min-width: 900px) {
+  .obs-head {
+    grid-template-columns: 92px minmax(0, 1fr) minmax(0, 400px);
+    align-items: start;
+    padding-block: 26px 34px;
+  }
+}
+
+.obs-index {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--ob-signal);
+  padding-top: 6px;
+}
+
+.obs-h {
+  font-size: clamp(1.125rem, 2.1vw, 1.4375rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--ob-text);
+}
+
+.obs-note {
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ob-text-3);
+}
+
+/* ── Instrument figures ───────────────────────────────────────────────── */
+
+.obs-num {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-text);
+  letter-spacing: -0.01em;
+}
+.obs-num-lg { font-size: clamp(1.5rem, 3vw, 2.125rem); line-height: 1.05; }
+.obs-num-md { font-size: 1.0625rem; line-height: 1.2; }
+.obs-num-sm { font-size: 0.8125rem; line-height: 1.3; }
+.obs-unit {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--ob-text-4);
+  margin-left: 4px;
+}
+.obs-void { color: var(--ob-text-4); font-style: normal; }
+
+/* ── Ruled data rows ──────────────────────────────────────────────────── */
+
+.obs-rows { display: flex; flex-direction: column; }
+.obs-row {
+  display: grid;
+  align-items: center;
+  gap: 4px 16px;
+  border-top: 1px solid var(--ob-line);
+  padding-block: 11px;
+  min-height: var(--obs-row);
+}
+.obs-rows > .obs-row:last-child { border-bottom: 1px solid var(--ob-line); }
+.obs-rowhead {
+  display: none;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+@media (min-width: 768px) {
+  .obs-rowhead { display: grid; }
+  .obs-row { padding-block: 0; }
+}
+a.obs-row { transition: background-color 140ms ease; }
+a.obs-row:hover { background: rgba(242, 242, 238, 0.03); }
+
+.obs-r { text-align: right; }
+
+/* ── Range / region switcher ──────────────────────────────────────────── */
+
+.obs-switch { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--ob-line-2); border-radius: 2px; }
+.obs-switch > * + * { border-left: 1px solid var(--ob-line-2); }
+.obs-tab {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding-inline: 12px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ob-text-3);
+  transition: color 120ms ease, background-color 120ms ease;
+}
+.obs-tab:hover { color: var(--ob-text); background: rgba(242, 242, 238, 0.04); }
+@media (max-width: 640px) {
+  /* Region codes are long; the control has to fit a 375px screen without
+     clipping a label, so it loses padding before it loses characters. */
+  .obs-tab { padding-inline: 9px; font-size: 0.625rem; letter-spacing: 0.08em; }
+}
+.obs-tab[aria-current='true'] {
+  color: var(--ob-void);
+  background: var(--ob-text);
+}
+
+/* ── Plot chrome ──────────────────────────────────────────────────────── */
+
+.obs-axis {
+  font-family: var(--ob-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  fill: var(--ob-text-4);
+}
+.obs-grid { stroke: rgba(242, 242, 238, 0.07); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-grid-strong { stroke: rgba(242, 242, 238, 0.14); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-thresh { stroke: var(--ob-signal); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.55; }
+.obs-trace { fill: none; stroke: var(--ob-text); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+.obs-trace-fill { fill: rgba(242, 242, 238, 0.05); stroke: none; }
+.obs-fail { stroke: var(--ob-critical); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-incident-band { fill: rgba(200, 84, 76, 0.13); }
+.obs-cursor { stroke: var(--ob-signal); stroke-width: 1; shape-rendering: crispEdges; }
+.obs-plot { touch-action: pan-y; }
+.obs-plot:focus-visible { outline: 2px solid var(--ob-signal); outline-offset: 2px; }
+
+/* Availability strip beneath the trace: one column per bucket. */
+.obs-strip-ok { fill: var(--ob-healthy); opacity: 0.55; }
+.obs-strip-fail { fill: var(--ob-critical); }
+.obs-strip-none { fill: rgba(242, 242, 238, 0.10); }
+
+/* ── Cadence hairline: the only motion on the page ────────────────────── */
+
+.obs-cadence {
+  position: relative;
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--ob-line-2);
+  overflow: hidden;
+}
+.obs-cadence > i {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  display: block;
+  background: var(--ob-signal);
+  transition: width 900ms linear;
+}
+
+/* Label colour variants. These are declared here, after `.ob-label`, because
+   a Tailwind arbitrary colour utility loses to a plain class selector defined
+   later in the sheet - so a label that must read as signal or as critical gets
+   a class rather than a utility that silently does nothing. */
+.obs-label-signal { color: var(--ob-signal); }
+.obs-label-crit { color: var(--ob-critical); }
+.obs-label-ok { color: var(--ob-healthy); }
+.obs-label-text { color: var(--ob-text-2); }
+
+/* ── Horizontal scrollers ─────────────────────────────────────────────────
+   A wide table inside `overflow-x: auto` still contributes its full width to
+   the root scroll area in Chromium, so the page itself scrolls sideways on a
+   phone even though the table is correctly clipped. `contain: paint` stops
+   that at the scroller, which is the only element that should scroll. */
+.ob-scroll-x {
+  overflow-x: auto;
+  contain: paint;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ob-line-3) transparent;
+}
+.ob-scroll-x::-webkit-scrollbar { height: 8px; }
+.ob-scroll-x::-webkit-scrollbar-thumb { background: var(--ob-line-3); }
+.ob-scroll-x::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Geographic plot ──────────────────────────────────────────────────── */
+
+.obs-geo-grid { stroke: rgba(242, 242, 238, 0.06); stroke-width: 1; }
+.obs-geo-axis { stroke: rgba(242, 242, 238, 0.13); stroke-width: 1; }
+.obs-geo-mark { stroke: var(--ob-text); stroke-width: 1; }
+.obs-geo-label {
+  font-family: var(--ob-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  fill: var(--ob-text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .obs-cadence > i { transition: none; }
+}

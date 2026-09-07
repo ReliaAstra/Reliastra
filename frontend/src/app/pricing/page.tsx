@@ -128,7 +128,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="ob-scroll-x">
             <table className="w-full min-w-[560px] border-collapse text-left">
               <caption className="sr-only">
                 RELIASTRA plan capability comparison

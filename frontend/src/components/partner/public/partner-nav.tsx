@@ -92,7 +92,7 @@ export function PartnerNav({ activePage }: { activePage?: PartnerPage } = {}) {
         </Link>
 
         {/* Desktop links */}
-        <ul className="hidden items-center gap-7 lg:flex">
+        <ul className="hidden items-center gap-7 xl:flex">
           {navLinks.map((link) => {
             const isActive = currentPage === link.page;
             return (
@@ -121,7 +121,7 @@ export function PartnerNav({ activePage }: { activePage?: PartnerPage } = {}) {
         </ul>
 
         {/* Desktop actions */}
-        <div className="hidden shrink-0 items-center gap-5 lg:flex">
+        <div className="hidden shrink-0 items-center gap-5 xl:flex">
           <Link
             href="/"
             className="text-[13px] text-[var(--ob-text-4)] transition-colors hover:text-[var(--ob-text-2)]"
@@ -152,7 +152,7 @@ export function PartnerNav({ activePage }: { activePage?: PartnerPage } = {}) {
           onClick={() => setMobileOpen((v) => !v)}
           aria-expanded={mobileOpen}
           aria-controls="partner-mobile-nav"
-          className="ob-label -mr-2 px-2 py-3 text-[var(--ob-text-2)] lg:hidden"
+          className="ob-label -mr-2 px-2 py-3 text-[var(--ob-text-2)] xl:hidden"
         >
           {mobileOpen ? 'Close' : 'Menu'}
         </button>
@@ -162,7 +162,7 @@ export function PartnerNav({ activePage }: { activePage?: PartnerPage } = {}) {
       {mobileOpen && (
         <div
           id="partner-mobile-nav"
-          className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-[var(--ob-line)] bg-[var(--ob-void)] lg:hidden"
+          className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-[var(--ob-line)] bg-[var(--ob-void)] xl:hidden"
         >
           <div className="ob-container flex flex-col py-8">
             <p className="ob-label mb-2">Program</p>

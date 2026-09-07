@@ -264,12 +264,156 @@ const VENDORS = [
   ['ven_openai', 'openai', 'OpenAI', 'model-apis', 'operational', 99.7, 702],
   ['ven_twilio', 'twilio', 'Twilio', 'messaging', 'down', 90.4, 0],
   ['ven_github', 'github', 'GitHub', 'developer', 'operational', 99.95, 143],
+  // A dependency that has been registered but never observed. It exists to
+  // prove the "insufficient data" path: the real API returns uptime 100.0 for
+  // an empty window, and the UI must never print that as a measurement.
+  ['ven_newrelic', 'newrelic', 'New Relic', 'observability', 'unknown', 0, 0],
 ].map(([id, vendor_name, display_name, category, recent_status, uptime, latency]) => ({
   id, vendor_name, display_name, category, is_public: true,
-  last_check_at: iso(2 * MIN), created_at: iso(300 * DAY), updated_at: iso(2 * MIN),
+  last_check_at: vendor_name === 'newrelic' ? null : iso(2 * MIN),
+  created_at: iso(300 * DAY), updated_at: iso(2 * MIN),
   recent_status, uptime_percentage_24h: uptime, avg_latency_ms: latency,
   endpoints: [{ id: `${id}_e1`, endpoint_url: `https://api.${vendor_name}.com`, regions: REGIONS, health_status: recent_status, is_active: true, last_check_at: iso(2 * MIN) }],
 }));
+
+/* ── Public vendor observatory (/v1/vendors/*) ──────────────────────────────
+ * Mirrors app/modules/vendors/schemas.py and the evidence-gate public
+ * incidents endpoint. Windows and resolutions match _WINDOW_HOURS /
+ * _AUTO_RESOLUTION in the real service, because the public track page reads
+ * both from the response rather than assuming them.
+ */
+
+const WINDOW_HOURS = { '1h': 1, '6h': 6, '24h': 24, '7d': 168, '30d': 720, '90d': 2160 };
+const AUTO_RESOLUTION = { '1h': 60, '6h': 60, '24h': 300, '7d': 900, '30d': 3600, '90d': 21600 };
+const RESOLUTION_LABEL = { 60: '1m', 300: '5m', 900: '15m', 3600: '1h', 21600: '6h' };
+
+const VENDOR_PROFILE = {
+  stripe:     { base: 190,  jitter: 0.10, fail: 0,     incidentAt: null },
+  cloudflare: { base: 24,   jitter: 0.18, fail: 0,     incidentAt: null },
+  auth0:      { base: 1310, jitter: 0.22, fail: 0.02,  incidentAt: 0.28 },
+  openai:     { base: 702,  jitter: 0.30, fail: 0.004, incidentAt: 0.62 },
+  twilio:     { base: 0,    jitter: 0,    fail: 1,     incidentAt: 0.05 },
+  newrelic:   { base: 0,    jitter: 0,    fail: 0,     incidentAt: null, empty: true },
+  github:     { base: 143,  jitter: 0.12, fail: 0,     incidentAt: null },
+};
+
+const REGION_OFFSET = { 'eu-west-1': 1, 'us-east-1': 1.08, 'ap-south-1': 1.19 };
+
+const VENDOR_INCIDENTS = {
+  auth0: [
+    {
+      incident_id: 'inc_7f31a9', vendor_name: 'auth0',
+      title: 'Token endpoint latency above threshold',
+      started_at: iso(61 * MIN), resolved_at: null, duration_minutes: null,
+      severity: 'major', status: 'open', max_latency_ms: 4106,
+      downtime_percentage: 0, has_evidence_report: true, download_token: 'gate_auth0_7f31a9',
+    },
+    {
+      incident_id: 'inc_31b0c2', vendor_name: 'auth0',
+      title: 'Elevated error responses in eu-west-1',
+      started_at: iso(9 * DAY), resolved_at: iso(9 * DAY - 22 * MIN), duration_minutes: 22,
+      severity: 'minor', status: 'resolved', max_latency_ms: 2210,
+      downtime_percentage: 1.4, has_evidence_report: false, download_token: null,
+    },
+  ],
+  twilio: [
+    {
+      incident_id: 'inc_9c2f10', vendor_name: 'twilio',
+      title: 'API unreachable from all observation regions',
+      started_at: iso(11 * HOUR + 9 * MIN), resolved_at: null, duration_minutes: null,
+      severity: 'critical', status: 'open', max_latency_ms: null,
+      downtime_percentage: 100, has_evidence_report: false, download_token: null,
+    },
+  ],
+  openai: [
+    {
+      incident_id: 'inc_5aa130', vendor_name: 'openai',
+      title: 'Model API latency excursion',
+      started_at: iso(3 * DAY), resolved_at: iso(3 * DAY - 2 * HOUR), duration_minutes: 120,
+      severity: 'minor', status: 'resolved', max_latency_ms: 5210,
+      downtime_percentage: 0, has_evidence_report: true, download_token: 'gate_openai_5aa130',
+    },
+  ],
+  stripe: [
+    {
+      incident_id: 'inc_4cd881', vendor_name: 'stripe',
+      title: 'Charge API error responses',
+      started_at: iso(9 * DAY), resolved_at: iso(9 * DAY - 41 * MIN), duration_minutes: 41,
+      severity: 'major', status: 'resolved', max_latency_ms: 3320,
+      downtime_percentage: 2.6, has_evidence_report: true, download_token: 'gate_stripe_4cd881',
+    },
+  ],
+};
+
+function vendorByName(name) {
+  const key = String(name || '').toLowerCase();
+  return VENDORS.find((v) => v.vendor_name === key);
+}
+
+function vendorStats(vendorName, hours) {
+  const p = VENDOR_PROFILE[vendorName] ?? { base: 200, jitter: 0.1, fail: 0 };
+  // Mirrors get_endpoint_stats: an empty window reports 100% uptime and a
+  // zero average, which is exactly the shape the UI has to refuse to print.
+  if (p.empty) return { total_observations: 0, uptime_percentage: 100.0, avg_latency_ms: 0, p95_latency_ms: null };
+  const total = Math.round((hours * 60) / 5) * REGIONS.length;
+  const uptime = p.fail === 1 ? 0 : Math.max(90, 100 - p.fail * 100 - (hours > 168 ? 0.12 : 0.04));
+  return {
+    total_observations: total,
+    uptime_percentage: Number(uptime.toFixed(2)),
+    avg_latency_ms: p.base,
+    p95_latency_ms: p.base ? Math.round(p.base * (1 + p.jitter * 3)) : null,
+  };
+}
+
+function timelinePoints(vendorName, window, region) {
+  const p = VENDOR_PROFILE[vendorName] ?? { base: 200, jitter: 0.1, fail: 0, incidentAt: null };
+  if (p.empty) return [];
+  const hours = WINDOW_HOURS[window] ?? 24;
+  const step = AUTO_RESOLUTION[window] ?? 300;
+  const count = Math.min(360, Math.round((hours * 3600) / step));
+  const regionScale = REGION_OFFSET[region] ?? 1;
+  const incidents = VENDOR_INCIDENTS[vendorName] ?? [];
+  const points = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const t = new Date(Date.now() - i * step * 1000);
+    const phase = (count - i) / count;
+    const wobble =
+      Math.sin(i / 5.3) * p.base * p.jitter + Math.cos(i / 11.7) * p.base * p.jitter * 0.5;
+    const inIncident = p.incidentAt != null && phase > p.incidentAt && phase < p.incidentAt + 0.12;
+    const down = p.fail === 1 || (inIncident && vendorName === 'twilio');
+    const latency = down ? 0 : Math.max(6, Math.round((p.base + wobble) * regionScale * (inIncident ? 2.7 : 1)));
+    points.push({
+      timestamp: t.toISOString(),
+      avg_latency_ms: latency,
+      status_code: down ? null : 200,
+      is_up: !down,
+      observation_count: Math.max(1, Math.round(step / 60)),
+      incident_id: inIncident && incidents[0] ? incidents[0].incident_id : null,
+    });
+  }
+  return points;
+}
+
+function vendorDetail(v) {
+  return {
+    id: v.id, vendor_name: v.vendor_name, display_name: v.display_name,
+    category: v.category, is_public: true, last_check_at: v.last_check_at,
+    created_at: v.created_at, updated_at: v.updated_at,
+    recent_status: v.recent_status, endpoints: v.endpoints,
+  };
+}
+
+function vendorCurrent(v, region) {
+  const p = VENDOR_PROFILE[v.vendor_name] ?? { base: 200, fail: 0 };
+  if (p.empty) return { timestamp: null, latency_ms: null, status_code: null, is_up: null };
+  const down = p.fail === 1;
+  return {
+    timestamp: v.last_check_at,
+    latency_ms: down ? null : Math.round(p.base * (REGION_OFFSET[region] ?? 1)),
+    status_code: down ? null : 200,
+    is_up: !down,
+  };
+}
 
 function latencySeries(hours = 24, base = 200, spikeAt = null) {
   const points = [];
@@ -415,6 +559,106 @@ const routes = [
   ['GET', /^\/v1\/api-keys$/, () => [
     { id: 'key_1', org_id: ORG.id, name: 'CI export', prefix: 'rsk_7f2a', scopes: ['evidence:read'], last_used_at: iso(2 * DAY), expires_at: null, created_at: iso(60 * DAY) },
   ]],
+  // ── Public vendor observatory ─────────────────────────────────────────
+  ['GET', /^\/v1\/vendors$/, (m, url) => {
+    const limit = Number(url.searchParams.get('limit') || 50);
+    return {
+      items: VENDORS.slice(0, limit).map(vendorDetail),
+      next_cursor: null,
+      has_more: false,
+    };
+  }],
+  ['GET', /^\/v1\/vendors\/([^/]+)\/developer$/, (m) => {
+    const v = vendorByName(m[1]);
+    if (!v) return { __status: 404 };
+    const s24 = vendorStats(v.vendor_name, 24);
+    return {
+      vendor: vendorDetail(v),
+      current_status: vendorCurrent(v, 'us-east-1'),
+      metrics_24h: { vendor_name: v.vendor_name, metrics: { '24h': { window: '24h', ...s24 } } },
+      recent_incidents: (VENDOR_INCIDENTS[v.vendor_name] ?? []).map((i) => ({
+        incident_id: i.incident_id, dependency_name: v.display_name,
+        started_at: i.started_at, resolved_at: i.resolved_at,
+        severity: i.severity, status: i.status,
+        duration_seconds: i.duration_minutes != null ? i.duration_minutes * 60 : null,
+      })),
+      uptime_7d: vendorStats(v.vendor_name, 168).uptime_percentage,
+      uptime_30d: vendorStats(v.vendor_name, 720).uptime_percentage,
+      avg_latency_24h: s24.avg_latency_ms,
+      p95_latency_24h: s24.p95_latency_ms,
+      endpoints: v.endpoints,
+      api_docs_url: 'https://docs.reliastra.com/public-api',
+      powered_by: { name: 'Reliastra', url: 'https://reliastra.com', message: 'Monitor YOUR vendors at reliastra.com' },
+    };
+  }],
+  ['GET', /^\/v1\/vendors\/([^/]+)\/timeline$/, (m, url) => {
+    const v = vendorByName(m[1]);
+    if (!v) return { __status: 404 };
+    const window = url.searchParams.get('window') || '24h';
+    if (!WINDOW_HOURS[window]) return { __status: 422 };
+    const region = url.searchParams.get('region') || 'us-east-1';
+    const points = timelinePoints(v.vendor_name, window, region);
+    return {
+      vendor_name: v.vendor_name,
+      window,
+      resolution: RESOLUTION_LABEL[AUTO_RESOLUTION[window]] ?? 'auto',
+      region,
+      from:
+        points[0]?.timestamp ??
+        new Date(Date.now() - WINDOW_HOURS[window] * 3600 * 1000).toISOString(),
+      to: new Date().toISOString(),
+      current: vendorCurrent(v, region),
+      points,
+    };
+  }],
+  ['GET', /^\/v1\/vendors\/([^/]+)\/metrics$/, (m, url) => {
+    const v = vendorByName(m[1]);
+    if (!v) return { __status: 404 };
+    const only = url.searchParams.get('window');
+    const labels = only ? [only] : Object.keys(WINDOW_HOURS);
+    const metrics = {};
+    for (const label of labels) metrics[label] = { window: label, ...vendorStats(v.vendor_name, WINDOW_HOURS[label]) };
+    return { vendor_name: v.vendor_name, metrics };
+  }],
+  ['GET', /^\/v1\/vendors\/([^/]+)\/incidents\/public$/, (m) => {
+    const v = vendorByName(m[1]);
+    if (!v) return { __status: 404 };
+    return VENDOR_INCIDENTS[v.vendor_name] ?? [];
+  }],
+  ['GET', /^\/v1\/vendors\/([^/]+)\/incidents$/, (m) => {
+    const v = vendorByName(m[1]);
+    if (!v) return { __status: 404 };
+    return {
+      vendor_name: v.vendor_name,
+      incidents: (VENDOR_INCIDENTS[v.vendor_name] ?? []).map((i) => ({
+        incident_id: i.incident_id, dependency_name: v.display_name,
+        started_at: i.started_at, resolved_at: i.resolved_at,
+        severity: i.severity, status: i.status,
+        duration_seconds: i.duration_minutes != null ? i.duration_minutes * 60 : null,
+      })),
+    };
+  }],
+  ['GET', /^\/v1\/vendors\/([^/]+)$/, (m) => {
+    const v = vendorByName(m[1]);
+    return v ? vendorDetail(v) : { __status: 404 };
+  }],
+  // Public evidence gate. The real endpoint records the requester and returns
+  // a signed, expiring token - never a direct file link - so the fixture
+  // mirrors that shape exactly.
+  ['POST', /^\/v1\/evidence\/gate$/, () => ({
+    download_url: 'http://127.0.0.1:8787/v1/evidence/rep_qa_token/download',
+    report_id: 'rep_qa',
+    report_token: 'rep_qa_token',
+    expires_at: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+    account_created: true,
+    login_url: '/login',
+    message: 'Evidence report ready.',
+  })],
+  ['GET', /^\/v1\/evidence\/([^/]+)\/download$/, (m) => ({
+    report_token: m[1],
+    format: 'pdf',
+    note: 'QA fixture: the real endpoint streams a signed PDF.',
+  })],
   ['GET', /^\/v1\/clients$/, () => []],
   ['GET', /^\/v1\/agency\/portfolio$/, () => ({ __status: 404 })],
   ['GET', /^\/v1\/partners\/support\/tickets$/, () => ({ items: [], page: 1, page_size: 50, total: 0 })],

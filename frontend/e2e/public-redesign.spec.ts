@@ -41,6 +41,15 @@ const ARCHETYPES = [
   { name: 'not found', path: '/this-route-does-not-exist-zzz' },
 ];
 
+/**
+ * Next injects `#__next-route-announcer__` with role="alert" on every page, so
+ * `getByRole('alert')` is never unique. This targets the application's own
+ * alerts only.
+ */
+function appAlert(page: Page) {
+  return page.locator('[role="alert"]:not(#__next-route-announcer__)');
+}
+
 async function settle(page: Page) {
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(600);
@@ -217,13 +226,13 @@ test.describe('authentication surfaces', () => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await settle(page);
     await page.getByRole('button', { name: /^sign in$/i }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(appAlert(page)).toBeVisible();
   });
 
   test('an expired session is explained on arrival', async ({ page }) => {
     await page.goto('/login?expired=1', { waitUntil: 'domcontentloaded' });
     await settle(page);
-    await expect(page.getByRole('alert')).toContainText(/session ended/i);
+    await expect(appAlert(page)).toContainText(/session ended/i);
   });
 
   test('signup enforces the password floor before calling the API', async ({
@@ -242,7 +251,7 @@ test.describe('authentication surfaces', () => {
   }) => {
     await page.goto('/reset-password', { waitUntil: 'domcontentloaded' });
     await settle(page);
-    await expect(page.getByRole('alert')).toContainText(/no reset token/i);
+    await expect(appAlert(page)).toContainText(/no reset token/i);
     await expect(
       page.getByRole('link', { name: /request a new link/i })
     ).toBeVisible();
@@ -314,7 +323,9 @@ test.describe('error states', () => {
       // The only acceptable 200 is the explicit "unreachable" state, which
       // must not display fabricated metrics.
       const body = await res.text();
-      expect(body).toMatch(/unreachable|Record unavailable/i);
+      expect(body).toMatch(
+        /unreachable|Record unavailable|does not publish a record/i
+      );
       expect(body).not.toMatch(/99\.9\d%/);
     }
   });
