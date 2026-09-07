@@ -1978,3 +1978,239 @@
   .ob-no-print { display: none !important; }
   .ob-prose, .ob-prose * { color: #000 !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OPERATIONAL EVIDENCE CONSOLE  ·  .obc
+   ──────────────────────────────────────────────────────────────────────────
+   The authenticated application. It shares the Obsidian palette, typeface and
+   button language with the public site so it is recognisably the same company,
+   but its composition is the opposite: the marketing surface is editorial and
+   spacious, this is dense and instrumented.
+
+   Rules that differ from the public layer:
+   -  Density first. Row height 40px, section gap 32px, gutter 20/28px. White
+      space separates concepts; it never pads a card.
+   -  There are no cards. Structure comes from 1px rules and background steps.
+      `.obc-panel` is a bordered region, not a floating tile - no radius above
+      2px, no shadow, ever.
+   -  Colour is state. Green/amber/red/grey mean operational/degraded/critical/
+      unknown and nothing else. Amber is also the single brand accent, which is
+      why it doubles as "degraded" - a deliberate collision: the accent colour
+      of this product is the colour of something needing attention.
+   -  Numbers are mono and right-aligned so columns compare vertically.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.obc {
+  --obc-void: #08090A;
+  --obc-base: #0D0F10;
+  --obc-raised: #111416;
+  --obc-elevated: #151819;
+
+  --obc-text: #F2F2EE;
+  --obc-text-2: #D5D7D5;
+  --obc-text-3: #969B9F;
+  --obc-text-4: #686D71;
+
+  --obc-line: rgba(242, 242, 238, 0.08);
+  --obc-line-2: rgba(242, 242, 238, 0.14);
+  --obc-line-3: rgba(242, 242, 238, 0.24);
+
+  --obc-signal: #D9A441;
+  --obc-signal-wash: rgba(217, 164, 65, 0.10);
+
+  --obc-ok: #57A773;
+  --obc-ok-wash: rgba(87, 167, 115, 0.12);
+  --obc-warn: #D9A441;
+  --obc-warn-wash: rgba(217, 164, 65, 0.12);
+  --obc-crit: #C8544C;
+  --obc-crit-wash: rgba(200, 84, 76, 0.12);
+  --obc-idle: #686D71;
+  --obc-idle-wash: rgba(104, 109, 113, 0.14);
+
+  --obc-row: 40px;
+  --obc-gutter: 20px;
+  --obc-rail: 232px;
+  --obc-bar: 52px;
+
+  background: var(--obc-void);
+  color: var(--obc-text);
+  font-family: var(--ob-font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 768px) {
+  .obc { --obc-gutter: 28px; }
+}
+
+/* ── Typography ───────────────────────────────────────────────────────── */
+
+.obc-title {
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+  color: var(--obc-text);
+}
+.obc-h2 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--obc-text);
+}
+.obc-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--obc-text-4);
+  font-family: var(--ob-font-sans);
+}
+.obc-body { font-size: 0.8125rem; line-height: 1.55; color: var(--obc-text-3); }
+.obc-mono {
+  font-family: var(--ob-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+/** A measured value: mono, tabular, sized for scanning down a column. */
+.obc-figure {
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.375rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--obc-text);
+}
+.obc-unit { font-size: 0.6875rem; color: var(--obc-text-4); margin-left: 0.2em; }
+
+.obc-link { color: var(--obc-text-2); text-decoration: none; border-bottom: 1px solid var(--obc-line-3); }
+.obc-link:hover { color: var(--obc-signal); border-bottom-color: var(--obc-signal); }
+
+/* ── Structure ────────────────────────────────────────────────────────── */
+
+.obc-page { padding: 0 var(--obc-gutter) 72px; }
+.obc-section { margin-top: 32px; }
+.obc-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--obc-line-2);
+}
+
+/* A bordered region. Not a card: 2px radius, no shadow, no hover lift. */
+.obc-panel { border: 1px solid var(--obc-line); border-radius: 2px; background: var(--obc-base); }
+.obc-inset { background: var(--obc-raised); border-radius: 2px; }
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+
+.obc-table { width: 100%; border-collapse: collapse; }
+.obc-table thead th {
+  height: 30px;
+  padding: 0 12px;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--obc-text-4);
+  border-bottom: 1px solid var(--obc-line-2);
+  white-space: nowrap;
+  background: var(--obc-void);
+}
+.obc-table tbody td {
+  height: var(--obc-row);
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  color: var(--obc-text-2);
+  border-bottom: 1px solid var(--obc-line);
+  white-space: nowrap;
+}
+.obc-table tbody tr:hover td { background: var(--obc-raised); }
+.obc-table tbody tr[data-active='true'] td { background: var(--obc-crit-wash); }
+.obc-num { text-align: right; font-family: var(--ob-font-mono); font-variant-numeric: tabular-nums; color: var(--obc-text); }
+.obc-table th.obc-num { text-align: right; }
+/* Sortable header affordance - a real <button> inside the th. */
+.obc-sort {
+  display: inline-flex; align-items: center; gap: 4px;
+  font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer;
+}
+.obc-sort:hover { color: var(--obc-text-2); }
+.obc-sort[aria-sort='ascending'], .obc-sort[aria-sort='descending'] { color: var(--obc-signal); }
+
+/* ── State ────────────────────────────────────────────────────────────── */
+
+.obc-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; display: inline-block; }
+.obc-state { display: inline-flex; align-items: center; gap: 7px; font-size: 0.75rem; color: var(--obc-text-2); white-space: nowrap; }
+.obc-state[data-state='ok']      .obc-dot { background: var(--obc-ok); }
+.obc-state[data-state='warn']    .obc-dot { background: var(--obc-warn); }
+.obc-state[data-state='crit']    .obc-dot { background: var(--obc-crit); }
+.obc-state[data-state='idle']    .obc-dot { background: var(--obc-idle); }
+.obc-state[data-state='crit']    { color: #E58C85; }
+.obc-state[data-state='warn']    { color: #E3BE7A; }
+
+/* A live incident pulses - slowly, once every 2.4s, and never under
+   prefers-reduced-motion. It is the only animation in the console. */
+@keyframes obc-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.obc-live .obc-dot { animation: obc-breathe 2.4s ease-in-out infinite; }
+
+/* ── Controls ─────────────────────────────────────────────────────────── */
+
+.obc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: 32px; padding: 0 13px;
+  border: 1px solid var(--obc-line-2); border-radius: 2px;
+  background: transparent; color: var(--obc-text-2);
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
+}
+.obc-btn:hover { border-color: var(--obc-line-3); color: var(--obc-text); background: var(--obc-raised); }
+.obc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.obc-btn-primary {
+  background: var(--obc-signal); border-color: var(--obc-signal); color: #17130A; font-weight: 600;
+}
+.obc-btn-primary:hover { background: #E4B155; border-color: #E4B155; color: #17130A; }
+.obc-btn-sm { height: 26px; padding: 0 9px; font-size: 0.6875rem; }
+
+.obc-field-label {
+  display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--obc-text-4); margin-bottom: 6px;
+}
+.obc-input {
+  width: 100%; height: 34px; padding: 0 10px;
+  background: var(--obc-elevated); color: var(--obc-text);
+  border: 1px solid var(--obc-line-2); border-radius: 2px;
+  font-size: 0.8125rem;
+}
+.obc-input::placeholder { color: var(--obc-text-4); }
+.obc-input:focus { outline: none; border-color: var(--obc-signal); }
+
+/* ── Focus ────────────────────────────────────────────────────────────── */
+
+.obc :is(a, button, [role='button'], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--obc-signal);
+  outline-offset: 1px;
+  border-radius: 1px;
+}
+
+/* ── Skeleton ─────────────────────────────────────────────────────────── */
+
+@keyframes obc-scan { 0% { opacity: 0.35; } 50% { opacity: 0.7; } 100% { opacity: 0.35; } }
+.obc-skel { background: var(--obc-raised); border-radius: 1px; animation: obc-scan 1.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .obc-live .obc-dot, .obc-skel { animation: none !important; }
+}
+
+/* ── Sparkline / chart chrome ─────────────────────────────────────────── */
+
+.obc-axis { font-family: var(--ob-font-mono); font-size: 9px; fill: var(--obc-text-4); }
+.obc-grid { stroke: var(--obc-line); stroke-width: 1; }
+.obc-thresh { stroke: var(--obc-warn); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
+
+/* ── Scrollbars: thin, neutral, always visible on dense surfaces ──────── */
+.obc-scroll { scrollbar-width: thin; scrollbar-color: var(--obc-line-3) transparent; }
+.obc-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+.obc-scroll::-webkit-scrollbar-thumb { background: var(--obc-line-3); border-radius: 0; }
+.obc-scroll::-webkit-scrollbar-track { background: transparent; }

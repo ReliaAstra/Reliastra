@@ -1,7 +1,7 @@
 'use client';
 
-import { IncidentsListPage } from '@/components/dashboard/pages/incidents-list';
+import { IncidentsPage } from '@/components/console/pages/incidents';
 
 export default function Page() {
-  return <IncidentsListPage />;
+  return <IncidentsPage />;
 }

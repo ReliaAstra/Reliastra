@@ -1,14 +1,27 @@
 import { formatDistanceToNowStrict, format } from 'date-fns';
 
+/**
+ * Short human-quotable codes.
+ *
+ * `slice(0, 4)` after stripping only dashes produced collisions and garbage
+ * on non-UUID identifiers: three different evidence rows with ids `ev_a1`,
+ * `ev_a2`, `ev_a3` all rendered as `RPT-EV_A`, because the underscore
+ * survived and the discriminating character was past position four. Strip
+ * every non-alphanumeric and take the LAST characters, which is where entropy
+ * actually lives in both UUIDs and prefixed ids.
+ */
+function shortCode(id: string, length = 4): string {
+  const compact = id.replace(/[^a-z0-9]/gi, '').toUpperCase();
+  return compact.slice(-length) || compact || '0000';
+}
+
 export function incidentCode(id: string, displayId?: string): string {
   if (displayId) return displayId;
-  const compact = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `INC-${compact}`;
+  return `INC-${shortCode(id)}`;
 }
 
 export function reportCode(id: string): string {
-  const compact = id.replace(/-/g, '').slice(0, 4).toUpperCase();
-  return `RPT-${compact}`;
+  return `RPT-${shortCode(id)}`;
 }
 
 export function timeAgo(iso: string | null | undefined): string {

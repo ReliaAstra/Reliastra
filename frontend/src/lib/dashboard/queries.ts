@@ -119,6 +119,30 @@ export function useEvidence() {
   const ready = useSessionReady();
   return useQuery({ queryKey: keys.evidence, queryFn: api.evidence, enabled: ready });
 }
+/**
+ * A single evidence record. Separate from `useEvidence()` so the record page
+ * can be opened directly (or refreshed) without the library being in cache.
+ */
+export function useEvidenceRecord(id: string) {
+  const ready = useSessionReady();
+  return useQuery({
+    queryKey: keys.evidenceItem(id),
+    queryFn: () => api.evidenceById(id),
+    enabled: Boolean(id) && ready,
+  });
+}
+
+export function useRegenerateEvidence() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.regenerateEvidence(id),
+    onSuccess: (record) => {
+      qc.setQueryData(keys.evidenceItem(record.id), record);
+      qc.invalidateQueries({ queryKey: keys.evidence });
+    },
+  });
+}
+
 export function useMe() {
   return useQuery({ queryKey: keys.me, queryFn: api.me });
 }

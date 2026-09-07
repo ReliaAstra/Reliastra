@@ -1,7 +1,7 @@
 'use client';
 
-import { DependenciesListPage } from '@/components/dashboard/pages/dependencies-list';
+import { DependenciesPage } from '@/components/console/pages/dependencies';
 
 export default function Page() {
-  return <DependenciesListPage />;
+  return <DependenciesPage />;
 }

@@ -47,10 +47,16 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
 
-    let cancelled = false;
-
+    // NOTE: deliberately no `cancelled` flag here.
+    //
+    // `bootstrapped` is a one-shot ref that survives StrictMode's synthetic
+    // unmount/remount, so the second mount returns early and never restarts
+    // the bootstrap. A cleanup that cancelled the first run therefore had
+    // nothing to supersede it: `setHydrated(true)` was skipped, `hydrated`
+    // stayed false, and every console route sat on the boot splash forever in
+    // development. Everything written below lands in the global Zustand store
+    // rather than component state, so writing after unmount is safe.
     const redirectToSignIn = () => {
-      if (cancelled) return;
       setSessionState('unauthenticated');
       router.replace('/login');
     };
@@ -71,17 +77,13 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
       try {
         const session = await restoreSession();
         if (!session) throw new Error('session rejected');
-        if (!cancelled) setSession(session.user, session.org, session.plan);
+        setSession(session.user, session.org, session.plan);
       } catch {
         redirectToSignIn();
       } finally {
-        if (!cancelled) setHydrated(true);
+        setHydrated(true);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
   }, [router, setHydrated, setSessionState, setSession]);
 
   // Route away the moment the backend rejects an expired session.

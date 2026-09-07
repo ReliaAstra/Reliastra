@@ -1,9 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { DependencyRecordPage } from '@/components/console/pages/dependency-record';
+import { EvidenceRecordPage } from '@/components/console/pages/evidence-record';
 
 export default function Page() {
   const params = useParams<{ id: string }>();
-  return <DependencyRecordPage id={params.id} />;
+  return <EvidenceRecordPage id={params.id} />;
 }

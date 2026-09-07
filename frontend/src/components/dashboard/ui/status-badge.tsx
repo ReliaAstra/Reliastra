@@ -45,6 +45,30 @@ const MAP: Record<string, StatusConfig> = {
     dotClass: 'bg-rs-text-tertiary',
     badgeClass: 'bg-rs-tertiary-bg text-rs-text-tertiary border-[rgb(105_116_138_/_0.20)]',
   },
+  // Incident lifecycle states. Without these an open incident rendered as
+  // "Unknown" — the badge silently disagreed with the incident it labelled.
+  open: {
+    label: 'Open',
+    dotClass: 'bg-rs-down',
+    badgeClass: 'bg-rs-down-bg text-rs-down border-[rgb(220_38_38_/_0.20)] dark:border-[rgb(248_113_113_/_0.25)]',
+    pulse: 'rs-pulse-down',
+  },
+  investigating: {
+    label: 'Investigating',
+    dotClass: 'bg-rs-degraded',
+    badgeClass: 'bg-rs-degraded-bg text-rs-degraded border-[rgb(217_119_6_/_0.20)] dark:border-[rgb(251_191_36_/_0.25)]',
+    pulse: 'rs-pulse-degraded',
+  },
+  resolved: {
+    label: 'Resolved',
+    dotClass: 'bg-rs-up',
+    badgeClass: 'bg-rs-up-bg text-rs-up border-[rgb(5_150_105_/_0.20)] dark:border-[rgb(52_211_153_/_0.25)]',
+  },
+  false_positive: {
+    label: 'False positive',
+    dotClass: 'bg-rs-text-tertiary',
+    badgeClass: 'bg-rs-tertiary-bg text-rs-text-tertiary border-[rgb(105_116_138_/_0.20)]',
+  },
   unknown: {
     label: 'Unknown',
     dotClass: 'bg-rs-text-tertiary',
