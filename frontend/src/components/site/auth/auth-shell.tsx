@@ -86,7 +86,7 @@ export function AuthShell({
         )}
       </div>
 
-      {/* Evidence column — desktop only, so mobile never downloads it */}
+      {/* Evidence column: desktop only, so mobile never downloads it */}
       <aside className="relative hidden flex-1 overflow-hidden border-l border-[var(--ob-line)] bg-[var(--ob-base)] lg:block">
         <Image
           src={image}
@@ -101,7 +101,7 @@ export function AuthShell({
           <p className="ob-mono text-[var(--ob-text-4)]">reliastra.com</p>
           {aside ?? <DefaultAside />}
           <p className="ob-mono text-[var(--ob-text-4)]">
-            Data retention per plan · Evidence records are checksummed
+            Evidence records are checksummed
           </p>
         </div>
       </aside>
@@ -120,15 +120,15 @@ function DefaultAside() {
         {[
           [
             'Independent observation',
-            'Dependencies are checked from multiple regions on a fixed interval, from infrastructure the vendor does not control.',
+            'Checks from infrastructure the vendor does not control, on a fixed interval.',
           ],
           [
             'Deterministic attribution',
-            'Your incidents are correlated against observed vendor behaviour in the same window, with the confidence basis stated.',
+            'Incidents correlated against observed vendor behaviour in the same window.',
           ],
           [
             'Evidence you can send',
-            'Timestamped, checksummed reliability records covering a defined period — exportable and shareable.',
+            'Timestamped, checksummed records for a defined window. Exportable.',
           ],
         ].map(([term, desc]) => (
           <div key={term} className="border-t border-[var(--ob-line)] py-5">
@@ -150,7 +150,7 @@ function DefaultAside() {
 /**
  * A labelled text input.
  *
- * `label` is a real `<label for>` — never a placeholder standing in for one.
+ * `label` is a real `<label for>` - never a placeholder standing in for one.
  * Help text and error text are wired through `aria-describedby`, and the
  * invalid state sets `aria-invalid` so it is announced rather than merely
  * coloured.
@@ -202,7 +202,7 @@ export function Field({
  * Status and error messaging.
  *
  * `role="alert"` for failures (assertive), `role="status"` for confirmations
- * (polite) — so a screen-reader user learns a sign-in failed without having
+ * (polite) - so a screen-reader user learns a sign-in failed without having
  * to go hunting for the reason.
  */
 export function AuthAlert({

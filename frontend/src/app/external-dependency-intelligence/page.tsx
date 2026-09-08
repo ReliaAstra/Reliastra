@@ -39,7 +39,7 @@ export default function EdiPage() {
       <MarketingPage
         eyebrow="Category"
         title="External Dependency Intelligence"
-        lede="Independently observed, timestamped knowledge about the third-party services your infrastructure depends on - the record that answers “was it us or them?”"
+        lede="Independently observed, timestamped records of the third-party services your infrastructure depends on. The record that answers “was it us or them?”"
         breadcrumbs={crumbs}
         related={[
           { label: 'Dependency monitoring', href: '/dependency-monitoring', description: 'How the observations are produced.' },

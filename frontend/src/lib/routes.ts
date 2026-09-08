@@ -175,8 +175,6 @@ export const PARTNER_PUBLIC_PAGES = [
   'how-it-works',
   'commission',
   'faq',
-  'tiers',
-  'premium',
   'resources',
   'support',
 ] as const;
@@ -211,8 +209,6 @@ export const PARTNER_INDEXABLE_SLUGS = [
   'how-it-works',
   'commission',
   'faq',
-  'tiers',
-  'premium',
   'resources',
 ] as const;
 

@@ -47,7 +47,7 @@ export default function QuickstartPage() {
         related={[
           { label: 'Monitoring docs', href: '/docs/monitoring', description: 'Regions, intervals, states in depth.' },
           { label: 'Evidence docs', href: '/docs/evidence', description: 'Turn observations into reports.' },
-          { label: 'Pricing', href: '/pricing', description: 'What the trial unlocks.' },
+          { label: 'Pricing', href: '/pricing', description: 'What the trial includes.' },
         ]}
       >
         <Prose>

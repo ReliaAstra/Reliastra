@@ -23,14 +23,13 @@ export function ResearchTeaser() {
       <Container>
         <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-col gap-5">
-            <Eyebrow index="07">RELIASTRA Research</Eyebrow>
+            <Eyebrow index="06">Research</Eyebrow>
             <h2 id="research-title" className="ob-h2 max-w-[18ch]">
               Our method is published, so it can be checked.
             </h2>
           </div>
           <p className="ob-body max-w-[42ch] md:text-right">
-            Customers take RELIASTRA records into commercial conversations with
-            their vendors. That only works if the measurement can be inspected.
+            Measurement methodology and failure analysis, in the open.
           </p>
         </div>
 
@@ -49,7 +48,7 @@ export function ResearchTeaser() {
                 {lead.summary}
               </p>
               <span className="ob-label mt-2 text-[var(--ob-signal)]">
-                Read the analysis →
+                Read →
               </span>
             </Link>
           </article>

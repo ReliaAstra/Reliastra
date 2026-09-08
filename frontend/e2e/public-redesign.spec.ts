@@ -301,7 +301,7 @@ test.describe('error states', () => {
     const body = (await page.locator('body').innerText()).toLowerCase();
     expect(body).not.toMatch(/oops|whoops|uh[- ]oh|😅|🙈/);
 
-    // The primary action must be public — never the protected console.
+    // The primary action must be public - never the protected console.
     const primary = page.getByRole('link', { name: /return to reliastra/i });
     await expect(primary).toHaveAttribute('href', '/');
     await expect(page.locator('header')).toBeVisible();

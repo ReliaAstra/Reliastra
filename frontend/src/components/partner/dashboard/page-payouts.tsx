@@ -338,7 +338,7 @@ export function PagePayouts() {
   // disabling the button.
   const balanceHint = (() => {
     if (belowMinimum) {
-      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)} - keep earning to unlock a withdrawal.`;
+      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)}.`;
     }
     const parts: string[] = [];
     if (onHoldMinor > 0) {

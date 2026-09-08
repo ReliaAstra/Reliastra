@@ -11,7 +11,6 @@ import { PageEarn } from './page-earn';
 import { PageHowItWorks } from './page-how-it-works';
 import { PageCommission } from './page-commission';
 import { PageFaq } from './page-faq';
-import { PageTiers } from './page-tiers';
 import { PageResources } from './page-resources';
 import { PageLogin } from './page-login';
 import { PageSignup } from './page-signup';
@@ -19,7 +18,6 @@ import { PageSupport } from './page-support';
 import { PageForgotPassword } from './page-forgot-password';
 import { PagePrivacy } from './page-privacy';
 import { PageTerms } from './page-terms';
-import { PagePremium } from './page-premium';
 import { ReferralBanner } from './referral-banner';
 import { ScrollToTop } from '../shared/scroll-to-top';
 import { CommandPalette } from '../shared/command-palette';
@@ -30,8 +28,6 @@ const publicPages: PartnerPage[] = [
   'how-it-works',
   'commission',
   'faq',
-  'tiers',
-  'premium',
   'resources',
   'login',
   'signup',
@@ -67,8 +63,6 @@ function PageContent({ page }: { page: PartnerPage }) {
       return <PageCommission />;
     case 'faq':
       return <PageFaq />;
-    case 'tiers':
-      return <PageTiers />;
     case 'resources':
       return <PageResources />;
     case 'login':
@@ -83,8 +77,6 @@ function PageContent({ page }: { page: PartnerPage }) {
       return <PagePrivacy />;
     case 'terms':
       return <PageTerms />;
-    case 'premium':
-      return <PagePremium />;
     default:
       return <PageHome />;
   }

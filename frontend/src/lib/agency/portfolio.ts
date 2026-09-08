@@ -10,8 +10,8 @@ import type {
 /**
  * Agency portfolio derivations.
  *
- * The backend gives the console four flat lists — clients (rolled up),
- * applications, dependencies and incidents — and the hierarchy that connects
+ * The backend gives the console four flat lists - clients (rolled up),
+ * applications, dependencies and incidents - and the hierarchy that connects
  * them is `client → application → dependency → incident → evidence`. Every
  * join in this file walks that chain and nothing else; no relationship is
  * inferred from a name, a prefix or a timestamp.
@@ -24,7 +24,7 @@ import type {
  * environment is perfectly healthy when nothing has ever been observed.
  */
 
-export const INSUFFICIENT = 'insufficient data';
+export const INSUFFICIENT = 'no monitors';
 export const NO_DATA = 'no data';
 
 /* ── Availability and latency, gated on there being something to measure ── */
@@ -60,7 +60,7 @@ export interface AgencyPosture {
   operational: number;
   degraded: number;
   critical: number;
-  /** Clients with no monitored dependency at all — not healthy, unmeasured. */
+  /** Clients with no monitored dependency at all - not healthy, unmeasured. */
   unmeasured: number;
   openIncidents: number;
   dependencies: number;

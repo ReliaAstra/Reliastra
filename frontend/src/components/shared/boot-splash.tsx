@@ -3,7 +3,7 @@
  *
  * It guards the console route group and the marketing entry point, so it is
  * the very first thing a returning operator sees. It is therefore rendered in
- * the product's own palette — void background, restrained signal rule — and
+ * the product's own palette - void background, restrained signal rule - and
  * not in the default light theme with a cyan checkmark, which belonged to no
  * part of RELIASTRA. There is no spinner: a two-second wait does not need
  * animation to be legible, and reduced-motion users get the same thing.

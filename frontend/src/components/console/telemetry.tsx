@@ -29,7 +29,7 @@ export function Plot({
 }: {
   points: Point[];
   unit?: string;
-  /** Draws a dashed rule — e.g. the configured alert threshold. */
+  /** Draws a dashed rule - e.g. the configured alert threshold. */
   threshold?: number | null;
   height?: number;
   label: string;
@@ -183,7 +183,7 @@ export function Plot({
 
       <details className="mt-2">
         <summary className="cursor-pointer text-[11px] text-[var(--obc-text-4)] hover:text-[var(--obc-text-2)]">
-          {label} — view {points.length} observations as a table
+          {label}: view {points.length} observations as a table
         </summary>
         <div className="obc-scroll mt-2 max-h-56 overflow-y-auto border border-[var(--obc-line)]">
           <table className="obc-table">

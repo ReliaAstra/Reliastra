@@ -31,7 +31,7 @@ function artwork(square) {
   const headlineY = square ? 537 : 345;
   const fontSize = square ? 48 : 46;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-  <title>RELIASTRA — External Dependency Intelligence</title>
+  <title>RELIASTRA. External Dependency Intelligence</title>
   <desc>Silver futuristic wordmark on black. Know when your dependencies fail. Prove what happened. reliastra.com</desc>
   <defs>
     <radialGradient id="ambient"><stop stop-color="#1b253c" stop-opacity=".65"/><stop offset="1" stop-color="#020305" stop-opacity="0"/></radialGradient>

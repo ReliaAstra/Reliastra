@@ -35,7 +35,7 @@ import { DataTable, type Column } from '@/components/console/data-table';
 import type { DependencyHealth, Incident } from '@/lib/dashboard/types';
 
 /**
- * Overview — the command centre.
+ * Overview - the command centre.
  *
  * Ordered by the questions section 1 says the console exists to answer:
  * what is happening now (active incidents), which dependency is affected
@@ -44,8 +44,8 @@ import type { DependencyHealth, Incident } from '@/lib/dashboard/types';
  * operator nothing that the tables below do not state more precisely, and the
  * coloured icon tiles were pure decoration.
  *
- * The one numeric strip that remains is a plain measurement row — no boxes,
- * no icons, no meters — because a count of dependencies and an aggregate
+ * The one numeric strip that remains is a plain measurement row - no boxes,
+ * no icons, no meters - because a count of dependencies and an aggregate
  * availability figure genuinely are the header facts of the workspace.
  */
 export function OverviewPage() {
@@ -118,7 +118,7 @@ export function OverviewPage() {
         <div className="obc-section">
           <Empty
             title="No dependencies monitored"
-            body="Connect your first external dependency to begin collecting independent observations. RELIASTRA checks it from three regions on a fixed interval and starts building the record immediately — the first observation lands within one check cycle."
+            body="Add your first external service. The first observation lands within one check interval."
             action={
               <button type="button" onClick={handleAdd} className="obc-btn obc-btn-primary">
                 Add dependency
@@ -164,7 +164,7 @@ export function OverviewPage() {
             ) : !allIncidents.data?.length ? (
               <Empty
                 title="No incidents recorded"
-                body="Your dependencies are being observed from multiple regions. When degradation passes quorum, a correlated incident is opened here and an evidence record is generated for it."
+                body="When a failure passes quorum, the incident is opened here and an evidence record is generated."
                 action={
                   <Link href="/dependencies" className="obc-btn">
                     Review dependencies
@@ -227,7 +227,7 @@ export function OverviewPage() {
 /**
  * Active incidents are the top of the page and the only element allowed to
  * pulse. When there are none, the section states that positively rather than
- * disappearing — an operator needs to know the check ran.
+ * disappearing - an operator needs to know the check ran.
  */
 function ActiveIncidents({
   incidents,
@@ -387,7 +387,7 @@ function HealthTable({
       sort: (r) => r.total_checks_24h ?? -1,
       render: (r) =>
         r.total_checks_24h == null ? (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ) : (
           r.total_checks_24h
         ),
@@ -418,7 +418,7 @@ function HealthTable({
             {incidentCode(inc.id, inc.display_id)}
           </span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         );
       },
     },

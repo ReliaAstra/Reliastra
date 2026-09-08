@@ -33,7 +33,7 @@ export default function DocsPage() {
       <MarketingPage
         eyebrow="Documentation"
         title="Documentation"
-        lede="Guides for the whole lifecycle: add a dependency, understand its telemetry, attribute an incident, and compile the evidence."
+        lede="Add a dependency, read its telemetry, attribute an incident, compile the evidence."
         breadcrumbs={crumbs}
         related={[
           ...GUIDES,

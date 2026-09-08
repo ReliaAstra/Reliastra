@@ -338,100 +338,6 @@ export interface Partner {
   payoutDetailsUpdatedAt?: string | null;
 }
 
-// ── Tier System (frontend-only for marketing) ──
-
-export type PartnerTier = 'bronze' | 'silver' | 'gold' | 'platinum';
-
-export interface TierInfo {
-  tier: PartnerTier;
-  name: string;
-  minReferrals: number;
-  commissionRate: number;
-  benefits: string[];
-  color: string;
-}
-
-export const PARTNER_TIERS: TierInfo[] = [
-  {
-    tier: 'bronze',
-    name: 'Bronze',
-    minReferrals: 0,
-    commissionRate: 30,
-    benefits: [
-      '30% recurring commission',
-      'Standard 90-day attribution',
-      'Email support',
-      'Basic dashboard access',
-      'Monthly payouts',
-    ],
-    color: 'amber',
-  },
-  {
-    tier: 'silver',
-    name: 'Silver',
-    minReferrals: 10,
-    commissionRate: 32,
-    benefits: [
-      '32% recurring commission',
-      'Extended 120-day attribution',
-      'Priority email support',
-      'Advanced analytics',
-      'Bi-weekly payouts',
-      'Custom referral links',
-    ],
-    color: 'slate',
-  },
-  {
-    tier: 'gold',
-    name: 'Gold',
-    commissionRate: 35,
-    minReferrals: 25,
-    benefits: [
-      '35% recurring commission',
-      '180-day attribution window',
-      'Dedicated account manager',
-      'Real-time analytics',
-      'Weekly payouts',
-      'Co-branded materials',
-      'Early access to new features',
-    ],
-    color: 'yellow',
-  },
-  {
-    tier: 'platinum',
-    name: 'Platinum',
-    commissionRate: 40,
-    minReferrals: 50,
-    benefits: [
-      '40% recurring commission',
-      'Lifetime attribution',
-      '24/7 dedicated support',
-      'On-demand payouts',
-      'White-label options',
-      'Revenue sharing bonuses',
-      'Executive partner events',
-    ],
-    color: 'zinc',
-  },
-];
-
-export function getPartnerTier(activeReferrals: number): TierInfo {
-  let current = PARTNER_TIERS[0];
-  for (const tier of PARTNER_TIERS) {
-    if (activeReferrals >= tier.minReferrals) current = tier;
-  }
-  return current;
-}
-
-export function getNextTier(activeReferrals: number): TierInfo | null {
-  const current = getPartnerTier(activeReferrals);
-  const currentIndex = PARTNER_TIERS.findIndex((t) => t.tier === current.tier);
-  if (currentIndex < PARTNER_TIERS.length - 1) {
-    return PARTNER_TIERS[currentIndex + 1];
-  }
-  return null;
-}
-
 // ── Analytics ─────────────────────────────────
 
 export interface AttributionBucket {
@@ -503,7 +409,6 @@ export type PartnerPage =
   | 'how-it-works'
   | 'commission'
   | 'faq'
-  | 'tiers'
   | 'resources'
   | 'login'
   | 'signup'
@@ -518,5 +423,4 @@ export type PartnerPage =
   // Misc
   | 'support'
   | 'privacy'
-  | 'terms'
-  | 'premium';
+  | 'terms';

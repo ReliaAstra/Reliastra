@@ -136,7 +136,7 @@ test.describe('observation configuration sequence', () => {
 
     await page.getByRole('button', { name: /review configuration/i }).click();
 
-    // 04 confirm — the review must state the real configuration
+    // 04 confirm - the review must state the real configuration
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/observation configuration/i);
     const review = page.locator('#sequence-main');
     await expect(review).toContainText('https://api.stripe.com/v1/charges');
@@ -222,8 +222,7 @@ test.describe('agency operations', () => {
     await expect(main).toContainText(/client environment(s)? under management/i);
     await expect(main).toContainText(/synchronised/i);
 
-    // A client with no monitors is "not observed" with insufficient data —
-    // never 100%.
+    // A client with no monitors is "not observed" with insufficient data - // never 100%.
     const row = page.locator('tr', { hasText: 'Verdant Energy' }).first();
     await expect(row).toContainText(/not observed/i);
     await expect(row).toContainText(/insufficient data/i);

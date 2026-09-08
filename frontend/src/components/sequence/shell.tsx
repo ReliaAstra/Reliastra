@@ -245,7 +245,7 @@ export function StageBlock({
 }
 
 /**
- * Selectable option. Square, hairline, no shadow — a control, not a card.
+ * Selectable option. Square, hairline, no shadow - a control, not a card.
  * `aria-pressed` carries the state so it is announced, not just coloured.
  */
 export function OptionButton({
