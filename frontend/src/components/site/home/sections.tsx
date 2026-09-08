@@ -331,12 +331,26 @@ export function AgenciesSection() {
             ))}
             <p className="ob-small mt-5 max-w-[58ch]">
               Client groups, client reports and white-label branding are
-              Enterprise capabilities.{' '}
-              <Link href={PUBLIC_ROUTES.pricing} className="ob-link">
-                See pricing
-              </Link>
-              .
+              Enterprise capabilities. The{' '}
+              <Link href={PUBLIC_ROUTES.agencies} className="ob-link">
+                agency page
+              </Link>{' '}
+              shows the workflow, the console and what each plan grants.
             </p>
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={PUBLIC_ROUTES.agencies}
+                className="ob-btn ob-btn-outline ob-btn-sm"
+              >
+                For agencies
+              </Link>
+              <Link
+                href={PUBLIC_ROUTES.pricing}
+                className="ob-btn ob-btn-outline ob-btn-sm"
+              >
+                Pricing
+              </Link>
+            </div>
           </dl>
         </div>
       </Container>

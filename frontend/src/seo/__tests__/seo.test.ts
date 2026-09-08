@@ -189,7 +189,7 @@ describe('machine-readable discovery', () => {
       expect(body).toContain('External Dependency Intelligence');
     }
     const body = await (await llms.GET()).text();
-    for (const path of ['/track', '/docs', '/pricing', '/security', '/research', '/partner']) {
+    for (const path of ['/agencies', '/track', '/docs', '/pricing', '/security', '/research', '/partner']) {
       expect(body).toContain(`https://reliastra.com${path}`);
     }
   });
@@ -201,6 +201,7 @@ describe('machine-readable discovery', () => {
     const titles = [
       'RELIASTRA - External Dependency Intelligence',
       'Product - External Dependency Intelligence platform',
+      'For agencies & MSPs',
       'External Dependency Intelligence',
       'Third-Party Dependency Monitoring',
       'SLA Evidence & Outage Proof',

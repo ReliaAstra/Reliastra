@@ -16,6 +16,7 @@
 export const PUBLIC_ROUTES = {
   home: '/',
   product: '/product',
+  agencies: '/agencies',
   externalDependencyIntelligence: '/external-dependency-intelligence',
   dependencyMonitoring: '/dependency-monitoring',
   slaEvidence: '/sla-evidence',

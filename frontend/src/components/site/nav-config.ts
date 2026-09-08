@@ -44,6 +44,11 @@ export const PRODUCT_PANEL: NavGroup[] = [
     label: 'Platform',
     links: [
       {
+        label: 'For Agencies',
+        href: PUBLIC_ROUTES.agencies,
+        description: 'Client infrastructure. Evidence you can hand over.',
+      },
+      {
         label: 'Overview',
         href: PUBLIC_ROUTES.product,
         description: 'How observation, attribution and evidence fit together',
@@ -110,6 +115,7 @@ export const FOOTER_GROUPS: NavGroup[] = [
   {
     label: 'Platform',
     links: [
+      { label: 'For Agencies', href: PUBLIC_ROUTES.agencies },
       { label: 'Overview', href: PUBLIC_ROUTES.product },
       { label: 'Dependency monitoring', href: PUBLIC_ROUTES.dependencyMonitoring },
       { label: 'Incident attribution', href: PUBLIC_ROUTES.incidentEvidence },
