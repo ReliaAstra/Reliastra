@@ -290,6 +290,12 @@ export interface Paginated<T> {
 }
 
 export interface AlertConfig {
+  destination: string | null;
+  connection_status: 'configured' | 'connected' | 'verified' | 'verification_required';
+  verification_required: boolean;
+  events: Record<string, boolean>;
+  last_test_at: string | null;
+  last_test_success: boolean | null;
   id: string;
   org_id: string;
   channel_type: string;

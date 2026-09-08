@@ -26,18 +26,16 @@ import {
   getAccessToken,
   getRefreshToken,
   clearPartnerTokens,
-} from '@/lib/session-storage';
-import { refreshSession } from '@/lib/auth-refresh';
+} from '@/lib/partner-session';
+import { refreshSession } from '@/lib/partner-session';
 
 const API_BASE = '/api';
 
 /**
  * One authenticated request path.
  *
- * On 401 the shared single-flight refresh (lib/auth-refresh.ts - the SAME
- * mutex the customer console and admin console use) rotates the session and
- * the original request is retried once. Tokens are cleared ONLY when the
- * refresh itself fails; a parallel surface's keys are never touched.
+ * A partner-scoped single-flight refresh rotates only the partner token family.
+ * Transient failures preserve credentials; rejected sessions clear this namespace.
  */
 async function request<T>(
   path: string,
@@ -71,6 +69,7 @@ async function request<T>(
     throw new Error('UNAUTHORIZED');
   }
 
+  if (res.status === 404) throw new Error('NOT_FOUND');
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Request failed' }));
     const msg = body?.error?.message || body?.error || `Request failed with status ${res.status}`;
@@ -145,7 +144,7 @@ export const partnerApi = {
       auth_provider?: string;
       created_at?: string;
       updated_at?: string;
-    }>('/auth/me');
+    }>('/partners/session/me');
   },
 
   async forgotPassword(data: ForgotPasswordRequest) {

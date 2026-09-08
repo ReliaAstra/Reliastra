@@ -1,4 +1,5 @@
 'use client';
+import { usePartnerNavigation } from '@/components/partner/public/navigation';
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,7 +37,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const authStatus = usePartnerStore((s) => s.authStatus);
   const { resolvedTheme, setTheme } = useTheme();
 

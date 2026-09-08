@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import uuid
 
 from sqlalchemy import func, select
+from app.config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.dependencies.models import Dependency
@@ -91,7 +92,7 @@ class VendorRepository:
             vendor_id=vendor_id,
             endpoint_url=endpoint_url,
             check_interval_seconds=300,
-            regions=["us-east", "eu-west"],
+            regions=[settings.CHECK_WORKER_REGION],
             is_active=True,
             health_status="unknown",
         )

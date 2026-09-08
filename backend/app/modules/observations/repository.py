@@ -73,7 +73,7 @@ class ObservationRepository:
     async def list_for_endpoints(
         session: AsyncSession,
         endpoint_urls: list[str],
-        source_type: str = "customer_check",
+        source_type: str = "vendor_probe",
         limit: int = 100,
         since: datetime | None = None,
     ) -> list[Observation]:
@@ -144,7 +144,7 @@ class ObservationRepository:
         session: AsyncSession,
         endpoint_urls: list[str],
         window_hours: int,
-        source_type: str = "customer_check",
+        source_type: str = "vendor_probe",
     ) -> dict[str, Any]:
         if not endpoint_urls:
             return {
@@ -312,7 +312,7 @@ class ObservationRepository:
 
         conditions = [
             Observation.endpoint_url.in_(endpoint_urls),
-            Observation.source_type == "customer_check",
+            Observation.source_type == "vendor_probe",
             Observation.timestamp >= since,
             Observation.timestamp < until,
         ]
@@ -359,7 +359,7 @@ class ObservationRepository:
             return None
         conditions = [
             Observation.endpoint_url.in_(endpoint_urls),
-            Observation.source_type == "customer_check",
+            Observation.source_type == "vendor_probe",
         ]
         if region is not None:
             conditions.append(Observation.region == region)

@@ -1,4 +1,5 @@
 'use client';
+import { usePartnerNavigation } from '@/components/partner/public/navigation';
 
 import { useEffect, useState, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -122,7 +123,7 @@ function ReliastraLogo({ className }: { className?: string }) {
 // --- Sidebar (desktop) ---
 function DesktopSidebar() {
   const currentPage = usePartnerStore((s) => s.currentPage);
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const user = usePartnerStore((s) => s.user);
   const setUser = usePartnerStore((s) => s.setUser);
   const setAuthStatus = usePartnerStore((s) => s.setAuthStatus);
@@ -205,7 +206,7 @@ function DesktopSidebar() {
 // --- Mobile bottom nav ---
 function MobileBottomNav({ onMoreOpen }: { onMoreOpen: () => void }) {
   const currentPage = usePartnerStore((s) => s.currentPage);
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
 
   return (
     <nav
@@ -281,7 +282,7 @@ function MoreSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const reset = usePartnerStore((s) => s.reset);
 
   const handleSignOut = useCallback(async () => {
@@ -340,7 +341,7 @@ function MoreSheet({
 
 // --- Notification bell ---
 function NotificationBell() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const browserEnabled = usePartnerStore((s) => s.browserNotificationsEnabled);
   const [open, setOpen] = useState(false);
   const { items, unread, markAllRead, markRead } = usePartnerNotifications({
@@ -431,7 +432,7 @@ function NotificationBell() {
 // --- Top bar ---
 function TopBar({ onMoreOpen }: { onMoreOpen: () => void }) {
   const user = usePartnerStore((s) => s.user);
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const reset = usePartnerStore((s) => s.reset);
   const dashboardData = usePartnerStore((s) => s.dashboardData);
 
@@ -641,7 +642,7 @@ function DashboardPages() {
 
 // --- Main export ---
 export function DashboardLayout() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const setDashboardData = usePartnerStore((s) => s.setDashboardData);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);

@@ -46,14 +46,6 @@ export function PaymentMethodPanel({
   const paying = phase === 'paying';
   const blocked = !quote.checkout_enabled || methods.length === 0;
 
-  // Live-rate gate: whenever the charge settles in a different currency than
-  // the price list, the customer must see a sourced, timestamped rate before
-  // the continue button exists as an option. The quote resolves it from a
-  // verifiable public source server-side; an absent reference (source down,
-  // fetch failed) is treated as "not yet verified", never skipped.
-  const fx = usableFxReference(quote.fx_reference);
-  const fxRequired = quote.payment_currency !== quote.product_currency;
-  const fxBlocked = fxRequired && !fx;
 
   const ctaLabel =
     phase === 'preparing'
@@ -134,13 +126,13 @@ export function PaymentMethodPanel({
           <button
             type="button"
             onClick={onContinue}
-            disabled={busy || paying || blocked || fxBlocked}
+            disabled={busy || paying || blocked}
             className={cn(
               'group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-5',
               'text-[14px] font-semibold transition-all',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-brand focus-visible:ring-offset-2 focus-visible:ring-offset-rs-elevated',
               'disabled:cursor-not-allowed',
-              blocked || fxBlocked
+              blocked
                 ? 'border border-rs-border-subtle bg-rs-base text-rs-text-tertiary'
                 : 'bg-rs-brand text-white hover:bg-rs-brand-hover active:scale-[0.995] disabled:opacity-80'
             )}
@@ -160,44 +152,6 @@ export function PaymentMethodPanel({
               </span>
             ) : null}
           </button>
-
-          {fxBlocked ? (
-            <div
-              className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5"
-              role="status"
-              aria-live="polite"
-              data-testid="checkout-fx-blocked"
-            >
-              <p className="text-[12px] font-semibold text-rs-text">
-                Live exchange rate not verified yet
-              </p>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-rs-text-secondary">
-                Before you pay we fetch the live {quote.product_currency} to{' '}
-                {quote.payment_currency} rate from a public source, so the
-                conversion behind the charge is transparent and checkable. It
-                could not be verified just now - nothing will start until it
-                can.
-              </p>
-              <button
-                type="button"
-                onClick={onRefreshQuote}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-rs-border bg-rs-elevated px-2.5 py-1.5 text-[12px] font-medium text-rs-text transition-colors hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
-                data-testid="checkout-fx-retry-button"
-              >
-                <RefreshCw size={12} aria-hidden="true" />
-                Re-check live rate
-              </button>
-            </div>
-          ) : null}
-
-          {fx && fxRequired ? (
-            <p
-              className="text-center text-[11px] leading-relaxed text-rs-text-tertiary"
-              data-testid="checkout-fx-verified"
-            >
-              Live rate verified: {formatFxRate(fx)} via {fx.provider}
-            </p>
-          ) : null}
 
           {session?.reference ? (
             <p className="text-center text-[11px] leading-relaxed text-rs-text-tertiary">

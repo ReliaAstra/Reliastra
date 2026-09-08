@@ -468,6 +468,12 @@ export function mockLatency(depId?: string) {
 export const mockAlertConfigs: AlertConfig[] = [
   {
     id: 'cfg-email',
+    destination: null,
+    connection_status: 'configured',
+    verification_required: true,
+    events: { 'incident.detected': true, 'incident.resolved': true },
+    last_test_at: null,
+    last_test_success: null,
     org_id: IDS.org,
     channel_type: 'email',
     is_active: true,

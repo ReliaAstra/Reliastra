@@ -16,7 +16,7 @@ async def test_notifications_endpoints(async_client, auth_data, mocker):
         headers=headers,
         json={
             "channel_type": "email",
-            "config": {"email": "alert@reliastra.com"},
+            "config": {"email": auth_data["email"]},
             "is_active": True,
         },
     )

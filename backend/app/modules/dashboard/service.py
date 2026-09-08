@@ -1,4 +1,7 @@
 import uuid
+from datetime import datetime, timezone
+from sqlalchemy import select
+from app.modules.checks.models import CheckResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.checks.repository import CheckRepository
 from app.modules.dashboard.repository import DashboardRepository
@@ -40,6 +43,8 @@ class DashboardService:
         stats_map = await CheckRepository.get_aggregated_stats_bulk(
             session, [d.id for d in deps], window_hours=24
         )
+        latest_rows = (await session.scalars(select(CheckResult).where(CheckResult.dependency_id.in_([d.id for d in deps]), CheckResult.org_id == org_id).distinct(CheckResult.dependency_id).order_by(CheckResult.dependency_id, CheckResult.executed_at.desc()))).all()
+        latest_by_id = {row.dependency_id: row for row in latest_rows}
         result: list[DependencyHealthResponse] = []
         for dep in deps:
             stats = stats_map.get(dep.id, {})
@@ -53,7 +58,15 @@ class DashboardService:
                 status = "unknown"
                 up_pct = None
             else:
-                status = "operational" if up_pct >= 99.0 else "degraded"
+                latest = latest_by_id.get(dep.id)
+                if not latest:
+                    status = 'unknown'
+                elif (datetime.now(timezone.utc) - latest.executed_at).total_seconds() > max(90, dep.check_interval_seconds * 3):
+                    status = 'stale'
+                elif latest.error_message and latest.error_message.startswith('URL blocked by security policy'):
+                    status = 'unknown'
+                else:
+                    status = 'operational' if latest.is_up else 'down'
             result.append(
                 DependencyHealthResponse(
                     dependency_id=dep.id,

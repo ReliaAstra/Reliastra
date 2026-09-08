@@ -47,6 +47,7 @@ class VendorEndpoint(UUIDMixin, TimestampMixin, Base):
         JSON, default=lambda: ["us-east", "eu-west"], nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    next_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     health_status: Mapped[str] = mapped_column(
         String(30), default="unknown", nullable=False
     )

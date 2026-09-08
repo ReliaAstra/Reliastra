@@ -49,7 +49,7 @@ export function useSummary() {
 }
 export function useHealth() {
   const ready = useSessionReady();
-  return useQuery({ queryKey: keys.health, queryFn: api.health, enabled: ready });
+  return useQuery({ queryKey: keys.health, queryFn: api.health, enabled: ready, refetchInterval: 15000, refetchIntervalInBackground: false, refetchOnWindowFocus: true });
 }
 export function useVendors() {
   const ready = useSessionReady();
@@ -95,6 +95,7 @@ export function useDependencyHistory(id: string) {
   const ready = useSessionReady();
   return useQuery({
     queryKey: keys.history(id),
+    refetchInterval: 15_000,
     queryFn: () => api.dependencyHistory(id),
     enabled: Boolean(id) && ready,
   });
@@ -103,6 +104,7 @@ export function useDependencyResults(id: string) {
   const ready = useSessionReady();
   return useQuery({
     queryKey: keys.results(id),
+    refetchInterval: 15_000,
     queryFn: () => api.dependencyResults(id),
     enabled: Boolean(id) && ready,
   });
@@ -111,6 +113,7 @@ export function useLatency(id?: string) {
   const ready = useSessionReady();
   return useQuery({
     queryKey: keys.latency(id),
+    refetchInterval: 15_000,
     queryFn: () => api.latency(24, id),
     enabled: ready,
   });
@@ -409,3 +412,8 @@ export function useAddSupportMessage() {
   });
 }
 
+
+export function useCheckState(id: string) {
+  const ready = useSessionReady();
+  return useQuery({ queryKey: ['check-state', id], queryFn: () => api.checkState(id), enabled: Boolean(id) && ready, refetchInterval: 10_000 });
+}

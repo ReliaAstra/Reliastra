@@ -65,3 +65,8 @@ export function clearSessionCookies(): void {
   clearAccessTokenCookie();
   clearOrgIdCookie();
 }
+
+/** Separate cookie transport for partner APIs; never supplies customer context. */
+export function setPartnerAccessTokenCookie(token: string | null): void {
+  setCookie('partner_access_token', token, MAX_AGE_SECONDS);
+}

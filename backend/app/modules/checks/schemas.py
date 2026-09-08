@@ -138,6 +138,9 @@ class CheckStateResponse(BaseModel):
     is_due: bool
     check_interval_seconds: int
     regions: list[str]
+    is_stale: bool = False
+    last_success_at: datetime | None = None
+    last_failure_at: datetime | None = None
     last_result: LastCheckResultSummary | None = None
     last_dispatch_failure: DispatchFailureSummary | None = None
     queued: PipelineMarker | None = None

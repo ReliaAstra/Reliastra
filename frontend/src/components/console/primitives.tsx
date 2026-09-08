@@ -64,6 +64,7 @@ const EXACT_WORD: Record<string, string> = {
   degraded: 'Degraded',
   down: 'Down',
   paused: 'Paused',
+  stale: 'No recent data',
   unknown: 'Unknown',
   open: 'Open',
   investigating: 'Investigating',

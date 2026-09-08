@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePartnerStore } from '@/stores/partner-store';
-import { navigatePartner } from '@/components/partner/public/navigation';
+import { usePartnerNavigation } from '@/components/partner/public/navigation';
 import { partnerApi, mapPartnerProfile } from '@/lib/partner-api';
 import { toast } from 'sonner';
 import { isEmailNotVerified, readApiError } from '@/lib/api-error';
@@ -16,7 +16,7 @@ import {
 import { partnerUrl } from '@/lib/routes';
 
 export function PageLogin() {
-  const navigate = navigatePartner;
+  const navigate = usePartnerNavigation();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +34,7 @@ export function PageLogin() {
     store.setTokens(accessToken, refreshToken);
 
     // Get current user info - UserResponse (snake_case, not wrapped)
-    const meRes = await fetch('/api/auth/me', {
+    const meRes = await fetch('/api/partners/session/me', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -54,7 +54,7 @@ export function PageLogin() {
       email: user.email,
       fullName: user.full_name,
     });
-    store.setAuthStatus('authenticated');
+
 
     // The admin control plane is a SEPARATE security domain with its own
     // operator credentials. A partner/customer sign-in must NEVER route into
@@ -66,26 +66,19 @@ export function PageLogin() {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    if (partnerRes.ok) {
-      store.setPartner(mapPartnerProfile(await partnerRes.json()));
-      toast.success('Welcome back');
-      navigate('dashboard');
-    } else if (partnerRes.status === 404) {
-      // Not a partner yet: activation is free, idempotent server-side, and
-      // requires no consent beyond the program terms - do it automatically so
-      // the user lands on the dashboard instead of a dead-end "apply" step.
-      try {
-        const profile = await partnerApi.apply({ agree_terms: true });
-        store.setPartner(mapPartnerProfile(profile));
-        toast.success('Welcome to the Partner Network');
-      } catch {
-        toast.error('Could not activate your partner account - try again from the dashboard.');
-      }
-      navigate('dashboard');
-    } else {
-      toast.error('Could not load your partner profile - try again from the dashboard.');
-      navigate('dashboard');
+    if (!partnerRes.ok) {
+      store.setPartner(null);
+      store.setAuthStatus('unauthenticated');
+      setFieldError(partnerRes.status === 404 ? 'No partner account. Register for the Partner Network to continue.' : 'Unable to load partner account. Try again.');
+      return;
     }
+    store.setPartner(mapPartnerProfile(await partnerRes.json()));
+    store.setAuthStatus('authenticated');
+    const next = new URLSearchParams(window.location.search).get('next');
+    const allowed = /^\/partner\/(dashboard(?:\/support)?|referrals|earnings|payouts|notifications|settings)$/.test(next ?? '');
+    toast.success('Welcome back');
+    if (allowed) window.location.assign(next!);
+    else navigate('dashboard');
   };
 
   const handleVerified = async (session: VerifiedSession) => {

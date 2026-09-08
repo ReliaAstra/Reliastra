@@ -12,9 +12,9 @@ import type {
   Partner,
 } from '@/types/partner';
 import {
-  storeSessionTokens,
-  clearAllSessionTokens,
-} from '@/lib/session-storage';
+  storePartnerTokens,
+  clearPartnerTokens,
+} from '@/lib/partner-session';
 
 type PartnerAuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -108,10 +108,8 @@ export const usePartnerStore = create<PartnerStore>()(
       setAuthStatus: (authStatus) => set({ authStatus }),
       setUser: (user) => set({ user }),
       setTokens: (access, refresh) => {
-        // Single shared session store: writes the canonical `reliastra_*`
-        // keys AND the legacy `partner_*` mirror so every surface (customer
-        // console, partner SPA, admin) sees the same pair.
-        storeSessionTokens(access, refresh);
+        // Partner tokens never overwrite customer credentials.
+        storePartnerTokens(access, refresh);
         set({ accessToken: access, refreshToken: refresh });
       },
 
@@ -130,8 +128,8 @@ export const usePartnerStore = create<PartnerStore>()(
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
 
       logout: () => {
-        // Explicit sign-out: the shared JWT session ends on all surfaces.
-        clearAllSessionTokens();
+        // End this partner session without touching customer credentials.
+        clearPartnerTokens();
         set({
           ...initialState,
           currentPage: 'home',
@@ -140,8 +138,8 @@ export const usePartnerStore = create<PartnerStore>()(
       },
 
       reset: () => {
-        // Explicit sign-out: the shared JWT session ends on all surfaces.
-        clearAllSessionTokens();
+        // End this partner session without touching customer credentials.
+        clearPartnerTokens();
         set({
           ...initialState,
           currentPage: 'home',

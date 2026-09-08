@@ -340,6 +340,7 @@ class Settings(BaseSettings):
         description="Emit structured JSON logs. Production always uses JSON "
         "(see app.core.logging); set this to force JSON in other environments.",
     )
+    CHECK_WORKER_REGION: Literal['us-east', 'eu-west', 'ap-south', 'sa-east'] = 'us-east'
     CHECK_SCHEDULE_SECONDS: float = Field(
         default=30.0,
         ge=5,

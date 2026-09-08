@@ -7,7 +7,7 @@ import {
   setAdminSessionCookiesProxy,
 } from '@/lib/admin-session-gate';
 import { verifyAdminToken } from '@/lib/admin-token-verify';
-import { isPartnerRouteSlug, partnerRouteUrl } from '@/lib/routes';
+import { isPartnerRouteSlug, partnerRouteUrl, PARTNER_DASHBOARD_PAGES } from '@/lib/routes';
 
 /**
  * Server-side gate for the admin surface.
@@ -113,9 +113,9 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
   // codes) are preserved on the destination.
   if (!isAdminPage && pathname === '/') {
     const requested = req.nextUrl.searchParams.get('page');
-    if (requested && isPartnerRouteSlug(requested)) {
+    if (requested && (isPartnerRouteSlug(requested) || (PARTNER_DASHBOARD_PAGES as readonly string[]).includes(requested))) {
       const url = req.nextUrl.clone();
-      url.pathname = partnerRouteUrl(requested);
+      url.pathname = isPartnerRouteSlug(requested) ? partnerRouteUrl(requested) : `/partner/${requested}`;
       url.searchParams.delete('page');
       url.search = url.searchParams.toString() ? `?${url.searchParams.toString()}` : '';
       return NextResponse.redirect(url, 308);

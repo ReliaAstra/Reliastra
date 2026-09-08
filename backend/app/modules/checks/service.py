@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -356,6 +356,7 @@ class CheckService:
         url: str,
         method: str,
         reason: str,
+        result_id: uuid.UUID | None = None,
     ) -> CheckResult:
         result = await self.repository.create(
             session=session,
@@ -367,6 +368,7 @@ class CheckService:
             status_code=None,
             error_message=f"{BLOCKED_BY_SECURITY_POLICY_PREFIX}: {reason}",
             quorum_confirmed=False,
+            result_id=result_id,
         )
         await self._enqueue_observation_outbox(session, result, url, method)
         return result
@@ -376,6 +378,7 @@ class CheckService:
         session: AsyncSession,
         dependency_id: uuid.UUID,
         region: str,
+        result_id: uuid.UUID | None = None,
     ) -> CheckResult | None:
         dep = await self.dep_repository.get_by_id(session, dependency_id)
         if not dep or not dep.is_active:
@@ -409,119 +412,16 @@ class CheckService:
         is_up = False
         error_message: str | None = None
 
-        # SSRF protection: block requests to private/internal IPs and pin the
-        # connection to a validated public IP (FIX 26 - DNS-rebinding safe).
-        try:
-            pinned_target = await resolve_pinned_target_async(url)
-        except ValueError as exc:
-            logger.warning("SSRF check blocked URL for dep %s: %s", dependency_id, exc)
-            result = await self._record_blocked_result(
-                session, dependency_id, org_id, region, url, method, str(exc)
-            )
-            checks_total.labels(region=region, status="blocked").inc()
-            await circuit_breaker.record_failure(dependency_id)
+        from app.modules.checks.http_probe import observe_http
+        observed = await observe_http(url, method, headers, timeout, expected_codes, dependency_id)
+        latency_ms, status_code, is_up, error_message = (
+            observed.latency_ms, observed.status_code, observed.is_up, observed.error_message
+        )
+        if error_message and error_message.startswith(BLOCKED_BY_SECURITY_POLICY_PREFIX):
+            result = await self._record_blocked_result(session, dependency_id, org_id, region, url, method, error_message.removeprefix(BLOCKED_BY_SECURITY_POLICY_PREFIX + ': '), result_id=result_id)
+            await clear_check_executing(dependency_id)
+            await clear_check_dispatched(dependency_id)
             return result
-
-        start_time = time.time()
-        try:
-            # Redirects are followed manually instead of via httpx
-            # (follow_redirects) so that EVERY hop is re-validated against
-            # the SSRF policy and pinned to a freshly validated IP (FIX 26).
-            # Vendor endpoints routinely redirect (http->https, www->apex,
-            # CDN routing); blindly following them with a pinned transport
-            # would silently send cross-host requests to the wrong IP. The
-            # hop cap makes a redirect loop a failed check, not an unbounded
-            # request.
-            #
-            # Security: credentials configured for the ORIGINAL host
-            # (Authorization / X-API-Key / Cookie headers) are stripped when
-            # a redirect crosses to a different host, so an open redirect or
-            # third-party error page can never capture org credentials.
-            _SENSITIVE_HEADERS = {
-                "authorization",
-                "x-api-key",
-                "cookie",
-                "proxy-authorization",
-            }
-            redirects_followed = 0
-            current_url = url
-            current_target = pinned_target
-            current_headers = dict(headers)
-            current_method = method
-            redirect_error: str | None = None
-            while True:
-                transport = pinned_transport_for(current_target)
-                async with httpx.AsyncClient(
-                    transport=transport, timeout=timeout
-                ) as client:
-                    response = await client.request(
-                        method=current_method,
-                        url=current_url,
-                        headers=current_headers,
-                    )
-                if response.status_code in {
-                    301,
-                    302,
-                    303,
-                    307,
-                    308,
-                } and response.headers.get("location"):
-                    if redirects_followed >= _MAX_REDIRECTS:
-                        redirect_error = f"{TOO_MANY_REDIRECTS_PREFIX} (> {_MAX_REDIRECTS})"
-                        break
-                    next_url = urllib.parse.urljoin(
-                        current_url, response.headers["location"]
-                    )
-                    try:
-                        current_target = await resolve_pinned_target_async(next_url)
-                    except ValueError as exc:
-                        redirect_error = f"{REDIRECT_BLOCKED_BY_SECURITY_POLICY_PREFIX}: {exc}"
-                        break
-                    # RFC 7231 §6.4.4: 303 switches the next request to GET.
-                    if response.status_code == 303 and current_method in {
-                        "POST",
-                        "PUT",
-                        "PATCH",
-                        "DELETE",
-                    }:
-                        current_method = "GET"
-                        current_headers = {
-                            k: v
-                            for k, v in current_headers.items()
-                            if k.lower() != "content-type"
-                        }
-                    # Cross-host redirect: drop credential headers.
-                    if (
-                        urllib.parse.urlsplit(next_url).netloc
-                        != urllib.parse.urlsplit(current_url).netloc
-                    ):
-                        current_headers = {
-                            k: v
-                            for k, v in current_headers.items()
-                            if k.lower() not in _SENSITIVE_HEADERS
-                        }
-                    current_url = next_url
-                    redirects_followed += 1
-                    continue
-                break
-
-            latency_ms = (time.time() - start_time) * 1000.0
-            status_code = response.status_code
-            if redirect_error:
-                is_up = False
-                error_message = redirect_error
-            elif response.status_code in expected_codes:
-                is_up = True
-            else:
-                is_up = False
-                error_message = f"Unexpected status code: {response.status_code}"
-        except Exception as exc:
-            latency_ms = (time.time() - start_time) * 1000.0
-            is_up = False
-            error_message = str(exc)
-            logger.warning(
-                "Check HTTP request failed for dep %s: %s", dependency_id, exc
-            )
 
         result = await self.repository.create(
             session=session,
@@ -533,6 +433,7 @@ class CheckService:
             status_code=status_code,
             error_message=error_message,
             quorum_confirmed=False,
+            result_id=result_id,
         )
 
         # FIX 3: atomic quorum evaluation. Lock the dependency row so
@@ -768,7 +669,14 @@ class CheckService:
             is_due=is_due,
         )
 
+        success_at, failure_at = (await session.execute(select(
+            func.max(case((CheckResult.is_up.is_(True), CheckResult.executed_at))),
+            func.max(case((CheckResult.is_up.is_(False), CheckResult.executed_at))),
+        ).where(CheckResult.dependency_id == dependency_id, CheckResult.org_id == org_id))).one()
         return {
+            "is_stale": bool(last_result and (now - last_result.executed_at).total_seconds() > max(90, dep.check_interval_seconds * 3)),
+            "last_success_at": success_at,
+            "last_failure_at": failure_at,
             "dependency_id": str(dependency_id),
             "state": state.value,
             "detail": detail,

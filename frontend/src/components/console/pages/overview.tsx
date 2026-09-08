@@ -137,7 +137,7 @@ export function OverviewPage() {
 
           <Section
             title="Dependency health"
-            hint="Current verdict per dependency, resolved by quorum across observation regions."
+            hint="Latest endpoint observations. Incidents require regional quorum."
             action={<SectionLink href="/dependencies">All dependencies</SectionLink>}
           >
             <HealthTable
@@ -164,7 +164,7 @@ export function OverviewPage() {
             ) : !allIncidents.data?.length ? (
               <Empty
                 title="No incidents recorded"
-                body="Your dependencies are being observed from multiple regions. When degradation passes quorum, a correlated incident is opened here and an evidence record is generated for it."
+                body="Incidents appear when failed checks meet the regional quorum."
                 action={
                   <Link href="/dependencies" className="obc-btn">
                     Review dependencies
@@ -253,7 +253,7 @@ function ActiveIncidents({
             <span>No active incidents</span>
           </span>
           <span className="ml-3 text-[var(--obc-text-4)]">
-            All monitored dependencies are within threshold.
+            No open incident records. Check current observations below.
           </span>
         </p>
       ) : (

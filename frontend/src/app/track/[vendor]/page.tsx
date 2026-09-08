@@ -102,7 +102,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const regions = regionsOf(detail);
   const title = `${name} status and reliability record - independently measured`;
   const description =
-    `Independent, multi-region observation of ${name}. Availability, latency, incident history ` +
+    `Independent observation of ${name}. Availability, latency, incident history ` +
     `and published evidence measured by RELIASTRA probes` +
     (regions.length ? ` from ${regions.join(', ')}` : '') +
     `, not taken from ${name}'s status page.`;
@@ -243,7 +243,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
             '@type': 'Dataset',
             '@id': `${canonicalUrl(basePath)}#dataset`,
             name: `${detail.display_name} availability and latency observations`,
-            description: `Independent multi-region observations of ${detail.display_name}'s public endpoints: availability, response latency and incident history measured by RELIASTRA.`,
+            description: `Independent observations of ${detail.display_name}'s public endpoints: availability, response latency and incident history measured by RELIASTRA.`,
             url: canonicalUrl(basePath),
             license: canonicalUrl(PUBLIC_ROUTES.terms),
             isAccessibleForFree: true,
@@ -315,7 +315,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
                   } been opened against this dependency, ${
                     published.length ? `${published.length} with published evidence.` : 'none with published evidence yet.'
                   }`
-                : 'No incident has been opened against this dependency.'}{' '}
+                : 'No public incident records are available.'}{' '}
               Availability, latency and incident history below are measured, not reported by the
               vendor.
             </p>

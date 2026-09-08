@@ -1,5 +1,7 @@
 'use client';
 
+import Script from 'next/script';
+
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 
@@ -16,7 +18,7 @@ type PreferredSourceButtonProps = {
  * - SSR-safe: renders placeholder with fixed min-height to avoid CLS
  * - Theme-aware: maps RELIASTRA's light/dark to Google's data-theme
  * - Graceful: if script fails, shows subtle fallback copy, no throw
- * - Non-blocking: publisher.js is loaded once in RootLayout with async/afterInteractive
+ * - Non-blocking: publisher.js is loaded only where this widget is rendered
  */
 export function PreferredSourceButton({ lang = 'en', className }: PreferredSourceButtonProps) {
   const { resolvedTheme } = useTheme();
@@ -34,6 +36,7 @@ export function PreferredSourceButton({ lang = 'en', className }: PreferredSourc
       style={{ minHeight: 32 }}
       aria-label="Add Reliastra as Preferred Source on Google"
     >
+      <Script src="https://news.google.com/swg/js/v1/publisher.js" strategy="afterInteractive" />
       {/* Google enhances this div when publisher.js loads */}
       <div {...({ 'google-add-preferred-source-btn': '' } as any)} data-theme={theme} data-lang={lang} />
       {/* Fallback for no-JS / script blocked - invisible when JS enhances */}

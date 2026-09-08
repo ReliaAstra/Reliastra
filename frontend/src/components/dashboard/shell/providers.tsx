@@ -61,9 +61,7 @@ export function DashboardProviders({ children }: { children: ReactNode }) {
       router.replace('/login');
     };
 
-    // `getRefreshToken()` reads the canonical `reliastra_refresh_token` with
-    // a fallback to the legacy `partner_refresh_token`, so an existing
-    // partner-session user keeps their session across the shared sign-in.
+    // Customer and partner sessions are deliberately separate namespaces.
     const refresh = getRefreshToken();
 
     if (!refresh) {

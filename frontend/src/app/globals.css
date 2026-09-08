@@ -2488,3 +2488,8 @@ a.obs-row:hover { background: rgba(242, 242, 238, 0.03); }
 @media (prefers-reduced-motion: reduce) {
   .obs-cadence > i { transition: none; }
 }
+
+/* Account controls retain console density on desktop and touch targets on mobile. */
+@media (pointer: coarse), (max-width: 640px) {
+  .obc .obc-btn-sm { min-height: 40px; padding-inline: 12px; }
+}

@@ -140,7 +140,9 @@ async def test_active_evaluation_allows_slack_channel():
 
     req = AlertConfigCreateRequest(channel_type="slack", config={"webhook_url": "https://hooks.slack.com/services/T/TEST/xxx"})
     repo = MagicMock()
-    repo.create = AsyncMock(return_value=MagicMock(id=uuid.uuid4(), org_id=org.id, channel_type="slack", is_active=True))
+    from types import SimpleNamespace
+    now = datetime.now(timezone.utc)
+    repo.create = AsyncMock(return_value=SimpleNamespace(id=uuid.uuid4(), org_id=org.id, channel_type="slack", is_active=True, config=req.config, created_at=now, updated_at=now))
     svc2 = NotificationService(repository=repo)
     with patch("app.modules.organizations.repository.OrganizationRepository.get_by_id", new=AsyncMock(return_value=org)):
         result = await svc2.create_config(AsyncMock(), org.id, req)
