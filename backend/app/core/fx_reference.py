@@ -115,7 +115,7 @@ async def _fetch_rate() -> dict | None:
             return None
         # Pin the quote currency to the source's own declaration: a document
         # not actually expressed in USD would silently mis-label the rate.
-        base = str(payload.get("base") or "").strip().upper()
+        base = str(payload.get("base_code") or payload.get("base") or "").strip().upper()
         rates = payload.get("rates")
         if base != PRODUCT_CURRENCY or not isinstance(rates, dict):
             return None

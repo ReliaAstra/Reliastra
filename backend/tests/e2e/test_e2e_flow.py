@@ -42,7 +42,7 @@ async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker)
 
     loopback_url = test_http_server
     mocker.patch(
-        "app.modules.checks.service.resolve_pinned_target_async",
+        "app.modules.checks.http_probe.resolve_pinned_target_async",
         new=AsyncMock(return_value=PinnedTarget(
             url=loopback_url,
             hostname="127.0.0.1",
@@ -51,7 +51,7 @@ async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker)
         )),
     )
     mocker.patch(
-        "app.modules.checks.service.pinned_transport_for",
+        "app.modules.checks.http_probe.pinned_transport_for",
         return_value=httpx.AsyncHTTPTransport(),
     )
     # FIX 35: storage failures raise - stub uploads in the test harness.

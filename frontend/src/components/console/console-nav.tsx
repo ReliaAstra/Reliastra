@@ -14,8 +14,7 @@ import { cn } from '@/lib/utils';
  * Console navigation.
  *
  * Grouped by what the user is doing, not by database table: MONITORING is the
- * live surface, EVIDENCE is the record. Every href is a route that exists —
- * there is no invented section. `Agency` appears only for organizations the
+ * live surface, EVIDENCE is the record. Every href is a route that exists - * there is no invented section. `Agency` appears only for organizations the
  * backend has actually flagged `has_agency_mode`, instead of being a
  * permanently visible dead end.
  *
@@ -65,6 +64,7 @@ const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?
     items: [
       { href: '/settings', label: 'Settings' },
       { href: '/settings/billing', label: 'Billing' },
+      { href: '/settings/notifications', label: 'Notifications' },
       { href: '/support', label: 'Support' },
     ],
   },
@@ -73,7 +73,7 @@ const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?
 function useIsActive() {
   const pathname = usePathname();
   return (href: string) =>
-    href === '/dashboard'
+    href === '/dashboard' || href === '/settings'
       ? pathname === '/dashboard'
       : pathname === href || pathname.startsWith(href + '/');
 }
@@ -84,8 +84,7 @@ function useIsActive() {
  * Section 8: overall state must be immediately legible and must not be a
  * giant colourful KPI card. It is a line of counts with status dots, sitting
  * directly under the wordmark in the rail and inline in the mobile bar.
- * Counts come from the dependency-health list and the open-incident list —
- * nothing is derived that the backend did not measure.
+ * Counts come from the dependency-health list and the open-incident list - * nothing is derived that the backend did not measure.
  */
 export function SystemStatus({ compact = false }: { compact?: boolean }) {
   const { data: health, isLoading, isError } = useHealth();
@@ -97,7 +96,7 @@ export function SystemStatus({ compact = false }: { compact?: boolean }) {
   if (isError || !health) {
     return (
       <p className="text-[11.5px] leading-snug text-[var(--obc-text-4)]">
-        System status unavailable — the measurement network could not be
+        System status unavailable. The measurement network could not be
         reached.
       </p>
     );
@@ -191,7 +190,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         );
       })}
 
-      {/* Reference. The public research index is the real destination — there
+      {/* Reference. The public research index is the real destination; there
           is no authenticated research capability in the backend, and a link
           that leaves the console is marked as one rather than faked into it. */}
       <div>

@@ -17,7 +17,7 @@ function priceFor(p: PlanMeta, interval: BillingInterval) {
 /**
  * The plan columns, shared by the homepage summary and `/pricing`.
  *
- * One implementation, two placements — so the price a visitor sees on the
+ * One implementation, two placements - so the price a visitor sees on the
  * homepage and the price on the pricing page can never disagree.
  *
  * Columns, not cards: hairline rules separate the plans and the type does the

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { CheckExecution } from '@/components/console/check-execution';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
@@ -201,6 +202,8 @@ export function DependencyRecordPage({ id }: { id: string }) {
         </div>
       )}
 
+      <CheckExecution id={id} />
+
       <Section
         title="Observed latency"
         hint={
@@ -256,14 +259,14 @@ export function DependencyRecordPage({ id }: { id: string }) {
               {
                 label: 'Availability',
                 value:
-                  history.data?.uptime_percentage != null
+                  history.data && history.data.total_checks > 0 && history.data.uptime_percentage != null
                     ? formatUptime(history.data.uptime_percentage)
                     : null,
               },
               {
                 label: 'Average latency',
                 value:
-                  history.data?.avg_latency_ms != null
+                  history.data && history.data.total_checks > 0 && history.data.avg_latency_ms != null
                     ? formatLatency(history.data.avg_latency_ms)
                     : null,
                 unit: 'ms',
@@ -298,7 +301,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         ) : byRegion.size === 0 ? (
           <Empty
             title="No checks recorded yet"
-            body="Checks run on the configured interval. If none appear after an interval has passed, the checking pipeline — not this endpoint — is the thing to investigate."
+            body="Checks run on the configured interval. If none appear after one interval, investigate the checking pipeline, not this endpoint."
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -312,7 +315,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
                 >
                   <div className="flex items-baseline justify-between gap-3">
                     <p className="text-[13px] text-[var(--obc-text)]">{regionLabel(region)}</p>
-                    <State status={last.is_up ? 'operational' : 'down'} />
+                    <State status={Date.now() - Date.parse(last.executed_at) > Math.max(90, (dep.data?.check_interval_seconds ?? 60) * 3) * 1000 ? 'unknown' : last.is_up ? 'operational' : 'down'} />
                   </div>
                   <div className="mt-3">
                     <CheckStrip
@@ -360,7 +363,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         ) : !depIncidents.length ? (
           <Empty
             title="No incidents recorded"
-            body="This dependency has not lost quorum since monitoring began."
+            body="No incident records are available for this dependency."
           />
         ) : (
           <ul className="border border-[var(--obc-line)]">
@@ -508,7 +511,7 @@ function ObservationLog({
             <span className="ml-1 text-[10px] text-[var(--obc-text-4)]">ms</span>
           </>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
     {
@@ -530,7 +533,7 @@ function ObservationLog({
         r.error_message ? (
           <span className="truncate text-[12px] text-[#E58C85]">{r.error_message}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
   ];

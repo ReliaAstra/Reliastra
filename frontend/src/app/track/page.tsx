@@ -151,7 +151,7 @@ export default async function ObservatoryIndexPage() {
         r.detail ? (
           <Value>{String(regionsOf(r.detail).length)}</Value>
         ) : (
-          <span className="obs-void text-[13px]">—</span>
+          <span className="obs-void text-[13px]">none</span>
         ),
     },
     {
@@ -212,18 +212,17 @@ export default async function ObservatoryIndexPage() {
           </p>
           <h1 className="obs-name mt-6 max-w-[15ch]">Dependency records</h1>
           <p className="obs-descriptor mt-6 max-w-[62ch]">
-            An independently observed record of the third-party services other products run on.
-            Every figure in this index originates from a RELIASTRA request to a public endpoint -
-            nothing is read from a vendor status page, an aggregator, or a customer&apos;s logs.
+            Independent observations of public third-party APIs. Nothing is read from a vendor
+            status page.
           </p>
 
           <dl className="mt-12 grid gap-x-8 gap-y-6 border-t border-[var(--ob-line-2)] pt-6 sm:grid-cols-2 lg:grid-cols-4">
             <IndexFact term="Dependencies under observation">
-              {items.length ? String(items.length) : '—'}
+              {items.length ? String(items.length) : '0'}
             </IndexFact>
-            <IndexFact term="Categories">{categories ? String(categories) : '—'}</IndexFact>
+            <IndexFact term="Categories">{categories ? String(categories) : '0'}</IndexFact>
             <IndexFact term="Observation regions in use">
-              {regionSet.size ? [...regionSet].sort().join(' · ') : '—'}
+              {regionSet.size ? [...regionSet].sort().join(' · ') : 'none'}
             </IndexFact>
             <IndexFact term="Most recent observation">
               {freshest ? utcStamp(freshest) : NO_OBSERVATION}
@@ -239,20 +238,15 @@ export default async function ObservatoryIndexPage() {
         title="Dependencies under observation"
         note={
           <>
-            Open a record for the current observation from each region, the historical telemetry,
-            the incident history and any published evidence. State is resolved from the five most
-            recent observations of each dependency; entries beyond the first {RESOLVE_LIMIT} are
-            listed without a state rather than with a guessed one.
+            State is resolved from the five most recent observations. Entries beyond the first{' '}
+            {RESOLVE_LIMIT} are listed without a state.
           </>
         }
         aside={<span className="ob-label md:text-right">Revalidated every 60 seconds</span>}
       >
         {failed ? (
           <Notice kind="error" title="Measurement network unreachable">
-            The catalog could not be retrieved from the measurement API. This page shows no
-            dependencies rather than a cached or approximated list. The individual records remain
-            addressable directly at /track/&lt;dependency&gt; and will render as soon as the API
-            answers.
+            The catalog could not be retrieved. No cached list is shown.
           </Notice>
         ) : rows.length ? (
           <RecordTable
@@ -264,8 +258,7 @@ export default async function ObservatoryIndexPage() {
           />
         ) : (
           <Notice title="No public dependency records yet">
-            Records appear here once organizations begin monitoring public APIs on RELIASTRA and
-            those observations become publishable. Nothing is listed in the meantime.
+            Records appear once public APIs are under observation.
           </Notice>
         )}
       </RecordSection>
@@ -274,34 +267,29 @@ export default async function ObservatoryIndexPage() {
         index="02"
         id="reading"
         title="How to read this index"
-        note="The index carries less than a record does, deliberately: the catalog endpoint returns identity and freshness, and a verdict belongs with the evidence behind it."
+        note="What each column means."
       >
         <dl className="flex flex-col">
           <SpecRow term="Observed state" wide>
-            Resolved per dependency from its five most recent observations: responding when all
-            five returned a valid response, degraded when any did not, and no observations when
-            none have been recorded. It is a summary of measurements, not a status announcement.
+            From the five most recent observations: responding when all five returned a valid
+            response, degraded when any did not.
           </SpecRow>
           <SpecRow term="Last observation" wide>
-            The time of the most recent completed check against the dependency&apos;s endpoint. It
-            reports how fresh the record is, not whether the service is healthy.
+            The most recent completed check. Freshness, not health.
           </SpecRow>
           <SpecRow term="Regions" wide>
-            How many observation regions RELIASTRA runs against that dependency. A dependency
-            observed from one region can show a fault that is local to that region; two regions are
-            required before an incident is opened.
+            Observation regions scheduled for the dependency. Two are required before an incident
+            is opened.
           </SpecRow>
           <SpecRow term="Independence" wide>
-            Every figure originates from a RELIASTRA probe. Vendor status pages are never ingested,
-            mirrored or reconciled, which is why a record here can disagree with one.
+            Every figure originates from a RELIASTRA probe. Vendor status pages are not ingested.
           </SpecRow>
           <SpecRow term="Scope" wide>
-            Public endpoints only. Customer endpoints, credentials, private dependency graphs and
-            the names customers give their own dependencies never appear on a public surface.
+            Public endpoints only. Customer endpoints and credentials never appear here.
           </SpecRow>
         </dl>
         <p className="ob-small mt-8">
-          The measurement method is documented in full in{' '}
+          Method:{' '}
           <Link href={researchRoute('how-reliastra-measures-vendor-reliability')} className="ob-link">
             {RESEARCH_ARTICLES[1].title}
           </Link>
@@ -314,7 +302,7 @@ export default async function ObservatoryIndexPage() {
         id="preferred-source"
         tone="base"
         title="Follow the record"
-        note="If you rely on one of these dependencies, the record updates whether or not anyone is watching it."
+        note="The record updates whether or not anyone is watching it."
       >
         <PreferredSourceSection variant="vendor" />
       </RecordSection>
@@ -325,18 +313,16 @@ export default async function ObservatoryIndexPage() {
             <div className="flex flex-col gap-5">
               <p className="ob-label obs-label-signal">Your own record</p>
               <h2 id="index-cta" className="ob-h2 max-w-[20ch]">
-                This index covers public dependencies. Your product depends on a specific list.
+                Your product depends on a specific list.
               </h2>
               <p className="ob-body max-w-[58ch]">
-                RELIASTRA observes the external services your product actually calls, attributes
-                your incidents to the dependency responsible, and produces the evidence record you
-                need when a vendor disputes it.
+                Observe the services your product calls. Attribute incidents. Keep the record.
               </p>
             </div>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                  Create an independent record
+                  Start monitoring
                 </Link>
                 <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
                   View pricing

@@ -21,18 +21,30 @@ _EXECUTE_CHECK_AUTORETRY = (Exception,)
     retry_backoff_max=300,
     retry_jitter=True,
     max_retries=3,
-    soft_time_limit=60,
-    time_limit=90,
+    expires=360,
+    soft_time_limit=330,
+    time_limit=360,
 )
 def execute_check(
     dependency_id: str, region: str, request_id: str | None = None
 ) -> dict[str, Any] | None:
+    # Capture Celery request context before the async adapter changes threads.
+    task_id = execute_check.request.id
     async def _run(session) -> dict[str, Any] | None:
         from app.modules.checks.service import check_service
-
-        result = await check_service.execute_check(
-            session, uuid.UUID(dependency_id), region
-        )
+        from app.config import settings
+        from app.modules.checks.models import CheckResult
+        from sqlalchemy import select, text
+        if region != settings.CHECK_WORKER_REGION:
+            raise RuntimeError('Probe delivered to the wrong region worker')
+        result = None
+        if task_id:
+            # A transaction-scoped advisory lock serializes broker redelivery.
+            lock_id = int.from_bytes(uuid.UUID(task_id).bytes[:8], 'big', signed=True)
+            await session.execute(text('SELECT pg_advisory_xact_lock(:key)'), {'key': lock_id})
+            result = await session.scalar(select(CheckResult).where(CheckResult.id == uuid.UUID(task_id)).limit(1))
+        if result is None:
+            result = await check_service.execute_check(session, uuid.UUID(dependency_id), region, result_id=uuid.UUID(task_id) if task_id else None)
         if not result:
             return None
         return {

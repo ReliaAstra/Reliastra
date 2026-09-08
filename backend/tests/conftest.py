@@ -102,6 +102,9 @@ async def test_engine(setup_test_db_server: str) -> AsyncGenerator[AsyncEngine, 
             "observations",
             "vendor_endpoints",
             "vendor_trackings",
+            "email_center_messages",
+            "email_center_senders",
+            "email_center_templates",
         ]:
             await conn.execute(text(f"DELETE FROM {table};"))
 

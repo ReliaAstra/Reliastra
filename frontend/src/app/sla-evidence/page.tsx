@@ -37,7 +37,7 @@ export default function SlaEvidencePage() {
       <MarketingPage
         eyebrow="Capability"
         title="SLA evidence & outage proof"
-        lede="When a vendor fails, bring a timestamped, independently measured record to the credit conversation - not screenshots."
+        lede="When a vendor fails, bring a timestamped, independently measured record to the credit conversation."
         breadcrumbs={crumbs}
         related={[
           { label: 'Incident evidence', href: '/incident-evidence', description: 'Attribution: was it you or the vendor?' },

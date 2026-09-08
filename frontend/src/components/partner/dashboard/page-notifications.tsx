@@ -1,4 +1,5 @@
 'use client';
+import { usePartnerNavigation } from '@/components/partner/public/navigation';
 
 import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -135,7 +136,7 @@ function NotificationRow({
 }
 
 export function PageNotifications() {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const browserEnabled = usePartnerStore((s) => s.browserNotificationsEnabled);
   const {
     items,

@@ -151,7 +151,7 @@ function CurrencyExplanation({
         id="checkout-currency-heading"
         className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rs-text-tertiary"
       >
-        Why you are charged in {quote.payment_currency}
+        Billing currency
       </h3>
       {quote.currency_notice ? (
         <p
@@ -176,34 +176,7 @@ function CurrencyExplanation({
         fx={fx}
         contextAmountMinor={quote.product_amount_minor}
       />
-      {fxRequired && !fx ? (
-        <div
-          className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-3"
-          role="status"
-          aria-live="polite"
-          data-testid="checkout-fx-pending"
-        >
-          <p className="text-[12px] font-semibold text-rs-text">
-            Live {quote.product_currency} to {quote.payment_currency} rate not
-            verified yet
-          </p>
-          <p className="mt-1 text-[11.5px] leading-relaxed text-rs-text-secondary">
-            The public source did not answer on the last check, so the
-            conversion behind this charge has no verifiable figure to show.
-            Payment cannot start until the rate is fetched - no guessed
-            numbers, ever.
-          </p>
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-rs-border bg-rs-elevated px-2.5 py-1.5 text-[12px] font-medium text-rs-text transition-colors hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
-            data-testid="checkout-fx-retry"
-          >
-            <RefreshCw size={12} aria-hidden="true" />
-            Re-check live rate
-          </button>
-        </div>
-      ) : null}
+
     </section>
   );
 }

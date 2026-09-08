@@ -5,8 +5,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.modules.observations.models import Observation
 
-from app.core.exceptions import ResourceNotFoundException, ValidationException
+from app.core.exceptions import ResourceNotFoundException, ValidationException, ServiceUnavailableException
 from app.modules.checks.repository import CheckRepository
 from app.modules.observations.repository import ObservationRepository
 from app.modules.vendors.constants import SEED_VENDORS
@@ -58,7 +60,7 @@ _CACHE_TTL: dict[str, int] = {
     "90d": 600,
 }
 
-_DEFAULT_REGION = "us-east-1"
+_DEFAULT_REGION = "us-east"
 
 
 class VendorService:
@@ -74,7 +76,7 @@ class VendorService:
                 session, item["vendor_name"]
             )
             if not existing:
-                await self.repository.create(
+                existing = await self.repository.create(
                     session=session,
                     vendor_name=item["vendor_name"],
                     display_name=item["display_name"],
@@ -82,6 +84,9 @@ class VendorService:
                     category=item["category"],
                 )
                 seeded_count += 1
+            endpoints = await self.repository.list_vendor_endpoints(session, existing.vendor_name)
+            if not endpoints:
+                await self.repository.create_vendor_endpoint(session, existing.id, existing.endpoint_url)
         return seeded_count
 
     async def list_public_vendors(
@@ -90,7 +95,20 @@ class VendorService:
         vendors = await self.repository.list_public(
             session, limit=limit, cursor=cursor
         )
-        return [VendorResponse.model_validate(vendor) for vendor in vendors]
+        urls = [vendor.endpoint_url for vendor in vendors]
+        latest = (await session.scalars(select(Observation).where(
+            Observation.endpoint_url.in_(urls), Observation.source_type == 'vendor_probe', Observation.org_id.is_(None),
+        ).distinct(Observation.endpoint_url).order_by(Observation.endpoint_url, Observation.timestamp.desc()))).all() if urls else []
+        by_url = {row.endpoint_url: row for row in latest}
+        result = []
+        for vendor in vendors:
+            data = VendorResponse.model_validate(vendor).model_dump()
+            observation = by_url.get(vendor.endpoint_url)
+            if observation:
+                stale = (datetime.now(timezone.utc) - observation.timestamp).total_seconds() > 900
+                data.update(last_check_at=observation.timestamp, recent_status='stale' if stale else 'down' if observation.error_type or observation.status_code is None else 'operational', latency_ms=observation.latency_ms, status_code=observation.status_code)
+            result.append(VendorResponse(**data))
+        return result
 
     async def get_vendor_details_bulk(
         self, session: AsyncSession
@@ -148,15 +166,9 @@ class VendorService:
                     else "operational"
                 )
             else:
-                # During dual-write rollout, preserve status visibility for legacy rows.
-                legacy = await CheckRepository.get_vendor_recent_status(
-                    session, vendor.endpoint_url, limit=5
-                )
-                data["recent_status"] = (
-                    "operational"
-                    if legacy and all(item.is_up for item in legacy)
-                    else "degraded" if legacy else "unknown"
-                )
+                data['recent_status'] = 'unknown'
+            if vendor_obs and (datetime.now(timezone.utc) - max(item.timestamp for item in vendor_obs)).total_seconds() > 900:
+                data['recent_status'] = 'stale'
             data["endpoints"] = [
                 VendorEndpointResponse.model_validate(endpoint)
                 for endpoint in await self.repository.list_vendor_endpoints(
@@ -200,15 +212,9 @@ class VendorService:
                 else "operational"
             )
         else:
-            # During dual-write rollout, preserve status visibility for legacy rows.
-            legacy = await CheckRepository.get_vendor_recent_status(
-                session, vendor.endpoint_url, limit=5
-            )
-            data["recent_status"] = (
-                "operational"
-                if legacy and all(item.is_up for item in legacy)
-                else "degraded" if legacy else "unknown"
-            )
+            data['recent_status'] = 'unknown'
+        if observations and (datetime.now(timezone.utc) - observations[0].timestamp).total_seconds() > 900:
+            data['recent_status'] = 'stale'
         data["endpoints"] = [
             VendorEndpointResponse.model_validate(endpoint)
             for endpoint in endpoints
@@ -222,16 +228,6 @@ class VendorService:
         stats = await ObservationRepository.get_endpoint_stats(
             session, urls, window_hours=24
         )
-        if stats["total"] == 0:
-            legacy = await CheckRepository.get_vendor_aggregated_stats(
-                session, vendor.endpoint_url, window_hours=24
-            )
-            return VendorHistoryResponse(
-                vendor_name=vendor.vendor_name,
-                uptime_percentage_24h=legacy["uptime_percentage"],
-                avg_latency_ms_24h=legacy["avg_latency_ms"],
-                recent_checks_count=legacy["total_checks"],
-            )
         return VendorHistoryResponse(
             vendor_name=vendor.vendor_name,
             uptime_percentage_24h=stats["uptime_percentage"],
@@ -274,32 +270,9 @@ class VendorService:
         limit: int = 50,
     ) -> VendorIncidentsResponse:
         vendor, _, urls = await self._vendor_and_urls(session, vendor_name)
-        rows = await self.repository.list_incidents_for_endpoints(
-            session, urls, limit=limit
-        )
-        incidents = []
-        now = datetime.now(timezone.utc)
-        for incident, dependency in rows:
-            end = incident.resolved_at or now
-            duration = max(0.0, (end - incident.started_at).total_seconds())
-            incidents.append(
-                VendorIncidentResponse(
-                    incident_id=incident.id,
-                    dependency_name=dependency.name,
-                    started_at=incident.started_at,
-                    resolved_at=incident.resolved_at,
-                    severity=incident.severity,
-                    status=incident.status,
-                    duration_seconds=round(duration, 2),
-                )
-            )
-        return VendorIncidentsResponse(
-            vendor_name=vendor.vendor_name, incidents=incidents
-        )
-
-    # ------------------------------------------------------------------
-    # Developer API
-    # ------------------------------------------------------------------
+        # Public probes currently persist observations, not customer incidents.
+        # Customer incident records are tenant-private even for a public URL.
+        return VendorIncidentsResponse(vendor_name=vendor.vendor_name, incidents=[])
 
     async def get_developer_info(
         self,
@@ -410,24 +383,7 @@ class VendorService:
                 vendor_name,
                 window,
             )
-            # Return a valid empty response instead of 500.
-            now = datetime.now(timezone.utc)
-            window_hours = _WINDOW_HOURS.get(window, 24)
-            since = now - timedelta(hours=window_hours)
-            resolved_region = region or _DEFAULT_REGION
-            return VendorTimelineResponse(
-                vendor_name=vendor_name,
-                window=window,
-                resolution=resolution if resolution != "auto" else self._auto_label(window),
-                region=resolved_region,
-                from_=since,
-                to=now,
-                current=TimelineCurrent(
-                    timestamp=None, latency_ms=None,
-                    status_code=None, is_up=None,
-                ),
-                points=[],
-            )
+            raise ServiceUnavailableException('Public observations unavailable') from None
 
     async def _get_vendor_timeline_impl(
         self,
@@ -480,9 +436,7 @@ class VendorService:
         )
 
         # --- 4. Fetch overlapping incidents -------------------------------
-        incidents = await self.repository.get_incidents_in_window(
-            session, urls, since, now
-        )
+        incidents = []  # Tenant incident IDs are not public telemetry.
 
         # --- 5. Attach incident ids to buckets ---------------------------
         points = self._associate_incidents(buckets, incidents)

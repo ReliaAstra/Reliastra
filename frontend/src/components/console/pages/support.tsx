@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 /**
  * Support desk.
  *
- * Same two-way ticket API as before — this is a presentation change only.
+ * Same two-way ticket API as before - this is a presentation change only.
  * Conversations are a register, not a stack of chat bubbles: an operator
  * looking for the thread where they reported last Tuesday's Twilio outage
  * scans ticket number, subject, state and last activity in one pass.
@@ -95,7 +95,7 @@ export function SupportPage() {
           ) : !items.length ? (
             <Empty
               title="No conversations"
-              body="Ask about a monitor, an evidence record, an invoice or an attribution you disagree with. Include the dependency name and the window you are asking about — it is the fastest route to a useful answer."
+              body="Ask about a monitor, an evidence record, an invoice or an attribution you disagree with. Include the dependency name and the window you are asking about. It is the fastest route to a useful answer."
               action={
                 <button
                   type="button"
@@ -181,7 +181,7 @@ function NewConversation({
   return (
     <Section
       title="New conversation"
-      hint="Dependency name, UTC timeframe and what you expected to see — that is usually enough for a first reply to be a real answer."
+      hint="Dependency name, UTC window, and what you expected to see."
     >
       <form
         className="max-w-2xl"
@@ -223,7 +223,7 @@ function NewConversation({
         </div>
         {create.isError && (
           <p className="mb-4 text-[12px] text-[#E58C85]">
-            The conversation could not be opened. Nothing was sent — try again.
+            The conversation could not be opened. Nothing was sent. Try again.
           </p>
         )}
         <div className="flex items-center gap-2">

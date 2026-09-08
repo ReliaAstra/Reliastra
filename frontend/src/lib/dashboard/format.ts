@@ -36,7 +36,9 @@ export function timeAgo(iso: string | null | undefined): string {
 export function formatUtc(iso: string | null | undefined, pattern = 'HH:mm'): string {
   if (!iso) return '-';
   try {
-    return `${format(new Date(iso), pattern)} UTC`;
+    const date = new Date(iso);
+    const utc = new Date(date.getTime() + date.getTimezoneOffset() * 60_000);
+    return `${format(utc, pattern)} UTC`;
   } catch {
     return '-';
   }
@@ -91,20 +93,8 @@ export function confidenceFromScore(score: number): 'HIGH' | 'MEDIUM' | 'LOW' {
  * index is normalised away before lookup and printed back afterwards.
  */
 export function regionLabel(code: string): string {
-  const map: Record<string, string> = {
-    'us-east': 'US East',
-    'us-west': 'US West',
-    'eu-west': 'EU West',
-    'eu-central': 'EU Central',
-    'ap-south': 'AP South',
-    'ap-southeast': 'AP Southeast',
-    'ap-northeast': 'AP Northeast',
-    'sa-east': 'SA East',
-    'af-south': 'AF South',
-    'me-south': 'ME South',
-  };
-  if (map[code]) return map[code];
-  const zoned = /^(.*)-(\d+)$/.exec(code);
-  if (zoned && map[zoned[1]]) return `${map[zoned[1]]} ${zoned[2]}`;
+  // Regions are scheduling labels, not places. The console prints the code
+  // the API uses (`us-east`, `eu-west-1`) so a region reads identically in
+  // the console, the public record and an exported evidence file.
   return code;
 }

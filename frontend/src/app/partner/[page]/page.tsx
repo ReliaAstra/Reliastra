@@ -1,3 +1,5 @@
+import { PartnerSession } from '@/components/partner/dashboard/partner-session';
+import { PARTNER_DASHBOARD_PAGES } from '@/lib/routes';
 import { notFound } from 'next/navigation';
 import { PartnerPublicPage } from '@/components/partner/public/partner-page-view';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -32,15 +34,6 @@ const TITLES: Record<string, { title: string; description: string }> = {
     title: 'FAQ - Partner Network',
     description:
       'Common questions about the RELIASTRA Partner Network: eligibility, attribution windows, commission and payouts.',
-  },
-  tiers: {
-    title: 'Tiers - Partner Network',
-    description:
-      'RELIASTRA partner tiers, the thresholds that move a partner between them, and what each level unlocks.',
-  },
-  premium: {
-    title: 'Premium - Partner Network',
-    description: 'Premium partnership for consultants, agencies and technology advisors.',
   },
   resources: {
     title: 'Resources - Partner Network',
@@ -81,6 +74,7 @@ const TITLES: Record<string, { title: string; description: string }> = {
 
 export async function generateMetadata({ params }: { params: Promise<{ page: string }> }) {
   const { page } = await params;
+  if ((PARTNER_DASHBOARD_PAGES as readonly string[]).includes(page)) return { title: 'Partner dashboard | RELIASTRA', robots: { index: false, follow: false } };
   if (!isPartnerRouteSlug(page)) return { title: 'Not found | RELIASTRA' };
   const copy = TITLES[page] ?? { title: 'Partner Network', description: 'The RELIASTRA Partner Network.' };
   const indexable = (PARTNER_INDEXABLE_SLUGS as readonly string[]).includes(page);
@@ -99,6 +93,7 @@ export async function generateMetadata({ params }: { params: Promise<{ page: str
  */
 export default async function PartnerSlugPage({ params }: { params: Promise<{ page: string }> }) {
   const { page } = await params;
+  if ((PARTNER_DASHBOARD_PAGES as readonly string[]).includes(page)) return <PartnerSession page={page as PartnerPage} />;
   if (!isPartnerRouteSlug(page)) notFound();
 
   const slug = page as PartnerRouteSlug;

@@ -151,7 +151,7 @@ function ResetPasswordContent() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
           hint={tooShort ? undefined : 'At least 8 characters.'}
-          error={tooShort ? 'Too short — use at least 8 characters.' : undefined}
+          error={tooShort ? 'Use at least 8 characters.' : undefined}
         />
         <Field
           id="confirm-password"

@@ -149,7 +149,7 @@ async def test_observation_attribution_snapshot_and_verification(
     dependency_id = uuid.UUID(dependency_response.json()["id"])
 
     mocker.patch(
-        "app.modules.checks.service.resolve_pinned_target_async",
+        "app.modules.checks.http_probe.resolve_pinned_target_async",
         new=AsyncMock(return_value=MagicMock(
             url="https://example.com/health",
             hostname="example.com",
@@ -163,7 +163,7 @@ async def test_observation_attribution_snapshot_and_verification(
             return httpx.Response(status_code=500, request=request)
 
     mocker.patch(
-        "app.modules.checks.service.pinned_transport_for",
+        "app.modules.checks.http_probe.pinned_transport_for",
         return_value=_FakePinnedTransport(),
     )
 

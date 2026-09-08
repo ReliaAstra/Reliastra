@@ -32,7 +32,7 @@ import type { CheckResult } from '@/lib/dashboard/types';
 
    Four stages and an activation surface. The user is not "setting up an app":
    they are configuring an observation system, and every screen is written and
-   composed as configuration — real constraints, real regions, a review of the
+   composed as configuration: real constraints, real regions, a review of the
    exact request RELIASTRA is about to start issuing, and then the first
    measurement it takes.
 
@@ -57,7 +57,7 @@ const REGIONS: Array<{ id: string; label: string }> = [
   { id: 'sa-east', label: 'SA East' },
 ];
 
-const INTERVALS = [60, 120, 300, 600, 1800];
+const INTERVALS = [15, 30, 60, 120, 300, 600, 1800];
 
 export function ObservationSetupSequence() {
   const router = useRouter();
@@ -66,7 +66,7 @@ export function ObservationSetupSequence() {
   const plan = useAppStore((s) => s.plan);
   const deps = useDependencies();
 
-  // Headers never touch the store — see the note in the sequence store.
+  // Headers never touch the store - see the note in the sequence store.
   const [headers, setHeaders] = useState<Array<{ key: string; value: string }>>([]);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -170,23 +170,22 @@ export function ObservationSetupSequence() {
         <>
           <StageHead
             index="01 · Environment"
-            title="Establish your observation environment"
+            title="Set up your first monitor"
             body={
               <>
-                RELIASTRA will begin building an independent record of the external services{' '}
-                {org?.name ?? 'your organization'} depends on — measured from its own probes, not
-                from a vendor status page and not from your application logs. This first pass
-                configures one dependency; the rest follow the same shape.
+                Independent checks of the external services{' '}
+                {org?.name ?? 'your organization'} depends on. This pass configures one
+                dependency.
               </>
             }
           />
 
           <StageBlock
             title="Environment"
-            hint="Established from your organization record. These are the limits your observations will run inside."
+            hint="From your organization record. Plan limits apply."
           >
             <dl className="grid gap-x-10 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
-              <EnvFact label="Organization" value={org?.name ?? '—'} />
+              <EnvFact label="Organization" value={org?.name ?? 'unknown'} />
               <EnvFact label="Plan" value={planRecord.name} />
               <EnvFact
                 label="Monitor allowance"
@@ -206,7 +205,7 @@ export function ObservationSetupSequence() {
 
           <StageBlock
             title="What you depend on"
-            hint="Used to order the suggestions in the next stage. It is stored with your organization's setup state and sent nowhere else."
+            hint="Orders the suggestions in the next stage. Stored with your setup state only."
           >
             <div className="grid gap-6 lg:grid-cols-3">
               <ChoiceGroup
@@ -249,7 +248,7 @@ export function ObservationSetupSequence() {
             </div>
           </StageBlock>
 
-          <StageActions note="Next: choose the first external dependency to observe. Nothing is created yet.">
+          <StageActions note="Nothing is created yet.">
             <button
               type="button"
               className="obc-btn obc-btn-primary"
@@ -283,12 +282,12 @@ export function ObservationSetupSequence() {
           <StageHead
             index="03 · Observation"
             title="Configure how it is observed"
-            body="Each setting below changes the request RELIASTRA issues and how its response is judged. Defaults are the ones the API applies if you change nothing."
+            body="Each setting changes the request issued and how its response is judged. Defaults are what the API applies."
           />
 
           <StageBlock
             title="Observation regions"
-            hint="A failure is only escalated to an incident when at least two regions record it inside the same 60-second window, so two or more regions is the configuration that produces attributable evidence."
+            hint="An incident requires at least two regions to fail inside the same 60-second window. Choose two or more."
           >
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {REGIONS.map((r) => {
@@ -312,8 +311,8 @@ export function ObservationSetupSequence() {
             </div>
             {draft.regions.length === 1 && (
               <p className="mt-3 text-[12px] text-[#E3BE7A]">
-                With one region, a failure is recorded as an observation but never confirmed as an
-                incident — no second region can corroborate it.
+                One region records failures but never confirms an incident. A second
+                region is required for quorum.
               </p>
             )}
             {draft.regions.length === 0 && (
@@ -325,7 +324,7 @@ export function ObservationSetupSequence() {
 
           <StageBlock
             title="Cadence and tolerance"
-            hint={`Your plan permits an interval as low as ${minInterval} seconds.`}
+            hint={`Plan minimum: ${minInterval} seconds.`}
           >
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -431,7 +430,7 @@ export function ObservationSetupSequence() {
           <HeadersBlock headers={headers} setHeaders={setHeaders} />
 
           <StageActions
-            note="Next: review the exact configuration before any request is issued."
+            note="Nothing is created until you confirm."
             back={{ label: 'Back', onClick: () => go('dependency') }}
           >
             <button
@@ -443,7 +442,7 @@ export function ObservationSetupSequence() {
                 go('confirm');
               }}
             >
-              Review configuration
+              Review
             </button>
           </StageActions>
         </>
@@ -455,7 +454,7 @@ export function ObservationSetupSequence() {
           <StageHead
             index="04 · Confirm"
             title="Observation configuration"
-            body="This is exactly what RELIASTRA will observe, how often, and from where. Nothing has been created yet."
+            body="What will be observed, how often, and from where. Nothing has been created yet."
           />
 
           <dl className="mt-8">
@@ -484,7 +483,7 @@ export function ObservationSetupSequence() {
             </ReviewRow>
             <ReviewRow label="Authentication">
               {headers.length ? (
-                `${headers.length} header${headers.length === 1 ? '' : 's'} configured — encrypted at rest, never returned by the API`
+                `${headers.length} header${headers.length === 1 ? '' : 's'} configured. Encrypted at rest, never returned by the API`
               ) : (
                 <span className="text-[var(--obc-text-4)]">not configured</span>
               )}
@@ -502,7 +501,7 @@ export function ObservationSetupSequence() {
           )}
 
           <StageActions
-            note="Begin observation creates the monitor and schedules the first check. You can change every value afterwards."
+            note="Creates the monitor and schedules the first check. Every value can be changed later."
             back={{ label: 'Back', onClick: () => go('observation') }}
           >
             <button
@@ -511,7 +510,7 @@ export function ObservationSetupSequence() {
               onClick={activate}
               disabled={creating || !draft.endpointUrl || !draft.name}
             >
-              {creating ? 'Creating monitor…' : 'Begin observation'}
+              {creating ? 'Creating…' : 'Start monitoring'}
             </button>
           </StageActions>
         </>
@@ -534,7 +533,7 @@ interface VendorSuggestion {
  * The suggestion list is the public dependency catalog RELIASTRA already
  * observes (`/v1/vendors`), not a hardcoded list of logos: selecting one
  * fetches that record and prefills the endpoint RELIASTRA itself observes.
- * If the catalog cannot be read the stage still works — manual entry is the
+ * If the catalog cannot be read the stage still works - manual entry is the
  * primary path, not the fallback.
  */
 function DependencyStage({
@@ -602,7 +601,7 @@ function DependencyStage({
       <StageHead
         index="02 · Dependency"
         title="What infrastructure do you depend on?"
-        body="Name the external service and the endpoint your product actually calls. A health or status endpoint is ideal; any endpoint that answers without side effects works."
+        body="The external service and the endpoint your product calls. Any endpoint that answers without side effects works."
       />
 
       {suggestions === null ? (
@@ -616,7 +615,7 @@ function DependencyStage({
       ) : suggestions.length > 0 ? (
         <StageBlock
           title="Services RELIASTRA already observes"
-          hint="Selecting one prefills the endpoint from the public record. You are still creating your own independent monitor — this only saves typing."
+          hint="Prefills the endpoint from the public record. You still create your own monitor."
         >
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {suggestions.map((v) => (
@@ -682,7 +681,7 @@ function DependencyStage({
       </StageBlock>
 
       <StageActions
-        note="Next: choose the regions, cadence and success criteria for this observation."
+        note="Next: regions, interval and success criteria."
         back={{ label: 'Back', onClick: onBack }}
       >
         <button
@@ -691,7 +690,7 @@ function DependencyStage({
           disabled={!valid}
           onClick={onNext}
         >
-          Configure observation
+          Continue
         </button>
       </StageActions>
     </>
@@ -730,7 +729,7 @@ function HeadersBlock({
   return (
     <StageBlock
       title="Authentication"
-      hint="Values are encrypted at rest and are never returned by the API — the dependency record only reports whether headers are set. Cookie, Host, Connection and proxy headers are rejected by the API."
+      hint="Values are encrypted at rest and never returned by the API. Cookie, Host, Connection and proxy headers are rejected."
     >
       <div className="space-y-2">
         {headers.map((h, i) => (
@@ -783,7 +782,7 @@ function HeadersBlock({
  * Infrastructure coming online, not a celebration: the monitor exists, the
  * first observation is pending, and the moment a real result lands it is
  * printed with its region, latency and status code. Nothing here is
- * simulated — while the scheduler has not run yet, the surface says so.
+ * simulated - while the scheduler has not run yet, the surface says so.
  */
 function ActivationSurface({
   dependencyId,
@@ -812,7 +811,7 @@ function ActivationSurface({
           return;
         }
       } catch {
-        /* keep waiting — a missing result is not an error yet */
+        /* keep waiting - a missing result is not an error yet */
       }
       if (!cancelled) timer = setTimeout(poll, 5000);
     };
@@ -835,8 +834,8 @@ function ActivationSurface({
         title={first ? `${name} is under observation` : `${name} is being brought online`}
         body={
           first
-            ? 'RELIASTRA is now collecting independent observations. Every result below is a real request from a real region, stored with its timestamp.'
-            : 'The monitor exists and is scheduled. The first measurement appears here as soon as the scheduler reaches it — nothing is shown until it does.'
+            ? 'Collecting independent observations. Each result is a real request from a real region, stored with its timestamp.'
+            : 'The monitor is scheduled. The first measurement appears when the scheduler reaches it.'
         }
       />
 
@@ -889,8 +888,8 @@ function ActivationSurface({
           <div className="border border-[var(--obc-line)] px-4 py-6">
             <p className="obc-label text-[var(--obc-signal)]">Observation initialising</p>
             <p className="mt-2 max-w-[64ch] text-[12.5px] leading-[1.65] text-[var(--obc-text-2)]">
-              The scheduler dispatches due checks continuously. Your first result will appear here
-              without a reload; you can also leave this page — the monitor is already running.
+              The first result appears here without a reload. You can leave this page; the
+              monitor is already running.
             </p>
           </div>
         )}
@@ -964,7 +963,7 @@ function AlertBlock({ hasEmail, onSaved }: { hasEmail: boolean; onSaved: () => v
   return (
     <StageBlock
       title="Notification"
-      hint="Optional. Without a channel, incidents are recorded in the console but nothing reaches you outside it."
+      hint="Optional. Without a channel, incidents are recorded in the console only."
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="sm:w-[320px]">

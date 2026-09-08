@@ -382,8 +382,10 @@ async function fetchBackend(
   req: NextRequest,
   authHeader: string | null
 ): Promise<NextResponse> {
-  const incoming = new URL(req.url);
-  const url = `${BACKEND_URL}/v1${safePath}${incoming.search}`;
+  // NOTE: `safePath` already carries the caller's query string (the route
+  // handler appends it). Do NOT re-append `incoming.search` here - doing so
+  // duplicates every parameter and breaks single-value params (e.g. booleans).
+  const url = `${BACKEND_URL}/v1${safePath}`;
   const method = req.method;
 
   const headers: Record<string, string> = { Accept: 'application/json' };

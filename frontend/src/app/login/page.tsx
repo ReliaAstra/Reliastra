@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Error messages shown to the visitor.
  *
- * Both authentication failures — unknown address and wrong password — map to
+ * Both authentication failures - unknown address and wrong password - map to
  * the SAME sentence. That is deliberate and must stay: distinguishing them
  * turns the sign-in form into an account-enumeration oracle.
  */
@@ -73,7 +73,16 @@ function CustomerLoginPageContent() {
           );
           return;
         }
-        setError(ERRORS[apiError.message] ?? apiError.message);
+        // Only known sentences reach the screen. An unexpected body (a proxy
+        // page, a stack fragment, a 5xx envelope) must not be echoed.
+        setError(
+          ERRORS[apiError.message] ??
+            (apiError.status === 429
+              ? 'Too many attempts. Wait a minute and retry.'
+              : apiError.status >= 500
+                ? 'Sign in is unavailable right now. Retry in a moment.'
+                : 'Email or password is incorrect.')
+        );
         return;
       }
       const data = await res.json().catch(() => ({}));
@@ -131,13 +140,13 @@ function CustomerLoginPageContent() {
   return (
     <AuthShell
       eyebrow="Customer sign in"
-      title="Sign in to RELIASTRA"
-      intro="External dependency intelligence, incident attribution and reliability evidence for your organization."
+      title="Sign in"
+      intro="Open your organization’s console."
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          Operating client accounts as an agency or MSP?{' '}
+          Partner account?{' '}
           <Link href={partnerUrl('login')} className="ob-link">
-            Partner sign-in
+            Partner sign in
           </Link>
         </p>
       }

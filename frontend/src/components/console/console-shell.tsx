@@ -14,7 +14,7 @@ import { AppErrorBoundary } from '../dashboard/shell/error-boundary';
 /**
  * The authenticated shell.
  *
- * Layout is a fixed rail plus a fluid work area — no max-width cap on the
+ * Layout is a fixed rail plus a fluid work area - no max-width cap on the
  * content. The previous shell clamped every page to `max-w-6xl`, which on a
  * 1920px operations display left roughly a third of the screen empty while
  * the dependency table truncated endpoint URLs. An operations console should
@@ -47,6 +47,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
       '/evidence': 'Evidence',
       '/settings': 'Settings',
       '/settings/billing': 'Billing',
+      '/settings/notifications': 'Notifications',
     };
     const label = labels[pathname] || pathname.split('/').filter(Boolean).slice(-1)[0];
     if (label) pushRecent({ href: pathname, label });
@@ -81,7 +82,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
               role="status"
               className="border-b border-[var(--obc-warn)]/30 bg-[var(--obc-warn-wash)] px-[var(--obc-gutter)] py-2 text-[12px] text-[#E3BE7A]"
             >
-              Offline — the console is showing the last values it retrieved.
+              Offline. Showing the last values retrieved.
               Actions will retry when the connection returns.
             </div>
           )}

@@ -1,4 +1,5 @@
 'use client';
+import { usePartnerNavigation } from '@/components/partner/public/navigation';
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,7 +37,7 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const authStatus = usePartnerStore((s) => s.authStatus);
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -61,8 +62,6 @@ export function CommandPalette() {
         { label: 'Earn', page: 'earn', icon: DollarSign, category: 'Navigation' },
         { label: 'Resources', page: 'resources', icon: FileText, category: 'Navigation' },
         { label: 'FAQ', page: 'faq', icon: HelpCircle, category: 'Navigation' },
-        { label: 'Tiers', page: 'tiers', icon: Crown, category: 'Navigation' },
-        { label: 'Premium', page: 'premium', icon: Crown, category: 'Navigation' },
         { label: 'Support', page: 'support', icon: MessageSquare, category: 'Navigation' },
         { label: 'Log in', page: 'login', icon: Users, category: 'Account' },
         { label: 'Sign up', page: 'signup', icon: Users, category: 'Account' },

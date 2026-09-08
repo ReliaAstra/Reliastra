@@ -298,7 +298,7 @@ def _marker_ttl_seconds() -> int:
     Bounded below so a very short ``CHECK_SCHEDULE_SECONDS`` cannot expire the
     marker before a worker has had a chance to pick the task up.
     """
-    return max(int(settings.CHECK_SCHEDULE_SECONDS * 4), 300)
+    return max(int(settings.CHECK_SCHEDULE_SECONDS * 4), 360)
 
 
 async def _write_marker(prefix: str, dependency_id: Any, payload: dict[str, Any], ttl: int) -> bool:
@@ -329,7 +329,7 @@ async def record_check_executing(dependency_id: Any, region: str) -> bool:
         EXECUTING_KEY_PREFIX,
         dependency_id,
         {"region": region, "at": _utcnow().isoformat()},
-        max(int(settings.CELERY_TASK_TIME_LIMIT), 60),
+        max(int(settings.CELERY_TASK_TIME_LIMIT), 360),
     )
 
 

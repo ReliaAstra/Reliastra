@@ -37,7 +37,7 @@ export default function SecurityPage() {
       <MarketingPage
         eyebrow="Trust"
         title="Security: your monitoring data stays yours"
-        lede="Encryption everywhere, SSRF-safe probing, organization isolation, and evidence integrity - the controls behind an evidence platform."
+        lede="Encryption, SSRF-safe probing, organization isolation, evidence integrity."
         breadcrumbs={crumbs}
         related={[
           { label: 'Privacy Policy', href: '/privacy', description: 'What we collect and why.' },
@@ -49,9 +49,9 @@ export default function SecurityPage() {
         <Prose>
           <h2>Encryption</h2>
           <p>
-            All data is encrypted at rest (AES-256) and in transit (TLS 1.3). Card
-            details are handled by our payment provider; RELIASTRA never stores full
-            card numbers.
+            Stored secrets such as request headers are encrypted at rest. Traffic is
+            served over HTTPS. Card details are handled by the payment provider;
+            RELIASTRA never stores card numbers.
           </p>
           <h2>Safe probing</h2>
           <p>
@@ -62,10 +62,10 @@ export default function SecurityPage() {
           </p>
           <h2>Isolation</h2>
           <p>
-            Organizations are strictly isolated: dependencies, incidents, evidence and
-            credentials are scoped per organization and enforced server-side. Public
-            Track pages show aggregated posture for vendors made public only - never
-            customer endpoints, headers or credentials.
+            Dependencies, incidents, evidence and credentials are scoped per
+            organization and enforced server-side. Public Track pages show aggregated
+            posture for public vendors only, never customer endpoints, headers or
+            credentials.
           </p>
           <h2>Evidence integrity</h2>
           <p>

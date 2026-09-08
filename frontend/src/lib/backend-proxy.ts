@@ -15,6 +15,7 @@ export async function proxyToBackend(
   options?: {
     /** Override the HTTP method */
     method?: string;
+    session?: 'customer' | 'partner';
     /** Omit the request body (e.g. for GET) */
     noBody?: boolean;
   }
@@ -34,6 +35,8 @@ export async function proxyToBackend(
   const headers: Record<string, string> = {};
 
   // Forward authorization and request-tracing / idempotency context.
+  const partnerSession = options?.session === 'partner' || path.startsWith('/partners/');
+  const tokenCookie = partnerSession ? 'partner_access_token' : 'reliastra_access_token';
   let authHeader = req.headers.get('authorization');
   if (!authHeader) {
     // Some preview edge proxies strip the `Authorization` header from
@@ -45,9 +48,9 @@ export async function proxyToBackend(
     const cookieMatch = cookieHeader
       .split(';')
       .map((part) => part.trim())
-      .find((part) => part.startsWith('reliastra_access_token='));
+      .find((part) => part.startsWith(`${tokenCookie}=`));
     if (cookieMatch) {
-      const token = cookieMatch.slice('reliastra_access_token='.length);
+      const token = cookieMatch.slice(tokenCookie.length + 1);
       authHeader = `Bearer ${decodeURIComponent(token)}`;
     }
   }
@@ -60,8 +63,8 @@ export async function proxyToBackend(
   // Tenant context must be forwarded on EVERY method: the backend resolves
   // the organization exclusively via these headers, and org-scoped GETs
   // (dependencies, incidents, dashboard, ...) fail without them.
-  let orgHeader = req.headers.get('x-organization-id');
-  if (!orgHeader) {
+  let orgHeader = partnerSession ? null : req.headers.get('x-organization-id');
+  if (!orgHeader && !partnerSession) {
     // Mirrored by the client into a cookie (see lib/auth-cookie.ts) because
     // custom headers can be stripped by preview edges.
     const cookieHeader = req.headers.get('cookie') ?? '';

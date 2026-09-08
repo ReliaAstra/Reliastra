@@ -118,7 +118,7 @@ export function TelemetryChart({
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-y border-[var(--ob-line)] py-3 sm:grid-cols-4">
         <ReadoutCell
           label={activeIsCursor ? 'Inspected bucket' : 'Latest bucket'}
-          value={utcCompact(active.timestamp) ?? '—'}
+          value={utcCompact(active.timestamp) ?? 'no data'}
         />
         <ReadoutCell label="Mean latency" value={fmtLatency(active.avg_latency_ms)} unit="ms" />
         <ReadoutCell
@@ -174,7 +174,7 @@ function ReadoutCell({
   unit?: string;
   tone?: 'critical';
 }) {
-  const muted = value === 'no data' || value === '—';
+  const muted = value === 'no data';
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="ob-label">{label}</span>

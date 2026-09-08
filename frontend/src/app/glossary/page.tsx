@@ -28,7 +28,7 @@ export default function GlossaryPage() {
       <MarketingPage
         eyebrow="Concepts"
         title="Glossary"
-        lede="The category’s vocabulary, defined once and used consistently: every term states its problem, why it matters, an example, and RELIASTRA’s approach."
+        lede="The category’s vocabulary, defined once. Each term states the problem, an example, and RELIASTRA’s approach."
         breadcrumbs={crumbs}
         related={[
           { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence', description: 'The pillar page for the category.' },

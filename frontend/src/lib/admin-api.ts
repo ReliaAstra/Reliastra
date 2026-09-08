@@ -20,6 +20,15 @@ import type {
   CustomerListResponse,
   EmailCampaign,
   EmailCampaignListResponse,
+  EmailCenterMessageDetail,
+  EmailCenterMessagesResponse,
+  EmailCenterRenderResponse,
+  EmailCenterSendRequest,
+  EmailCenterSendResponse,
+  EmailCenterSender,
+  EmailCenterSendersResponse,
+  EmailCenterStatus,
+  EmailCenterTemplate,
   ErrorLogListResponse,
   FeedbackTicket,
   FeedbackTicketListResponse,
@@ -460,6 +469,58 @@ export const adminApi = {
   errors: (params: QueryParams = {}) => request<ErrorLogListResponse>('/operations/errors', { params }),
   systemMetrics: () => request<SystemMetrics>('/operations/metrics'),
   auditLogs: (params: QueryParams = {}) => request<AuditLogListResponse>('/audit-log', { params }),
+
+  /* ── Email Center ─────────────────────────────────────────────────── */
+
+  emailStatus: (refresh = false) =>
+    request<EmailCenterStatus>('/email-center/status', { params: refresh ? { refresh: true } : {} }),
+  emailSenders: (refresh = false) =>
+    request<EmailCenterSendersResponse>('/email-center/senders', {
+      params: refresh ? { refresh: true } : {},
+    }),
+  addEmailSender: (data: { email: string; name: string }) =>
+    request<EmailCenterSender>('/email-center/senders', { method: 'POST', body: data }),
+  updateEmailSender: (senderId: string, data: { name?: string; enabled?: boolean }) =>
+    request<EmailCenterSender>(`/email-center/senders/${senderId}`, { method: 'PATCH', body: data }),
+  deleteEmailSender: (senderId: string) =>
+    request<void>(`/email-center/senders/${senderId}`, { method: 'DELETE' }),
+  sendEmail: (data: EmailCenterSendRequest) =>
+    request<EmailCenterSendResponse>('/email-center/send', { method: 'POST', body: data }),
+  sendTestEmail: (data: { sender: string; to: string }) =>
+    request<EmailCenterSendResponse>('/email-center/test', { method: 'POST', body: data }),
+  emailMessages: (params: QueryParams = {}) =>
+    request<EmailCenterMessagesResponse>('/email-center/messages', { params }),
+  emailMessage: (messageId: string) =>
+    request<EmailCenterMessageDetail>(`/email-center/messages/${messageId}`),
+  emailTemplates: () => request<EmailCenterTemplate[]>('/email-center/templates'),
+  createEmailTemplate: (data: {
+    name: string;
+    description?: string;
+    subject: string;
+    text_body?: string;
+    html_body?: string;
+  }) => request<EmailCenterTemplate>('/email-center/templates', { method: 'POST', body: data }),
+  updateEmailTemplate: (
+    templateId: string,
+    data: { name?: string; description?: string; subject?: string; text_body?: string; html_body?: string }
+  ) =>
+    request<EmailCenterTemplate>(`/email-center/templates/${templateId}`, {
+      method: 'PATCH',
+      body: data,
+    }),
+  deleteEmailTemplate: (templateId: string) =>
+    request<void>(`/email-center/templates/${templateId}`, { method: 'DELETE' }),
+  duplicateEmailTemplate: (templateId: string) =>
+    request<EmailCenterTemplate>(`/email-center/templates/${templateId}/duplicate`, {
+      method: 'POST',
+    }),
+  renderEmailTemplate: (data: {
+    template_id?: string;
+    subject?: string;
+    text_body?: string;
+    html_body?: string;
+    variables?: Record<string, string>;
+  }) => request<EmailCenterRenderResponse>('/email-center/templates/render', { method: 'POST', body: data }),
 };
 
 export function isAdminApiError(error: unknown): error is AdminApiError {

@@ -15,6 +15,7 @@ from app.modules.notifications.schemas import (
     InboxMarkReadRequest,
     InboxUnreadCountResponse,
 )
+from app.modules.notifications.schemas import ChannelVerificationRequest
 from app.modules.notifications.service import (
     NotificationService,
     notification_service,
@@ -225,3 +226,13 @@ async def dismiss_inbox_item(
         # the caller must not be told the dismissal succeeded.
         raise ResourceNotFoundException("Notification not found")
 
+
+
+@router.post('/configs/{config_id}/verify', response_model=AlertConfigResponse, dependencies=[Depends(require_member)])
+async def verify_channel(config_id: uuid.UUID, body: ChannelVerificationRequest, db: AsyncSession = Depends(get_db), current_org: Organization = Depends(get_current_org), service: NotificationService = Depends(get_notif_service)):
+    return await service.verify_email(db, current_org.id, config_id, body.code)
+
+
+@router.post('/configs/{config_id}/resend-verification', response_model=AlertConfigResponse, dependencies=[Depends(require_member)])
+async def resend_channel_verification(config_id: uuid.UUID, db: AsyncSession = Depends(get_db), current_org: Organization = Depends(get_current_org), service: NotificationService = Depends(get_notif_service)):
+    return await service.resend_verification(db, current_org.id, config_id)

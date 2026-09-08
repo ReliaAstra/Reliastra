@@ -64,9 +64,10 @@ async def process_outbox_batch(
             await OutboxRepository.delete(session, event)
             continue
         try:
-            dto = ObservationCreateDTO.model_validate_json(event.payload)
-            await observation_service.record_observation(session, dto)
-            await OutboxRepository.delete(session, event)
+            async with session.begin_nested():
+                dto = ObservationCreateDTO.model_validate_json(event.payload)
+                await observation_service.record_observation(session, dto)
+                await OutboxRepository.delete(session, event)
             processed += 1
         except Exception:
             logger.exception("Failed to process outbox event %s", event.id)

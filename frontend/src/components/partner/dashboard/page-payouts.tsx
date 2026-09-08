@@ -1,4 +1,5 @@
 'use client';
+import { usePartnerNavigation } from '@/components/partner/public/navigation';
 
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,7 +49,7 @@ function destinationSummary(partner: Partner | null): string {
 
 // --- Payout destination banner ---
 function PayoutDestinationBanner({ partner }: { partner: Partner | null }) {
-  const navigate = usePartnerStore((s) => s.navigate);
+  const navigate = usePartnerNavigation();
   const hasMethod = Boolean(partner?.payoutMethod);
   const summary = destinationSummary(partner);
   const isBank = partner?.payoutMethod === 'bank';
@@ -338,7 +339,7 @@ export function PagePayouts() {
   // disabling the button.
   const balanceHint = (() => {
     if (belowMinimum) {
-      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)} - keep earning to unlock a withdrawal.`;
+      return `Minimum payout is ${formatCurrencyFromMinor(minimumMinor, currency)}.`;
     }
     const parts: string[] = [];
     if (onHoldMinor > 0) {

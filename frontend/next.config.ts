@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
+  // Dev-only Next indicator; it never ships, and it pollutes visual QA captures.
+  devIndicators: false,
   // Cinematic photography is the public site's heaviest asset class. AVIF/WebP
   // negotiation plus an explicit quality allow-list keeps the hero under
   // control on mobile without hand-exporting derivatives.
@@ -66,6 +68,18 @@ const nextConfig: NextConfig = {
       {
         source: "/partners",
         destination: "/partner",
+        permanent: true,
+      },
+      // The program has one flat commission rate and no tier model; the
+      // former tier/premium marketing pages resolve to the commission terms.
+      {
+        source: "/partner/tiers",
+        destination: "/partner/commission",
+        permanent: true,
+      },
+      {
+        source: "/partner/premium",
+        destination: "/partner/commission",
         permanent: true,
       },
       ...consoleSections.flatMap((section) => [

@@ -231,7 +231,7 @@ export function ClientSetupSequence() {
           <StageHead
             index="02 · Application"
             title={`What does ${clientName} run?`}
-            body="An application is the unit monitors attach to — a product, a service, an environment. It is the link that attributes an incident to this client."
+            body="An application is what monitors attach to: a product, a service, an environment. It links an incident to this client."
           />
 
           <StageBlock title="Application" hint="You can add more from the client environment afterwards.">

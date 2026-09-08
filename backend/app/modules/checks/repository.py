@@ -42,9 +42,10 @@ class CheckRepository:
         status_code: int | None = None,
         error_message: str | None = None,
         quorum_confirmed: bool = False,
+        result_id: uuid.UUID | None = None,
     ) -> CheckResult:
         result = CheckResult(
-            id=uuid.uuid4(),
+            id=result_id or uuid.uuid4(),
             dependency_id=dependency_id,
             org_id=org_id,
             region=region,

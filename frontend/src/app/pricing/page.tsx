@@ -83,15 +83,13 @@ export default function PricingPage() {
             Three plans. Limits enforced server-side.
           </h1>
           <p className="ob-lede mt-6">
-            Start measuring for free. Every new organization gets a 14-day Pro
-            trial with attribution and evidence enabled — no payment method
-            required. Move to Enterprise when client isolation and white-label
-            reporting matter.
+            14-day Pro trial on every new organization. No payment method
+            required.
           </p>
         </Container>
       </header>
 
-      {/* Plan columns — the same matrix the homepage renders */}
+      {/* Plan columns: the same matrix the homepage renders */}
       <Section tone="void" divider={false} tight aria-labelledby="plans-heading">
         <Container>
           {/* Named for assistive tech and to keep the document outline
@@ -103,7 +101,7 @@ export default function PricingPage() {
         </Container>
       </Section>
 
-      {/* Currency disclosure — first-class, not a footnote */}
+      {/* Currency disclosure: first-class, not a footnote */}
       <Section tone="void" divider={false} tight aria-labelledby="currency-heading">
         <Container>
           <h2 id="currency-heading" className="sr-only">
@@ -119,12 +117,10 @@ export default function PricingPage() {
           <div className="flex flex-col gap-5 pb-10">
             <Eyebrow>Capabilities</Eyebrow>
             <h2 id="capabilities-heading" className="ob-h2 max-w-[18ch]">
-              What each plan actually grants.
+              What each plan grants.
             </h2>
             <p className="ob-body">
-              This table is generated from the same entitlement definitions the
-              API enforces. If a capability is not ticked, the backend will
-              refuse the request — the UI cannot promise otherwise.
+              Generated from the entitlements the API enforces.
             </p>
           </div>
 
@@ -180,7 +176,7 @@ export default function PricingPage() {
                                 : 'text-[var(--ob-text-4)]'
                             )}
                           >
-                            {on ? 'yes' : '—'}
+                            {on ? 'yes' : 'no'}
                           </span>
                         </td>
                       );
@@ -200,43 +196,41 @@ export default function PricingPage() {
             <div className="flex flex-col gap-5">
               <Eyebrow>Billing</Eyebrow>
               <h2 id="terms-heading" className="ob-h2 max-w-[14ch]">
-                The terms, stated once.
+                Billing terms.
               </h2>
             </div>
             <dl className="flex flex-col">
               {[
                 [
                   'Trial',
-                  'Every new organization starts on a 14-day Pro trial with attribution, evidence, Slack alerts and API access enabled. No payment method is required to start it.',
+                  '14 days of Pro on every new organization. No payment method required.',
                 ],
                 [
                   'After the trial',
-                  'An organization that does not upgrade continues on Free: 3 dependencies, 1-minute checks, 24-hour retention and email alerts. Nothing is deleted at the moment the trial ends beyond the retention window of the plan you are on.',
+                  'Without an upgrade the organization continues on Free: 3 dependencies, 1-minute checks, 24-hour retention, email alerts.',
                 ],
                 [
                   'Renewal',
-                  'Paid plans renew for the interval you selected until cancelled. Cancellation takes effect at the end of the paid period.',
+                  'Paid plans renew for the selected interval until cancelled. Cancellation takes effect at the end of the paid period.',
                 ],
                 [
                   'Enforcement',
-                  'Dependency counts, check intervals, retention windows, seat counts and feature access are enforced by the API, not by the interface.',
+                  'Dependency counts, check intervals, retention, seats and feature access are enforced by the API.',
                 ],
                 [
                   'Enterprise',
                   <>
-                    Priced against scope rather than a list. Talk to{' '}
+                    Priced against scope. Contact{' '}
                     <a href={EXTERNAL_LINKS.salesEmail} className="ob-link">
                       sales@reliastra.com
-                    </a>{' '}
-                    about client isolation, white-label reporting, custom
-                    retention and contractual terms.
+                    </a>
+                    .
                   </>,
                 ],
                 [
                   'Governing terms',
                   <>
-                    Trials, renewals, cancellation and refunds are governed by
-                    the{' '}
+                    Governed by the{' '}
                     <Link href={PUBLIC_ROUTES.terms} className="ob-link">
                       Terms of Service
                     </Link>{' '}
@@ -271,14 +265,12 @@ export default function PricingPage() {
                 Produce a real evidence report before you decide.
               </h2>
               <p className="ob-body max-w-[56ch]">
-                The trial includes the capabilities the decision actually turns
-                on. Add a dependency, wait for a check interval, and see what
-                the record looks like.
+                Add a dependency. Wait one check interval. Read the record.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start 14-day Pro trial
+                Start trial
               </Link>
               <Link
                 href={PUBLIC_ROUTES.contact}

@@ -29,7 +29,7 @@ import {
 /**
  * Evidence record.
  *
- * This page is written to be read by someone who is not a customer — a vendor
+ * This page is written to be read by someone who is not a customer - a vendor
  * account manager, a procurement lead, a lawyer. So it reads as a record:
  * what was observed, when, from where, how the fault was attributed, and what
  * makes the document verifiable. There is no chart here at all; the

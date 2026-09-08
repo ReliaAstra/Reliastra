@@ -37,7 +37,7 @@ export default function ContactPage() {
       <MarketingPage
         eyebrow="Company"
         title="Talk to RELIASTRA"
-        lede="Support, sales and security - real inboxes, answered by the team that operates the measurement network."
+        lede="Support, sales and security. Answered by the team that operates the measurement network."
         breadcrumbs={crumbs}
         related={[
           { label: 'Documentation', href: '/docs', description: 'Answers before you ask.' },

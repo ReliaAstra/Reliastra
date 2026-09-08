@@ -26,7 +26,7 @@ export default function StatusPage() {
       <MarketingPage
         eyebrow="Operations"
         title="Platform status"
-        lede="RELIASTRA’s own health is reported the same way we report vendors: explicitly, with distinct states for distinct causes."
+        lede="RELIASTRA’s own health, reported the way vendors are reported."
         breadcrumbs={crumbs}
         related={[
           { label: 'Live vendor status', href: '/track', description: 'Vendor posture, not platform health.' },

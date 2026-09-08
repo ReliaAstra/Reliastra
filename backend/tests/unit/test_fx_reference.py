@@ -58,7 +58,7 @@ def mock_httpx(monkeypatch):
 async def test_reference_payload_is_sourced_and_timestamped(mock_httpx, monkeypatch):
     mock_httpx["transport"] = _transport(
         {
-            "base": "USD",
+            "base_code": "USD",
             "rates": {"NGN": 1650.1234, "GHS": 15.0},
             "time_last_update_utc": "Wed, 13 Aug 2025 00:40:32 +0000",
         }

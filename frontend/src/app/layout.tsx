@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "RELIASTRA - External Dependency Intelligence",
     description:
-      "Monitor third-party APIs independently. When vendors fail, generate timestamped SLA evidence reports to claim credits and prove fault.",
+      "Independent monitoring of third-party APIs. Incident attribution. Timestamped, checksummed evidence.",
     url: "https://reliastra.com",
     siteName: "RELIASTRA",
     locale: "en_US",
@@ -68,7 +67,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "RELIASTRA - External Dependency Intelligence",
     description:
-      "Monitor third-party APIs. Prove vendor failures. Claim SLA credits.",
+      "Monitor third-party APIs. Attribute incidents. Export evidence.",
     images: ["/opengraph-image.png"],
   },
 };
@@ -92,12 +91,6 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
-        {/* Google Preferred Sources - publisher.js loaded once, async, non-blocking */}
-        <Script
-          src="https://news.google.com/swg/js/v1/publisher.js"
-          strategy="afterInteractive"
-          async
-        />
       </body>
     </html>
   );

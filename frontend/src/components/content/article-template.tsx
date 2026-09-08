@@ -39,7 +39,7 @@ type Props = {
  * Reading rules applied here:
  * - One column, ~68 characters. Long-form technical prose is unreadable at
  *   full width and the previous template let it run to 720px of small grey.
- * - 17px base with 1.75 line-height, and the same scale on mobile — a
+ * - 17px base with 1.75 line-height, and the same scale on mobile - a
  *   research paper read on a phone is the common case, not the edge case.
  * - Metadata is a real `<dl>` and dates are real `<time>` elements, so the
  *   visible metadata and the structured data are the same facts.

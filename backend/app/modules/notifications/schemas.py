@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from app.modules.notifications.constants import ChannelType
 
 
@@ -11,6 +11,7 @@ class AlertPayload(BaseModel):
     org_id: uuid.UUID
     incident_id: uuid.UUID | None = None
     severity: str
+    event: str = "incident.detected"
     title: str
     body: str
     metadata: dict[str, Any] = {}
@@ -21,26 +22,6 @@ class AlertConfigCreateRequest(BaseModel):
     config: dict[str, Any]
     is_active: bool = True
 
-    @classmethod
-    def _redact_config(cls, config: dict[str, Any], channel_type: ChannelType) -> dict[str, Any]:
-        """Validate config contains expected fields for the channel type."""
-        ct = channel_type.value.lower() if isinstance(channel_type, ChannelType) else str(channel_type).lower()
-        if ct == "slack" and not config.get("webhook_url"):
-            raise ValueError("Slack channel config requires 'webhook_url'")
-        if ct == "pagerduty" and not config.get("routing_key"):
-            raise ValueError("PagerDuty channel config requires 'routing_key'")
-        if ct == "webhook" and not config.get("url"):
-            raise ValueError("Webhook channel config requires 'url'")
-        if ct == "email" and not config.get("email") and not config.get("recipient"):
-            raise ValueError("Email channel config requires 'email' or 'recipient'")
-        return config
-
-    @classmethod
-    def model_validate(cls, *args: Any, **kwargs: Any) -> AlertConfigCreateRequest:
-        """Override to add config validation on create."""
-        instance = super().model_validate(*args, **kwargs)
-        instance.config = instance._redact_config(instance.config, instance.channel_type)
-        return instance
 
 
 class AlertConfigUpdateRequest(BaseModel):
@@ -58,6 +39,12 @@ class AlertConfigResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    destination: str | None = None
+    connection_status: str = 'configured'
+    verification_required: bool = False
+    events: dict[str, bool] = Field(default_factory=lambda: {'incident.detected': True, 'incident.resolved': True})
+    last_test_at: str | None = None
+    last_test_success: bool | None = None
 
 
 class AlertTestRequest(BaseModel):
@@ -105,3 +92,7 @@ class InboxUnreadCountResponse(BaseModel):
 class InboxMarkReadRequest(BaseModel):
     #: Omit (or send an empty list) to mark the whole feed read.
     notification_ids: list[uuid.UUID] | None = None
+
+
+class ChannelVerificationRequest(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")

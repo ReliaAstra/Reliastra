@@ -13,37 +13,37 @@ import {
 
 const HOME_FAQS = [
   {
-    q: 'How is RELIASTRA different from regular uptime monitoring?',
-    a: 'Regular uptime monitors check your own infrastructure from the outside. RELIASTRA monitors your vendors’ APIs from independent locations, correlates vendor degradation with your incidents, and generates evidence reports you can send to vendor support to claim SLA credits.',
+    q: 'How is RELIASTRA different from uptime monitoring?',
+    a: 'Uptime monitors check your own infrastructure. RELIASTRA monitors the third-party APIs you depend on from its own infrastructure, correlates their degradation with your incidents, and generates evidence reports you can send to a vendor.',
   },
   {
-    q: 'What counts as an independent verification?',
-    a: 'RELIASTRA runs checks from multiple cloud regions on infrastructure separate from yours and the vendor’s. Each check is timestamped and logged with full metadata, giving third-party proof from locations the vendor does not control.',
+    q: 'What counts as an independent observation?',
+    a: 'A check issued from RELIASTRA infrastructure, separate from yours and the vendor’s, recorded with its timestamp, region, status code and latency.',
   },
   {
     q: 'Which vendors can RELIASTRA monitor?',
-    a: 'Any HTTP endpoint: Stripe, Auth0, Twilio, Cloudflare, OpenAI, PagerDuty, AWS, and hundreds more. If it has a URL and returns a status code, it can be monitored.',
+    a: 'Any HTTP endpoint that returns a status code.',
   },
   {
-    q: 'How do SLA evidence reports work?',
-    a: 'When a vendor incident is detected, RELIASTRA compiles a timestamped report with independent multi-region verification, exact degradation duration, correlated service impact, and the calculated SLA credit amount.',
+    q: 'What is in an evidence report?',
+    a: 'The incident window, the dependency, the regions that observed it, the retained observations, the attribution result and a SHA-256 checksum of the report.',
   },
   {
-    q: 'Is my data secure?',
-    a: 'All data is encrypted at rest (AES-256) and in transit (TLS 1.3). Monitoring data and evidence reports belong to the account holder and are never shared with vendors or third parties.',
+    q: 'Who can see my monitoring data?',
+    a: 'Your organization. Monitoring data and evidence reports are never shared with the vendors being measured.',
   },
 ];
 
 export const metadata: Metadata = {
   title: 'RELIASTRA - External Dependency Intelligence',
   description:
-    'Know when your dependencies fail. Prove what happened. RELIASTRA monitors third-party APIs independently, attributes incidents to the responsible vendor, and generates timestamped SLA evidence.',
+    'Independent monitoring of the third-party APIs you depend on. Incidents attributed to the responsible dependency. Timestamped, checksummed evidence.',
   alternates: { canonical: canonicalUrl('/') },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'RELIASTRA - External Dependency Intelligence',
     description:
-      'Monitor third-party APIs independently. When vendors fail, generate timestamped SLA evidence reports to claim credits and prove fault.',
+      'Independent monitoring of third-party APIs. Incident attribution. Timestamped, checksummed evidence.',
     url: SITE_URL + '/',
     siteName: 'RELIASTRA',
     type: 'website',
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'RELIASTRA - External Dependency Intelligence',
-    description: 'Monitor third-party APIs. Prove vendor failures. Claim SLA credits.',
+    description: 'Monitor third-party APIs. Attribute incidents. Export evidence.',
     images: [`${SITE_URL}/opengraph-image.png`],
   },
 };
@@ -96,8 +96,8 @@ export default function Home() {
       <noscript>
         <div>
           <p>
-            RELIASTRA - External Dependency Intelligence. Know when your
-            dependencies fail. Prove what happened.
+            RELIASTRA - External Dependency Intelligence. Independent
+            monitoring of third-party APIs, incident attribution and evidence.
           </p>
           <ul>
             <li><a href="/product">Product</a></li>

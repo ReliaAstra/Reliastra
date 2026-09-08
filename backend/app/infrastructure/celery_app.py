@@ -1,5 +1,6 @@
 import logging
 from celery import Celery
+from kombu import Queue
 from celery.schedules import crontab
 from celery.signals import (
     task_postrun,
@@ -74,12 +75,23 @@ from app.modules.vendor_submissions import models as _submission_models  # noqa:
 from app.modules.vendors import models as _vendor_models  # noqa: F401
 from app.modules.webhooks import models as _webhook_models  # noqa: F401
 
+def route_check(name, args, kwargs, options, task=None, **extra):
+    if name == 'app.modules.checks.tasks.execute_check':
+        region = kwargs.get('region') or (args[1] if len(args) > 1 else settings.CHECK_WORKER_REGION)
+        return {'queue': f'checks.{region}'}
+    if name == 'app.modules.vendors.tasks.execute_vendor_check':
+        region = kwargs.get('region') or (args[2] if len(args) > 2 else settings.CHECK_WORKER_REGION)
+        return {'queue': f'checks.{region}'}
+    return None
+
+
 celery_app = Celery(
     "reliastra",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
     include=[
         "app.modules.checks.tasks",
+        "app.modules.vendors.tasks",
         "app.modules.incidents.tasks",
         "app.modules.evidence.tasks",
         "app.modules.notifications.tasks",
@@ -106,11 +118,11 @@ celery_app.conf.update(
     # ── Explicit queue + broker behaviour ───────────────────────────────────
     # The queue name is part of the observability contract (the health probe
     # reports its depth), so it is pinned rather than inherited from a default.
-    # ``task_queues`` is deliberately NOT set: it must hold kombu ``Queue``
-    # objects, and passing names makes the worker die at startup with
-    # "'str' object has no attribute 'name'". ``task_default_queue`` plus
-    # ``task_create_missing_queues`` declares the same queue correctly.
+    # Real kombu Queue objects with distinct routing keys keep regional jobs
+    # off the control queue. Workers consume only their physical region.
     task_default_queue="celery",
+    task_queues=(Queue('celery', routing_key='celery'), Queue(f'checks.{settings.CHECK_WORKER_REGION}', routing_key=f'checks.{settings.CHECK_WORKER_REGION}')),
+    task_routes=(route_check,),
     task_create_missing_queues=True,
     # ``acks_late`` plus this: a worker killed mid-probe returns the task to
     # the queue instead of losing it. Re-execution is idempotent by
@@ -142,6 +154,11 @@ celery_app.conf.update(
     worker_send_task_events=True,
     task_send_sent_event=True,
     beat_schedule={
+        'public-vendor-checks': {
+            'task': 'app.modules.vendors.tasks.schedule_vendor_checks',
+            'schedule': float(settings.CHECK_SCHEDULE_SECONDS),
+            'options': {'expires': 60},
+        },
         # Interval is env-configurable (CHECK_SCHEDULE_SECONDS).
         "schedule-checks-periodic": {
             "task": "app.modules.checks.tasks.schedule_checks",

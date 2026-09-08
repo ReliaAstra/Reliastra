@@ -215,6 +215,14 @@ class IncidentService:
                 exc,
             )
 
+        from app.modules.notifications.schemas import AlertPayload
+        from app.modules.notifications.service import notification_service
+        await notification_service.dispatch_alert(session, AlertPayload(
+            org_id=updated.org_id, incident_id=updated.id, severity='info',
+            event='incident.resolved', title='Incident resolved',
+            body='The dependency has recovered.', metadata={'dependency_id': str(updated.dependency_id)},
+        ))
+
         # Evidence is generated for every resolved incident, not only incidents
         # that happened to have a temporal correlation.
         # FIX 18: generation is dispatched asynchronously to Celery so the
