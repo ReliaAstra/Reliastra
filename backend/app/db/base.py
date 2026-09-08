@@ -71,3 +71,5 @@ def import_all_models() -> None:
     import app.modules.admin.models  # noqa: F401
     import app.modules.partners.models  # noqa: F401
     import app.modules.acquisition.models  # noqa: F401
+    import app.modules.email_center.models  # noqa: F401
+    import app.modules.email_events.models  # noqa: F401

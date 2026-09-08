@@ -322,6 +322,12 @@ class Settings(BaseSettings):
         default=None,
         description="Resend webhook signing secret (whsec_...) for POST /webhooks/resend verification (Svix).",
     )
+    RESEND_SENDING_DOMAIN: str = Field(
+        default="reliastra.com",
+        description="Authoritative sending domain for the Admin Email Center. "
+        "Only sender aliases on this domain may be used, and only when the "
+        "domain reports a verified status in the Resend account.",
+    )
     # ── Human inbound aliases (ImprovMX forwarding) ───────────────────
     SUPPORT_EMAIL: str = Field(default="support@reliastra.com")
     SECURITY_EMAIL: str = Field(default="security@reliastra.com")
