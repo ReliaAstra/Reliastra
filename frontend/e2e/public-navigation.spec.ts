@@ -26,6 +26,7 @@ import { expect, test, type Page } from '@playwright/test';
 const PUBLIC_ROUTES = [
   '/',
   '/product',
+  '/agencies',
   '/external-dependency-intelligence',
   '/dependency-monitoring',
   '/sla-evidence',

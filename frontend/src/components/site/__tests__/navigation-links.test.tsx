@@ -213,6 +213,7 @@ describe('public navigation link integrity', () => {
   it('exposes the branded-SERP concept destinations', () => {
     const hrefs = new Set(flattenNavConfig().map((l) => l.href));
     for (const href of [
+      PUBLIC_ROUTES.agencies,
       PUBLIC_ROUTES.externalDependencyIntelligence,
       PUBLIC_ROUTES.dependencyMonitoring,
       PUBLIC_ROUTES.slaEvidence,

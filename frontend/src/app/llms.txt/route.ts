@@ -51,6 +51,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 - Home: ${SITE_URL}/
 - Product: ${SITE_URL}/product
+- For agencies and MSPs: ${SITE_URL}/agencies
 - External Dependency Intelligence: ${SITE_URL}/external-dependency-intelligence
 - Dependency monitoring: ${SITE_URL}/dependency-monitoring
 - SLA evidence: ${SITE_URL}/sla-evidence

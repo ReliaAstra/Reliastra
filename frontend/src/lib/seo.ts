@@ -207,6 +207,7 @@ export function articleJsonLd(input: {
 export const PUBLIC_PAGES = [
   { path: '/', changeFrequency: 'daily' as const, priority: 1.0 },
   { path: '/product', changeFrequency: 'weekly' as const, priority: 0.9 },
+  { path: '/agencies', changeFrequency: 'weekly' as const, priority: 0.85 },
   { path: '/external-dependency-intelligence', changeFrequency: 'weekly' as const, priority: 0.9 },
   { path: '/dependency-monitoring', changeFrequency: 'weekly' as const, priority: 0.9 },
   { path: '/sla-evidence', changeFrequency: 'weekly' as const, priority: 0.9 },

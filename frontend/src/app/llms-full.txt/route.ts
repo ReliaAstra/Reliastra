@@ -28,6 +28,7 @@ causes with a deterministic engine, and generates verifiable evidence reports.
 Plans: Free (3 dependencies, 1-minute checks, 24h retention), Pro ($39/mo,
 50 dependencies, 15-second checks, 90-day retention, evidence + attribution +
 API), Enterprise (custom scale, client isolation, white-label).
+For agencies and MSPs operating client infrastructure: ${SITE_URL}/agencies.
 
 ## Differentiation from uptime monitoring
 
