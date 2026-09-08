@@ -40,6 +40,7 @@ const actions: CommandAction[] = [
   { label: 'View revenue', description: 'MRR and revenue movement', href: '/admin/revenue', icon: CircleDollarSign, group: 'Navigate' },
   { label: 'View partners', description: 'Referrals, commissions, payouts', href: '/admin/partners', icon: HandCoins, group: 'Navigate' },
   { label: 'Check system health', description: 'API, database, workers, and delivery', href: '/admin/operations', icon: MonitorCog, group: 'Navigate' },
+  { label: 'Open Email Center', description: 'Send operational email from verified senders', href: '/admin/email', icon: Send, group: 'Navigate' },
   { label: 'Create email campaign', description: 'Start a focused campaign draft', href: '/admin/communications?compose=campaign', icon: Send, group: 'Create' },
   { label: 'Create announcement', description: 'Prepare an in-app announcement', href: '/admin/communications?compose=announcement', icon: Megaphone, group: 'Create' },
   { label: 'Review audit trail', description: 'Search administrative activity', href: '/admin/audit', icon: FilePenLine, group: 'Navigate' },

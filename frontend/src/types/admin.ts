@@ -729,3 +729,127 @@ export interface AdminAnalyticsOverview {
   countries_top: CountrySlice[];
   series: AnalyticsSeriesPoint[];
 }
+
+/* ── Email Center ─────────────────────────────────────────────────────── */
+
+export type EmailCenterSenderStatus = 'verified' | 'not_verified' | 'unavailable';
+export type EmailCenterMessageStatus = 'queued' | 'sent' | 'failed' | 'rejected';
+
+export interface EmailCenterSender {
+  id: string;
+  email: string;
+  name: string;
+  domain: string;
+  verified: boolean;
+  enabled: boolean;
+  status: EmailCenterSenderStatus;
+  status_detail: string;
+  is_system: boolean;
+}
+
+export interface EmailCenterSendersResponse {
+  senders: EmailCenterSender[];
+  domain: string;
+  domain_status: string;
+  last_checked_at: string | null;
+}
+
+export interface EmailCenterStatus {
+  connected: boolean;
+  connection_detail: string;
+  sending_domain: string;
+  domain_status: string;
+  domain_detail: string;
+  sender_identities_verified: number | null;
+  sender_identities_total: number | null;
+  last_checked_at: string | null;
+}
+
+export interface EmailCenterAttachmentInput {
+  filename: string;
+  content_base64: string;
+  content_type?: string | null;
+}
+
+export interface EmailCenterSendRequest {
+  sender: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  reply_to?: string | null;
+  subject: string;
+  text?: string | null;
+  html?: string | null;
+  attachments?: EmailCenterAttachmentInput[];
+  template_id?: string | null;
+  variables?: Record<string, string>;
+  idempotency_key?: string | null;
+}
+
+export interface EmailCenterSendResponse {
+  id: string;
+  status: EmailCenterMessageStatus;
+  provider: string;
+  provider_message_id: string | null;
+  message: string;
+  failure_code: string | null;
+}
+
+export interface EmailCenterRecipients {
+  to: string[];
+  cc: string[];
+  bcc: string[];
+}
+
+export interface EmailCenterMessageItem {
+  id: string;
+  status: EmailCenterMessageStatus;
+  sender: string;
+  sender_name: string | null;
+  recipients: EmailCenterRecipients;
+  subject: string;
+  provider: string;
+  provider_message_id: string | null;
+  is_test: boolean;
+  failure_code: string | null;
+  created_at: string;
+}
+
+export interface EmailCenterAttachmentMeta {
+  filename: string;
+  size_bytes: number;
+  content_type: string | null;
+}
+
+export interface EmailCenterMessageDetail extends EmailCenterMessageItem {
+  admin_email: string | null;
+  text_body: string | null;
+  html_body: string | null;
+  failure_reason: string | null;
+  template_id: string | null;
+  attachments_meta: EmailCenterAttachmentMeta[] | null;
+  updated_at: string;
+}
+
+export type EmailCenterMessagesResponse = PaginatedResponse<EmailCenterMessageItem>;
+
+export interface EmailCenterTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  subject: string;
+  text_body: string;
+  html_body: string;
+  variables: string[];
+  is_system: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailCenterRenderResponse {
+  subject: string;
+  text_body: string;
+  html_body: string;
+  variables: string[];
+  missing_variables: string[];
+}
