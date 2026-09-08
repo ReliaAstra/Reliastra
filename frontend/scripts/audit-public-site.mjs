@@ -300,7 +300,7 @@ async function main() {
 
     if (res.status >= 400) {
       const from = [...(referrers.get(path) ?? [])].join(', ') || '(seed)';
-      record('error', path, 'status', `HTTP ${res.status} — linked from ${from}`);
+      record('error', path, 'status', `HTTP ${res.status} - linked from ${from}`);
       continue;
     }
     if (res.status >= 300) {
@@ -342,7 +342,7 @@ async function main() {
   );
 
   const pages = [...visited.entries()].filter(([, s]) => s !== 'skipped (authenticated)');
-  console.log(`\nRELIASTRA public-site audit — ${BASE}`);
+  console.log(`\nRELIASTRA public-site audit - ${BASE}`);
   console.log(`${pages.length} routes crawled, ${assetChecks.size} assets checked\n`);
 
   const counts = { error: 0, warn: 0, info: 0 };

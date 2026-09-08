@@ -28,7 +28,6 @@ import {
   type ObservedState,
   type StateVerdict,
 } from '@/lib/observatory/format';
-import { formatCoordinate, regionInfo } from '@/lib/observatory/regions';
 import { mergeIncidents, type MergedIncident } from '@/lib/observatory/incidents';
 import {
   Readout,
@@ -150,14 +149,13 @@ export function Masthead({
             first. Ordering is CSS, so the DOM order stays the reading order. */}
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:gap-16">
           <p className="obs-descriptor order-1 max-w-[56ch] lg:col-start-1 lg:row-start-1">
-            External dependency intelligence. RELIASTRA observes {detail.display_name}
-            &apos;s public {detail.category.replace(/[-_]/g, ' ')} endpoint
-            {detail.endpoints.length === 1 ? '' : 's'} from{' '}
+            Independent observation of {detail.display_name}&apos;s public{' '}
+            {detail.category.replace(/[-_]/g, ' ')} endpoint
+            {detail.endpoints.length === 1 ? '' : 's'}
             {regions.length > 0
-              ? `${regions.length} region${regions.length === 1 ? '' : 's'}`
-              : 'its own probes'}{' '}
-            and publishes the measurements without reference to any status page the vendor
-            operates.
+              ? ` from ${regions.length} region${regions.length === 1 ? '' : 's'}`
+              : ''}
+            . Not read from the vendor&apos;s status page.
           </p>
 
           <div className="order-2 flex flex-col gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
@@ -247,16 +245,6 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
       cell: (r) => <span className="obs-num obs-num-sm">{r.region}</span>,
     },
     {
-      key: 'place',
-      head: 'Location',
-      width: 'minmax(0,1fr)',
-      cell: (r) => (
-        <span className="text-[13px] text-[var(--ob-text-3)]">
-          {regionInfo(r.region).place ?? NOT_RECORDED}
-        </span>
-      ),
-    },
-    {
       key: 'latency',
       head: 'Latency',
       width: 'minmax(0,110px)',
@@ -305,13 +293,7 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
       index="01"
       id="current-observation"
       title="Current observation"
-      note={
-        <>
-          The most recent completed observation in each region RELIASTRA runs against this
-          dependency. These are individual measurements, not averages: one request, one response,
-          one timestamp.
-        </>
-      }
+      note="The most recent completed observation per region. One request, one response, one timestamp."
       aside={
         <span className="ob-label text-right">
           {rows.length} region{rows.length === 1 ? '' : 's'} · region-scoped
@@ -419,10 +401,8 @@ export function StateSection({
       title="Observed state and availability"
       note={
         <>
-          The state at the top of this record is derived from observations, not from an
-          announcement. {verdict.qualifier} Availability is the share of observations in a window
-          that returned a status code with no transport error; a window with no observations reads
-          as insufficient data rather than as 100%.
+          Availability is the share of observations that returned a status code with no
+          transport error. No observations reads as insufficient data, never 100%.
         </>
       }
       aside={
@@ -482,30 +462,6 @@ export function NetworkSection({
       cell: (r) => <span className="obs-num obs-num-sm">{r.region}</span>,
     },
     {
-      key: 'place',
-      head: 'Location',
-      width: 'minmax(0,1fr)',
-      cell: (r) => (
-        <span className="text-[13px] text-[var(--ob-text-3)]">
-          {regionInfo(r.region).place ?? 'code not in the published region catalog'}
-        </span>
-      ),
-    },
-    {
-      key: 'coord',
-      head: 'Coordinate',
-      width: 'minmax(0,180px)',
-      cell: (r) => {
-        const info = regionInfo(r.region);
-        const c = formatCoordinate(info.lat, info.lon);
-        return c ? (
-          <span className="obs-num obs-num-sm text-[var(--ob-text-3)]">{c}</span>
-        ) : (
-          <span className="obs-void text-[13px]">{NOT_RECORDED}</span>
-        );
-      },
-    },
-    {
       key: 'cadence',
       head: 'Observed cadence',
       width: 'minmax(0,150px)',
@@ -540,14 +496,7 @@ export function NetworkSection({
       index="04"
       id="network"
       title="Observation network"
-      note={
-        <>
-          Geography is part of the measurement. A dependency that answers in 180 ms from Dublin and
-          fails from Mumbai has a regional fault, and only a record that says where it was observed
-          from can show that. These are the regions RELIASTRA schedules checks in for this
-          dependency.
-        </>
-      }
+      note="The observation regions scheduled for this dependency. An incident requires at least two regions to fail inside the same window."
     >
       <div className="flex flex-col gap-10">
         {children}
@@ -560,8 +509,7 @@ export function NetworkSection({
           />
         ) : (
           <Notice title="No regions declared">
-            This dependency&apos;s endpoint records carry no region list, so the observation
-            topology cannot be published.
+            This dependency&apos;s endpoint records carry no region list.
           </Notice>
         )}
       </div>
@@ -656,10 +604,8 @@ export function IncidentsSection({
       title="Observed incidents"
       note={
         <>
-          An incident is opened when at least two observation regions fail against{' '}
-          {vendorName} inside the same 60-second window, and closed when consecutive successful
-          observations return from at least two regions. Single-region failures are recorded as
-          observations but never published here as an incident.
+          Opened when at least two regions fail against {vendorName} inside the same 60-second
+          window. Closed on consecutive successes from at least two regions.
         </>
       }
       aside={
@@ -718,10 +664,8 @@ export function EvidenceSection({
       title="Evidence records"
       note={
         <>
-          An evidence record is the signed artifact behind an incident: the observations that
-          triggered it, the regions they came from, the timestamps, and the checksum that makes the
-          file verifiable after the fact. Published records are released to a named requester
-          rather than served from an open link.
+          The checksummed artifact behind an incident: observations, regions, timestamps.
+          Released to a named requester, not an open link.
         </>
       }
       aside={
@@ -821,23 +765,18 @@ export function MethodologySection({
       id="methodology"
       tone="base"
       title="How RELIASTRA knows this"
-      note={
-        <>
-          This section describes what the system actually does. Anything RELIASTRA does not measure
-          is listed as a limit rather than left for a reader to assume.
-        </>
-      }
+      note="What is measured, and what is not."
       aside={
         <Link
           href={researchRoute('how-reliastra-measures-vendor-reliability')}
           className="ob-link text-[13px]"
         >
-          Full measurement methodology
+          Full methodology
         </Link>
       }
     >
       <dl className="flex flex-col">
-        <SpecRow term="Where observations come from" wide>
+        <SpecRow term="Source" wide>
           Scheduled workers issue real requests to {detail.display_name}&apos;s public endpoints
           from{' '}
           {regions.length ? (
@@ -845,104 +784,59 @@ export function MethodologySection({
           ) : (
             'RELIASTRA regions'
           )}
-          . Nothing on this page is read from a vendor status page, a third-party aggregator, or a
-          customer&apos;s own logs.
+          . Nothing is read from a vendor status page, an aggregator or customer logs.
         </SpecRow>
-        <SpecRow term="How often" wide>
+        <SpecRow term="Interval" wide>
           {cadenceSeconds
-            ? `Observations in the last hour arrived about every ${cadenceSeconds} seconds per region. `
-            : 'The observation interval could not be derived from the current window. '}
-          The interval is set per endpoint and is not exposed publicly, so this record reports the
-          cadence measured from the data rather than a schedule it cannot verify.
+            ? `About every ${cadenceSeconds} seconds per region, measured from the last hour of observations. `
+            : 'Not derivable from the current window. '}
+          The configured interval is not exposed publicly.
         </SpecRow>
-        <SpecRow term="What counts as a failure" wide>
-          An observation fails when no HTTP status code is recorded or a transport error is
-          returned. A slow but valid response is recorded as latency, not as downtime - which is
-          why a dependency can show high latency and full availability in the same window.
+        <SpecRow term="Failure" wide>
+          No HTTP status code recorded, or a transport error. A slow but valid response is
+          latency, not downtime.
         </SpecRow>
-        <SpecRow term="When an incident is opened" wide>
-          At least two distinct regions must record a failure inside the same 60-second window. A
-          single region failing is treated as a fault in the observation path until a second region
-          confirms it, which is the rule that keeps a probe&apos;s bad minute out of a vendor&apos;s
-          public record.
+        <SpecRow term="Incident opens" wide>
+          At least two regions record a failure inside the same 60-second window.
         </SpecRow>
-        <SpecRow term="When an incident is closed" wide>
-          Consecutive successful observations must return from at least two regions before the
-          incident resolves. Flapping successes inside the window keep it open.
+        <SpecRow term="Incident closes" wide>
+          Consecutive successful observations from at least two regions.
         </SpecRow>
-        <SpecRow term="How availability is calculated" wide>
-          Observations that returned a status code with no transport error, divided by all
-          observations in the window. Availability is always published with the number of
-          observations behind it, and a window with no observations is reported as insufficient
-          data - never as 100%.
+        <SpecRow term="Availability" wide>
+          Observations with a status code and no transport error, divided by all observations in
+          the window. A window with no observations is insufficient data, never 100%.
         </SpecRow>
-        <SpecRow term="How latency is reported" wide>
-          Mean and 95th percentile of observed response times in the window, in milliseconds,
-          across every region. The telemetry chart plots the mean of each bucket at the resolution
-          the API aggregates to and breaks the line wherever a bucket contains no successful
-          response.
+        <SpecRow term="Latency" wide>
+          Mean and 95th percentile of response times in the window, in milliseconds, across all
+          regions. The chart breaks the line where a bucket has no successful response.
         </SpecRow>
         <SpecRow term="Freshness" wide>
-          This page is rendered on the server and revalidated every 60 seconds; the observation
-          counter updates in the browser and requests fresh data when the expected interval has
-          passed. Every timestamp on this page is UTC.
+          Rendered on the server and revalidated every 60 seconds. All timestamps are UTC.
+        </SpecRow>
+        <SpecRow term="Not vendor status" wide>
+          {detail.display_name}&apos;s own status page is not ingested, mirrored or reconciled.
+          The two can disagree. Read both.
         </SpecRow>
         <SpecRow term="Limits" wide>
-          These measurements describe the endpoints listed in the dependency information below,
-          observed from the regions listed above. They are not a statement about every service the
-          vendor operates, about a private or regional endpoint RELIASTRA does not observe, or
-          about your specific integration with them.
+          These figures describe the listed endpoints, observed from the listed regions. They are
+          not a statement about every service the vendor operates or about your integration.
         </SpecRow>
       </dl>
     </RecordSection>
   );
 }
 
-/* ── 08 · Observation vs official status ────────────────────────────────── */
-
-export function DistinctionSection({ vendorName }: { vendorName: string }) {
-  return (
-    <RecordSection
-      index="08"
-      id="distinction"
-      title="RELIASTRA observation is not official vendor status"
-      note="The distinction matters most in the hour it is least convenient, so it is stated here rather than in a footnote."
-    >
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className="flex flex-col gap-3 border-t border-[var(--ob-line-2)] pt-5">
-          <h3 className="ob-label obs-label-signal">RELIASTRA observation</h3>
-          <p className="max-w-[54ch] text-[13.5px] leading-[1.7] text-[var(--ob-text-2)]">
-            An independent measurement of what {vendorName}&apos;s public endpoints returned to a
-            request from a specific region at a specific second. It can disagree with the
-            vendor&apos;s own status page, and a regional failure the vendor does not classify as
-            an outage still appears here as observed failures.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 border-t border-[var(--ob-line-2)] pt-5">
-          <h3 className="ob-label">Official vendor status</h3>
-          <p className="max-w-[54ch] text-[13.5px] leading-[1.7] text-[var(--ob-text-2)]">
-            A statement published by {vendorName} about its own services. RELIASTRA does not ingest,
-            mirror or reconcile it, so no comparison between the two is shown on this page. If the
-            vendor publishes a status page, read it alongside this record rather than instead of
-            it.
-          </p>
-        </div>
-      </div>
-    </RecordSection>
-  );
-}
-
-/* ── 09 · Dependency information ────────────────────────────────────────── */
+/* ── 08 · Dependency information ────────────────────────────────────────── */
 
 export function DependencyInfoSection({ record }: { record: VendorRecord }) {
   const { detail } = record;
   return (
     <RecordSection
-      index="09"
+      index="08"
       id="dependency"
       tone="base"
       title="Dependency information"
-      note="The configuration this record was produced from, exactly as the measurement API reports it."
+      note="The configuration this record was produced from, as the measurement API reports it."
     >
       <div className="flex flex-col gap-10">
         {detail.endpoints?.length ? (
@@ -995,7 +889,7 @@ export function DependencyInfoSection({ record }: { record: VendorRecord }) {
   );
 }
 
-/* ── 10 · Related records ───────────────────────────────────────────────── */
+/* ── 09 · Related records ───────────────────────────────────────────────── */
 
 export function RelatedSection({
   vendors,
@@ -1007,10 +901,10 @@ export function RelatedSection({
   const others = vendors.filter((v) => v.vendor_name !== currentVendor).slice(0, 8);
   return (
     <RecordSection
-      index="10"
+      index="09"
       id="related"
       title="Related records"
-      note="Other dependencies under observation, and the published work behind the method."
+      note="Other dependencies under observation."
     >
       <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
         <div className="flex flex-col gap-4">
@@ -1104,27 +998,18 @@ export function RecordCTA({ vendorName }: { vendorName: string }) {
               {vendorName} is one dependency. Your product has a list.
             </h2>
             <p className="ob-body max-w-[58ch]">
-              RELIASTRA observes the specific external services your product calls - including the
-              ones no public index tracks - attributes your incidents to the dependency that caused
-              them, and produces the evidence record you need when a vendor disputes it.
+              Observe the services your product calls. Attribute incidents. Keep the record.
             </p>
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Create an independent record
+                Start monitoring
               </Link>
               <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
-                View pricing
+                Pricing
               </Link>
             </div>
-            <p className="ob-small">
-              Or read{' '}
-              <Link href={PUBLIC_ROUTES.dependencyMonitoring} className="ob-link">
-                how dependency monitoring works
-              </Link>{' '}
-              before you create anything.
-            </p>
           </div>
         </div>
       </div>
@@ -1146,9 +1031,8 @@ export function RecordUnavailable({ vendorName }: { vendorName: string }) {
         This record could not be read from the measurement network.
       </h1>
       <p className="ob-lede mt-6 max-w-[62ch]">
-        The measurement API is unreachable, so RELIASTRA cannot show the current state of{' '}
-        {vendorName}. No cached, approximate or last-known figure is displayed in its place - a
-        reliability record that guesses is worse than one that stops.
+        The measurement API is unreachable. No cached or approximate figure is shown for{' '}
+        {vendorName}.
       </p>
       <div className="mt-10 flex flex-wrap gap-3">
         <Link href={SHARE_ROUTES.trackVendor(vendorName)} className="ob-btn ob-btn-outline">

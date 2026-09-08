@@ -8,10 +8,9 @@ import { PUBLIC_ROUTES } from '@/lib/routes';
 /**
  * 11 · Pricing on the homepage.
  *
- * A summary, not a second pricing page: plan, price, the four limits that
- * decide the choice, the amount actually charged, and one link to the full
- * terms. Deliberately three columns of type separated by rules — not three
- * glowing cards.
+ * A summary, not a second pricing page: plan, price, the limits that decide
+ * the choice, the amount actually charged, and one link to the full terms.
+ * Three columns of type separated by rules, not three glowing cards.
  *
  * The columns come from the same `PlanMatrix` the `/pricing` page renders, so
  * the two surfaces cannot drift.
@@ -27,7 +26,7 @@ export function PricingSummary() {
         <div className="flex flex-col gap-6 pb-9 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-5">
             <p className="ob-label flex items-center gap-3">
-              <span className="text-[var(--ob-signal)]">11</span>
+              <span className="text-[var(--ob-signal)]">10</span>
               <span aria-hidden className="h-px w-6 bg-[var(--ob-line-2)]" />
               Pricing
             </p>
@@ -36,8 +35,8 @@ export function PricingSummary() {
             </h2>
           </div>
           <p className="ob-body max-w-[44ch]">
-            Every new organization starts on a 14-day Pro trial with attribution
-            and evidence enabled. No payment method required.
+            14-day Pro trial on every new organization. No payment method
+            required.
           </p>
         </div>
 
@@ -49,7 +48,7 @@ export function PricingSummary() {
             href={PUBLIC_ROUTES.pricing}
             className="ob-btn ob-btn-outline ob-btn-sm shrink-0"
           >
-            Full pricing &amp; billing terms
+            Full pricing and terms
           </Link>
         </div>
       </div>

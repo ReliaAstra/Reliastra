@@ -57,7 +57,7 @@ import { AgencyUnavailable } from './parts';
  * only this client's applications, monitors, incidents and evidence, and the
  * header says which environment you are inside before it says anything else.
  *
- * The applications layer is not decoration — it is the join the backend uses.
+ * The applications layer is not decoration - it is the join the backend uses.
  * A monitor becomes part of a client by being attached to one of that client's
  * applications, which is why attaching is done here rather than being buried
  * in the dependency record.
@@ -186,7 +186,7 @@ export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
       sort: (d) => d.application_id ?? '',
       render: (d) => (
         <span className="text-[12.5px] text-[var(--obc-text-2)]">
-          {(apps.data ?? []).find((a) => a.id === d.application_id)?.name ?? '—'}
+          {(apps.data ?? []).find((a) => a.id === d.application_id)?.name ?? 'unassigned'}
         </span>
       ),
     },
@@ -206,7 +206,7 @@ export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
       render: (d) => {
         const h = healthById.get(d.id);
         if (!h || h.total_checks_24h === 0 || h.uptime_percentage_24h == null) {
-          return <span className="text-[var(--obc-text-4)]">insufficient data</span>;
+          return <span className="text-[var(--obc-text-4)]">no monitors</span>;
         }
         return formatUptime(h.uptime_percentage_24h);
       },
@@ -360,7 +360,7 @@ export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
         ) : (
           <Empty
             title="No applications in this environment"
-            body="An application is the unit a monitor attaches to — a product, a service, an environment. Add one, then attach the monitors that serve it."
+            body="An application is what a monitor attaches to: a product, a service, an environment."
             action={
               <button
                 type="button"
@@ -610,7 +610,7 @@ function ApplicationForm({ clientId, onDone }: { clientId: string; onDone: () =>
 /* ── Attaching monitors ──────────────────────────────────────────────────── */
 
 /**
- * Attaching a monitor is a PATCH of `application_id` on the dependency — the
+ * Attaching a monitor is a PATCH of `application_id` on the dependency - the
  * same field the API already exposes. Nothing is copied or duplicated: the
  * monitor keeps its history and simply starts rolling up to this client.
  */

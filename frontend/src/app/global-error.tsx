@@ -10,8 +10,8 @@ import Link from 'next/link';
  * the component tree which just crashed is not an error boundary. Inline
  * styles guarantee it renders even if the stylesheet was the failure.
  *
- * It shows the framework-provided `digest` — the only identifier that can
- * actually be correlated with a server log — and nothing else. No stack, no
+ * It shows the framework-provided `digest` - the only identifier that can
+ * actually be correlated with a server log - and nothing else. No stack, no
  * message, no request payload: an error page is not a place to leak internals
  * to an anonymous visitor.
  */

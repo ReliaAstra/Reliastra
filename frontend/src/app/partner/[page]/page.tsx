@@ -33,15 +33,6 @@ const TITLES: Record<string, { title: string; description: string }> = {
     description:
       'Common questions about the RELIASTRA Partner Network: eligibility, attribution windows, commission and payouts.',
   },
-  tiers: {
-    title: 'Tiers - Partner Network',
-    description:
-      'RELIASTRA partner tiers, the thresholds that move a partner between them, and what each level unlocks.',
-  },
-  premium: {
-    title: 'Premium - Partner Network',
-    description: 'Premium partnership for consultants, agencies and technology advisors.',
-  },
   resources: {
     title: 'Resources - Partner Network',
     description:

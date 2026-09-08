@@ -14,8 +14,6 @@ const navLinks: { label: string; page: PartnerPage; href: string }[] = [
   { label: 'How it works', page: 'how-it-works', href: partnerUrl('how-it-works') },
   { label: 'Commission', page: 'commission', href: partnerUrl('commission') },
   { label: 'Earn', page: 'earn', href: partnerUrl('earn') },
-  { label: 'Tiers', page: 'tiers', href: partnerUrl('tiers') },
-  { label: 'Premium', page: 'premium', href: partnerUrl('premium') },
   { label: 'FAQ', page: 'faq', href: partnerUrl('faq') },
 ];
 
@@ -158,7 +156,7 @@ export function PartnerNav({ activePage }: { activePage?: PartnerPage } = {}) {
         </button>
       </nav>
 
-      {/* Mobile sheet — a full-height panel, not a cramped dropdown */}
+      {/* Mobile sheet: a full-height panel, not a cramped dropdown */}
       {mobileOpen && (
         <div
           id="partner-mobile-nav"

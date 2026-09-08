@@ -33,7 +33,7 @@ type Row = Dependency & {
 const STATE_RANK = { crit: 0, warn: 1, idle: 2, ok: 3 } as const;
 
 /**
- * Dependencies index — the central table of the console.
+ * Dependencies index - the central table of the console.
  *
  * Two correctness changes over the version this replaces: a dependency with
  * no uptime reading no longer renders as `100.00%` (it renders "no data"),
@@ -103,7 +103,8 @@ export function DependenciesPage() {
     {
       key: 'name',
       header: 'Dependency',
-      width: 300,
+      // No fixed width: this column absorbs whatever the fixed columns
+      // leave, so the table never exceeds its container.
       sort: (r) => r.name.toLowerCase(),
       render: (r) => (
         <span className="flex min-w-0 flex-col gap-0.5">
@@ -155,15 +156,15 @@ export function DependenciesPage() {
     {
       key: 'regions',
       header: 'Regions',
-      width: 150,
+      width: 96,
+      numeric: true,
       sort: (r) => r.regions.length,
+      // A count, not a truncated list: the full set is on the record page.
       render: (r) =>
         r.regions.length ? (
-          <span className="truncate text-[12px] text-[var(--obc-text-3)]">
-            {r.regions.map(regionLabel).join(', ')}
-          </span>
+          <span title={r.regions.map(regionLabel).join(', ')}>{r.regions.length}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">none configured</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
     {
@@ -196,7 +197,7 @@ export function DependenciesPage() {
             {incidentCode(r.incident.id, r.incident.display_id)}
           </Link>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
   ];
@@ -230,20 +231,20 @@ export function DependenciesPage() {
 
       <Section
         title="Monitored endpoints"
-        hint="Each endpoint is checked independently from every configured region. A fault is only declared when regions agree."
+        hint="Checked from every configured region. A fault requires regions to agree."
       >
         {deps.isLoading ? (
           <RowsSkeleton rows={6} cols={6} />
         ) : deps.isError ? (
           <Failure
             title="Dependency list unavailable"
-            body="The list could not be retrieved. Checks continue to run on the schedule you configured — this is a read failure in the console."
+            body="The list could not be retrieved. Checks continue to run."
             onRetry={() => deps.refetch()}
           />
         ) : !rows.length ? (
           <Empty
             title="No dependencies monitored"
-            body="Connect your first external dependency to begin multi-region observation. Checks start on the next interval and the first observations appear within minutes."
+            body="Add your first external service. Checks start on the next interval."
             action={
               <button type="button" className="obc-btn obc-btn-primary" onClick={onAdd}>
                 Add dependency
@@ -266,7 +267,7 @@ export function DependenciesPage() {
               right={
                 health.isError ? (
                   <span className="text-[11.5px] text-[#E58C85]">
-                    Health readings unavailable — statuses below may be stale
+                    Health readings unavailable. Statuses may be stale
                   </span>
                 ) : atLimit ? (
                   <span className="text-[11.5px] text-[var(--obc-text-4)]">
@@ -287,7 +288,7 @@ export function DependenciesPage() {
             ) : (
               <Empty
                 title="No dependencies match this filter"
-                body="Clear the filter or select a different state to see the rest of the list."
+                body="Clear the filter to see the full list."
               />
             )}
           </>

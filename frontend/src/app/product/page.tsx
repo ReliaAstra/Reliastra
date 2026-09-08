@@ -39,7 +39,7 @@ export default function ProductPage() {
       <MarketingPage
         eyebrow="Product"
         title="The platform that watches your vendors"
-        lede="RELIASTRA monitors the external APIs your product depends on, correlates their failures with your incidents, and produces independent evidence of what happened."
+        lede="Independent monitoring of the external APIs your product depends on. Failures correlated with your incidents. Evidence of what happened."
         breadcrumbs={crumbs}
         related={[
           { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence', description: 'The category RELIASTRA defines and owns.' },

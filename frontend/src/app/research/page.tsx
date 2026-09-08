@@ -50,7 +50,7 @@ export const metadata: Metadata = {
  * masthead, a standing editorial statement, a lead article with real weight,
  * and an archive listing with dates, reading time and subject tags.
  *
- * Categories and tags are read from `RESEARCH_ARTICLES` — the same constant
+ * Categories and tags are read from `RESEARCH_ARTICLES` - the same constant
  * that produces `generateStaticParams`, the sitemap and the footer. No topic
  * taxonomy is invented here that the content does not actually carry.
  */
@@ -112,18 +112,15 @@ export default function ResearchIndexPage() {
             ]}
             className="mb-9"
           />
-          <Eyebrow>RELIASTRA Research</Eyebrow>
+          <Eyebrow>Research</Eyebrow>
           <h1 className="ob-h1 mt-5 max-w-[15ch]">
-            Independent infrastructure intelligence.
+            Method, published.
           </h1>
           <p className="ob-lede mt-6">
-            Customers take RELIASTRA reliability records into commercial
-            conversations with their vendors. That only works if the method can
-            be inspected. Everything published here describes how the product
-            actually behaves — not a marketing summary of it.
+            How RELIASTRA measures, what it refuses to claim, and why.
           </p>
 
-          <dl className="mt-12 grid max-w-4xl grid-cols-2 gap-x-10 gap-y-6 border-t border-[var(--ob-line)] pt-7 sm:grid-cols-4">
+          <dl className="mt-12 grid max-w-4xl grid-cols-3 gap-x-10 gap-y-6 border-t border-[var(--ob-line)] pt-7">
             <div>
               <dt className="ob-label mb-2">Published</dt>
               <dd className="ob-mono text-[var(--ob-text-2)]">
@@ -135,20 +132,14 @@ export default function ResearchIndexPage() {
               <dd className="ob-mono text-[var(--ob-text-2)]">Reliastra, Inc.</dd>
             </div>
             <div>
-              <dt className="ob-label mb-2">Licence</dt>
+              <dt className="ob-label mb-2">Access</dt>
               <dd className="ob-mono text-[var(--ob-text-2)]">Free to read</dd>
-            </div>
-            <div>
-              <dt className="ob-label mb-2">Standard</dt>
-              <dd className="ob-mono text-[var(--ob-text-2)]">
-                Method disclosed
-              </dd>
             </div>
           </dl>
         </Container>
       </header>
 
-      {/* Subjects — real tags from the corpus, not an invented taxonomy */}
+      {/* Subjects: real tags from the corpus, not an invented taxonomy */}
       <div className="border-b border-[var(--ob-line)] bg-[var(--ob-void)]">
         <Container className="flex flex-wrap items-center gap-x-8 gap-y-3 py-5">
           <span className="ob-label">Subjects</span>
@@ -252,7 +243,7 @@ export default function ResearchIndexPage() {
         </Container>
       </Section>
 
-      {/* Standing editorial policy — the trust surface */}
+      {/* Standing editorial policy: the trust surface */}
       <Section tone="void" aria-labelledby="policy-heading">
         <Container>
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
@@ -261,22 +252,18 @@ export default function ResearchIndexPage() {
               <h2 id="policy-heading" className="ob-h2 max-w-[14ch]">
                 What we will not publish.
               </h2>
-              <p className="ob-body">
-                These commitments constrain the product as much as the writing.
-                They are stated in full in the research agenda.
-              </p>
               <div className="mt-2">
                 <ArrowLink href={researchRoute('reliastra-research-agenda')}>
-                  Read the research agenda
+                  Research agenda
                 </ArrowLink>
               </div>
             </div>
             <ul className="flex flex-col">
               {[
-                'Vendor rankings without the measurement window, sample size and methodology stated alongside them.',
-                'Synthetic data presented as observation, or missed probes backfilled after the fact.',
-                'Causal claims derived from correlated timelines.',
-                'Customer endpoints, credentials or identities on any public surface.',
+                'Vendor rankings without window, sample size and method.',
+                'Synthetic data as observation. Backfilled probes.',
+                'Causal claims from correlated timelines.',
+                'Customer endpoints, credentials or identities.',
               ].map((line) => (
                 <li
                   key={line}
@@ -295,11 +282,10 @@ export default function ResearchIndexPage() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-4">
               <h2 id="research-cta" className="ob-h2 max-w-[18ch]">
-                Reading is one thing. Measuring your own stack is another.
+                See the measurements.
               </h2>
               <p className="ob-body max-w-[56ch]">
-                The public dependency index shows what RELIASTRA’s probes
-                observe for tracked vendors right now — no account required.
+                Live observations for tracked vendors. No account required.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">

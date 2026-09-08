@@ -17,7 +17,7 @@ import { Fact, PageHead, Section } from '@/components/console/primitives';
  *
  * When `has_agency_mode` is false the nav entry does not exist at all; this is
  * what a direct navigation lands on. It states the fact and how the capability
- * is enabled — it does not quote a price, imply a plan, or dress a missing
+ * is enabled - it does not quote a price, imply a plan, or dress a missing
  * feature up as an upgrade opportunity, because nothing in the billing system
  * sells agency mode.
  */
@@ -33,7 +33,7 @@ export function AgencyUnavailable() {
           <p>
             Agency mode groups the dependencies you already monitor into client
             environments. Each environment owns its applications and monitors, and rolls
-            up its own availability, incidents and evidence — so an operator running
+            up its own availability, incidents and evidence, so an operator running
             infrastructure for several organizations can see which client needs attention
             without switching accounts.
           </p>
@@ -51,7 +51,7 @@ export function AgencyUnavailable() {
               <Link className="obc-link" href={PUBLIC_ROUTES.contact}>
                 Contact RELIASTRA
               </Link>{' '}
-              — agency mode is switched on per organization.
+              Agency mode is switched on per organization.
             </dd>
           </div>
           <div>
@@ -78,7 +78,7 @@ export function AgencyUnavailable() {
 /**
  * Creating a client environment is two fields and a consequence, stated.
  * Focus is trapped to the dialog, Escape closes it, and the first field is
- * focused on open — the same contract as every other console dialog.
+ * focused on open - the same contract as every other console dialog.
  */
 export function ClientCreateDialog({
   onClose,
@@ -176,7 +176,7 @@ export function ClientCreateDialog({
 
           <p className="mt-4 border-t border-[var(--obc-line)] pt-4 text-[12px] leading-[1.6] text-[var(--obc-text-3)]">
             The environment starts empty. You then add applications to it and attach
-            monitors to those applications — that hierarchy is what produces the client&apos;s
+            monitors to those applications. That hierarchy is what produces the client&apos;s
             availability rollup, incident attribution and evidence.
           </p>
 
@@ -208,7 +208,7 @@ export function ClientCreateDialog({
 
 /**
  * The portfolio portal is a real, signed, read-only page at
- * `/portal/{share_token}` covering every client in this organization — so it
+ * `/portal/{share_token}` covering every client in this organization - so it
  * is offered at agency level and never on a single client, where it would
  * imply an isolation the link does not have.
  */

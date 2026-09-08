@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 /**
  * Route-level failure.
  *
- * Technical, specific and actionable — and deliberately free of the backend's
+ * Technical, specific and actionable - and deliberately free of the backend's
  * own message, which can carry internal detail a customer must never see. The
  * digest is shown because it is the only thing support can correlate against.
  */
@@ -32,7 +32,7 @@ export default function ConsoleError({
         <p className="obc-label text-[#E58C85]">Console view unavailable</p>
         <p className="obc-body mt-3">
           This screen failed to render. Monitoring, incident detection and evidence generation run
-          on the backend and are unaffected — no observation was missed because of this.
+          on the backend and are unaffected. No observation was missed.
         </p>
         {error.digest && (
           <p className="obc-mono mt-3 text-[var(--obc-text-4)]">reference {error.digest}</p>

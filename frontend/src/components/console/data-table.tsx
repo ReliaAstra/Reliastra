@@ -52,7 +52,7 @@ export function DataTable<T>({
   rowKey: (row: T) => string;
   /** Makes the row a navigable record. */
   rowHref?: (row: T) => string;
-  /** `crit` tints the row — used for rows with an active incident. */
+  /** `crit` tints the row - used for rows with an active incident. */
   rowState?: (row: T) => 'crit' | undefined;
   caption: string;
   emptyLabel?: string;
@@ -96,7 +96,7 @@ export function DataTable<T>({
 
   return (
     <>
-      {/* Dense table — laptop and up */}
+      {/* Dense table: laptop and up */}
       <div
         className={cn(
           'hidden border border-[var(--obc-line)]',
@@ -107,7 +107,7 @@ export function DataTable<T>({
           <caption className="sr-only">{caption}</caption>
           <thead>
             <tr>
-              {columns.map((c) => {
+              {columns.map((c, i) => {
                 const active = sort?.key === c.key;
                 const ariaSort = active
                   ? sort!.dir === 'asc'
@@ -122,7 +122,10 @@ export function DataTable<T>({
                     scope="col"
                     aria-sort={ariaSort}
                     className={cn(c.numeric && 'obc-num')}
-                    style={c.width ? { width: c.width } : undefined}
+                    // The title column is fluid: it absorbs whatever the fixed
+                    // columns leave, so `table-fixed` can never push the
+                    // table wider than its container on a narrow laptop.
+                    style={c.width && i > 0 ? { width: c.width } : undefined}
                   >
                     {c.sort ? (
                       <button
@@ -179,7 +182,7 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {/* Record stack — phone and tablet. Same fields, no sideways scroll. */}
+      {/* Record stack: phone and tablet. Same fields, no sideways scroll. */}
       <ul
         className={cn(
           'divide-y divide-[var(--obc-line)] border border-[var(--obc-line)]',
@@ -189,9 +192,22 @@ export function DataTable<T>({
         {sorted.map((row) => {
           const href = rowHref?.(row);
           const [first, ...rest] = columns.filter((c) => !c.mobileHidden);
-          const body = (
-            <>
-              <div className="mb-2.5">{first.render(row)}</div>
+          return (
+            <li
+              key={rowKey(row)}
+              data-active={rowState?.(row) === 'crit' ? 'true' : undefined}
+              className="px-3.5 py-3.5 data-[active=true]:bg-[var(--obc-crit-wash)]"
+            >
+              {/* Only the title cell is the record link. Detail cells may
+                  carry their own links (an incident code, for instance), and
+                  an <a> inside an <a> is invalid HTML that breaks hydration. */}
+              {href ? (
+                <a href={href} className="mb-2.5 block">
+                  {first.render(row)}
+                </a>
+              ) : (
+                <div className="mb-2.5">{first.render(row)}</div>
+              )}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {rest.map((c) => (
                   <div key={c.key} className="min-w-0">
@@ -207,21 +223,6 @@ export function DataTable<T>({
                   </div>
                 ))}
               </dl>
-            </>
-          );
-          return (
-            <li
-              key={rowKey(row)}
-              data-active={rowState?.(row) === 'crit' ? 'true' : undefined}
-              className="px-3.5 py-3.5 data-[active=true]:bg-[var(--obc-crit-wash)]"
-            >
-              {href ? (
-                <a href={href} className="block">
-                  {body}
-                </a>
-              ) : (
-                body
-              )}
             </li>
           );
         })}
@@ -232,7 +233,7 @@ export function DataTable<T>({
 
 /**
  * Table toolbar: free-text filter plus optional segmented state filter.
- * Both are real form controls with labels — the search box is not a
+ * Both are real form controls with labels - the search box is not a
  * placeholder pretending to be one.
  */
 export function TableFilters({

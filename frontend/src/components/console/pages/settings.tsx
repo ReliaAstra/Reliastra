@@ -15,8 +15,7 @@ import Link from 'next/link';
  *
  * Two rules govern this page. Fields the backend will not let a customer
  * change are rendered as read-only readouts, not as inputs that silently do
- * nothing. And entitlement rows state what the current plan actually grants —
- * they never advertise a channel the entitlement model does not implement
+ * nothing. And entitlement rows state what the current plan actually grants - * they never advertise a channel the entitlement model does not implement
  * (there is no PagerDuty, so there is no PagerDuty row).
  */
 export function SettingsPage() {
@@ -49,7 +48,7 @@ export function SettingsPage() {
         title="Settings"
         meta={
           <>
-            <Fact label="Organization" value={org?.name ?? '—'} mono={false} />
+            <Fact label="Organization" value={org?.name ?? 'unknown'} mono={false} />
             <Fact label="Plan" value={current.name} mono={false} />
             <Fact
               label="Dependencies"
@@ -95,7 +94,7 @@ export function SettingsPage() {
               aria-describedby="org-slug-note"
             />
             <p id="org-slug-note" className="mt-1.5 text-[11.5px] text-[var(--obc-text-4)]">
-              The slug is fixed once a workspace is created — it appears in verification links
+              The slug is fixed once a workspace is created. It appears in verification links
               already issued to third parties.
             </p>
           </div>
@@ -116,10 +115,10 @@ export function SettingsPage() {
               {user?.full_name || <span className="text-[var(--obc-text-4)]">not set</span>}
             </Row>
             <Row label="Email" mono>
-              {user?.email ?? '—'}
+              {user?.email ?? 'unknown'}
             </Row>
             <Row label="Account created" mono>
-              {user?.created_at ? user.created_at.slice(0, 10) : '—'}
+              {user?.created_at ? user.created_at.slice(0, 10) : 'unknown'}
             </Row>
           </dl>
         </div>

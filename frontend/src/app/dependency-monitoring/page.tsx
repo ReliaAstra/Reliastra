@@ -37,7 +37,7 @@ export default function DependencyMonitoringPage() {
       <MarketingPage
         eyebrow="Capability"
         title="Third-party dependency monitoring"
-        lede="Any HTTP endpoint - Stripe, Auth0, Twilio, Cloudflare, OpenAI, AWS - checked on a fixed interval from independent regions, with incidents declared by quorum."
+        lede="Any HTTP endpoint, checked on a fixed interval from independent regions. Incidents declared by quorum."
         breadcrumbs={crumbs}
         related={[
           { label: 'Live vendor status', href: '/track', description: 'Aggregated posture for public vendors.' },

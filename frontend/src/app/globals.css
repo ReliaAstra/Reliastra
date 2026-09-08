@@ -2124,6 +2124,10 @@
   color: var(--obc-text-2);
   border-bottom: 1px solid var(--obc-line);
   white-space: nowrap;
+  /* table-fixed + nowrap: a long cell must clip inside its column, never
+     run under the next one. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .obc-table tbody tr:hover td { background: var(--obc-raised); }
 .obc-table tbody tr[data-active='true'] td { background: var(--obc-crit-wash); }

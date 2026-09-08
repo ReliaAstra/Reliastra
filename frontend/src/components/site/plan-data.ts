@@ -11,7 +11,7 @@ import { AUTH_ROUTES, EXTERNAL_LINKS } from '@/lib/routes';
  * Plan presentation data, kept OUT of the client component that renders it.
  *
  * `plan-matrix.tsx` carries a `'use client'` directive, and a client module can
- * only export client references — a server component importing a plain
+ * only export client references - a server component importing a plain
  * constant from it receives a proxy, not the array. These values are needed by
  * both server (`/pricing` capability table) and client (`PlanMatrix`) code, so
  * they live here, in a module with no directive at all.
@@ -55,10 +55,10 @@ export function planLimits(p: PlanMeta): [string, string][] {
 
 export function planCta(p: PlanMeta): { href: string; label: string } {
   if (p.isEnterprise) {
-    return { href: EXTERNAL_LINKS.salesEmail, label: 'Contact Sales' };
+    return { href: EXTERNAL_LINKS.salesEmail, label: 'Contact sales' };
   }
   return {
     href: AUTH_ROUTES.signup,
-    label: p.id === 'free' ? 'Start free' : 'Start 14-day Pro trial',
+    label: p.id === 'free' ? 'Start free' : 'Start Pro trial',
   };
 }

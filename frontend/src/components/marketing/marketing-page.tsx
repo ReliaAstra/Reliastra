@@ -21,12 +21,12 @@ export type MarketingLink = { label: string; href: string; description?: string 
  * Two things changed here beyond the visual language, and both were defects:
  *
  * 1. These pages previously rendered a bare `<main>` with NO global header
- *    and NO footer. Seventeen public routes — the entire product, docs,
- *    glossary, legal and company surface — were unreachable from each other
+ *    and NO footer. Seventeen public routes - the entire product, docs,
+ *    glossary, legal and company surface - were unreachable from each other
  *    and had no site-wide navigation at all. Every one of them now renders
  *    inside `SiteShell`, so the internal link graph is complete.
  * 2. Breadcrumbs are rendered once, by this component, from the same array
- *    the page passes to its structured data — they cannot disagree.
+ *    the page passes to its structured data - they cannot disagree.
  *
  * The contract (eyebrow / title / lede / breadcrumbs / children / related /
  * ctaTitle / ctaBody) is unchanged, so all seventeen callers were restyled

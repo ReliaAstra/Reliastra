@@ -34,8 +34,7 @@ import type { CheckResult, IncidentDetail } from '@/lib/dashboard/types';
 /**
  * Incident record.
  *
- * The previous version of this page rendered two headline figures —
- * "Error rate 3.1x" and "Latency p95 1,240ms" — as hardcoded string literals,
+ * The previous version of this page rendered two headline figures - * "Error rate 3.1x" and "Latency p95 1,240ms" - as hardcoded string literals,
  * shown on every incident that had any chart data at all. On a product whose
  * entire promise is evidence for an SLA dispute, that is the most damaging
  * possible defect: a customer could have quoted an invented multiplier to a
@@ -69,7 +68,7 @@ export function IncidentRecordPage({ id }: { id: string }) {
       <div className="obc-section">
         <Failure
           title="Incident record unavailable"
-          body="This incident could not be retrieved. The record itself is unaffected — this is a read failure in the console."
+          body="This incident could not be retrieved. The record is unaffected."
           onRetry={() => refetch()}
         />
       </div>
@@ -183,7 +182,7 @@ export function IncidentRecordPage({ id }: { id: string }) {
 }
 
 /**
- * Attribution — the section that answers "was this us or them?".
+ * Attribution - the section that answers "was this us or them?".
  *
  * Every value here is read straight off the incident payload. Correlation
  * confidence is the backend's `correlation_confidence`, printed as the
@@ -256,7 +255,7 @@ function Attribution({ incident, depName }: { incident: IncidentDetail; depName?
                 <span className="flex shrink-0 items-center gap-5">
                   <State status={d.status} />
                   <span className="obc-mono w-16 text-right text-[var(--obc-text-3)]">
-                    {d.latency_ms ? `${Math.round(d.latency_ms)} ms` : '—'}
+                    {d.latency_ms ? `${Math.round(d.latency_ms)} ms` : 'no data'}
                   </span>
                 </span>
               </li>

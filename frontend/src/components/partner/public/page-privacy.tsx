@@ -57,10 +57,9 @@ const sections: PolicySection[] = [
   {
     heading: '4. Data Security',
     paragraphs: [
-      'We implement industry-standard security measures to protect your personal information. All data transmissions between your browser and our servers are encrypted using TLS 1.2 or higher. Sensitive data at rest, including payment and authentication credentials, is encrypted using AES-256 encryption.',
-      'Our infrastructure is hosted on secure, SOC 2 Type II certified cloud providers with robust physical security, network firewalls, intrusion detection systems, and continuous monitoring. Access to production systems is restricted to authorized personnel through multi-factor authentication and least-privilege access controls.',
-      'We conduct regular security assessments, including automated vulnerability scanning and periodic penetration testing, to identify and address potential security risks. All code changes go through peer review and automated testing before deployment.',
-      'Despite our best efforts, no method of electronic transmission or storage is completely secure. We cannot guarantee absolute security. If you become aware of any security vulnerability or unauthorized access to your account, please contact us immediately at support@reliastra.com.',
+      'Traffic between your browser and our servers is served over HTTPS. Passwords are stored as salted hashes. Stored secrets are encrypted at rest. Payout destination details are held only as needed to make payouts.',
+      'Access to production systems is restricted to authorized personnel. Security-relevant actions are recorded in an audit log.',
+      'No method of electronic transmission or storage is completely secure. If you become aware of a vulnerability or unauthorized access to your account, contact support@reliastra.com.',
     ],
   },
   {

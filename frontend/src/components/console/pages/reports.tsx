@@ -29,8 +29,8 @@ import type { EvidenceReport } from '@/lib/dashboard/types';
  * EVIDENCE → REPORTS.
  *
  * The distinction this route exists to make: `/evidence` is the incident-side
- * view — which failure was recorded, what caused it, what the record says.
- * This is the artifact side — which files exist, when they were generated,
+ * view - which failure was recorded, what caused it, what the record says.
+ * This is the artifact side - which files exist, when they were generated,
  * what they hash to, and how to get one into an email to a vendor.
  *
  * Every action here is a real endpoint: `GET /v1/evidence` lists the reports,
@@ -124,7 +124,7 @@ export function ReportsPage() {
             {incidentCode(r.incident.id, r.incident.display_id)}
           </span>
         ) : (
-          <span className="text-[12px] text-[var(--obc-text-4)]">—</span>
+          <span className="text-[12px] text-[var(--obc-text-4)]">none</span>
         ),
     },
     {
@@ -170,7 +170,7 @@ export function ReportsPage() {
         title="Reports"
         meta={
           <>
-            <Fact label="Reports" value={reports.data?.length ?? '—'} />
+            <Fact label="Reports" value={reports.data?.length ?? '0'} />
             <Fact
               label="Most recent"
               value={
@@ -199,7 +199,7 @@ export function ReportsPage() {
       >
         {reports.isError ? (
           <Failure
-            body="The report index could not be read. No list is shown rather than a partial one — a missing report here would look like evidence that was never generated."
+            body="The report index could not be read. No partial list is shown."
             onRetry={() => reports.refetch()}
           />
         ) : reports.isLoading ? (
@@ -224,7 +224,7 @@ export function ReportsPage() {
         ) : (
           <Empty
             title="No reports generated"
-            body="A report is produced when RELIASTRA confirms an incident against one of your monitors. Until an incident is recorded there is no artifact to generate — nothing here is a placeholder."
+            body="A report is produced when an incident is confirmed against one of your monitors."
             action={
               <Link href="/dependencies" className="obc-btn obc-btn-sm">
                 Review monitored dependencies

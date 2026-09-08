@@ -23,8 +23,8 @@ type Record_ = EvidenceReport & { incident?: Incident };
  * Evidence library.
  *
  * A register of records, not a feed of cards: the fields that matter in a
- * dispute — record id, the incident it covers, the dependency, the window it
- * describes, its checksum and its expiry — are all columns, and the checksum
+ * dispute - record id, the incident it covers, the dependency, the window it
+ * describes, its checksum and its expiry - are all columns, and the checksum
  * is visible in the list because it is the thing that makes the record worth
  * anything. Confidence is printed only when the backend returns it; the old
  * library defaulted absent values to "MEDIUM".
@@ -147,7 +147,7 @@ export function EvidencePage() {
         title="Evidence records"
         meta={
           <>
-            <Fact label="Records" value={evidence.data?.length ?? '—'} />
+            <Fact label="Records" value={evidence.data?.length ?? '0'} />
             <Fact
               label="Source"
               value="confirmed incidents"
@@ -167,8 +167,8 @@ export function EvidencePage() {
               Evidence records are not included in your plan
             </p>
             <p className="obc-body mt-3 max-w-[62ch]">
-              Monitoring and incident detection continue as normal. Evidence generation —
-              the checksummed record used to support an SLA claim — requires a paid plan.
+              Monitoring and incident detection continue. Evidence generation,
+              the checksummed record used to support an SLA claim, requires a paid plan.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <button
@@ -188,7 +188,7 @@ export function EvidencePage() {
         ) : evidence.isError ? (
           <Failure
             title="Evidence register unavailable"
-            body="The register could not be retrieved. Stored records are unaffected — this is a read failure in the console."
+            body="The register could not be retrieved. Stored records are unaffected."
             onRetry={() => evidence.refetch()}
           />
         ) : !evidence.data?.length ? (

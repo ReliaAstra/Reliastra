@@ -154,7 +154,7 @@ export function BillingPage() {
           data-testid="payment-confirmation"
           aria-live="polite"
         >
-          <p className="obc-label text-[var(--obc-text-2)]">Payment confirmed — plan active</p>
+          <p className="obc-label text-[var(--obc-text-2)]">Payment confirmed. Plan active</p>
           <dl className="mt-3 grid gap-x-10 sm:grid-cols-2">
             <Row label="Plan" mono>
               {getPlan(paid.plan).name}
@@ -163,7 +163,7 @@ export function BillingPage() {
               {paid.payment_provider ?? paymentProviderName(currency)}
             </Row>
             <Row label="Product price" mono>
-              {paid.product_price_display ?? '—'}
+              {paid.product_price_display ?? 'n/a'}
             </Row>
             <Row label="Actual charge" mono>
               {paid.amount_display ??
@@ -246,7 +246,7 @@ export function BillingPage() {
               <span className="obc-figure text-[var(--obc-signal)]">{daysLeft}</span>
               <span className="text-[13px] text-[var(--obc-text-2)]">
                 day{daysLeft === 1 ? '' : 's'} remaining of {evaluationLength}
-                {daysLeft <= 3 ? ' — ends soon' : ''}
+                {daysLeft <= 3 ? ', ends soon' : ''}
               </span>
             </p>
             <div
@@ -442,7 +442,7 @@ export function BillingPage() {
                     className="obc-link text-[11.5px]"
                     onClick={() => openUpgrade()}
                   >
-                    not included — compare plans
+                    not included. Compare plans
                   </button>
                 )}
               </span>
@@ -520,7 +520,7 @@ export function BillingPage() {
         ) : (
           <Empty
             title="No payments recorded"
-            body="Receipts appear here the moment a payment settles. Every entry shows the amount actually charged and the currency it was charged in — never a re-derived price."
+            body="Receipts appear when a payment settles. Each shows the amount and currency actually charged."
             action={
               <button type="button" className="obc-btn obc-btn-sm" onClick={() => openUpgrade()}>
                 View plans

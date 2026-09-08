@@ -15,8 +15,7 @@ import {
 /**
  * Payment-currency disclosure, in the public site's visual language.
  *
- * IMPORTANT: every *sentence* here still comes from `lib/billing/currency` —
- * `currencyNotice()`, `paymentAmountFor()`, `paymentProviderName()`,
+ * IMPORTANT: every *sentence* here still comes from `lib/billing/currency` - * `currencyNotice()`, `paymentAmountFor()`, `paymentProviderName()`,
  * `formatFxRate()` and the FX `label`/`disclaimer` fields. That module is the
  * canonical wording (it is byte-compared against the backend's transactional
  * email copy in the backend test suite). This component changes the container

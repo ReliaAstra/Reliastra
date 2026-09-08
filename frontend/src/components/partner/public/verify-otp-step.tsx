@@ -33,6 +33,12 @@ type Props = {
    * only trip the 60s per-account cooldown.
    */
   autoSend?: boolean;
+  /**
+   * Omit the step's own eyebrow and heading. Set when the host already renders
+   * them (the customer `/verify-email` page wraps this step in `AuthShell`,
+   * which owns the page's single `<h1>`).
+   */
+  headless?: boolean;
 };
 
 /**
@@ -49,6 +55,7 @@ export function VerifyOtpStep({
   backLabel = 'Back',
   title = 'Check your email',
   autoSend = false,
+  headless = false,
 }: Props) {
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -145,12 +152,15 @@ export function VerifyOtpStep({
 
   return (
     <div className="w-full">
-      <p className="ob-label text-[var(--ob-signal)]">Email verification</p>
-      <h1 className="ob-h2 mt-4 text-[clamp(1.75rem,4vw,2.25rem)]">{title}</h1>
-      <p className="ob-body mt-4 text-[14.5px]">
+      {!headless && (
+        <>
+          <p className="ob-label text-[var(--ob-signal)]">Email verification</p>
+          <h1 className="ob-h2 mt-4 text-[clamp(1.75rem,4vw,2.25rem)]">{title}</h1>
+        </>
+      )}
+      <p className={headless ? 'ob-body text-[14.5px]' : 'ob-body mt-4 text-[14.5px]'}>
         A {CODE_LENGTH}-digit code was sent to{' '}
-        <span className="ob-mono text-[var(--ob-text)]">{email}</span>. Enter it
-        below to activate your account.
+        <span className="ob-mono text-[var(--ob-text)]">{email}</span>.
       </p>
 
       {error && (

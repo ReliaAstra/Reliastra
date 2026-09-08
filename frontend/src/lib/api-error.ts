@@ -42,6 +42,11 @@ export async function readApiError(
       ? (body as { error: unknown }).error
       : null;
 
+  // A 5xx body is never user copy: it may be a proxy page, a traceback
+  // fragment or an internal reason. Keep the code (callers key off it) but
+  // always show the caller's generic sentence.
+  const internal = res.status >= 500;
+
   if (envelope && typeof envelope === 'object') {
     const e = envelope as {
       code?: string;
@@ -51,16 +56,17 @@ export async function readApiError(
     return {
       status: res.status,
       code: e.code || 'UNKNOWN',
-      message: e.message || fallback,
+      message: !internal && e.message ? e.message : fallback,
       issues: Array.isArray(e.details)
         ? e.details.map((d) => d?.issue ?? '').filter(Boolean)
         : [],
     };
   }
 
-  // Some proxies answer with a bare `{ error: "text" }`.
+  // Some proxies answer with a bare `{ error: "text" }`. That text is not
+  // written for a visitor, so it is never shown.
   if (typeof envelope === 'string') {
-    return { status: res.status, code: 'UNKNOWN', message: envelope, issues: [] };
+    return { status: res.status, code: 'UNKNOWN', message: fallback, issues: [] };
   }
 
   return { status: res.status, code: 'UNKNOWN', message: fallback, issues: [] };

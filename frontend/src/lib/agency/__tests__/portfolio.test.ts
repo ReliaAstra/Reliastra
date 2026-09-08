@@ -46,8 +46,8 @@ const client = (over: Partial<PortfolioClient> = {}): PortfolioClient => ({
 
 describe('client availability', () => {
   it('never reports 100% for a client with no monitors', () => {
-    expect(clientAvailability(100, 0)).toBe('insufficient data');
-    expect(clientLatency(0, 0)).toBe('insufficient data');
+    expect(clientAvailability(100, 0)).toBe('no monitors');
+    expect(clientLatency(0, 0)).toBe('no monitors');
   });
 
   it('reports a measured value when monitors exist', () => {

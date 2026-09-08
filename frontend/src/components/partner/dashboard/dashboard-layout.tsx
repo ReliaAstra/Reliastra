@@ -57,8 +57,6 @@ import {
 } from '@/components/ui/popover';
 import { ThemeToggle } from '../shared/theme-toggle';
 import { CommandPalette } from '../shared/command-palette';
-import { TierBadge } from '../shared/tier-badge';
-import { getPartnerTier, type TierInfo } from '@/types/partner';
 
 // --- Query client (created once) ---
 const queryClient = new QueryClient({
@@ -433,9 +431,6 @@ function TopBar({ onMoreOpen }: { onMoreOpen: () => void }) {
   const user = usePartnerStore((s) => s.user);
   const navigate = usePartnerStore((s) => s.navigate);
   const reset = usePartnerStore((s) => s.reset);
-  const dashboardData = usePartnerStore((s) => s.dashboardData);
-
-  const currentTier: TierInfo = getPartnerTier(dashboardData?.active_paid_customers ?? 0);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -471,9 +466,6 @@ function TopBar({ onMoreOpen }: { onMoreOpen: () => void }) {
       <div className="flex items-center gap-2">
         <NotificationBell />
         <ThemeToggle />
-        <div className="hidden sm:inline-flex items-center gap-1.5">
-          <TierBadge tier={currentTier} size="sm" />
-        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

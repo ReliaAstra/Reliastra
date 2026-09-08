@@ -33,7 +33,7 @@ function severityWord(s: string) {
  *
  * The old version rendered incidents as a column of rounded link cards, each
  * with a coloured left bar and a confidence label that defaulted to `HIGH`
- * whenever the API omitted one — a fabricated verdict on exactly the field a
+ * whenever the API omitted one - a fabricated verdict on exactly the field a
  * dispute would hinge on. This is a table: one row per incident, scannable
  * top to bottom, with active incidents pulled to the top and tinted, and
  * confidence shown only when the backend supplies it.
@@ -174,7 +174,7 @@ export function IncidentsPage() {
         r.evidence_report_id ? (
           <span className="text-[var(--obc-text-2)]">Available</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
   ];
@@ -205,7 +205,7 @@ export function IncidentsPage() {
         ) : isError ? (
           <Failure
             title="Incident log unavailable"
-            body="The incident log could not be retrieved. Monitoring is unaffected — this is a read failure in the console."
+            body="The incident log could not be retrieved. Monitoring is unaffected."
             onRetry={() => refetch()}
           />
         ) : !all.length ? (
