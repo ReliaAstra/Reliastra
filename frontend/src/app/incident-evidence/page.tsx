@@ -37,7 +37,7 @@ export default function IncidentEvidencePage() {
       <MarketingPage
         eyebrow="Capability"
         title="Incident evidence & outage attribution"
-        lede="Your site went down. Was it you, or your vendors? Correlated timelines give the answer - with confidence levels, not guesswork."
+        lede="Your site went down. Was it you, or your vendors? Correlated timelines answer, with a stated confidence."
         breadcrumbs={crumbs}
         related={[
           { label: 'SLA evidence', href: '/sla-evidence', description: 'From attribution to credit-ready reports.' },

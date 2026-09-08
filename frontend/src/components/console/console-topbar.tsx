@@ -15,8 +15,7 @@ import { cn } from '@/lib/utils';
  *
  * Deliberately thin. The previous bar carried two separate bells (an
  * "attention" popover listing open incidents and a notification inbox), a
- * theme toggle, a command-palette hint, a trial pill and an avatar menu —
- * five competing affordances in a 56px strip. Open incidents now live in the
+ * theme toggle, a command-palette hint, a trial pill and an avatar menu - * five competing affordances in a 56px strip. Open incidents now live in the
  * global system status where they belong, the theme toggle is gone because
  * the product is single-theme, and what remains is: where am I, what is new,
  * who am I.
@@ -156,7 +155,7 @@ function Inbox() {
  * Agency operators work in two different scopes and must never be unsure
  * which one they are in: AGENCY means every client, CLIENT means one. The
  * indicator states the current scope in words, and switching is a real
- * navigation — there is no invisible filter that silently changes what the
+ * navigation - there is no invisible filter that silently changes what the
  * other pages mean.
  *
  * It renders only for organizations the backend flagged `has_agency_mode`.
@@ -365,7 +364,7 @@ export function ConsoleTopBar() {
         )}
         {!evaluating && current.id === 'free' && (
           <button type="button" onClick={() => openUpgrade()} className="obc-btn obc-btn-sm">
-            Free plan — upgrade
+            Free plan · Upgrade
           </button>
         )}
         <Inbox />

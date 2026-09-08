@@ -22,7 +22,6 @@ import {
   utcStamp,
   windowLabel,
 } from '@/lib/observatory/format';
-import { regionInfo } from '@/lib/observatory/regions';
 import { canonicalUrl, breadcrumbJsonLd } from '@/lib/seo';
 import { JsonLd } from '@/components/seo/json-ld';
 import { PUBLIC_ROUTES, SHARE_ROUTES } from '@/lib/routes';
@@ -31,7 +30,6 @@ import { ObservatoryShell, RecordSection } from '@/components/observatory/primit
 import {
   CurrentObservationSection,
   DependencyInfoSection,
-  DistinctionSection,
   EvidenceSection,
   IncidentsSection,
   Masthead,
@@ -48,7 +46,6 @@ import {
   TelemetryPanel,
   TelemetrySkeleton,
 } from '@/components/observatory/telemetry-panel';
-import { RegionPlot } from '@/components/observatory/region-plot';
 
 /**
  * The public record for one observed dependency.
@@ -92,7 +89,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: 'Dependency record - RELIASTRA observatory',
       description:
-        'Independently measured availability, latency and incident history for third-party APIs, observed from multiple regions by RELIASTRA.',
+        'Independently measured availability, latency and incident history for third-party APIs.',
       alternates: { canonical: url },
       robots: { index: false, follow: true },
     };
@@ -219,16 +216,6 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
   const m30 = record.metrics?.metrics?.['30d'] ?? null;
   const basePath = SHARE_ROUTES.trackVendor(detail.vendor_name);
 
-  const regionMarks = record.regionObservations.map((r) => ({
-    info: regionInfo(r.region),
-    state: (r.current?.is_up === true
-      ? 'healthy'
-      : r.current?.is_up === false
-        ? 'critical'
-        : 'unknown') as 'healthy' | 'critical' | 'unknown',
-    label: r.current?.latency_ms ? `${latency(r.current.latency_ms)} ms` : 'no observation',
-  }));
-
   return (
     <ObservatoryShell>
       <JsonLd
@@ -287,15 +274,14 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
         cadenceSeconds={cadenceSeconds}
       />
 
-      {/* Crawlable summary. Everything in this paragraph is composed from the
-          record above; there is no marketing sentence in it. */}
-      <section aria-labelledby="summary-h" className="obs-section bg-[var(--ob-base)]">
-        <div className="ob-container py-10 md:py-14">
-          <h2 id="summary-h" className="sr-only">
-            Summary of this record
-          </h2>
-          <div className="grid gap-8 lg:grid-cols-2 lg:gap-16">
-            <p className="max-w-[68ch] text-[14.5px] leading-[1.75] text-[var(--ob-text-2)]">
+      {/* Crawlable summary, composed from the record. Visually hidden: every
+          figure in it is already on screen in the masthead and sections 01-02,
+          and printing it twice made the page read like a brochure. */}
+      <section aria-labelledby="summary-h" className="sr-only">
+        <div>
+          <h2 id="summary-h">Summary of this record</h2>
+          <div>
+            <p>
               {detail.display_name} is a {detail.category.replace(/[-_]/g, ' ')} dependency under
               continuous observation by RELIASTRA. Requests are issued to its public endpoints from{' '}
               {regions.length ? regions.join(', ') : 'RELIASTRA observation regions'}
@@ -303,7 +289,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
               response is stored with its latency, status code and timestamp. The last observation
               recorded was {utcStamp(lastObservation) ?? NO_OBSERVATION}.
             </p>
-            <p className="max-w-[68ch] text-[14.5px] leading-[1.75] text-[var(--ob-text-2)]">
+            <p>
               Over the last 24 hours RELIASTRA recorded{' '}
               {m24 ? m24.total_observations.toLocaleString('en-US') : 'no'} observations, an
               availability of {availability(m24?.uptime_percentage, m24?.total_observations)} and a
@@ -374,9 +360,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
         </p>
       </RecordSection>
 
-      <NetworkSection record={record}>
-        <RegionPlot regions={regionMarks} className="hidden max-w-[980px] md:flex" />
-      </NetworkSection>
+      <NetworkSection record={record} />
 
       <IncidentsSection
         incidents={incidents}
@@ -391,8 +375,6 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
       />
 
       <MethodologySection record={record} cadenceSeconds={cadenceSeconds} />
-
-      <DistinctionSection vendorName={detail.display_name} />
 
       <DependencyInfoSection record={record} />
 

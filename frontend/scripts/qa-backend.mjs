@@ -1,5 +1,5 @@
 /**
- * QA fixture backend — DEVELOPMENT AND TEST ONLY.
+ * QA fixture backend - DEVELOPMENT AND TEST ONLY.
  *
  * The console is gated on a real session and reads every number it renders
  * from `RELIASTRA_API_URL`. Without a backend the authenticated surface cannot
@@ -57,13 +57,13 @@ const PLAN = {
   evaluation_days_remaining: 0,
   max_dependencies: 50,
   max_team_members: 10,
-  min_check_interval_seconds: 60,
+  min_check_interval_seconds: 15,
   data_retention_days: 90,
   subscription_status: 'active',
   current_period_end: iso(-19 * DAY),
   price_usd: 39,
   billing_interval: 'monthly',
-  // Shape must match `PaymentCurrencyInfo` exactly — a partial payload is how
+  // Shape must match `PaymentCurrencyInfo` exactly - a partial payload is how
   // the console ends up printing "undefined" where a currency belongs.
   payment: {
     product_currency: 'USD',
@@ -560,9 +560,9 @@ function portfolio() {
 
 const PRICING = {
   plans: [
-    { plan: 'free', display_name: 'Free', description: 'Observation for a small stack.', tag: null, price_usd: 0, price_annual_usd: 0, max_dependencies: 3, max_team_members: 1, min_check_interval_seconds: 300, data_retention_days: 7, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$0.00 (USD)' },
-    { plan: 'pro', display_name: 'Pro', description: 'Evidence for a production stack.', tag: 'Current', price_usd: 39, price_annual_usd: 390, max_dependencies: 50, max_team_members: 10, min_check_interval_seconds: 60, data_retention_days: 90, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$39.00 (USD)', payment_amount_display: '₦60,000.00 (NGN)' },
-    { plan: 'enterprise', display_name: 'Enterprise', description: 'Agency and multi-client operations.', tag: null, price_usd: 0, price_annual_usd: null, max_dependencies: null, max_team_members: null, min_check_interval_seconds: 30, data_retention_days: 365, features: {}, billing_availability: 'sales', is_enterprise: true, is_custom_pricing: true },
+    { plan: 'free', display_name: 'Free', description: 'Observation for a small stack.', tag: null, price_usd: 0, price_annual_usd: 0, max_dependencies: 3, max_team_members: 1, min_check_interval_seconds: 60, data_retention_days: 1, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$0.00 (USD)' },
+    { plan: 'pro', display_name: 'Pro', description: 'Evidence for a production stack.', tag: 'Current', price_usd: 39, price_annual_usd: 390, max_dependencies: 50, max_team_members: 10, min_check_interval_seconds: 15, data_retention_days: 90, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$39.00 (USD)', payment_amount_display: '₦60,000.00 (NGN)' },
+    { plan: 'enterprise', display_name: 'Enterprise', description: 'Agency and multi-client operations.', tag: null, price_usd: 0, price_annual_usd: null, max_dependencies: null, max_team_members: null, min_check_interval_seconds: null, data_retention_days: null, features: {}, billing_availability: 'sales', is_enterprise: true, is_custom_pricing: true },
   ],
   payment: PLAN.payment,
 };

@@ -1,1 +1,1 @@
-RELIASTRA — External Dependency Intelligence. Know when your dependencies fail. Prove what happened.
+RELIASTRA. External Dependency Intelligence. Independent monitoring, incident attribution, evidence.

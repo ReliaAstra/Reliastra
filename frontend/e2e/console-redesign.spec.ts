@@ -5,8 +5,8 @@ import { createAccount, signIn } from './helpers';
  * The operational console, judged as an operator would judge it.
  *
  * These are not snapshot tests. Each one encodes a rule the console must obey
- * for the product's promise — "know when your dependencies fail, prove what
- * happened" — to survive contact with a real dispute:
+ * for the product's promise - "know when your dependencies fail, prove what
+ * happened" - to survive contact with a real dispute:
  *
  *   * the shell states global system state without being asked;
  *   * every navigation target is a route that exists;
@@ -156,7 +156,7 @@ test.describe('evidence', () => {
     await expect(page.getByRole('heading', { level: 1, name: /evidence records/i })).toBeVisible();
 
     const text = await page.locator('main').innerText();
-    // Either the register, the plan gate, or an honest empty state — never an
+    // Either the register, the plan gate, or an honest empty state - never an
     // invented record and never a bare "nothing here yet".
     expect(text).toMatch(
       /record register|no evidence records|not included in your plan|evidence register unavailable/i

@@ -328,11 +328,11 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     problem:
       'Screenshots and Slack messages do not settle credit disputes. The vendor’s own status page is written by the counterparty to the claim.',
     whyItMatters:
-      'Structured, third-party verification is the basis of successful SLA claims. Vendors honor claims backed by regional timestamps far more readily than manual reports.',
+      'An SLA claim needs an independent record of the window. A vendor status page is written by the counterparty to the claim.',
     example:
-      'A 17-minute degradation with per-minute observations from two regions, correlated service impact, and a computed credit figure under your plan’s SLA clause - compiled into one report with a verifiable checksum.',
+      'A 17-minute degradation with per-minute observations from two regions and the correlated incident window, compiled into one report with a verifiable checksum.',
     howReliastra:
-      'When a vendor incident is detected, RELIASTRA compiles independent observations, duration, correlated impact and the calculated credit amount. Reports are checksummed, bound to your organization, and verifiable without disclosing endpoints or credentials.',
+      'When a vendor incident is confirmed, RELIASTRA compiles the independent observations, the window and the attribution result. Reports are checksummed, bound to your organization, and verifiable without disclosing endpoints or credentials.',
     related: [
       { label: 'SLA evidence', href: '/sla-evidence' },
       { label: 'Infrastructure evidence', href: '/glossary/infrastructure-evidence' },

@@ -5,9 +5,9 @@ import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 /**
  * Homepage hero.
  *
- * A full-viewport photograph of the thing the product is actually about -
- * physical infrastructure - with the smallest amount of type that can carry
- * the positioning. No cards, no mock dashboard, no floating shapes.
+ * A full-viewport photograph of physical infrastructure with the smallest
+ * amount of type that can carry the positioning. No cards, no mock dashboard,
+ * no floating shapes.
  *
  * Technical notes:
  * - `100svh` (not `100vh`) so mobile browser chrome cannot crop the CTA.
@@ -21,10 +21,9 @@ export function HomeHero() {
   return (
     <section
       id="top"
-      /* Full-viewport on phones and laptops, but capped at 880px so a 1440p or
-         4K display does not get a hero taller than a person's field of view
-         with the first line of copy pushed off-screen. */
-      className="relative flex h-[100svh] max-h-[880px] min-h-[620px] flex-col justify-end overflow-hidden bg-[var(--ob-void)]"
+      /* Full-viewport on phones and laptops, capped at 820px so a large
+         display does not push the first line of copy out of view. */
+      className="relative flex h-[100svh] max-h-[820px] min-h-[600px] flex-col justify-end overflow-hidden bg-[var(--ob-void)]"
       aria-labelledby="hero-title"
     >
       <div className="absolute inset-0">
@@ -53,41 +52,29 @@ export function HomeHero() {
           you can prove.
         </h1>
 
-        <p className="ob-rise ob-rise-3 mt-8 max-w-[54ch] text-[clamp(1rem,1.6vw,1.3125rem)] leading-[1.55] text-[var(--ob-text-2)]">
-          Your product runs on services you do not control. RELIASTRA observes
-          them independently, attributes failures to whoever caused them, and
-          leaves you with evidence instead of an argument.
+        <p className="ob-rise ob-rise-3 mt-8 max-w-[44ch] text-[clamp(1rem,1.6vw,1.3125rem)] leading-[1.55] text-[var(--ob-text-2)]">
+          Independent observation of the services you depend on. Incidents
+          attributed. Evidence you can hand over.
         </p>
 
         <div className="ob-rise ob-rise-4 mt-10 flex flex-col gap-3 sm:flex-row">
           <CTA href={AUTH_ROUTES.signup} tone="signal">
             Start monitoring
           </CTA>
-          <CTA href={PUBLIC_ROUTES.research} tone="outline">
-            Explore research
+          <CTA href={PUBLIC_ROUTES.track} tone="outline">
+            Public dependency index
           </CTA>
         </div>
       </Container>
 
-      {/* Bottom rail: what the product does, stated as three verifiable
-          capabilities. Not metrics - RELIASTRA does not put numbers it cannot
-          source on its own front page. */}
+      {/* Bottom rail: the three things the product does. Not metrics. */}
       <div className="relative border-t border-[var(--ob-line)] bg-[var(--ob-void)]/70 supports-[backdrop-filter]:backdrop-blur-sm">
         <Container>
           <dl className="grid grid-cols-1 divide-y divide-[var(--ob-line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
-              [
-                'Observation',
-                'Checks originate outside your network and outside the vendor’s.',
-              ],
-              [
-                'Attribution',
-                'Vendor degradation is correlated with your incident timeline.',
-              ],
-              [
-                'Evidence',
-                'Each finding is timestamped, checksummed and exportable.',
-              ],
+              ['Observe', 'Checks run outside your network and the vendor’s.'],
+              ['Correlate', 'Vendor degradation aligned with your incident window.'],
+              ['Prove', 'Timestamped, checksummed, exportable records.'],
             ].map(([term, desc], i) => (
               <div
                 key={term}

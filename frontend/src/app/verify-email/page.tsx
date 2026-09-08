@@ -29,7 +29,7 @@ type LinkState = 'verifying' | 'verified' | 'failed';
  * sign-in is blocked by the verification gate.
  *
  * Both paths are preserved exactly; only their presentation changed. Note the
- * single-use token guard (`consumedRef`) — React StrictMode double-mounts in
+ * single-use token guard (`consumedRef`) - React StrictMode double-mounts in
  * development, and firing the exchange twice would report the second call as
  * "already used" and show a false failure.
  */
@@ -86,7 +86,7 @@ function VerifyEmailContent() {
         <AuthShell
           eyebrow="Email verification"
           title="Verifying your address"
-          intro="Exchanging the link token with the authentication service."
+          intro="One moment."
         >
           <p role="status" className="ob-label text-[var(--ob-text-4)]">
             Working…
@@ -100,7 +100,7 @@ function VerifyEmailContent() {
         <AuthShell
           eyebrow="Email verification"
           title="Address confirmed"
-          intro="Your email address has been verified. You can sign in now."
+          intro="You can sign in now."
         >
           <AuthAlert tone="ok">
             Verification complete. This link cannot be used again.
@@ -119,12 +119,11 @@ function VerifyEmailContent() {
       <AuthShell
         eyebrow="Email verification"
         title="Verification failed"
-        intro="The link could not be used. Links are single-use and expire, so this is most often because it was already opened."
+        intro="Links are single-use and expire."
       >
         <AuthAlert tone="error">{linkError}</AuthAlert>
         <p className="ob-body mt-6 text-[14px]">
-          Request a fresh 6-digit code instead — it is sent to the same address
-          and works from any device.
+          Request a 6-digit code instead. It works from any device.
         </p>
         <button
           type="button"
@@ -146,7 +145,7 @@ function VerifyEmailContent() {
       <AuthShell
         eyebrow="Email verification"
         title="Account active"
-        intro="Your address is verified and your session is live."
+        intro="Your address is verified."
       >
         <AuthAlert tone="ok">
           Verification complete. Your organization is ready.
@@ -155,7 +154,7 @@ function VerifyEmailContent() {
           href="/dashboard"
           className="ob-btn ob-btn-signal ob-btn-block mt-7"
         >
-          Continue to your workspace
+          Open console
         </Link>
       </AuthShell>
     );
@@ -163,10 +162,11 @@ function VerifyEmailContent() {
 
   if (confirmedEmail) {
     return (
-      <AuthShell eyebrow="Email verification" title="Check your email">
+      <AuthShell eyebrow="Email verification" title="Enter your code">
         <VerifyOtpStep
           email={confirmedEmail}
           autoSend
+          headless
           // The OTP exchange issues the session - persist BOTH tokens before
           // showing the "verified" screen so the console is authenticated.
           onVerified={(session: VerifiedSession) => {
@@ -179,7 +179,6 @@ function VerifyEmailContent() {
           }}
           onBack={() => setConfirmedEmail(null)}
           backLabel="Use a different email"
-          title="Enter your verification code"
         />
       </AuthShell>
     );
@@ -189,7 +188,7 @@ function VerifyEmailContent() {
     <AuthShell
       eyebrow="Email verification"
       title="Verify your email"
-      intro="Enter the address you signed up with and a 6-digit code will be sent to it."
+      intro="A 6-digit code will be sent to the address you signed up with."
     >
       <form
         className="flex flex-col gap-5"

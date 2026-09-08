@@ -46,7 +46,7 @@ const MAP: Record<string, StatusConfig> = {
     badgeClass: 'bg-rs-tertiary-bg text-rs-text-tertiary border-[rgb(105_116_138_/_0.20)]',
   },
   // Incident lifecycle states. Without these an open incident rendered as
-  // "Unknown" — the badge silently disagreed with the incident it labelled.
+  // "Unknown" - the badge silently disagreed with the incident it labelled.
   open: {
     label: 'Open',
     dotClass: 'bg-rs-down',

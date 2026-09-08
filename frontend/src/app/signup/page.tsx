@@ -104,16 +104,16 @@ export default function CustomerSignupPage() {
   return (
     <AuthShell
       eyebrow="Create your organization"
-      title="Start measuring your dependencies"
-      intro="14-day Pro trial with attribution and evidence enabled. No payment method required."
+      title="Start monitoring"
+      intro="14-day Pro trial. No payment method required."
       image="/media/fiber-patch-panel.jpg"
       imageAlt="Macro view of a fibre patch panel: densely stacked duplex connectors and coiled jumpers."
       aside={<SignupAside />}
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          Agency, MSP or distribution partner?{' '}
+          Referring customers as a partner?{' '}
           <Link href={partnerUrl('signup')} className="ob-link">
-            Apply to the partner network
+            Apply to the partner program
           </Link>
         </p>
       }
@@ -162,7 +162,7 @@ export default function CustomerSignupPage() {
           }
           error={
             passwordTooShort
-              ? 'Too short — use at least 8 characters.'
+              ? 'Use at least 8 characters.'
               : undefined
           }
         />
@@ -206,17 +206,17 @@ function SignupAside() {
           [
             '01',
             'Add an endpoint',
-            'Paste the URL of an external service you depend on, choose the regions and the interval.',
+            'The URL of an external service, the regions, the interval.',
           ],
           [
             '02',
             'Observation begins',
-            'RELIASTRA starts checking it from independent infrastructure and records every result.',
+            'Checks run from independent infrastructure. Every result is kept.',
           ],
           [
             '03',
             'Evidence accumulates',
-            'When the dependency fails, the correlation and the record already exist — you are not reconstructing them afterwards.',
+            'When the dependency fails, the record already exists.',
           ],
         ].map(([index, term, desc]) => (
           <li key={index} className="border-t border-[var(--ob-line)] py-5">

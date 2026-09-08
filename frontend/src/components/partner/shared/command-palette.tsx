@@ -62,8 +62,6 @@ export function CommandPalette() {
         { label: 'Earn', page: 'earn', icon: DollarSign, category: 'Navigation' },
         { label: 'Resources', page: 'resources', icon: FileText, category: 'Navigation' },
         { label: 'FAQ', page: 'faq', icon: HelpCircle, category: 'Navigation' },
-        { label: 'Tiers', page: 'tiers', icon: Crown, category: 'Navigation' },
-        { label: 'Premium', page: 'premium', icon: Crown, category: 'Navigation' },
         { label: 'Support', page: 'support', icon: MessageSquare, category: 'Navigation' },
         { label: 'Log in', page: 'login', icon: Users, category: 'Account' },
         { label: 'Sign up', page: 'signup', icon: Users, category: 'Account' },

@@ -12,7 +12,7 @@ import { create } from 'zustand';
  * What is persisted and what is not is a security decision, not a convenience
  * one: the draft endpoint, cadence and regions survive a reload, and request
  * HEADERS NEVER DO. Headers can carry an API token, and a monitoring product
- * has no business leaving one in localStorage — they live in component state
+ * has no business leaving one in localStorage - they live in component state
  * for the length of the sequence and are sent once, to be encrypted at rest by
  * the backend.
  */

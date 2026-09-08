@@ -46,7 +46,7 @@ import { DataTable, type Column } from '@/components/console/data-table';
 import { AgencyUnavailable, ClientCreateDialog, PortfolioShare } from './parts';
 
 /**
- * AGENCY OPERATIONS — the multi-client console.
+ * AGENCY OPERATIONS - the multi-client console.
  *
  * This is not a second dashboard. The customer console answers "what is my
  * infrastructure doing"; this answers "which of my clients' infrastructure
@@ -135,7 +135,7 @@ export function AgencyPortfolioPage() {
         <PageHead eyebrow="Agency operations" title="Client environments" />
         <div className="py-6">
           <Failure
-            body="The client portfolio could not be retrieved. No client posture is shown rather than a cached or partial one — an agency operator acting on a stale rollup is worse than one who knows the rollup is missing."
+            body="The client portfolio could not be retrieved. No client posture is shown rather than a cached or partial one. An agency operator acting on a stale rollup is worse than one who knows the rollup is missing."
             onRetry={() => portfolio.refetch()}
           />
         </div>
@@ -229,7 +229,7 @@ export function AgencyPortfolioPage() {
         c.open_incidents ? (
           <span className="text-[#E58C85]">{c.open_incidents}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
     {
@@ -255,20 +255,20 @@ export function AgencyPortfolioPage() {
           <>
             <Fact
               label="Environments"
-              value={portfolio.data ? portfolio.data.totals.clients : '—'}
+              value={portfolio.data ? portfolio.data.totals.clients : '0'}
             />
             <Fact
               label="Dependencies observed"
-              value={portfolio.data ? portfolio.data.totals.dependencies : '—'}
+              value={portfolio.data ? portfolio.data.totals.dependencies : '0'}
             />
             <Fact
               label="Unassigned monitors"
-              value={portfolio.data ? portfolio.data.unassigned_monitors : '—'}
+              value={portfolio.data ? portfolio.data.unassigned_monitors : '0'}
             />
             <Fact
               label="Synchronised"
               value={
-                portfolio.data ? formatUtc(portfolio.data.generated_at, 'HH:mm:ss') : '—'
+                portfolio.data ? formatUtc(portfolio.data.generated_at, 'HH:mm:ss') : 'pending'
               }
             />
           </>
@@ -328,7 +328,7 @@ export function AgencyPortfolioPage() {
               <dd className="obc-figure mt-1.5">
                 {portfolio.data && portfolio.data.totals.dependencies > 0
                   ? `${portfolio.data.totals.avg_uptime_24h.toFixed(2)}%`
-                  : <span className="text-[15px] font-normal text-[var(--obc-text-4)]">insufficient data</span>}
+                  : <span className="text-[15px] font-normal text-[var(--obc-text-4)]">no monitors</span>}
               </dd>
             </div>
           </dl>
@@ -337,7 +337,7 @@ export function AgencyPortfolioPage() {
 
       <Section
         title="Client environments"
-        hint="Sorted by what needs attention. Availability is only reported for environments that have monitors."
+        hint="Sorted by what needs attention."
         id="client-environments"
       >
         {portfolio.isLoading || clients.isLoading ? (
@@ -420,7 +420,7 @@ export function AgencyPortfolioPage() {
 
       <Section
         title="Recent evidence by client"
-        hint="Which client has a record you can act on, and which incident produced it."
+        hint="The latest evidence record per client."
         action={<SectionLink href="/reports">All reports</SectionLink>}
         id="agency-evidence"
       >
@@ -462,7 +462,7 @@ export function AgencyPortfolioPage() {
       {orphans.length > 0 && (
         <Section
           title="Unassigned monitors"
-          hint="These monitors belong to your organization but not to any client application, so they roll up to no client."
+          hint="Monitors not attached to any client application."
           id="unassigned-monitors"
         >
           <div className="border border-[var(--obc-line)]">

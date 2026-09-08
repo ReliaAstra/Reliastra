@@ -20,8 +20,6 @@ const footerSections: {
       { label: 'How it works', href: partnerUrl('how-it-works') },
       { label: 'Commission', href: partnerUrl('commission') },
       { label: 'Earn', href: partnerUrl('earn') },
-      { label: 'Tiers', href: partnerUrl('tiers') },
-      { label: 'Premium', href: partnerUrl('premium') },
       { label: 'Resources', href: partnerUrl('resources') },
       { label: 'FAQ', href: partnerUrl('faq') },
     ],

@@ -64,8 +64,8 @@ export function BillingPage() {
           {paid && currency.differs_from_product_currency && <p className="mt-2 text-[12px] text-[var(--obc-text-3)]">USD list price: {formatMinorUnits((annual ? current.priceAnnual ?? 0 : current.priceMonthly ?? 0) * 100, 'USD')}. Charged at the published {currency.payment_currency} price.</p>}
         </div>
         <dl className="self-center">
-          <Row label="Billing cycle">{paid ? (annual ? 'Annual' : 'Monthly') : '—'}</Row>
-          <Row label="Payment currency">{paid ? currency.payment_currency : '—'}</Row>
+          <Row label="Billing cycle">{paid ? (annual ? 'Annual' : 'Monthly') : 'n/a'}</Row>
+          <Row label="Payment currency">{paid ? currency.payment_currency : 'n/a'}</Row>
           {plan.current_period_end && <Row label="Current period ends">{formatUtc(plan.current_period_end, 'dd MMM yyyy')}</Row>}
           {evaluation && <Row label="Evaluation remaining">{plan.evaluation_days_remaining ?? plan.trial_days_remaining ?? 0} days</Row>}
           {evaluation && <Row label="Base plan">{current.name}</Row>}
@@ -77,7 +77,7 @@ export function BillingPage() {
     <Section title="Usage">
       <div className="grid gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] sm:grid-cols-3">
         <div className="bg-[var(--obc-base)] p-5">
-          <p className="obc-label">Monitors</p><p className="obc-mono mt-3" style={{ fontSize: 22 }}>{used ?? '—'} <span className="text-[13px] text-[var(--obc-text-3)]">/ {limit ?? 'custom'}</span></p>
+          <p className="obc-label">Monitors</p><p className="obc-mono mt-3" style={{ fontSize: 22 }}>{used ?? 'n/a'} <span className="text-[13px] text-[var(--obc-text-3)]">/ {limit ?? 'custom'}</span></p>
           {limit != null && used != null && <progress aria-label="Monitor usage" value={percentage} max={100} className="mt-4 h-1 w-full accent-[var(--obc-signal)]" />}
         </div>
         <div className="bg-[var(--obc-base)] p-5"><p className="obc-label">Observation retention</p><p className="obc-mono mt-3" style={{ fontSize: 22 }}>{retentionLabel(plan.data_retention_days ?? effective.retentionDays)}</p></div>

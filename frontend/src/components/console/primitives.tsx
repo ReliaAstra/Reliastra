@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Console primitives — the whole vocabulary of the operational surface.
+ * Console primitives - the whole vocabulary of the operational surface.
  *
  * There are deliberately few of these, and none of them is a card. Structure
  * in this application comes from rules and background steps; anything that
@@ -20,7 +20,7 @@ export type SystemState = 'ok' | 'warn' | 'crit' | 'idle';
 
 /**
  * Map every status string the backend can produce onto the four operational
- * states. Anything unrecognised becomes `idle` (unknown) — never `ok`, because
+ * states. Anything unrecognised becomes `idle` (unknown) - never `ok`, because
  * defaulting an unknown state to healthy is how a monitoring product lies.
  */
 export function toState(raw: string | null | undefined): SystemState {
@@ -55,7 +55,7 @@ const STATE_WORD: Record<SystemState, string> = {
  * Prefer the backend's own word when it is one we recognise.
  *
  * A dependency that the API reports as `down` should read "Down", not
- * "Critical" — "critical" is incident severity language and using it for a
+ * "Critical" - "critical" is incident severity language and using it for a
  * host state made the health table and the incident table disagree about the
  * same event. Only genuinely unrecognised values fall back to the state word.
  */
@@ -84,7 +84,7 @@ export function State({
   className,
 }: {
   status: string | null | undefined;
-  /** Override the word — e.g. an incident's own `investigating`. */
+  /** Override the word - e.g. an incident's own `investigating`. */
   label?: string;
   /** Pulse the dot. Reserve for genuinely active incidents. */
   live?: boolean;
@@ -108,7 +108,7 @@ export function State({
 
 /**
  * Page header. `meta` is a row of key/value facts rendered inline rather than
- * as tiles — the header states what this object is, not how it is doing.
+ * as tiles - the header states what this object is, not how it is doing.
  */
 export function PageHead({
   eyebrow,
@@ -296,7 +296,7 @@ export function Empty({
 }
 
 /**
- * Error state. Technical, specific, actionable — and it never relays a raw
+ * Error state. Technical, specific, actionable - and it never relays a raw
  * backend message, which can carry internal detail a customer must not see.
  */
 export function Failure({

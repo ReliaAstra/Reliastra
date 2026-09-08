@@ -29,7 +29,7 @@ export default function AboutPage() {
       <MarketingPage
         eyebrow="Company"
         title="Was it you, or your vendors?"
-        lede="RELIASTRA exists because that question decides incidents, postmortems and SLA conversations - and no existing tool answered it with evidence."
+        lede="That question decides incidents, postmortems and SLA conversations. RELIASTRA answers it with evidence."
         breadcrumbs={crumbs}
         related={[
           { label: 'Research agenda', href: '/research/reliastra-research-agenda', description: 'What we publish and what we refuse to.' },

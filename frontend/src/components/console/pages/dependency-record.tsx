@@ -301,7 +301,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         ) : byRegion.size === 0 ? (
           <Empty
             title="No checks recorded yet"
-            body="Checks run on the configured interval. If none appear after an interval has passed, the checking pipeline — not this endpoint — is the thing to investigate."
+            body="Checks run on the configured interval. If none appear after one interval, investigate the checking pipeline, not this endpoint."
           />
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -511,7 +511,7 @@ function ObservationLog({
             <span className="ml-1 text-[10px] text-[var(--obc-text-4)]">ms</span>
           </>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
     {
@@ -533,7 +533,7 @@ function ObservationLog({
         r.error_message ? (
           <span className="truncate text-[12px] text-[#E58C85]">{r.error_message}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">—</span>
+          <span className="text-[var(--obc-text-4)]">none</span>
         ),
     },
   ];

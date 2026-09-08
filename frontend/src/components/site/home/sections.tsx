@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {
   ArrowLink,
   Container,
-  DataRow,
   Eyebrow,
   Section,
   SectionHeader,
@@ -13,10 +12,9 @@ import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
 /* ── 02 · The problem ───────────────────────────────────────────────────── */
 
 /**
- * The dependency classes named below are examples of what the product is
- * built to observe. They are rendered as text, never as logos: a logo wall on
- * a marketing site reads as an endorsement, and RELIASTRA has no relationship
- * with these companies. The caption says so explicitly.
+ * Dependency classes the product is built to observe. Rendered as text,
+ * never as logos: a logo wall reads as an endorsement, and RELIASTRA has no
+ * relationship with these companies. The caption says so.
  */
 const DEPENDENCY_CLASSES: [string, string[]][] = [
   ['Payments', ['Stripe', 'Paystack', 'Adyen']],
@@ -38,27 +36,17 @@ export function ProblemSection() {
               You are accountable for infrastructure you do not operate.
             </h2>
             <p className="ob-body-lg">
-              A modern application is mostly other people’s systems. Payments,
-              identity, delivery, storage, inference, DNS — each one is a
-              dependency with its own failure modes, its own status page, and
-              its own commercial interest in how an outage is described.
-            </p>
-            <p className="ob-body">
-              When something breaks, your monitoring tells you <em>what</em>{' '}
-              broke inside your perimeter. It rarely tells you <em>why</em>, and
-              it never tells you whose fault it was. The vendor’s status page is
-              written by the vendor. Your logs stop at your edge. The gap
-              between those two records is where postmortems stall, SLA claims
-              die, and customers stop believing you.
+              Your monitoring stops at your edge. The vendor’s status page is
+              written by the vendor. Nobody keeps the record in between.
             </p>
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 gap-px sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-x-6 gap-px lg:grid-cols-3">
               {DEPENDENCY_CLASSES.map(([label, examples]) => (
                 <div
                   key={label}
-                  className="border-t border-[var(--ob-line)] py-5 sm:pr-8"
+                  className="border-t border-[var(--ob-line)] py-5"
                 >
                   <p className="ob-label mb-3">{label}</p>
                   <ul className="flex flex-col gap-1.5">
@@ -75,9 +63,8 @@ export function ProblemSection() {
               ))}
             </div>
             <p className="ob-small max-w-[52ch] border-t border-[var(--ob-line)] pt-5">
-              Examples of the dependency classes RELIASTRA is built to observe.
-              Any HTTP endpoint can be monitored. Naming a service here
-              indicates no relationship, endorsement or partnership with it.
+              Examples only. Any HTTP endpoint can be monitored. Naming a
+              service implies no relationship with it.
             </p>
           </div>
         </div>
@@ -111,28 +98,22 @@ export function EvidenceLayerSection() {
         />
       </div>
 
-      <Container className="relative py-24 md:py-36 lg:py-44">
+      <Container className="relative py-24 md:py-32 lg:py-40">
         <div className="max-w-[46rem]">
           <Eyebrow index="03">RELIASTRA</Eyebrow>
           <h2 id="layer-title" className="ob-h1 mt-6 max-w-[16ch]">
-            An independent evidence layer around your dependencies.
+            An independent record of your dependencies.
           </h2>
           <p className="ob-body-lg mt-7">
-            RELIASTRA sits outside your infrastructure and outside your
-            vendors’. It measures the external services you depend on from
-            regions neither party controls, keeps every observation, and turns
-            that record into something you can hand to a vendor, an auditor, a
-            board or a customer.
-          </p>
-          <p className="ob-body mt-5">
-            It is not another uptime checker pointed at your own site. It is the
-            third record — the one nobody in the argument owns.
+            RELIASTRA measures external services from infrastructure neither
+            you nor the vendor controls, keeps every observation, and exports
+            the record.
           </p>
           <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3">
-            <ArrowLink href={PUBLIC_ROUTES.externalDependencyIntelligence}>
-              What External Dependency Intelligence means
-            </ArrowLink>
             <ArrowLink href={PUBLIC_ROUTES.product}>Platform overview</ArrowLink>
+            <ArrowLink href={PUBLIC_ROUTES.externalDependencyIntelligence}>
+              The category
+            </ArrowLink>
           </div>
         </div>
       </Container>
@@ -146,25 +127,25 @@ const STEPS: { n: string; title: string; body: string; href: string }[] = [
   {
     n: '01',
     title: 'Observe',
-    body: 'Every dependency is checked on a fixed interval from multiple regions, on infrastructure that belongs to neither you nor the vendor. Each check records latency, status code, and the region it originated from.',
+    body: 'Each dependency is checked on a fixed interval from every region you configure. Latency, status code and origin are recorded.',
     href: PUBLIC_ROUTES.dependencyMonitoring,
   },
   {
     n: '02',
     title: 'Correlate',
-    body: 'Regional results are resolved into a single verdict by quorum, so one bad probe is not an outage. Confirmed vendor degradation is then aligned against the timeline of your own incident.',
+    body: 'A fault needs at least two regions to agree inside one 60-second window. Confirmed degradation is aligned with your incident.',
     href: PUBLIC_ROUTES.incidentEvidence,
   },
   {
     n: '03',
     title: 'Document',
-    body: 'A confirmed event becomes a durable record: start, end, duration, severity, the regions that saw it, and the observations underneath it. Nothing is backfilled and nothing is inferred.',
+    body: 'A confirmed event becomes a record: start, end, severity, regions, and the observations under it. Nothing is backfilled.',
     href: PUBLIC_ROUTES.slaEvidence,
   },
   {
     n: '04',
     title: 'Prove',
-    body: 'The record is exported as a timestamped, checksummed evidence report you can attach to a vendor support case, a customer postmortem, or an internal review.',
+    body: 'The record is exported as a timestamped, checksummed report for a vendor case, a postmortem or a review.',
     href: PUBLIC_ROUTES.docsEvidence,
   },
 ];
@@ -178,10 +159,9 @@ export function HowItWorksSection() {
           eyebrow="Method"
           id="how-title"
           title="Observe. Correlate. Document. Prove."
-          lede="Four stages, in order. Each one only accepts what the stage before it can support."
         />
 
-        <ol className="mt-16 grid gap-px md:grid-cols-2 xl:grid-cols-4">
+        <ol className="mt-14 grid gap-px md:grid-cols-2 xl:grid-cols-4">
           {STEPS.map((step) => (
             <li
               key={step.n}
@@ -206,116 +186,46 @@ export function HowItWorksSection() {
   );
 }
 
-/* ── 05 · The dependency chain ──────────────────────────────────────────── */
-
-const CHAIN: { label: string; note: string }[] = [
-  { label: 'Organization', note: 'The business carrying the obligation' },
-  { label: 'Application', note: 'What your customers actually touch' },
-  { label: 'External dependencies', note: 'The services you do not operate' },
-  { label: 'Observed telemetry', note: 'Multi-region checks, retained per plan' },
-  { label: 'Evidence', note: 'Timestamped, checksummed, exportable' },
-  { label: 'Attribution', note: 'Which party the failure belongs to' },
-];
-
-export function DependencyChainSection() {
-  return (
-    <Section id="chain" tone="void" aria-labelledby="chain-title">
-      <Container>
-        <SectionHeader
-          index="05"
-          eyebrow="External Dependency Intelligence"
-          id="chain-title"
-          title="From a business obligation to a provable cause."
-          lede="Accountability travels down this chain. RELIASTRA instruments the three links at the bottom, which are the three nobody else keeps."
-        />
-
-        <ol className="mt-16 grid gap-px lg:grid-cols-6">
-          {CHAIN.map((node, i) => {
-            const instrumented = i >= 3;
-            return (
-              <li
-                key={node.label}
-                className="relative flex gap-5 border-t border-[var(--ob-line)] pt-6 lg:flex-col lg:gap-4 lg:pr-6"
-              >
-                <span
-                  aria-hidden
-                  className="ob-label shrink-0 pt-0.5"
-                  style={
-                    instrumented ? { color: 'var(--ob-signal)' } : undefined
-                  }
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-[15px] font-semibold leading-snug tracking-[-0.01em] text-[var(--ob-text)]">
-                    {node.label}
-                  </h3>
-                  <p className="text-[13px] leading-[1.55] text-[var(--ob-text-4)]">
-                    {node.note}
-                  </p>
-                  {instrumented && (
-                    <span className="ob-label mt-1 text-[var(--ob-signal)]">
-                      RELIASTRA
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      </Container>
-    </Section>
-  );
-}
-
-/* ── 06 · Evidence artifact ─────────────────────────────────────────────── */
+/* ── 05 · Evidence artifact ─────────────────────────────────────────────── */
 
 /**
- * A structural preview of the evidence artifact.
- *
- * This is deliberately NOT a screenshot of a dashboard, and deliberately NOT
- * presented as a real incident. Every field name below is a field the product
- * actually produces; the values are illustrative and the panel says so in its
- * own header. Fabricating a "real" incident on the marketing page of an
- * evidence product would be self-defeating.
+ * A structural preview of the evidence artifact. Not a screenshot, not a real
+ * incident. Field names match what the product produces; the values are
+ * illustrative and the panel says so in its own header.
  */
 export function EvidenceArtifactSection() {
   return (
-    <Section id="evidence" tone="base" aria-labelledby="evidence-title">
+    <Section id="evidence" tone="void" aria-labelledby="evidence-title">
       <Container>
         <div className="grid gap-14 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
           <div className="flex flex-col gap-6">
-            <Eyebrow index="06">Evidence</Eyebrow>
+            <Eyebrow index="05">Evidence</Eyebrow>
             <h2 id="evidence-title" className="ob-h2 max-w-[15ch]">
               A record that survives the incident.
             </h2>
             <p className="ob-body">
-              Chat scrollback and a screenshot of a status page are not
-              evidence. An evidence report is a structured artifact: what was
-              observed, from where, when it started, when it recovered, how
-              confident the verdict is, and a checksum so the file can be shown
-              to be unaltered.
+              What was observed, from where, when it started, when it
+              recovered, and a checksum that proves the file is unaltered.
             </p>
-            <p className="ob-body">
-              Evidence generation and deterministic attribution are Pro
-              capabilities. Every new organization starts on a 14-day Pro trial,
-              so you can produce a real one before you decide anything.
+            <p className="ob-small">
+              Attribution and evidence are Pro capabilities. Every new
+              organization starts on a 14-day Pro trial.
             </p>
             <div className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
               <ArrowLink href={PUBLIC_ROUTES.slaEvidence}>
-                How SLA evidence works
+                How evidence works
               </ArrowLink>
               <ArrowLink href={PUBLIC_ROUTES.docsEvidence}>
-                Evidence documentation
+                Documentation
               </ArrowLink>
             </div>
           </div>
 
           <figure className="ob-inset overflow-hidden">
             <figcaption className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ob-line)] px-5 py-3.5">
-              <span className="ob-label">Evidence report · field structure</span>
+              <span className="ob-label">Evidence report · fields</span>
               <span className="ob-label text-[var(--ob-signal)]">
-                Illustrative values
+                Example values
               </span>
             </figcaption>
 
@@ -327,11 +237,10 @@ export function EvidenceArtifactSection() {
                 ['window_end', '2025-11-14T09:48:06Z'],
                 ['duration', '35m 25s'],
                 ['severity', 'major'],
-                ['observed_from', 'eu-west-1 · us-east-1 · ap-south-1'],
-                ['quorum', '3 of 3 regions failing'],
+                ['regions', 'eu-west · us-east'],
+                ['quorum', '2 of 2 regions failing'],
                 ['attribution', 'external_dependency'],
-                ['confidence', 'high'],
-                ['observations', '142 checks retained'],
+                ['observations', '142 retained'],
                 ['sha256', '9f2c…a417'],
               ].map(([k, v], i) => (
                 <div
@@ -349,8 +258,8 @@ export function EvidenceArtifactSection() {
             </dl>
 
             <p className="border-t border-[var(--ob-line)] px-5 py-3.5 text-[12px] leading-[1.55] text-[var(--ob-text-4)]">
-              Field names match the artifact RELIASTRA generates. The values
-              above are an example, not a recorded incident.
+              Field names match the generated artifact. Values are an example,
+              not a recorded incident.
             </p>
           </figure>
         </div>
@@ -359,7 +268,7 @@ export function EvidenceArtifactSection() {
   );
 }
 
-/* ── 09 · Agencies and MSPs ─────────────────────────────────────────────── */
+/* ── 08 · Agencies and MSPs ─────────────────────────────────────────────── */
 
 export function AgenciesSection() {
   return (
@@ -383,53 +292,50 @@ export function AgenciesSection() {
       <Container className="relative py-24 md:py-32">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
           <div className="flex flex-col gap-6">
-            <Eyebrow index="09">Agencies · MSPs · consultancies</Eyebrow>
+            <Eyebrow index="08">Agencies · MSPs</Eyebrow>
             <h2 id="agencies-title" className="ob-h2 max-w-[17ch]">
-              You are held responsible for stacks you inherited.
+              Held responsible for stacks you inherited.
             </h2>
             <p className="ob-body-lg">
-              When a client’s checkout stops working, the call comes to you —
-              regardless of whether the fault is in your code, their
-              configuration, or a payment provider two networks away. Without an
-              independent record, that conversation is decided by whoever
-              sounds most certain.
+              When a client’s checkout fails, the call comes to you. An
+              independent record settles whose fault it was.
             </p>
           </div>
 
           <dl className="flex flex-col">
             {[
               [
-                'Separate what you own from what you don’t',
-                'Client work is isolated into its own group, so each engagement has its own dependencies, incidents and evidence.',
+                'Client isolation',
+                'Each client has its own dependencies, incidents and evidence.',
               ],
               [
-                'Answer the client before they ask',
-                'Vendor degradation that touches a client’s stack is attributed and documented while the incident is still open.',
+                'Attribution per client',
+                'Vendor degradation is attributed while the incident is open.',
               ],
               [
-                'Hand over something durable',
-                'Client-facing reports and shareable portals mean the retainer conversation is about a record, not a recollection.',
+                'Shareable records',
+                'Client-facing reports and portals, from the same record.',
               ],
             ].map(([term, desc]) => (
               <div
                 key={term}
-                className="border-t border-[var(--ob-line)] py-6"
+                className="border-t border-[var(--ob-line)] py-5"
               >
-                <dt className="text-[15.5px] font-semibold leading-snug text-[var(--ob-text)]">
+                <dt className="text-[15px] font-semibold leading-snug text-[var(--ob-text)]">
                   {term}
                 </dt>
-                <dd className="mt-2 max-w-[58ch] text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
+                <dd className="mt-1.5 max-w-[58ch] text-[14px] leading-[1.6] text-[var(--ob-text-3)]">
                   {desc}
                 </dd>
               </div>
             ))}
             <p className="ob-small mt-5 max-w-[58ch]">
-              Client groups, client-facing reports and white-label branding are
-              Enterprise capabilities. See{' '}
+              Client groups, client reports and white-label branding are
+              Enterprise capabilities.{' '}
               <Link href={PUBLIC_ROUTES.pricing} className="ob-link">
-                pricing
-              </Link>{' '}
-              for exactly what each plan includes.
+                See pricing
+              </Link>
+              .
             </p>
           </dl>
         </div>
@@ -438,48 +344,38 @@ export function AgenciesSection() {
   );
 }
 
-/* ── 10 · Partner program ───────────────────────────────────────────────── */
+/* ── 09 · Partner program ───────────────────────────────────────────────── */
 
 export function PartnerSection() {
   return (
-    <Section id="partners" tone="base" aria-labelledby="partners-title">
+    <Section id="partners" tone="base" tight aria-labelledby="partners-title">
       <Container>
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20">
           <div className="flex flex-col gap-6">
-            <Eyebrow index="10">Partner program</Eyebrow>
-            <h2 id="partners-title" className="ob-h2 max-w-[18ch]">
-              Bring dependency accountability to the organizations you advise.
+            <Eyebrow index="09">Partner program</Eyebrow>
+            <h2 id="partners-title" className="ob-h2 max-w-[16ch]">
+              Refer the organizations you advise.
             </h2>
-            <p className="ob-body-lg">
-              Consultants, agencies, MSPs, infrastructure engineers and
-              technical communities can join the RELIASTRA Partner Network,
-              refer organizations that need external dependency visibility, and
-              earn recurring commission on the accounts they bring.
-            </p>
             <p className="ob-body">
-              Referrals are attributed through a tracked partner link, and the
-              partner dashboard reports referrals, commission and payouts
-              directly from the same ledger that pays them.
+              Consultancies, agencies and technical publishers earn recurring
+              commission on referred accounts. Referrals are attributed through
+              a tracked link.
             </p>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row">
               <Link href={PUBLIC_ROUTES.partner} className="ob-btn ob-btn-outline">
                 Partner program
               </Link>
-              <Link
-                href={partnerUrl('signup')}
-                className="ob-btn ob-btn-outline"
-              >
-                Apply as a partner
+              <Link href={partnerUrl('signup')} className="ob-btn ob-btn-outline">
+                Apply
               </Link>
             </div>
           </div>
 
           <dl className="flex flex-col self-start">
             {[
-              ['Who it is for', 'Consultancies, agencies, MSPs, infrastructure professionals, technical creators and communities.'],
-              ['Attribution', 'A tracked referral link ties every signup to the partner who introduced it.'],
-              ['Commission', 'Published in full on the program pages, including tier thresholds and payout terms.'],
-              ['Onboarding', 'Apply, verify your email, and the partner workspace is available immediately.'],
+              ['Commission', 'Published in full on the commission page.'],
+              ['Attribution', 'A tracked link ties each signup to the partner.'],
+              ['Accounts', 'A partner account is separate from a customer account.'],
             ].map(([term, desc]) => (
               <div key={term} className="border-t border-[var(--ob-line)] py-5">
                 <dt className="ob-label mb-2">{term}</dt>
@@ -488,13 +384,6 @@ export function PartnerSection() {
                 </dd>
               </div>
             ))}
-            <p className="ob-small mt-4">
-              Commission rates, tiers and payout schedules are stated on the{' '}
-              <Link href={partnerUrl('commission')} className="ob-link">
-                commission page
-              </Link>
-              . A partner account is separate from a customer account.
-            </p>
           </dl>
         </div>
       </Container>
@@ -502,86 +391,55 @@ export function PartnerSection() {
   );
 }
 
-/* ── Reference: plain-language answers ──────────────────────────────────── */
+/* ── Reference: plain-language definitions ──────────────────────────────── */
 
 /**
- * Explicit, machine-legible definitions.
- *
- * Search engines and language models should not have to infer what this
- * company does from a hero line. These are real definitions in semantic
- * markup (`dl` / `dt` / `dd`), they mirror the FAQPage structured data emitted
- * by the page, and they are genuinely useful to a first-time reader.
+ * Short, machine-legible definitions in semantic markup. They mirror the
+ * FAQPage structured data emitted by the page.
  */
 export const HOME_DEFINITIONS: { q: string; a: string }[] = [
   {
     q: 'What is RELIASTRA?',
-    a: 'RELIASTRA is an external dependency intelligence platform. It independently monitors the third-party APIs and services an organization depends on, correlates their failures with that organization’s own incidents, attributes the fault to the responsible party, and generates timestamped, checksummed evidence reports.',
+    a: 'An external dependency intelligence platform. It monitors third-party APIs independently, correlates their failures with your incidents, and generates timestamped, checksummed evidence reports.',
   },
   {
-    q: 'What is External Dependency Intelligence?',
-    a: 'External Dependency Intelligence is the practice of measuring, documenting and proving the behaviour of infrastructure a business relies on but does not operate — payment processors, identity providers, cloud platforms, model APIs, DNS and messaging services. It combines independent observation, incident correlation, fault attribution and durable evidence.',
+    q: 'What does it monitor?',
+    a: 'Any HTTP endpoint: payment providers, identity providers, cloud platforms, model APIs, messaging, managed databases, DNS.',
   },
   {
-    q: 'What problem does RELIASTRA solve?',
-    a: 'Internal monitoring shows that a service failed but not who caused it. Vendor status pages are written by the vendor. RELIASTRA supplies the missing third record: independent measurement of the dependency itself, so an organization can determine whether an outage originated inside its own systems or in a service it buys.',
+    q: 'How is an incident confirmed?',
+    a: 'At least two observation regions must fail inside the same 60-second window. A single failing region is recorded, not declared.',
   },
   {
-    q: 'Who is RELIASTRA for?',
-    a: 'Engineering and infrastructure teams at software companies, platform and SRE teams responsible for uptime commitments, agencies and managed service providers accountable for client stacks, and founders or operators who must explain outages to customers.',
+    q: 'What is in an evidence report?',
+    a: 'The dependency, the incident window, the regions that observed it, the retained observations, the attribution result, and a SHA-256 checksum.',
   },
   {
-    q: 'What does RELIASTRA monitor?',
-    a: 'Any HTTP endpoint. In practice this means third-party APIs and services such as payment providers, authentication providers, cloud and edge platforms, model inference APIs, messaging and email delivery, managed databases and DNS.',
-  },
-  {
-    q: 'What is reliability evidence?',
-    a: 'Reliability evidence is a structured, timestamped record of an observed failure: the dependency involved, the window it was degraded, the regions that observed the degradation, the number of retained observations, the attribution verdict and its confidence, and a checksum that lets the artifact be verified as unaltered.',
-  },
-  {
-    q: 'How does RELIASTRA generate evidence?',
-    a: 'Checks run on a fixed interval from multiple regions on infrastructure separate from both the customer and the vendor. Regional results are resolved by quorum into a single verdict, confirmed degradation is aligned against the customer’s incident timeline, and the resulting record is exported as a timestamped, checksummed report.',
-  },
-  {
-    q: 'How does dependency attribution work?',
-    a: 'Attribution is deterministic, not probabilistic. RELIASTRA compares the observed state of each external dependency against the customer’s incident window. Where independently confirmed vendor degradation overlaps the incident, the incident is attributed to that dependency with a stated confidence level. Where the timelines do not support a claim, no claim is made.',
-  },
-  {
-    q: 'What is RELIASTRA Research?',
-    a: 'RELIASTRA Research is the company’s public technical publication. It documents measurement methodology, dependency failure analysis and the standards RELIASTRA holds its own data to, so customers can inspect how reliability records are produced before relying on them commercially.',
-  },
-  {
-    q: 'What are public dependency pages?',
-    a: 'Public dependency pages are the independently measured status pages RELIASTRA publishes for tracked vendors at /track. Each page reports current state, observed availability over 7 and 30 days, latency, incident history and the methodology behind the measurement — useful to any engineer, customer or not.',
+    q: 'How does attribution work?',
+    a: 'Deterministically. Confirmed vendor degradation is compared against your incident window. Where the timelines do not support a claim, no claim is made.',
   },
 ];
 
 export function ReferenceSection() {
   return (
-    <Section id="reference" tone="void" aria-labelledby="reference-title">
+    <Section id="reference" tone="void" tight aria-labelledby="reference-title">
       <Container>
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
           <div className="flex flex-col gap-5">
             <Eyebrow>Reference</Eyebrow>
             <h2 id="reference-title" className="ob-h2 max-w-[14ch]">
-              Plainly, what this is.
+              Definitions.
             </h2>
-            <p className="ob-body">
-              Definitions, not positioning. If you are evaluating RELIASTRA for
-              a security review, an architecture decision or an investment
-              conversation, start here.
-            </p>
             <div className="mt-2">
-              <ArrowLink href={PUBLIC_ROUTES.glossary}>
-                Full glossary of terms
-              </ArrowLink>
+              <ArrowLink href={PUBLIC_ROUTES.glossary}>Full glossary</ArrowLink>
             </div>
           </div>
 
           <dl className="flex flex-col">
             {HOME_DEFINITIONS.map((item) => (
-              <div key={item.q} className="border-t border-[var(--ob-line)] py-6">
+              <div key={item.q} className="border-t border-[var(--ob-line)] py-5">
                 <dt className="ob-h4">{item.q}</dt>
-                <dd className="mt-2.5 max-w-[70ch] text-[14.5px] leading-[1.7] text-[var(--ob-text-3)]">
+                <dd className="mt-2 max-w-[70ch] text-[14.5px] leading-[1.65] text-[var(--ob-text-3)]">
                   {item.a}
                 </dd>
               </div>
@@ -593,7 +451,7 @@ export function ReferenceSection() {
   );
 }
 
-/* ── 12 · Final CTA ─────────────────────────────────────────────────────── */
+/* ── 11 · Final CTA ─────────────────────────────────────────────────────── */
 
 export function FinalCTASection() {
   return (
@@ -614,39 +472,23 @@ export function FinalCTASection() {
         <div className="ob-scrim-bottom absolute inset-0" aria-hidden />
       </div>
 
-      <Container className="relative flex min-h-[520px] flex-col justify-end py-24 md:min-h-[620px] md:py-32">
-        <Eyebrow index="12">Start</Eyebrow>
+      <Container className="relative flex min-h-[440px] flex-col justify-end py-20 md:min-h-[520px] md:py-28">
+        <Eyebrow index="11">Start</Eyebrow>
         <h2 id="final-cta-title" className="ob-h1 mt-6 max-w-[14ch]">
           Know what you depend on. Prove what it did.
         </h2>
-        <p className="ob-body-lg mt-6">
-          Add your first dependency and RELIASTRA begins observing it from
-          independent regions on the next check interval. Every new organization
-          gets a 14-day Pro trial — attribution and evidence included, no card
+        <p className="ob-body-lg mt-6 max-w-[44ch]">
+          14-day Pro trial on every new organization. No payment method
           required.
         </p>
         <div className="mt-9 flex flex-col gap-3 sm:flex-row">
           <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
             Start monitoring
           </Link>
-          <Link href={PUBLIC_ROUTES.track} className="ob-btn ob-btn-outline">
-            Browse public dependency data
+          <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
+            Pricing
           </Link>
         </div>
-        <dl className="mt-12 grid max-w-3xl grid-cols-1 gap-px border-t border-[var(--ob-line)] pt-6 sm:grid-cols-3">
-          <DataRow label="Trial" className="border-t-0 sm:col-span-3">
-            14 days of Pro on every new organization. No payment method
-            required to start.
-          </DataRow>
-          <DataRow label="Free tier" className="sm:col-span-3">
-            Continues after the trial: 3 dependencies, 1-minute checks, email
-            alerts.
-          </DataRow>
-          <DataRow label="Data" className="sm:col-span-3">
-            Monitoring data and evidence reports belong to the account holder
-            and are never shared with the vendors being measured.
-          </DataRow>
-        </dl>
       </Container>
     </section>
   );
