@@ -62,6 +62,7 @@ export function SettingsPage() {
         }
       />
 
+      <div className="flex flex-wrap gap-4 border-b border-[var(--obc-line)] py-4"><Link className="obc-link" href="/settings/notifications">Notifications →</Link><Link className="obc-link" href="/settings/billing">Billing →</Link></div>
       <Section title="Organization" hint="Displayed on evidence records and shared reports.">
         <form
           className="max-w-xl"

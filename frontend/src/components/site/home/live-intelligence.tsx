@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PublicObservations } from './public-observations';
 import {
   ArrowLink,
   Container,
@@ -16,29 +17,6 @@ import { PUBLIC_ROUTES, SHARE_ROUTES } from '@/lib/routes';
  * so plainly instead of rendering placeholder rows. A monitoring product that
  * fakes status on its own homepage has already lost the argument it is making.
  */
-
-const CATEGORY_LABELS: Record<string, string> = {
-  payment: 'Payments',
-  communication: 'Communication',
-  cloud: 'Cloud',
-  storage: 'Storage',
-  database: 'Database',
-  auth: 'Identity',
-  ai: 'Model APIs',
-  other: 'Other',
-};
-
-function relativeTime(iso: string | null): string {
-  if (!iso) return 'pending';
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return 'pending';
-  const mins = Math.floor((Date.now() - then) / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
 
 export async function LiveIntelligenceSection() {
   let vendors: TrackVendorListItem[] | null = null;
@@ -89,32 +67,7 @@ export async function LiveIntelligenceSection() {
         )}
 
         {!unreachable && vendors && vendors.length > 0 && (
-          <ul className="mt-4 grid gap-x-12 sm:grid-cols-2 xl:grid-cols-3">
-            {vendors.map((v) => (
-              <li key={v.id}>
-                <Link
-                  href={SHARE_ROUTES.trackVendor(v.vendor_name)}
-                  className="group flex items-baseline justify-between gap-6 border-b border-[var(--ob-line)] py-5 transition-colors hover:border-[var(--ob-line-3)]"
-                >
-                  <span className="flex min-w-0 flex-col gap-1.5">
-                    <span className="truncate text-[15.5px] font-medium tracking-[-0.01em] text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">
-                      {v.display_name}
-                    </span>
-                    <span className="ob-label">
-                      {CATEGORY_LABELS[v.category] ?? v.category}
-                    </span>
-                  </span>
-                  {/* The catalog endpoint reports when a vendor was last
-                      observed, not its state - so that is all this row claims.
-                      Current state lives on the vendor page, where the data
-                      backing it is actually fetched. */}
-                  <span className="ob-label shrink-0 whitespace-nowrap transition-colors group-hover:text-[var(--ob-signal)]">
-                    {relativeTime(v.last_check_at)} →
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <PublicObservations initial={vendors} />
         )}
 
         <div className="mt-12 flex flex-wrap items-center gap-x-10 gap-y-4">

@@ -96,7 +96,7 @@ async def verify_supabase_token(
     """
     import jwt as pyjwt
 
-    if not token:
+    if not token or (not supabase_url and not jwt_secret):
         return None
 
     if jwt_secret:

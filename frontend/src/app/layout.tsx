@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
@@ -92,12 +91,6 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
-        {/* Google Preferred Sources - publisher.js loaded once, async, non-blocking */}
-        <Script
-          src="https://news.google.com/swg/js/v1/publisher.js"
-          strategy="afterInteractive"
-          async
-        />
       </body>
     </html>
   );

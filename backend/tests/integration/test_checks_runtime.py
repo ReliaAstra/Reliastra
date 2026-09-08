@@ -192,10 +192,10 @@ async def test_worker_task_execution_writes_a_check_result(
     from app.modules.checks.tasks import execute_check
 
     with patch(
-        "app.modules.checks.service.resolve_pinned_target_async",
+        "app.modules.checks.http_probe.resolve_pinned_target_async",
         new=AsyncMock(return_value=_public_target()),
     ), patch(
-        "app.modules.checks.service.pinned_transport_for",
+        "app.modules.checks.http_probe.pinned_transport_for",
         return_value=_FakePinnedTransport(status_code=200),
     ):
         result = execute_check.apply(args=[dep["id"], "us-east"]).get()
@@ -235,10 +235,10 @@ async def test_state_after_a_real_probe_reports_the_target(async_client, auth_da
     await record_scheduler_heartbeat()
     await record_worker_heartbeat()
     with patch(
-        "app.modules.checks.service.resolve_pinned_target_async",
+        "app.modules.checks.http_probe.resolve_pinned_target_async",
         new=AsyncMock(return_value=_public_target()),
     ), patch(
-        "app.modules.checks.service.pinned_transport_for",
+        "app.modules.checks.http_probe.pinned_transport_for",
         return_value=_FakePinnedTransport(status_code=200),
     ):
         execute_check.apply(args=[dep["id"], "us-east"]).get()
@@ -416,3 +416,26 @@ async def test_manual_trigger_is_rate_limited_per_organization(
 
 class OperationalError(Exception):
     """Stands in for a broker connection error."""
+
+
+@pytest.mark.asyncio
+async def test_duplicate_task_delivery_keeps_result_and_outbox_identity(async_client, auth_data, monkeypatch, db_session):
+    import json
+    import uuid
+    from sqlalchemy import select
+    from app.modules.checks.models import CheckResult
+    from app.modules.observations.models import OutboxEvent
+    from app.modules.checks.tasks import execute_check
+    dep = await _create_dependency(async_client, auth_data['headers'])
+    monkeypatch.setattr(celery_app.conf, 'task_always_eager', True)
+    task_id = str(uuid.uuid4())
+    with patch('app.modules.checks.http_probe.resolve_pinned_target_async', new=AsyncMock(return_value=_public_target())), patch('app.modules.checks.http_probe.pinned_transport_for', return_value=_FakePinnedTransport(status_code=200)):
+        first = execute_check.apply(args=[dep['id'], 'us-east'], task_id=task_id).get()
+        second = execute_check.apply(args=[dep['id'], 'us-east'], task_id=task_id).get()
+    assert first == second
+    results = (await db_session.scalars(select(CheckResult).where(CheckResult.dependency_id == uuid.UUID(dep['id'])))).all()
+    assert len(results) == 1
+    assert str(results[0].id) == task_id
+    events = (await db_session.scalars(select(OutboxEvent).where(OutboxEvent.payload.contains(task_id)))).all()
+    assert len(events) == 1
+    assert json.loads(events[0].payload)['metadata']['check_result_id'] == task_id

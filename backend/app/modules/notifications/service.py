@@ -5,12 +5,14 @@ import hmac
 import logging
 import time
 import uuid
+import secrets
+from datetime import datetime, timezone, timedelta
 from typing import Any
 import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
-from app.core.exceptions import ResourceNotFoundException
+from app.core.exceptions import ResourceNotFoundException, ValidationException, ServiceUnavailableException
 from app.core.ssrf_protection import validate_outbound_url
 from app.infrastructure.email import email_client
 from app.infrastructure.email_layout import escape, render_email
@@ -24,6 +26,9 @@ from app.modules.notifications.schemas import (
     AlertPayload,
     AlertTestResponse,
 )
+
+from app.modules.notifications.configuration import unpack, pack, validate_config, public_fields
+from app.core.audit_log import AuditLogService
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +249,7 @@ class NotificationService:
         self, session: AsyncSession, org_id: uuid.UUID
     ) -> list[AlertConfigResponse]:
         configs = await self.repository.list_for_org(session, org_id)
-        return [AlertConfigResponse.model_validate(c) for c in configs]
+        return [self._response(c) for c in configs]
 
     async def _enforce_channel_entitlement(
         self, session: AsyncSession, org_id: uuid.UUID, channel_type: str
@@ -254,28 +259,9 @@ class NotificationService:
         from app.core.permissions import PLAN_FEATURES, get_effective_plan_for_org
         from app.modules.organizations.repository import OrganizationRepository
 
-        try:
-            org = await OrganizationRepository.get_by_id(session, org_id)
-        except Exception:
-            org = None
-        # Let real org-not-found raise, but let mocked DB (MagicMock) skip enforcement
+        org = await OrganizationRepository.get_by_id(session, org_id)
         if org is None:
-            # If session is a mock (unit test without DB), don't enforce; real code will have org
-            # Detect mocked session by checking if db call failed or returned MagicMock
-            # For unit tests that mock org to control evaluation, they patch this method's org lookup
-            # separately, so reaching here with None in a mock context should not block.
-            # In production, None means truly missing org and should raise.
-            # We distinguish by checking if session is a MagicMock/AsyncMock
-            try:
-                from unittest.mock import MagicMock as _MM
-
-                if isinstance(session, _MM):
-                    return
-            except Exception:
-                pass
-            raise ResourceNotFoundException("Organization not found")
-        if not isinstance(getattr(org, "plan", None), str):
-            return  # mocked org without real plan - skip gate for unit test compat
+            raise ResourceNotFoundException('Organization not found')
         effective = get_effective_plan_for_org(org)
         features = PLAN_FEATURES.get(effective, {})
         # Slack, PagerDuty, webhook are advanced - require slack_alerts flag.
@@ -298,10 +284,13 @@ class NotificationService:
             session=session,
             org_id=org_id,
             channel_type=request.channel_type.value,
-            config=request.config,
+            config=pack(await self._prepare_email(session, org_id, request.channel_type.value, validate_config(request.channel_type.value, request.config))),
             is_active=request.is_active,
         )
-        return AlertConfigResponse.model_validate(cfg)
+        if cfg.channel_type == 'email' and not unpack(cfg.config).get('verified_at'):
+            await self._send_verification(session, cfg)
+        await AuditLogService.log_event(session, 'notification_channel_created', org_id=org_id, resource_type='alert_config', resource_id=str(cfg.id), payload={'channel_type': cfg.channel_type})
+        return self._response(cfg)
 
     async def get_config(
         self, session: AsyncSession, org_id: uuid.UUID, config_id: uuid.UUID
@@ -309,7 +298,7 @@ class NotificationService:
         cfg = await self.repository.get_by_id(session, config_id)
         if not cfg or cfg.org_id != org_id:
             raise ResourceNotFoundException("Alert configuration not found")
-        return AlertConfigResponse.model_validate(cfg)
+        return self._response(cfg)
 
     async def update_config(
         self,
@@ -326,16 +315,25 @@ class NotificationService:
         if request.channel_type is not None:
             await self._enforce_channel_entitlement(session, org_id, request.channel_type.value)
 
-        update_kwargs = {}
-        if request.channel_type is not None:
-            update_kwargs["channel_type"] = request.channel_type.value
+        channel = request.channel_type.value if request.channel_type else cfg.channel_type
+        if request.channel_type and channel != cfg.channel_type:
+            raise ValidationException('Create a new channel to change its type')
+        value = unpack(cfg.config)
         if request.config is not None:
-            update_kwargs["config"] = request.config
-        if request.is_active is not None:
-            update_kwargs["is_active"] = request.is_active
-
-        updated = await self.repository.update(session, cfg, **update_kwargs)
-        return AlertConfigResponse.model_validate(updated)
+            public = {k: v for k, v in value.items() if k in {'email', 'recipient', 'webhook_url', 'routing_key', 'url', 'label', 'events'}}
+            value_new = validate_config(channel, {**public, **request.config})
+            destination_changed = any(value_new.get(k) != value.get(k) for k in ('email', 'webhook_url', 'routing_key', 'url'))
+            if destination_changed:
+                value = await self._prepare_email(session, org_id, channel, value_new)
+            else:
+                value = {**value, **value_new}
+        if request.is_active:
+            await self._enforce_channel_entitlement(session, org_id, channel)
+        updated = await self.repository.update(session, cfg, config=pack(value), is_active=request.is_active)
+        if request.config is not None and channel == 'email' and not value.get('verified_at'):
+            await self._send_verification(session, updated)
+        await AuditLogService.log_event(session, 'notification_channel_updated', org_id=org_id, resource_type='alert_config', resource_id=str(cfg.id))
+        return self._response(updated)
 
     async def delete_config(
         self, session: AsyncSession, org_id: uuid.UUID, config_id: uuid.UUID
@@ -344,10 +342,14 @@ class NotificationService:
         if not cfg or cfg.org_id != org_id:
             raise ResourceNotFoundException("Alert configuration not found")
         await self.repository.delete(session, cfg)
+        await AuditLogService.log_event(session, 'notification_channel_deleted', org_id=org_id, resource_type='alert_config', resource_id=str(config_id))
 
     async def send_to_channel(
         self, alert: AlertPayload, channel_type: str, config: dict[str, Any]
     ) -> bool:
+        config = unpack(config)
+        if channel_type == 'email' and not config.get('verified_at'):
+            return False
         channel_cls = CHANNEL_REGISTRY.get(channel_type.lower())
         if not channel_cls:
             logger.warning("Unsupported channel type: %s", channel_type)
@@ -362,16 +364,26 @@ class NotificationService:
         if not cfg or cfg.org_id != org_id:
             raise ResourceNotFoundException("Alert configuration not found")
 
+        from app.infrastructure.redis_client import safe_redis_claim
+        if not await safe_redis_claim(f'notification:test:{org_id}:{config_id}', ex=30):
+            raise ValidationException('Wait 30 seconds before sending another test')
+        await self._enforce_channel_entitlement(session, org_id, cfg.channel_type)
+        if cfg.channel_type == 'email' and not unpack(cfg.config).get('verified_at'):
+            raise ValidationException('Verify this email address first')
         test_alert = AlertPayload(
             org_id=org_id,
             severity="minor",
             title="Reliastra Test Alert",
-            body="This is a test notification from Reliastra MVP.",
+            body="Your RELIASTRA notification channel is ready.",
             metadata={"test": True},
         )
         success = await self.send_to_channel(
             test_alert, cfg.channel_type, cfg.config
         )
+        value = unpack(cfg.config)
+        value.update(last_test_at=datetime.now(timezone.utc).isoformat(), last_test_success=success)
+        await self.repository.update(session, cfg, config=pack(value))
+        logger.info('Notification test org=%s channel=%s success=%s', org_id, config_id, success)
         return AlertTestResponse(
             success=success,
             message="Test alert sent successfully" if success else "Failed to send test alert",
@@ -379,7 +391,7 @@ class NotificationService:
 
     def _alert_fingerprint(self, alert: AlertPayload) -> str:
         key = (
-            f"{alert.org_id}|{alert.severity}|{alert.title}|"
+            f"{alert.org_id}|{alert.event}|{alert.severity}|{alert.title}|"
             f"{alert.incident_id or alert.metadata.get('dependency_id', '')}"
         )
         return hashlib.sha256(key.encode("utf-8")).hexdigest()
@@ -443,6 +455,10 @@ class NotificationService:
         sent_count = 0
         for cfg in configs:
             try:
+                config = unpack(cfg.config)
+                if not config.get('events', {}).get(alert.event, True):
+                    continue
+                await self._enforce_channel_entitlement(session, alert.org_id, cfg.channel_type)
                 success = await self.send_to_channel(
                     alert, cfg.channel_type, cfg.config
                 )
@@ -530,6 +546,77 @@ class NotificationService:
         except Exception as exc:  # pragma: no cover - alerting is best effort
             logger.warning("In-app alert delivery failed for org %s: %s", alert.org_id, exc)
             return 0
+
+
+    @staticmethod
+    def _response(cfg: AlertConfig) -> AlertConfigResponse:
+        return AlertConfigResponse(**{
+            **AlertConfigResponse.model_validate(cfg).model_dump(),
+            **public_fields(cfg.channel_type, cfg.config),
+        })
+
+    @staticmethod
+    async def _prepare_email(session, org_id, channel, value):
+        if channel != 'email':
+            return value
+        from app.modules.users.models import User
+        from app.modules.organizations.models import OrganizationMember
+        verified = await session.scalar(select(User.id).join(OrganizationMember, OrganizationMember.user_id == User.id).where(
+            OrganizationMember.org_id == org_id, OrganizationMember.is_deleted.is_(False),
+            User.email == value['email'], User.is_email_verified.is_(True), User.is_active.is_(True),
+        ).limit(1))
+        if verified:
+            value['verified_at'] = datetime.now(timezone.utc).isoformat()
+        return value
+
+    async def _send_verification(self, session, cfg):
+        from app.infrastructure.redis_client import safe_redis_claim
+        if not await safe_redis_claim(f'notification:verify-send:{cfg.id}', ex=60):
+            raise ValidationException('Wait one minute before requesting another code')
+        value = unpack(cfg.config)
+        code = f'{secrets.randbelow(1000000):06d}'
+        value.update(verification_hash=hashlib.sha256(code.encode()).hexdigest(),
+                     verification_expires=(datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+                     verification_attempts=0)
+        await self.repository.update(session, cfg, config=pack(value))
+        sent = await email_client.send_async(value['email'], 'Verify your RELIASTRA alert destination', f'Your verification code is {code}. It expires in 10 minutes.')
+        if not sent:
+            logger.warning('Channel verification email failed org=%s channel=%s', cfg.org_id, cfg.id)
+            raise ServiceUnavailableException('Unable to send the verification email. Please retry later.')
+
+    async def verify_email(self, session, org_id, config_id, code):
+        cfg = await self.repository.get_by_id(session, config_id)
+        if not cfg or cfg.org_id != org_id:
+            raise ResourceNotFoundException('Alert configuration not found')
+        value = unpack(cfg.config)
+        if cfg.channel_type != 'email':
+            raise ValidationException('This channel does not require email verification')
+        from app.infrastructure.redis_client import safe_redis_claim
+        # One guess per code slot; five guesses maximum per ten-minute code window.
+        slot = int(time.time() // 600)
+        allowed = False
+        for attempt in range(5):
+            if await safe_redis_claim(f'notification:verify-attempt:{cfg.id}:{slot}:{attempt}', ex=1200):
+                allowed = True
+                break
+        valid = (allowed and value.get('verification_expires', '') > datetime.now(timezone.utc).isoformat()
+                 and hmac.compare_digest(value.get('verification_hash', ''), hashlib.sha256(code.encode()).hexdigest()))
+        if not valid:
+            raise ValidationException('Invalid or expired verification code')
+        value['verified_at'] = datetime.now(timezone.utc).isoformat()
+        for key in ('verification_hash', 'verification_expires', 'verification_attempts'):
+            value.pop(key, None)
+        await self.repository.update(session, cfg, config=pack(value))
+        return self._response(cfg)
+
+    async def resend_verification(self, session, org_id, config_id):
+        cfg = await self.repository.get_by_id(session, config_id)
+        if not cfg or cfg.org_id != org_id:
+            raise ResourceNotFoundException('Alert configuration not found')
+        if cfg.channel_type != 'email' or unpack(cfg.config).get('verified_at'):
+            raise ValidationException('Verification is not required')
+        await self._send_verification(session, cfg)
+        return self._response(cfg)
 
 
 notification_service = NotificationService()

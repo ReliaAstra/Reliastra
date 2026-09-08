@@ -34,6 +34,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL to your Supabase Postgres URI}
       DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-require}
       REDIS_URL: redis://redis:6379/0
+      CHECK_WORKER_REGION: ${CHECK_WORKER_REGION:-us-east}
       SECRET_KEY: ${SECRET_KEY:-reliastra-dev-only-change-in-production-key}
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 7
@@ -66,6 +67,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL to your Supabase Postgres URI}
       DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-require}
       REDIS_URL: redis://redis:6379/0
+      CHECK_WORKER_REGION: ${CHECK_WORKER_REGION:-us-east}
       SECRET_KEY: ${SECRET_KEY:-reliastra-dev-only-change-in-production-key}
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 7
@@ -110,6 +112,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL to your Supabase Postgres URI}
       DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-require}
       REDIS_URL: redis://redis:6379/0
+      CHECK_WORKER_REGION: ${CHECK_WORKER_REGION:-us-east}
       SECRET_KEY: ${SECRET_KEY:-reliastra-dev-only-change-in-production-key}
       ACCESS_TOKEN_EXPIRE_MINUTES: 15
       REFRESH_TOKEN_EXPIRE_DAYS: 7

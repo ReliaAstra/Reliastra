@@ -71,10 +71,11 @@ class DependencyRepository:
             .where(
                 Dependency.is_active == True,  # noqa: E712
                 Dependency.is_deleted == False,  # noqa: E712
-                Dependency.next_check_at <= now,
+                (Dependency.next_check_at <= now) | Dependency.next_check_at.is_(None),
             )
-            .order_by(Dependency.next_check_at.asc())
+            .order_by(Dependency.next_check_at.asc().nullsfirst())
             .limit(limit)
+            .with_for_update(skip_locked=True)
         )
         result = await session.execute(query)
         return list(result.scalars().all())

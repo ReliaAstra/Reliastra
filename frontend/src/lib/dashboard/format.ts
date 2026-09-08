@@ -36,7 +36,9 @@ export function timeAgo(iso: string | null | undefined): string {
 export function formatUtc(iso: string | null | undefined, pattern = 'HH:mm'): string {
   if (!iso) return '-';
   try {
-    return `${format(new Date(iso), pattern)} UTC`;
+    const date = new Date(iso);
+    const utc = new Date(date.getTime() + date.getTimezoneOffset() * 60_000);
+    return `${format(utc, pattern)} UTC`;
   } catch {
     return '-';
   }

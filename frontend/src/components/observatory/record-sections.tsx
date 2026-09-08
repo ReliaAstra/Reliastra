@@ -631,10 +631,9 @@ export function IncidentsSection({
           caption="Times are UTC. An open incident has no resolution time because RELIASTRA has not yet observed a qualifying recovery."
         />
       ) : (
-        <Notice title="No incidents observed">
-          RELIASTRA has not opened an incident against this dependency. That means no qualifying
-          multi-region failure has been observed - it is not a statement about failures the vendor
-          may have had in components RELIASTRA does not observe.
+        <Notice title="No public incident records">
+          No public incident records are available. Use the endpoint observations above;
+          an empty incident list does not establish the absence of outages.
         </Notice>
       )}
     </RecordSection>

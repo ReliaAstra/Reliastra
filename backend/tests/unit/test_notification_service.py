@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
+from types import SimpleNamespace
 import pytest
 from app.modules.notifications.service import (
     NotificationService,
@@ -28,15 +29,16 @@ async def test_email_channel_send(mocker):
 
 
 @pytest.mark.asyncio
-async def test_create_config():
+async def test_create_config(mocker):
+    mocker.patch('app.modules.organizations.repository.OrganizationRepository.get_by_id', new=AsyncMock(return_value=SimpleNamespace(plan='free', trial_ends_at=None)))
     repo = MagicMock()
     org_id = uuid.uuid4()
     now = datetime.now(timezone.utc)
-    fake_config = MagicMock()
+    fake_config = SimpleNamespace()
     fake_config.id = uuid.uuid4()
     fake_config.org_id = org_id
     fake_config.channel_type = ChannelType.EMAIL.value
-    fake_config.config = {"email": "test@reliastra.com"}
+    fake_config.config = {"email": "test@reliastra.com", "verified_at": datetime.now(timezone.utc).isoformat()}
     fake_config.is_active = True
     fake_config.created_at = now
     fake_config.updated_at = now
@@ -54,9 +56,10 @@ async def test_create_config():
 
 @pytest.mark.asyncio
 async def test_dispatch_alert(mocker):
+    mocker.patch('app.modules.organizations.repository.OrganizationRepository.get_by_id', new=AsyncMock(return_value=SimpleNamespace(plan='pro', trial_ends_at=None)))
     repo = MagicMock()
     org_id = uuid.uuid4()
-    fake_config = MagicMock()
+    fake_config = SimpleNamespace()
     fake_config.id = uuid.uuid4()
     fake_config.org_id = org_id
     fake_config.channel_type = ChannelType.PAGERDUTY.value
@@ -88,11 +91,11 @@ async def test_dispatch_alert_deduplicates_repeat_alerts(mocker):
     """FIX 39: the same alert within 60s is dispatched only once."""
     repo = MagicMock()
     org_id = uuid.uuid4()
-    fake_config = MagicMock()
+    fake_config = SimpleNamespace()
     fake_config.id = uuid.uuid4()
     fake_config.org_id = org_id
     fake_config.channel_type = ChannelType.EMAIL.value
-    fake_config.config = {"email": "test@reliastra.com"}
+    fake_config.config = {"email": "test@reliastra.com", "verified_at": datetime.now(timezone.utc).isoformat()}
     fake_config.is_active = True
 
     repo.list_for_org = AsyncMock(return_value=[fake_config])

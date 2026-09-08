@@ -9,11 +9,29 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from datetime import datetime, timezone
 from typing import Any
 
 from app.core.request_context import get_request_id, get_user_id
+
+
+def redact_secrets(message: str) -> str:
+    return re.sub(r'https://hooks\.slack(?:-gov)?\.com/services/[^\s\"<>]+', '[Slack webhook redacted]', message)
+
+
+class RedactingFormatter(logging.Formatter):
+    def format(self, record):
+        return redact_secrets(super().format(record))
+
+
+class SecretURLFilter(logging.Filter):
+    def filter(self, record):
+        message = record.getMessage()
+        record.msg = re.sub(r'https://hooks\.slack(?:-gov)?\.com/services/[^\s\"<>]+', '[Slack webhook redacted]', message)
+        record.args = ()
+        return True
 
 
 class JsonFormatter(logging.Formatter):
@@ -36,7 +54,7 @@ class JsonFormatter(logging.Formatter):
             payload["exc_info"] = self.formatException(record.exc_info)
         if record.stack_info:
             payload["stack_info"] = self.formatStack(record.stack_info)
-        return json.dumps(payload, default=str)
+        return redact_secrets(json.dumps(payload, default=str))
 
 
 def _should_use_json() -> bool:
@@ -50,11 +68,12 @@ def _should_use_json() -> bool:
 def configure_logging(level: int = logging.INFO) -> None:
     """Install a process-wide formatter. Safe to call more than once."""
     root = logging.getLogger()
+    logging.getLogger("httpx").addFilter(SecretURLFilter())
     formatter: logging.Formatter
     if _should_use_json():
         formatter = JsonFormatter()
     else:
-        formatter = logging.Formatter(
+        formatter = RedactingFormatter(
             "%(asctime)s %(levelname)s [%(name)s] %(message)s"
         )
 

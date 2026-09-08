@@ -47,6 +47,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
       '/evidence': 'Evidence',
       '/settings': 'Settings',
       '/settings/billing': 'Billing',
+      '/settings/notifications': 'Notifications',
     };
     const label = labels[pathname] || pathname.split('/').filter(Boolean).slice(-1)[0];
     if (label) pushRecent({ href: pathname, label });

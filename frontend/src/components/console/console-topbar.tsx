@@ -31,6 +31,7 @@ const LABELS: Record<string, string> = {
   reports: 'Reports',
   settings: 'Settings',
   billing: 'Billing',
+  notifications: 'Notifications',
   support: 'Support',
 };
 

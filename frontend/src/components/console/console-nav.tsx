@@ -64,6 +64,7 @@ const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?
     items: [
       { href: '/settings', label: 'Settings' },
       { href: '/settings/billing', label: 'Billing' },
+      { href: '/settings/notifications', label: 'Notifications' },
       { href: '/support', label: 'Support' },
     ],
   },
@@ -72,7 +73,7 @@ const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?
 function useIsActive() {
   const pathname = usePathname();
   return (href: string) =>
-    href === '/dashboard'
+    href === '/dashboard' || href === '/settings'
       ? pathname === '/dashboard'
       : pathname === href || pathname.startsWith(href + '/');
 }

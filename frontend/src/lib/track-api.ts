@@ -21,11 +21,13 @@ const BACKEND_URL =
   process.env.RELIASTRA_API_URL?.replace(/\/$/, '') ||
   'https://api.reliastra.com';
 
-const REVALIDATE_SECONDS = 60;
 
 /* ── Response shapes (mirrors app/modules/vendors/schemas.py) ───────────── */
 
 export interface TrackVendorListItem {
+  recent_status?: string;
+  latency_ms?: number | null;
+  status_code?: number | null;
   id: string;
   vendor_name: string;
   display_name: string;
@@ -164,7 +166,7 @@ export class TrackApiError extends Error {
 
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${BACKEND_URL}/v1${path}`, {
-    next: { revalidate: REVALIDATE_SECONDS },
+    cache: 'no-store',
     headers: { accept: 'application/json' },
   });
   if (!res.ok) throw new TrackApiError(res.status, path);

@@ -426,13 +426,27 @@ export const api = {
   regenerateEvidence: (id: string) =>
     request<EvidenceReport>(`/evidence/${id}/regenerate`, { method: 'POST' }),
 
+  checkState: (id: string) => request<{
+    state: string; detail: string; is_stale: boolean; is_infrastructure_problem: boolean; is_target_problem: boolean; is_active: boolean; next_check_at: string | null;
+    last_success_at: string | null; last_failure_at: string | null;
+    last_result: { executed_at: string; latency_ms: number; status_code: number | null; is_up: boolean; error_message: string | null } | null;
+  }>(`/checks/state/${id}`),
+  runCheck: (id: string) => request('/checks/run', { method: 'POST', body: JSON.stringify({ dependency_id: id }) }),
+
   alertConfigs: () => request<AlertConfig[]>('/notifications/configs'),
 
-  createAlertConfig: (body: { channel_type: string; config: Record<string, string>; is_active: boolean }) =>
+  createAlertConfig: (body: { channel_type: string; config: Record<string, unknown>; is_active: boolean }) =>
     request<AlertConfig>('/notifications/configs', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+
+  updateAlertConfig: (id: string, body: { config?: Record<string, unknown>; is_active?: boolean }) =>
+    request<AlertConfig>(`/notifications/configs/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteAlertConfig: (id: string) => request<void>(`/notifications/configs/${id}`, { method: 'DELETE' }),
+  testAlertConfig: (id: string) => request<{ success: boolean; message: string }>('/notifications/test', { method: 'POST', body: JSON.stringify({ config_id: id }) }),
+  verifyAlertConfig: (id: string, code: string) => request<AlertConfig>(`/notifications/configs/${id}/verify`, { method: 'POST', body: JSON.stringify({ code }) }),
+  resendAlertVerification: (id: string) => request<AlertConfig>(`/notifications/configs/${id}/resend-verification`, { method: 'POST' }),
 
   // ── In-dashboard notification inbox ───────────────────────────────────────
   // No mock fallback, ever. The bell previously rendered three hardcoded

@@ -11,6 +11,8 @@ async def test_seed_vendors():
     repo = MagicMock()
     repo.get_by_name = AsyncMock(return_value=None)
     repo.create = AsyncMock()
+    repo.list_vendor_endpoints = AsyncMock(return_value=[])
+    repo.create_vendor_endpoint = AsyncMock()
 
     service = VendorService(repository=repo)
     session = AsyncMock()
@@ -32,6 +34,7 @@ async def test_get_vendor_detail(mocker):
     fake_vendor.category = "payments"
     fake_vendor.is_public = True
     fake_vendor.last_check_at = None
+    fake_vendor.recent_status = 'unknown'
     fake_vendor.created_at = now
     fake_vendor.updated_at = now
 
@@ -51,4 +54,5 @@ async def test_get_vendor_detail(mocker):
     res = await service.get_vendor_detail(session, "stripe")
 
     assert res.vendor_name == "stripe"
-    assert res.recent_status == "operational"
+    # Customer measurements never imply a public endpoint observation.
+    assert res.recent_status == "unknown"

@@ -65,6 +65,7 @@ export const CONSOLE_ROUTES = {
   onboarding: '/onboarding',
   settings: '/settings',
   billing: '/settings/billing',
+  notifications: '/settings/notifications',
 } as const;
 
 // ── Admin ───────────────────────────────────────────────────────────────────
@@ -142,14 +143,8 @@ export function isResearchSlug(slug: string): slug is ResearchSlug {
 
 // ── Partner network ─────────────────────────────────────────────────────────
 
-// ── Partner dashboard (state-routed inside the authenticated `/` shell) ─────
+// ── Partner dashboard (URL-driven; membership proven by PartnerSession) ─────
 
-/**
- * Partner dashboard pages have no file routes by design: they render inside
- * the authenticated home shell, so a shared/bookmarked URL can never leak
- * into a protected surface. Navigation to them is store-driven (see
- * `navigatePartner` in `components/partner/public/navigation`).
- */
 export const PARTNER_DASHBOARD_PAGES = [
   'dashboard',
   'referrals',

@@ -121,8 +121,10 @@ async def test_notification_http_client_is_pooled(fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_dispatch_alert_dedupes_within_60s(fake_redis):
+async def test_dispatch_alert_dedupes_within_60s(fake_redis, mocker):
     """FIX 39: identical alerts within a minute are dispatched once."""
+    from types import SimpleNamespace
+    mocker.patch('app.modules.organizations.repository.OrganizationRepository.get_by_id', new=AsyncMock(return_value=SimpleNamespace(plan='free', trial_ends_at=None)))
     repo = MagicMock()
     repo.list_for_org = AsyncMock(return_value=[])
     service = NotificationService(repository=repo)

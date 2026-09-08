@@ -14,12 +14,8 @@ import { defineConfig, devices } from '@playwright/test';
  *   PLAYWRIGHT_CHROMIUM=... (auto-set by the repo dev stack if present)
  *   npx playwright test
  *
- * Live FX verification: before the payment CTA unlocks, the backend resolves
- * the USD->NGN reference from a public source (open.er-api.com by default).
- * For deterministic or offline runs, start the Paystack stand-in (it serves a
- * static rate at /fx/latest, overridable via FX_NGN_RATE, default 1650.00) and
- * point the backend at it:
- *   FX_REFERENCE_URL=http://127.0.0.1:9200/fx/latest make backend
+ * FX references are informational. An unavailable rate must not disable a
+ * checkout whose fixed payment price is already configured.
  */
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000';
 const executable = process.env.PW_CHROMIUM_PATH || undefined;

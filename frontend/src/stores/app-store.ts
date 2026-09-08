@@ -182,9 +182,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
   signOut: () => {
-    // Explicit sign-out may clear the whole shared session.
+    // End only the customer session; partner credentials remain separate.
     if (typeof window !== 'undefined') {
-      clearAllSessionTokens();
+      clearCustomerTokens();
     }
     set({
       accessToken: null,
