@@ -1,6 +1,8 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
+import { DependencyTopology } from '@/components/site/visuals/dependency-topology';
+import { LatencyChart } from '@/components/site/visuals/latency-chart';
 
 export const metadata = buildMetadata({
   title: 'Third-Party Dependency Monitoring',
@@ -39,6 +41,13 @@ export default function DependencyMonitoringPage() {
         title="Third-party dependency monitoring"
         lede="Any HTTP endpoint, checked on a fixed interval from independent regions. Incidents declared by quorum."
         breadcrumbs={crumbs}
+        visual={
+          <div className="flex flex-col gap-12">
+            <DependencyTopology />
+            <LatencyChart />
+          </div>
+        }
+        visualCaption="Illustrative values. Region codes, status codes, latency and the quorum rule are the ones the product records and applies."
         related={[
           { label: 'Live vendor status', href: '/track', description: 'Aggregated posture for public vendors.' },
           { label: 'Monitoring docs', href: '/docs/monitoring', description: 'Configure checks, regions and intervals.' },

@@ -34,7 +34,7 @@ export async function LiveIntelligenceSection() {
       <Container>
         <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-5">
-            <Eyebrow index="07">Public dependency index</Eyebrow>
+            <Eyebrow index="09">Public dependency index</Eyebrow>
             <h2 id="live-title" className="ob-h2 max-w-[18ch]">
               Public vendors, measured from outside.
             </h2>

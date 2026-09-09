@@ -1,6 +1,8 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
+import { EvidenceArtifact } from '@/components/site/visuals/evidence-artifact';
+import { LatencyChart } from '@/components/site/visuals/latency-chart';
 
 export const metadata = buildMetadata({
   title: 'SLA Evidence & Outage Proof',
@@ -39,6 +41,13 @@ export default function SlaEvidencePage() {
         title="SLA evidence & outage proof"
         lede="When a vendor fails, bring a timestamped, independently measured record to the credit conversation."
         breadcrumbs={crumbs}
+        visual={
+          <div className="flex flex-col gap-12">
+            <EvidenceArtifact />
+            <LatencyChart />
+          </div>
+        }
+        visualCaption="Illustrative values. Section headings and field labels are the ones the generated report uses; the arithmetic between the window, uptime and degradation figures is internally consistent."
         related={[
           { label: 'Incident evidence', href: '/incident-evidence', description: 'Attribution: was it you or the vendor?' },
           { label: 'Evidence docs', href: '/docs/evidence', description: 'Generate, share and verify reports.' },

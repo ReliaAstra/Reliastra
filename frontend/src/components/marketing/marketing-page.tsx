@@ -37,6 +37,8 @@ export function MarketingPage({
   title,
   lede,
   breadcrumbs,
+  visual,
+  visualCaption,
   children,
   related,
   ctaTitle = 'Know what you depend on. Prove what it did.',
@@ -46,6 +48,17 @@ export function MarketingPage({
   title: string;
   lede: string;
   breadcrumbs: { name: string; href: string }[];
+  /**
+   * A product visual, rendered full-bleed between the masthead and the prose.
+   *
+   * This exists because these pages are capability pages, not articles: a
+   * visitor should see the thing before reading about it. It is deliberately
+   * a single slot rather than free-form children so the visual always lands
+   * in the same place on every page, at a width that suits a diagram rather
+   * than a 68ch measure.
+   */
+  visual?: ReactNode;
+  visualCaption?: string;
   children: ReactNode;
   related?: MarketingLink[];
   ctaTitle?: string;
@@ -62,6 +75,17 @@ export function MarketingPage({
           <p className="ob-lede mt-6">{lede}</p>
         </Container>
       </header>
+
+      {visual && (
+        <Section tone="void" divider={false} tight>
+          <Container width="narrow">
+            {visual}
+            {visualCaption && (
+              <p className="ob-small mt-5 max-w-[62ch]">{visualCaption}</p>
+            )}
+          </Container>
+        </Section>
+      )}
 
       <Section tone="void" divider={false} tight>
         <Container width="narrow" className="!px-0">
