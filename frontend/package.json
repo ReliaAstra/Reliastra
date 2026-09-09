@@ -8,6 +8,7 @@
     "start": "NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:referral": "node e2e/partner-referral.http.mjs",
     "test:watch": "vitest",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",

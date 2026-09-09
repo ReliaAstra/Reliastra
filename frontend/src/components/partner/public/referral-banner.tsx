@@ -3,55 +3,32 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Link2 } from 'lucide-react';
+import {
+  getReferralCodeFromSearch,
+  getStoredReferralCode,
+  persistPublicReferralCookie,
+} from '@/lib/partner-referral';
 
-const REFERRAL_COOKIE = 'ra_ref';
-const REFERRAL_COOKIE_DAYS = 90;
+export { getStoredReferralCode } from '@/lib/partner-referral';
 
-function getReferralFromUrl(): string | null {
-  if (typeof window === 'undefined') return null;
-  const params = new URLSearchParams(window.location.search);
-  return params.get('ref');
-}
-
-function setReferralCookie(code: string) {
-  const expires = new Date();
-  expires.setDate(expires.getDate() + REFERRAL_COOKIE_DAYS);
-  document.cookie = `${REFERRAL_COOKIE}=${encodeURIComponent(code)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-}
-
-function getReferralCookie(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${REFERRAL_COOKIE}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-// Detect referral on initial render (lazy initializer)
 function detectInitialReferral(): { code: string | null; showBanner: boolean } {
   if (typeof window === 'undefined') return { code: null, showBanner: false };
 
-  const urlRef = getReferralFromUrl();
+  const urlRef = getReferralCodeFromSearch(window.location.search);
   if (urlRef) {
-    setReferralCookie(urlRef);
+    persistPublicReferralCookie(urlRef);
     return { code: urlRef, showBanner: true };
   }
 
-  const cookie = getReferralCookie();
-  return { code: cookie, showBanner: false };
+  return { code: getStoredReferralCode(), showBanner: false };
 }
 
 export function ReferralBanner() {
   const [dismissed, setDismissed] = useState(false);
-  const [refCode, setRefCode] = useState<string | null>(null);
-  const [showBanner, setShowBanner] = useState(false);
-
-  // Use lazy initializer to detect referral without an effect
-  const [initial] = useState(detectInitialReferral);
-
-  // Sync initial detection to state on first render
-  if (initial.code && !refCode) {
-    setRefCode(initial.code);
-    setShowBanner(initial.showBanner);
-  }
+  const [{ code: refCode, showBanner: initiallyShown }] = useState(
+    detectInitialReferral
+  );
+  const [showBanner, setShowBanner] = useState(initiallyShown);
 
   if (dismissed || !showBanner || !refCode) return null;
 
@@ -87,9 +64,4 @@ export function ReferralBanner() {
       </motion.div>
     </AnimatePresence>
   );
-}
-
-// Export utility for reading referral code in signup/apply flows
-export function getStoredReferralCode(): string | null {
-  return getReferralCookie();
 }

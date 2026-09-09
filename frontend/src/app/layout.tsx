@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { VisitBeacon } from "@/components/analytics/visit-beacon";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
+import { ReferralCapture } from "@/components/analytics/referral-capture";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -87,6 +88,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AttributionCapture />
+          <ReferralCapture />
           <VisitBeacon />
           {children}
           <Toaster />
