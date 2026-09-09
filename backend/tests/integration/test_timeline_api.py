@@ -267,12 +267,12 @@ async def test_timeline_single_region(async_client, db_session):
     await db_session.commit()
 
     res = await async_client.get(
-        "/v1/vendors/stripe/timeline?window=1h&resolution=5m&region=us-east-1"
+        "/v1/vendors/stripe/timeline?window=1h&resolution=5m&region=us-east"
     )
     assert res.status_code == 200, res.text
     body = res.json()
     assert body["region"] == "us-east"
-    # Only 1 observation in us-east-1
+    # Only 1 observation in us-east
     total_obs = sum(p["observation_count"] for p in body["points"])
     assert total_obs == 1
 
