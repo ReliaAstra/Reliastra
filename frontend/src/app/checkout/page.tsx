@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * The page takes a plan and a billing interval from the query string and
  * nothing else. It is not a security boundary and does not pretend to be one:
  * the plan id is re-normalized server-side, the price is re-resolved from
- * RELIASTRA's published payment catalog, and any figure a client tried to
+ * RELIASTRA's live USD-to-NGN conversion, and any figure a client tried to
  * smuggle in has nowhere to be read. `force-dynamic` keeps the response
  * per-customer and uncached, since the quote embeds the organization's name and
  * billing email.

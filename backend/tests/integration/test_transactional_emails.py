@@ -8,8 +8,8 @@ isolation:
 * welcome / verification / password-reset / receipt / confirmation emails all
   carry the canonical support footer exactly once, in HTML *and* plain text;
 * pricing, plan-details and payment initialization agree on one currency;
-* a non-USD checkout charges the published payment price, never the USD
-  minor-unit figure, and refuses outright when no price is published.
+* a non-USD checkout charges the USD price converted at the live rate, never
+  the USD minor-unit figure, and refuses outright when no rate is available.
 """
 
 from __future__ import annotations
@@ -26,14 +26,17 @@ from app.core.payment_pricing import NGN_CURRENCY_NOTICE
 from app.infrastructure.email_layout import TRANSACTIONAL_SUPPORT_FOOTER
 from tests.helpers import TEST_OTP_CODE, register_and_verify
 
-NGN_CATALOG = {"pro": {"monthly": 6000000, "annual": 60000000}}
+#: The contract-testing rate the integration conftest pins (NGN per 1 USD).
+FX_RATE = 1322.0
+MONTHLY_MINOR = 2_511_800  # $19.00 x 1322 -> ₦25,118.00
+ANNUAL_MINOR = 25_118_000  # $190.00 x 1322 -> ₦251,180.00
 
 
 @pytest.fixture(autouse=True)
-def _ngn_payment_prices(monkeypatch):
-    """Publish the NGN payment prices an operator would set in production."""
+def _ngn_payment_currency(monkeypatch):
+    """Ensure the merchant account processes in NGN (the integration conftest
+    pins the live FX rate the charge is converted at)."""
     monkeypatch.setattr(settings, "PAYSTACK_CURRENCY", "NGN")
-    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", NGN_CATALOG)
 
 
 def _footer_count(body: str) -> int:
@@ -188,8 +191,8 @@ async def test_pricing_endpoint_discloses_the_processing_currency(async_client):
     assert payment["notice"] == NGN_CURRENCY_NOTICE
     pro = next(p for p in payload["plans"] if p["plan"] == "pro")
     assert pro["price_usd"] == 19
-    # The published payment price, formatted with the code as text.
-    assert pro["payment_amount_display"] == "\u20a660,000.00 (NGN)"
+    # The converted payment price, formatted with the code as text.
+    assert pro["payment_amount_display"] == "\u20a625,118.00 (NGN)"
     assert re.search(r"\(NGN\)", pro["payment_amount_display"])
 
 
@@ -214,7 +217,7 @@ async def test_plan_details_expose_next_charge_in_the_payment_currency(
 
 
 @pytest.mark.asyncio
-async def test_initialize_sends_the_published_payment_price(async_client, auth_data, mocker):
+async def test_initialize_sends_the_converted_payment_price(async_client, auth_data, mocker):
     captured: dict[str, Any] = {}
 
     async def fake_initialize(self, **kwargs):  # noqa: ANN001
@@ -240,22 +243,26 @@ async def test_initialize_sends_the_published_payment_price(async_client, auth_d
     assert res.status_code == 200, res.text
     body = res.json()
     # Amount and currency sent to Paystack == amount and currency shown to the
-    # customer: the published NGN price, not the USD cents figure.
-    assert captured["amount"] == NGN_CATALOG["pro"]["monthly"]
+    # customer: the USD price converted at the live rate, not the USD cents
+    # figure.
+    assert captured["amount"] == MONTHLY_MINOR
     assert captured["currency"] == "NGN"
     assert captured["amount"] != 3900
     assert body["currency"] == "NGN"
-    assert body["amount_minor"] == NGN_CATALOG["pro"]["monthly"]
-    assert body["amount_display"] == "\u20a660,000.00 (NGN)"
+    assert body["amount_minor"] == MONTHLY_MINOR
+    assert body["amount_display"] == "\u20a625,118.00 (NGN)"
     # Metadata lets the webhook restate the same charge without re-deriving.
     assert captured["metadata"]["currency"] == "NGN"
 
 
 @pytest.mark.asyncio
-async def test_initialize_refuses_when_no_payment_price_is_published(
+async def test_initialize_refuses_when_no_rate_is_available(
     async_client, auth_data, mocker, monkeypatch
 ):
-    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", None)
+    async def _down(*_a, **_k):
+        return None
+
+    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
     called = mocker.patch(
         "app.modules.billing.service.PaystackClient.initialize_transaction",
         new=AsyncMockLike(),
@@ -265,7 +272,7 @@ async def test_initialize_refuses_when_no_payment_price_is_published(
         headers=auth_data["headers"],
         json={"plan": "pro", "billing_interval": "monthly", "terms_accepted": True},
     )
-    # 409 is the state RELIASTRA is in (a price that has not been published
+    # 409 is the state RELIASTRA is in (no rate available to convert the price
     # yet); 400/422 remain accepted so this stays a check about the *refusal*,
     # not about which code the API happens to use for it.
     assert res.status_code in (400, 409, 422), res.text
@@ -303,7 +310,7 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
         "status": True,
         "data": {
             "status": "success",
-            "amount": NGN_CATALOG["pro"]["monthly"],
+            "amount": MONTHLY_MINOR,
             "currency": "NGN",
             "reference": reference,
             "paid_at": "2026-01-05T10:00:00+00:00",
@@ -340,17 +347,17 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     # price, the amount ACTUALLY charged (with the ISO code Paystack settled
     # in) and the provider - and the USD figure may appear only as the
     # clearly-labelled product price, never as the charge.
-    assert "\u20a660,000.00 (NGN)" in receipt["body"]
-    assert "\u20a660,000.00 (NGN)" in receipt["html_body"]
+    assert "\u20a625,118.00 (NGN)" in receipt["body"]
+    assert "\u20a625,118.00 (NGN)" in receipt["html_body"]
     assert "Product price: $19.00 (USD)" in receipt["body"]
-    assert "Actual charge: \u20a660,000.00 (NGN)" in receipt["body"]
+    assert "Actual charge: \u20a625,118.00 (NGN)" in receipt["body"]
     assert "Payment provider: Paystack" in receipt["body"]
     assert "payment was collected by Paystack in NGN" in receipt["body"]
     assert reference in receipt["body"]
     assert "Pro" in confirmation["body"]
     # The confirmation mail carries the same triple.
     assert "Product price: $19.00 (USD)" in confirmation["body"]
-    assert "Actual charge: \u20a660,000.00 (NGN)" in confirmation["body"]
+    assert "Actual charge: \u20a625,118.00 (NGN)" in confirmation["body"]
     assert "Payment provider: Paystack" in confirmation["body"]
 
     # ── The charge is ALSO persisted as a transaction record: receipts and
@@ -362,8 +369,8 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     items = tx_res.json()["items"]
     match = next(t for t in items if t["reference"] == reference)
     assert match["charged_currency"] == "NGN"
-    assert match["charged_amount_minor"] == NGN_CATALOG["pro"]["monthly"]
-    assert match["charged_amount_display"] == "\u20a660,000.00 (NGN)"
+    assert match["charged_amount_minor"] == MONTHLY_MINOR
+    assert match["charged_amount_display"] == "\u20a625,118.00 (NGN)"
     assert match["product_currency"] == "USD"
     assert match["product_amount_minor"] == 1900
     assert match["product_price_display"] == "$19.00 (USD)"
@@ -389,7 +396,7 @@ async def test_receipt_is_sent_once_per_reference(
         "status": True,
         "data": {
             "status": "success",
-            "amount": NGN_CATALOG["pro"]["monthly"],
+            "amount": MONTHLY_MINOR,
             "currency": "NGN",
             "reference": reference,
             "paid_at": "2026-01-06T10:00:00+00:00",

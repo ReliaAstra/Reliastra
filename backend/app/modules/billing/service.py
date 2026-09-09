@@ -57,7 +57,10 @@ from app.core.payment_channels import (
     resolve_checkout_channels,
     settled_channel_is_acceptable,
 )
-from app.core.payment_disclosure import currency_payload
+from app.core.payment_disclosure import (
+    currency_payload,
+    resolve_payment_price_async,
+)
 from app.core.payment_pricing import (
     ANNUAL as ANNUAL_INTERVAL,
     MONTHLY as MONTHLY_INTERVAL,
@@ -65,7 +68,6 @@ from app.core.payment_pricing import (
     PaymentPrice,
     format_money,
     payment_currency,
-    resolve_payment_price,
 )
 from app.modules.billing.notifications import (
     PaymentSummary,
@@ -224,23 +226,16 @@ paystack_client = PaystackClient()
 # PRODUCT PRICING (USD list price: PLAN_PRICES_USD / PLAN_AMOUNTS in
 # ``app.core.permissions``) and PAYMENT PRICING (the amount actually charged
 # through Paystack, in the processing currency) are two separate concepts and
-# are resolved through ``app.core.payment_pricing``. Nothing converts one into
-# the other: for a non-USD processor the business publishes explicit payment
-# prices (PAYSTACK_NGN_PLAN_PRICES), and self-serve checkout is disabled for
-# any plan whose payment price is missing rather than silently charging the
-# USD minor-unit figure in another currency.
+# are resolved through ``app.core.payment_pricing``. For a non-USD processor
+# the payment price is the USD list price converted at the live exchange rate
+# (``resolve_payment_price_async``), and self-serve checkout is disabled when
+# no rate is available rather than silently charging the USD minor-unit figure
+# in another currency.
 #
 # ENTERPRISE and FREE are NOT self-serve: enterprise routes to Contact Sales,
 # and free has nothing to charge.
 _MONTHLY_AMOUNTS = PLAN_AMOUNTS
 _ANNUAL_AMOUNTS = PLAN_ANNUAL_AMOUNTS
-
-
-def _price_for(plan: str, interval: str) -> PaymentPrice:
-    """Canonical product+payment price for a plan/interval pair."""
-    return resolve_payment_price(
-        plan, ANNUAL_INTERVAL if interval == BillingInterval.ANNUAL.value else MONTHLY_INTERVAL
-    )
 
 
 def _price_token(price: PaymentPrice, channels: Sequence[str]) -> str:
@@ -263,16 +258,6 @@ def _price_token(price: PaymentPrice, channels: Sequence[str]) -> str:
         ]
     )
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:16]
-
-
-def _amount_for_interval(plan: str, interval: str) -> int | None:
-    """The amount (minor units of the processing currency) a checkout pays.
-
-    Kept as a helper because the webhook/verify integrity check needs the same
-    single source of truth the initializer uses - if these two ever disagreed,
-    every correctly priced payment would be rejected as "undersized".
-    """
-    return _price_for(plan, interval).payment_amount
 
 
 def _add_calendar_months(moment: datetime, months: int) -> datetime:
@@ -573,21 +558,21 @@ class BillingService:
             can_cancel=bool(is_paid and status == "active" and not cancel_at_end),
             can_resume=bool(is_paid and cancel_at_end and status == "active"),
             can_change_plan=get_plan_billing_availability(stored_plan) != "contact_sales",
-            **self._next_charge_fields(subscription),
+            **await self._next_charge_fields(subscription),
         )
 
-    @staticmethod
-    def _next_charge_fields(subscription) -> dict:
-        """Next renewal amount for the billing page, from the payment catalog.
+    async def _next_charge_fields(self, subscription) -> dict:
+        """Next renewal amount for the billing page, converted at the live rate.
 
         Empty when there is no active paid subscription: the UI must not show
-        a "next charge" figure the customer will never be billed.
+        a "next charge" figure the customer will never be billed - and empty
+        when no rate is available to convert it, rather than inventing one.
         """
         if subscription is None or subscription.plan == Plan.FREE.value:
             return {}
         if getattr(subscription, "cancel_at_period_end", False) is True:
             return {}
-        price = resolve_payment_price(
+        price = await resolve_payment_price_async(
             subscription.plan, subscription.billing_interval or MONTHLY_INTERVAL
         )
         if not price.is_configured:
@@ -870,7 +855,7 @@ class BillingService:
 
         Why an endpoint instead of letting the checkout page compute from the
         pricing list it already fetched: the page would then be *composing* a
-        price - plan id plus interval in, "₦60,000" out - and any bug in that
+        price - plan id plus interval in, "₦25,118" out - and any bug in that
         composition is a customer who was shown one number and charged another.
         So the page asks, and displays. It receives the product price, the
         payment amount, the currency names, the disclosure, the FX reference and
@@ -893,7 +878,7 @@ class BillingService:
         normalized = normalize_plan(plan)
         interval = (billing_interval or MONTHLY_INTERVAL).strip().lower()
         interval = ANNUAL_INTERVAL if interval == ANNUAL_INTERVAL else MONTHLY_INTERVAL
-        price = resolve_payment_price(normalized, interval)
+        price = await resolve_payment_price_async(normalized, interval)
         methods = payment_method_descriptors()
         policy = resolve_checkout_channels()
         disclosure = await currency_payload()
@@ -1068,14 +1053,14 @@ class BillingService:
             )
 
         interval = request.billing_interval.value
-        price = _price_for(plan, interval)
+        price = await resolve_payment_price_async(plan, interval)
         if not price.is_configured:
-            # The product price exists, but the business has not published a
-            # PAYMENT price for the processing currency. Charging the USD
+            # The product price exists, but no exchange rate is available to
+            # convert it into the processing currency. Charging the USD
             # minor-unit figure as Naira would mis-bill the customer, so we
             # stop here - before any Paystack transaction exists.
             logger.warning(
-                "Checkout disabled for plan '%s' (%s): no %s payment price published",
+                "Checkout disabled for plan '%s' (%s): no %s rate available to convert the price",
                 plan,
                 interval,
                 price.payment_currency,
@@ -1501,7 +1486,7 @@ class BillingService:
         # prevents both a tampered/undersized charge from unlocking a higher
         # tier AND the historical bug where an annual checkout silently billed
         # the monthly amount.
-        expected_price = _price_for(plan, billing_interval)
+        expected_price = await resolve_payment_price_async(plan, billing_interval)
         expected_amount = expected_price.payment_amount
         collected = data.get("amount")
         if expected_amount is None:
@@ -1783,7 +1768,7 @@ class BillingService:
             return
         plan = _normalized_plan(data)
         billing_interval = _billing_interval(data)
-        price = _price_for(plan, billing_interval)
+        price = await resolve_payment_price_async(plan, billing_interval)
         raw_amount = data.get("amount")
         try:
             amount_minor = int(raw_amount) if raw_amount is not None else int(price.payment_amount or 0)

@@ -316,36 +316,28 @@ def test_paystack_currency_setting_exists():
     assert getattr(settings, "PAYSTACK_CURRENCY", "").strip().upper() == "NGN"
 
 
-def test_payment_price_is_published_not_converted():
-    """No FX math may exist between the USD list price and the NGN charge.
+def test_payment_price_is_live_converted():
+    """The NGN charge is the USD list price converted at the live rate.
 
-    ``resolve_payment_price`` reads an operator-published catalog. With no
-    catalog entry it refuses rather than reusing the USD minor units, which
-    would bill 1900 (i.e. ₦19.00) for a $19 plan.
+    ``resolve_payment_price`` converts ``USD minor units x rate``. With no
+    rate it refuses rather than reusing the USD minor units, which would bill
+    1900 (i.e. ₦19.00) for a $19 plan.
     """
-    from app.config import settings
     from app.core import payment_pricing
 
-    monkey = payment_pricing.resolve_payment_price("pro", "monthly")
-    assert monkey.product_amount == 1900  # USD list price, untouched
-    assert monkey.payment_currency == "NGN"
+    priced = payment_pricing.resolve_payment_price("pro", "monthly", rate=1322.0)
+    assert priced.product_amount == 1900  # USD list price, untouched
+    assert priced.payment_currency == "NGN"
+    assert priced.payment_amount == 2_511_800
+    assert priced.is_configured is True
 
-    original = settings.PAYSTACK_NGN_PLAN_PRICES
-    try:
-        settings.PAYSTACK_NGN_PLAN_PRICES = None
-        unpriced = payment_pricing.resolve_payment_price("pro", "monthly")
-        assert unpriced.payment_amount is None
-        assert unpriced.is_configured is False
-        with pytest.raises(payment_pricing.PaymentPriceNotConfigured):
-            payment_pricing.checkout_amount("pro", "monthly")
-
-        settings.PAYSTACK_NGN_PLAN_PRICES = {"pro": {"monthly": 1234500}}
-        priced = payment_pricing.resolve_payment_price("pro", "monthly")
-        assert priced.payment_amount == 1234500
-        # Still not derived: the USD price is unchanged by publishing NGN.
-        assert priced.product_amount == 1900
-    finally:
-        settings.PAYSTACK_NGN_PLAN_PRICES = original
+    unpriced = payment_pricing.resolve_payment_price("pro", "monthly")
+    assert unpriced.payment_amount is None
+    assert unpriced.is_configured is False
+    with pytest.raises(payment_pricing.PaymentPriceNotConfigured):
+        payment_pricing.checkout_amount("pro", "monthly")
+    # Still derived from the USD price: the list price is unchanged by any rate.
+    assert unpriced.product_amount == 1900
 
 
 # ---------------------------------------------------------------------------

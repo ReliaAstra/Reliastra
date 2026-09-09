@@ -124,7 +124,7 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   },
   amount_below_plan_price: {
     title: 'Payment does not cover this plan',
-    body: 'The amount collected is less than the published price for this plan, so we have not activated it automatically.',
+    body: 'The amount collected is less than the price for this plan, so we have not activated it automatically.',
     action: 'Contact billing@reliastra.com and we will reconcile it for you.',
     tone: 'problem',
     retry: false,
@@ -156,7 +156,7 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
   },
   price_not_configured: {
     title: 'Online checkout is being finalized',
-    body: 'Our price for this plan in your payment currency is being confirmed, so we are not taking payment here rather than quote you a figure we have not published.',
+    body: 'Our price for this plan in your payment currency is being confirmed, so we are not taking payment here rather than quote you a figure we have not resolved.',
     action: 'Contact billing@reliastra.com and we will set up your subscription directly.',
     tone: 'attention',
     retry: false,

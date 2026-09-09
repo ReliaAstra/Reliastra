@@ -141,7 +141,7 @@ export function BillingPage() {
             <p className="mt-2 text-[12px] text-[var(--obc-text-3)]">
               Product price {listUsd}.
               {currency.differs_from_product_currency
-                ? ` Charged at the published ${currency.payment_currency} price.`
+                ? ` Charged in ${currency.payment_currency} at the current exchange rate.`
                 : null}
               {plan.next_charge_amount_display && !plan.cancel_at_period_end
                 ? ` Next renewal ${plan.next_charge_amount_display}.`
@@ -165,7 +165,7 @@ export function BillingPage() {
       </div>
       {evaluation && (
         <p className="mt-3 max-w-[72ch] text-[13px] leading-relaxed text-[var(--obc-text-3)]" data-testid="billing-trial">
-          {trialSummary} After the trial, Pro is billed at the published price. Subscribing starts billing immediately.
+          {trialSummary} After the trial, Pro is billed in NGN at the current exchange rate. Subscribing starts billing immediately.
         </p>
       )}
     </Section>

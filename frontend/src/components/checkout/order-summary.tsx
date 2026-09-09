@@ -13,14 +13,14 @@ import { cn } from '@/lib/utils';
  *
  * Three rules this component obeys, because the whole checkout is built on them:
  *
- * 1. **Every figure is a string from the backend.** `₦60,000.00 (NGN)` is
+ * 1. **Every figure is a string from the backend.** `₦25,118.00 (NGN)` is
  *    rendered exactly as the resolver that prices the Paystack transaction
  *    formatted it. There is no currency table, no multiplier and no `*`
  *    footnote computed here: an amount a browser composes is an amount a
  *    browser can get wrong, and on a payment page "wrong" means mis-billed.
  * 2. **The interval control changes the question, not the answer.** Switching
- *    to annual refetches the quote from the backend, which returns a different
- *    published price. The component never computes an annual figure from a
+ *    to annual refetches the quote from the backend, which re-converts the
+ *    annual price. The component never computes an annual figure from a
  *    monthly one.
  * 3. **The USD price and the NGN charge are both shown, and both labelled.**
  *    Nothing about this checkout is allowed to be a surprise discovered after a

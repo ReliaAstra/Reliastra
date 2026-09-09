@@ -9,8 +9,8 @@ Coverage, in the order the customer meets it:
 
 * the quote is the only thing the page needs, is priced from the same
   resolution as the transaction, and refuses to offer checkout it cannot honour;
-* the transaction is opened with the published amount, the processing currency,
-  a card-only channel array, and no provider plan code;
+* the transaction is opened with the USD price converted at the live rate, the
+  processing currency, a card-only channel array, and no provider plan code;
 * a client that volunteers an amount, a currency or a method is ignored or
   refused, never obeyed;
 * verification is what activates a subscription - cross-organization, replayed,
@@ -39,7 +39,7 @@ def _paystack_verify_success(**overrides: Any) -> dict[str, Any]:
     """A provider verification response, in the shape Paystack actually returns."""
     data: dict[str, Any] = {
         "status": "success",
-        "amount": 6_000_000,
+        "amount": 2_511_800,
         "currency": "NGN",
         "channel": "card",
         "reference": overrides.pop("reference", "ref_x"),
@@ -137,7 +137,7 @@ async def test_quote_is_the_render_model_and_offers_card_only(
     quote = res.json()
     # The transparency triple, as strings, from the server.
     assert quote["product_price_display"] == "$19.00 (USD)"
-    assert quote["payment_amount_display"] == "\u20a660,000.00 (NGN)"
+    assert quote["payment_amount_display"] == "\u20a625,118.00 (NGN)"
     assert quote["payment_provider"] == "Paystack"
     assert quote["payment_currency"] == "NGN"
     assert quote["product_currency"] == "USD"
@@ -156,54 +156,49 @@ async def test_quote_is_the_render_model_and_offers_card_only(
 
 
 @pytest.mark.asyncio
-async def test_fx_reference_is_labelled_context_and_never_prices_the_charge(
+async def test_fx_reference_rates_the_charge(
     async_client, auth_data, monkeypatch, _fresh_fx_cache
 ):
-    """A rate may be shown; it must never decide anything.
+    """The quoted charge is the USD price converted at the fetched rate."""
 
-    Stubbed to an absurd figure on purpose: if any part of pricing consulted the
-    FX reference, the quoted charge would move with it. It does not, because the
-    charge comes from the published price list and the rate is decoration with
-    a source and a timestamp attached.
-    """
-
-    async def _absurd(*_a, **_k):
+    async def _rate_1650(*_a, **_k):
         return {
             "available": True,
             "source_currency": "USD",
             "payment_currency": "NGN",
-            "rate": 999999.0,
+            "rate": 1650.0,
             "source_timestamp": "Sun, 30 Aug 2026 00:00:00 +0000",
             "retrieved_at": "2026-08-30T00:00:00Z",
             "provider": "Test Source",
             "provider_url": "https://example.test",
-            "label": "Exchange rate reference (estimate \u2014 not the price you pay)",
+            "label": "Exchange rate (converts your USD price to NGN)",
             "disclaimer": (
-                "Exchange rate shown is a market reference estimate only. It is "
-                "provided for context and is never used to determine your actual "
-                "charge."
+                "Your charge is the USD price converted to NGN at the market "
+                "rate shown here. The rate is provided by the named source and "
+                "is refreshed periodically."
             ),
         }
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _absurd)
+    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _rate_1650)
     quote = (
         await async_client.get(
             "/v1/billing/checkout/quote?plan=pro", headers=auth_data["headers"]
         )
     ).json()
-    assert quote["fx_reference"]["rate"] == 999999.0
+    assert quote["fx_reference"]["rate"] == 1650.0
     assert quote["fx_reference"]["provider"] == "Test Source"
     assert quote["fx_reference"]["source_timestamp"]
-    assert "never used to determine your actual charge" in quote["fx_reference"]["disclaimer"]
-    # And the charge is the published price, untouched.
-    assert quote["payment_amount_minor"] == 6_000_000
+    assert "converted" in quote["fx_reference"]["disclaimer"]
+    # The charge is exactly that conversion: 1900 cents x 1650 = ₦31,350.00.
+    assert quote["payment_amount_minor"] == 3_135_000
+    assert quote["payment_amount_display"] == "\u20a631,350.00 (NGN)"
 
 
 @pytest.mark.asyncio
-async def test_no_fx_source_means_no_estimate_shown(
+async def test_no_fx_source_means_no_charge_can_be_offered(
     async_client, auth_data, monkeypatch, _fresh_fx_cache
 ):
-    """Unreachable rate \u2192 the field is null, never a stale or invented number."""
+    """Unreachable rate → no estimate shown AND no charge invented."""
 
     async def _down(*_a, **_k):
         return None
@@ -215,8 +210,10 @@ async def test_no_fx_source_means_no_estimate_shown(
         )
     ).json()
     assert quote["fx_reference"] is None
-    assert quote["payment_amount_minor"] == 6_000_000
-    assert quote["available"] is True
+    assert quote["payment_amount_minor"] is None
+    assert quote["payment_amount_display"] is None
+    assert quote["available"] is False
+    assert quote["unavailable_reason"] == CheckoutReason.PRICE_NOT_CONFIGURED
 
 
 @pytest.mark.asyncio
@@ -230,22 +227,24 @@ async def test_annual_quote_prices_the_year_not_twelve_months(async_client, auth
     assert quote["billing_interval"] == "annual"
     assert quote["period_word"] == "year"
     assert quote["product_price_display"] == "$190.00 (USD)"
-    assert quote["payment_amount_display"] == "\u20a6600,000.00 (NGN)"
+    assert quote["payment_amount_display"] == "\u20a6251,180.00 (NGN)"
 
 
 @pytest.mark.asyncio
 async def test_quote_refuses_to_offer_checkout_it_cannot_honour(
     async_client, auth_data, monkeypatch
 ):
-    """No price published for the processing currency → no CTA, and no number.
+    """No exchange rate → no CTA, and no number.
 
-    The alternative is a page that quotes the customer a figure the business has
-    never published, and a Paystack transaction that either fails or bills them
-    for something nobody priced.
+    The alternative is a page that quotes the customer a figure nobody resolved,
+    and a Paystack transaction that either fails or bills them for something
+    that was never priced.
     """
-    from app.config import settings
 
-    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", None)
+    async def _down(*_a, **_k):
+        return None
+
+    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
     res = await async_client.get(
         "/v1/billing/checkout/quote?plan=pro", headers=auth_data["headers"]
     )
@@ -308,7 +307,7 @@ async def test_transaction_is_opened_with_a_card_only_channel_array(
     assert res.status_code == 200, res.text
     body = captured["body"]
     assert body["channels"] == ["card"], "the wire must not offer a local rail"
-    assert body["amount"] == 6_000_000
+    assert body["amount"] == 2_511_800
     assert body["currency"] == "NGN"
     assert "plan" not in body, "a plan code would override the amount"
     payload = res.json()
@@ -359,7 +358,7 @@ async def test_a_client_volunteering_an_amount_is_ignored_not_rejected(
     """Pricing is not a client input, and a mismatch is not a client error.
 
     A body claiming ``amount: 1`` and ``currency: USD`` still opens the
-    published NGN transaction. Rejecting it outright would be worse for real
+    converted NGN transaction. Rejecting it outright would be worse for real
     customers than ignoring it: older clients, extensions and a curl command in
     a support thread all send extra fields, and none of them may change what is
     charged. The field is simply not part of the contract.
@@ -382,7 +381,7 @@ async def test_a_client_volunteering_an_amount_is_ignored_not_rejected(
     )
     assert res.status_code == 200, res.text
     body = captured["body"]
-    assert body["amount"] == 6_000_000
+    assert body["amount"] == 2_511_800
     assert body["currency"] == "NGN"
     assert body["channels"] == ["card"]
     # The payer identity is the organization's owner, not whoever the body named.
@@ -415,8 +414,9 @@ async def test_a_stale_quote_stops_the_payment_instead_of_requoting_silently(
 ):
     """The price moved while the page sat open: stop, do not charge.
 
-    The customer approved the figure on screen. If the backend's published price
-    no longer matches it, sending the new one anyway is a surprise charge, and
+    The customer approved the figure on screen. If the backend's converted price
+    no longer matches it (the rate moved), sending the new one anyway is a
+    surprise charge, and
     sending the old one is charging below the list price. Either way the answer
     is to show the customer the current price and let them decide again.
     """
@@ -470,7 +470,7 @@ async def test_verified_payment_activates_and_records_who_and_when(
     assert payload["activated"] is True
     assert payload["duplicate_payment"] is False
     assert payload["period_word"] == "month"
-    assert payload["amount_display"] == "\u20a660,000.00 (NGN)"
+    assert payload["amount_display"] == "\u20a625,118.00 (NGN)"
 
     plan = await async_client.get("/v1/billing/plan", headers=auth_data["headers"])
     assert plan.json()["plan"] == "pro"
@@ -671,7 +671,7 @@ async def test_metadata_arriving_as_a_json_string_still_provisions(
     throws on the way into the database is money taken and a plan not delivered.
     """
     reference = f"ref_strmeta_{_uuid.uuid4().hex[:8]}"
-    payload = _paystack_verify_success(reference=reference, amount=60_000_000)
+    payload = _paystack_verify_success(reference=reference, amount=25_118_000)
     payload["data"]["metadata"] = _json.dumps(
         {
             "org_id": auth_data["org_id"],
@@ -730,9 +730,24 @@ async def test_history_states_what_was_charged_even_after_a_repricing(
     )
     assert res.status_code == 200, res.text
 
-    from app.config import settings
+    # The market rate moved after the customer paid. The persisted row must
+    # still state what was actually charged, not today's conversion.
+    async def _new_rate(*_a, **_k):
+        return {
+            "available": True,
+            "source_currency": "USD",
+            "payment_currency": "NGN",
+            "rate": 1650.0,
+            "source_timestamp": "Sun, 30 Aug 2026 00:00:00 +0000",
+            "retrieved_at": "2026-08-30T00:00:00Z",
+            "provider": "ExchangeRate-API",
+            "provider_url": "https://www.exchangerate-api.com",
+            "source_url": "https://open.er-api.com/v6/latest/USD",
+            "label": "Exchange rate (converts your USD price to NGN)",
+            "disclaimer": "d",
+        }
 
-    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", {"pro_monthly": 9_900_000})
+    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _new_rate)
 
     hist = await async_client.get(
         "/v1/billing/transactions", headers=auth_data["headers"]
@@ -740,8 +755,8 @@ async def test_history_states_what_was_charged_even_after_a_repricing(
     row = next(
         t for t in hist.json()["items"] if t["reference"] == reference
     )
-    assert row["charged_amount_minor"] == 6_000_000
-    assert row["charged_amount_display"] == "\u20a660,000.00 (NGN)"
+    assert row["charged_amount_minor"] == 2_511_800
+    assert row["charged_amount_display"] == "\u20a625,118.00 (NGN)"
     assert row["charged_currency"] == "NGN"
     assert row["provider"].lower() == "paystack"
 

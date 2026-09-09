@@ -223,7 +223,7 @@ test.describe('checkout entry and return', () => {
     expectTextContains(
       receiptText,
       'Product price: $19.00 (USD)',
-      'Actual charge: ₦60,000.00 (NGN)',
+      'Actual charge: ₦31,350.00 (NGN)',
       'Payment provider: Paystack',
     );
     // The reference belongs on the receipt: it is the only thing a customer can

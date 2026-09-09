@@ -84,7 +84,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 | `PAYSTACK_PUBLIC_KEY` | _(empty)_ | Paystack public key for checkout |
 | `PAYSTACK_BASE_URL` | `https://api.paystack.co` | Paystack API base (point at a stand-in for local QA) |
 | `PAYSTACK_CURRENCY` | `NGN` | The currency the merchant account settles in - i.e. what customers are **charged** |
-| `PAYSTACK_NGN_PLAN_PRICES` | _(empty)_ | JSON, minor units, per plan (and optionally per billing interval): the prices Paystack is told to charge |
+| `FX_REFERENCE_URL` | `https://open.er-api.com/v6/latest/USD` | Public USD→NGN rate source; the rate fetched here converts the USD price into the NGN amount Paystack is told to charge |
 | `PAYSTACK_WEBHOOK_SECRET` | _(empty)_ | HMAC key for verifying `POST /v1/billing/webhook`; required in production |
 | `SUPABASE_S3_ENDPOINT` | _(empty)_ | Supabase Storage S3 endpoint, e.g. `https://<project-ref>.supabase.co/storage/v1/s3` (Storage → S3 Access Keys) |
 | `SUPABASE_S3_REGION` | _(empty)_ | Supabase project region (e.g. `eu-west-3`) - required, no default |
@@ -112,10 +112,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 3. Run `alembic upgrade head` to create database tables
 4. Set OAuth variables to enable Google/GitHub sign-in
 5. Set `PAYSTACK_SECRET_KEY` and `PAYSTACK_PUBLIC_KEY` to enable billing, and
-   publish `PAYSTACK_NGN_PLAN_PRICES` for the currency in `PAYSTACK_CURRENCY`.
-   Product prices (USD) and payment prices (what Paystack charges) are separate
-   by design: with no published payment price, self-serve checkout is refused
-   rather than charging a converted or guessed amount. See
+   make sure `FX_REFERENCE_URL` (and its related settings) are reachable for
+   the currency in `PAYSTACK_CURRENCY`. The NGN amount Paystack is told to
+   charge is the USD product price converted at the live rate fetched from that
+   source; with no reachable rate, self-serve checkout is refused rather than
+   charging a converted-from-nothing or guessed amount. See
    `app/core/payment_pricing.py` and `docs/TRANSACTIONAL_EMAIL.md`.
 6. Set the `SUPABASE_S3_*` variables (Supabase dashboard → Storage → S3 Access Keys) to enable evidence PDF storage
 7. Verify health: `GET /health` should return `{"status": "ok", ...}`

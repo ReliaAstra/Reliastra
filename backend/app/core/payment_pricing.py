@@ -1,4 +1,4 @@
-"""Payment pricing - PRODUCT PRICE (USD) versus PAYMENT PRICE (Paystack).
+"""Payment pricing - PRODUCT PRICE (USD) converted to PAYMENT PRICE (Paystack).
 
 Two distinct concepts, deliberately kept separate:
 
@@ -10,24 +10,26 @@ Two distinct concepts, deliberately kept separate:
 ``PAYMENT PRICING``
     The amount actually sent to Paystack, in the *processing currency*
     (``settings.PAYSTACK_CURRENCY`` - NGN for the current merchant account).
-    This is a business-defined price the operator publishes
-    (``settings.PAYSTACK_NGN_PLAN_PRICES``); it is **not** derived from the USD
-    list price.
+    For a currency other than USD, the payment amount is the USD product price
+    converted at the **live exchange rate**: ``round(USD minor units x rate)``,
+    where ``rate`` is payment-currency units per 1 USD (e.g. $19.00 at
+    ₦1,322/USD -> ₦25,118.00).
 
 Rules this module enforces
 --------------------------
-* **No FX conversion, ever.** There is no rate constant here, nothing is
-  fetched at runtime, and ``$19`` is never silently transformed into a Naira
-  figure. Paystack reads the integer it is given as the currency it is told,
-  so an implicit conversion would be a mis-charge, not a rounding detail.
-  An *FX reference* exists for customer context (``app.core.fx_reference``)
-  but it is display-only: no function below consults it, and a test locks the
-  pricing path free of that import.
-* **No invented fallback.** If the payment price for a plan/interval has not
-  been published for the configured currency, self-serve checkout is *not*
-  offered: :func:`resolve_payment_price` reports ``is_configured=False`` and
-  :meth:`BillingService.initialize_payment` refuses to initialize rather than
-  charging the USD minor-unit amount in a different currency.
+* **The rate is always an explicit input.** Nothing here fetches or caches a
+  rate, and this module never imports the FX layer (``fx_reference`` /
+  ``payment_disclosure``). Callers on the request path obtain the live rate
+  through :func:`app.core.payment_disclosure.resolve_payment_price_async` (or
+  :func:`app.core.fx_reference.current_rate`) and pass it in, so the figure
+  quoted, displayed and sent to Paystack is one resolution of one rate.
+* **No invented fallback.** If the rate is unavailable for a non-USD
+  processing currency, :func:`resolve_payment_price` reports
+  ``is_configured=False`` and :meth:`BillingService.initialize_payment`
+  refuses to initialize rather than charging the USD minor-unit amount in a
+  different currency. The FX estimate and the charge share one cache entry, so
+  what the customer sees as "the rate" is the same number that priced the
+  charge.
 * **One number everywhere.** Pricing pages, the upgrade flow, the pre-payment
   confirmation, receipts and emails all read the amount through this module,
   so what the customer sees is literally what is sent to Paystack.
@@ -45,8 +47,8 @@ from dataclasses import dataclass
 from app.config import settings
 from app.core.permissions import (
     PLAN_AMOUNTS,
-    PLAN_BILLING_AVAILABILITY,
     PLAN_ANNUAL_AMOUNTS,
+    PLAN_BILLING_AVAILABILITY,
     PLAN_PRICES_USD,
     get_plan_annual_price_usd,
     normalize_plan,
@@ -92,24 +94,25 @@ PAYMENT_PROVIDER_DISPLAY = "Paystack - secure hosted checkout"
 #: Canonical, customer-facing disclosure shown next to every RELIASTRA payment
 #: decision while the processing currency is Naira. One version for the whole
 #: product - never restate it in a page or a component. This is the mandated
-#: transparency wording: what the price list says, what Paystack charges, and
-#: what is pending confirmation. It must not be softened, shortened or
-#: paraphrased in
-#: a surface; the copy-guard tests diff this string against the frontend and
-#: the transactional emails.
+#: transparency wording: what the price list says and what Paystack charges.
+#: It must not be softened, shortened or paraphrased in a surface; the
+#: copy-guard tests diff this string against the frontend and the
+#: transactional emails.
 NGN_CURRENCY_NOTICE = (
     "RELIASTRA's plans are priced in USD. Our current Paystack payment flow "
     "processes payments in NGN. We are awaiting confirmation of additional "
     "payment options for international customers."
 )
 
-#: Mandatory heading above the FX reference wherever one is displayed. A rate
-#: without these words is how a customer comes to believe the charge was
-#: converted at that rate - which it never is.
+#: Mandatory wording beside the exchange rate wherever one is displayed. The
+#: rate is no longer decorative: it is the basis of the conversion from the
+#: USD list price to the NGN charge, so the disclosure must say so - a rate
+#: without these words is how a customer comes to believe the figure was
+#: invented.
 FX_REFERENCE_DISCLAIMER = (
-    "Exchange rate shown is a market reference estimate only. It is provided "
-    "for context and is never used to determine your actual charge - the "
-    "amount billed by Paystack is the published NGN price above."
+    "Your charge is the USD price converted to NGN at the market rate shown "
+    "here. The rate is provided by the named source and is refreshed "
+    "periodically."
 )
 
 
@@ -125,7 +128,8 @@ class PaymentPrice:
     payment_currency: str
     payment_amount: int | None
     """Amount actually sent to Paystack, in minor units of
-    ``payment_currency``. ``None`` when unpublished for that currency."""
+    ``payment_currency``. ``None`` when no rate is available to convert the
+    USD price for that currency."""
 
     @property
     def payment_currency_name(self) -> str:
@@ -139,7 +143,7 @@ class PaymentPrice:
     @property
     def requires_different_amount(self) -> bool:
         """True when the processing currency differs from the product currency,
-        so a business-published payment price is mandatory."""
+        so an exchange rate is mandatory to price the charge."""
         return self.payment_currency != self.product_currency
 
 
@@ -153,7 +157,7 @@ def currency_name(code: str) -> str:
 
 
 def format_money(minor_units: int | None, currency: str) -> str:
-    """Render a minor-unit amount as ``\u20a660,000.00 (NGN)``.
+    """Render a minor-unit amount as ``\u20a625,118.00 (NGN)``.
 
     The ISO code is always part of the output - a bare symbol is not acceptable
     here: screen readers, plain-text email clients and forwarded receipts must
@@ -179,86 +183,28 @@ def format_product_price(plan: str, interval: str = MONTHLY) -> str | None:
     return format_money(int(usd) * 100, PRODUCT_CURRENCY)
 
 
-def _published_amounts(currency: str) -> dict[str, dict[str, int]] | None:
-    """Operator-published payment prices, keyed ``plan -> interval -> minor``.
+def converted_payment_amount(product_minor: int, rate: float) -> int:
+    """Convert a USD minor-unit price to payment-currency minor units.
 
-    Read from settings, so the business controls the number; never computed.
-    Accepts either a full map (``{"pro": {"monthly": 6000000}}``) or a flat
-    monthly-only map (``{"pro": 6000000}``) for convenience. Only NGN has a
-    published catalog today: adding another currency means adding its own
-    explicit setting, not deriving one.
+    ``product_minor`` is USD cents and ``rate`` is payment-currency units per
+    1 USD, so the product ``cents x (units/USD)`` is already expressed in
+    payment-currency minor units (kobo for NGN). Rounded to the nearest minor
+    unit - $19.00 at ₦1,322/USD -> 1,900 x 1,322 = 2,511,800 kobo = ₦25,118.00.
     """
-    if currency != "NGN":
-        return None
-    raw = settings.PAYSTACK_NGN_PLAN_PRICES
-    if not raw:
-        return None
-    normalized: dict[str, dict[str, int]] = {}
-    for plan, value in raw.items():
-        stated = str(plan).strip().lower()
-        key = normalize_plan(stated)
-        intervals: dict[str, int] = {}
-        if isinstance(value, dict):
-            for interval, amount in value.items():
-                try:
-                    intervals[str(interval).strip().lower()] = int(amount)
-                except (TypeError, ValueError):
-                    continue
-        else:
-            try:
-                intervals[MONTHLY] = int(value)
-            except (TypeError, ValueError):
-                intervals = {}
-        intervals = {
-            interval: amount
-            for interval, amount in intervals.items()
-            if interval in (MONTHLY, ANNUAL) and amount > 0
-        }
-        if not intervals:
-            logger.error(
-                "PAYSTACK_NGN_PLAN_PRICES[%r] carries no usable amount; ignoring "
-                "the entry.",
-                stated,
-            )
-            continue
-        if key != stated:
-            logger.warning(
-                "PAYSTACK_NGN_PLAN_PRICES[%r] uses a legacy plan name; price it "
-                "under its canonical id %r instead.",
-                stated,
-                key,
-            )
-        if key not in self_serve_plans():
-            # Free is never charged and Enterprise is Contact Sales: a price
-            # attached to either is a misconfiguration, never a checkout.
-            logger.error(
-                "PAYSTACK_NGN_PLAN_PRICES[%r] resolves to %r, which RELIASTRA "
-                "does not charge through self-serve checkout; ignoring.",
-                stated,
-                key,
-            )
-            continue
-        if key in normalized:
-            if stated == key:
-                normalized[key] = intervals  # canonical id wins over an alias
-            else:
-                # ``starter`` is a legacy alias of ``pro``. An alias may fill a
-                # gap but must never overwrite a price published under the
-                # canonical slug: silently repricing a live plan is a
-                # mis-charge.
-                logger.error(
-                    "Ignoring PAYSTACK_NGN_PLAN_PRICES[%r]: %r already has a "
-                    "published price under its canonical id.",
-                    stated,
-                    key,
-                )
-            continue
-        normalized[key] = intervals
-    return normalized or None
+    return int(round(product_minor * rate))
 
 
-def resolve_payment_price(plan: str, interval: str = MONTHLY) -> PaymentPrice:
-    """The canonical resolution of "what will this plan cost and be charged as"."""
+def resolve_payment_price(
+    plan: str, interval: str = MONTHLY, *, rate: float | None = None
+) -> PaymentPrice:
+    """The canonical resolution of "what will this plan cost and be charged as".
+
+    ``rate`` is the live exchange rate (payment-currency units per 1 USD). It
+    is required to price a non-USD charge and is deliberately NOT read here -
+    the caller must supply it, so the quoted figure and the charged figure are
+    the product of one explicit resolution. When the processing currency is
+    USD, no rate is needed and the published USD amount is charged directly.
+    """
     normalized = normalize_plan(plan)
     interval = (interval or MONTHLY).strip().lower()
     interval = ANNUAL if interval == ANNUAL else MONTHLY
@@ -270,17 +216,16 @@ def resolve_payment_price(plan: str, interval: str = MONTHLY) -> PaymentPrice:
         product_minor = PLAN_PRICES_USD.get(normalized, 0) * 100
 
     currency = payment_currency()
-    published = _published_amounts(currency)
     amount: int | None = None
-    if published:
-        amount = published.get(normalized, {}).get(interval)
-    if amount is None and currency == PRODUCT_CURRENCY:
+    if currency == PRODUCT_CURRENCY:
         # A USD deployment charges its published USD amounts directly.
         amount = (
             PLAN_ANNUAL_AMOUNTS.get(normalized)
             if interval == ANNUAL
             else PLAN_AMOUNTS.get(normalized)
         )
+    elif rate is not None and rate > 0 and product_minor:
+        amount = converted_payment_amount(product_minor, float(rate))
     return PaymentPrice(
         plan=normalized,
         interval=interval,
@@ -291,38 +236,40 @@ def resolve_payment_price(plan: str, interval: str = MONTHLY) -> PaymentPrice:
     )
 
 
-def checkout_amount(plan: str, interval: str = MONTHLY) -> int:
+def checkout_amount(plan: str, interval: str = MONTHLY, *, rate: float | None = None) -> int:
     """Amount in minor units to send to Paystack.
 
-    Raises instead of guessing: a missing payment price for a non-USD
+    Raises instead of guessing: a missing exchange rate for a non-USD
     processing currency must never fall back to the USD figure.
     """
-    price = resolve_payment_price(plan, interval)
+    price = resolve_payment_price(plan, interval, rate=rate)
     if not price.is_configured:
         raise PaymentPriceNotConfigured(price)
     return int(price.payment_amount or 0)
 
 
-def minimum_product_amount(plan: str, interval: str = MONTHLY) -> int | None:
+def minimum_product_amount(
+    plan: str, interval: str = MONTHLY, *, rate: float | None = None
+) -> int | None:
     """The smallest payment that covers the plan, in payment-currency minor units.
 
-    Used by webhook/verify integrity checks. It is the *published payment
-    price* - not the USD list price - because that is what a correctly
-    configured checkout collects.
+    Used by webhook/verify integrity checks. It is the *resolved payment
+    price* (USD converted at the live rate) - not the raw USD list price -
+    because that is what a correctly configured checkout collects.
     """
-    amount = resolve_payment_price(plan, interval).payment_amount
+    amount = resolve_payment_price(plan, interval, rate=rate).payment_amount
     return int(amount) if amount else None
 
 
 class PaymentPriceNotConfigured(RuntimeError):
-    """Raised when checkout is requested for a currency with no published price."""
+    """Raised when checkout is requested for a currency with no resolvable rate."""
 
     def __init__(self, price: PaymentPrice) -> None:
         self.price = price
         super().__init__(
-            f"No {price.payment_currency} payment price is published for plan "
-            f"'{price.plan}' ({price.interval}). Set PAYSTACK_NGN_PLAN_PRICES for "
-            f"{price.payment_currency} before offering self-serve checkout."
+            f"No {price.payment_currency} payment price is available for plan "
+            f"'{price.plan}' ({price.interval}): no live exchange rate is "
+            f"available to convert the USD list price."
         )
 
 
@@ -357,26 +304,28 @@ def self_serve_plans() -> list[str]:
     )
 
 
-def checkout_ready() -> bool:
-    """Are payment prices published for every self-serve plan/interval?
+def checkout_ready(*, rate: float | None = None) -> bool:
+    """Are payment prices resolvable for every self-serve plan/interval?
 
     A pricing page must not offer "Upgrade to Pro" for a currency it cannot
-    price: with no published amount, checkout would either fail mid-flow or -
+    price: with no available rate, checkout would either fail mid-flow or -
     worse - charge the USD minor-unit figure as Naira.
     """
     if not currency_mismatch():
         return True
+    if rate is None or rate <= 0:
+        return False
     for plan in self_serve_plans():
         for interval in (MONTHLY, ANNUAL):
-            if resolve_payment_price(plan, interval).payment_amount is None:
+            if resolve_payment_price(plan, interval, rate=rate).payment_amount is None:
                 return False
     return True
 
 
-def published_payment_amounts() -> dict[str, dict[str, str]]:
-    """``plan -> interval -> display`` for every published payment price.
+def resolved_payment_amounts(*, rate: float | None = None) -> dict[str, dict[str, str]]:
+    """``plan -> interval -> display`` for every resolvable payment price.
 
-    Only amounts the business actually published appear. A pricing card must
+    Only amounts the current rate actually resolves appear. A pricing card must
     never compose a Naira figure itself - if it is not in this map, the card
     states the currency without inventing a number.
     """
@@ -384,7 +333,7 @@ def published_payment_amounts() -> dict[str, dict[str, str]]:
     for plan in self_serve_plans():
         row: dict[str, str] = {}
         for interval in (MONTHLY, ANNUAL):
-            price = resolve_payment_price(plan, interval)
+            price = resolve_payment_price(plan, interval, rate=rate)
             if price.is_configured:
                 row[interval] = format_money(
                     price.payment_amount, price.payment_currency
@@ -394,11 +343,14 @@ def published_payment_amounts() -> dict[str, dict[str, str]]:
     return out
 
 
-def currency_info() -> dict:
+def currency_info(*, rate: float | None = None) -> dict:
     """The payload every customer-facing payment surface renders from.
 
-    Returned as a plain dict so both the public pricing endpoint and the
-    authenticated billing endpoint can embed the identical object.
+    ``rate`` is the live exchange rate the charge is converted at; when it is
+    None the payload reports ``checkout_ready: False`` and empty
+    ``plan_payment_amounts`` (the UI then states the currency without a
+    figure). Returned as a plain dict so both the public pricing endpoint and
+    the authenticated billing endpoint can embed the identical object.
     """
     currency = payment_currency()
     return {
@@ -408,8 +360,8 @@ def currency_info() -> dict:
         "payment_symbol": CURRENCY_SYMBOLS.get(currency, currency),
         "differs_from_product_currency": currency_mismatch(),
         "notice": customer_currency_notice(),
-        "checkout_ready": checkout_ready(),
-        "plan_payment_amounts": published_payment_amounts(),
+        "checkout_ready": checkout_ready(rate=rate),
+        "plan_payment_amounts": resolved_payment_amounts(rate=rate),
         # The processor is part of the disclosure contract: every payment
         # surface names who charges the customer.
         "payment_provider": PAYMENT_PROVIDER,
@@ -418,7 +370,11 @@ def currency_info() -> dict:
 
 
 def transparency_lines(
-    plan: str, interval: str = MONTHLY, *, price: PaymentPrice | None = None
+    plan: str,
+    interval: str = MONTHLY,
+    *,
+    rate: float | None = None,
+    price: PaymentPrice | None = None,
 ) -> dict[str, str | None]:
     """The mandatory customer-facing transparency triple for one plan.
 
@@ -426,19 +382,19 @@ def transparency_lines(
     RELIASTRA-owned payment surface::
 
         Product price:     $19.00 (USD)
-        Actual charge:     ₦60,000.00 (NGN)
+        Actual charge:     ₦25,118.00 (NGN)
         Payment provider:  Paystack
 
-    ``actual_charge`` is the *published payment price* - the integer that is
-    sent to Paystack - never a number the caller composes itself. It is
-    ``None`` when no payment price has been published (and the surface then
-    states the currency without a figure). ``product_price`` is ``None`` for
+    ``actual_charge`` is the *resolved payment price* - the USD list price
+    converted at ``rate`` - the same integer that is sent to Paystack. It is
+    ``None`` when no rate is available (and the surface then states the
+    currency without a figure). ``product_price`` is ``None`` for
     custom-priced plans, which route to Contact Sales instead of checkout.
 
     Web, receipts and emails all call this so the three lines can never
     disagree with each other or with the charge.
     """
-    price = price or resolve_payment_price(plan, interval)
+    price = price or resolve_payment_price(plan, interval, rate=rate)
     return {
         "product_price": format_money(price.product_amount, price.product_currency) or None,
         "actual_charge": (

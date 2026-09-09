@@ -40,11 +40,12 @@ true in the same message, in every message.
    token list across every rendered template.
 
 5. **Currency language.** Where an email states what will be charged, it uses
-   the canonical disclosure and the published payment amount from
-   `app/core/payment_pricing.py` - never a figure composed in the template, and
-   never a forward-looking promise the receipt cannot support. A receipt states
-   the currency factually; that is the **one** deliberate difference between
-   mail and web copy, recorded in `app/modules/billing/notifications.py`.
+   the canonical disclosure and the converted payment amount (the USD price at
+   the live exchange rate) from `app/core/payment_pricing.py` - never a figure
+   composed in the template, and never a forward-looking promise the receipt
+   cannot support. A receipt states the currency factually; that is the **one**
+   deliberate difference between mail and web copy, recorded in
+   `app/modules/billing/notifications.py`.
 
 ## Using it
 

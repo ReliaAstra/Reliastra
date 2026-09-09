@@ -1,9 +1,12 @@
 """Currency must be validated BEFORE the amount comparison.
 
-PLAN_AMOUNTS is denominated in minor units of PAYSTACK_CURRENCY. Comparing
-`data["amount"]` as a bare integer let a transaction settled in a weaker
-currency clear the gate: 3900 NGN is about $2.50, not the $19 Pro plan, but
-3900 == 3900.
+``PLAN_AMOUNTS`` is the USD product price in minor units (cents). Comparing
+``data["amount"]`` as a bare integer let a transaction settled in a weaker
+currency clear the gate: a $19 plan is 1900 cents, but 1900 NGN is about
+$1.40 - 1900 == 1900. When Paystack settles in a different currency the
+expected amount is that USD price converted at the live rate, and the
+currency check must still run first: an amount-only comparison across
+currencies is meaningless.
 
 Covers the canonical 3-tier architecture:
 - PRO monthly = $19  -> 1900 minor units

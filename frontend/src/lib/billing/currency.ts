@@ -3,10 +3,9 @@
  *
  * RELIASTRA prices products in USD (see `lib/dashboard/plans.ts`, which mirrors
  * the backend's `PLAN_PRICES_USD`). Paystack currently *charges* in Nigerian
- * Naira. Those are two different things and this module keeps them apart:
- * nothing here converts one currency into another, and no amount is computed
- * from an exchange rate - every payment figure is a string the backend
- * resolved from its published payment-price catalog.
+ * Naira. The backend converts the USD price into NGN at the live exchange rate
+ * and returns the finished figure - no amount is computed from a rate in the
+ * browser, and every payment figure is a string the backend resolved.
  *
  * The disclosure paragraph below is the ONE canonical version in the web tier.
  * Components import it; they never restate it, so the pricing page, the upgrade
@@ -16,13 +15,12 @@
  */
 
 /**
- * A market reference rate, shown ONLY as context next to a real charge.
+ * The live market rate the backend used to convert the USD price into NGN.
  *
- * It is display data from the backend (`app.core.fx_reference`): labelled an
- * estimate, attributed to a verifiable source and timestamped. It never
- * determines what is charged - the amount sent to Paystack comes from the
- * published payment-price catalog, and the frontend must not use this number
- * for anything a customer pays.
+ * It is display data from the backend (`app.core.fx_reference`): attributed to
+ * a verifiable source, timestamped, and stated to be the basis of the charge.
+ * The amount sent to Paystack is the USD price converted at this rate - the
+ * frontend shows this number but never computes a charge from it itself.
  */
 export interface FxReference {
   available?: boolean;
@@ -37,9 +35,9 @@ export interface FxReference {
   provider: string;
   provider_url: string;
   source_url: string;
-  /** Heading label, e.g. "Exchange rate reference (estimate - not the price you pay)". */
+  /** Heading label, e.g. "Exchange rate (converts your USD price to NGN)". */
   label: string;
-  /** Mandatory wording that the estimate is not the billing basis. */
+  /** Mandatory wording that the rate is the basis of the USD-to-NGN conversion. */
   disclaimer: string;
 }
 
@@ -56,13 +54,14 @@ export interface PaymentCurrencyInfo {
   differs_from_product_currency: boolean;
   /** Canonical disclosure. `null` when there is nothing to disclose. */
   notice: string | null;
-  /** False when no payment price is published for the processing currency. */
+  /** False when no rate is available to price the processing currency. */
   checkout_ready: boolean;
   /**
-   * `plan -> interval -> formatted amount` for payment prices the business has
-   * published. Empty means unpublished, in which case no amount may be shown:
-   * the UI states the currency and stops, because deriving a figure client-side
-   * is exactly the mis-billing this separation prevents.
+   * `plan -> interval -> formatted amount` for payment prices the backend has
+   * resolved (USD converted at the live rate). Empty means no rate was
+   * available, in which case no amount may be shown: the UI states the currency
+   * and stops, because deriving a figure client-side is exactly the
+   * mis-billing this separation prevents.
    */
   plan_payment_amounts?: Record<string, Record<string, string>>;
   /** The processor that collects the money - part of the transparency triple. */
@@ -70,7 +69,7 @@ export interface PaymentCurrencyInfo {
   /** Longer form for payment-surface copy, e.g. "Paystack - secure hosted checkout". */
   payment_provider_display?: string;
   /**
-   * Market reference estimate shown for context only. `null`/absent when
+   * The live market rate the charge was converted at. `null`/absent when
    * disabled or unavailable - surfaces then hide the reference entirely; a
    * fallback rate would be an invented one.
    */
@@ -102,11 +101,12 @@ export const PAYMENT_PROVIDER_DISPLAY = 'Paystack - secure hosted checkout';
  * - `checkout_ready: false` - without the backend's answer we cannot know the
  *   Paystack account can price this plan, so no surface may present a live
  *   "continue to payment" action on the strength of this object.
- * - `plan_payment_amounts: {}` - amounts are business-published numbers; a
- *   stale or invented Naira figure is a mis-charge risk, so the UI shows the
- *   currency without a number until `/api/v1/billing/currency` answers.
- * - `fx_reference: null` - a missing estimate must not be replaced by an
- *   assumed rate. Absent means "do not show a reference", always.
+ * - `plan_payment_amounts: {}` - amounts are resolved by the backend from the
+ *   live rate; a stale or invented Naira figure is a mis-charge risk, so the UI
+ *   shows the currency without a number until `/api/v1/billing/currency`
+ *   answers.
+ * - `fx_reference: null` - a missing rate must not be replaced by an
+ *   assumed one. Absent means "do not show a reference", always.
  *
  * The notice itself is what a customer needs before deciding; the amount and
  * the CTA are what the API decides.
@@ -176,10 +176,10 @@ export function isCheckoutReady(info: PaymentCurrencyInfo | null | undefined): b
 }
 
 /**
- * The published payment amount for a plan/interval, as a ready-made string
- * from the backend (e.g. "\u20a660,000.00 (NGN)"). `null` when the business has
- * not published that price - callers must then omit the amount rather than
- * compute one.
+ * The resolved payment amount for a plan/interval, as a ready-made string
+ * from the backend (e.g. "\u20a625,118.00 (NGN)"). `null` when no rate was
+ * available to convert the price - callers must then omit the amount rather
+ * than compute one.
  */
 export function paymentAmountFor(
   info: PaymentCurrencyInfo | null | undefined,
@@ -208,7 +208,7 @@ export function paymentProviderDisplay(
 }
 
 /**
- * The FX estimate to display beside prices, or `null`.
+ * The FX rate to display beside prices, or `null`.
  *
  * Only surfaced when the currency actually differs and the backend returned a
  * fresh, sourced, timestamped payload. `null` hides the panel - there is no
@@ -239,7 +239,7 @@ export function usableFxReference(fx: FxReference | null | undefined): FxReferen
   return fx;
 }
 
-/** "1 USD ≈ ₦1,650.00 NGN" style copy - explicitly an estimate. */
+/** "1 USD ≈ ₦1,650.00 NGN" style copy - the rate the charge is converted at. */
 export function formatFxRate(fx: FxReference): string {
   const symbol = SYMBOLS[fx.payment_currency] ?? '';
   const amount = fx.rate.toLocaleString('en-US', {

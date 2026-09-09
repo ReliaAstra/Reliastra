@@ -10,7 +10,7 @@ No price string in this module is hardcoded. Product prices come from
 ``app.core.permissions`` and payment amounts from
 ``app.core.payment_pricing`` - the same two sources the checkout used - so a
 receipt can never contradict what Paystack actually collected. Receipts state
-the *charged* amount and its ISO currency code in words (``NGN 60,000.00 NGN``
+the *charged* amount and its ISO currency code in words (``NGN 25,118.00 NGN``
 style output from :func:`format_money`), never a bare symbol.
 
 The pre-payment currency disclosure paragraph belongs to the *decision*
@@ -27,6 +27,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from app.core.fx_reference import cached_rate
 from app.core.payment_pricing import (
     PAYMENT_PROVIDER,
     PRODUCT_CURRENCY,
@@ -83,8 +84,14 @@ class PaymentSummary:
 
     @property
     def payment_price_label(self) -> str:
-        """The published payment price for this plan/interval (may be empty)."""
-        price = resolve_payment_price(self.plan, self.interval_label)
+        """The converted payment price for this plan/interval (may be empty).
+
+        Read from the process-local rate cache - an email renderer cannot
+        await the fetch - so it is empty when no rate has been cached yet.
+        """
+        price = resolve_payment_price(
+            self.plan, self.interval_label, rate=cached_rate()
+        )
         return format_money(price.payment_amount, price.payment_currency)
 
     @property
@@ -390,7 +397,7 @@ def render_trial_ending_email(
     days_left: int,
     plan: str = "pro",
 ) -> tuple[str, str]:
-    price = resolve_payment_price(plan, "monthly")
+    price = resolve_payment_price(plan, "monthly", rate=cached_rate())
     upgrade_url = frontend_url("/settings/billing")
     amount_bits: list[str] = []
     if price.product_amount:
@@ -457,7 +464,7 @@ def render_trial_expired_email(
     entitlement-critical, so it lives in the body; the shared footer sits below
     it, separated."""
     origin = frontend_url("/settings/billing")
-    price = resolve_payment_price("pro", "monthly")
+    price = resolve_payment_price("pro", "monthly", rate=cached_rate())
     price_bits: list[str] = []
     if price.product_amount:
         price_bits.append(

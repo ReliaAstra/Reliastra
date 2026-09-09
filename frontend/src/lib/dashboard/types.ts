@@ -356,7 +356,7 @@ export interface BillingTransactionItem {
   product_price_display: string | null;
   charged_currency: string;
   charged_amount_minor: number;
-  /** Pre-formatted from the backend, e.g. "₦60,000.00 (NGN)". */
+  /** Pre-formatted from the backend, e.g. "₦25,118.00 (NGN)". */
   charged_amount_display: string;
   paid_at: string | null;
   period_start: string | null;

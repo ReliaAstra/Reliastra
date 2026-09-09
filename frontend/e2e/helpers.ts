@@ -4,20 +4,29 @@ import { expect, type APIRequestContext, type Page } from '@playwright/test';
 export const PAYSTACK_MOCK = process.env.E2E_PAYSTACK_URL ?? 'http://127.0.0.1:9200';
 export const MAIL_SINK = process.env.E2E_MAILHOG_URL ?? 'http://127.0.0.1:8025';
 
-/** The published, contractual pricing - asserted, never read from the UI. */
+/**
+ * The contractual pricing - asserted, never read from the UI.
+ *
+ * The NGN charge is the USD product price converted at the live rate. The dev
+ * stack pins that rate (``FX_NGN_RATE=1650.00`` in the Paystack mock), so the
+ * amounts below are exactly the conversion the backend computes:
+ *
+ *   monthly  $19.00  -> 1900 cents x 1650  = 3,135,000 kobo = ₦31,350.00
+ *   annual   $190.00 -> 19000 cents x 1650 = 31,350,000 kobo = ₦313,500.00
+ */
 export const CONTRACT = {
   productAmountDisplay: '$19.00 (USD)',
   productAmountMinor: 1900,
   productCurrency: 'USD',
-  actualChargeDisplay: '₦60,000.00 (NGN)',
-  paymentAmountMinor: 6_000_000, // kobo - set independently, NOT 3900 converted
+  actualChargeDisplay: '₦31,350.00 (NGN)',
+  paymentAmountMinor: 3_135_000, // kobo - 1900 cents x 1650 rate
   paymentCurrency: 'NGN',
   provider: 'Paystack',
   notice:
     "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
   annualProductDisplay: '$190.00 (USD)',
-  annualChargeDisplay: '₦600,000.00 (NGN)',
-  annualAmountMinor: 60_000_000,
+  annualChargeDisplay: '₦313,500.00 (NGN)',
+  annualAmountMinor: 31_350_000,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -188,7 +197,7 @@ export interface PaystackInitCapture {
   amount: number | null;
   currency: string | null;
   email?: string | null;
-  /** Must be absent/null: a plan code would override our published amount. */
+  /** Must be absent/null: a plan code would override our converted amount. */
   plan?: string | null;
   /** The rails the customer was allowed to pay through. */
   channels?: string[];

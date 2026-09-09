@@ -47,10 +47,11 @@ async def test_billing_endpoints(async_client, auth_data, monkeypatch):
 
 # ── USD product price vs. NGN payment price: the Paystack contract ──────────
 #
-# What the backend sends to Paystack must be EXACTLY the published NGN amount
-# and the explicit currency, and the persisted transaction must record what
-# was actually charged. These are the acceptance tests for the pricing
-# refactor: they read the actual HTTP body the Paystack client posts.
+# What the backend sends to Paystack must be EXACTLY the USD price converted
+# at the live rate, with the explicit currency, and the persisted transaction
+# must record what was actually charged. These are the acceptance tests for
+# the pricing refactor: they read the actual HTTP body the Paystack client
+# posts.
 #
 # Mechanics: the service constructs a fresh ``httpx.AsyncClient`` per call, so
 # the tests swap in a subclass that installs a MockTransport - the already-
@@ -111,7 +112,7 @@ def _intercept_paystack(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_initialize_sends_the_published_ngn_amount_and_currency(
+async def test_initialize_sends_the_converted_ngn_amount_and_currency(
     async_client, auth_data, monkeypatch
 ):
     captured = _intercept_paystack(monkeypatch)
@@ -123,19 +124,19 @@ async def test_initialize_sends_the_published_ngn_amount_and_currency(
     assert res.status_code == 200, res.text
     body = captured["body"]
     # The exact Paystack contract: minor units of NGN + explicit currency.
-    assert body["amount"] == 6_000_000
+    assert body["amount"] == 2_511_800
     assert body["currency"] == "NGN"
     assert body["amount"] != 3900, "USD minor units must never be billed as Naira"
     # Metadata carries both sides for reconciliation and the webhook path.
     meta = body["metadata"]
     assert meta["currency"] == "NGN"
-    assert meta["amount_minor"] == "6000000"
+    assert meta["amount_minor"] == "2511800"
     assert meta["product_currency"] == "USD"
     assert meta["product_amount_minor"] == "1900"
     payload = res.json()
-    assert payload["amount_minor"] == 6_000_000
+    assert payload["amount_minor"] == 2_511_800
     assert payload["currency"] == "NGN"
-    assert payload["amount_display"] == "\u20a660,000.00 (NGN)"
+    assert payload["amount_display"] == "\u20a625,118.00 (NGN)"
     assert payload["product_price_display"] == "$19.00 (USD)"
     assert payload["payment_provider"] == "Paystack"
 
@@ -151,7 +152,7 @@ async def test_initialize_annual_uses_the_annual_payment_price(
         json={"plan": "pro", "billing_interval": "annual", "terms_accepted": True},
     )
     assert res.status_code == 200, res.text
-    assert captured["body"]["amount"] == 60_000_000
+    assert captured["body"]["amount"] == 25_118_000
     assert captured["body"]["currency"] == "NGN"
 
 
@@ -182,21 +183,25 @@ async def test_enterprise_checkout_is_refused_without_creating_anything(
 
 
 @pytest.mark.asyncio
-async def test_unpublished_price_disables_checkout_instead_of_guessing(
+async def test_no_rate_disables_checkout_instead_of_guessing(
     async_client, auth_data, monkeypatch
 ):
-    """No published NGN price → honest refusal, never a USD-as-NGN charge."""
+    """No exchange rate → honest refusal, never a USD-as-NGN charge."""
     captured = _intercept_paystack(monkeypatch)
-    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", None)
+
+    async def _down(*_a, **_k):
+        return None
+
+    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
         json={"plan": "pro", "billing_interval": "monthly", "terms_accepted": True},
     )
     # 409, not 422: the request is well-formed and retrying it changes nothing
-    # - the *account state* (no published price) is what conflicts. The client
-    # can act on that distinction, which is why the status is asserted rather
-    # than left at the generic validation code.
+    # - the *account state* (no rate to convert with) is what conflicts. The
+    # client can act on that distinction, which is why the status is asserted
+    # rather than left at the generic validation code.
     assert res.status_code == 409, res.text
     body = res.json()
     # The checkout UI branches on this slug to explain the situation in
@@ -205,7 +210,7 @@ async def test_unpublished_price_disables_checkout_instead_of_guessing(
     assert {"field": "reason", "issue": "price_not_configured"} in body["error"]["details"]
     assert "being finalized" in body["error"]["message"]
     inits = [c for c in captured["calls"] if "transaction/initialize" in c[0]]
-    assert inits == [], "no checkout may start without a published price"
+    assert inits == [], "no checkout may start without a rate to convert with"
 
 
 @pytest.mark.asyncio
@@ -218,7 +223,7 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
         "status": True,
         "data": {
             "status": "success",
-            "amount": 6_000_000,
+            "amount": 2_511_800,
             "currency": "NGN",
             "reference": reference,
             "id": 12345,
@@ -254,7 +259,7 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
     payload = res.json()
     assert payload["verified"] is True
     assert payload["currency"] == "NGN"
-    assert payload["amount_minor"] == 6_000_000
+    assert payload["amount_minor"] == 2_511_800
     assert payload["product_price_display"] == "$19.00 (USD)"
 
     hist = await async_client.get(
@@ -263,9 +268,9 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
     assert hist.status_code == 200, hist.text
     items = hist.json()["items"]
     row = next(t for t in items if t["reference"] == reference)
-    assert row["charged_amount_minor"] == 6_000_000
+    assert row["charged_amount_minor"] == 2_511_800
     assert row["charged_currency"] == "NGN"
-    assert row["charged_amount_display"] == "\u20a660,000.00 (NGN)"
+    assert row["charged_amount_display"] == "\u20a625,118.00 (NGN)"
     assert row["product_amount_minor"] == 1900
     assert row["product_currency"] == "USD"
     assert row["status"] == "success"
@@ -294,7 +299,7 @@ async def test_refund_webhook_marks_the_persisted_transaction(
         "status": True,
         "data": {
             "status": "success",
-            "amount": 6_000_000,
+            "amount": 2_511_800,
             "currency": "NGN",
             "reference": reference,
             "paid_at": "2026-01-05T10:00:00+00:00",
@@ -343,7 +348,7 @@ async def test_pricing_endpoint_transparency_triple(async_client):
     data = res.json()
     pro = next(p for p in data["plans"] if p["plan"] == "pro")
     assert pro["transparency"]["monthly"]["product_price"] == "$19.00 (USD)"
-    assert pro["transparency"]["monthly"]["actual_charge"] == "\u20a660,000.00 (NGN)"
+    assert pro["transparency"]["monthly"]["actual_charge"] == "\u20a625,118.00 (NGN)"
     assert pro["transparency"]["monthly"]["payment_provider"] == "Paystack"
     ent = next(p for p in data["plans"] if p["plan"] == "enterprise")
     assert ent["billing_availability"] == "contact_sales"
@@ -394,7 +399,7 @@ async def test_cancel_resume_and_invoice_document(async_client, auth_data, mocke
         "status": True,
         "data": {
             "status": "success",
-            "amount": 6_000_000,
+            "amount": 2_511_800,
             "currency": "NGN",
             "reference": reference,
             "paid_at": paid_at,

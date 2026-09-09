@@ -29,7 +29,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 
 from app.core.audit_log import AuditLogService
-from app.core.payment_pricing import payment_currency, resolve_payment_price
+from app.core.payment_disclosure import resolve_payment_price_async
+from app.core.payment_pricing import payment_currency
 from app.core.permissions import (
     PLAN_DEPENDENCY_LIMITS,
     Plan,
@@ -377,7 +378,7 @@ async def _run_renewal_reminders() -> int:
             owner = await _org_owner(session, org.id)
             if owner is None or not owner.email:
                 continue
-            price = resolve_payment_price(sub.plan, sub.billing_interval)
+            price = await resolve_payment_price_async(sub.plan, sub.billing_interval)
             payment = PaymentSummary(
                 plan=sub.plan,
                 billing_interval=sub.billing_interval,
