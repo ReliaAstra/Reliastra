@@ -46,6 +46,8 @@ fi
 
 echo "=== 1/4 sync tree to $REF ==="
 cd "$REPO"
+# Self-heal: past root-run git ops leave root-owned objects behind.
+chown -R reliastra:reliastra "$REPO/.git"
 sudo -u reliastra git fetch origin main
 sudo -u reliastra git reset --hard "$REF"
 COMMIT=$(git rev-parse HEAD)
