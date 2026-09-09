@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>RELIASTRA</title>
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".5" stop-color="#e6e8ec"/><stop offset="1" stop-color="#b4bac4"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#2563EB"/>
+  <g transform="translate(32.526661995683526 240.6485440036289) scale(0.4386130284677458)"><g fill="url(#silver)"><g transform="translate(0 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(127 0)"><path d="M0 0H100V13H0ZM0 28H100V41H0ZM0 57H100V70H0Z"/></g><g transform="translate(254 0)"><path d="M0 0H15V57H85V70H14Q0 70 0 56Z"/></g><g transform="translate(366 0)"><path d="M0 0H15V70H0Z"/></g><g transform="translate(408 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g><g transform="translate(536 0)"><path d="M100 0H23Q0 0 0 21Q0 42 23 42H77Q87 42 87 50Q87 57 77 57H3V70H77Q101 70 101 49Q101 29 78 29H24Q14 29 14 21Q14 13 24 13H100Z"/></g><g transform="translate(664 0)"><path d="M0 0H100V13H57V70H43V13H0Z"/></g><g transform="translate(791 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(918 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g></g></g>
+</svg>

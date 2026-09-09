@@ -14,6 +14,7 @@ const glyphs = {
   T: '<path d="M0 0H100V13H57V70H43V13H0Z"/>',
 };
 const widths = { R: 100, E: 100, L: 85, I: 15, A: 101, S: 101, T: 100 };
+const wordmarkHeight = 70;
 let offset = 0;
 const wordmark = [...'RELIASTRA'].map((letter) => {
   const svg = `<g transform="translate(${offset} 0)">${glyphs[letter]}</g>`;
@@ -21,6 +22,28 @@ const wordmark = [...'RELIASTRA'].map((letter) => {
   return svg;
 }).join('');
 const wordmarkWidth = offset - 27;
+
+// Email account avatar: 512×512, solid RELIASTRA brand blue (--rs-brand #2563EB),
+// silver wordmark centered inside the circular-crop safe zone with even padding.
+// Wordmark paths, spacing, and gradient are identical to the social artwork.
+function avatarSvg(size) {
+  const canvas = 512;
+  const safeRadius = 224; // 32px padding inside the 256px circular avatar crop
+  // Largest uniform scale whose bounding-box corners stay inside the safe circle.
+  const logoWidth = (2 * safeRadius) / Math.sqrt(1 + (wordmarkHeight / wordmarkWidth) ** 2);
+  const scale = logoWidth / wordmarkWidth;
+  const logoHeight = wordmarkHeight * scale;
+  const x = (canvas - logoWidth) / 2;
+  const y = (canvas - logoHeight) / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${canvas} ${canvas}">
+  <title>RELIASTRA</title>
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".5" stop-color="#e6e8ec"/><stop offset="1" stop-color="#b4bac4"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#2563EB"/>
+  <g transform="translate(${x} ${y}) scale(${scale})"><g fill="url(#silver)">${wordmark}</g></g>
+</svg>`;
+}
 
 function artwork(square) {
   const width = square ? 1080 : 1200;
@@ -58,12 +81,23 @@ function artwork(square) {
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 await mkdir(`${root}public/social`, { recursive: true });
+// Optional args regenerate a subset, e.g. `node scripts/generate-social-images.mjs reliastra-email-avatar`
+const only = process.argv.slice(2);
+const wanted = (name) => only.length === 0 || only.includes(name);
 for (const square of [false, true]) {
   const name = square ? 'reliastra-social-square' : 'reliastra-og';
+  if (!wanted(name)) continue;
   const svg = artwork(square);
   await writeFile(`${root}public/social/${name}.svg`, svg);
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
   const target = square ? 'public/social/reliastra-social-square.png' : 'src/app/opengraph-image.png';
   await writeFile(`${root}${target}`, png);
   console.log(`${target}: ${(png.length / 1024).toFixed(0)} KB`);
+}
+if (wanted('reliastra-email-avatar')) {
+  await writeFile(`${root}public/social/reliastra-email-avatar.svg`, avatarSvg(512));
+  // Render 4× and Lanczos-downscale so thin letterform edges stay crisp at 512.
+  const png = await sharp(Buffer.from(avatarSvg(2048))).resize(512, 512, { kernel: 'lanczos3' }).png().toBuffer();
+  await writeFile(`${root}public/social/reliastra-email-avatar.png`, png);
+  console.log(`public/social/reliastra-email-avatar.png: ${(png.length / 1024).toFixed(0)} KB`);
 }
