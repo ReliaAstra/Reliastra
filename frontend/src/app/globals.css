@@ -2540,10 +2540,22 @@
 }
 .ob-attr-scale-labels > span:first-child { left: 0; transform: none; }
 .ob-attr-scale-max { right: 0; left: auto !important; transform: none !important; }
+/* Anchor the highest threshold to the right instead of centring it, so it can
+   never overhang the track on an intermediate width. */
+.ob-attr-scale-labels > span:nth-last-child(2) {
+  left: auto !important;
+  right: 0;
+  transform: none !important;
+}
 
-@media (max-width: 640px) {
-  /* The inline threshold captions collide on a phone; keep the marks (which
-     carry no text) and state the thresholds in the sentence below instead. */
+/*
+  The two threshold captions are centred on their marks, so at 50% and 75% of
+  a narrow track they collide with each other and with the 0 / 100 end stops.
+  Rather than shrink the type, they are withheld until the track is wide
+  enough to carry them; the marks themselves are text-free and stay at every
+  width, and the sentence under the panel states both thresholds in words.
+*/
+@media (max-width: 899px) {
   .ob-attr-scale-labels > span:not(:first-child):not(.ob-attr-scale-max) {
     display: none;
   }

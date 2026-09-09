@@ -148,11 +148,18 @@ export function AttributionSignals() {
         })}
       </ul>
 
+      {/*
+        Both thresholds are named in words here, not only as scale captions:
+        the captions are withheld below 900px, and a reader on a phone still
+        has to be able to see where the boundaries fall.
+      */}
       <p className="ob-attr-foot">
         Deterministic. Signals are weighted, summed and rounded; the same inputs
-        always produce the same score. At {confidence.toFixed(2)} the result
-        clears the {CLASSIFICATION_THRESHOLDS.vendor_failure} threshold for{' '}
-        <code>vendor_failure</code>. No model is involved in this decision.
+        always produce the same score. A score of{' '}
+        {CLASSIFICATION_THRESHOLDS.multi_cause} or more is{' '}
+        <code>multi_cause</code>; {CLASSIFICATION_THRESHOLDS.vendor_failure} or
+        more is <code>vendor_failure</code>. At {confidence.toFixed(2)} this
+        clears the higher bar. No model is involved in this decision.
       </p>
     </div>
   );
