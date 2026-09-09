@@ -30,9 +30,11 @@ WORKDIR /build
 
 # Install dependencies first for layer caching. Dev deps are REQUIRED for
 # the build (tailwind/postcss/typescript) - do not set NODE_ENV=production
-# before this step.
-COPY frontend/package.json frontend/bun.lock ./
-RUN npm install --no-audit --no-fund
+# before this step. `npm ci` (not install) for exact lockfile versions:
+# floating re-resolution breaks on peer conflicts (react-dom 19.3 vs pinned
+# react 19.2 types) and is non-deterministic between environments.
+COPY frontend/package.json frontend/package-lock.json frontend/bun.lock ./
+RUN npm ci --no-audit --no-fund
 
 COPY frontend/prisma ./prisma
 RUN npx prisma generate
