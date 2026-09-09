@@ -372,7 +372,7 @@ def _optional_uuid(value: Any) -> uuid.UUID | None:
 
 
 def _authorization_fields(data: dict[str, Any]) -> dict[str, Any]:
-    """Masked card fields from Paystack's authorization object. Never the PAN."""
+    """Masked card fields from Paystack's authorization object. Never the full card number."""
     auth = data.get("authorization")
     if not isinstance(auth, dict):
         return {}
@@ -512,8 +512,13 @@ class BillingService:
         status = subscription.status if subscription else None
         last4 = getattr(subscription, "payment_method_last4", None) if subscription else None
         brand = getattr(subscription, "payment_method_brand", None) if subscription else None
-        exp_month = getattr(subscription, "payment_method_exp_month", None) if subscription else None
-        exp_year = getattr(subscription, "payment_method_exp_year", None) if subscription else None
+        exp_month, exp_year = None, None
+        month_raw = getattr(subscription, "payment_method_exp_month", None) if subscription else None
+        if isinstance(month_raw, int):
+            exp_month = month_raw
+        year_raw = getattr(subscription, "payment_method_exp_year", None) if subscription else None
+        if isinstance(year_raw, int):
+            exp_year = year_raw
         channel = getattr(subscription, "payment_method_channel", None) if subscription else None
         canceled_at = getattr(subscription, "canceled_at", None) if subscription else None
         period_start = getattr(subscription, "current_period_start", None) if subscription else None

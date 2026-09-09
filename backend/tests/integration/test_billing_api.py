@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json as _json
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -383,6 +384,12 @@ async def test_commercial_terms_are_public(async_client):
 @pytest.mark.asyncio
 async def test_cancel_resume_and_invoice_document(async_client, auth_data, mocker):
     reference = f"ref_ctrl_{_uuid.uuid4().hex[:8]}"
+    # Period dates are relative to NOW: a fixed past period would already be
+    # over, and the expiry logic would (correctly) close the subscription,
+    # breaking the cancel/resume assertions below.
+    now = datetime.now(timezone.utc)
+    paid_at = (now - timedelta(days=5)).isoformat()
+    next_payment_date = (now + timedelta(days=25)).isoformat()
     verify_result = {
         "status": True,
         "data": {
@@ -390,8 +397,8 @@ async def test_cancel_resume_and_invoice_document(async_client, auth_data, mocke
             "amount": 6_000_000,
             "currency": "NGN",
             "reference": reference,
-            "paid_at": "2026-01-05T10:00:00+00:00",
-            "next_payment_date": "2026-02-05T10:00:00+00:00",
+            "paid_at": paid_at,
+            "next_payment_date": next_payment_date,
             "customer": {"customer_code": "CUS_C"},
             "authorization": {"brand": "visa", "last4": "4242", "exp_month": 3, "exp_year": 2029},
             "metadata": {

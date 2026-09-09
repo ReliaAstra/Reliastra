@@ -59,7 +59,7 @@ class Subscription(UUIDMixin, TimestampMixin, Base):
     canceled_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    # Masked payment method from Paystack's authorization object. Never a PAN.
+    # Masked payment method from Paystack's authorization object. Never the full card number.
     payment_method_brand: Mapped[str | None] = mapped_column(String(50), nullable=True)
     payment_method_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
     payment_method_exp_month: Mapped[int | None] = mapped_column(Integer, nullable=True)

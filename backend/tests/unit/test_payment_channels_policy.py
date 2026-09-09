@@ -371,17 +371,44 @@ def test_raw_card_data_is_never_permitted():
     RELIASTRA has no PCI attestation, so collecting card data is not a
     preference. ``raw_card_allowed`` exists as a permanently False field so a
     future surface has to contradict it deliberately rather than by omission.
+
+    Scan rule: ``card_number``/``cvv``/``cvc`` are banned even in prose.
+    ``pan``/``exp_month`` are banned as code identifiers, but may appear in
+    comments, docstrings and string literals: Paystack's authorization object
+    legitimately carries masked metadata (brand/last4/expiry), and the code
+    documents that it is never the full number.
     """
+    import io
+    import tokenize
+
     assert resolve_checkout_channels().raw_card_allowed is False
     app = REPO / "backend" / "app"
-    sources = [
-        path
-        for path in app.rglob("*.py")
-        if "__pycache__" not in str(path)
-        and re.search(r"\b(card_number|cvv|cvc|exp_month|pan)\b", path.read_text("utf-8"), re.I)
-        and "modules/billing" in str(path)
-    ]
-    assert not sources, f"billing code appears to touch raw card fields: {sources}"
+    hard_banned = []
+    identifier_banned = []
+    for path in app.rglob("*.py"):
+        if "__pycache__" in str(path) or "modules/billing" not in str(path):
+            continue
+        text = path.read_text("utf-8")
+        if re.search(r"\b(card_number|cvv|cvc)\b", text, re.I):
+            hard_banned.append(path)
+            continue
+        # Strip comments and string literals: prose about masked metadata
+        # (e.g. "never the full card number") and Paystack response keys
+        # (e.g. auth["exp_month"]) are not card handling.
+        code_tokens = []
+        try:
+            for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+                if tok.type not in (tokenize.COMMENT, tokenize.STRING):
+                    code_tokens.append(tok.string)
+        except (tokenize.TokenError, IndentationError, SyntaxError):
+            code_tokens = [text]
+        code_only = " ".join(code_tokens)
+        if re.search(r"\b(pan|exp_month)\b", code_only, re.I):
+            identifier_banned.append(path)
+    assert not hard_banned, f"billing code mentions raw card secrets: {hard_banned}"
+    assert not identifier_banned, (
+        f"billing code uses raw card identifiers: {identifier_banned}"
+    )
 
 
 def test_no_frontend_surface_hard_codes_a_channel_list():

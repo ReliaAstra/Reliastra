@@ -21,6 +21,9 @@ async def test_get_plan_details():
         plan=Plan.PRO.value,
         created_at=datetime.now(timezone.utc) - timedelta(days=365),
     )
+    # NOTE: `name` is reserved by MagicMock at construction (it names the
+    # mock); assign afterwards so org.name resolves to a real string.
+    fake_org.name = "Test Org"
     fake_subscription = MagicMock(
         status="active",
         current_period_end=datetime.now(timezone.utc),
@@ -86,7 +89,7 @@ async def test_initialize_payment(monkeypatch):
         AsyncMock(),
         org_id,
         InitializePaymentRequest(
-            plan="pro", email="owner@example.com"
+            plan="pro", email="owner@example.com", terms_accepted=True
         ),
     )
     assert response.reference == "ref_test"
@@ -119,7 +122,7 @@ async def test_initialize_payment_refuses_without_published_price(monkeypatch):
         await service.initialize_payment(
             AsyncMock(),
             org_id,
-            InitializePaymentRequest(plan="pro", email="owner@example.com"),
+            InitializePaymentRequest(plan="pro", email="owner@example.com", terms_accepted=True),
         )
     client.initialize_transaction.assert_not_awaited()
 

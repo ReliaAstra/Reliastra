@@ -302,6 +302,7 @@ async def test_transaction_is_opened_with_a_card_only_channel_array(
             "billing_interval": "monthly",
             "payment_method": INTERNATIONAL_CARD_METHOD_ID,
             "expected_price_token": quote["price_token"],
+            "terms_accepted": True,
         },
     )
     assert res.status_code == 200, res.text
