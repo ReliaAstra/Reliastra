@@ -39,6 +39,7 @@ export function MarketingPage({
   breadcrumbs,
   visual,
   visualCaption,
+  sideNav,
   children,
   related,
   ctaTitle = 'Know what you depend on. Prove what it did.',
@@ -59,6 +60,12 @@ export function MarketingPage({
    */
   visual?: ReactNode;
   visualCaption?: string;
+  /**
+   * Sticky side navigation, rendered beside the prose instead of the narrow
+   * reading column. Used by the documentation guides, which are read as a set
+   * and need the spine always in view.
+   */
+  sideNav?: ReactNode;
   children: ReactNode;
   related?: MarketingLink[];
   ctaTitle?: string;
@@ -88,11 +95,20 @@ export function MarketingPage({
       )}
 
       <Section tone="void" divider={false} tight>
-        <Container width="narrow" className="!px-0">
-          <div className="ob-container-read !max-w-none !px-[var(--ob-gutter)] lg:!max-w-[780px] lg:!px-0">
-            {children}
-          </div>
-        </Container>
+        {sideNav ? (
+          <Container>
+            <div className="grid gap-10 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-16">
+              {sideNav}
+              <div className="ob-prose-wrap min-w-0">{children}</div>
+            </div>
+          </Container>
+        ) : (
+          <Container width="narrow" className="!px-0">
+            <div className="ob-container-read !max-w-none !px-[var(--ob-gutter)] lg:!max-w-[780px] lg:!px-0">
+              {children}
+            </div>
+          </Container>
+        )}
       </Section>
 
       {related && related.length > 0 && (

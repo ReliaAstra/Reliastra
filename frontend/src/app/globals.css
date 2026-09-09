@@ -1934,6 +1934,85 @@
   height: 1px;
 }
 
+/* ── Documentation spine ──────────────────────────────────────────────────
+   Docs are information-dense by design, so this is navigation chrome rather
+   than marketing: a hairline rail, no cards, and the active page marked by
+   weight and a rule rather than by colour alone.
+   ---------------------------------------------------------------------- */
+
+.ob-docs-nav { min-width: 0; }
+
+.ob-docs-nav-title {
+  margin: 0 0 12px;
+}
+
+/* Narrow: one sweepable line. A wrapped block of five short labels reads as
+   prose; a scroller reads as a spine. */
+.ob-docs-nav-scroll {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 10px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--ob-line);
+}
+.ob-docs-nav-scroll li { flex: 0 0 auto; }
+
+.ob-docs-nav-pill {
+  display: inline-block;
+  padding: 7px 13px;
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: var(--ob-text-3);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.ob-docs-nav-pill:hover { color: var(--ob-text); border-color: var(--ob-line-3); }
+.ob-docs-nav-pill.is-active {
+  color: var(--ob-text);
+  border-color: var(--ob-line-3);
+  font-weight: 600;
+}
+
+/* Prose column when it sits beside the docs rail. `.ob-prose` sets the type
+   scale; this only constrains the measure, which has to be narrower than the
+   grid track or long lines run past a comfortable reading width. */
+.ob-prose-wrap {
+  max-width: 780px;
+  min-width: 0;
+}
+
+/* Desktop: sticky rail. */
+.ob-docs-nav-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 104px;
+}
+.ob-docs-nav-link {
+  display: block;
+  padding: 7px 0 7px 14px;
+  border-left: 1px solid var(--ob-line);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ob-text-4);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.ob-docs-nav-link:hover { color: var(--ob-text-2); border-left-color: var(--ob-line-3); }
+.ob-docs-nav-link.is-active {
+  color: var(--ob-text);
+  font-weight: 600;
+  border-left-color: var(--ob-signal);
+}
+
 /* ── Product visuals ──────────────────────────────────────────────────────
    The surfaces that demonstrate the product: dependency topology, incident
    timeline, evidence artifact, latency chart, attribution signals.

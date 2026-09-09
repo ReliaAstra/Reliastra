@@ -1,6 +1,7 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo';
+import { DocsSideNav } from '@/components/site/docs-side-nav';
 
 export const metadata = buildMetadata({
   title: 'Monitoring docs - Checks, regions, states',
@@ -30,6 +31,7 @@ export default function MonitoringDocsPage() {
         title="Monitoring: checks, regions, states"
         lede="How to configure dependencies and read what the network reports - including the states that mean “we could not run the probe.”"
         breadcrumbs={crumbs}
+        sideNav={<DocsSideNav activeHref="/docs/monitoring" />}
         related={[
           { label: 'Quickstart', href: '/docs/quickstart', description: 'First check in minutes.' },
           { label: 'Evidence docs', href: '/docs/evidence', description: 'From observations to reports.' },
