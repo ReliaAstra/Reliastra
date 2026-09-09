@@ -1,628 +1,416 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import {
-  CTA,
-  CTABand,
-  Container,
-  Eyebrow,
-  Section,
-  SectionHeader,
-  StateIndicator,
-} from '@/components/site/primitives';
+import { CTA, Container, StateIndicator } from '@/components/site/primitives';
 import { SiteShell } from '@/components/site/site-shell';
 import { AUTH_ROUTES, CONSOLE_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
-import { PLANS } from '@/lib/dashboard/plans';
-import { PLAN_CAPABILITIES } from '@/components/site/plan-data';
 import { cn } from '@/lib/utils';
 
 /**
  * /agencies
  *
- * A high-conviction sales page for the buyers RELIASTRA already serves in the
- * product but understates on the public site: agencies, MSPs, infrastructure
- * consultants and system integrators who operate client stacks.
- *
- * The claim of the page is narrow and testable: when a client's infrastructure
- * fails, RELIASTRA gives the operator an independent record of what happened.
- * Monitoring is treated as the mechanism, never the product. The page reuses
- * the site primitives and the real entitlement table; it does not invent a
- * capability the backend does not grant.
+ * The agency page is a product story, not a plan document. Every surface below
+ * is illustrative demo data, labelled as such, and uses the same vocabulary as
+ * the authenticated agency console: environments, applications, dependencies,
+ * incidents and evidence.
  */
 
-const STEPS = [
+const WORKFLOW = [
   {
-    n: '01',
-    title: 'Create a client environment',
-    body: 'One row per organization you operate.',
+    label: 'Clients',
+    title: 'Keep every account in view.',
+    body: 'Organize environments by the client who depends on them.',
   },
   {
-    n: '02',
-    title: 'Attach applications and monitors',
-    body: 'Each client owns its checks, incidents and evidence.',
+    label: 'Services',
+    title: 'Know what each stack touches.',
+    body: 'Connect applications to the external services behind them.',
   },
   {
-    n: '03',
-    title: 'Track incidents and dependencies',
-    body: 'Operational, degraded and critical roll up per environment.',
+    label: 'Incidents',
+    title: 'See what failed.',
+    body: 'Roll up the state that needs an operator now.',
   },
   {
-    n: '04',
-    title: 'Determine what failed',
-    body: 'Incident → dependency → application → client attribution.',
+    label: 'Evidence',
+    title: 'Preserve what happened.',
+    body: 'Keep timestamped observations on the same incident timeline.',
   },
   {
-    n: '05',
-    title: 'Generate and share evidence',
-    body: 'Timestamped, checksummed records from the same timeline.',
-  },
-  {
-    n: '06',
-    title: 'Hand the client a report',
-    body: 'A professional explanation, not a recollection.',
+    label: 'Reports',
+    title: 'Hand over the record.',
+    body: 'Give the client a professional explanation, not a recollection.',
   },
 ] as const;
 
-const CONSOLE_ROWS = [
-  {
-    client: 'Meridian Commerce',
-    status: 'critical' as const,
-    apps: '3',
-    deps: '8',
-    uptime: '97.40%',
-    incidents: '2',
-    last: '4m ago',
-  },
-  {
-    client: 'Beacon Ledger',
-    status: 'degraded' as const,
-    apps: '2',
-    deps: '6',
-    uptime: '99.02%',
-    incidents: '1',
-    last: '1h ago',
-  },
-  {
-    client: 'Atlas Commerce',
-    status: 'healthy' as const,
-    apps: '4',
-    deps: '9',
-    uptime: '99.98%',
-    incidents: '0',
-    last: 'none recorded',
-  },
+const CLIENTS = [
+  { name: 'Meridian Commerce', meta: 'Checkout · 8 dependencies', state: 'critical' as const },
+  { name: 'Beacon Ledger', meta: 'Payments · 6 dependencies', state: 'degraded' as const },
+  { name: 'Atlas Commerce', meta: 'Storefront · 9 dependencies', state: 'healthy' as const },
 ] as const;
 
-const PORTAL_FLOW = [
-  { label: 'Incident detected', value: 'quorum across regions' },
-  { label: 'Evidence collected', value: 'per-region observations' },
-  { label: 'Dependency identified', value: 'correlated timeline' },
-  { label: 'Client receives report', value: 'portal + signed artifact' },
-] as const;
-
-const CAPABILITY_LABELS = [
-  'Email alerts',
-  'Incident detection',
-  'Deterministic attribution',
-  'Evidence generation',
-  'Historical analysis',
-  'Client groups & isolation',
-  'Client-facing reports',
-  'White-label branding',
-  'Custom-branded evidence',
+const CAPABILITIES = [
+  ['Client environments', 'Keep every client stack organized.'],
+  ['Dependency attribution', 'Trace incidents beyond the application layer.'],
+  ['Evidence', 'Generate timestamped incident records.'],
+  ['Client reporting', 'Give clients a professional explanation.'],
+  ['White label', 'Present evidence under your agency brand.'],
+  ['API', 'Fit RELIASTRA into the workflow you already run.'],
 ] as const;
 
 export function AgenciesPage() {
-  const tiers = [PLANS[0], PLANS[1], PLANS[2]];
-  const capabilities = CAPABILITY_LABELS.map((label) => {
-    const cap = PLAN_CAPABILITIES.find((c) => c.label === label);
-    return {
-      label,
-      tiers: tiers.map((plan) => Boolean(cap?.get(plan))),
-    };
-  });
-
   return (
-    <SiteShell>
-      {/* ── 01 · Hero ─────────────────────────────────────────────────── */}
-      <header className="border-b border-[var(--ob-line)] bg-[var(--ob-void)]">
-        <Container className="py-20 md:py-28 lg:py-32">
-          <div className="max-w-[880px]">
-            <Eyebrow index="01" signal className="mb-8">
-              For agencies · MSPs · consultants
-            </Eyebrow>
-            <h1 className="ob-display max-w-[15ch]">
-              Your client&apos;s outage
-              <br />
-              becomes your problem.
-            </h1>
-            <p className="ob-h2 mt-8 max-w-[24ch]">
-              Prove what happened.
+    <SiteShell overHero>
+      <Hero />
+
+      <section className="agency-light-section agency-overview" aria-labelledby="portfolio-title">
+        <Container>
+          <div className="agency-section-intro agency-reveal">
+            <p className="agency-kicker agency-kicker-dark">The agency view</p>
+            <h2 id="portfolio-title" className="agency-heading agency-heading-dark">
+              One place for every client.
+            </h2>
+            <p className="agency-intro-copy agency-copy-dark">
+              RELIASTRA turns a portfolio of external dependencies into one clear operating view.
             </p>
-            <p className="ob-body-lg mt-6 max-w-[58ch]">
-              RELIASTRA gives agencies the infrastructure evidence they need to
-              investigate incidents, identify dependency failures, and
-              communicate clearly with clients.
-            </p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <CTA href={AUTH_ROUTES.signup} tone="signal">
-                Create your workspace
-              </CTA>
-              <CTA href="#how-it-works" tone="outline">
-                See how it works
-              </CTA>
+          </div>
+
+          <PortfolioConsole />
+        </Container>
+      </section>
+
+      <section className="agency-dark-section agency-failure" aria-labelledby="failure-title">
+        <Container>
+          <div className="agency-two-column agency-failure-grid">
+            <div className="agency-section-intro agency-reveal">
+              <p className="agency-kicker">See the failure</p>
+              <h2 id="failure-title" className="agency-heading">
+                When something breaks, know what broke.
+              </h2>
+              <p className="agency-intro-copy">
+                RELIASTRA connects the application, dependency, region and incident so your team can stop guessing at the cause.
+              </p>
+              <Link href={PUBLIC_ROUTES.dependencyMonitoring} className="agency-text-link">
+                Explore dependency monitoring <span aria-hidden>↗</span>
+              </Link>
+            </div>
+
+            <FailureTrace />
+          </div>
+        </Container>
+      </section>
+
+      <section className="agency-light-section agency-evidence" aria-labelledby="evidence-title">
+        <Container>
+          <div className="agency-two-column agency-evidence-grid">
+            <div className="agency-section-intro agency-reveal">
+              <p className="agency-kicker agency-kicker-dark">From incident to evidence</p>
+              <h2 id="evidence-title" className="agency-heading agency-heading-dark">
+                Hand your client evidence. Not an explanation.
+              </h2>
+              <p className="agency-intro-copy agency-copy-dark">
+                Turn the incident timeline into a report that is clear enough for a decision-maker and precise enough for an engineer.
+              </p>
+              <Link href={PUBLIC_ROUTES.incidentEvidence} className="agency-text-link agency-text-link-dark">
+                See how evidence works <span aria-hidden>↗</span>
+              </Link>
+            </div>
+
+            <EvidenceArtifact />
+          </div>
+        </Container>
+      </section>
+
+      <section className="agency-dark-section agency-portal" aria-labelledby="portal-title">
+        <Container>
+          <div className="agency-two-column agency-portal-grid">
+            <ClientPortal />
+            <div className="agency-section-intro agency-reveal">
+              <p className="agency-kicker">Client communication</p>
+              <h2 id="portal-title" className="agency-heading">
+                Make the handoff feel as considered as the investigation.
+              </h2>
+              <p className="agency-intro-copy">
+                Give clients a polished view of their service, current status and the record behind the incident.
+              </p>
+              <Link href={PUBLIC_ROUTES.docsEvidence} className="agency-text-link">
+                Read the evidence documentation <span aria-hidden>↗</span>
+              </Link>
             </div>
           </div>
         </Container>
-      </header>
+      </section>
 
-      {/* ── 02 · The agency workflow ─────────────────────────────────────── */}
-      <Section
-        id="how-it-works"
-        tone="base"
-        aria-labelledby="agency-workflow-title"
-      >
+      <section className="agency-light-section agency-workflow" id="how-it-works" aria-labelledby="workflow-title">
         <Container>
-          <SectionHeader
-            index="02"
-            eyebrow="The agency workflow"
-            id="agency-workflow-title"
-            title="Client → Applications → Dependencies → Incident → Evidence → Client-facing report"
-            lede="RELIASTRA is arranged around the work an agency already does, not around a monitoring dashboard viewed for its own sake."
-          />
+          <div className="agency-section-intro agency-reveal">
+            <p className="agency-kicker agency-kicker-dark">Built for the way agencies operate</p>
+            <h2 id="workflow-title" className="agency-heading agency-heading-dark">
+              From client to proof.
+            </h2>
+          </div>
 
-          <ol className="mt-14 border-t border-[var(--ob-line)]">
-            {STEPS.map((step, i) => (
-              <li
-                key={step.n}
-                className={cn(
-                  'grid gap-4 border-b border-[var(--ob-line)] py-6 sm:grid-cols-[72px_240px_minmax(0,1fr)] sm:gap-8',
-                )}
-              >
-                <span className="font-[family-name:var(--ob-font-mono)] text-[13px] tabular-nums text-[var(--ob-signal)]">
-                  {step.n}
-                </span>
-                <div>
-                  <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ob-text)]">
-                    {step.title}
-                  </h3>
+          <ol className="agency-workflow-list">
+            {WORKFLOW.map((step, index) => (
+              <li key={step.label} className="agency-workflow-item">
+                <div className="agency-workflow-line" aria-hidden>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  {index < WORKFLOW.length - 1 && <i />}
                 </div>
-                <p className="text-[14px] leading-[1.65] text-[var(--ob-text-3)] sm:pt-0.5">
-                  {step.body}
-                </p>
+                <div>
+                  <p className="agency-kicker agency-kicker-dark">{step.label}</p>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
               </li>
             ))}
           </ol>
         </Container>
-      </Section>
+      </section>
 
-      {/* ── 03 · The agency console ──────────────────────────────────────── */}
-      <Section
-        id="console"
-        tone="void"
-        aria-labelledby="console-title"
-      >
+      <section className="agency-light-section agency-capabilities" aria-labelledby="capabilities-title">
         <Container>
-          <div className="grid gap-14 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] xl:gap-20">
-            <div className="flex flex-col gap-6 xl:sticky xl:top-[112px] xl:self-start">
-              <SectionHeader
-                index="03"
-                eyebrow="The agency console"
-                id="console-title"
-                title="Client environments."
-                lede="The console is a rollup of the infrastructure you operate, ordered by who needs you right now. It is not a second monitoring tool."
-              />
-              <dl className="flex flex-col gap-4">
-                <DLRow
-                  term="Posture"
-                  desc="Rolled-up availability, degradation and critical states across every client environment."
-                />
-                <DLRow
-                  term="Attribution"
-                  desc="Open incidents walk from dependency to application to client, so the accountable party is visible."
-                />
-                <DLRow
-                  term="Evidence"
-                  desc="Recent reports by client, with the incident that produced each one."
-                />
-                <DLRow
-                  term="Unassigned monitors"
-                  desc="Monitors that belong to no client stay visible until they are assigned, never silently hidden."
-                />
-              </dl>
-              <div>
-                <p className="ob-small max-w-[54ch] border-t border-[var(--ob-line)] pt-5">
-                  Client environments, client-facing reports and white-label
-                  branding are Enterprise capabilities. See the{' '}
-                  <Link href={PUBLIC_ROUTES.pricing} className="ob-link">
-                    entitlement table
-                  </Link>{' '}
-                  below before you claim them in a proposal.
-                </p>
-              </div>
+          <div className="agency-capability-heading agency-reveal">
+            <div>
+              <p className="agency-kicker agency-kicker-dark">The operating layer</p>
+              <h2 id="capabilities-title" className="agency-heading agency-heading-dark">
+                Everything your team needs to defend the record.
+              </h2>
             </div>
-
-            <AgencyConsolePreview />
-          </div>
-        </Container>
-      </Section>
-
-      {/* ── 04 · The artifact you hand over ──────────────────────────────── */}
-      <Section
-        id="client-portal"
-        tone="base"
-        aria-labelledby="portal-title"
-      >
-        <Container>
-          <SectionHeader
-            index="04"
-            eyebrow="Client portal"
-            id="portal-title"
-            title="The artifact you hand to your client."
-            lede="After an incident, the agency can provide a professional, evidence-backed view of what happened instead of screenshots, guesses or a long explanation."
-          />
-
-          <div className="mt-14 grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-20">
-            <ol className="flex flex-col border-t border-[var(--ob-line)]">
-              {PORTAL_FLOW.map((item, i) => (
-                <li
-                  key={item.label}
-                  className="grid gap-2 border-b border-[var(--ob-line)] py-5 sm:grid-cols-[minmax(0,200px)_1fr] sm:gap-8"
-                >
-                  <span className="font-[family-name:var(--ob-font-mono)] text-[11px] uppercase tracking-[0.14em] text-[var(--ob-text-4)]">
-                    {String(i + 1).padStart(2, '0')} · {item.label}
-                  </span>
-                  <span className="text-[14px] leading-[1.6] text-[var(--ob-text-2)]">
-                    {item.value}
-                  </span>
-                </li>
-              ))}
-            </ol>
-
-            <div className="border border-[var(--ob-line)] bg-[var(--ob-void)]">
-              <div className="flex items-center justify-between gap-4 border-b border-[var(--ob-line)] px-5 py-4">
-                <div>
-                  <p className="ob-label">Client portal</p>
-                  <p className="mt-1.5 text-[14px] font-semibold text-[var(--ob-text)]">
-                    Meridian Commerce · Service reliability portal
-                  </p>
-                </div>
-                <span className="font-[family-name:var(--ob-font-mono)] text-[11px] text-[var(--ob-text-4)]">
-                  Generated 14:42 UTC
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-px border-b border-[var(--ob-line)] sm:grid-cols-4">
-                {[
-                  ['Clients', '4'],
-                  ['Services monitored', '23'],
-                  ['Average uptime · 24h', '99.61%'],
-                  ['Open incidents', '1'],
-                ].map(([label, value]) => (
-                  <div key={label} className="px-5 py-5">
-                    <p className="ob-label mb-3">{label}</p>
-                    <p className="font-[family-name:var(--ob-font-mono)] text-[22px] leading-none tabular-nums text-[var(--ob-text)]">
-                      {value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center justify-between gap-4 px-5 py-5">
-                <div>
-                  <StateIndicator state="healthy" label="Operational" />
-                  <p className="ob-small mt-1">Northwind Retail · 3 services observed</p>
-                </div>
-                <span className="ob-label text-right">
-                  /portal/{'{share_token}'}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2 border-t border-[var(--ob-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <span className="ob-small">Signed data · unauthenticated by design · print-ready</span>
-                <Link
-                  href={PUBLIC_ROUTES.docsEvidence}
-                  className="ob-link text-[12px]"
-                >
-                  Evidence documentation
-                </Link>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </Section>
-
-      {/* ── 05 · Entitlements ─────────────────────────────────────────────── */}
-      <Section id="entitlements" tone="void" aria-labelledby="entitlements-title">
-        <Container>
-          <div className="grid gap-14 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
-            <div className="flex flex-col gap-5">
-              <SectionHeader
-                index="05"
-                eyebrow="Entitlements"
-                id="entitlements-title"
-                title="What your plan actually grants."
-                lede="These rows are the same entitlement table the pricing page renders. Nobody has to guess what is included."
-              />
-              <dl className="mt-2 flex flex-col gap-4">
-                <DLRow
-                  term="Pro"
-                  desc="Self-serve. Attribution, evidence and API access for one organization."
-                />
-                <DLRow
-                  term="Enterprise"
-                  desc="Client isolation, client-facing reports, portals and white-label evidence."
-                />
-              </dl>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-t border-[var(--ob-line)]">
-                <thead>
-                  <tr className="border-b border-[var(--ob-line)]">
-                    <th scope="col" className="ob-label py-4 pr-6 text-left">
-                      Capability
-                    </th>
-                    {['Free', 'Pro', 'Enterprise'].map((p) => (
-                      <th
-                        key={p}
-                        scope="col"
-                        className="ob-label px-4 py-4 text-center"
-                      >
-                        {p}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {capabilities.map((row) => (
-                    <tr
-                      key={row.label}
-                      className="border-b border-[var(--ob-line)]"
-                    >
-                      <td className="py-4 pr-6 text-[13.5px] text-[var(--ob-text-2)]">
-                        {row.label}
-                      </td>
-                      {row.tiers.map((granted, i) => (
-                        <td
-                          key={i}
-                          className="px-4 py-4 text-center font-[family-name:var(--ob-font-mono)] text-[13px] text-[var(--ob-text-3)]"
-                        >
-                          {granted ? 'yes' : '·'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p className="ob-small mt-5 max-w-[54ch]">
-                Free and Pro include the monitoring side by default. Client
-                isolation, portals and white-label are Enterprise capabilities,
-                reflected here from the same source the backend enforces.
-              </p>
-            </div>
-          </div>
-        </Container>
-      </Section>
-
-      {/* ── 06 · Agency customer, not partner ─────────────────────────────── */}
-      <Section id="distinction" tone="base" aria-labelledby="distinction-title">
-        <Container>
-          <SectionHeader
-            index="06"
-            eyebrow="Agency customer · separate from Partner"
-            id="distinction-title"
-            title="Two different relationships."
-            lede="Using RELIASTRA to operate client infrastructure is a customer relationship. Referring organizations and earning commission is a partner relationship. The page you are on is for the first."
-          />
-
-          <div className="mt-14 grid gap-px border border-[var(--ob-line)] bg-[var(--ob-line)] sm:grid-cols-2">
-            <div className="bg-[var(--ob-void)] p-7">
-              <p className="ob-label mb-5">Agency customer</p>
-              <h3 className="ob-h4 mb-3 text-[var(--ob-text)]">
-                You run it for your clients.
-              </h3>
-              <p className="text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
-                Create client environments, attach their applications and
-                monitors, and hand over reports and portals when they need to
-                understand what happened.
-              </p>
-              <div className="mt-6">
-                <CTA href={AUTH_ROUTES.signup} tone="primary" size="sm">
-                  Create your workspace
-                </CTA>
-              </div>
-            </div>
-            <div className="bg-[var(--ob-void)] p-7">
-              <p className="ob-label mb-5">RELIASTRA Partner</p>
-              <h3 className="ob-h4 mb-3 text-[var(--ob-text)]">
-                You refer and earn commission.
-              </h3>
-              <p className="text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
-                Point the organizations you advise to RELIASTRA through a
-                tracked link and earn recurring commission on accounts you
-                bring in.
-              </p>
-              <div className="mt-6">
-                <CTA href={PUBLIC_ROUTES.partner} tone="outline" size="sm">
-                  Explore the Partner Network
-                </CTA>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col gap-2 border-t border-[var(--ob-line)] pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[14px] text-[var(--ob-text-2)]">
-              Already helping companies adopt infrastructure tools?
+            <p className="agency-intro-copy agency-copy-dark">
+              Focused capabilities for the work between the outage and the client call.
             </p>
-            <Link href={PUBLIC_ROUTES.partner} className="ob-link text-[13px]">
-              Explore the RELIASTRA Partner Network
-            </Link>
+          </div>
+
+          <div className="agency-capability-grid">
+            {CAPABILITIES.map(([title, body]) => (
+              <article key={title} className="agency-capability">
+                <span className="agency-capability-rule" aria-hidden />
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="agency-enterprise-note">
+            <span className="agency-kicker agency-kicker-dark">For enterprise agency teams</span>
+            <p>Client isolation, client-facing reports and white-label branding are available as Enterprise capabilities.</p>
+            <Link href={PUBLIC_ROUTES.pricing} className="agency-text-link agency-text-link-dark">See plans <span aria-hidden>↗</span></Link>
           </div>
         </Container>
-      </Section>
+      </section>
 
-      {/* ── 07 · Close ───────────────────────────────────────────────────── */}
-      <CTABand
-        title="Stop arguing about who caused the outage. Show the evidence."
-        body="Create a workspace, add the endpoints your clients depend on, and keep the record when the next vendor incident lands."
-        primary={{ href: AUTH_ROUTES.signup, label: 'Create your workspace' }}
-        secondary={{ href: PUBLIC_ROUTES.pricing, label: 'See pricing' }}
-        tone="void"
-      />
+      <section className="agency-dark-section agency-final-cta" aria-labelledby="final-cta-title">
+        <Container>
+          <div className="agency-final-cta-inner agency-reveal">
+            <p className="agency-kicker">RELIASTRA for agencies</p>
+            <h2 id="final-cta-title" className="agency-final-heading">Know what happened.</h2>
+            <p className="agency-final-copy">RELIASTRA gives your agency the evidence to prove it.</p>
+            <div className="agency-cta-row">
+              <CTA href={AUTH_ROUTES.signup} tone="signal">Start free</CTA>
+              <CTA href={PUBLIC_ROUTES.contact} tone="outline">Talk to sales</CTA>
+            </div>
+          </div>
+        </Container>
+      </section>
     </SiteShell>
   );
 }
 
-/* ── Small local pieces ──────────────────────────────────────────────────── */
-
-function DLRow({ term, desc }: { term: string; desc: string }) {
+function Hero() {
   return (
-    <div className="border-t border-[var(--ob-line)] py-4">
-      <dt className="ob-label mb-2">{term}</dt>
-      <dd className="text-[14px] leading-[1.6] text-[var(--ob-text-3)]">
-        {desc}
-      </dd>
+    <header className="agency-hero">
+      <Image
+        src="/media/hero-datacenter-aisle.jpg"
+        alt="A dark data center aisle with illuminated infrastructure racks"
+        fill
+        priority
+        sizes="100vw"
+        className="agency-hero-image"
+      />
+      <div className="agency-hero-shade" aria-hidden />
+      <Container>
+        <div className="agency-hero-content">
+          <div className="agency-hero-copy agency-reveal">
+            <p className="agency-kicker agency-kicker-signal">For agencies · MSPs · infrastructure teams</p>
+            <h1 className="agency-hero-heading">
+              Your client&apos;s outage.
+              <br />
+              <span>Your reputation.</span>
+            </h1>
+            <p className="agency-hero-subline">
+              RELIASTRA gives you an independent record of what failed, when it failed and what caused it.
+            </p>
+            <div className="agency-cta-row">
+              <CTA href={AUTH_ROUTES.signup} tone="signal">Start free</CTA>
+              <CTA href="#how-it-works" tone="outline">See how it works</CTA>
+            </div>
+          </div>
+          <HeroTelemetry />
+          <div className="agency-hero-footer">
+            <span>External Dependency Intelligence</span>
+            <span className="agency-hero-footer-line" aria-hidden />
+            <span>Independent observation · incident attribution · evidence</span>
+          </div>
+        </div>
+      </Container>
+    </header>
+  );
+}
+
+function HeroTelemetry() {
+  return (
+    <div className="agency-hero-telemetry agency-float" aria-label="Illustrative agency incident view">
+      <div className="agency-telemetry-topline">
+        <span className="agency-demo-tag">Illustrative view</span>
+        <span className="agency-mono agency-telemetry-time">14:44:18 UTC</span>
+      </div>
+      <div className="agency-telemetry-layout">
+        <div className="agency-telemetry-network">
+          <div className="agency-network-node agency-network-node-app">
+            <span className="agency-network-dot agency-dot-signal" />
+            <span><b>Checkout</b><small>Meridian Commerce</small></span>
+          </div>
+          <span className="agency-network-connector agency-connector-warn" aria-hidden />
+          <div className="agency-network-node agency-network-node-dep">
+            <span className="agency-network-dot agency-dot-critical" />
+            <span><b>Stripe API</b><small>Dependency</small></span>
+          </div>
+          <span className="agency-network-connector agency-connector-broken" aria-hidden />
+          <div className="agency-network-node">
+            <span className="agency-network-dot agency-dot-muted" />
+            <span><b>eu-west-1</b><small>Observation region</small></span>
+          </div>
+        </div>
+        <div className="agency-telemetry-alert">
+          <div>
+            <p className="agency-label-light">Incident confirmed</p>
+            <strong>Payment API degradation</strong>
+          </div>
+          <span className="agency-status-pill agency-status-pill-critical">Open</span>
+        </div>
+      </div>
     </div>
   );
 }
 
-/**
- * A static rendering of the /clients agency console.
- *
- * The real console is authenticated and client-side. Marketing cannot render
- * a customer's data, so this is an illustrative view using the same column
- * structure, labels, state words and attribution language as the product.
- */
-function AgencyConsolePreview() {
+function PortfolioConsole() {
   return (
-    <div className="border border-[var(--ob-line)] bg-[var(--ob-void)]">
-      <div className="flex flex-col gap-3 border-b border-[var(--ob-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="ob-label">Agency operations · Client environments</p>
-        <span className="ob-label normal-case tracking-[0.05em] text-[var(--ob-signal)]">
-          Representative view
-        </span>
+    <div className="agency-console agency-reveal" aria-label="Illustrative RELIASTRA agency console">
+      <div className="agency-console-bar">
+        <div className="agency-console-brand"><span className="agency-signal-mark" /> AGENCY OPERATIONS</div>
+        <span className="agency-demo-tag agency-demo-tag-dark">Demo data · representative view</span>
       </div>
-
-      <div className="grid grid-cols-2 gap-px border-b border-[var(--ob-line)] sm:grid-cols-4">
-        {[
-          ['Environments', '4'],
-          ['Dependencies observed', '23'],
-          ['Unassigned monitors', '2'],
-          ['Rollup availability', '99.61%'],
-        ].map(([label, value]) => (
-          <div key={label} className="px-5 py-5">
-            <p className="ob-label mb-3">{label}</p>
-            <p className="font-[family-name:var(--ob-font-mono)] text-[22px] leading-none tabular-nums text-[var(--ob-text)]">
-              {value}
-            </p>
-          </div>
-        ))}
+      <div className="agency-console-summary">
+        <Metric label="Environments" value="04" />
+        <Metric label="Services" value="23" />
+        <Metric label="Dependencies" value="31" />
+        <Metric label="Availability · 24h" value="99.61%" tone="healthy" />
       </div>
-
-      <div className="grid grid-cols-1 gap-px xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
-        <div className="min-w-0 overflow-x-auto border-b border-[var(--ob-line)] xl:border-b-0 xl:border-r">
-          <div className="grid min-w-[760px] grid-cols-[minmax(0,1.5fr)_110px_60px_70px_90px_70px_90px] gap-2 border-b border-[var(--ob-line)] px-5 py-3 xl:min-w-0">
-            {[
-              'Client environment',
-              'Status',
-              'Apps',
-              'Deps',
-              'Availability',
-              'Incidents',
-              'Last',
-            ].map((h) => (
-              <span key={h} className="ob-label">
-                {h}
-              </span>
-            ))}
-          </div>
-          {CONSOLE_ROWS.map((row) => (
-            <div
-              key={row.client}
-              className="grid min-w-[760px] grid-cols-[minmax(0,1.5fr)_110px_60px_70px_90px_70px_90px] items-center gap-2 border-b border-[var(--ob-line)] px-5 py-4 last:border-b-0 xl:min-w-0"
-            >
-              <span className="truncate text-[13px] font-medium text-[var(--ob-text)]">
-                {row.client}
-              </span>
-              <StateIndicator state={row.status} />
-              <span className="font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums text-[var(--ob-text-3)]">
-                {row.apps}
-              </span>
-              <span className="font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums text-[var(--ob-text-3)]">
-                {row.deps}
-              </span>
-              <span
-                className={cn(
-                  'font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums',
-                  row.status === 'critical'
-                    ? 'text-[var(--ob-critical)]'
-                    : row.status === 'degraded'
-                      ? 'text-[var(--ob-degraded)]'
-                      : 'text-[var(--ob-text-3)]',
-                )}
-              >
-                {row.uptime}
-              </span>
-              <span
-                className={cn(
-                  'font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums',
-                  row.incidents !== '0' ? 'text-[var(--ob-critical)]' : 'text-[var(--ob-text-4)]',
-                )}
-              >
-                {row.incidents}
-              </span>
-              <span className="truncate text-[12px] text-[var(--ob-text-4)]">
-                {row.last}
-              </span>
+      <div className="agency-console-body">
+        <div className="agency-client-list">
+          <div className="agency-console-section-title"><span>Client environments</span><span className="agency-console-muted">Status · last observation</span></div>
+          {CLIENTS.map((client) => (
+            <div className="agency-client-row" key={client.name}>
+              <div className="agency-client-name"><span className={cn('agency-state-dot', `agency-state-dot-${client.state}`)} /><span><b>{client.name}</b><small>{client.meta}</small></span></div>
+              <StateIndicator state={client.state} label={client.state === 'critical' ? 'Critical' : client.state === 'degraded' ? 'Degraded' : 'Operational'} />
+              <span className="agency-client-time">{client.state === 'critical' ? '4m ago' : client.state === 'degraded' ? '1h ago' : 'none'}</span>
             </div>
           ))}
         </div>
-
-        <div className="flex flex-col">
-          <div className="border-b border-[var(--ob-line)] px-5 py-5">
-            <p className="ob-label mb-3">Active incidents across clients</p>
-            <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_80px] gap-2">
-              <span className="truncate text-[12.5px] font-medium text-[var(--ob-text)]">
-                Meridian Commerce
-              </span>
-              <span className="truncate text-[12.5px] text-[var(--ob-text-3)]">
-                Payment API
-              </span>
-              <StateIndicator state="critical" label="Open" />
-            </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_80px] gap-2">
-              <span className="truncate text-[12.5px] font-medium text-[var(--ob-text)]">
-                Beacon Ledger
-              </span>
-              <span className="truncate text-[12.5px] text-[var(--ob-text-3)]">
-                Auth provider
-              </span>
-              <StateIndicator state="degraded" label="Open" />
-            </div>
-          </div>
-
-          <div className="flex-1 px-5 py-5">
-            <p className="ob-label mb-4">Unassigned monitors</p>
-            <div className="flex flex-col gap-3">
-              {['Vendor API · EU route', 'Disaster recovery endpoint'].map((m) => (
-                <div
-                  key={m}
-                  className="flex items-center justify-between gap-3 border-t border-[var(--ob-line)] pt-3"
-                >
-                  <span className="truncate text-[12.5px] text-[var(--ob-text-3)]">
-                    {m}
-                  </span>
-                  <span className="ob-label tracking-[0.05em]">Assign</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 border-t border-[var(--ob-line)] pt-4">
-              <Link
-                href={CONSOLE_ROUTES.clients}
-                className="ob-link text-[12px]"
-              >
-                Open the agency console
-              </Link>
-            </div>
-          </div>
+        <div className="agency-active-incident">
+          <div className="agency-console-section-title"><span>Active incident</span><span className="agency-status-pill agency-status-pill-critical">Open</span></div>
+          <div className="agency-incident-client">Meridian Commerce <span>·</span> Checkout</div>
+          <div className="agency-incident-cause"><span className="agency-state-dot agency-state-dot-critical" /> Stripe API dependency degradation</div>
+          <div className="agency-incident-bottom"><span className="agency-console-muted">Attribution confidence</span><b>Correlated</b></div>
+          <Link href={CONSOLE_ROUTES.clients} className="agency-console-link">Open agency console <span aria-hidden>↗</span></Link>
         </div>
       </div>
     </div>
+  );
+}
+
+function Metric({ label, value, tone }: { label: string; value: string; tone?: 'healthy' }) {
+  return (
+    <div className="agency-metric">
+      <span>{label}</span>
+      <strong className={tone ? 'agency-metric-healthy' : undefined}>{value}</strong>
+    </div>
+  );
+}
+
+function FailureTrace() {
+  return (
+    <div className="agency-trace-wrap agency-reveal" aria-label="Illustrative incident attribution timeline">
+      <div className="agency-trace-heading">
+        <div><p className="agency-label-light">Illustrative incident · INC-2048</p><h3>Checkout degraded.</h3></div>
+        <span className="agency-status-pill agency-status-pill-critical">Attribution ready</span>
+      </div>
+      <div className="agency-trace-path">
+        <TraceNode time="14:41" title="Application" value="Checkout latency rises" state="warn" />
+        <TraceNode time="14:42" title="Dependency" value="Stripe API degrades" state="critical" />
+        <TraceNode time="14:43" title="Region" value="eu-west-1 confirms" state="critical" />
+        <TraceNode time="14:44" title="Evidence" value="Observations preserved" state="healthy" last />
+      </div>
+      <div className="agency-trace-footer"><span>Meridian Commerce</span><span>Payment API</span><span>14:41–14:49 UTC</span></div>
+    </div>
+  );
+}
+
+function TraceNode({ time, title, value, state, last }: { time: string; title: string; value: string; state: 'warn' | 'critical' | 'healthy'; last?: boolean }) {
+  return (
+    <div className="agency-trace-node">
+      <span className="agency-trace-time">{time}</span>
+      <span className={cn('agency-trace-dot', `agency-trace-dot-${state}`)} />
+      {!last && <span className="agency-trace-rail" aria-hidden />}
+      <div><p>{title}</p><strong>{value}</strong></div>
+    </div>
+  );
+}
+
+function EvidenceArtifact() {
+  return (
+    <article className="agency-report agency-reveal" aria-label="Illustrative incident evidence report">
+      <div className="agency-report-head">
+        <div><span className="agency-report-mark">R</span><span className="agency-report-brand">RELIASTRA / EVIDENCE</span></div>
+        <span className="agency-demo-tag agency-demo-tag-dark">Illustrative record</span>
+      </div>
+      <div className="agency-report-title-row"><div><p className="agency-report-eyebrow">INCIDENT REPORT</p><h3>Payment API degradation</h3></div><span className="agency-report-verified"><i /> Verified</span></div>
+      <div className="agency-report-grid">
+        <ReportField label="Impact" value="Checkout requests affected" />
+        <ReportField label="Dependency" value="Stripe API" />
+        <ReportField label="Observation" value="Multi-region latency increase" />
+        <ReportField label="Time window" value="14:41–14:49 UTC" />
+      </div>
+      <div className="agency-report-chart">
+        <div className="agency-chart-labels"><span>Latency · ms</span><span>14:41 <b>·</b> 14:49 UTC</span></div>
+        <div className="agency-chart-grid" aria-hidden><span /><span /><span /><span /><span /></div>
+        <svg viewBox="0 0 560 112" preserveAspectRatio="none" role="img" aria-label="Illustrative latency chart showing a spike during the incident">
+          <path d="M0 82 C38 79 60 84 94 80 S145 82 178 78 S218 87 244 81 S270 82 290 79 L318 75 L338 20 L350 45 L366 13 L383 62 L398 35 L416 68 L434 55 L453 73 C482 82 513 78 560 80" />
+          <line x1="318" y1="8" x2="318" y2="104" />
+          <line x1="453" y1="8" x2="453" y2="104" />
+        </svg>
+      </div>
+      <div className="agency-report-foot"><span><i className="agency-report-check" /> Timestamped observations</span><span className="agency-report-hash">SHA-256 · 7b2e…91ac</span></div>
+    </article>
+  );
+}
+
+function ReportField({ label, value }: { label: string; value: string }) {
+  return <div><p>{label}</p><strong>{value}</strong></div>;
+}
+
+function ClientPortal() {
+  return (
+    <article className="agency-portal-card agency-reveal" aria-label="Illustrative client portal">
+      <div className="agency-portal-nav"><span className="agency-portal-client-mark">M</span><div><b>Meridian Commerce</b><small>Service reliability portal</small></div><span className="agency-portal-live"><i /> Live view</span></div>
+      <div className="agency-portal-status"><div><p className="agency-label-light">Checkout</p><h3>Resolved</h3></div><span className="agency-status-pill agency-status-pill-healthy">Operational</span></div>
+      <div className="agency-portal-facts">
+        <div><span>Root dependency</span><b>Stripe API</b></div>
+        <div><span>Incident window</span><b>14:41–14:49 UTC</b></div>
+        <div><span>Evidence</span><b className="agency-portal-verified"><i /> Verified</b></div>
+      </div>
+      <div className="agency-portal-action"><span>Report / INC-2048</span><b>View incident evidence <span aria-hidden>↗</span></b></div>
+      <p className="agency-portal-demo">Demo portal · not a customer record</p>
+    </article>
   );
 }
