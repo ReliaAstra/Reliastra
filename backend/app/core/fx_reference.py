@@ -1,30 +1,32 @@
-"""FX reference rate - customer context only, never a pricing input.
+"""Live exchange rate - the single source that prices the NGN charge.
 
-Global B2B customers see a USD list price ($19) and an NGN charge (the
-published Paystack price). The gap between the two invites the question
-"what rate did you use?" - this module answers it *without* answering it
-commercially:
+RELIASTRA lists prices in USD ($19) and collects payment in NGN. The NGN
+charge is the USD price converted at the **live market rate** this module
+fetches, so the number a customer sees as "the rate" is the very number the
+charge was computed from:
 
 * the rate is fetched from a **verifiable public source** (default:
   ExchangeRate-API's open endpoint at ``open.er-api.com``, no key, its own
   update timestamp), so anyone can reproduce the number;
-* it is always labelled a **reference estimate**, timestamped, and paired
-  with the disclaimer from ``app.core.payment_pricing``;
-* it is **never consulted to determine a charge**. Nothing in
-  ``app.core.payment_pricing`` imports this module; the amount sent to
-  Paystack comes solely from the published payment-price catalog. A unit
-  test (``tests/unit/test_fx_reference.py``) enforces that boundary, so a
-  future "just multiply by the rate" shortcut has to break an explicit
-  guard first.
+* it is timestamped and paired with the disclaimer from
+  ``app.core.payment_pricing``, which states plainly that the charge is the
+  USD price converted at this rate;
+* it **prices the charge**. ``app.core.payment_pricing`` still never imports
+  this module (the rate is passed in explicitly), but the request path calls
+  :func:`current_rate` and feeds the result into price resolution, so quote,
+  display and transaction are one resolution of one cached rate.
 
 Failure behaviour is deliberately boring: if fetching or parsing fails, the
-estimate is *absent* (``None``) and payment surfaces hide the reference
-panel. There is no cached-forever value, no fallback number, and no
-synthesized rate - an unavailable reference is honest, a wrong one is not.
+rate is *absent* (``None``) and self-serve checkout refuses to price the
+charge rather than inventing a number. There is no cached-forever value, no
+fallback rate, and no synthesized rate - an unavailable rate is honest, a
+wrong one is not.
 
 Caching: Redis when available (shared across workers), otherwise a
 process-local TTL cache; both also short-cache *failures* so an offline
-source cannot turn every page render into a 4-second stall.
+source cannot turn every page render into a 4-second stall. The cache TTL
+also bounds how far a displayed rate can drift from the market between
+refreshes.
 """
 
 from __future__ import annotations
@@ -60,11 +62,11 @@ _UNAVAILABLE = json.dumps({"unavailable": True})
 
 
 def fx_reference_enabled() -> bool:
-    """Should a reference estimate be offered at all?
+    """Should the exchange rate be fetched at all?
 
-    Off when the deployment is disabled, or when nothing would be explained:
+    Off when the deployment is disabled, or when nothing would be converted:
     if Paystack settles in the same currency as the list price there is no
-    FX question to answer, and showing a rate would imply one.
+    FX question to answer, and showing (or fetching) a rate would imply one.
     """
     if not settings.FX_REFERENCE_ENABLED:
         return False
@@ -144,7 +146,7 @@ async def _fetch_rate() -> dict | None:
             "provider": settings.FX_REFERENCE_PROVIDER,
             "provider_url": settings.FX_REFERENCE_PROVIDER_URL,
             "source_url": settings.FX_REFERENCE_URL,
-            "label": "Exchange rate reference (estimate - not the price you pay)",
+            "label": "Exchange rate (converts your USD price to NGN)",
             "disclaimer": FX_REFERENCE_DISCLAIMER,
         }
     except (httpx.HTTPError, ValueError, TypeError) as exc:
@@ -181,3 +183,52 @@ async def fx_reference_payload() -> dict | None:
         else _FAILURE_TTL_SECONDS,
     )
     return payload
+
+
+async def current_rate() -> float | None:
+    """The live rate pricing uses to convert the USD price, or ``None``.
+
+    Reuses :func:`fx_reference_payload` so the figure the customer sees as
+    "the rate" is exactly the figure the charge was computed from - the same
+    cache entry, the same source, the same timestamps. Returns ``None``
+    whenever the reference would be hidden (disabled, currencies matching, or
+    a failed fetch); pricing then refuses to convert rather than guessing.
+    """
+    if not fx_reference_enabled():
+        return None
+    payload = await fx_reference_payload()
+    if not payload:
+        return None
+    rate = payload.get("rate")
+    try:
+        rate = float(rate)
+    except (TypeError, ValueError):
+        return None
+    return rate if rate > 0 else None
+
+
+def cached_rate() -> float | None:
+    """The last successfully fetched rate, read from the process-local cache.
+
+    Synchronous and I/O-free (it never touches Redis or the network), for
+    callers that cannot await - the email renderers. Returns ``None`` when no
+    rate is cached, when the cached entry is expired, or when the last fetch
+    failed: callers then omit the figure rather than invent one.
+    """
+    if _memory_cache is None:
+        return None
+    payload, expires_at = _memory_cache
+    if time.monotonic() >= expires_at:
+        return None
+    try:
+        data = json.loads(payload)
+    except ValueError:
+        return None
+    if not isinstance(data, dict) or data.get("unavailable"):
+        return None
+    rate = data.get("rate")
+    try:
+        rate = float(rate)
+    except (TypeError, ValueError):
+        return None
+    return rate if rate > 0 else None

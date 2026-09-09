@@ -4,9 +4,9 @@ import { CONTRACT, apiGet, flatText } from './helpers';
 /**
  * Public pricing page: the transparency contract every customer sees before
  * paying. Runs against the live API, so figures are cross-checked between
- * what the backend publishes, what the Paystack catalog holds, and what the
+ * what the backend resolves, what the Paystack charge will be, and what the
  * DOM renders - and the FX reference (when configured) is proven to be a
- * labelled estimate that does NOT feed the charge.
+ * labelled, sourced rate that IS the basis of the charge.
  */
 
 type CurrencyInfo = {
@@ -45,9 +45,9 @@ test.describe('pricing transparency (public)', () => {
   }) => {
     const currency = await apiGet<CurrencyInfo>(request, '/api/v1/billing/currency');
 
-    // The backend itself is the contract: NGN prices are real, provider-
-    // payable amounts, USD product prices are separate, and they differ -
-    // ₦60,000.00 is not $39 converted at any nearby rate.
+    // The backend itself is the contract: NGN prices are the USD product
+    // price converted at the live rate (₦31,350.00 = $19.00 x 1650), and the
+    // USD product price is stated separately.
     expect(currency.product_currency).toBe(CONTRACT.productCurrency);
     expect(currency.payment_currency).toBe(CONTRACT.paymentCurrency);
     expect(currency.payment_provider).toBe(CONTRACT.provider);
@@ -68,7 +68,7 @@ test.describe('pricing transparency (public)', () => {
     ).toHaveText(CONTRACT.actualChargeDisplay, { timeout: 30_000 });
     const proText = await flatText(pro);
     expectTextContains(proText, 'Product price $19.00 (USD)');
-    expectTextContains(proText, 'Actual charge ₦60,000.00 (NGN) per month');
+    expectTextContains(proText, 'Actual charge ₦31,350.00 (NGN) per month');
     expectTextContains(proText, 'Payment provider Paystack');
 
     // The notice is full-size and verbatim - not a footnote. (The container
@@ -86,7 +86,7 @@ test.describe('pricing transparency (public)', () => {
     );
     const annualText = await flatText(pro);
     expectTextContains(annualText, 'Product price $190.00 (USD)');
-    expectTextContains(annualText, 'Actual charge ₦600,000.00 (NGN) per year');
+    expectTextContains(annualText, 'Actual charge ₦313,500.00 (NGN) per year');
 
     // Enterprise: contact-sales only, zero self-serve checkout figures.
     const ent = page.locator('[data-testid="pricing-card-enterprise"]');
@@ -101,18 +101,18 @@ test.describe('pricing transparency (public)', () => {
     expectTextContains(await flatText(pro), 'per month');
 
     // FX reference: shown only if the backend has one. When present it must
-    // read as a labelled, sourced, timestamped estimate - and the charge
-    // must remain the published NGN price regardless of the rate value.
+    // read as a labelled, sourced, timestamped rate - the rate the charge
+    // was converted at.
     if (currency.fx_reference) {
       const panel = page.locator('[data-testid="fx-reference-panel"]').first();
       await expect(panel).toBeVisible();
       const panelText = await flatText(panel);
-      expectTextContains(panelText, 'estimate');
-      expectTextContains(panelText, currency.fx_reference.provider, 'not the price you pay');
+      expectTextContains(panelText, 'converted');
+      expectTextContains(panelText, currency.fx_reference.provider);
       expectTextContains(panelText, currency.fx_reference.disclaimer);
-      expect(currency.fx_reference.disclaimer).toContain('never used to determine your actual charge');
-      // The panel exists next to the charge line - and the charge line has
-      // NOT moved to a converted figure.
+      expect(currency.fx_reference.disclaimer).toContain('converted');
+      // The panel exists next to the charge line - and the charge line IS
+      // the conversion of the USD price at this rate.
       expectTextContains(await flatText(pro), CONTRACT.actualChargeDisplay);
     } else {
       await expect(page.locator('[data-testid="fx-reference-panel"]')).toHaveCount(0);

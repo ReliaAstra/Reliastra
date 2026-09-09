@@ -62,8 +62,7 @@ export function PaymentCurrencyDisclosure({
             <p className="ob-mono text-[var(--ob-text)]">{formatFxRate(fx)}</p>
           </div>
           <p className="mt-1.5 text-[12px] leading-[1.55] text-[var(--ob-text-4)]">
-            {fx.disclaimer} This is a reference estimate, not the price you
-            pay. Source:{' '}
+            {fx.disclaimer} Source:{' '}
             <a
               href={fx.provider_url}
               target="_blank"
@@ -93,7 +92,7 @@ export function PlanChargeSummary({
 }: {
   plan: string;
   interval: 'monthly' | 'annual';
-  /** Pre-formatted list price, e.g. "$39.00 (USD)". */
+  /** Pre-formatted list price, e.g. "$19.00 (USD)". */
   productPrice: string;
   className?: string;
 }) {

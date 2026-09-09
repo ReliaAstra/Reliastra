@@ -8,10 +8,10 @@ import type { CheckoutQuote } from '@/lib/dashboard/api';
 /**
  * Checkout exists but cannot be offered for this plan right now.
  *
- * The honest alternative to a button that will fail. RELIASTRA does not price a
- * plan it has not published in the payment currency, and it does not let a
- * customer discover that mid-payment; the refusal happens here, in plain
- * language, with a human route out.
+ * The honest alternative to a button that will fail. RELIASTRA does not quote
+ * a payment amount it cannot resolve in the payment currency (no live rate),
+ * and it does not let a customer discover that mid-payment; the refusal
+ * happens here, in plain language, with a human route out.
  */
 export function CheckoutUnavailable({ quote }: { quote: CheckoutQuote }) {
   return (

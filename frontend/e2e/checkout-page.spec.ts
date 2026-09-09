@@ -83,11 +83,12 @@ test.describe('the checkout page', () => {
       'Nigerian Naira',
     );
 
-    // Any rate shown is an estimate with a source, never the price.
+    // Any rate shown is sourced and timestamped, and states that it is the
+    // basis of the USD-to-NGN conversion.
     const fx = page.locator('[data-testid="fx-reference-panel"]');
     if (await fx.isVisible().catch(() => false)) {
       const fxText = await flatText(fx);
-      expectTextContains(fxText, 'estimate', 'not the price you pay');
+      expectTextContains(fxText, 'converted');
       expect(fxText).toMatch(/source|retrieved/i);
     }
 
@@ -110,7 +111,7 @@ test.describe('the checkout page', () => {
       CONTRACT.annualChargeDisplay,
       { timeout: 30_000 },
     );
-    // Annual is a published price, never monthly x 12 computed here.
+    // Annual is a separate conversion, never monthly x 12 computed here.
     await expect(page.getByText(CONTRACT.annualProductDisplay).first()).toBeVisible();
     await page.locator('[data-testid="checkout-interval-monthly"]').click();
     await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
@@ -230,7 +231,7 @@ test.describe('the checkout page', () => {
     expectTextContains(
       decodeMailRaw(receipt!.raw),
       'Product price: $19.00 (USD)',
-      'Actual charge: ₦60,000.00 (NGN)',
+      'Actual charge: ₦31,350.00 (NGN)',
       'Payment provider: Paystack',
     );
   });

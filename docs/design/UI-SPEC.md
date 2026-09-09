@@ -188,10 +188,12 @@ pre-payment confirmation step, and the billing page.
   (`app/core/fx_reference.py`, default open.er-api.com). `FxReferencePanel`
   renders it with the source name, the source's own quote timestamp, the
   retrieval time, and a **"Verify this rate"** link to the raw source URL so a
-  customer can reproduce the number themselves. When a product price is in
-  context the panel adds a labelled live-conversion line
-  ("...at this rate = ... (reference only; your charge is the published price)"),
-  which may never replace the backend-published charge.
+  customer can reproduce the number themselves. The same fetched rate is the
+  basis of the charge: the NGN amount is the USD price converted at this rate
+  (`round(USD minor units × rate)`). When a product price is in context the
+  panel adds a labelled live-conversion line ("Your $19.00 USD plan converts
+  to ₦25,118.00 NGN at this rate"), and the backend-resolved charge is exactly
+  that conversion - never a separate fixed figure.
 - **Gate.** On the checkout review, the "Continue to secure payment" button is
   disabled until that verified rate exists; a failed fetch shows a plain
   "not verified yet" status with a re-check action instead of a guess.

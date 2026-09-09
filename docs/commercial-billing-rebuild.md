@@ -2,8 +2,14 @@
 
 Rebuild of ReliaAstra’s billing, checkout, invoices, cancellation and refund
 surfaces as a B2B SaaS control path. Canonical list price is **$19 USD / month**
-(annual **$190**). Paystack still collects the published NGN catalog
-(₦60,000 / month, ₦600,000 / year). The 14-day trial is unchanged.
+(annual **$190**). Paystack collects the USD price converted to NGN at the live
+exchange rate (e.g. $19.00 at ₦1,322/USD → ₦25,118.00 / month). The 14-day
+trial is unchanged.
+
+> **Update:** the NGN payment amount is no longer an operator-published catalog
+> (₦60,000 / ₦600,000). It is the USD list price converted at the live rate
+> from `app/core/fx_reference.py`; a plan is chargeable only while a rate is
+> available. See `app/core/payment_pricing.py` for the resolution.
 
 ## Root causes
 
@@ -132,8 +138,9 @@ Coverage added/updated:
 - Analytics unit fixtures still use `amount_minor=3900` as a sample integer,
   not a list price.
 - Observatory `duration(3900)` is unrelated and was left alone.
-- NGN list remains ₦60,000 / ₦600,000 — a separate published catalog, not $19
-  converted at FX.
+- NGN charge was previously a separate published catalog (₦60,000 / ₦600,000);
+  it is now the $19/$190 list price converted at the live FX rate
+  (see the update note above and `app/core/payment_pricing.py`).
 - Evidence reports still use a small feature-gate dialog; Subscribe then
   redirects to checkout (not a pricing popup).
 - “Update payment method” reuses checkout rather than a card-update-only

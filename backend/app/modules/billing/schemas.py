@@ -32,21 +32,20 @@ class PaymentCurrencyResponse(BaseModel):
     """Canonical pre-payment disclosure. ``None`` when there is nothing to
     disclose (processing currency == product currency)."""
     checkout_ready: bool = True
-    """False when the business has not published payment prices for the
-    processing currency, so self-serve checkout must not be offered."""
+    """False when no exchange rate is available to convert the USD price for
+    the processing currency, so self-serve checkout must not be offered."""
     plan_payment_amounts: dict[str, dict[str, str]] = {}
-    """``plan -> interval -> formatted amount`` for published payment prices.
-    Absent means unpublished - the UI then states the currency without showing
-    a figure, because no figure may be derived client-side."""
+    """``plan -> interval -> formatted amount`` for resolved payment prices.
+    Absent means no rate was available - the UI then states the currency
+    without showing a figure, because no figure may be derived client-side."""
     payment_provider: str = "Paystack"
     """Who actually takes the money. Part of the mandatory transparency
     triple (product price / actual charge / payment provider)."""
     payment_provider_display: str = "Paystack - secure hosted checkout"
     fx_reference: dict | None = None
-    """Market reference estimate (rate, source, timestamps, disclaimer) shown
-    *beside* prices for context. Display-only: it is never consulted to
-    determine a charge. ``None`` when disabled or unavailable - surfaces then
-    omit the estimate rather than inventing one."""
+    """The live market rate (rate, source, timestamps, disclaimer) the charge
+    was converted at, shown *beside* prices. ``None`` when disabled or
+    unavailable - surfaces then omit the estimate rather than inventing one."""
 
 
 class BillingTransactionResponse(BaseModel):
@@ -186,8 +185,8 @@ class CheckoutQuoteResponse(BaseModel):
     carries a plan and an interval and nothing else.
 
     ``available`` is the honest gate. When checkout cannot be offered (no
-    published payment price, a contact-sales plan) the page says so with the
-    reason instead of presenting a button that will fail.
+    exchange rate available to price the charge, a contact-sales plan) the page
+    says so with the reason instead of presenting a button that will fail.
     """
 
     plan: str

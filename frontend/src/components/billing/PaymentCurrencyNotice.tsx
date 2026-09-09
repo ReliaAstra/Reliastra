@@ -35,14 +35,14 @@ import {
  * The mandatory transparency triple, rendered as a hairline table so it reads
  * as product documentation rather than a disclaimer:
  *
- *   Product price     $39.00 (USD)
- *   Actual charge     ₦60,000.00 (NGN)  per month
+ *   Product price     $19.00 (USD)
+ *   Actual charge     ₦25,118.00 (NGN)  per month
  *   Payment provider  Paystack
  *
  * Every figure is a backend-resolved string ({@linkcode paymentAmountFor}):
  * the charge line is literally the minor-unit amount the API sends to
- * Paystack, formatted server-side. When no payment price has been published
- * the charge line states that honestly - the component never derives a
+ * Paystack, formatted server-side. When no rate is available to convert the
+ * price the charge line states that honestly - the component never derives a
  * number, and neither may any caller.
  *
  * `emphasis`:
@@ -60,7 +60,7 @@ export function PlanPaymentSummary({
   info?: PaymentCurrencyInfo | null;
   plan: string;
   interval?: 'monthly' | 'annual';
-  /** USD product list price, pre-formatted by the caller (e.g. "$39.00 (USD)"). */
+  /** USD product list price, pre-formatted by the caller (e.g. "$19.00 (USD)"). */
   productPrice: string;
   emphasis?: 'card' | 'panel';
   className?: string;
@@ -163,7 +163,7 @@ function TransparencyRow({
       </dt>
       <dd className="min-w-0 text-right text-[12px] leading-snug">
         {/* The figure and its unit stay one unbreakable unit: a wrapped
-            "₦60,000.00 (NGN) per month" is how amounts get misread. */}
+            "₦25,118.00 (NGN) per month" is how amounts get misread. */}
         <span className="whitespace-nowrap">
           {value}
           {hint ? (
@@ -223,11 +223,11 @@ export function PaymentCurrencyNotice({
 /**
  * The FX reference footnote, when the backend has one.
  *
- * Renders ONLY a sourced, timestamped estimate. The label states it is an
- * estimate; the source is named and linked so the figure is verifiable; the
- * retrieval time is shown; and the disclaimer makes plain that the charge was
- * not computed from this rate. If the payload is missing or stale-but-absent,
- * the whole panel is omitted - never replaced with a guessed number.
+ * Renders ONLY a sourced, timestamped rate. The source is named and linked so
+ * the figure is verifiable; the retrieval time is shown; and the disclaimer
+ * makes plain that this rate is the basis of the USD-to-NGN conversion. If the
+ * payload is missing or stale-but-absent, the whole panel is omitted - never
+ * replaced with a guessed number.
  */
 export function FxReferencePanel({
   info,
@@ -245,9 +245,9 @@ export function FxReferencePanel({
   fx?: FxReference | null;
   /**
    * Optional product price (in minor units of `fx.source_currency`) so the
-   * panel can show what THAT price converts to at the live rate. Purely
-   * contextual: it is computed client-side, labelled a reference, and can never
-   * replace the backend-published charge.
+   * panel can show what THAT price converts to at the live rate. It restates
+   * the backend's conversion for the customer; the amount of record is always
+   * the backend-resolved charge, never this client-side arithmetic.
    */
   contextAmountMinor?: number | null;
   className?: string;
@@ -326,9 +326,10 @@ export function FxReferencePanel({
 }
 
 /**
- * The live-conversion context line: what the product price becomes at the
- * fetched rate. Always framed as a reference ("at this rate ..."), so the
- * published charge can never be read as a client-side computation.
+ * The conversion context line: what the product price becomes at the fetched
+ * rate. The backend computes the charge from this same rate, so this line
+ * restates the arithmetic the customer is about to be billed on - the figure
+ * of record is still the backend's, never a client-side recomputation.
  */
 function formatContextConversion(
   fx: FxReference,
@@ -351,9 +352,8 @@ function formatContextConversion(
       maximumFractionDigits: 2,
     });
     return (
-      `Live conversion check: ${baseFmt.format(amount)} ${fx.source_currency} at this rate = ` +
-      `${targetFmt.format(converted)} ${fx.payment_currency} (reference only; ` +
-      `your charge is the published price)`
+      `Your ${baseFmt.format(amount)} ${fx.source_currency} plan converts to ` +
+      `${targetFmt.format(converted)} ${fx.payment_currency} at this rate`
     );
   } catch {
     // A currency the runtime cannot format is not a reason to hide the rate.

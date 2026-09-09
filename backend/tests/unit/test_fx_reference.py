@@ -1,11 +1,11 @@
-"""FX reference rate: sourced, timestamped, labelled - and never in the charge.
+"""Live FX rate: sourced, timestamped, labelled - and the basis of the charge.
 
-The reference estimate exists so a global customer can make sense of the gap
-between a $19 list price and a ₦60,000 payment. These tests pin the honesty
-rules of that panel:
+The rate converts the $19 list price into the NGN charge. These tests pin the
+honesty rules of that panel:
 
 * the payload carries the provider name, a human-checkable URL, the source's
-  own timestamp plus the fetch timestamp, and the disclaimer;
+  own timestamp plus the fetch timestamp, and the disclaimer stating the rate
+  is the basis of the conversion;
 * it is only produced while the payment currency differs from the product
   currency (a USD deployment has no FX question to answer);
 * failure ⇒ `None`, never a stale, zero or guessed rate;
@@ -74,9 +74,9 @@ async def test_reference_payload_is_sourced_and_timestamped(mock_httpx, monkeypa
     assert fx["source_url"] == settings.FX_REFERENCE_URL
     assert fx["source_timestamp"] == "Wed, 13 Aug 2025 00:40:32 +0000"
     assert fx["retrieved_at"].endswith("Z")
-    # It says it is an estimate - in the label and in the disclaimer.
-    assert "estimate" in fx["label"].lower()
-    assert "never" in fx["disclaimer"].lower()
+    # It names the conversion it drives - in the label and in the disclaimer.
+    assert "exchange rate" in fx["label"].lower()
+    assert "converted" in fx["disclaimer"].lower()
     assert fx["disclaimer"] == FX_REFERENCE_DISCLAIMER
 
 
@@ -137,16 +137,50 @@ async def test_feature_flag_turns_it_off(mock_httpx, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_currency_payload_embeds_reference_without_touching_prices(mock_httpx):
-    """The shared disclosure object carries the estimate beside the notice."""
+async def test_currency_payload_embeds_reference_and_resolves_amounts(mock_httpx):
+    """The shared disclosure object carries the rate and the converted amounts."""
     mock_httpx["transport"] = _transport(
         {"base": "USD", "rates": {"NGN": 1611.0}, "time_last_update_utc": "y"}
     )
     from app.core.payment_disclosure import currency_payload
-    from app.core.payment_pricing import checkout_amount, MONTHLY
 
     payload = await currency_payload()
     assert payload["fx_reference"]["rate"] == 1611.0
-    # ...and the number that goes to Paystack is still the published price.
-    assert checkout_amount("pro", MONTHLY) == 6_000_000
+    # The amounts are the USD price converted at that same rate:
+    # 1900 cents x 1611 = 3,060,900 kobo = ₦30,609.00.
+    assert payload["plan_payment_amounts"]["pro"]["monthly"] == "\u20a630,609.00 (NGN)"
+    assert payload["checkout_ready"] is True
     assert json.loads(json.dumps(payload))  # serializable for the API layer
+
+
+@pytest.mark.asyncio
+async def test_current_rate_returns_the_rate_used_for_pricing(mock_httpx, monkeypatch):
+    """``current_rate`` is the number pricing consumes."""
+    from app.core import fx_reference
+
+    mock_httpx["transport"] = _transport(
+        {"base": "USD", "rates": {"NGN": 1322.0}, "time_last_update_utc": "z"}
+    )
+    assert await fx_reference.current_rate() == 1322.0
+
+
+@pytest.mark.asyncio
+async def test_current_rate_is_none_when_the_source_is_down(mock_httpx):
+    from app.core import fx_reference
+
+    mock_httpx["transport"] = _transport({"nope": True}, status=503)
+    assert await fx_reference.current_rate() is None
+
+
+@pytest.mark.asyncio
+async def test_cached_rate_reads_without_io(mock_httpx):
+    """The synchronous cache read serves the email renderers."""
+    from app.core import fx_reference
+
+    mock_httpx["transport"] = _transport(
+        {"base": "USD", "rates": {"NGN": 1322.0}, "time_last_update_utc": "z"}
+    )
+    # Nothing cached yet -> None, without touching the network.
+    assert fx_reference.cached_rate() is None
+    await fx_reference.fx_reference_payload()
+    assert fx_reference.cached_rate() == 1322.0

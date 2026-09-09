@@ -12,6 +12,39 @@ from app.modules.billing.schemas import InitializePaymentRequest
 from app.modules.billing.service import BillingService
 
 
+def _stub_fx_rate(monkeypatch, rate):
+    """Pin the live exchange rate the checkout converts at (None = unavailable)."""
+    from app.core import fx_reference
+
+    async def _fetch(*_a, **_k):
+        if rate is None:
+            return None
+        return {
+            "available": True,
+            "source_currency": "USD",
+            "payment_currency": "NGN",
+            "rate": rate,
+            "source_timestamp": "Sun, 30 Aug 2026 00:00:00 +0000",
+            "retrieved_at": "2026-08-30T00:00:00Z",
+            "provider": "ExchangeRate-API",
+            "provider_url": "https://www.exchangerate-api.com",
+            "source_url": "https://open.er-api.com/v6/latest/USD",
+            "label": "Exchange rate (converts your USD price to NGN)",
+            "disclaimer": "d",
+        }
+
+    async def _none(*_a, **_k):
+        return None
+
+    async def _noop(*_a, **_k):
+        return None
+
+    monkeypatch.setattr(fx_reference, "_fetch_rate", _fetch)
+    monkeypatch.setattr(fx_reference, "_cache_read", _none)
+    monkeypatch.setattr(fx_reference, "_cache_store", _noop)
+    fx_reference._memory_cache = None
+
+
 @pytest.mark.asyncio
 async def test_get_plan_details():
     repo = MagicMock()
@@ -60,12 +93,10 @@ async def test_initialize_payment(monkeypatch):
             },
         }
     )
-    # The NGN charge amount is operator-published. Tests pin a value so the
-    # assertion proves checkout sends *that* number in *that* currency, not a
-    # converted (or leftover USD) one.
-    monkeypatch.setattr(
-        settings, "PAYSTACK_NGN_PLAN_PRICES", {"pro": {"monthly": 6000000}}
-    )
+    # The NGN charge amount is the USD price converted at the live rate. Pin
+    # the rate so the assertion proves checkout sends *that* conversion in
+    # *that* currency, not a leftover USD figure.
+    _stub_fx_rate(monkeypatch, 1322.0)
     # The payer address is resolved from organization membership, not taken from
     # the request, so the identity lookups are stubbed to answer as they would
     # for a real member. (tests/integration/test_checkout_flow.py covers the
@@ -94,21 +125,21 @@ async def test_initialize_payment(monkeypatch):
     )
     assert response.reference == "ref_test"
     assert response.currency == "NGN"
-    assert response.amount_minor == 6000000
+    assert response.amount_minor == 2_511_800
     client.initialize_transaction.assert_awaited_once()
     sent = client.initialize_transaction.await_args.kwargs
-    assert sent["amount"] == 6000000
+    assert sent["amount"] == 2_511_800
     assert sent["currency"] == "NGN"
 
 
 @pytest.mark.asyncio
-async def test_initialize_payment_refuses_without_published_price(monkeypatch):
-    """Unpublished payment price => no Paystack transaction, ever."""
+async def test_initialize_payment_refuses_without_a_rate(monkeypatch):
+    """No exchange rate => no Paystack transaction, ever."""
     import pytest
 
     from app.core.exceptions import ValidationException
 
-    monkeypatch.setattr(settings, "PAYSTACK_NGN_PLAN_PRICES", None)
+    _stub_fx_rate(monkeypatch, None)
     org_id = uuid.uuid4()
     repository = MagicMock()
     repository.get_org = AsyncMock(

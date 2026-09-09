@@ -41,13 +41,17 @@
 
 ## Billing
 
-The NGN catalog and USD list prices remain independent published prices. No FX
-conversion is invented, and reference-rate availability no longer gates a fixed
-price. Checkout continues to verify its server-issued price token. No payment is
-initiated by visiting Billing. Card details, cancellation, invoice downloads, and
-recurring-price commitments are not invented where the backend has no API. Billing
-support is the explicit fallback. Direct USD/EUR collection requires provider
-account capability and a separate commercial decision, not a frontend change.
+The NGN charge is the USD list price converted at the live exchange rate
+(`round(USD minor units × rate)`), fetched from `app/core/fx_reference`. No
+fixed NGN catalog exists anymore; a plan is chargeable only while a rate is
+available, and an unavailable rate disables self-serve checkout rather than
+charging a made-up figure. Checkout continues to verify its server-issued price
+token (now the quote and the charge are one resolution of one rate). No payment
+is initiated by visiting Billing. Card details, cancellation, invoice downloads,
+and recurring-price commitments are not invented where the backend has no API.
+Billing support is the explicit fallback. Direct USD/EUR collection requires
+provider account capability and a separate commercial decision, not a frontend
+change.
 
 ## Live QA
 

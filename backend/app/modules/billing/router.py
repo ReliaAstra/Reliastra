@@ -23,8 +23,11 @@ from app.core.permissions import (
     get_min_check_interval,
     is_enterprise_plan,
 )
-from app.core.payment_disclosure import currency_payload
-from app.core.payment_pricing import format_money, resolve_payment_price
+from app.core.payment_disclosure import (
+    currency_payload,
+    resolve_payment_price_async,
+)
+from app.core.payment_pricing import format_money
 from app.db.session import get_db
 from app.dependencies import (
     get_current_org,
@@ -141,8 +144,8 @@ async def get_pricing_plans() -> PricingPlansResponse:
     for plan_id in sorted(CANONICAL_PLANS):
         p = plan_id
         is_enterprise = is_enterprise_plan(p)
-        monthly = resolve_payment_price(p, "monthly")
-        annual = resolve_payment_price(p, "annual")
+        monthly = await resolve_payment_price_async(p, "monthly")
+        annual = await resolve_payment_price_async(p, "annual")
         plans.append(
             PricingPlanResponse(
                 plan=p,
@@ -166,7 +169,7 @@ async def get_pricing_plans() -> PricingPlansResponse:
                         **transparency_lines(p, "annual", price=annual)
                     ),
                 },
-                # Only self-serve *paid* plans need a published payment price;
+                # Only self-serve *paid* plans need a convertible payment price;
                 # Free has nothing to charge and Enterprise routes to Contact Sales.
                 checkout_ready=(
                     True if (is_enterprise or p == Plan.FREE.value)
@@ -215,8 +218,9 @@ async def get_payment_currency() -> PaymentCurrencyResponse:
     Public and cheap on purpose: the marketing pricing page, the upgrade modal
     and the billing page all read the same object, so the currency statement a
     prospect sees before signing up cannot differ from the one a customer sees
-    at checkout. ``fx_reference`` is the cached market estimate (display
-    only - never a pricing input) and is ``null`` when disabled/unavailable.
+    at checkout. ``fx_reference`` is the cached market rate the charge was
+    converted at (the same fetch prices the charge), and is ``null`` when
+    disabled/unavailable.
     """
     return PaymentCurrencyResponse(**await currency_payload())
 

@@ -435,16 +435,16 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     card_note = _flat(per_card["text"])
     assert "nigerian naira" in card_note or "ngn" in card_note
     # The mandatory triple: Product price / Actual charge / Payment provider.
-    assert "product price $39.00 (usd)" in card_note, (
+    assert "product price $19.00 (usd)" in card_note, (
         "every card names the USD product price, even on the marketing page"
     )
     assert re.search(r"actual charge ₦[\d,]+\.\d{2} ?\(ngn\) ?per month", card_note), (
-        "the card must state the published charge, spelled and coded"
+        "the card must state the converted charge, spelled and coded"
     )
     assert re.search(r"payment provider paystack", card_note), (
         "the card must name who takes the money"
     )
-    assert "$39" in per_card["card"], (
+    assert "$19" in per_card["card"], (
         "the USD list price stays visible - the disclosure explains, it hides nothing"
     )
 
@@ -469,8 +469,8 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
         "Enterprise must never be priced as a number, anywhere on its card"
     )
 
-    # FX reference: if the API publishes one it must arrive labelled, sourced
-    # and timestamped; if it does not, the panel must be absent - never faked.
+    # FX reference: if the API has one it must arrive labelled, sourced and
+    # timestamped; if it does not, the panel must be absent - never faked.
     import urllib.request
 
     with urllib.request.urlopen(f"{API_URL}/billing/currency", timeout=30) as res:
@@ -479,13 +479,13 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     if fx:
         assert await panel.count() == 1, "an available reference must be displayed"
         text = await panel.inner_text()
-        assert "estimate" in text.lower(), "the reference must be labelled an estimate"
+        assert "converted" in text.lower(), "the reference must state it converts the price"
         assert fx["provider"].lower() in text.lower(), "the reference must name its source"
         assert fx["retrieved_at"][:10].replace("-", " ") in text or "fetched" in text.lower(), (
             "the reference must be timestamped"
         )
         assert _flat(fx["disclaimer"]) in _flat(text), (
-            "the 'not your charge' disclaimer is part of the panel, verbatim"
+            "the conversion disclaimer is part of the panel, verbatim"
         )
     else:
         assert await panel.count() == 0, (
@@ -496,7 +496,7 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
 # ── journey 2: upgrade flow → Paystack → mail ─────────────────────────────
 
 
-async def test_upgrade_flow_confirms_then_charges_the_published_amount(
+async def test_upgrade_flow_confirms_then_charges_the_converted_amount(
     page: Any, api: httpx.Client
 ) -> None:
     account = await _account()
@@ -520,17 +520,18 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     assert NGN_CURRENCY_NOTICE.strip() in grid_notice, (
         "the plan chooser carries the disclosure, not only the payment step"
     )
-    published = api.get("/billing/currency").json()["plan_payment_amounts"]["pro"]
-    # The digits of "₦60,000.00 (NGN)" are exactly the minor units the backend
-    # publishes, so every amount below is derived from the API rather than from
-    # a figure this test happens to know.
-    expected_minor = int(re.sub(r"\D", "", published["monthly"]))
+    resolved = api.get("/billing/currency").json()["plan_payment_amounts"]["pro"]
+    # The digits of the resolved amount (e.g. "₦25,118.00 (NGN)") are exactly
+    # the minor units the backend converted from the USD price at the live
+    # rate, so every amount below is derived from the API rather than from a
+    # figure this test happens to know.
+    expected_minor = int(re.sub(r"\D", "", resolved["monthly"]))
     card_line = _flat(
         await modal.locator('[data-testid="payment-currency-pro"]').inner_text()
     )
     assert "nigerian naira (ngn)" in card_line or "ngn" in card_line
-    assert f"actual charge {published['monthly'].lower()}" in card_line, (
-        "the plan chooser shows the same published charge as checkout will"
+    assert f"actual charge {resolved['monthly'].lower()}" in card_line, (
+        "the plan chooser shows the same converted charge as checkout will"
     )
     assert "payment provider paystack" in card_line
 
@@ -541,13 +542,13 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     amount = (
         await modal.locator('[data-testid="payment-charge-pro"]').inner_text()
     ).strip()
-    assert amount == published["monthly"], (
-        "the confirmed amount must match the published price character for character"
+    assert amount == resolved["monthly"], (
+        "the confirmed amount must match the resolved price character for character"
     )
     review_block = _flat(
         await modal.locator('[data-testid="payment-transparency-pro"]').inner_text()
     )
-    assert "product price $39.00 (usd)" in review_block, (
+    assert "product price $19.00 (usd)" in review_block, (
         "the last RELIASTRA screen before Paystack restates the product price"
     )
     assert "payment provider paystack - secure hosted checkout" in review_block
@@ -645,7 +646,7 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
     # the amount and currency charged are the ones the customer was shown.
     assert paid["currency"] == "NGN"
     assert paid["amount_minor"] == expected_minor
-    assert paid["amount_display"] == published["monthly"]
+    assert paid["amount_display"] == resolved["monthly"]
 
     if MAIL_URL:
         receipt = await _await_mail(account["email"], r"receipt")
@@ -667,7 +668,7 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
             assert "Actual charge: ₦" in joined, (
                 "the charge line itself must be in the currency actually charged"
             )
-        assert published["monthly"] in " ".join(_text_parts(receipt["raw"])), (
+        assert resolved["monthly"] in " ".join(_text_parts(receipt["raw"])), (
             "the receipt shows the amount actually charged"
         )
 
