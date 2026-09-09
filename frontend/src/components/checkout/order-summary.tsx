@@ -108,6 +108,34 @@ export function OrderSummary({
             {quote.trial_note}
           </p>
         ) : null}
+        {(quote.trial_summary || quote.cancellation_summary || quote.refund_summary) ? (
+          <dl className="mt-5 space-y-3 border-t border-rs-border-subtle pt-4 text-[12.5px] leading-relaxed text-rs-text-secondary" data-testid="checkout-commercial-terms">
+            {quote.what_you_buy ? (
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">What you buy</dt>
+                <dd className="mt-1">{quote.what_you_buy}</dd>
+              </div>
+            ) : null}
+            {quote.trial_summary ? (
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">Trial</dt>
+                <dd className="mt-1">{quote.trial_summary}</dd>
+              </div>
+            ) : null}
+            {quote.cancellation_summary ? (
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">Cancellation</dt>
+                <dd className="mt-1">{quote.cancellation_summary}</dd>
+              </div>
+            ) : null}
+            {quote.refund_summary ? (
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-rs-text-tertiary">Refunds</dt>
+                <dd className="mt-1">{quote.refund_summary}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
       </section>
 
       <CurrencyExplanation quote={quote} onRefresh={onRefresh} />

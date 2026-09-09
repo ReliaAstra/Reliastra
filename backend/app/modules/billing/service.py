@@ -21,6 +21,18 @@ from app.core.exceptions import (
     ValidationException,
     ServiceUnavailableException,
 )
+from app.core.commercial_terms import (
+    BILLING_EMAIL,
+    REFUND_POLICY_PATH,
+    SELLER_LEGAL_NAME,
+    TERMS_PATH,
+    cancellation_after_effect,
+    cancellation_summary,
+    checkout_what_you_buy,
+    refund_summary,
+    terms_acceptance_label,
+    trial_summary,
+)
 from app.core.permissions import (
     PLAN_AMOUNTS,
     PLAN_ANNUAL_AMOUNTS,
@@ -61,6 +73,13 @@ from app.modules.billing.notifications import (
     send_subscription_confirmed_email,
 )
 from app.modules.billing.repository import BillingRepository
+from app.modules.billing.documents import (
+    filename_for,
+    invoice_number,
+    receipt_number,
+    render_invoice,
+    render_receipt,
+)
 from app.modules.billing.schemas import (
     BillingInterval,
     BillingTransactionResponse,
@@ -71,6 +90,7 @@ from app.modules.billing.schemas import (
     InitializePaymentResponse,
     PaystackWebhookResponse,
     PlanDetailsResponse,
+    SubscriptionActionResponse,
     VerifyTransactionResponse,
 )
 
@@ -350,6 +370,81 @@ def _optional_uuid(value: Any) -> uuid.UUID | None:
         return None
 
 
+
+def _authorization_fields(data: dict[str, Any]) -> dict[str, Any]:
+    """Masked card fields from Paystack's authorization object. Never the PAN."""
+    auth = data.get("authorization")
+    if not isinstance(auth, dict):
+        return {}
+    out: dict[str, Any] = {}
+    brand = str(auth.get("brand") or auth.get("card_type") or "").strip()[:50]
+    last4 = str(auth.get("last4") or "").strip()[:4]
+    channel = str(auth.get("channel") or data.get("channel") or "").strip()[:40]
+    if brand:
+        out["payment_method_brand"] = brand
+    if last4:
+        out["payment_method_last4"] = last4
+    try:
+        month = int(auth["exp_month"]) if auth.get("exp_month") not in (None, "") else None
+    except (TypeError, ValueError):
+        month = None
+    try:
+        year = int(auth["exp_year"]) if auth.get("exp_year") not in (None, "") else None
+    except (TypeError, ValueError):
+        year = None
+    if month:
+        out["payment_method_exp_month"] = month
+    if year:
+        out["payment_method_exp_year"] = year
+    if channel:
+        out["payment_method_channel"] = channel
+    return out
+
+
+def _provider_metadata(data: dict[str, Any]) -> dict[str, Any]:
+    meta = {
+        key: data.get(key)
+        for key in (
+            "id",
+            "domain",
+            "channel",
+            "gateway_reference",
+            "status",
+            "transaction_date",
+        )
+        if data.get(key) is not None
+    }
+    auth = _authorization_fields(data)
+    if auth.get("payment_method_brand"):
+        meta["card_brand"] = auth["payment_method_brand"]
+        meta["brand"] = auth["payment_method_brand"]
+    if auth.get("payment_method_last4"):
+        meta["last4"] = auth["payment_method_last4"]
+    return meta
+
+
+def _payment_method_display(subscription: Any) -> str | None:
+    last4 = getattr(subscription, "payment_method_last4", None)
+    brand = getattr(subscription, "payment_method_brand", None)
+    if not isinstance(last4, str) or not last4:
+        channel = getattr(subscription, "payment_method_channel", None)
+        return channel.title() if isinstance(channel, str) and channel else None
+    label = brand.title() if isinstance(brand, str) and brand else "Card"
+    return f"{label} ···· {last4}"
+
+
+def _document_fields(tx) -> dict[str, str]:
+    tid = str(tx.id)
+    return {
+        "invoice_number": invoice_number(tx),
+        "receipt_number": receipt_number(tx),
+        "invoice_url": f"/v1/billing/transactions/{tid}/invoice",
+        "receipt_url": f"/v1/billing/transactions/{tid}/receipt",
+        "invoice_download_url": f"/v1/billing/transactions/{tid}/invoice?download=1",
+        "receipt_download_url": f"/v1/billing/transactions/{tid}/receipt?download=1",
+    }
+
+
 def _reason_details(reason: str, **extra: Any) -> list[dict[str, Any]]:
     """``details`` payload carrying a machine-readable reason slug."""
     payload: list[dict[str, Any]] = [{"field": "reason", "issue": reason}]
@@ -400,15 +495,31 @@ class BillingService:
         subscription = await self.repository.get_subscription(session, org_id)
 
         # Centralized evaluation-aware entitlement resolution. Server time only.
+        subscription = await self._expire_cancelled_if_due(session, org, subscription)
         ent = get_effective_entitlements(org)
         effective_plan = ent["effective_plan"]
         base_price = get_plan_price_usd(effective_plan)
         # Real account consequences for the fallback message (never fabricated).
         fallback_info = await self._build_fallback_info(session, org, ent)
         effective_is_custom = get_plan_billing_availability(effective_plan) == "contact_sales"
+        cancel_at_end = (
+            getattr(subscription, "cancel_at_period_end", False) is True
+            if subscription is not None
+            else False
+        )
+        stored_plan = ent["subscription_plan"]
+        is_paid = stored_plan not in {Plan.FREE.value, Plan.ENTERPRISE.value}
+        status = subscription.status if subscription else None
+        last4 = getattr(subscription, "payment_method_last4", None) if subscription else None
+        brand = getattr(subscription, "payment_method_brand", None) if subscription else None
+        exp_month = getattr(subscription, "payment_method_exp_month", None) if subscription else None
+        exp_year = getattr(subscription, "payment_method_exp_year", None) if subscription else None
+        channel = getattr(subscription, "payment_method_channel", None) if subscription else None
+        canceled_at = getattr(subscription, "canceled_at", None) if subscription else None
+        period_start = getattr(subscription, "current_period_start", None) if subscription else None
         return PlanDetailsResponse(
             org_id=org.id,
-            plan=ent["subscription_plan"],
+            plan=stored_plan,
             effective_plan=effective_plan,
             is_trial_active=ent["is_evaluation_active"],
             trial_days_remaining=ent["evaluation_days_remaining"],
@@ -425,7 +536,8 @@ class BillingService:
             data_retention_days=get_retention_days(effective_plan),
             effective_features=ent["effective_features"],
             fallback_info=fallback_info,
-            subscription_status=subscription.status if subscription else None,
+            subscription_status=status,
+            current_period_start=period_start if isinstance(period_start, datetime) else None,
             current_period_end=(
                 subscription.current_period_end if subscription else None
             ),
@@ -439,6 +551,23 @@ class BillingService:
             # reference), resolved from the same source the checkout uses -
             # never a frontend literal.
             payment=PaymentCurrencyResponse(**(await currency_payload())),
+            cancel_at_period_end=cancel_at_end,
+            canceled_at=canceled_at if isinstance(canceled_at, datetime) else None,
+            payment_method_brand=brand if isinstance(brand, str) else None,
+            payment_method_last4=last4 if isinstance(last4, str) else None,
+            payment_method_exp_month=exp_month if isinstance(exp_month, int) else None,
+            payment_method_exp_year=exp_year if isinstance(exp_year, int) else None,
+            payment_method_channel=channel if isinstance(channel, str) else None,
+            payment_method_display=_payment_method_display(subscription) if subscription else None,
+            billing_email=await self._billing_email_for_org(session, org_id),
+            organization_name=getattr(org, "name", None),
+            trial_summary=trial_summary(),
+            cancellation_summary=cancellation_summary(),
+            refund_summary=refund_summary(),
+            refund_policy_path=REFUND_POLICY_PATH,
+            can_cancel=bool(is_paid and status == "active" and not cancel_at_end),
+            can_resume=bool(is_paid and cancel_at_end and status == "active"),
+            can_change_plan=get_plan_billing_availability(stored_plan) != "contact_sales",
             **self._next_charge_fields(subscription),
         )
 
@@ -450,6 +579,8 @@ class BillingService:
         a "next charge" figure the customer will never be billed.
         """
         if subscription is None or subscription.plan == Plan.FREE.value:
+            return {}
+        if getattr(subscription, "cancel_at_period_end", False) is True:
             return {}
         price = resolve_payment_price(
             subscription.plan, subscription.billing_interval or MONTHLY_INTERVAL
@@ -506,6 +637,7 @@ class BillingService:
                     # twice for one month needs to see both lines and the
                     # credit, not a history that quietly dropped one.
                     duplicate=bool(tx.duplicate),
+                    **_document_fields(tx),
                 )
             )
         return BillingTransactionsResponse(
@@ -558,6 +690,168 @@ class BillingService:
             }
         except Exception:
             return None
+
+
+    async def _billing_email_for_org(
+        self, session: AsyncSession, org_id: uuid.UUID
+    ) -> str | None:
+        from app.modules.organizations.repository import OrganizationRepository
+        from app.modules.users.repository import UserRepository
+
+        try:
+            members = await OrganizationRepository.list_members(session, org_id)
+            owner = next((m for m in members if m.role == "owner"), None)
+            if owner is None:
+                return None
+            user = await UserRepository.get_by_id(session, owner.user_id)
+            return user.email if user else None
+        except Exception:  # pragma: no cover
+            logger.warning("Could not resolve billing email for org %s", org_id)
+            return None
+
+    async def _expire_cancelled_if_due(
+        self, session: AsyncSession, org, subscription
+    ):
+        """Drop a cancelled-at-period-end subscription once the paid period ends.
+
+        Paid, non-cancelled subscriptions are not auto-expired: Reliastra owns
+        the period and a missed one-off renewal must not silently strip a
+        customer who already paid. Cancellation is the only path that ends
+        entitlement at ``current_period_end``.
+        """
+        if subscription is None or org is None:
+            return subscription
+        if getattr(subscription, "cancel_at_period_end", False) is not True:
+            return subscription
+        end = getattr(subscription, "current_period_end", None)
+        if not isinstance(end, datetime):
+            return subscription
+        now = datetime.now(timezone.utc)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+        if now < end:
+            return subscription
+        await self.repository.update_subscription(
+            session,
+            subscription,
+            status="canceled",
+            plan=Plan.FREE.value,
+            cancel_at_period_end=False,
+        )
+        from app.modules.organizations.repository import OrganizationRepository
+
+        await OrganizationRepository.update(
+            session, org, plan=Plan.FREE.value, evaluation_status="expired"
+        )
+        await session.refresh(org)
+        return subscription
+
+    async def cancel_subscription(
+        self, session: AsyncSession, org_id: uuid.UUID
+    ) -> SubscriptionActionResponse:
+        org = await self.repository.get_org(session, org_id)
+        if not org:
+            raise ResourceNotFoundException("Organization not found")
+        subscription = await self.repository.get_subscription(session, org_id)
+        subscription = await self._expire_cancelled_if_due(session, org, subscription)
+        if (
+            subscription is None
+            or subscription.plan == Plan.FREE.value
+            or subscription.status != "active"
+        ):
+            raise ValidationException("There is no paid subscription to cancel.")
+        if getattr(subscription, "cancel_at_period_end", False) is True:
+            return SubscriptionActionResponse(
+                plan=subscription.plan,
+                subscription_status=subscription.status,
+                cancel_at_period_end=True,
+                canceled_at=subscription.canceled_at,
+                current_period_end=subscription.current_period_end,
+                message="This subscription is already scheduled to cancel at the end of the paid period.",
+                cancellation_summary=cancellation_summary(),
+                cancellation_after_effect=cancellation_after_effect(),
+                refund_summary=refund_summary(),
+            )
+        now = datetime.now(timezone.utc)
+        await self.repository.update_subscription(
+            session,
+            subscription,
+            cancel_at_period_end=True,
+            canceled_at=now,
+        )
+        return SubscriptionActionResponse(
+            plan=subscription.plan,
+            subscription_status=subscription.status,
+            cancel_at_period_end=True,
+            canceled_at=now,
+            current_period_end=subscription.current_period_end,
+            message=(
+                "Cancellation is scheduled. Access continues until the end of "
+                "the current paid period. Future renewal will stop."
+            ),
+            cancellation_summary=cancellation_summary(),
+            cancellation_after_effect=cancellation_after_effect(),
+            refund_summary=refund_summary(),
+        )
+
+    async def resume_subscription(
+        self, session: AsyncSession, org_id: uuid.UUID
+    ) -> SubscriptionActionResponse:
+        org = await self.repository.get_org(session, org_id)
+        if not org:
+            raise ResourceNotFoundException("Organization not found")
+        subscription = await self.repository.get_subscription(session, org_id)
+        subscription = await self._expire_cancelled_if_due(session, org, subscription)
+        if subscription is None or getattr(subscription, "cancel_at_period_end", False) is not True:
+            raise ValidationException("This subscription is not scheduled to cancel.")
+        if subscription.plan == Plan.FREE.value or subscription.status != "active":
+            raise ValidationException(
+                "The paid period has already ended. Subscribe again from checkout."
+            )
+        await self.repository.update_subscription(
+            session,
+            subscription,
+            cancel_at_period_end=False,
+            canceled_at=None,
+        )
+        return SubscriptionActionResponse(
+            plan=subscription.plan,
+            subscription_status=subscription.status,
+            cancel_at_period_end=False,
+            canceled_at=None,
+            current_period_end=subscription.current_period_end,
+            message="Cancellation was withdrawn. The subscription will renew at the end of the current period.",
+            cancellation_summary=cancellation_summary(),
+            cancellation_after_effect=cancellation_after_effect(),
+            refund_summary=refund_summary(),
+        )
+
+    async def render_billing_document(
+        self,
+        session: AsyncSession,
+        org_id: uuid.UUID,
+        transaction_id: uuid.UUID,
+        kind: str,
+    ) -> tuple[str, str]:
+        org = await self.repository.get_org(session, org_id)
+        if not org:
+            raise ResourceNotFoundException("Organization not found")
+        tx = await self.repository.get_transaction_for_org(
+            session, org_id, transaction_id
+        )
+        if tx is None:
+            raise ResourceNotFoundException("Transaction not found")
+        email = await self._billing_email_for_org(session, org_id)
+        if kind == "receipt":
+            html = render_receipt(
+                tx, organization_name=org.name, billing_email=email or tx.email
+            )
+        else:
+            html = render_invoice(
+                tx, organization_name=org.name, billing_email=email or tx.email
+            )
+            kind = "invoice"
+        return html, filename_for(kind, tx)
 
     async def checkout_quote(
         self,
@@ -706,6 +1000,17 @@ class BillingService:
             unavailable_message=message,
             checkout_enabled=bool(settings.PAYSTACK_SECRET_KEY),
             trial_note=trial_note,
+            trial_length_days=TRIAL_DAYS,
+            trial_requires_payment=False,
+            trial_summary=trial_summary(),
+            cancellation_summary=cancellation_summary(),
+            refund_summary=refund_summary(),
+            refund_policy_path=REFUND_POLICY_PATH,
+            terms_path=TERMS_PATH,
+            terms_acceptance_label=terms_acceptance_label(),
+            what_you_buy=checkout_what_you_buy(),
+            seller_legal_name=SELLER_LEGAL_NAME,
+            billing_contact=BILLING_EMAIL,
         )
 
     async def initialize_payment(
@@ -750,6 +1055,11 @@ class BillingService:
             raise ValidationException(
                 f"Plan '{plan}' is not available for self-serve checkout. "
                 f"Please contact sales."
+            )
+
+        if not request.terms_accepted:
+            raise ValidationException(
+                "Accept the Terms of Service to continue with checkout."
             )
 
         interval = request.billing_interval.value
@@ -1088,6 +1398,9 @@ class BillingService:
                     "plan as soon as it settles.",
                 )
             if provider_status in {"failed", "abandoned"}:
+                await self._record_failed_attempt(
+                    session, data, reference, caller_org_id=caller_org_id
+                )
                 return self._unverified_response(
                     reference,
                     data,
@@ -1194,7 +1507,7 @@ class BillingService:
         # of the processing currency, so the integer comparison below is
         # meaningless until the denomination is known to match. A multi-currency
         # Paystack account can settle the same nominal amount in a far weaker
-        # currency (3900 NGN is about $2.50, not the $39 Pro plan) and clear an
+        # currency (3900 NGN is about $2.50, not the $19 Pro plan) and clear an
         # amount-only check. Checkout always initializes in the resolved
         # payment currency, so anything else did not come from our checkout.
         #
@@ -1317,18 +1630,22 @@ class BillingService:
             and str(subscription.provider_subscription_id or "") == reference
         )
 
+        period_end = _resolve_period_end(
+            paid_at,
+            billing_interval,
+            _parse_datetime(data.get("next_payment_date")),
+        )
         values = {
             "plan": plan,
             "status": "active",
             "provider_customer_id": customer_code,
             "provider_subscription_id": str(data.get("subscription_code") or reference),
             "current_period_start": paid_at,
-            "current_period_end": _resolve_period_end(
-                paid_at,
-                billing_interval,
-                _parse_datetime(data.get("next_payment_date")),
-            ),
+            "current_period_end": period_end,
             "billing_interval": billing_interval,
+            "cancel_at_period_end": False,
+            "canceled_at": None,
+            **_authorization_fields(data),
         }
         if subscription:
             await self.repository.update_subscription(session, subscription, **values)
@@ -1373,19 +1690,8 @@ class BillingService:
                 duplicate=duplicate_within_period,
                 paid_at=paid_at,
                 period_start=_parse_datetime(data.get("transaction_date")) or paid_at,
-                period_end=_parse_datetime(data.get("next_payment_date")),
-                provider_metadata={
-                    key: data.get(key)
-                    for key in (
-                        "id",
-                        "domain",
-                        "channel",
-                        "gateway_reference",
-                        "status",
-                        "transaction_date",
-                    )
-                    if data.get(key) is not None
-                },
+                period_end=period_end,
+                provider_metadata=_provider_metadata(data),
             )
         except Exception:
             # The charge and provisioning are done; a record-keeping failure
@@ -1423,7 +1729,7 @@ class BillingService:
                 reference=reference,
                 paid_at=paid_at,
                 period_start=_parse_datetime(data.get("transaction_date")) or paid_at,
-                period_end=_parse_datetime(data.get("next_payment_date")),
+                period_end=period_end,
             ),
         )
 
@@ -1455,6 +1761,52 @@ class BillingService:
             or None,
             payment_provider=PAYMENT_PROVIDER,
         )
+
+
+    async def _record_failed_attempt(
+        self,
+        session: AsyncSession,
+        data: dict[str, Any],
+        reference: str,
+        *,
+        caller_org_id: uuid.UUID | None,
+    ) -> None:
+        """Persist a declined/abandoned attempt so billing history is honest."""
+        metadata = transaction_metadata(data.get("metadata"))
+        org_id = _optional_uuid(metadata.get("org_id")) or caller_org_id
+        if org_id is None:
+            return
+        plan = _normalized_plan(data)
+        billing_interval = _billing_interval(data)
+        price = _price_for(plan, billing_interval)
+        raw_amount = data.get("amount")
+        try:
+            amount_minor = int(raw_amount) if raw_amount is not None else int(price.payment_amount or 0)
+        except (TypeError, ValueError):
+            amount_minor = int(price.payment_amount or 0)
+        currency = str(data.get("currency") or price.payment_currency or "").upper()[:3]
+        try:
+            await self.repository.record_transaction(
+                session,
+                organization_id=org_id,
+                reference=str(data.get("reference") or reference),
+                email=(data.get("customer") or {}).get("email")
+                if isinstance(data.get("customer"), dict)
+                else None,
+                plan=plan,
+                billing_interval=billing_interval,
+                product_currency=price.product_currency,
+                product_amount_minor=price.product_amount,
+                charged_currency=currency or price.payment_currency,
+                charged_amount_minor=amount_minor,
+                paid_at=None,
+                provider_metadata=_provider_metadata(data),
+                status="failed",
+            )
+        except Exception:
+            logger.exception(
+                "Failed to persist declined billing attempt for reference %s", reference
+            )
 
     async def _notify_payment_succeeded(
         self, session: AsyncSession, *, org, payment: PaymentSummary

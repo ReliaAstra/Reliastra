@@ -174,6 +174,7 @@ export const FOOTER_GROUPS: NavGroup[] = [
     links: [
       { label: 'Privacy & cookies', href: PUBLIC_ROUTES.privacy },
       { label: 'Terms of service', href: PUBLIC_ROUTES.terms },
+      { label: 'Refund policy', href: PUBLIC_ROUTES.refundPolicy },
       { label: 'Partner program privacy', href: partnerRouteUrl('privacy') },
       { label: 'Partner program terms', href: partnerRouteUrl('terms') },
     ],

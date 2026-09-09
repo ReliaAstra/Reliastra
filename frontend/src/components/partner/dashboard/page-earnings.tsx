@@ -15,10 +15,10 @@ import { CommissionBasisNote } from '../commission-basis-note';
 // --- Empty state with projected earnings ---
 function EarningsEmpty() {
   const projections = [
-    { referrals: 1, monthly: 11.7, yearly: 140.4 },
-    { referrals: 5, monthly: 58.5, yearly: 702 },
-    { referrals: 10, monthly: 117, yearly: 1404 },
-    { referrals: 25, monthly: 292.5, yearly: 3510 },
+    { referrals: 1, monthly: 5.7, yearly: 68.4 },
+    { referrals: 5, monthly: 28.5, yearly: 342 },
+    { referrals: 10, monthly: 57, yearly: 684 },
+    { referrals: 25, monthly: 142.5, yearly: 1710 },
   ];
 
   return (
@@ -42,7 +42,7 @@ function EarningsEmpty() {
       >
         <div className="px-5 py-3.5 border-b border-border/60">
           <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
-            Projected earnings at $39/mo Pro plan
+            Projected earnings at $19/mo Pro plan
           </p>
         </div>
         <div className="divide-y divide-border/30">
@@ -85,7 +85,7 @@ function EarningsEmpty() {
         </div>
         <div className="space-y-2 px-5 py-3 border-t border-border/60 bg-muted/20">
           <p className="text-[11px] text-muted-foreground">
-            Projections based on 30% commission of $39/mo subscription. Actual earnings depend on referral plan and retention.
+            Projections based on 30% commission of $19/mo subscription. Actual earnings depend on referral plan and retention.
           </p>
           <CommissionBasisNote />
         </div>

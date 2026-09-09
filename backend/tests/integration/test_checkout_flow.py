@@ -136,7 +136,7 @@ async def test_quote_is_the_render_model_and_offers_card_only(
     assert res.status_code == 200, res.text
     quote = res.json()
     # The transparency triple, as strings, from the server.
-    assert quote["product_price_display"] == "$39.00 (USD)"
+    assert quote["product_price_display"] == "$19.00 (USD)"
     assert quote["payment_amount_display"] == "\u20a660,000.00 (NGN)"
     assert quote["payment_provider"] == "Paystack"
     assert quote["payment_currency"] == "NGN"
@@ -229,7 +229,7 @@ async def test_annual_quote_prices_the_year_not_twelve_months(async_client, auth
     quote = res.json()
     assert quote["billing_interval"] == "annual"
     assert quote["period_word"] == "year"
-    assert quote["product_price_display"] == "$390.00 (USD)"
+    assert quote["product_price_display"] == "$190.00 (USD)"
     assert quote["payment_amount_display"] == "\u20a6600,000.00 (NGN)"
 
 
@@ -342,7 +342,7 @@ async def test_without_a_public_key_the_hosted_page_is_still_payable(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro"},
+        json={"plan": "pro", "terms_accepted": True},
     )
     assert res.status_code == 200, res.text
     payload = res.json()
@@ -376,6 +376,7 @@ async def test_a_client_volunteering_an_amount_is_ignored_not_rejected(
             "currency": "USD",
             "channels": ["card", "bank", "ussd"],
             "email": "attacker@example.com",
+            "terms_accepted": True,
         },
     )
     assert res.status_code == 200, res.text
@@ -397,7 +398,7 @@ async def test_requesting_a_local_method_is_refused_before_paystack_sees_it(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "payment_method": "ussd"},
+        json={"plan": "pro", "payment_method": "ussd", "terms_accepted": True},
     )
     assert res.status_code == 409, res.text
     error = res.json()["error"]
@@ -424,7 +425,7 @@ async def test_a_stale_quote_stops_the_payment_instead_of_requoting_silently(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "expected_price_token": "0" * 16},
+        json={"plan": "pro", "expected_price_token": "0" * 16, "terms_accepted": True},
     )
     assert res.status_code == 409, res.text
     error = res.json()["error"]
@@ -436,7 +437,7 @@ async def test_a_stale_quote_stops_the_payment_instead_of_requoting_silently(
 
 @pytest.mark.asyncio
 async def test_initialization_requires_a_session(async_client):
-    res = await async_client.post("/v1/billing/initialize", json={"plan": "pro"})
+    res = await async_client.post("/v1/billing/initialize", json={"plan": "pro", "terms_accepted": True})
     assert res.status_code == 401, res.text
 
 
@@ -574,7 +575,7 @@ async def test_wrong_currency_payment_is_not_activated(
         monkeypatch,
         _paystack_verify_success(
             reference=reference,
-            amount=3900,
+            amount=1900,
             currency="USD",
             metadata={
                 "org_id": auth_data["org_id"],

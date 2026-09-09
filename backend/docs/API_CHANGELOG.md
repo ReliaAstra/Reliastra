@@ -244,8 +244,8 @@ is the only authoritative source for what a payment will cost:
 
 ```json
 { "plan": "pro", "display_plan": "Pro", "billing_interval": "monthly",
-  "product_currency": "USD", "product_amount_minor": 3900,
-  "product_price_display": "$39.00 (USD)",
+  "product_currency": "USD", "product_amount_minor": 1900,
+  "product_price_display": "$19.00 (USD)",
   "payment_currency": "NGN", "payment_amount_minor": 6000000,
   "payment_amount_display": "\u20a660,000.00 (NGN)",
   "payment_currency_name": "Nigerian Naira (NGN)",
@@ -288,8 +288,8 @@ and the stored transaction cannot disagree:
   "inline_js_url": "https://js.paystack.co/v1/inline.js",
   "channels": ["card"], "payment_methods": [ … ],
   "amount_minor": 6000000, "currency": "NGN", "amount_display": "\u20a660,000.00 (NGN)",
-  "product_currency": "USD", "product_amount_minor": 3900,
-  "product_price_display": "$39.00 (USD)", "payment_provider": "Paystack" }
+  "product_currency": "USD", "product_amount_minor": 1900,
+  "product_price_display": "$19.00 (USD)", "payment_provider": "Paystack" }
 ```
 
 - Clients never send an amount, a currency, a channel list or an email; such fields are
@@ -312,8 +312,8 @@ browser callback is never sufficient:
   "plan": "pro", "display_plan": "Pro", "billing_interval": "monthly",
   "period_word": "month", "reference": "…",
   "currency": "NGN", "amount_minor": 6000000, "amount_display": "\u20a660,000.00 (NGN)",
-  "product_currency": "USD", "product_amount_minor": 3900,
-  "product_price_display": "$39.00 (USD)", "payment_provider": "Paystack",
+  "product_currency": "USD", "product_amount_minor": 1900,
+  "product_price_display": "$19.00 (USD)", "payment_provider": "Paystack",
   "reason": null, "reason_message": null }
 ```
 
@@ -380,8 +380,8 @@ verification report when the money moved:
   "items": [{
     "reference": "6K…", "provider": "Paystack", "plan": "pro",
     "billing_interval": "monthly", "status": "success",
-    "product_currency": "USD", "product_amount_minor": 3900,
-    "product_price_display": "$39.00 (USD)",
+    "product_currency": "USD", "product_amount_minor": 1900,
+    "product_price_display": "$19.00 (USD)",
     "charged_currency": "NGN", "charged_amount_minor": 6000000,
     "charged_amount_display": "\u20a660,000.00 (NGN)",
     "display_plan": "Pro",

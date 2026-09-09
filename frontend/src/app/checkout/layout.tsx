@@ -68,6 +68,13 @@ export default function CheckoutLayout({ children }: { children: React.ReactNode
             >
               Terms
             </Link>
+            {' · '}
+            <Link
+              href="/refund-policy"
+              className="font-medium text-rs-text-secondary underline underline-offset-2"
+            >
+              Refunds
+            </Link>
           </p>
         </footer>
       </div>

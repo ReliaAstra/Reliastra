@@ -79,6 +79,12 @@ class BillingTransactionResponse(BaseModel):
     created_at: datetime
     # A second payment for an already-covered period. Surfaced, not hidden.
     duplicate: bool = False
+    invoice_number: str | None = None
+    receipt_number: str | None = None
+    invoice_url: str | None = None
+    receipt_url: str | None = None
+    invoice_download_url: str | None = None
+    receipt_download_url: str | None = None
 
 
 class BillingTransactionsResponse(BaseModel):
@@ -132,6 +138,28 @@ class PlanDetailsResponse(BaseModel):
     # units + display string in the payment currency.
     next_charge_amount_minor: int | None = None
     next_charge_amount_display: str | None = None
+    # Local cancellation: Reliastra owns the period. Access continues until
+    # ``current_period_end`` when this is True.
+    cancel_at_period_end: bool = False
+    canceled_at: datetime | None = None
+    current_period_start: datetime | None = None
+    # Masked payment method (never a full card number).
+    payment_method_brand: str | None = None
+    payment_method_last4: str | None = None
+    payment_method_exp_month: int | None = None
+    payment_method_exp_year: int | None = None
+    payment_method_channel: str | None = None
+    payment_method_display: str | None = None
+    billing_email: str | None = None
+    organization_name: str | None = None
+    # Canonical commercial copy so the billing page cannot invent terms.
+    trial_summary: str | None = None
+    cancellation_summary: str | None = None
+    refund_summary: str | None = None
+    refund_policy_path: str = "/refund-policy"
+    can_cancel: bool = False
+    can_resume: bool = False
+    can_change_plan: bool = False
 
 
 class PaystackWebhookPayload(BaseModel):
@@ -206,6 +234,17 @@ class CheckoutQuoteResponse(BaseModel):
     # True when card checkout can be opened right now (Paystack configured).
     checkout_enabled: bool = True
     trial_note: str | None = None
+    trial_length_days: int | None = None
+    trial_requires_payment: bool = False
+    trial_summary: str | None = None
+    cancellation_summary: str | None = None
+    refund_summary: str | None = None
+    refund_policy_path: str = "/refund-policy"
+    terms_path: str = "/terms"
+    terms_acceptance_label: str | None = None
+    what_you_buy: str | None = None
+    seller_legal_name: str | None = None
+    billing_contact: str | None = None
 
 
 class InitializePaymentRequest(BaseModel):
@@ -222,6 +261,10 @@ class InitializePaymentRequest(BaseModel):
     #: (an older client just skips the staleness check); present-and-different
     #: stops initialization with a classified 409 rather than a mismatched charge.
     expected_price_token: str | None = Field(default=None, max_length=64)
+    # Checkout must collect an explicit terms acknowledgement. The backend
+    # refuses initialization when this is False so a skipped checkbox cannot
+    # still open Paystack.
+    terms_accepted: bool = False
 
 
 class InitializePaymentResponse(BaseModel):
@@ -288,3 +331,48 @@ class VerifyTransactionResponse(BaseModel):
     # A second valid payment for a period already covered. Applied, and shown
     # honestly - never silently swallowed.
     duplicate_payment: bool = False
+
+
+class SubscriptionActionResponse(BaseModel):
+    plan: str
+    subscription_status: str | None = None
+    cancel_at_period_end: bool = False
+    canceled_at: datetime | None = None
+    current_period_end: datetime | None = None
+    message: str
+    cancellation_summary: str | None = None
+    cancellation_after_effect: str | None = None
+    refund_summary: str | None = None
+
+
+class CommercialTermsResponse(BaseModel):
+    seller_legal_name: str
+    seller_brand: str
+    billing_email: str
+    support_email: str
+    refund_policy_path: str
+    terms_path: str
+    privacy_path: str
+    billing_path: str
+    refund_period_days: int | None = None
+    trial_length_days: int
+    trial_requires_payment: bool
+    payment_required_before_trial: bool
+    cancellation_takes_effect: str
+    pro_price_usd: int
+    trial_summary: str
+    trial_end_summary: str
+    price_after_trial_summary: str
+    cancellation_summary: str
+    cancellation_after_effect: str
+    refund_summary: str
+    refund_eligibility: str
+    refund_period: str
+    refund_how_to_request: str
+    refund_destination: str
+    refund_processing: str
+    cancellation_versus_refund: str
+    promotional_treatment: str
+    terms_acceptance_label: str
+    what_you_buy: str
+    sections: list[dict[str, str]] = []

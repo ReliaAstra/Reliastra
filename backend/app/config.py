@@ -258,7 +258,7 @@ class Settings(BaseSettings):
 
     # ── FX REFERENCE (display context ONLY - never a pricing input) ─────────
     # The customer-facing pages may show a reference USD→NGN rate so the gap
-    # between the $39 list price and the ₦ payment price is not a mystery.
+    # between the $19 list price and the ₦ payment price is not a mystery.
     # It is labelled an estimate, attributed to a verifiable public source,
     # timestamped, and read through a cache. No charge ever consults it.
     FX_REFERENCE_ENABLED: bool = Field(

@@ -92,7 +92,24 @@ export async function proxyToBackend(
   };
 
   if (!options?.noBody && method !== 'GET' && method !== 'HEAD') {
-    fetchOptions.body = await req.text();
+    let bodyText = await req.text();
+    // Partner referral: if the visitor arrived via `/r/{code}`, the HttpOnly
+    // `ra_ref` cookie is the attribution. Inject it when the client omitted
+    // `ref_code` so signup/signin/onboarding redirects cannot drop it.
+    if (method === 'POST' && path === '/auth/register') {
+      try {
+        const parsed: unknown = bodyText ? JSON.parse(bodyText) : {};
+        const { applyReferralToRegisterPayload } = await import(
+          '@/lib/partner-referral'
+        );
+        bodyText = JSON.stringify(
+          applyReferralToRegisterPayload(parsed, req.headers.get('cookie'))
+        );
+      } catch {
+        /* leave the body unchanged — registration must still succeed */
+      }
+    }
+    fetchOptions.body = bodyText;
   }
 
   let res: Response;

@@ -243,6 +243,7 @@ export const PUBLIC_PAGES = [
   { path: '/status', changeFrequency: 'daily' as const, priority: 0.6 },
   { path: '/privacy', changeFrequency: 'yearly' as const, priority: 0.3 },
   { path: '/terms', changeFrequency: 'yearly' as const, priority: 0.3 },
+  { path: '/refund-policy', changeFrequency: 'yearly' as const, priority: 0.3 },
 ] as const;
 
 // ── Glossary (concept layer: definition → problem → why → example → approach) ─

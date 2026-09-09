@@ -37,6 +37,7 @@ export const PUBLIC_ROUTES = {
   status: '/status',
   privacy: '/privacy',
   terms: '/terms',
+  refundPolicy: '/refund-policy',
   /**
    * Customer support. NOTE: this lives inside the `(console)` route group, so
    * the URL is `/support` but it renders inside the authenticated console
@@ -91,6 +92,13 @@ export const SHARE_ROUTES = {
   portal: (token: string) => `/portal/${token}`,
   report: (token: string) => `/reports/${token}`,
   trackVendor: (vendor: string) => `/track/${vendor}`,
+  /**
+   * Canonical partner referral URL. Partners share this; `/r/{code}` records
+   * the click, sets the attribution cookie, and redirects into the public
+   * signup/landing flow. Do not confuse with the PLG `/ref/{code}` programme.
+   */
+  partnerReferral: (code: string) => `/r/${code}`,
+  referralUnavailable: '/referral-unavailable',
 } as const;
 
 // ── Research ────────────────────────────────────────────────────────────────

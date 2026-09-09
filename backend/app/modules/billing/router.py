@@ -1,6 +1,8 @@
 import json
+import uuid
 
 from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,12 +35,14 @@ from app.dependencies import (
 from app.modules.billing.schemas import (
     BillingTransactionsResponse,
     CheckoutQuoteResponse,
+    CommercialTermsResponse,
     InitializePaymentRequest,
     PaymentCurrencyResponse,
     InitializePaymentResponse,
     PaystackWebhookPayload,
     PaystackWebhookResponse,
     PlanDetailsResponse,
+    SubscriptionActionResponse,
     VerifyTransactionResponse,
 )
 from app.modules.billing.service import BillingService, billing_service
@@ -111,13 +115,26 @@ class PricingPlansResponse(BaseModel):
     # disclosure + the display-only FX reference, served once so no surface
     # writes its own copy.
     payment: PaymentCurrencyResponse
+    trial_length_days: int = 14
+    trial_summary: str | None = None
+    cancellation_summary: str | None = None
+    refund_summary: str | None = None
+    refund_policy_path: str = "/refund-policy"
+    terms_path: str = "/terms"
 
 
 @router.get("/pricing", response_model=PricingPlansResponse)
 async def get_pricing_plans() -> PricingPlansResponse:
     """Public endpoint returning exactly the three customer-facing plans."""
-    from app.core.permissions import CANONICAL_PLANS, get_plan_annual_price_usd
+    from app.core.permissions import CANONICAL_PLANS, TRIAL_DAYS, get_plan_annual_price_usd
     from app.core.payment_pricing import transparency_lines
+    from app.core.commercial_terms import (
+        REFUND_POLICY_PATH,
+        TERMS_PATH,
+        cancellation_summary,
+        refund_summary,
+        trial_summary,
+    )
 
     currency = PaymentCurrencyResponse(**await currency_payload())
     plans = []
@@ -170,7 +187,25 @@ async def get_pricing_plans() -> PricingPlansResponse:
                 is_custom_pricing=is_enterprise,
             )
         )
-    return PricingPlansResponse(plans=plans, payment=currency)
+    return PricingPlansResponse(
+        plans=plans,
+        payment=currency,
+        trial_length_days=TRIAL_DAYS,
+        trial_summary=trial_summary(),
+        cancellation_summary=cancellation_summary(),
+        refund_summary=refund_summary(),
+        refund_policy_path=REFUND_POLICY_PATH,
+        terms_path=TERMS_PATH,
+    )
+
+
+@router.get("/billing/terms", response_model=CommercialTermsResponse)
+async def get_commercial_terms() -> CommercialTermsResponse:
+    """Canonical cancellation, trial and refund copy. Public so pricing and
+    the refund-policy page can render the same contract as checkout."""
+    from app.core.commercial_terms import public_policy
+
+    return CommercialTermsResponse(**public_policy())
 
 
 @router.get("/billing/currency", response_model=PaymentCurrencyResponse)
@@ -304,6 +339,72 @@ async def verify_transaction(
     return await service.verify_transaction(
         db, reference, caller_org_id=current_org.id, user_id=current_user.id
     )
+
+
+@router.post(
+    "/billing/cancel",
+    response_model=SubscriptionActionResponse,
+    dependencies=[Depends(require_admin)],
+)
+async def cancel_subscription(
+    db: AsyncSession = Depends(get_db),
+    current_org: Organization = Depends(get_current_org),
+    service: BillingService = Depends(get_bill_service),
+) -> SubscriptionActionResponse:
+    return await service.cancel_subscription(db, current_org.id)
+
+
+@router.post(
+    "/billing/resume",
+    response_model=SubscriptionActionResponse,
+    dependencies=[Depends(require_admin)],
+)
+async def resume_subscription(
+    db: AsyncSession = Depends(get_db),
+    current_org: Organization = Depends(get_current_org),
+    service: BillingService = Depends(get_bill_service),
+) -> SubscriptionActionResponse:
+    return await service.resume_subscription(db, current_org.id)
+
+
+@router.get(
+    "/billing/transactions/{transaction_id}/invoice",
+    response_class=HTMLResponse,
+)
+async def get_invoice(
+    transaction_id: uuid.UUID,
+    download: bool = Query(default=False),
+    db: AsyncSession = Depends(get_db),
+    current_org: Organization = Depends(get_current_org),
+    service: BillingService = Depends(get_bill_service),
+) -> HTMLResponse:
+    html, filename = await service.render_billing_document(
+        db, current_org.id, transaction_id, "invoice"
+    )
+    headers = {"Cache-Control": "private, no-store"}
+    if download:
+        headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return HTMLResponse(content=html, headers=headers)
+
+
+@router.get(
+    "/billing/transactions/{transaction_id}/receipt",
+    response_class=HTMLResponse,
+)
+async def get_receipt(
+    transaction_id: uuid.UUID,
+    download: bool = Query(default=False),
+    db: AsyncSession = Depends(get_db),
+    current_org: Organization = Depends(get_current_org),
+    service: BillingService = Depends(get_bill_service),
+) -> HTMLResponse:
+    html, filename = await service.render_billing_document(
+        db, current_org.id, transaction_id, "receipt"
+    )
+    headers = {"Cache-Control": "private, no-store"}
+    if download:
+        headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return HTMLResponse(content=html, headers=headers)
 
 
 @router.post("/billing/webhook", response_model=PaystackWebhookResponse)

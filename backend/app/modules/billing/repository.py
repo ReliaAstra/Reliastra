@@ -39,6 +39,7 @@ class BillingRepository:
         period_start: datetime | None = None,
         period_end: datetime | None = None,
         provider_metadata: dict[str, Any] | None = None,
+        status: str = "success",
     ) -> BillingTransaction:
         """Upsert the payment record for one provider reference.
 
@@ -73,7 +74,7 @@ class BillingRepository:
             transaction = BillingTransaction(
                 provider="paystack",
                 reference=reference,
-                status="success",
+                status=status,
                 **values,
             )
             session.add(transaction)
@@ -94,8 +95,12 @@ class BillingRepository:
                 transaction.duplicate = True
             # A refund/dispute already seen by the webhook outranks a later
             # re-verification of the same reference; never regress the state.
-            if transaction.status == "pending":
+            # Failed first-attempts can be upgraded to success on a later
+            # verification of the same reference.
+            if status == "success" and transaction.status in {"pending", "failed"}:
                 transaction.status = "success"
+            elif transaction.status == "pending" and status != "success":
+                transaction.status = status
         await session.flush()
         return transaction
 
@@ -133,6 +138,20 @@ class BillingRepository:
         return list(result.scalars().all())
 
     @staticmethod
+    async def get_transaction_for_org(
+        session: AsyncSession,
+        organization_id: uuid.UUID,
+        transaction_id: uuid.UUID,
+    ) -> BillingTransaction | None:
+        result = await session.execute(
+            select(BillingTransaction).where(
+                BillingTransaction.id == transaction_id,
+                BillingTransaction.organization_id == organization_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def get_subscription(
         session: AsyncSession, org_id: uuid.UUID
     ) -> Subscription | None:
@@ -153,11 +172,17 @@ class BillingRepository:
         billing_interval: str = "monthly",
         current_period_start: Any = None,
         current_period_end: Any = None,
+        **extra: Any,
     ) -> Subscription:
         # Every field is a named parameter on purpose. This constructor used to
         # take **periods and read two keys out of it, which silently discarded
         # billing_interval - an annual customer was created on the monthly
         # default, so the interval they paid for was not the interval recorded.
+        known = {
+            key: value
+            for key, value in extra.items()
+            if hasattr(Subscription, key)
+        }
         subscription = Subscription(
             organization_id=org_id,
             provider=provider,
@@ -168,6 +193,7 @@ class BillingRepository:
             billing_interval=billing_interval,
             current_period_start=current_period_start,
             current_period_end=current_period_end,
+            **known,
         )
         session.add(subscription)
         await session.flush()
@@ -178,7 +204,7 @@ class BillingRepository:
         session: AsyncSession, subscription: Subscription, **kwargs: Any
     ) -> Subscription:
         for key, value in kwargs.items():
-            if value is not None and hasattr(subscription, key):
+            if hasattr(subscription, key):
                 setattr(subscription, key, value)
         session.add(subscription)
         await session.flush()

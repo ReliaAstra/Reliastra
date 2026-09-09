@@ -525,11 +525,43 @@ async def test_public_referral_resolver(async_client, db_session):
     assert body["valid"] is True
     assert body["referral_code"] == profile["referral_code"]
 
-    # Unknown code → not valid, safe default destination.
+    # Unknown code → not valid, safe default destination. Never a 404.
     res2 = await async_client.get("/v1/public/referral/NOPE-0000")
     assert res2.status_code == 200
     assert res2.json()["valid"] is False
     assert res2.json()["destination"] == "/"
+
+    # Open-redirect payloads cannot leave the site.
+    res3 = await async_client.get(
+        f"/v1/public/referral/{profile['referral_code']}",
+        params={"to": "https://evil.example"},
+    )
+    assert res3.status_code == 200
+    assert res3.json()["destination"] == "/"
+
+    res4 = await async_client.get(
+        f"/v1/public/referral/{profile['referral_code']}",
+        params={"to": "/signup"},
+    )
+    assert res4.status_code == 200
+    assert res4.json()["valid"] is True
+    assert res4.json()["destination"] == "/signup"
+
+
+@pytest.mark.asyncio
+async def test_public_referral_counts_clicks(async_client, db_session):
+    partner = await _register(async_client, "clicker@example.com", "Click Counter")
+    profile = await _activate_partner(async_client, partner["headers"])
+    code = profile["referral_code"]
+
+    for _ in range(3):
+        res = await async_client.get(f"/v1/public/referral/{code}")
+        assert res.status_code == 200
+        assert res.json()["valid"] is True
+
+    dash = await async_client.get("/v1/partners/dashboard", headers=partner["headers"])
+    assert dash.status_code == 200, dash.text
+    assert dash.json()["clicks"] == 3
 
 
 # ── Admin control plane ──────────────────────────────────────────────────

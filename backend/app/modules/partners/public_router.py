@@ -54,6 +54,7 @@ async def resolve_referral(
     """
     await enforce_rate_limit(request, _resolve_limiter)
 
+    referral_code = (referral_code or "").strip()
     code = await ReferralCodeRepository.get_by_code(db, referral_code)
     if code is None:
         return ReferralResolveResponse(
@@ -70,10 +71,17 @@ async def resolve_referral(
             valid=False, referral_code=None, destination=_DEFAULT_DESTINATION
         )
 
-    # Count the click (a counter, not an analytics platform).
-    await PartnerProfileRepository.update(
-        db, partner, click_count=(partner.click_count or 0) + 1
-    )
+    # Count the click (a counter, not an analytics platform). A failed
+    # increment must never 500 a real visitor — attribution still happens
+    # at signup via ``ref_code``.
+    try:
+        await PartnerProfileRepository.update(
+            db, partner, click_count=(partner.click_count or 0) + 1
+        )
+    except Exception:
+        logger.exception(
+            "Failed to count referral click for partner %s", partner.id
+        )
 
     destination = _safe_destination(to)
 

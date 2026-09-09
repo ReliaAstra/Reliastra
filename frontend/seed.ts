@@ -20,11 +20,11 @@ async function seed() {
     await p.referral.upsert({ where: { id: r.referredEmail + '_' + pid }, update: r, create: r });
   }
 
-  const plans: Record<string, number> = { Pro: 3900, Enterprise: 0 };
+  const plans: Record<string, number> = { Pro: 1900, Enterprise: 0 };
   let ci = 200;
 
   for (const rf of refs) {
-    const ma = plans[rf.plan] || 3900;
+    const ma = plans[rf.plan] || 1900;
     const startOffset = Math.floor((Date.now() - new Date(rf.createdAt).getTime()) / d);
 
     for (let m = startOffset; m >= 0; m--) {

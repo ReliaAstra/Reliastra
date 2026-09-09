@@ -6,8 +6,8 @@ export const MAIL_SINK = process.env.E2E_MAILHOG_URL ?? 'http://127.0.0.1:8025';
 
 /** The published, contractual pricing - asserted, never read from the UI. */
 export const CONTRACT = {
-  productAmountDisplay: '$39.00 (USD)',
-  productAmountMinor: 3900,
+  productAmountDisplay: '$19.00 (USD)',
+  productAmountMinor: 1900,
   productCurrency: 'USD',
   actualChargeDisplay: '₦60,000.00 (NGN)',
   paymentAmountMinor: 6_000_000, // kobo - set independently, NOT 3900 converted
@@ -15,7 +15,7 @@ export const CONTRACT = {
   provider: 'Paystack',
   notice:
     "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
-  annualProductDisplay: '$390.00 (USD)',
+  annualProductDisplay: '$190.00 (USD)',
   annualChargeDisplay: '₦600,000.00 (NGN)',
   annualAmountMinor: 60_000_000,
 };
@@ -116,6 +116,19 @@ export async function createAccount(
   const organizationId: string | undefined = session?.organization?.id;
   expect(organizationId, 'verify-otp did not return the default organization').toBeTruthy();
   return { accessToken: accessToken!, organizationId: organizationId! };
+}
+
+/** Accept checkout terms and click Continue. The CTA stays disabled until the
+ *  checkbox is checked so a skipped acknowledgement cannot open Paystack. */
+export async function continueToSecurePayment(page: Page): Promise<void> {
+  const terms = page.locator('[data-testid="checkout-terms"]');
+  await expect(terms).toBeVisible({ timeout: 60_000 });
+  if (!(await terms.isChecked())) {
+    await terms.check();
+  }
+  const cta = page.locator('[data-testid="checkout-continue"]');
+  await expect(cta).toBeEnabled({ timeout: 60_000 });
+  await cta.click();
 }
 
 export async function signIn(page: Page, email: string, password: string): Promise<void> {

@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export const metadata = buildMetadata({
   title: 'Pricing - Free, Pro and Enterprise',
   description:
-    'RELIASTRA pricing: Free (3 dependencies, 1-minute checks), Pro $39/month (50 dependencies, 15-second checks, attribution and evidence), Enterprise (custom scale, client isolation, white-label). Every plan limit is enforced server-side.',
+    'RELIASTRA pricing: Free (3 dependencies, 1-minute checks), Pro $19/month (50 dependencies, 15-second checks, attribution and evidence), Enterprise (custom scale, client isolation, white-label). Every plan limit is enforced server-side.',
   path: PUBLIC_ROUTES.pricing,
 });
 
@@ -228,15 +228,37 @@ export default function PricingPage() {
                   </>,
                 ],
                 [
+                  'Cancellation',
+                  'You may cancel at any time. Access continues until the end of the current paid period. Cancellation stops future renewal; it does not by itself refund the current period.',
+                ],
+                [
+                  'Refunds',
+                  <>
+                    RELIASTRA does not advertise a fixed money-back window. Refund requests go to{' '}
+                    <a href="mailto:billing@reliastra.com" className="ob-link">
+                      billing@reliastra.com
+                    </a>
+                    . Full policy:{' '}
+                    <Link href={PUBLIC_ROUTES.refundPolicy} className="ob-link">
+                      Refund policy
+                    </Link>
+                    .
+                  </>,
+                ],
+                [
                   'Governing terms',
                   <>
                     Governed by the{' '}
                     <Link href={PUBLIC_ROUTES.terms} className="ob-link">
                       Terms of Service
-                    </Link>{' '}
-                    and the{' '}
+                    </Link>
+                    , the{' '}
                     <Link href={PUBLIC_ROUTES.privacy} className="ob-link">
                       Privacy Policy
+                    </Link>
+                    {' '}and the{' '}
+                    <Link href={PUBLIC_ROUTES.refundPolicy} className="ob-link">
+                      Refund policy
                     </Link>
                     .
                   </>,

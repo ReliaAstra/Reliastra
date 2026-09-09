@@ -8,6 +8,7 @@ import {
 } from '@/lib/admin-session-gate';
 import { verifyAdminToken } from '@/lib/admin-token-verify';
 import { isPartnerRouteSlug, partnerRouteUrl, PARTNER_DASHBOARD_PAGES } from '@/lib/routes';
+import { handlePartnerReferralRequest } from '@/lib/partner-referral-http';
 
 /**
  * Server-side gate for the admin surface.
@@ -36,11 +37,11 @@ const ADMIN_PAGE_PREFIX = '/admin';
 const ADMIN_LOGIN_PATH = '/admin/login';
 
 export const config = {
-  // Admin page routes (server-gated below) plus the exact `/` path, which
-  // owns exactly one redirect: legacy `/?page=<partner-slug>` query URLs
-  // from the old state-routed partner SPA onto the canonical `/partner/*`
-  // file routes. Nothing else on `/` is touched.
-  matcher: ['/admin/:path*', '/'],
+  // Admin page routes (server-gated below), the exact `/` path (legacy
+  // `/?page=<partner-slug>` query URLs), and `/r/:code` partner referral
+  // links. `/r/*` is also a real App Router handler; the proxy match is
+  // defense in depth so a missing page can never 404 a partner campaign.
+  matcher: ['/admin/:path*', '/', '/r', '/r/:path*'],
 };
 
 interface RotatedSession {
@@ -103,6 +104,13 @@ async function resolveAdminPageSession(
 
 export default async function proxy(req: NextRequest, _event?: unknown): Promise<NextResponse> {
   const { pathname } = req.nextUrl;
+
+  // Partner referral links. Must run before any other `/` logic so
+  // `https://reliastra.com/r/{code}` never falls through to the 404 page.
+  if (pathname === '/r' || pathname.startsWith('/r/')) {
+    return handlePartnerReferralRequest(req);
+  }
+
   const isAdminPage = pathname === ADMIN_PAGE_PREFIX || pathname.startsWith(`${ADMIN_PAGE_PREFIX}/`);
   const isLoginPage = pathname === ADMIN_LOGIN_PATH || pathname.startsWith(`${ADMIN_LOGIN_PATH}/`);
   const secure = requestIsSecure(req);
