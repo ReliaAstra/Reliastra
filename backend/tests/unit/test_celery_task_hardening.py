@@ -18,9 +18,11 @@ def test_beat_schedule_uses_configured_interval():
 
 
 def test_execute_check_retries_and_time_limits():
+    # Limits raised for quorum probes across regions (long-tail targets +
+    # advisory-lock serialization); schedule_checks keeps the tight 45/60.
     assert execute_check.max_retries == 3
-    assert execute_check.soft_time_limit == 60
-    assert execute_check.time_limit == 90
+    assert execute_check.soft_time_limit == 330
+    assert execute_check.time_limit == 360
     assert Exception in (execute_check.autoretry_for or ())
 
 

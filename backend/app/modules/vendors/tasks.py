@@ -50,10 +50,10 @@ def execute_vendor_check(endpoint_id: str, scheduled_at: str, region: str):
         if not vendor or not vendor.is_public:
             return None
         # Duplicate/redelivered jobs and older jobs behind a newer result are no-ops.
+        # NOTE: no region-affinity guard (see checks.tasks.execute_check):
+        # the single-host worker executes every region's probes.
         if endpoint.last_check_at and endpoint.last_check_at >= datetime.fromisoformat(scheduled_at):
             return None
-        if region != settings.CHECK_WORKER_REGION:
-            raise RuntimeError('Probe delivered to the wrong region worker')
         result = await observe_http(endpoint.endpoint_url, timeout=15.0, probe_id=endpoint_id)
         observed_at = datetime.now(timezone.utc)
         await observation_service.record_observation(session, ObservationCreateDTO(

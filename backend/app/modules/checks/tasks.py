@@ -32,11 +32,12 @@ def execute_check(
     task_id = execute_check.request.id
     async def _run(session) -> dict[str, Any] | None:
         from app.modules.checks.service import check_service
-        from app.config import settings
         from app.modules.checks.models import CheckResult
         from sqlalchemy import select, text
-        if region != settings.CHECK_WORKER_REGION:
-            raise RuntimeError('Probe delivered to the wrong region worker')
+        # NOTE: no region-affinity guard. The single-host deployment runs one
+        # worker that must execute every region's probes; region stays a
+        # result label. (A per-region-worker fleet may reintroduce affinity
+        # together with queue routing + consumption.)
         result = None
         if task_id:
             # A transaction-scoped advisory lock serializes broker redelivery.

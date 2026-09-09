@@ -41,8 +41,8 @@ async def _insert_observation(
     minutes_ago: int = 0,
     latency_ms: float = 100.0,
     status_code: int = 200,
-    region: str = "us-east-1",
-    source_type: str = "customer_check",
+    region: str = "us-east",
+    source_type: str = "vendor_probe",
     error_type: str | None = None,
     org_id: uuid.UUID | None = None,
 ) -> None:
@@ -135,7 +135,7 @@ async def test_timeline_valid_vendor_empty(async_client, db_session):
     assert body["vendor_name"] == "stripe"
     assert body["window"] == "24h"
     assert body["resolution"] in ("1m", "5m", "15m", "1h", "6h")  # auto-resolved
-    assert body["region"] == "us-east-1"
+    assert body["region"] == "us-east"
     assert "from" in body
     assert "to" in body
     assert body["current"]["timestamp"] is None
@@ -188,7 +188,7 @@ async def test_timeline_with_observations(async_client, db_session):
             minutes_ago=10 + i,
             latency_ms=100.0 + i * 10,
             status_code=200,
-            region="us-east-1",
+            region="us-east",
         )
     await db_session.commit()
 
@@ -225,7 +225,7 @@ async def test_timeline_degraded_observations(async_client, db_session):
         minutes_ago=5,
         latency_ms=5000.0,
         status_code=500,
-        region="us-east-1",
+        region="us-east",
         error_type="http_error",
     )
     await db_session.commit()
@@ -244,7 +244,7 @@ async def test_timeline_degraded_observations(async_client, db_session):
 
 @pytest.mark.asyncio
 async def test_timeline_single_region(async_client, db_session):
-    """Only us-east-1 observations are returned when region is specified."""
+    """Only us-east observations are returned when region is specified."""
     await _seed_vendor(db_session)
 
     endpoint = "https://status.stripe.com"
@@ -254,7 +254,7 @@ async def test_timeline_single_region(async_client, db_session):
         minutes_ago=3,
         latency_ms=50.0,
         status_code=200,
-        region="us-east-1",
+        region="us-east",
     )
     await _insert_observation(
         db_session,
@@ -262,7 +262,7 @@ async def test_timeline_single_region(async_client, db_session):
         minutes_ago=2,
         latency_ms=9999.0,
         status_code=200,
-        region="eu-west-1",  # different region - should be excluded
+        region="eu-west",  # different region - should be excluded
     )
     await db_session.commit()
 
@@ -271,7 +271,7 @@ async def test_timeline_single_region(async_client, db_session):
     )
     assert res.status_code == 200, res.text
     body = res.json()
-    assert body["region"] == "us-east-1"
+    assert body["region"] == "us-east"
     # Only 1 observation in us-east-1
     total_obs = sum(p["observation_count"] for p in body["points"])
     assert total_obs == 1
@@ -279,7 +279,12 @@ async def test_timeline_single_region(async_client, db_session):
 
 @pytest.mark.asyncio
 async def test_timeline_incident_marker(async_client, db_session):
-    """Buckets overlapping an incident get incident_id attached."""
+    """Tenant incidents are NEVER exposed on the public timeline.
+
+    Even with an open incident overlapping observations, every bucket's
+    incident_id stays None: tenant incident IDs are customer topology, not
+    public telemetry. (The endpoint still returns the buckets themselves.)
+    """
     await _seed_vendor(db_session)
 
     token, org_id = await _create_org_and_user(async_client)
@@ -304,7 +309,7 @@ async def test_timeline_incident_marker(async_client, db_session):
             minutes_ago=7 + i,
             latency_ms=2000.0,
             status_code=503,
-            region="us-east-1",
+            region="us-east",
             error_type="http_error",
         )
     await db_session.commit()
@@ -314,10 +319,10 @@ async def test_timeline_incident_marker(async_client, db_session):
     )
     assert res.status_code == 200, res.text
     body = res.json()
-    # At least one bucket should have the incident_id
-    marked = [p for p in body["points"] if p["incident_id"] is not None]
-    assert len(marked) >= 1, "Expected at least one bucket with incident_id"
-    assert marked[0]["incident_id"] == str(inc_id)
+    # Buckets exist (observations present) but carry no tenant incident id.
+    assert len(body["points"]) >= 1
+    assert all(p["incident_id"] is None for p in body["points"])
+    assert str(inc_id) not in res.text
 
 
 @pytest.mark.asyncio
@@ -335,7 +340,7 @@ async def test_timeline_no_private_data_leak(async_client, db_session):
         minutes_ago=2,
         latency_ms=80.0,
         status_code=200,
-        region="us-east-1",
+        region="us-east",
         org_id=org_id,
     )
     await db_session.commit()
@@ -368,7 +373,7 @@ async def test_timeline_correct_aggregation(async_client, db_session):
             minutes_ago=3,  # all at ~3 minutes ago
             latency_ms=100.0 + i * 50.0,  # 100, 150, 200
             status_code=200,
-            region="us-east-1",
+            region="us-east",
         )
     await db_session.commit()
 
@@ -401,7 +406,7 @@ async def test_timeline_current_observation(async_client, db_session):
         minutes_ago=5,
         latency_ms=120.0,
         status_code=200,
-        region="us-east-1",
+        region="us-east",
     )
     await _insert_observation(
         db_session,
@@ -409,7 +414,7 @@ async def test_timeline_current_observation(async_client, db_session):
         minutes_ago=1,
         latency_ms=85.0,
         status_code=200,
-        region="us-east-1",
+        region="us-east",
     )
     await db_session.commit()
 
@@ -455,7 +460,7 @@ async def test_timeline_explicit_resolution(async_client, db_session):
         minutes_ago=2,
         latency_ms=100.0,
         status_code=200,
-        region="us-east-1",
+        region="us-east",
     )
     await db_session.commit()
 

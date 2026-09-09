@@ -75,16 +75,6 @@ from app.modules.vendor_submissions import models as _submission_models  # noqa:
 from app.modules.vendors import models as _vendor_models  # noqa: F401
 from app.modules.webhooks import models as _webhook_models  # noqa: F401
 
-def route_check(name, args, kwargs, options, task=None, **extra):
-    if name == 'app.modules.checks.tasks.execute_check':
-        region = kwargs.get('region') or (args[1] if len(args) > 1 else settings.CHECK_WORKER_REGION)
-        return {'queue': f'checks.{region}'}
-    if name == 'app.modules.vendors.tasks.execute_vendor_check':
-        region = kwargs.get('region') or (args[2] if len(args) > 2 else settings.CHECK_WORKER_REGION)
-        return {'queue': f'checks.{region}'}
-    return None
-
-
 celery_app = Celery(
     "reliastra",
     broker=settings.REDIS_URL,
@@ -119,10 +109,17 @@ celery_app.conf.update(
     # The queue name is part of the observability contract (the health probe
     # reports its depth), so it is pinned rather than inherited from a default.
     # Real kombu Queue objects with distinct routing keys keep regional jobs
-    # off the control queue. Workers consume only their physical region.
+    # off the control queue on multi-host fleets (workers there consume only
+    # their physical region via -Q).
+    #
+    # SINGLE-HOST NOTE: there is deliberately NO task_routes table. The
+    # all-in-one deployment runs one worker consuming the default queue; any
+    # route to checks.{region} would pile tasks onto a queue nothing consumes
+    # (invisible to the celery-queue depth probe) - a total monitoring
+    # blackout. Region stays a task-level label. Reintroduce routing only
+    # together with per-region workers (-Q) and a multi-queue health probe.
     task_default_queue="celery",
     task_queues=(Queue('celery', routing_key='celery'), Queue(f'checks.{settings.CHECK_WORKER_REGION}', routing_key=f'checks.{settings.CHECK_WORKER_REGION}')),
-    task_routes=(route_check,),
     task_create_missing_queues=True,
     # ``acks_late`` plus this: a worker killed mid-probe returns the task to
     # the queue instead of losing it. Re-execution is idempotent by
