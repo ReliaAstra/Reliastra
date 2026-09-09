@@ -91,3 +91,6 @@ For each alias, send from external Gmail to `hello@reliastra.com` etc., check de
 
 ## 13. Rollback
 If inbound fails, revert MX to previous values (keep SPF/DKIM). Outbound unaffected.
+
+## 14. Account profile image (avatar)
+Set the profile picture of the reliastra.com mailbox (and any Google Workspace / Outlook / Zoho accounts sending as reliastra.com) to `frontend/public/social/reliastra-email-avatar.png` — 512×512, RELIASTRA wordmark on brand blue, sized for circular avatar crops. This is a manual step in each provider's account settings; the file is the canonical asset, do not re-export or rescale it ad hoc.
