@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { useHealth, useIncidents } from '@/lib/dashboard/queries';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 import { Wordmark } from '@/components/site/wordmark';
 import { toState } from './primitives';
 import { cn } from '@/lib/utils';
@@ -53,8 +54,9 @@ const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?
     ],
   },
   {
-    label: 'Agency',
+    label: 'Organization',
     items: [
+      { href: '/organization', label: 'Organization overview', agencyOnly: true },
       { href: '/clients', label: 'Client environments', agencyOnly: true },
       { href: '/clients/onboarding', label: 'Add client environment', agencyOnly: true },
     ],
@@ -148,7 +150,8 @@ export function SystemStatus({ compact = false }: { compact?: boolean }) {
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
   const org = useAppStore((s) => s.org);
-  const agency = Boolean(org?.has_agency_mode);
+  const plan = useAppStore((s) => s.plan);
+  const agency = hasAgencyWorkspace(org, plan);
 
   return (
     <nav aria-label="Console" className="flex flex-col gap-5">
