@@ -8,6 +8,7 @@ import {
   decodeMimeWords,
   expectTextContains,
   flatText,
+  continueToSecurePayment,
   lastPaystackInit,
   resetPaystackMock,
   setPaystackOutcome,
@@ -140,11 +141,7 @@ test.describe('the checkout page', () => {
 
     // The pre-payment gate: the live exchange rate must be verified from its
     // public source before the continue control unlocks at all.
-    await expect(page.locator('[data-testid="checkout-continue"]')).toBeEnabled({
-      timeout: 60_000,
-    });
-
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
 
     // RELIASTRA opened the transaction and the customer completes it in the
     // provider's own experience - no card field is ever rendered by us.
@@ -232,7 +229,7 @@ test.describe('the checkout page', () => {
     expect(receipt, 'no receipt email for this payment').toBeTruthy();
     expectTextContains(
       decodeMailRaw(receipt!.raw),
-      'Product price: $39.00 (USD)',
+      'Product price: $19.00 (USD)',
       'Actual charge: ₦60,000.00 (NGN)',
       'Payment provider: Paystack',
     );
@@ -247,7 +244,7 @@ test.describe('the checkout page', () => {
     await signIn(page, email, PASSWORD);
     await openCheckout(page);
 
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(overlay(page)).toBeVisible({ timeout: 60_000 });
     await overlay(page).locator('button[data-out="decline"]').click();
 
@@ -279,7 +276,7 @@ test.describe('the checkout page', () => {
     await signIn(page, email, PASSWORD);
     await openCheckout(page);
 
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(overlay(page)).toBeVisible({ timeout: 60_000 });
     await overlay(page).locator('button[data-out="cancel"]').click();
 
@@ -303,7 +300,7 @@ test.describe('the checkout page', () => {
     await signIn(page, email, PASSWORD);
     await openCheckout(page);
 
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(overlay(page)).toBeVisible({ timeout: 60_000 });
     const init = await lastPaystackInit(request);
     // Settle the payment at the provider but keep the popup from reporting it,
@@ -376,7 +373,7 @@ test.describe('the checkout page', () => {
     await openCheckout(page);
 
     for (const _ of [0, 1]) {
-      await page.locator('[data-testid="checkout-continue"]').click();
+      await continueToSecurePayment(page);
       await expect(overlay(page)).toBeVisible({ timeout: 60_000 });
       await overlay(page).locator('button[data-out="success"]').click();
       await expect(page.locator('[data-testid="checkout-confirmation"]')).toBeVisible({
@@ -428,7 +425,7 @@ test.describe('the checkout page', () => {
     await createAccount(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
     await openCheckout(page);
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(overlay(page)).toBeVisible({ timeout: 60_000 });
 
     const fromStandIn = seen.filter((url) => url.startsWith(PAYSTACK_MOCK));
@@ -468,6 +465,7 @@ test.describe('checkout on a small screen', () => {
       METHOD,
       'checkout-continue',
       'checkout-billing-email',
+      'checkout-terms',
     ]) {
       const loc = page.locator(`[data-testid="${testid}"]`).first();
       await expect(loc, `${testid} missing at 320px`).toBeVisible();

@@ -1,6 +1,6 @@
 """FX reference rate - customer context only, never a pricing input.
 
-Global B2B customers see a USD list price ($39) and an NGN charge (the
+Global B2B customers see a USD list price ($19) and an NGN charge (the
 published Paystack price). The gap between the two invites the question
 "what rate did you use?" - this module answers it *without* answering it
 commercially:

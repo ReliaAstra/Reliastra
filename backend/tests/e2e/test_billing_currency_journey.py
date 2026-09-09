@@ -663,7 +663,7 @@ async def test_upgrade_flow_confirms_then_charges_the_published_amount(
             # The triple belongs on payment documents too; the USD figure may
             # only appear as a *labelled product price*, never as the charge.
             assert "Payment provider: Paystack" in joined
-            assert "Product price: $39.00 (USD)" in joined
+            assert "Product price: $19.00 (USD)" in joined
             assert "Actual charge: ₦" in joined, (
                 "the charge line itself must be in the currency actually charged"
             )

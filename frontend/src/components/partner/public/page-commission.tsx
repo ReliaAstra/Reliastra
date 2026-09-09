@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { motion } from 'framer-motion';
 import { ArrowRight, Calculator } from 'lucide-react';
@@ -126,7 +126,7 @@ export function PageCommission() {
                       Customer pays
                     </p>
                     <p className="font-mono text-2xl font-bold text-foreground sm:text-3xl">
-                      $39/mo
+                      $19/mo
                     </p>
                   </div>
 
@@ -142,7 +142,7 @@ export function PageCommission() {
                       You earn (30%)
                     </p>
                     <p className="font-mono text-2xl font-bold text-foreground sm:text-3xl">
-                      $11.70/mo
+                      $5.70/mo
                     </p>
                   </div>
                 </div>
@@ -225,9 +225,9 @@ export function PageCommission() {
                 },
                 {
                   plan: 'Pro',
-                  fee: '$39/mo',
-                  commission: '$11.70',
-                  annual: '$117.00',
+                  fee: '$19/mo',
+                  commission: '$5.70',
+                  annual: '$68.40',
                 },
                 {
                   plan: 'Enterprise',

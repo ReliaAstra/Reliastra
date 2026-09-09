@@ -1,9 +1,10 @@
 'use client';
 
-import { Check, Loader2, Lock, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Check, Loader2, Lock, ShieldCheck } from 'lucide-react';
 
+import Link from 'next/link';
 import type { CheckoutQuote } from '@/lib/dashboard/api';
-import { formatFxRate, usableFxReference } from '@/lib/billing/currency';
+import { COMMERCIAL_COPY, REFUND_POLICY_PATH } from '@/lib/billing/commercial-terms';
 import type { CheckoutPhase } from './checkout-experience';
 import { TrustMarks } from './trust-marks';
 import { cn } from '@/lib/utils';
@@ -30,13 +31,17 @@ export function PaymentMethodPanel({
   phase,
   handingOff,
   session,
+  termsAccepted,
+  onTermsAcceptedChange,
   onContinue,
-  onRefreshQuote,
+  onRefreshQuote: _onRefreshQuote,
 }: {
   quote: CheckoutQuote;
   phase: CheckoutPhase;
   handingOff: boolean;
   session: { reference?: string; amount_display?: string | null } | null;
+  termsAccepted: boolean;
+  onTermsAcceptedChange: (next: boolean) => void;
   onContinue: () => void;
   /** Re-fetches the quote, which re-runs the backend's live FX resolution. */
   onRefreshQuote: () => void;
@@ -44,7 +49,7 @@ export function PaymentMethodPanel({
   const methods = quote.payment_methods ?? [];
   const busy = phase === 'preparing' || phase === 'verifying';
   const paying = phase === 'paying';
-  const blocked = !quote.checkout_enabled || methods.length === 0;
+  const blocked = !quote.checkout_enabled || methods.length === 0 || !termsAccepted;
 
 
   const ctaLabel =
@@ -122,6 +127,26 @@ export function PaymentMethodPanel({
               />
             </dl>
           </div>
+
+          <label className="flex items-start gap-3 text-[12.5px] leading-relaxed text-rs-text-secondary">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--rs-brand,#2563eb)]"
+              checked={termsAccepted}
+              onChange={(e) => onTermsAcceptedChange(e.target.checked)}
+              data-testid="checkout-terms"
+            />
+            <span>
+              {quote.terms_acceptance_label || COMMERCIAL_COPY.termsAcceptanceLabel}{' '}
+              <Link href={quote.terms_path || '/terms'} className="underline underline-offset-2">
+                Terms
+              </Link>
+              {' · '}
+              <Link href={quote.refund_policy_path || REFUND_POLICY_PATH} className="underline underline-offset-2">
+                Refund policy
+              </Link>
+            </span>
+          </label>
 
           <button
             type="button"

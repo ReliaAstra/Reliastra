@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -89,19 +89,19 @@ const mechanics = [
 ];
 
 const projections = [
-  { month: '1', newRefs: '2', total: '2', earn: '$72' },
-  { month: '3', newRefs: '2', total: '6', earn: '$216' },
-  { month: '6', newRefs: '3', total: '15', earn: '$540' },
-  { month: '12', newRefs: '3', total: '33', earn: '$1,188' },
-  { month: '18', newRefs: '2', total: '45', earn: '$1,620' },
-  { month: '24', newRefs: '3', total: '63', earn: '$2,268' },
+  { month: '1', newRefs: '2', total: '2', earn: '$11' },
+  { month: '3', newRefs: '2', total: '6', earn: '$34' },
+  { month: '6', newRefs: '3', total: '15', earn: '$86' },
+  { month: '12', newRefs: '3', total: '33', earn: '$188' },
+  { month: '18', newRefs: '2', total: '45', earn: '$257' },
+  { month: '24', newRefs: '3', total: '63', earn: '$359' },
 ];
 
 // --- Interactive Earnings Calculator ---
 function EarningsCalculator() {
   const [monthlyRefs, setMonthlyRefs] = useState(3);
   const [months, setMonths] = useState(12);
-  const planPrice = 39;
+  const planPrice = 19;
   const commissionRate = 0.3;
   const perReferralMonthly = planPrice * commissionRate;
 
@@ -449,7 +449,7 @@ export function PageEarn() {
               custom={2}
               className="mt-4 font-mono text-xs leading-relaxed text-muted-foreground/60"
             >
-              Based on $39/mo Pro plan. You would earn $11.70/mo per referral.
+              Based on $19/mo Pro plan. You would earn $5.70/mo per referral.
             </motion.p>
             <CommissionBasisNote className="mt-3 max-w-md mx-auto" />
           </motion.div>

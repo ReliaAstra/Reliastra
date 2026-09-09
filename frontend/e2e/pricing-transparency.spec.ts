@@ -67,7 +67,7 @@ test.describe('pricing transparency (public)', () => {
       page.locator('[data-testid="payment-charge-pro"]').first(),
     ).toHaveText(CONTRACT.actualChargeDisplay, { timeout: 30_000 });
     const proText = await flatText(pro);
-    expectTextContains(proText, 'Product price $39.00 (USD)');
+    expectTextContains(proText, 'Product price $19.00 (USD)');
     expectTextContains(proText, 'Actual charge ₦60,000.00 (NGN) per month');
     expectTextContains(proText, 'Payment provider Paystack');
 
@@ -85,7 +85,7 @@ test.describe('pricing transparency (public)', () => {
       { timeout: 15_000 },
     );
     const annualText = await flatText(pro);
-    expectTextContains(annualText, 'Product price $390.00 (USD)');
+    expectTextContains(annualText, 'Product price $190.00 (USD)');
     expectTextContains(annualText, 'Actual charge ₦600,000.00 (NGN) per year');
 
     // Enterprise: contact-sales only, zero self-serve checkout figures.

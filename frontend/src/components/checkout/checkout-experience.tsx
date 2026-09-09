@@ -79,10 +79,13 @@ export type CheckoutPhase =
 
 export type CheckoutInterval = 'monthly' | 'annual';
 
-/** RELIASTRA's only self-serve plan. Not a choice the page offers: the backend
- *  decides what is chargeable, and a hardcoded menu here would be a second
- *  source of truth about pricing. */
-const CHECKOUT_PLAN = 'pro';
+/** Normalize `/checkout?plan=` so `standard` (and other legacy aliases) land on Pro. */
+function checkoutPlanFromQuery(raw: string | null): string {
+  const value = (raw || 'pro').trim().toLowerCase();
+  if (value === 'enterprise') return 'enterprise';
+  if (['pro', 'standard', 'starter', 'professional'].includes(value)) return 'pro';
+  return 'pro';
+}
 
 function isSafePaystackRedirect(url: string): boolean {
   try {
@@ -118,11 +121,13 @@ export function CheckoutExperience() {
   const org = useAppStore((s) => s.org);
   const queryClient = useQueryClient();
 
+  const checkoutPlan = checkoutPlanFromQuery(searchParams.get('plan'));
   const initialInterval: CheckoutInterval =
     searchParams.get('interval') === 'annual' ? 'annual' : 'monthly';
 
   const [phase, setPhase] = useState<CheckoutPhase>('restoring');
   const [interval, setIntervalState] = useState<CheckoutInterval>(initialInterval);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
   const [session, setSession] = useState<InitializePaymentResult | null>(null);
   const [failure, setFailure] = useState<CheckoutFailureCopy | null>(null);
@@ -171,7 +176,7 @@ export function CheckoutExperience() {
       setPhase('loading');
       setFailure(null);
       try {
-        const next = await api.checkoutQuote(CHECKOUT_PLAN, which);
+        const next = await api.checkoutQuote(checkoutPlan, which);
         if (!alive()) return;
         setQuote(next);
         // A quote that cannot be honoured is a state of its own: the CTA must
@@ -189,7 +194,7 @@ export function CheckoutExperience() {
         setPhase('failed');
       }
     },
-    [alive]
+    [alive, checkoutPlan]
   );
 
   // First load, and every deliberate interval change.
@@ -232,7 +237,7 @@ export function CheckoutExperience() {
           // side effect of recording what already happened.
           if (typeof window !== 'undefined' && !searchParams.get('reference')) {
             const url = new URL(window.location.href);
-            url.searchParams.set('plan', CHECKOUT_PLAN);
+            url.searchParams.set('plan', checkoutPlan);
             url.searchParams.set('reference', result.reference || reference);
             url.searchParams.delete('status');
             url.searchParams.delete('pay_ref');
@@ -269,7 +274,7 @@ export function CheckoutExperience() {
         verifyingRef.current = null;
       }
     },
-    [alive, queryClient, searchParams]
+    [alive, queryClient, searchParams, checkoutPlan]
   );
 
   // Returned from the provider with a reference? Finish the job.
@@ -301,7 +306,8 @@ export function CheckoutExperience() {
         snapshotQuote.plan,
         snapshotQuote.billing_interval,
         'international_card',
-        snapshotQuote.price_token
+        snapshotQuote.price_token,
+        termsAccepted
       );
     } catch (error) {
       if (!alive()) return;
@@ -376,7 +382,7 @@ export function CheckoutExperience() {
     // A plain navigation, not a router push: this is a cross-origin hand-off to
     // the payment provider and the router has no business unmounting mid-flight.
     window.location.assign(created.authorization_url);
-  }, [quote, alive, verify]);
+  }, [quote, alive, verify, termsAccepted]);
 
   const retry = useCallback(() => {
     setFailure(null);
@@ -446,6 +452,8 @@ export function CheckoutExperience() {
         phase={phase}
         handingOff={handingOff}
         session={session}
+        termsAccepted={termsAccepted}
+        onTermsAcceptedChange={setTermsAccepted}
         onContinue={continueToPayment}
         // The live-rate retry re-prices from the backend: the same quote call
         // that prices the charge also re-resolves the FX reference from its
