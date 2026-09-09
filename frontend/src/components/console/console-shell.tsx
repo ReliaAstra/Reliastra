@@ -42,6 +42,8 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const labels: Record<string, string> = {
       '/dashboard': 'Overview',
+      '/organization': 'Organization',
+      '/clients': 'Client environments',
       '/dependencies': 'Dependencies',
       '/incidents': 'Incidents',
       '/evidence': 'Evidence',

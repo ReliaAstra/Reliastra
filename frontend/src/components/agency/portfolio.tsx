@@ -32,6 +32,7 @@ import {
   unassignedDependencies,
 } from '@/lib/agency/portfolio';
 import type { PortfolioClient } from '@/lib/dashboard/types';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 import {
   Empty,
   Fact,
@@ -62,9 +63,11 @@ import { AgencyUnavailable, ClientCreateDialog, PortfolioShare } from './parts';
  *    incident → dependency → application → client, and anything that does not
  *    resolve stays visibly unattributed rather than being assigned a guess.
  */
-export function AgencyPortfolioPage() {
+export function AgencyPortfolioPage({ organizationOverview = false }: { organizationOverview?: boolean }) {
   const router = useRouter();
   const org = useAppStore((s) => s.org);
+  const plan = useAppStore((s) => s.plan);
+  const agencyEnabled = hasAgencyWorkspace(org, plan);
   const [creating, setCreating] = useState(false);
 
   const portfolio = usePortfolio();
@@ -125,9 +128,10 @@ export function AgencyPortfolioPage() {
     [deps.data, index]
   );
 
-  // Capability, not paywall: the surface exists for organizations the backend
-  // has flagged. It is never presented as something to buy.
-  if (org && !org.has_agency_mode) return <AgencyUnavailable />;
+  // Enterprise entitlement or explicit organization enablement grants this
+  // workspace. Keep this identical to navigation, scope and command-palette
+  // visibility so an operator never receives contradictory affordances.
+  if (org && !agencyEnabled) return <AgencyUnavailable />;
 
   if (portfolio.isError) {
     return (
@@ -249,8 +253,14 @@ export function AgencyPortfolioPage() {
   return (
     <>
       <PageHead
-        eyebrow="Agency operations"
-        title={org?.name ? `${org.name} · client environments` : 'Client environments'}
+        eyebrow={organizationOverview ? 'Organization' : 'Agency operations'}
+        title={
+          organizationOverview
+            ? (org?.name ?? 'Organization overview')
+            : org?.name
+              ? `${org.name} · client environments`
+              : 'Client environments'
+        }
         meta={
           <>
             <Fact

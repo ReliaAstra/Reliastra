@@ -48,6 +48,7 @@ import {
 import { DataTable, type Column } from '@/components/console/data-table';
 import { useHealth } from '@/lib/dashboard/queries';
 import { AgencyUnavailable } from './parts';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 
 /**
  * A client environment.
@@ -64,6 +65,8 @@ import { AgencyUnavailable } from './parts';
  */
 export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
   const org = useAppStore((s) => s.org);
+  const plan = useAppStore((s) => s.plan);
+  const agencyEnabled = hasAgencyWorkspace(org, plan);
   const portfolio = usePortfolio();
   const clients = useClients();
   const apps = useApplications(clientId);
@@ -125,7 +128,7 @@ export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
     return times[0] ?? null;
   }, [clientDeps, healthById]);
 
-  if (org && !org.has_agency_mode) return <AgencyUnavailable />;
+  if (org && !agencyEnabled) return <AgencyUnavailable />;
 
   if (portfolio.isError || clients.isError) {
     return (

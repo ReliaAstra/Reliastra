@@ -14,6 +14,7 @@ import {
 } from '@/lib/dashboard/queries';
 import { applicationIndex, unassignedDependencies } from '@/lib/agency/portfolio';
 import { AgencyUnavailable } from '@/components/agency/parts';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 import {
   OptionButton,
   ReviewRow,
@@ -53,6 +54,8 @@ type StageId = 'client' | 'application' | 'monitors' | 'done';
 export function ClientSetupSequence() {
   const router = useRouter();
   const org = useAppStore((s) => s.org);
+  const plan = useAppStore((s) => s.plan);
+  const agencyEnabled = hasAgencyWorkspace(org, plan);
 
   const [stage, setStage] = useState<StageId>('client');
   const [completed, setCompleted] = useState<string[]>([]);
@@ -82,7 +85,7 @@ export function ClientSetupSequence() {
     [deps.data, index]
   );
 
-  if (org && !org.has_agency_mode) {
+  if (org && !agencyEnabled) {
     return (
       <div className="obc min-h-screen bg-[var(--obc-void)] px-[var(--obc-gutter)] py-10">
         <div className="mx-auto max-w-[900px]">

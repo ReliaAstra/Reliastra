@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { getPlan } from '@/lib/dashboard/plans';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 import { initials } from '@/lib/dashboard/format';
 import { useClients, useInbox, useMarkInboxRead } from '@/lib/dashboard/queries';
 import { timeAgo } from '@/lib/dashboard/format';
@@ -26,6 +27,7 @@ const LABELS: Record<string, string> = {
   dependencies: 'Dependencies',
   incidents: 'Incidents',
   evidence: 'Evidence',
+  organization: 'Organization',
   clients: 'Client environments',
   onboarding: 'Configuration',
   reports: 'Reports',
@@ -162,10 +164,11 @@ function Inbox() {
  */
 function ClientScope() {
   const org = useAppStore((s) => s.org);
+  const plan = useAppStore((s) => s.plan);
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const agency = Boolean(org?.has_agency_mode);
+  const agency = hasAgencyWorkspace(org, plan);
   const clients = useClients(agency);
 
   if (!agency) return null;
@@ -203,7 +206,7 @@ function ClientScope() {
               role="menuitem"
               onClick={() => {
                 setOpen(false);
-                router.push('/clients');
+                router.push('/organization');
               }}
               className="block w-full border-b border-[var(--obc-line)] px-3 py-2.5 text-left"
             >

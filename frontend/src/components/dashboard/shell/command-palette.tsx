@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
-import { effectivePlan, hasEvidence } from '@/lib/dashboard/plans';
+import { hasEvidence } from '@/lib/dashboard/plans';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 import { useClients } from '@/lib/dashboard/queries';
 
 interface Item {
@@ -39,12 +40,12 @@ export function CommandPalette() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const setHelp = useAppStore((s) => s.setHelpOpen);
   const plan = useAppStore((s) => s.plan);
+  const org = useAppStore((s) => s.org);
   const router = useRouter();
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
 
-  const currentPlan = effectivePlan(plan);
-  const agencyEnabled = currentPlan.id === 'enterprise';
+  const agencyEnabled = hasAgencyWorkspace(org, plan);
   const { data: clients } = useClients(agencyEnabled);
 
   useEffect(() => {
@@ -69,7 +70,9 @@ export function CommandPalette() {
   const items = useMemo<Item[]>(() => {
     const nav: Item[] = [
       { id: 'dash', group: 'Navigation', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: 'G D' },
-      { id: 'cli', group: 'Navigation', label: 'Agency Command Center', href: '/clients', icon: Building2, shortcut: 'G C' },
+      ...(agencyEnabled
+        ? [{ id: 'org', group: 'Navigation', label: 'Organization overview', href: '/organization', icon: Building2, shortcut: 'G O' }]
+        : []),
       { id: 'deps', group: 'Navigation', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
       { id: 'inc', group: 'Navigation', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
       { id: 'evi', group: 'Navigation', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
