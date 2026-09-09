@@ -8,6 +8,7 @@ import {
   decodeMimeWords,
   expectTextContains,
   flatText,
+  continueToSecurePayment,
   lastPaystackInit,
   resetPaystackMock,
   signIn,
@@ -23,8 +24,8 @@ import {
  *   1. **Entry.** Every paid-plan action in the product must arrive at
  *      RELIASTRA's own checkout with the plan and interval already chosen - not
  *      start a payment from inside a modal, and not open a provider tab that the
- *      customer then has to find their way back from. The upgrade dialog's job
- *      ends at handing over intent.
+ *      customer then has to find their way back from. Upgrade Plan is a
+ *      navigation, not a popup.
  *
  *   2. **Return.** A customer who comes back to a signed-in session - from the
  *      provider's hosted page, from an email link, or by pressing reload - must
@@ -40,7 +41,7 @@ test.describe('checkout entry and return', () => {
     await resetPaystackMock(request);
   });
 
-  test("the plan chooser hands off to RELIASTRA's checkout, price intact", async ({
+  test("billing Subscribe to Pro hands off to RELIASTRA's checkout, price intact", async ({
     page,
     request,
   }) => {
@@ -49,33 +50,12 @@ test.describe('checkout entry and return', () => {
     await signIn(page, email, PASSWORD);
 
     await page.goto('/settings/billing', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /^upgrade$/i }).first().click();
-
-    const dialog = page.getByRole('dialog');
-    await expect(dialog.getByRole('heading', { name: /choose your plan/i })).toBeVisible();
-
-    // Transparency is mandatory on the chooser too, anchored on the resolved
-    // figure so no assertion can catch a loading placeholder.
-    await expect(dialog.locator('[data-testid="payment-charge-pro"]').first()).toHaveText(
-      CONTRACT.actualChargeDisplay,
-      { timeout: 30_000 },
-    );
-    const chooser = await flatText(dialog);
-    expectTextContains(
-      chooser,
-      'Product price $39.00 (USD)',
-      'Actual charge ₦60,000.00 (NGN)',
-      'Payment provider Paystack',
-      CONTRACT.notice,
-    );
-
-    // Choosing PRO opens the checkout - it does not pay from here. The dialog is
-    // RELIASTRA's, the payment is Paystack's, and the review step belongs to the
-    // page whose URL the customer can go back to.
-    await dialog.getByRole('button', { name: /upgrade to pro/i }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.locator('[data-testid="billing-upgrade"]').click();
     await page.waitForURL(/\/checkout\?/, { timeout: 60_000 });
     expect(page.url()).toContain('plan=pro');
     expect(page.url()).not.toContain(PAYSTACK_MOCK);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     // The hand-off carries intent, and the page re-prices it server-side.
     await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
@@ -88,12 +68,7 @@ test.describe('checkout entry and return', () => {
 
     // The pre-payment gate: the live exchange rate must be verified from its
     // public source before the continue control unlocks at all.
-    await expect(page.locator('[data-testid="checkout-continue"]')).toBeEnabled({
-      timeout: 60_000,
-    });
-
-    // Pay, from the checkout page, on the checkout page's own terms.
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
       timeout: 60_000,
     });
@@ -123,34 +98,20 @@ test.describe('checkout entry and return', () => {
     await createAccount(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
 
-    await page.goto('/settings/billing', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: /^upgrade$/i }).first().click();
-    const dialog = page.getByRole('dialog');
-    const annual = dialog.getByRole('button', { name: /annual/i }).first();
-    if (await annual.isVisible().catch(() => false)) {
-      await annual.click();
-      await expect(dialog.locator('[data-testid="payment-charge-pro"]').first()).toHaveText(
-        CONTRACT.annualChargeDisplay,
-        { timeout: 30_000 },
-      );
-      await dialog.getByRole('button', { name: /upgrade to pro/i }).click();
-      await page.waitForURL(/\/checkout\?/, { timeout: 60_000 });
-      expect(page.url()).toContain('interval=annual');
-      await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
-        CONTRACT.annualChargeDisplay,
-        { timeout: 60_000 },
-      );
-      await page.locator('[data-testid="checkout-continue"]').click();
-      await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
-        timeout: 60_000,
-      });
-      const init = await lastPaystackInit(request);
-      expect(init!.amount).toBe(CONTRACT.annualAmountMinor);
-      expect(init!.metadata).toMatchObject({ billing_interval: 'annual' });
-    } else {
-      // No annual control in this build: the checkout must not invent one.
-      expect(await flatText(dialog)).not.toMatch(/annual/i);
-    }
+    await page.goto('/checkout?plan=pro&interval=annual', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(page.url()).toContain('interval=annual');
+    await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
+      CONTRACT.annualChargeDisplay,
+      { timeout: 60_000 },
+    );
+    await continueToSecurePayment(page);
+    await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
+      timeout: 60_000,
+    });
+    const init = await lastPaystackInit(request);
+    expect(init!.amount).toBe(CONTRACT.annualAmountMinor);
+    expect(init!.metadata).toMatchObject({ billing_interval: 'annual' });
   });
 
   test('the landing page sends new customers to an account, not to a payment', async ({
@@ -188,10 +149,7 @@ test.describe('checkout entry and return', () => {
 
     // Take a payment through the checkout, then come back the old way.
     await page.goto('/checkout?plan=pro&interval=monthly', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-testid="checkout-continue"]')).toBeVisible({
-      timeout: 60_000,
-    });
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
       timeout: 60_000,
     });
@@ -233,10 +191,7 @@ test.describe('checkout entry and return', () => {
     await createAccount(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
     await page.goto('/checkout?plan=pro', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-testid="checkout-continue"]')).toBeVisible({
-      timeout: 60_000,
-    });
-    await page.locator('[data-testid="checkout-continue"]').click();
+    await continueToSecurePayment(page);
     await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
       timeout: 60_000,
     });
@@ -267,7 +222,7 @@ test.describe('checkout entry and return', () => {
     const receiptText = decodeMailRaw(receipt!.raw);
     expectTextContains(
       receiptText,
-      'Product price: $39.00 (USD)',
+      'Product price: $19.00 (USD)',
       'Actual charge: ₦60,000.00 (NGN)',
       'Payment provider: Paystack',
     );

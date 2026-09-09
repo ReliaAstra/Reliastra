@@ -17,7 +17,7 @@ Two distinct concepts, deliberately kept separate:
 Rules this module enforces
 --------------------------
 * **No FX conversion, ever.** There is no rate constant here, nothing is
-  fetched at runtime, and ``$39`` is never silently transformed into a Naira
+  fetched at runtime, and ``$19`` is never silently transformed into a Naira
   figure. Paystack reads the integer it is given as the currency it is told,
   so an implicit conversion would be a mis-charge, not a rounding detail.
   An *FX reference* exists for customer context (``app.core.fx_reference``)
@@ -167,7 +167,7 @@ def format_money(minor_units: int | None, currency: str) -> str:
 
 
 def format_product_price(plan: str, interval: str = MONTHLY) -> str | None:
-    """Human product-price string for a plan (``$39``). None for custom."""
+    """Human product-price string for a plan (``$19``). None for custom."""
     normalized = normalize_plan(plan)
     usd = (
         get_plan_annual_price_usd(normalized)
@@ -425,7 +425,7 @@ def transparency_lines(
     Renders exactly the three facts the product spec requires on every
     RELIASTRA-owned payment surface::
 
-        Product price:     $39.00 (USD)
+        Product price:     $19.00 (USD)
         Actual charge:     ₦60,000.00 (NGN)
         Payment provider:  Paystack
 

@@ -6,6 +6,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     ForeignKey,
+    Integer,
     JSON,
     String,
     UniqueConstraint,
@@ -50,6 +51,20 @@ class Subscription(UUIDMixin, TimestampMixin, Base):
     current_period_end: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Local cancellation: Reliastra owns the paid period. Access continues
+    # until ``current_period_end`` when this is True.
+    cancel_at_period_end: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    canceled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Masked payment method from Paystack's authorization object. Never a PAN.
+    payment_method_brand: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    payment_method_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    payment_method_exp_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    payment_method_exp_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    payment_method_channel: Mapped[str | None] = mapped_column(String(40), nullable=True)
 
 
 class BillingTransaction(UUIDMixin, TimestampMixin, Base):

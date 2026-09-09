@@ -187,7 +187,7 @@ async def test_pricing_endpoint_discloses_the_processing_currency(async_client):
     assert payment["differs_from_product_currency"] is True
     assert payment["notice"] == NGN_CURRENCY_NOTICE
     pro = next(p for p in payload["plans"] if p["plan"] == "pro")
-    assert pro["price_usd"] == 39
+    assert pro["price_usd"] == 19
     # The published payment price, formatted with the code as text.
     assert pro["payment_amount_display"] == "\u20a660,000.00 (NGN)"
     assert re.search(r"\(NGN\)", pro["payment_amount_display"])
@@ -235,7 +235,7 @@ async def test_initialize_sends_the_published_payment_price(async_client, auth_d
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "billing_interval": "monthly"},
+        json={"plan": "pro", "billing_interval": "monthly", "terms_accepted": True},
     )
     assert res.status_code == 200, res.text
     body = res.json()
@@ -263,7 +263,7 @@ async def test_initialize_refuses_when_no_payment_price_is_published(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "billing_interval": "monthly"},
+        json={"plan": "pro", "billing_interval": "monthly", "terms_accepted": True},
     )
     # 409 is the state RELIASTRA is in (a price that has not been published
     # yet); 400/422 remain accepted so this stays a check about the *refusal*,
@@ -342,14 +342,14 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     # clearly-labelled product price, never as the charge.
     assert "\u20a660,000.00 (NGN)" in receipt["body"]
     assert "\u20a660,000.00 (NGN)" in receipt["html_body"]
-    assert "Product price: $39.00 (USD)" in receipt["body"]
+    assert "Product price: $19.00 (USD)" in receipt["body"]
     assert "Actual charge: \u20a660,000.00 (NGN)" in receipt["body"]
     assert "Payment provider: Paystack" in receipt["body"]
     assert "payment was collected by Paystack in NGN" in receipt["body"]
     assert reference in receipt["body"]
     assert "Pro" in confirmation["body"]
     # The confirmation mail carries the same triple.
-    assert "Product price: $39.00 (USD)" in confirmation["body"]
+    assert "Product price: $19.00 (USD)" in confirmation["body"]
     assert "Actual charge: \u20a660,000.00 (NGN)" in confirmation["body"]
     assert "Payment provider: Paystack" in confirmation["body"]
 
@@ -365,8 +365,8 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     assert match["charged_amount_minor"] == NGN_CATALOG["pro"]["monthly"]
     assert match["charged_amount_display"] == "\u20a660,000.00 (NGN)"
     assert match["product_currency"] == "USD"
-    assert match["product_amount_minor"] == 3900
-    assert match["product_price_display"] == "$39.00 (USD)"
+    assert match["product_amount_minor"] == 1900
+    assert match["product_price_display"] == "$19.00 (USD)"
     assert match["status"] == "success"
 
 
@@ -421,7 +421,7 @@ async def test_receipt_is_sent_once_per_reference(
 
 
 def test_no_hardcoded_plan_price_in_billing_email_copy():
-    """Trial/billing emails derive prices; they never restate "$39/mo"."""
+    """Trial/billing emails derive prices; they never restate "$19/mo"."""
     root = settings.__module__.split(".")[0]
     del root
     from app.modules.billing import notifications as billing_notifications

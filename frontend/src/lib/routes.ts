@@ -37,6 +37,7 @@ export const PUBLIC_ROUTES = {
   status: '/status',
   privacy: '/privacy',
   terms: '/terms',
+  refundPolicy: '/refund-policy',
   /**
    * Customer support. NOTE: this lives inside the `(console)` route group, so
    * the URL is `/support` but it renders inside the authenticated console

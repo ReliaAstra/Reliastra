@@ -2,7 +2,7 @@
 
 These tests lock the commercial invariants of the billing refactor:
 
-* the USD product price list is exactly ``Free $0 · Pro $39/mo · Pro $390/yr ·
+* the USD product price list is exactly ``Free $0 · Pro $19/mo · Pro $190/yr ·
   Enterprise custom``;
 * NGN payment prices are **explicit published values** (never the USD minor
   units, never an FX product), and an unpublished price disables checkout
@@ -54,8 +54,8 @@ from app.core.permissions import (
 def test_canonical_usd_price_list():
     assert PRODUCT_CURRENCY == "USD"
     assert PLAN_PRICES_USD["free"] == 0
-    assert PLAN_PRICES_USD["pro"] == 39
-    assert PLAN_ANNUAL_PRICES_USD["pro"] == 390
+    assert PLAN_PRICES_USD["pro"] == 19
+    assert PLAN_ANNUAL_PRICES_USD["pro"] == 190
     assert PLAN_ANNUAL_PRICES_USD["enterprise"] is None  # custom - never a number
     assert PLAN_BILLING_AVAILABILITY["enterprise"] == "contact_sales"
     assert PLAN_BILLING_AVAILABILITY["pro"] == "self_serve"
@@ -65,8 +65,8 @@ def test_product_price_minor_units_are_usd_cents():
     monthly = resolve_payment_price("pro", MONTHLY)
     annual = resolve_payment_price("pro", ANNUAL)
     assert monthly.product_currency == "USD"
-    assert monthly.product_amount == 3900
-    assert annual.product_amount == 39000
+    assert monthly.product_amount == 1900
+    assert annual.product_amount == 19000
 
 
 # ── explicit NGN payment prices ───────────────────────────────────────────────
@@ -111,7 +111,7 @@ def test_unpublished_ngn_price_disables_checkout_instead_of_guessing(monkeypatch
     with pytest.raises(PaymentPriceNotConfigured):
         checkout_amount("pro", MONTHLY)
     # The product price is untouched: checkout stops, it does not reprice.
-    assert price.product_amount == 3900
+    assert price.product_amount == 1900
 
 
 def test_usd_deployment_charges_the_product_price_directly(monkeypatch):
@@ -119,7 +119,7 @@ def test_usd_deployment_charges_the_product_price_directly(monkeypatch):
     monkeypatch.setattr(settings, "PAYSTACK_CURRENCY", "USD")
     monthly = resolve_payment_price("pro", MONTHLY)
     assert monthly.payment_currency == "USD"
-    assert monthly.payment_amount == 3900  # cents - same currency as the list
+    assert monthly.payment_amount == 1900  # cents - same currency as the list
     assert monthly.is_configured is True
     assert checkout_ready() is True
     # With matching currencies there is nothing to disclose.
@@ -132,13 +132,13 @@ def test_usd_deployment_charges_the_product_price_directly(monkeypatch):
 
 def test_transparency_triple_words_and_values():
     lines = transparency_lines("pro", MONTHLY)
-    assert lines["product_price"] == "$39.00 (USD)"
+    assert lines["product_price"] == "$19.00 (USD)"
     assert lines["actual_charge"] == "\u20a660,000.00 (NGN)"
     assert lines["payment_provider"] == "Paystack"
     assert lines["payment_provider"] == PAYMENT_PROVIDER
     assert PAYMENT_PROVIDER_DISPLAY.startswith(PAYMENT_PROVIDER)
     annual = transparency_lines("pro", ANNUAL)
-    assert annual["product_price"] == "$390.00 (USD)"
+    assert annual["product_price"] == "$190.00 (USD)"
     assert annual["actual_charge"] == "\u20a6600,000.00 (NGN)"
 
 
@@ -156,7 +156,7 @@ def test_unpublished_amount_never_falls_back_to_a_number(monkeypatch):
 
 
 def test_money_formatting_always_carries_the_iso_code():
-    assert format_money(3900, "USD") == "$39.00 (USD)"
+    assert format_money(1900, "USD") == "$19.00 (USD)"
     assert format_money(6_000_000, "NGN") == "\u20a660,000.00 (NGN)"
     assert format_money(None, "NGN") == ""
 

@@ -71,6 +71,24 @@ export interface PlanDetails {
   payment?: import('@/lib/billing/currency').PaymentCurrencyInfo | null;
   next_charge_amount_minor?: number | null;
   next_charge_amount_display?: string | null;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string | null;
+  current_period_start?: string | null;
+  payment_method_brand?: string | null;
+  payment_method_last4?: string | null;
+  payment_method_exp_month?: number | null;
+  payment_method_exp_year?: number | null;
+  payment_method_channel?: string | null;
+  payment_method_display?: string | null;
+  billing_email?: string | null;
+  organization_name?: string | null;
+  trial_summary?: string | null;
+  cancellation_summary?: string | null;
+  refund_summary?: string | null;
+  refund_policy_path?: string;
+  can_cancel?: boolean;
+  can_resume?: boolean;
+  can_change_plan?: boolean;
 }
 
 export interface PricingPlan {
@@ -91,7 +109,7 @@ export interface PricingPlan {
   /** Published payment amount for this plan (processing currency), if any. */
   payment_amount_display?: string | null;
   payment_annual_amount_display?: string | null;
-  /** Product list price, pre-formatted by the backend ("$39.00 (USD)"). */
+  /** Product list price, pre-formatted by the backend ("$19.00 (USD)"). */
   product_price_display?: string | null;
   product_annual_price_display?: string | null;
   /** The mandatory transparency triple, per billing interval, backend-formatted. */
@@ -334,7 +352,7 @@ export interface BillingTransactionItem {
   status: 'success' | 'refunded' | 'disputed' | string;
   product_currency: string;
   product_amount_minor: number | null;
-  /** Pre-formatted from the backend, e.g. "$39.00 (USD)". */
+  /** Pre-formatted from the backend, e.g. "$19.00 (USD)". */
   product_price_display: string | null;
   charged_currency: string;
   charged_amount_minor: number;
@@ -344,6 +362,12 @@ export interface BillingTransactionItem {
   period_start: string | null;
   period_end: string | null;
   created_at: string;
+  invoice_number?: string | null;
+  receipt_number?: string | null;
+  invoice_url?: string | null;
+  receipt_url?: string | null;
+  invoice_download_url?: string | null;
+  receipt_download_url?: string | null;
 }
 
 export interface BillingTransactionsResult {

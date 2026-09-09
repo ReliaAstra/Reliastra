@@ -68,6 +68,11 @@ export default function TermsPage() {
           description: 'What data is collected and how it is handled.',
         },
         {
+          label: 'Refund policy',
+          href: PUBLIC_ROUTES.refundPolicy,
+          description: 'Cancellation versus refund of collected payments.',
+        },
+        {
           label: 'Pricing & billing terms',
           href: PUBLIC_ROUTES.pricing,
           description: 'Trials, renewal, currency and enforcement.',

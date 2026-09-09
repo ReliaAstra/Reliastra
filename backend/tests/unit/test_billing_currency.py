@@ -2,12 +2,12 @@
 
 PLAN_AMOUNTS is denominated in minor units of PAYSTACK_CURRENCY. Comparing
 `data["amount"]` as a bare integer let a transaction settled in a weaker
-currency clear the gate: 3900 NGN is about $2.50, not the $39 Pro plan, but
+currency clear the gate: 3900 NGN is about $2.50, not the $19 Pro plan, but
 3900 == 3900.
 
 Covers the canonical 3-tier architecture:
-- PRO monthly = $39  -> 3900 minor units
-- PRO annual  = $390 -> 39000 minor units
+- PRO monthly = $19  -> 1900 minor units
+- PRO annual  = $190 -> 19000 minor units
 """
 
 import uuid
@@ -20,7 +20,7 @@ from app.core.exceptions import ValidationException
 from app.modules.billing.service import PLAN_AMOUNTS, BillingService
 
 
-def _result(org_id, *, currency="USD", amount=3900, plan="pro", interval="monthly", include_currency=True):
+def _result(org_id, *, currency="USD", amount=1900, plan="pro", interval="monthly", include_currency=True):
     data = {
         "status": "success",
         "amount": amount,
@@ -43,15 +43,15 @@ def _service(result):
 
 
 @pytest.mark.asyncio
-async def test_pro_monthly_price_is_3900_minor_units():
-    assert PLAN_AMOUNTS["pro"] == 3900
+async def test_pro_monthly_price_is_1900_minor_units():
+    assert PLAN_AMOUNTS["pro"] == 1900
 
 
 @pytest.mark.asyncio
 async def test_wrong_currency_with_numerically_correct_amount_is_rejected():
     """The core case: 3900 NGN must not buy a 3900-USD-cent plan."""
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="NGN", amount=3900))
+    service = _service(_result(org_id, currency="NGN", amount=1900))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(ValidationException, match="currency"),
@@ -85,7 +85,7 @@ async def test_missing_currency_is_rejected_not_assumed_correct():
 @pytest.mark.asyncio
 async def test_correct_currency_but_short_amount_is_rejected():
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="USD", amount=3899))
+    service = _service(_result(org_id, currency="USD", amount=1899))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(ValidationException, match="cover"),
@@ -96,7 +96,7 @@ async def test_correct_currency_but_short_amount_is_rejected():
 @pytest.mark.asyncio
 async def test_correct_currency_is_case_insensitive_and_passes_the_gate():
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="usd", amount=3900))
+    service = _service(_result(org_id, currency="usd", amount=1900))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(Exception) as exc,
@@ -108,12 +108,12 @@ async def test_correct_currency_is_case_insensitive_and_passes_the_gate():
 
 
 @pytest.mark.asyncio
-async def test_annual_checkout_charges_390_not_monthly():
-    """Annual bill (£390 / 39000 minor units) must not be rejected as an
-    undersized monthly amount, and monthly `$39` must not clear an annual
+async def test_annual_checkout_charges_190_not_monthly():
+    """Annual bill ($190 / 19000 minor units) must not be rejected as an
+    undersized monthly amount, and monthly `$19` must not clear an annual
     charge. Guards the original annual-billing bug."""
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="USD", amount=39000, interval="annual"))
+    service = _service(_result(org_id, currency="USD", amount=19000, interval="annual"))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(Exception) as exc,
@@ -125,10 +125,10 @@ async def test_annual_checkout_charges_390_not_monthly():
 
 @pytest.mark.asyncio
 async def test_monthly_amount_does_not_clear_annual_checkout():
-    """$39 (monthly) offered against an annual transaction must be rejected
+    """$19 (monthly) offered against an annual transaction must be rejected
     as an undersized amount - the annual billing bug the other way around."""
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="USD", amount=3900, interval="annual"))
+    service = _service(_result(org_id, currency="USD", amount=1900, interval="annual"))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(ValidationException, match="cover"),

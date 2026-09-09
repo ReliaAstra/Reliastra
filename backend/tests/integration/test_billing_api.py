@@ -117,7 +117,7 @@ async def test_initialize_sends_the_published_ngn_amount_and_currency(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "billing_interval": "monthly"},
+        json={"plan": "pro", "billing_interval": "monthly", "terms_accepted": True},
     )
     assert res.status_code == 200, res.text
     body = captured["body"]
@@ -130,12 +130,12 @@ async def test_initialize_sends_the_published_ngn_amount_and_currency(
     assert meta["currency"] == "NGN"
     assert meta["amount_minor"] == "6000000"
     assert meta["product_currency"] == "USD"
-    assert meta["product_amount_minor"] == "3900"
+    assert meta["product_amount_minor"] == "1900"
     payload = res.json()
     assert payload["amount_minor"] == 6_000_000
     assert payload["currency"] == "NGN"
     assert payload["amount_display"] == "\u20a660,000.00 (NGN)"
-    assert payload["product_price_display"] == "$39.00 (USD)"
+    assert payload["product_price_display"] == "$19.00 (USD)"
     assert payload["payment_provider"] == "Paystack"
 
 
@@ -147,7 +147,7 @@ async def test_initialize_annual_uses_the_annual_payment_price(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "billing_interval": "annual"},
+        json={"plan": "pro", "billing_interval": "annual", "terms_accepted": True},
     )
     assert res.status_code == 200, res.text
     assert captured["body"]["amount"] == 60_000_000
@@ -190,7 +190,7 @@ async def test_unpublished_price_disables_checkout_instead_of_guessing(
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],
-        json={"plan": "pro", "billing_interval": "monthly"},
+        json={"plan": "pro", "billing_interval": "monthly", "terms_accepted": True},
     )
     # 409, not 422: the request is well-formed and retrying it changes nothing
     # - the *account state* (no published price) is what conflicts. The client
@@ -228,6 +228,13 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
             "transaction_date": "2026-01-05T10:00:00+00:00",
             "next_payment_date": "2026-02-05T10:00:00+00:00",
             "customer": {"customer_code": "CUS_X", "email": "owner@reliastra.com"},
+            "authorization": {
+                "brand": "visa",
+                "last4": "4081",
+                "exp_month": 12,
+                "exp_year": 2030,
+                "channel": "card",
+            },
             "metadata": {
                 "org_id": auth_data["org_id"],
                 "plan": "pro",
@@ -247,7 +254,7 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
     assert payload["verified"] is True
     assert payload["currency"] == "NGN"
     assert payload["amount_minor"] == 6_000_000
-    assert payload["product_price_display"] == "$39.00 (USD)"
+    assert payload["product_price_display"] == "$19.00 (USD)"
 
     hist = await async_client.get(
         "/v1/billing/transactions", headers=auth_data["headers"]
@@ -258,10 +265,13 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
     assert row["charged_amount_minor"] == 6_000_000
     assert row["charged_currency"] == "NGN"
     assert row["charged_amount_display"] == "\u20a660,000.00 (NGN)"
-    assert row["product_amount_minor"] == 3900
+    assert row["product_amount_minor"] == 1900
     assert row["product_currency"] == "USD"
     assert row["status"] == "success"
     assert row["provider"].lower() == "paystack"
+    assert row["invoice_url"].endswith(f"/transactions/{row['id']}/invoice")
+    assert row["receipt_url"].endswith(f"/transactions/{row['id']}/receipt")
+    assert row["invoice_number"].startswith("INV-")
     # Re-verifying the same reference must not double-book the charge.
     res2 = await async_client.post(
         f"/v1/billing/verify?reference={reference}", headers=auth_data["headers"]
@@ -331,7 +341,7 @@ async def test_pricing_endpoint_transparency_triple(async_client):
     assert res.status_code == 200
     data = res.json()
     pro = next(p for p in data["plans"] if p["plan"] == "pro")
-    assert pro["transparency"]["monthly"]["product_price"] == "$39.00 (USD)"
+    assert pro["transparency"]["monthly"]["product_price"] == "$19.00 (USD)"
     assert pro["transparency"]["monthly"]["actual_charge"] == "\u20a660,000.00 (NGN)"
     assert pro["transparency"]["monthly"]["payment_provider"] == "Paystack"
     ent = next(p for p in data["plans"] if p["plan"] == "enterprise")
@@ -339,3 +349,101 @@ async def test_pricing_endpoint_transparency_triple(async_client):
     assert ent["transparency"]["monthly"]["actual_charge"] is None
     assert ent["price_usd"] == 0  # custom pricing: no numeric charge anywhere
     assert data["payment"]["payment_provider"] == "Paystack"
+    assert data["refund_policy_path"] == "/refund-policy"
+    assert data["trial_length_days"] == 14
+    assert "money-back window" in (data["refund_summary"] or "").lower()
+
+
+@pytest.mark.asyncio
+async def test_initialize_requires_terms_acceptance(async_client, auth_data, monkeypatch):
+    captured = _intercept_paystack(monkeypatch)
+    res = await async_client.post(
+        "/v1/billing/initialize",
+        headers=auth_data["headers"],
+        json={"plan": "pro", "billing_interval": "monthly"},
+    )
+    assert res.status_code == 422, res.text
+    assert "terms" in res.text.lower()
+    inits = [c for c in captured["calls"] if "transaction/initialize" in c[0]]
+    assert inits == []
+
+
+@pytest.mark.asyncio
+async def test_commercial_terms_are_public(async_client):
+    res = await async_client.get("/v1/billing/terms")
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["pro_price_usd"] == 19
+    assert body["refund_period_days"] is None
+    assert body["trial_length_days"] == 14
+    assert body["trial_requires_payment"] is False
+    assert body["refund_policy_path"] == "/refund-policy"
+
+
+@pytest.mark.asyncio
+async def test_cancel_resume_and_invoice_document(async_client, auth_data, mocker):
+    reference = f"ref_ctrl_{_uuid.uuid4().hex[:8]}"
+    verify_result = {
+        "status": True,
+        "data": {
+            "status": "success",
+            "amount": 6_000_000,
+            "currency": "NGN",
+            "reference": reference,
+            "paid_at": "2026-01-05T10:00:00+00:00",
+            "next_payment_date": "2026-02-05T10:00:00+00:00",
+            "customer": {"customer_code": "CUS_C"},
+            "authorization": {"brand": "visa", "last4": "4242", "exp_month": 3, "exp_year": 2029},
+            "metadata": {
+                "org_id": auth_data["org_id"],
+                "plan": "pro",
+                "billing_interval": "monthly",
+            },
+        },
+    }
+    client = _MagicMock()
+    client.verify_transaction = _AsyncMock(return_value=verify_result)
+    mocker.patch("app.modules.billing.service.billing_service.client", client)
+
+    res = await async_client.post(
+        f"/v1/billing/verify?reference={reference}", headers=auth_data["headers"]
+    )
+    assert res.status_code == 200, res.text
+
+    plan = await async_client.get("/v1/billing/plan", headers=auth_data["headers"])
+    body = plan.json()
+    assert body["plan"] == "pro"
+    assert body["can_cancel"] is True
+    assert body["payment_method_last4"] == "4242"
+    assert "Visa" in (body["payment_method_display"] or "")
+
+    cancelled = await async_client.post("/v1/billing/cancel", headers=auth_data["headers"])
+    assert cancelled.status_code == 200, cancelled.text
+    assert cancelled.json()["cancel_at_period_end"] is True
+
+    after = await async_client.get("/v1/billing/plan", headers=auth_data["headers"])
+    assert after.json()["cancel_at_period_end"] is True
+    assert after.json()["can_resume"] is True
+    assert after.json()["plan"] == "pro"
+
+    resumed = await async_client.post("/v1/billing/resume", headers=auth_data["headers"])
+    assert resumed.status_code == 200, resumed.text
+    assert resumed.json()["cancel_at_period_end"] is False
+
+    hist = await async_client.get("/v1/billing/transactions", headers=auth_data["headers"])
+    row = next(t for t in hist.json()["items"] if t["reference"] == reference)
+    invoice = await async_client.get(
+        f"/v1/billing/transactions/{row['id']}/invoice",
+        headers=auth_data["headers"],
+    )
+    assert invoice.status_code == 200, invoice.text
+    assert "text/html" in invoice.headers["content-type"]
+    assert "$19.00 (USD)" in invoice.text
+    assert reference in invoice.text
+    receipt = await async_client.get(
+        f"/v1/billing/transactions/{row['id']}/receipt",
+        headers=auth_data["headers"],
+    )
+    assert receipt.status_code == 200, receipt.text
+    assert "Receipt" in receipt.text
+

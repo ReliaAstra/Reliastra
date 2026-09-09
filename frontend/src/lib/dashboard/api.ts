@@ -346,6 +346,17 @@ export interface CheckoutQuote {
   unavailable_message?: string | null;
   checkout_enabled?: boolean;
   trial_note?: string | null;
+  trial_length_days?: number | null;
+  trial_requires_payment?: boolean;
+  trial_summary?: string | null;
+  cancellation_summary?: string | null;
+  refund_summary?: string | null;
+  refund_policy_path?: string;
+  terms_path?: string;
+  terms_acceptance_label?: string | null;
+  what_you_buy?: string | null;
+  seller_legal_name?: string | null;
+  billing_contact?: string | null;
 }
 
 export const api = {
@@ -543,13 +554,15 @@ export const api = {
     plan: PlanId | string,
     billingInterval: 'monthly' | 'annual' = 'monthly',
     paymentMethod?: string,
-    expectedPriceToken?: string
+    expectedPriceToken?: string,
+    termsAccepted = false
   ) =>
     request<InitializePaymentResult>('/billing/initialize', {
       method: 'POST',
       body: JSON.stringify({
         plan,
         billing_interval: billingInterval,
+        terms_accepted: termsAccepted,
         // Echoes the method the review screen displayed. It cannot widen the
         // backend's channel policy - an unavailable method is refused there.
         ...(paymentMethod ? { payment_method: paymentMethod } : {}),
@@ -559,6 +572,63 @@ export const api = {
         ...(expectedPriceToken ? { expected_price_token: expectedPriceToken } : {}),
       }),
     }),
+
+  cancelSubscription: () =>
+    request<{
+      plan: string;
+      subscription_status?: string | null;
+      cancel_at_period_end: boolean;
+      message: string;
+    }>('/billing/cancel', { method: 'POST' }),
+
+  resumeSubscription: () =>
+    request<{
+      plan: string;
+      subscription_status?: string | null;
+      cancel_at_period_end: boolean;
+      message: string;
+    }>('/billing/resume', { method: 'POST' }),
+
+  /**
+   * Open or download a persisted invoice/receipt. Auth headers ride on the
+   * same session as every other billing call. The document is HTML generated
+   * from the stored transaction — never from today's price list.
+   */
+  openBillingDocument: async (
+    transactionId: string,
+    kind: 'invoice' | 'receipt',
+    download = false
+  ) => {
+    await waitForSession();
+    const token = useAppStore.getState().accessToken;
+    const orgId = useAppStore.getState().org?.id;
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (orgId) headers['X-Organization-ID'] = orgId;
+    const suffix = download ? '?download=1' : '';
+    const res = await fetch(
+      `${BASE}/billing/transactions/${encodeURIComponent(transactionId)}/${kind}${suffix}`,
+      { headers }
+    );
+    if (!res.ok) {
+      throw new ApiError(`Unable to open ${kind}`, res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const disposition = res.headers.get('content-disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match?.[1] || `reliastra-${kind}.html`;
+    if (download) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } else if (typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  },
 
   /**
    * Authoritative payment currency + canonical disclosure. Public and cheap;

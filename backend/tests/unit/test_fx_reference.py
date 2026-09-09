@@ -1,7 +1,7 @@
 """FX reference rate: sourced, timestamped, labelled - and never in the charge.
 
 The reference estimate exists so a global customer can make sense of the gap
-between a $39 list price and a ₦60,000 payment. These tests pin the honesty
+between a $19 list price and a ₦60,000 payment. These tests pin the honesty
 rules of that panel:
 
 * the payload carries the provider name, a human-checkable URL, the source's

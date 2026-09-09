@@ -77,6 +77,11 @@ export default function PrivacyPage() {
           description: 'The agreement governing use of the platform.',
         },
         {
+          label: 'Refund policy',
+          href: PUBLIC_ROUTES.refundPolicy,
+          description: 'How collected payments and cancellation are handled.',
+        },
+        {
           label: 'Security',
           href: PUBLIC_ROUTES.security,
           description: 'How the platform is operated and protected.',

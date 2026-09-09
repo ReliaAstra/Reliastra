@@ -77,14 +77,14 @@ PLAN_DISPLAY_NAMES: dict[str, str] = {
 # a number.
 PLAN_PRICES_USD: dict[str, int] = {
     Plan.FREE.value: 0,
-    Plan.PRO.value: 39,
+    Plan.PRO.value: 19,
     Plan.ENTERPRISE.value: 0,  # custom - not a real list price
 }
 
 # Annual prices in USD. Enterprise is custom => None.
 PLAN_ANNUAL_PRICES_USD: dict[str, int | None] = {
     Plan.FREE.value: 0,
-    Plan.PRO.value: 390,
+    Plan.PRO.value: 190,
     Plan.ENTERPRISE.value: None,  # custom pricing
 }
 
@@ -188,12 +188,12 @@ PLAN_DESCRIPTIONS: dict[str, str] = {
 # ENTERPRISE is deliberately absent: it must route to Contact Sales. FREE is
 # not self-serve (nothing to pay).
 PLAN_AMOUNTS: dict[str, int] = {
-    Plan.PRO.value: 3900,  # $39/mo
+    Plan.PRO.value: 1900,  # $19/mo
 }
 
 # Annual self-serve checkout amounts, in minor units of PAYSTACK_CURRENCY.
 PLAN_ANNUAL_AMOUNTS: dict[str, int] = {
-    Plan.PRO.value: 39000,  # $390/year
+    Plan.PRO.value: 19000,  # $190/year
 }
 
 

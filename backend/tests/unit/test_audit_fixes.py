@@ -321,13 +321,13 @@ def test_payment_price_is_published_not_converted():
 
     ``resolve_payment_price`` reads an operator-published catalog. With no
     catalog entry it refuses rather than reusing the USD minor units, which
-    would bill 3900 (i.e. ₦39.00) for a $39 plan.
+    would bill 1900 (i.e. ₦19.00) for a $19 plan.
     """
     from app.config import settings
     from app.core import payment_pricing
 
     monkey = payment_pricing.resolve_payment_price("pro", "monthly")
-    assert monkey.product_amount == 3900  # USD list price, untouched
+    assert monkey.product_amount == 1900  # USD list price, untouched
     assert monkey.payment_currency == "NGN"
 
     original = settings.PAYSTACK_NGN_PLAN_PRICES
@@ -343,7 +343,7 @@ def test_payment_price_is_published_not_converted():
         priced = payment_pricing.resolve_payment_price("pro", "monthly")
         assert priced.payment_amount == 1234500
         # Still not derived: the USD price is unchanged by publishing NGN.
-        assert priced.product_amount == 3900
+        assert priced.product_amount == 1900
     finally:
         settings.PAYSTACK_NGN_PLAN_PRICES = original
 
