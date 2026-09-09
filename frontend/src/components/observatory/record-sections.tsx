@@ -825,13 +825,65 @@ export function MethodologySection({
   );
 }
 
-/* ── 08 · Dependency information ────────────────────────────────────────── */
+/* ── 08 · What this record is not ───────────────────────────────────────── */
+
+/**
+ * The distinction that makes this page worth reading instead of the vendor's
+ * own status page.
+ *
+ * This section existed as an e2e expectation long before it existed as a
+ * component: `observatory.spec.ts` asserts a `#distinction` section stating
+ * that the record is not the official vendor status page and that RELIASTRA
+ * does not ingest or mirror vendor-reported state. No component had ever
+ * rendered it, so that assertion had never passed. The claim itself is the
+ * core of the product - measurement from outside both networks - so it
+ * belongs here as its own section rather than buried in a specification row.
+ */
+export function DistinctionSection({ record }: { record: VendorRecord }) {
+  const { detail } = record;
+  return (
+    <RecordSection
+      index="08"
+      id="distinction"
+      tone="base"
+      title="This is not a status page"
+      note="What this record is, and what it deliberately is not."
+    >
+      <dl className="flex flex-col">
+        <SpecRow term="Official vendor status" wide>
+          This is not {detail.display_name}&apos;s official vendor status page, and
+          it is not affiliated with or endorsed by them. It is an independent
+          measurement of the endpoints listed in this record.
+        </SpecRow>
+        <SpecRow term="Vendor-reported state" wide>
+          RELIASTRA does not ingest, mirror or reconcile vendor-reported state.
+          Nothing here is copied from a status page, an aggregator or a
+          vendor API. Every figure is derived from observations RELIASTRA
+          issued itself.
+        </SpecRow>
+        <SpecRow term="Why that matters" wide>
+          A status page is written by the party whose reliability it describes,
+          and is updated when that party decides to update it. An independent
+          record is written by the observer. Where the two disagree, both are
+          worth reading - but only one of them is yours to keep.
+        </SpecRow>
+        <SpecRow term="Scope" wide>
+          These observations describe the listed endpoints from the listed
+          regions. They are not a statement about every service{' '}
+          {detail.display_name} operates, or about your specific integration.
+        </SpecRow>
+      </dl>
+    </RecordSection>
+  );
+}
+
+/* ── 09 · Dependency information ────────────────────────────────────────── */
 
 export function DependencyInfoSection({ record }: { record: VendorRecord }) {
   const { detail } = record;
   return (
     <RecordSection
-      index="08"
+      index="09"
       id="dependency"
       tone="base"
       title="Dependency information"
@@ -888,7 +940,7 @@ export function DependencyInfoSection({ record }: { record: VendorRecord }) {
   );
 }
 
-/* ── 09 · Related records ───────────────────────────────────────────────── */
+/* ── 10 · Related records ──────────────────────────────────────────────── */
 
 export function RelatedSection({
   vendors,
@@ -900,7 +952,7 @@ export function RelatedSection({
   const others = vendors.filter((v) => v.vendor_name !== currentVendor).slice(0, 8);
   return (
     <RecordSection
-      index="09"
+      index="10"
       id="related"
       title="Related records"
       note="Other dependencies under observation."

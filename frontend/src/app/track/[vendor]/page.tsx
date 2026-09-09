@@ -33,6 +33,7 @@ import {
   EvidenceSection,
   IncidentsSection,
   Masthead,
+  DistinctionSection,
   MethodologySection,
   NetworkSection,
   RecordCTA,
@@ -375,6 +376,8 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
       />
 
       <MethodologySection record={record} cadenceSeconds={cadenceSeconds} />
+
+      <DistinctionSection record={record} />
 
       <DependencyInfoSection record={record} />
 
