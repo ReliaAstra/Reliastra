@@ -1,6 +1,7 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
+import { DocsSideNav } from '@/components/site/docs-side-nav';
 
 export const metadata = buildMetadata({
   title: 'Documentation',
@@ -35,6 +36,7 @@ export default function DocsPage() {
         title="Documentation"
         lede="Add a dependency, read its telemetry, attribute an incident, compile the evidence."
         breadcrumbs={crumbs}
+        sideNav={<DocsSideNav activeHref="/docs" />}
         related={[
           ...GUIDES,
           { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability', description: 'The method behind every figure.' },

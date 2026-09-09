@@ -67,13 +67,19 @@ const PUBLIC_ROUTES = [
  * Mirrors `LANDING_SECTIONS` in `src/lib/routes.ts`; the unit test asserts the
  * header/footer only anchor at ids from that list, and this asserts the ids
  * are actually rendered.
+ *
+ * `landing-sections.test.tsx` renders the real composition and asserts the
+ * two lists are identical, so this copy cannot silently drift out of step
+ * with the routes table the way the previous one did (it carried `chain`, a
+ * section that no component had ever rendered).
  */
 const LANDING_SECTION_IDS = [
   'top',
   'problem',
-  'how-it-works',
-  'chain',
+  'observation',
+  'incident',
   'evidence',
+  'how-it-works',
   'research',
   'public-intelligence',
   'partners',

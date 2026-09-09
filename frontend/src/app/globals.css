@@ -1934,6 +1934,735 @@
   height: 1px;
 }
 
+/* ── Documentation spine ──────────────────────────────────────────────────
+   Docs are information-dense by design, so this is navigation chrome rather
+   than marketing: a hairline rail, no cards, and the active page marked by
+   weight and a rule rather than by colour alone.
+   ---------------------------------------------------------------------- */
+
+.ob-docs-nav { min-width: 0; }
+
+.ob-docs-nav-title {
+  margin: 0 0 12px;
+}
+
+/* Narrow: one sweepable line. A wrapped block of five short labels reads as
+   prose; a scroller reads as a spine. */
+.ob-docs-nav-scroll {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 10px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--ob-line);
+}
+.ob-docs-nav-scroll li { flex: 0 0 auto; }
+
+.ob-docs-nav-pill {
+  display: inline-block;
+  padding: 7px 13px;
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: var(--ob-text-3);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.ob-docs-nav-pill:hover { color: var(--ob-text); border-color: var(--ob-line-3); }
+.ob-docs-nav-pill.is-active {
+  color: var(--ob-text);
+  border-color: var(--ob-line-3);
+  font-weight: 600;
+}
+
+/* Prose column when it sits beside the docs rail. `.ob-prose` sets the type
+   scale; this only constrains the measure, which has to be narrower than the
+   grid track or long lines run past a comfortable reading width. */
+.ob-prose-wrap {
+  max-width: 780px;
+  min-width: 0;
+}
+
+/* Desktop: sticky rail. */
+.ob-docs-nav-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 104px;
+}
+.ob-docs-nav-link {
+  display: block;
+  padding: 7px 0 7px 14px;
+  border-left: 1px solid var(--ob-line);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ob-text-4);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.ob-docs-nav-link:hover { color: var(--ob-text-2); border-left-color: var(--ob-line-3); }
+.ob-docs-nav-link.is-active {
+  color: var(--ob-text);
+  font-weight: 600;
+  border-left-color: var(--ob-signal);
+}
+
+/* ── Product visuals ──────────────────────────────────────────────────────
+   The surfaces that demonstrate the product: dependency topology, incident
+   timeline, evidence artifact, latency chart, attribution signals.
+
+   Rules, matching the rest of the system:
+   - Hairlines and whitespace do the work. No shadows, no glass, no gradients.
+   - Colour only reports state. Amber is the signal accent, never decoration.
+   - Everything is server-rendered markup. No client JavaScript, no canvas.
+   - Compositions reflow at 640px rather than scaling down a desktop diagram.
+   ---------------------------------------------------------------------- */
+
+.ob-vis-flag {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-signal);
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+/* Shared label/value row used inside the artifact and beats. */
+.ob-vis-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding-block: 7px;
+  border-top: 1px solid var(--ob-line);
+}
+.ob-vis-row:first-child { border-top: 0; }
+@media (min-width: 520px) {
+  .ob-vis-row {
+    grid-template-columns: minmax(120px, 190px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: baseline;
+  }
+}
+.ob-vis-k {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-vis-v {
+  font-family: var(--ob-font-mono);
+  font-size: 0.8125rem;
+  color: var(--ob-text);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Evidence artifact ─────────────────────────────────────────────────── */
+
+.ob-artifact {
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  background: var(--ob-base);
+  overflow: hidden;
+}
+
+.ob-artifact-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--ob-line-2);
+  background: var(--ob-raised);
+}
+.ob-artifact-title {
+  font-family: var(--ob-font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ob-text);
+}
+.ob-artifact-sub {
+  font-size: 0.75rem;
+  color: var(--ob-text-4);
+  margin-top: 2px;
+}
+
+.ob-artifact-body { padding: 4px 18px 14px; }
+
+.ob-vis-block { padding-block: 16px; }
+.ob-vis-block + .ob-vis-block { border-top: 1px solid var(--ob-line); }
+.ob-vis-block-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ob-text);
+  /* These are <p> elements now (see ReportSection), so the UA margins have to
+     be cancelled explicitly or the block gains phantom vertical space. */
+  margin: 0 0 10px;
+}
+.ob-vis-block-n {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  color: var(--ob-signal);
+}
+.ob-vis-dl { display: flex; flex-direction: column; }
+
+.ob-artifact-foot {
+  border-top: 1px solid var(--ob-line-2);
+  background: var(--ob-raised);
+  padding: 14px 18px 16px;
+}
+.ob-artifact-note {
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--ob-text-4);
+  max-width: 62ch;
+}
+
+/* ── Incident timeline ─────────────────────────────────────────────────── */
+
+.ob-timeline { position: relative; }
+.ob-timeline-flag {
+  display: inline-block;
+  margin-bottom: 28px;
+}
+
+.ob-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ob-beat {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.ob-beat-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6px;
+}
+.ob-beat-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--ob-unknown);
+  box-shadow: 0 0 0 3px var(--ob-void);
+}
+.ob-beat-dot[data-state="healthy"] { background: var(--ob-healthy); }
+.ob-beat-dot[data-state="degraded"] { background: var(--ob-degraded); }
+.ob-beat-dot[data-state="critical"] { background: var(--ob-critical); }
+.ob-beat-line {
+  flex: 1;
+  width: 1px;
+  min-height: 18px;
+  background: var(--ob-line-2);
+  margin-block: 4px;
+}
+
+.ob-beat-body { padding-bottom: 34px; min-width: 0; }
+.ob-beat:last-child .ob-beat-body { padding-bottom: 0; }
+
+.ob-beat-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.ob-beat-time {
+  font-family: var(--ob-font-mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-signal);
+  letter-spacing: -0.01em;
+}
+.ob-beat-actor {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+
+.ob-beat-title {
+  font-size: clamp(1rem, 1.6vw, 1.1875rem);
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+  color: var(--ob-text);
+  max-width: 34ch;
+  margin: 0;
+}
+.ob-beat-detail {
+  margin: 7px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: var(--ob-text-3);
+  max-width: 56ch;
+}
+
+.ob-beat-data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  margin-top: 14px;
+  background: var(--ob-line);
+  border: 1px solid var(--ob-line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ob-beat-datum {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: var(--ob-base);
+  padding: 8px 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ob-beat-datum dt {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-beat-datum dd {
+  font-family: var(--ob-font-mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-text);
+}
+
+/* ── Dependency topology ───────────────────────────────────────────────── */
+
+.ob-topo { display: flex; flex-direction: column; }
+
+.ob-topo-lanes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--ob-line);
+  border: 1px solid var(--ob-line);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 26px;
+}
+.ob-topo-lane {
+  background: var(--ob-raised);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ob-topo-lane-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ob-text-3);
+}
+
+.ob-topo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ob-topo-node {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+@media (min-width: 900px) {
+  .ob-topo-node {
+    grid-template-columns: minmax(70px, 110px) minmax(0, 1fr) minmax(70px, 110px);
+    align-items: center;
+  }
+}
+
+.ob-topo-edge {
+  display: none;
+  position: relative;
+  height: 1px;
+  background: var(--ob-line-2);
+}
+@media (min-width: 900px) {
+  .ob-topo-edge { display: block; }
+}
+.ob-topo-edge-label {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-family: var(--ob-font-mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+  white-space: nowrap;
+}
+.ob-topo-edge-right .ob-topo-edge-label { left: auto; right: 0; }
+
+.ob-topo-card {
+  border: 1px solid var(--ob-line);
+  border-radius: 2px;
+  background: var(--ob-base);
+  padding: 14px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+}
+.ob-topo-node[data-state="critical"] .ob-topo-card {
+  border-color: var(--ob-line-3);
+}
+
+.ob-topo-id {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.ob-topo-name {
+  font-family: var(--ob-font-mono);
+  font-size: 0.875rem;
+  color: var(--ob-text);
+  overflow-wrap: anywhere;
+}
+.ob-topo-kind {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+
+.ob-topo-readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 0;
+}
+.ob-topo-reading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ob-topo-reading dt {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-topo-reading dd {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.ob-topo-code { font-size: 0.8125rem; color: var(--ob-text); }
+.ob-topo-node[data-state="critical"] .ob-topo-code { color: var(--ob-critical); }
+.ob-topo-node[data-state="degraded"] .ob-topo-code { color: var(--ob-degraded); }
+.ob-topo-ms { font-size: 0.75rem; color: var(--ob-text-4); }
+
+.ob-topo-state {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-topo-state[data-state="healthy"] { color: var(--ob-healthy); }
+.ob-topo-state[data-state="degraded"] { color: var(--ob-degraded); }
+.ob-topo-state[data-state="critical"] { color: var(--ob-critical); }
+
+.ob-topo-foot {
+  margin: 20px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--ob-text-4);
+  max-width: 62ch;
+}
+
+/* ── Latency chart ─────────────────────────────────────────────────────── */
+
+.ob-chart {
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  background: var(--ob-base);
+  overflow: hidden;
+}
+.ob-chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ob-line);
+  background: var(--ob-raised);
+}
+.ob-chart-plot { padding: 12px 8px 4px; }
+.ob-chart-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+.ob-chart-tick {
+  font-family: var(--ob-font-mono);
+  font-size: 10px;
+  fill: var(--ob-text-4);
+}
+.ob-chart-window {
+  font-family: var(--ob-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: var(--ob-critical);
+}
+
+.ob-chart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--ob-line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+.ob-chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--ob-text-3);
+}
+.ob-chart-key {
+  width: 14px;
+  height: 2px;
+  display: inline-block;
+}
+.ob-chart-key[data-series="a"] { background: var(--ob-signal); }
+.ob-chart-key[data-series="b"] { background: var(--ob-text-3); }
+.ob-chart-rule {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--ob-text-4);
+  margin-left: auto;
+}
+
+/* ── Attribution signals ───────────────────────────────────────────────── */
+
+.ob-attr {
+  border: 1px solid var(--ob-line-2);
+  border-radius: 2px;
+  background: var(--ob-base);
+  overflow: hidden;
+}
+
+.ob-attr-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border-bottom: 1px solid var(--ob-line-2);
+  background: var(--ob-raised);
+}
+.ob-attr-verdict-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ob-attr-classification {
+  font-family: var(--ob-font-mono);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  letter-spacing: -0.03em;
+  color: var(--ob-signal);
+  line-height: 1;
+}
+.ob-attr-verdict-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+}
+.ob-attr-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ob-attr-score,
+.ob-attr-version {
+  font-family: var(--ob-font-mono);
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-text);
+  letter-spacing: -0.02em;
+}
+
+.ob-attr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ob-attr-row {
+  padding: 16px 18px;
+  border-top: 1px solid var(--ob-line);
+}
+.ob-attr-row:first-child { border-top: 0; }
+
+.ob-attr-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ob-attr-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ob-text);
+}
+.ob-attr-nums {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--ob-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.ob-attr-contrib { font-size: 0.8125rem; color: var(--ob-text); }
+.ob-attr-weight { font-size: 0.6875rem; color: var(--ob-text-4); }
+
+.ob-attr-bar {
+  position: relative;
+  height: 6px;
+  background: var(--ob-elevated);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.ob-attr-fill {
+  display: block;
+  height: 100%;
+  background: var(--ob-signal);
+}
+/* Aggregate confidence scale. This is the only bar the classification
+   thresholds are drawn against, because they apply to the weighted 0-100
+   total rather than to any single normalised signal. */
+.ob-attr-scale {
+  padding: 16px 18px 18px;
+  border-top: 1px solid var(--ob-line);
+}
+.ob-attr-scale-track {
+  position: relative;
+  height: 8px;
+  background: var(--ob-elevated);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.ob-attr-scale-fill {
+  display: block;
+  height: 100%;
+  background: var(--ob-signal);
+}
+.ob-attr-scale-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--ob-line-3);
+}
+.ob-attr-scale-labels {
+  position: relative;
+  height: 26px;
+  margin-top: 8px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-attr-scale-labels > span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.ob-attr-scale-labels > span:first-child { left: 0; transform: none; }
+.ob-attr-scale-max { right: 0; left: auto !important; transform: none !important; }
+/* Anchor the highest threshold to the right instead of centring it, so it can
+   never overhang the track on an intermediate width. */
+.ob-attr-scale-labels > span:nth-last-child(2) {
+  left: auto !important;
+  right: 0;
+  transform: none !important;
+}
+
+/*
+  The two threshold captions are centred on their marks, so at 50% and 75% of
+  a narrow track they collide with each other and with the 0 / 100 end stops.
+  Rather than shrink the type, they are withheld until the track is wide
+  enough to carry them; the marks themselves are text-free and stay at every
+  width, and the sentence under the panel states both thresholds in words.
+*/
+@media (max-width: 899px) {
+  .ob-attr-scale-labels > span:not(:first-child):not(.ob-attr-scale-max) {
+    display: none;
+  }
+}
+
+.ob-attr-note {
+  margin: 9px 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--ob-text-4);
+  max-width: 60ch;
+}
+
+.ob-attr-foot {
+  padding: 16px 18px;
+  border-top: 1px solid var(--ob-line-2);
+  background: var(--ob-raised);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ob-text-3);
+  max-width: 76ch;
+}
+.ob-attr-foot code {
+  font-family: var(--ob-font-mono);
+  font-size: 0.75rem;
+  color: var(--ob-text);
+}
+
 /* ── Motion ─────────────────────────────────────────────────────────────── */
 
 @keyframes ob-rise {

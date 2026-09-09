@@ -1,6 +1,8 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
+import { IncidentTimeline } from '@/components/site/visuals/incident-timeline';
+import { AttributionSignals } from '@/components/site/visuals/attribution-signals';
 
 export const metadata = buildMetadata({
   title: 'Incident Evidence & Outage Attribution',
@@ -39,6 +41,13 @@ export default function IncidentEvidencePage() {
         title="Incident evidence & outage attribution"
         lede="Your site went down. Was it you, or your vendors? Correlated timelines answer, with a stated confidence."
         breadcrumbs={crumbs}
+        visual={
+          <div className="flex flex-col gap-12">
+            <IncidentTimeline />
+            <AttributionSignals />
+          </div>
+        }
+        visualCaption="Illustrative incident. Timestamps, latency values and signal scores are an example, not a recorded event; the fields, classifications and weights are the ones the product uses."
         related={[
           { label: 'SLA evidence', href: '/sla-evidence', description: 'From attribution to credit-ready reports.' },
           { label: 'Incident attribution (glossary)', href: '/glossary/incident-attribution', description: 'The canonical definition.' },

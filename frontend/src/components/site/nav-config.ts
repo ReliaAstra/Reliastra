@@ -109,6 +109,23 @@ export const HEADER_ACTIONS = {
   start: { label: 'Start monitoring', href: AUTH_ROUTES.signup },
 } as const;
 
+/* ── Documentation ──────────────────────────────────────────────────────── */
+
+/**
+ * The documentation spine, in reading order.
+ *
+ * Declared here rather than inside a component so the side navigation, the
+ * docs index and the footer map cannot disagree about which guides exist.
+ * Every href is a `lib/routes` constant, so the link-integrity test covers it.
+ */
+export const DOCS_NAV: NavLink[] = [
+  { label: 'Overview', href: PUBLIC_ROUTES.docs },
+  { label: 'Quickstart', href: PUBLIC_ROUTES.docsQuickstart },
+  { label: 'Monitoring', href: PUBLIC_ROUTES.docsMonitoring },
+  { label: 'Evidence', href: PUBLIC_ROUTES.docsEvidence },
+  { label: 'API reference', href: PUBLIC_ROUTES.docsApi },
+];
+
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 export const FOOTER_GROUPS: NavGroup[] = [

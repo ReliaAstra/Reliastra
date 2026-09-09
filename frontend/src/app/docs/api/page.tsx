@@ -1,6 +1,7 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo';
+import { DocsSideNav } from '@/components/site/docs-side-nav';
 
 export const metadata = buildMetadata({
   title: 'API docs - Programmatic access',
@@ -30,6 +31,7 @@ export default function ApiDocsPage() {
         title="API: programmatic access"
         lede="Versioned /v1 endpoints for dependencies, incidents, evidence and public vendor data - for Pro organizations and above."
         breadcrumbs={crumbs}
+        sideNav={<DocsSideNav activeHref="/docs/api" />}
         related={[
           { label: 'Monitoring docs', href: '/docs/monitoring', description: 'The resources the API manages.' },
           { label: 'Evidence docs', href: '/docs/evidence', description: 'Reports via UI and API.' },

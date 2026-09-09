@@ -1,6 +1,8 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
+import { DependencyTopology } from '@/components/site/visuals/dependency-topology';
+import { IncidentTimeline } from '@/components/site/visuals/incident-timeline';
 
 export const metadata = buildMetadata({
   title: 'Product - External Dependency Intelligence platform',
@@ -41,6 +43,13 @@ export default function ProductPage() {
         title="The platform that watches your vendors"
         lede="Independent monitoring of the external APIs your product depends on. Failures correlated with your incidents. Evidence of what happened."
         breadcrumbs={crumbs}
+        visual={
+          <div className="flex flex-col gap-12">
+            <DependencyTopology />
+            <IncidentTimeline />
+          </div>
+        }
+        visualCaption="Illustrative values. The topology, the observation fields and the incident sequence are the ones the product produces."
         related={[
           { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence', description: 'The category RELIASTRA defines and owns.' },
           { label: 'Dependency monitoring', href: '/dependency-monitoring', description: 'How checks, regions and quorum work.' },

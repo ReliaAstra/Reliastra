@@ -1,6 +1,7 @@
 import { JsonLd } from '@/components/seo/json-ld';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo';
+import { DocsSideNav } from '@/components/site/docs-side-nav';
 
 export const metadata = buildMetadata({
   title: 'Evidence docs - Generate, share, verify',
@@ -30,6 +31,7 @@ export default function EvidenceDocsPage() {
         title="Evidence: generate, share, verify"
         lede="Turn a failure window into a checksummed fault report your vendor, your postmortem and your contract can all reference."
         breadcrumbs={crumbs}
+        sideNav={<DocsSideNav activeHref="/docs/evidence" />}
         related={[
           { label: 'SLA evidence', href: '/sla-evidence', description: 'The capability overview.' },
           { label: 'Incident evidence', href: '/incident-evidence', description: 'Attribution before compilation.' },

@@ -8,6 +8,11 @@ import {
   SectionHeader,
 } from '@/components/site/primitives';
 import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
+import { DependencyTopology } from '@/components/site/visuals/dependency-topology';
+import { IncidentTimeline } from '@/components/site/visuals/incident-timeline';
+import { EvidenceArtifact } from '@/components/site/visuals/evidence-artifact';
+import { LatencyChart } from '@/components/site/visuals/latency-chart';
+import { AttributionSignals } from '@/components/site/visuals/attribution-signals';
 
 /* ── 02 · The problem ───────────────────────────────────────────────────── */
 
@@ -121,7 +126,7 @@ export function EvidenceLayerSection() {
   );
 }
 
-/* ── 04 · How it works ──────────────────────────────────────────────────── */
+/* ── 07 · How it works ──────────────────────────────────────────────────── */
 
 const STEPS: { n: string; title: string; body: string; href: string }[] = [
   {
@@ -155,7 +160,7 @@ export function HowItWorksSection() {
     <Section id="how-it-works" tone="base" aria-labelledby="how-title">
       <Container>
         <SectionHeader
-          index="04"
+          index="07"
           eyebrow="Method"
           id="how-title"
           title="Observe. Correlate. Document. Prove."
@@ -186,89 +191,120 @@ export function HowItWorksSection() {
   );
 }
 
-/* ── 05 · Evidence artifact ─────────────────────────────────────────────── */
+/* ── 06 · Evidence ──────────────────────────────────────────────────────── */
 
 /**
- * A structural preview of the evidence artifact. Not a screenshot, not a real
- * incident. Field names match what the product produces; the values are
- * illustrative and the panel says so in its own header.
+ * The artifact, the chart it embeds, and the arithmetic behind its verdict.
+ *
+ * Every field label here comes from `backend/templates/evidence/default.html`
+ * and every classification and weight from the attribution engine, asserted by
+ * `product-contract.test.ts`. The previous version of this section rendered
+ * `attribution: external_dependency` - a value the engine cannot produce - and
+ * claimed the field names matched the artifact when most did not.
  */
 export function EvidenceArtifactSection() {
   return (
     <Section id="evidence" tone="void" aria-labelledby="evidence-title">
       <Container>
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
-          <div className="flex flex-col gap-6">
-            <Eyebrow index="05">Evidence</Eyebrow>
-            <h2 id="evidence-title" className="ob-h2 max-w-[15ch]">
-              A record that survives the incident.
-            </h2>
-            <p className="ob-body">
-              What was observed, from where, when it started, when it
-              recovered, and a checksum that proves the file is unaltered.
-            </p>
-            <p className="ob-small">
-              Attribution and evidence are Pro capabilities. Every new
-              organization starts on a 14-day Pro trial.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
-              <ArrowLink href={PUBLIC_ROUTES.slaEvidence}>
-                How evidence works
-              </ArrowLink>
-              <ArrowLink href={PUBLIC_ROUTES.docsEvidence}>
-                Documentation
-              </ArrowLink>
-            </div>
+        <SectionHeader
+          index="06"
+          eyebrow="Evidence"
+          id="evidence-title"
+          title="A record that survives the incident."
+          lede="What was observed, from where, when it started, when it recovered, and a checksum that proves the file is unaltered."
+        >
+          <div className="flex flex-wrap gap-x-8 gap-y-3 pt-2">
+            <ArrowLink href={PUBLIC_ROUTES.slaEvidence}>
+              How evidence works
+            </ArrowLink>
+            <ArrowLink href={PUBLIC_ROUTES.docsEvidence}>Documentation</ArrowLink>
           </div>
+        </SectionHeader>
 
-          <figure className="ob-inset overflow-hidden">
-            <figcaption className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--ob-line)] px-5 py-3.5">
-              <span className="ob-label">Evidence report · fields</span>
-              <span className="ob-label text-[var(--ob-signal)]">
-                Example values
-              </span>
-            </figcaption>
+        <div className="mt-14 grid gap-px lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10">
+          <EvidenceArtifact />
+          <div className="flex flex-col gap-10">
+            <LatencyChart />
+            <AttributionSignals />
+          </div>
+        </div>
 
-            <dl className="px-5 pb-2">
-              {[
-                ['report_id', 'ev_01JD4M2Q7X8A3RK9TZ0B'],
-                ['dependency', 'payments-api'],
-                ['window_start', '2025-11-14T09:12:41Z'],
-                ['window_end', '2025-11-14T09:48:06Z'],
-                ['duration', '35m 25s'],
-                ['severity', 'major'],
-                ['regions', 'eu-west · us-east'],
-                ['quorum', '2 of 2 regions failing'],
-                ['attribution', 'external_dependency'],
-                ['observations', '142 retained'],
-                ['sha256', '9f2c…a417'],
-              ].map(([k, v], i) => (
-                <div
-                  key={k}
-                  className={`flex items-baseline justify-between gap-6 py-2.5 ${
-                    i > 0 ? 'border-t border-[var(--ob-line)]' : ''
-                  }`}
-                >
-                  <dt className="ob-mono text-[var(--ob-text-4)]">{k}</dt>
-                  <dd className="ob-mono text-right text-[var(--ob-text)]">
-                    {v}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+        <p className="ob-small mt-10 max-w-[62ch]">
+          Attribution and evidence are Pro capabilities. Every new organization
+          starts on a 14-day Pro trial.
+        </p>
+      </Container>
+    </Section>
+  );
+}
 
-            <p className="border-t border-[var(--ob-line)] px-5 py-3.5 text-[12px] leading-[1.55] text-[var(--ob-text-4)]">
-              Field names match the generated artifact. Values are an example,
-              not a recorded incident.
-            </p>
-          </figure>
+/* ── 04 · What RELIASTRA observes ───────────────────────────────────────── */
+
+/**
+ * The product's actual shape, drawn instead of described: your application
+ * calls a dependency, and RELIASTRA measures the same dependency from regions
+ * that belong to neither of you.
+ */
+export function ObservationSection() {
+  return (
+    <Section id="observation" tone="base" aria-labelledby="observation-title">
+      <Container>
+        <SectionHeader
+          index="04"
+          eyebrow="What it observes"
+          id="observation-title"
+          title="The same dependency. Measured from outside both of you."
+          lede="Your application sees a failed request. RELIASTRA sees whether the endpoint was failing for everyone, from where, and for how long."
+        />
+
+        <div className="mt-14">
+          <DependencyTopology />
         </div>
       </Container>
     </Section>
   );
 }
 
-/* ── 08 · Agencies and MSPs ─────────────────────────────────────────────── */
+/* ── 05 · The incident, as a sequence ───────────────────────────────────── */
+
+/**
+ * One incident end to end. This is the section that explains the product
+ * without asking the visitor to read a manual: failures appear, independent
+ * observation confirms them, the quorum rule is met, the engine attributes,
+ * the record is written.
+ */
+export function IncidentStorySection() {
+  return (
+    <Section id="incident" tone="void" aria-labelledby="incident-title">
+      <Container>
+        <div className="grid gap-14 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:gap-20">
+          <div className="flex flex-col gap-6 lg:sticky lg:top-28 lg:self-start">
+            <Eyebrow index="05">Incident</Eyebrow>
+            <h2 id="incident-title" className="ob-h2 max-w-[15ch]">
+              Checkout fails. Whose fault was it?
+            </h2>
+            <p className="ob-body">
+              Five minutes, start to finished record. This is what the product
+              does while your team is still arguing about it.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
+              <ArrowLink href={PUBLIC_ROUTES.incidentEvidence}>
+                How attribution works
+              </ArrowLink>
+              <ArrowLink href={PUBLIC_ROUTES.dependencyMonitoring}>
+                How checks run
+              </ArrowLink>
+            </div>
+          </div>
+
+          <IncidentTimeline />
+        </div>
+      </Container>
+    </Section>
+  );
+}
+
+/* ── 10 · Agencies and MSPs ─────────────────────────────────────────────── */
 
 export function AgenciesSection() {
   return (
@@ -292,7 +328,7 @@ export function AgenciesSection() {
       <Container className="relative py-24 md:py-32">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
           <div className="flex flex-col gap-6">
-            <Eyebrow index="08">Agencies · MSPs</Eyebrow>
+            <Eyebrow index="10">Agencies · MSPs</Eyebrow>
             <h2 id="agencies-title" className="ob-h2 max-w-[17ch]">
               Held responsible for stacks you inherited.
             </h2>
@@ -358,7 +394,7 @@ export function AgenciesSection() {
   );
 }
 
-/* ── 09 · Partner program ───────────────────────────────────────────────── */
+/* ── 11 · Partner program ───────────────────────────────────────────────── */
 
 export function PartnerSection() {
   return (
@@ -366,7 +402,7 @@ export function PartnerSection() {
       <Container>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20">
           <div className="flex flex-col gap-6">
-            <Eyebrow index="09">Partner program</Eyebrow>
+            <Eyebrow index="11">Partner program</Eyebrow>
             <h2 id="partners-title" className="ob-h2 max-w-[16ch]">
               Refer the organizations you advise.
             </h2>
@@ -465,7 +501,7 @@ export function ReferenceSection() {
   );
 }
 
-/* ── 11 · Final CTA ─────────────────────────────────────────────────────── */
+/* ── 13 · Final CTA ─────────────────────────────────────────────────────── */
 
 export function FinalCTASection() {
   return (
@@ -487,7 +523,7 @@ export function FinalCTASection() {
       </div>
 
       <Container className="relative flex min-h-[440px] flex-col justify-end py-20 md:min-h-[520px] md:py-28">
-        <Eyebrow index="11">Start</Eyebrow>
+        <Eyebrow index="13">Start</Eyebrow>
         <h2 id="final-cta-title" className="ob-h1 mt-6 max-w-[14ch]">
           Know what you depend on. Prove what it did.
         </h2>

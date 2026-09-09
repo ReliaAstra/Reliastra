@@ -241,25 +241,29 @@ export const EXTERNAL_LINKS = {
 } as const;
 
 /**
- * Homepage section anchors.
+ * Homepage section anchors, in narrative order.
  *
  * A stale anchor is a dead link that still looks like it works (the browser
  * simply does nothing, and `scrollToId` silently scrolls to the top), so every
- * id here must exist in the rendered homepage composition -
- * `components/site/__tests__/navigation-links.test.tsx` asserts exactly that.
+ * id here must exist in the rendered homepage composition.
  *
- * Updated for the rebuilt narrative: `evidence` and `research` survive from
- * the previous composition; `live` became `public-intelligence` (the section
- * is public dependency intelligence, not a "live" widget); `comparison` was
- * removed with the competitor table; `problem`, `how-it-works`, `chain`,
- * `partners` and `reference` are new.
+ * `landing-sections.test.tsx` renders the real composition and asserts this
+ * list is exactly the set of ids it emits - not a subset. That direction
+ * matters: the previous list carried `chain`, a section that no component had
+ * ever rendered, and the e2e spec that walks this list was failing on it. A
+ * subset check would have kept passing while the anchor stayed dead.
+ *
+ * Sections with no anchor are deliberately absent: the RELIASTRA statement
+ * band and the final CTA are not link targets, and the agencies block is
+ * reached by route rather than by anchor.
  */
 export const LANDING_SECTIONS = [
   'top',
   'problem',
-  'how-it-works',
-  'chain',
+  'observation',
+  'incident',
   'evidence',
+  'how-it-works',
   'research',
   'public-intelligence',
   'partners',
