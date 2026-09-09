@@ -20,6 +20,13 @@
 
 	encode gzip
 
+	# Partner referral links (`/r/{code}`) MUST stay on the Next.js catch-all
+	# below. The App Router resolver Set-Cookies on reliastra.com and 302s
+	# into the signup/landing flow. Do NOT proxy `/r/*` to FastAPI: the API
+	# lives at `/v1/public/referral/{code}` and a cookie set on a different
+	# hop would not attribute the visitor. Invalid codes are handled by
+	# Next.js (`/referral-unavailable`), never the generic 404.
+
 	# Frontend - Next.js standalone
 	handle {
 		reverse_proxy reliastra-api:3000 {

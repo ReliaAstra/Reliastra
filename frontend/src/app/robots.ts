@@ -38,6 +38,9 @@ export default function robots(): MetadataRoute.Robots {
     '/signup',
     '/verify-email',
     '/reset-password',
+    '/r/',
+    '/r',
+    '/referral-unavailable',
   ];
   return {
     rules: [

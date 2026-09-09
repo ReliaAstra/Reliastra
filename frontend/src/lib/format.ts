@@ -33,5 +33,8 @@ export function formatDate(dateStr: string): string {
 }
 
 export function getReferralLink(code: string): string {
-  return `https://reliastra.com/r/${code.toUpperCase()}`;
+  const origin = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com'
+  ).replace(/\/$/, '');
+  return `${origin}/r/${code.toUpperCase()}`;
 }

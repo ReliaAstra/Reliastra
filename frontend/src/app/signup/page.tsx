@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,6 +13,8 @@ import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
 import { readApiError } from '@/lib/api-error';
 import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
+import { getSignupAttribution } from '@/lib/attribution';
+import { getStoredReferralCode } from '@/lib/partner-referral';
 
 interface RegisterResponse {
   user?: { id: string; email: string };
@@ -31,6 +33,12 @@ export default function CustomerSignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const code = getStoredReferralCode();
+    if (code) setReferralCode(code);
+  }, []);
 
   const passwordOk = password.length >= 8;
   const passwordTooShort = Boolean(password) && !passwordOk;
@@ -48,6 +56,7 @@ export default function CustomerSignupPage() {
     }
     setLoading(true);
     try {
+      const attribution = getSignupAttribution();
       const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,6 +64,8 @@ export default function CustomerSignupPage() {
           full_name: fullName.trim(),
           email: email.trim(),
           password,
+          ref_code: referralCode || undefined,
+          acquisition: attribution,
         }),
       });
       if (!res.ok) {
@@ -118,11 +129,20 @@ export default function CustomerSignupPage() {
         </p>
       }
     >
+      {referralCode && (
+        <AuthAlert tone="note">
+          Referred by{' '}
+          <span className="ob-mono text-[var(--ob-text-2)]">{referralCode}</span>
+          . This organization will be attributed to the partner.
+        </AuthAlert>
+      )}
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
       <form
         onSubmit={handleSubmit}
-        className={error ? 'mt-6 flex flex-col gap-5' : 'flex flex-col gap-5'}
+        className={
+          error || referralCode ? 'mt-6 flex flex-col gap-5' : 'flex flex-col gap-5'
+        }
         noValidate
       >
         <Field
