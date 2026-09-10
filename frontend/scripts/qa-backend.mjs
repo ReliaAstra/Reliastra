@@ -569,6 +569,11 @@ const PRICING = {
 
 const routes = [
   ['POST', /^\/v1\/auth\/refresh$/, () => ({ access_token: 'qa-access-token', refresh_token: 'qa-refresh-token', token_type: 'bearer', expires_in: 3600 })],
+  // The console login form's entry point. The fixture is single-tenant: any
+  // credentials yield the Northwind fixture session, which is the point - the
+  // authenticated surface is judged against real fixture data, and the real
+  // backend is the one that validates credentials.
+  ['POST', /^\/v1\/auth\/login$/, () => ({ access_token: 'qa-access-token', refresh_token: 'qa-refresh-token', token_type: 'bearer', expires_in: 3600 })],
   ['GET', /^\/v1\/orgs$/, () => [ORG]],
   ['GET', /^\/v1\/orgs\/current$/, () => ORG],
   ['PATCH', /^\/v1\/orgs\/current$/, (m, url, body) => Object.assign(ORG, body ?? {})],

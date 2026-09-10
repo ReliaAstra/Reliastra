@@ -3,75 +3,17 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useCreateClient } from '@/lib/dashboard/queries';
-import { PUBLIC_ROUTES } from '@/lib/routes';
-import { Fact, PageHead, Section } from '@/components/console/primitives';
+import { Fact } from '@/components/console/primitives';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Shared agency parts: the capability notice, the client dialog, the portal
-   share control. Kept out of the page files so the portfolio and the client
-   environment read as documents rather than as component soup.
-   ═══════════════════════════════════════════════════════════════════════════ */
+   Shared agency parts: the client dialog and the portal share control. Kept
+   out of the page files so the portfolio and the client environment read as
+   documents rather than as component soup.
 
-/**
- * Agency mode is a capability, not a paywall.
- *
- * When `has_agency_mode` is false the nav entry does not exist at all; this is
- * what a direct navigation lands on. It states the fact and how the capability
- * is enabled - it does not quote a price, imply a plan, or dress a missing
- * feature up as an upgrade opportunity, because nothing in the billing system
- * sells agency mode.
- */
-export function AgencyUnavailable() {
-  return (
-    <>
-      <PageHead
-        eyebrow="Agency operations"
-        title="Multi-client operations is not enabled for this organization"
-      />
-      <Section title="What this capability is" id="agency-capability">
-        <div className="max-w-[76ch] space-y-4 text-[13px] leading-[1.7] text-[var(--obc-text-2)]">
-          <p>
-            Agency mode groups the dependencies you already monitor into client
-            environments. Each environment owns its applications and monitors, and rolls
-            up its own availability, incidents and evidence, so an operator running
-            infrastructure for several organizations can see which client needs attention
-            without switching accounts.
-          </p>
-          <p>
-            It is a capability flag on your organization rather than a plan feature. Your
-            monitors, incidents and evidence records are unaffected either way: enabling
-            agency mode adds the client hierarchy on top of them, and nothing already
-            recorded is moved or re-scoped.
-          </p>
-        </div>
-        <dl className="mt-6 grid gap-x-10 gap-y-4 border-t border-[var(--obc-line)] pt-5 sm:grid-cols-2">
-          <div>
-            <dt className="obc-label">Enable it</dt>
-            <dd className="mt-1.5 text-[12.5px] text-[var(--obc-text-2)]">
-              <Link className="obc-link" href={PUBLIC_ROUTES.contact}>
-                Contact RELIASTRA
-              </Link>{' '}
-              Agency mode is switched on per organization.
-            </dd>
-          </div>
-          <div>
-            <dt className="obc-label">In the meantime</dt>
-            <dd className="mt-1.5 text-[12.5px] text-[var(--obc-text-2)]">
-              <Link className="obc-link" href="/dependencies">
-                Your dependencies
-              </Link>{' '}
-              and{' '}
-              <Link className="obc-link" href="/evidence">
-                evidence records
-              </Link>{' '}
-              work exactly as they do for any organization.
-            </dd>
-          </div>
-        </dl>
-      </Section>
-    </>
-  );
-}
+   The not-enabled state lives in `./gated` (`AgencyGatedExperience`): it is
+   the one place the capability is presented, and every surface that renders
+   a direct navigation by a disabled organization lands on the same page.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Client creation ─────────────────────────────────────────────────────── */
 

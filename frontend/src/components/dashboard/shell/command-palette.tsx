@@ -70,9 +70,10 @@ export function CommandPalette() {
   const items = useMemo<Item[]>(() => {
     const nav: Item[] = [
       { id: 'dash', group: 'Navigation', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: 'G D' },
-      ...(agencyEnabled
-        ? [{ id: 'org', group: 'Navigation', label: 'Organization overview', href: '/organization', icon: Building2, shortcut: 'G O' }]
-        : []),
+      // The agency overview is a destination for every authenticated
+      // organization (the same rule as the sidebar): an organization without
+      // the capability opens the gated experience, never a missing page.
+      { id: 'agency', group: 'Navigation', label: 'Agency overview', href: '/agency', icon: Building2, shortcut: 'G A' },
       { id: 'deps', group: 'Navigation', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
       { id: 'inc', group: 'Navigation', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
       { id: 'evi', group: 'Navigation', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
@@ -81,6 +82,13 @@ export function CommandPalette() {
 
     const agencyActions: Item[] = agencyEnabled
       ? [
+          {
+            id: 'clients',
+            group: 'Agency Actions',
+            label: 'Client environments',
+            icon: Building2,
+            href: '/clients',
+          },
           {
             id: 'new-client',
             group: 'Agency Actions',

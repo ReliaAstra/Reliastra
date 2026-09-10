@@ -47,7 +47,7 @@ import {
 } from '@/components/console/primitives';
 import { DataTable, type Column } from '@/components/console/data-table';
 import { useHealth } from '@/lib/dashboard/queries';
-import { AgencyUnavailable } from './parts';
+import { AgencyGatedExperience } from './gated';
 import { hasAgencyWorkspace } from '@/lib/agency/access';
 
 /**
@@ -67,17 +67,20 @@ export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
   const org = useAppStore((s) => s.org);
   const plan = useAppStore((s) => s.plan);
   const agencyEnabled = hasAgencyWorkspace(org, plan);
-  const portfolio = usePortfolio();
-  const clients = useClients();
-  const apps = useApplications(clientId);
-  const deps = useDependencies();
-  const health = useHealth();
-  const incidents = useIncidents(undefined, 50);
-  const evidence = useEvidence();
+  // Every read on this page is client-management data: a disabled
+  // organization must not request it, so each query is gated on the same
+  // entitlement the navigation uses.
+  const portfolio = usePortfolio(agencyEnabled);
+  const clients = useClients(agencyEnabled);
+  const apps = useApplications(clientId, agencyEnabled);
+  const deps = useDependencies(agencyEnabled);
+  const health = useHealth(agencyEnabled);
+  const incidents = useIncidents(undefined, 50, agencyEnabled);
+  const evidence = useEvidence(agencyEnabled);
   const [addingApp, setAddingApp] = useState(false);
 
   const clientIds = useMemo(() => (clients.data ?? []).map((c) => c.id), [clients.data]);
-  const allApplications = useAllApplications(clientIds);
+  const allApplications = useAllApplications(clientIds, agencyEnabled);
   const index = useMemo(
     () => applicationIndex(allApplications.data ?? []),
     [allApplications.data]
@@ -128,7 +131,18 @@ export function ClientEnvironmentPage({ clientId }: { clientId: string }) {
     return times[0] ?? null;
   }, [clientDeps, healthById]);
 
-  if (org && !agencyEnabled) return <AgencyUnavailable />;
+  if (!org) {
+    // Session still resolving: show the page shape, not a not-found state.
+    return (
+      <>
+        <PageHead eyebrow="Client environment" title="Client environment" />
+        <div className="py-6">
+          <RowsSkeleton rows={4} cols={4} />
+        </div>
+      </>
+    );
+  }
+  if (!agencyEnabled) return <AgencyGatedExperience />;
 
   if (portfolio.isError || clients.isError) {
     return (
