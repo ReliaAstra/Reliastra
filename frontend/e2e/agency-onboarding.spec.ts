@@ -266,7 +266,7 @@ test.describe('agency operations', () => {
     await settle(page);
     await page.getByRole('button', { name: /Client.*Meridian Health/ }).click();
     await page.getByRole('menuitem', { name: /all client environments/i }).click();
-    await page.waitForURL(/\/clients$/);
+    await page.waitForURL(/\/agency$/);
     await expect(page.getByRole('button', { name: /Agency.*Northwind/ })).toBeVisible();
   });
 
@@ -314,11 +314,19 @@ test.describe('agency operations', () => {
     await page.goto('/clients', { waitUntil: 'domcontentloaded' });
     await settle(page);
 
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/not enabled/i);
+    // A direct navigation lands on the premium gated experience, not an
+    // error page or a generic "unavailable" notice.
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      'Manage every client environment from one operational view'
+    );
     const body = await page.locator('body').innerText();
     expect(body).not.toMatch(/upgrade to|\$\d|enterprise tier/i);
+    // No fixture client data leaks into the gated state.
+    expect(body).not.toContain('Meridian Health');
 
-    // And it is not advertised in the navigation.
+    // The destination stays discoverable: the overview is always in the
+    // navigation, the client-management entries are not.
+    await expect(page.locator('nav[aria-label="Console"] a[href="/agency"]')).toHaveCount(1);
     await expect(page.locator('nav[aria-label="Console"] a[href="/clients"]')).toHaveCount(0);
 
     await setAgencyMode(page, true);
