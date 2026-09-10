@@ -228,7 +228,7 @@ export function ArticleTemplate({
           </h2>
           <p className="ob-body mt-3">
             Add the external services this analysis applies to and RELIASTRA
-            begins observing them from independent regions on the next check
+            begins observing them on the next scheduled check
             interval.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">

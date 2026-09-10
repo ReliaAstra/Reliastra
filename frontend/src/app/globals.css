@@ -2471,6 +2471,7 @@
 }
 .ob-chart-key[data-series="a"] { background: var(--ob-signal); }
 .ob-chart-key[data-series="b"] { background: var(--ob-text-3); }
+.ob-chart-key[data-series="failed"] { background: var(--ob-critical); }
 .ob-chart-rule {
   font-family: var(--ob-font-mono);
   font-size: 0.6875rem;

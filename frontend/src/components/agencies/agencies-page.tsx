@@ -378,7 +378,7 @@ function EvidenceArtifact() {
       <div className="agency-report-grid">
         <ReportField label="Impact" value="Checkout requests affected" />
         <ReportField label="Dependency" value="Stripe API" />
-        <ReportField label="Observation" value="Multi-region latency increase" />
+        <ReportField label="Observation" value="Sustained latency increase with failed checks" />
         <ReportField label="Time window" value="14:41–14:49 UTC" />
       </div>
       <div className="agency-report-chart">

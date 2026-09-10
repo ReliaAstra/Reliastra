@@ -1,4 +1,8 @@
-import { DEFAULT_REGIONS } from '@/lib/product-contract';
+import {
+  CHECK_INTERVAL_SECONDS,
+  OBSERVATION_POINT_COUNT,
+  OBSERVATION_POINT_LABEL,
+} from '@/lib/product-contract';
 
 /**
  * What RELIASTRA actually observes.
@@ -9,16 +13,24 @@ import { DEFAULT_REGIONS } from '@/lib/product-contract';
  * is unreadable.
  *
  * The structure is the product's real shape. Your application calls the
- * dependency. RELIASTRA measures the same dependency from regions that are
- * neither your network nor the vendor's, and each observation records region,
- * status code, latency and whether it was up.
+ * dependency. RELIASTRA measures the same dependency on a fixed interval from
+ * infrastructure that is neither your network nor the vendor's, and each
+ * observation records a timestamp, status code, latency and whether it was up.
+ *
+ * One observation point, shown honestly as one: the two readings per
+ * dependency are two *consecutive checks* at different timestamps, not two
+ * independent places. RELIASTRA deploys a single observation point today, and
+ * a diagram that drew two would be claiming a fleet that does not exist.
  */
+
+/** Timestamps of the two most recent checks, one interval apart. */
+const CHECK_TIMES = ['09:12:41', '09:17:41'] as const;
 
 type Dependency = {
   name: string;
   kind: string;
   state: 'healthy' | 'degraded' | 'critical';
-  /** Illustrative latency per region, in the order DEFAULT_REGIONS lists them. */
+  /** Illustrative latency per check, newest last, in CHECK_TIMES order. */
   latency: [number, number];
   status: [number, number];
 };
@@ -71,7 +83,9 @@ export function DependencyTopology() {
         <div className="ob-topo-lane">
           <span className="ob-label">RELIASTRA probes</span>
           <p className="ob-topo-lane-note">
-            Independent regions: {DEFAULT_REGIONS.join(' · ')}
+            {OBSERVATION_POINT_COUNT} {OBSERVATION_POINT_LABEL}
+            {OBSERVATION_POINT_COUNT === 1 ? '' : 's'}, on infrastructure the
+            vendor does not control
           </p>
         </div>
       </div>
@@ -91,9 +105,9 @@ export function DependencyTopology() {
               </div>
 
               <dl className="ob-topo-readings">
-                {DEFAULT_REGIONS.map((region, i) => (
-                  <div key={region} className="ob-topo-reading">
-                    <dt>{region}</dt>
+                {CHECK_TIMES.map((checkTime, i) => (
+                  <div key={checkTime} className="ob-topo-reading">
+                    <dt>{checkTime}</dt>
                     <dd>
                       <span className="ob-topo-code">{dep.status[i]}</span>
                       <span className="ob-topo-ms">{dep.latency[i]} ms</span>
@@ -109,7 +123,7 @@ export function DependencyTopology() {
 
             <span className="ob-topo-edge ob-topo-edge-right" aria-hidden>
               <span className="ob-topo-edge-label">
-                {DEFAULT_REGIONS.length} independent checks
+                checked every {CHECK_INTERVAL_SECONDS}s
               </span>
             </span>
           </li>
@@ -117,8 +131,8 @@ export function DependencyTopology() {
       </ul>
 
       <p className="ob-topo-foot">
-        Each observation records region, status code, latency and whether the
-        endpoint answered. Values are illustrative; the fields are the ones the
+        Each observation records a timestamp, status code, latency and whether
+        the endpoint answered. Values are illustrative; the fields are the ones the
         product writes.
       </p>
     </div>

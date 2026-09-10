@@ -20,6 +20,7 @@ import {
   reportCode,
   timeAgo,
 } from '@/lib/dashboard/format';
+import { evidenceState } from '@/lib/dashboard/evidence-state';
 import {
   agencyPosture,
   applicationIndex,
@@ -410,8 +411,11 @@ export function AgencyPortfolioPage({ organizationOverview = false }: { organiza
                 <span className="font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums text-[var(--obc-text-3)]">
                   {durationBetween(incident.started_at, incident.resolved_at)} open
                 </span>
-                <span className="text-[11.5px] uppercase tracking-[0.1em] text-[var(--obc-text-4)]">
-                  {incident.evidence_report_id ? 'Evidence ready' : 'No report yet'}
+                <span
+                  className="text-[11.5px] uppercase tracking-[0.1em] text-[var(--obc-text-4)]"
+                  title={evidenceState(incident).hint}
+                >
+                  {evidenceState(incident).label}
                 </span>
                 <span className="sr-only">
                   {incidentCode(incident.id, incident.display_id)}

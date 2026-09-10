@@ -1,14 +1,17 @@
 import abc
 import logging
 import uuid
+from typing import Any
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.audit_log import AuditLogService
 from app.core.exceptions import ResourceNotFoundException
 from app.modules.evidence.schemas import EvidenceReportResponse
 from app.modules.incidents.constants import (
     DEFAULT_CORRELATION_CONFIDENCE,
     TEMPORAL_WINDOW_SECONDS,
     CorrelationMethod,
+    EvidenceStatus,
     IncidentSeverity,
     IncidentStatus,
 )
@@ -95,8 +98,23 @@ class IncidentService:
         session: AsyncSession,
         org_id: uuid.UUID,
         dependency_id: uuid.UUID,
-        error_message: str = "Quorum confirmed failure",
+        error_message: str = "Detector confirmed failure",
+        detection: dict[str, Any] | None = None,
+        started_at: datetime | None = None,
     ) -> Incident:
+        """Open an incident for a dependency, at most once while one is open.
+
+        Idempotent at three levels, because two workers can legitimately reach
+        this at the same moment for the same dependency:
+
+        1. an already-open incident is returned unchanged;
+        2. the INSERT races under the partial unique index
+           ``uq_incidents_one_open_per_dependency`` (migration 0014) and the
+           loser of that race re-reads the winner's row;
+        3. ``detection`` metadata is written on the create path only, so a
+           repeat call cannot overwrite the provenance of the original
+           decision.
+        """
         existing = await self.repository.get_open_for_dependency(
             session, dependency_id
         )
@@ -118,7 +136,14 @@ class IncidentService:
                     dependency_id=dependency_id,
                     severity=IncidentSeverity.MAJOR.value,
                     description=error_message,
+                    started_at=started_at,
                 )
+                # Provenance is written with the incident, not after it: the
+                # evidence artifact is rendered asynchronously and must be able
+                # to state which rule fired and on what figures.
+                if detection:
+                    incident.detection_rule = str(detection.get("rule") or "") or None
+                    incident.detection_metadata = detection
                 await session.flush()
         except IntegrityError:
             incident = await self.repository.get_open_for_dependency(
@@ -133,6 +158,20 @@ class IncidentService:
             raise
 
         await self.correlation_strategy.correlate(session, incident)
+
+        await AuditLogService.log_event(
+            session=session,
+            event_type="INCIDENT_OPENED",
+            org_id=org_id,
+            resource_type="incident",
+            resource_id=str(incident.id),
+            payload={
+                "dependency_id": str(dependency_id),
+                "severity": incident.severity,
+                "started_at": incident.started_at.isoformat(),
+                "detection": detection or {},
+            },
+        )
 
         try:
             from app.modules.notifications.service import notification_service
@@ -164,6 +203,7 @@ class IncidentService:
         session: AsyncSession,
         incident_id: uuid.UUID,
         org_id: uuid.UUID | None = None,
+        detection: dict[str, Any] | None = None,
     ) -> Incident:
         incident = await self.repository.get_by_id(session, incident_id)
         if not incident or (org_id and incident.org_id != org_id):
@@ -215,6 +255,24 @@ class IncidentService:
                 exc,
             )
 
+        await AuditLogService.log_event(
+            session=session,
+            event_type="INCIDENT_RESOLVED",
+            org_id=updated.org_id,
+            resource_type="incident",
+            resource_id=str(updated.id),
+            payload={
+                "dependency_id": str(updated.dependency_id),
+                "started_at": updated.started_at.isoformat(),
+                "resolved_at": (
+                    updated.resolved_at.isoformat()
+                    if updated.resolved_at
+                    else None
+                ),
+                "detection": detection or {},
+            },
+        )
+
         from app.modules.notifications.schemas import AlertPayload
         from app.modules.notifications.service import notification_service
         await notification_service.dispatch_alert(session, AlertPayload(
@@ -223,29 +281,7 @@ class IncidentService:
             body='The dependency has recovered.', metadata={'dependency_id': str(updated.dependency_id)},
         ))
 
-        # Evidence is generated for every resolved incident, not only incidents
-        # that happened to have a temporal correlation.
-        # FIX 18: generation is dispatched asynchronously to Celery so the
-        # resolve path (itself often running inside a check transaction)
-        # returns immediately instead of rendering HTML+PDF inline. The
-        # countdown lets the resolve transaction commit before the worker
-        # reads the incident.
-        try:
-            from app.modules.evidence.tasks import generate_evidence_report
-            from app.core.request_context import get_request_id
-
-            # FIX 36: propagate the inbound request id for distributed tracing.
-            generate_evidence_report.apply_async(
-                args=[str(incident.id)],
-                kwargs={"request_id": get_request_id()},
-                countdown=5,
-            )
-            logger.info(
-                "Dispatched async evidence generation for incident %s",
-                incident.id,
-            )
-        except Exception as exc:
-            logger.warning("Could not dispatch evidence report task: %s", exc)
+        await self.request_evidence_generation(session, updated)
 
         try:
             from app.core.metrics import incidents_total
@@ -255,6 +291,128 @@ class IncidentService:
             pass
 
         return updated
+
+    async def request_evidence_generation(
+        self,
+        session: AsyncSession,
+        incident: Incident,
+        *,
+        reason: str = "incident_resolved",
+    ) -> str:
+        """Queue evidence generation for a resolved incident, or record why not.
+
+        Returns the resulting ``evidence_status``. Three properties matter:
+
+        *Deliberate about entitlement.* A plan without evidence generation gets
+        ``not_entitled`` and **no task is queued**. The previous behaviour
+        queued a job that the permission gate rejected, retried three times and
+        died - a background failure that looked like a broken product for a
+        workspace that was never supposed to have the feature.
+
+        *Idempotent.* An incident that already has a linked artifact is left
+        alone, so a repeated resolve, a task retry or a manual re-request
+        cannot pile up artifacts.
+
+        *Race-free.* Publication happens on ``after_commit`` (see
+        :mod:`app.infrastructure.after_commit`), not after a fixed sleep: the
+        worker must be able to see the resolved incident, its final check
+        results and its outbox rows. A dispatch that cannot even reach the
+        broker is recorded as ``failed`` rather than left as a lie.
+        """
+        if (
+            incident.evidence_status == EvidenceStatus.AVAILABLE.value
+            and incident.evidence_report_id is not None
+        ):
+            return incident.evidence_status
+
+        from app.core.permissions import plan_allows_feature
+        from app.modules.organizations.repository import OrganizationRepository
+
+        try:
+            org = await OrganizationRepository.get_by_id(session, incident.org_id)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(
+                "Could not resolve org %s for evidence entitlement: %s",
+                incident.org_id,
+                exc,
+            )
+            org = None
+
+        if not plan_allows_feature(org, "evidence_generation"):
+            await self.repository.set_evidence_state(
+                session,
+                incident,
+                status=EvidenceStatus.NOT_ENTITLED.value,
+                error=None,
+            )
+            await AuditLogService.log_event(
+                session=session,
+                event_type="EVIDENCE_SKIPPED_NOT_ENTITLED",
+                org_id=incident.org_id,
+                resource_type="incident",
+                resource_id=str(incident.id),
+                payload={
+                    "reason": reason,
+                    "effective_plan": (
+                        getattr(org, "plan", None) if org is not None else None
+                    ),
+                },
+            )
+            logger.info(
+                "Evidence generation not entitled for incident %s; nothing queued",
+                incident.id,
+            )
+            return EvidenceStatus.NOT_ENTITLED.value
+
+        await self.repository.set_evidence_state(
+            session,
+            incident,
+            status=EvidenceStatus.GENERATING.value,
+            error=None,
+        )
+
+        from app.core.request_context import get_request_id
+        from app.infrastructure.after_commit import dispatch_after_commit
+
+        request_id = get_request_id()
+        incident_id = str(incident.id)
+
+        def _publish() -> None:
+            from celery import chain
+
+            from app.modules.evidence.tasks import generate_evidence_report
+            from app.modules.observations.tasks import process_outbox
+
+            # Drain the observation outbox first so attribution sees the
+            # observations belonging to this incident, then generate. The
+            # immutable signature (``si``) keeps the drain's return value out
+            # of the generation task's arguments.
+            chain(
+                process_outbox.s(),
+                generate_evidence_report.si(incident_id, request_id=request_id),
+            ).apply_async()
+            logger.info(
+                "Dispatched evidence generation for incident %s (reason=%s)",
+                incident_id,
+                reason,
+            )
+
+        try:
+            dispatch_after_commit(session, _publish)
+        except Exception as exc:
+            logger.exception(
+                "Could not schedule evidence generation for incident %s",
+                incident.id,
+            )
+            await self.repository.set_evidence_state(
+                session,
+                incident,
+                status=EvidenceStatus.FAILED.value,
+                error=f"dispatch failed: {exc}"[:2000],
+            )
+            return EvidenceStatus.FAILED.value
+
+        return EvidenceStatus.GENERATING.value
 
     async def list_incidents(
         self,

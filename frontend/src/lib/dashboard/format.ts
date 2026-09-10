@@ -86,15 +86,9 @@ export function confidenceFromScore(score: number): 'HIGH' | 'MEDIUM' | 'LOW' {
   return 'LOW';
 }
 
-/**
- * Region codes appear in two forms: the four values a dependency can be
- * configured with (`us-east`), and the zone a worker recorded an observation
- * from (`us-east-1`). Both must read as the same place, so a trailing zone
- * index is normalised away before lookup and printed back afterwards.
- */
-export function regionLabel(code: string): string {
-  // Regions are scheduling labels, not places. The console prints the code
-  // the API uses (`us-east`, `eu-west-1`) so a region reads identically in
-  // the console, the public record and an exported evidence file.
-  return code;
-}
+// `regionLabel` was removed with the console's multi-node surfaces. A check
+// result still carries a `region` string - it is the scheduling label the
+// worker stamps on the row - but the console never prints it as a place, so
+// there is nothing left to format. See `src/lib/product-contract.ts`
+// (OBSERVATION_POINT_COUNT) and
+// `src/components/console/__tests__/single-observation-point.test.ts`.

@@ -177,7 +177,7 @@ export function EvidenceReportPage({ token }: { token: string }) {
 
       <footer className="border-t border-[#E2E8F0] px-6 py-6">
         <p className="mx-auto max-w-[760px] text-xs text-[#94A3B8]">
-          RELIASTRA generates verifiable SLA evidence from deterministic multi-region checks.
+          RELIASTRA generates verifiable SLA evidence from deterministic checks.
         </p>
       </footer>
     </div>

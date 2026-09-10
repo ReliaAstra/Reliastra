@@ -107,6 +107,62 @@ class CheckRepository:
         return list(result.scalars().all())
 
     @staticmethod
+    async def list_for_dependency_window(
+        session: AsyncSession,
+        dependency_id: uuid.UUID,
+        start_time: datetime,
+        end_time: datetime,
+        limit: int = 5000,
+    ) -> list[CheckResult]:
+        """Check results inside ``[start_time, end_time]``, oldest first.
+
+        The evidence pipeline reads this instead of the asynchronously drained
+        ``observations`` table: ``check_results`` is written in the same
+        transaction as the probe, so an artifact built from it cannot miss the
+        checks that closed the incident.
+
+        The window is inclusive at both ends, so the first and last
+        observations of an incident are part of its own measurement. Results
+        are capped at *limit*; callers that hit the cap must say so rather
+        than present a partial window as complete.
+        """
+        query = (
+            select(CheckResult)
+            .join(Dependency, CheckResult.dependency_id == Dependency.id)
+            .where(
+                CheckResult.dependency_id == dependency_id,
+                CheckResult.executed_at >= start_time,
+                CheckResult.executed_at <= end_time,
+                Dependency.is_deleted == False,  # noqa: E712
+            )
+            .order_by(CheckResult.executed_at.asc(), CheckResult.id.asc())
+            .limit(limit)
+        )
+        result = await session.execute(query)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def count_for_dependency_window(
+        session: AsyncSession,
+        dependency_id: uuid.UUID,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> int:
+        """Exact number of results in the window, so truncation is knowable."""
+        query = (
+            select(func.count(CheckResult.id))
+            .join(Dependency, CheckResult.dependency_id == Dependency.id)
+            .where(
+                CheckResult.dependency_id == dependency_id,
+                CheckResult.executed_at >= start_time,
+                CheckResult.executed_at <= end_time,
+                Dependency.is_deleted == False,  # noqa: E712
+            )
+        )
+        result = await session.execute(query)
+        return int(result.scalar() or 0)
+
+    @staticmethod
     async def list_for_org(
         session: AsyncSession,
         org_id: uuid.UUID,

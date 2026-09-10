@@ -226,7 +226,7 @@ export function SiteHeader({
                 <p className="ob-label mb-4">Start here</p>
                 <p className="mb-6 text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
                   Add the external services your product depends on and RELIASTRA
-                  begins observing them from independent regions immediately.
+                  begins observing them on the next scheduled check.
                 </p>
                 <Link
                   href={HEADER_ACTIONS.start.href}

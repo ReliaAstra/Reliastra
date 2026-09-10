@@ -20,9 +20,9 @@ import {
   formatUptime,
   formatUtc,
   incidentCode,
-  regionLabel,
   timeAgo,
 } from '@/lib/dashboard/format';
+import { OBSERVATION_POINT_LABEL } from '@/lib/product-contract';
 import { intervalLabel, retentionLabel } from '@/lib/dashboard/plans';
 import {
   Empty,
@@ -70,17 +70,15 @@ export function DependencyRecordPage({ id }: { id: string }) {
   );
   const open = depIncidents.find((i) => !i.resolved_at);
 
-  const byRegion = useMemo(() => {
-    const m = new Map<string, CheckResult[]>();
-    for (const r of results.data ?? []) {
-      const list = m.get(r.region);
-      if (list) list.push(r);
-      else m.set(r.region, [r]);
-    }
-    for (const list of m.values())
-      list.sort((a, b) => new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime());
-    return m;
-  }, [results.data]);
+  // RELIASTRA probes from one place, so the checks are a single time-ordered
+  // stream, not a set of parallel series to compare against each other.
+  const stream = useMemo(
+    () =>
+      [...(results.data ?? [])].sort(
+        (a, b) => new Date(a.executed_at).getTime() - new Date(b.executed_at).getTime()
+      ),
+    [results.data]
+  );
 
   if (dep.isLoading) {
     return (
@@ -111,6 +109,15 @@ export function DependencyRecordPage({ id }: { id: string }) {
   const d = dep.data;
   const status = row?.current_status ?? (d.is_active ? 'unknown' : 'paused');
   const points = latency.data?.points ?? [];
+
+  // Headline figures for the observation stream. Derived here, not inside the
+  // markup, so the panel reads as data rather than as an inline computation.
+  const lastObservation = stream.length ? stream[stream.length - 1] : null;
+  const observationsUp = stream.filter((r) => r.is_up).length;
+  const observationStale =
+    lastObservation !== null &&
+    Date.now() - Date.parse(lastObservation.executed_at) >
+      Math.max(90, d.check_interval_seconds * 3) * 1000;
 
   return (
     <>
@@ -209,7 +216,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         hint={
           latency.isError
             ? undefined
-            : 'Measured from the checking regions, over the last 24 hours, in UTC.'
+            : 'Measured at the RELIASTRA observation point, over the last 24 hours, in UTC.'
         }
       >
         {latency.isLoading ? (
@@ -288,60 +295,58 @@ export function DependencyRecordPage({ id }: { id: string }) {
       </Section>
 
       <Section
-        title="Regional observation"
-        hint="Each region checks independently. Disagreement between regions is what separates a vendor outage from a local network fault."
+        title="Observation stream"
+        hint="Every recorded check, oldest to newest, from the single RELIASTRA observation point."
       >
         {results.isLoading ? (
           <RowsSkeleton rows={3} cols={2} />
         ) : results.isError ? (
           <Failure
-            body="Regional check results could not be retrieved."
+            body="Check results could not be retrieved."
             onRetry={() => results.refetch()}
           />
-        ) : byRegion.size === 0 ? (
+        ) : stream.length === 0 ? (
           <Empty
             title="No checks recorded yet"
             body="Checks run on the configured interval. If none appear after one interval, investigate the checking pipeline, not this endpoint."
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {[...byRegion.entries()].map(([region, list]) => {
-              const last = list[list.length - 1];
-              const up = list.filter((r) => r.is_up).length;
-              return (
-                <div
-                  key={region}
-                  className="border border-[var(--obc-line)] bg-[var(--obc-base)] p-4"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-[13px] text-[var(--obc-text)]">{regionLabel(region)}</p>
-                    <State status={Date.now() - Date.parse(last.executed_at) > Math.max(90, (dep.data?.check_interval_seconds ?? 60) * 3) * 1000 ? 'unknown' : last.is_up ? 'operational' : 'down'} />
-                  </div>
-                  <div className="mt-3">
-                    <CheckStrip
-                      cells={list.map((r) => ({
-                        at: r.executed_at,
-                        up: r.is_up,
-                        latency: r.latency_ms,
-                        region: r.region,
-                      }))}
-                      label={`${list.length} checks from ${regionLabel(region)}`}
-                    />
-                  </div>
-                  <dl className="mt-3">
-                    <Row label="Checks" mono>
-                      {up}/{list.length} up
-                    </Row>
-                    <Row label="Last observation" mono>
-                      {formatUtc(last.executed_at, 'HH:mm:ss')}
-                    </Row>
-                    <Row label="Last latency" mono>
-                      {last.is_up ? `${formatLatency(last.latency_ms)} ms` : 'no response'}
-                    </Row>
-                  </dl>
-                </div>
-              );
-            })}
+          <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-[13px] text-[var(--obc-text)]">{OBSERVATION_POINT_LABEL}</p>
+              <State
+                status={
+                  observationStale
+                    ? 'unknown'
+                    : lastObservation?.is_up
+                      ? 'operational'
+                      : 'down'
+                }
+              />
+            </div>
+            <div className="mt-3">
+              <CheckStrip
+                cells={stream.map((r) => ({
+                  at: r.executed_at,
+                  up: r.is_up,
+                  latency: r.latency_ms,
+                }))}
+                label={`${stream.length} checks from the ${OBSERVATION_POINT_LABEL}`}
+              />
+            </div>
+            <dl className="mt-3">
+              <Row label="Checks" mono>
+                {observationsUp}/{stream.length} up
+              </Row>
+              <Row label="Last observation" mono>
+                {lastObservation ? formatUtc(lastObservation.executed_at, 'HH:mm:ss') : 'none'}
+              </Row>
+              <Row label="Last latency" mono>
+                {lastObservation?.is_up
+                  ? `${formatLatency(lastObservation.latency_ms)} ms`
+                  : 'no response'}
+              </Row>
+            </dl>
           </div>
         )}
       </Section>
@@ -430,8 +435,8 @@ export function DependencyRecordPage({ id }: { id: string }) {
             <Row label="Next check" mono>
               {d.next_check_at ? formatUtc(d.next_check_at, 'HH:mm:ss') : 'not scheduled'}
             </Row>
-            <Row label="Regions" mono>
-              {d.regions.length ? d.regions.map(regionLabel).join(', ') : 'none configured'}
+            <Row label="Observation point" mono>
+              {OBSERVATION_POINT_LABEL}
             </Row>
             <Row label="Alert threshold" mono>
               {d.alert_threshold_ms ? `${d.alert_threshold_ms} ms` : 'none set'}
@@ -477,13 +482,6 @@ function ObservationLog({
       render: (r) => formatUtc(r.executed_at, 'MMM d HH:mm:ss'),
     },
     {
-      key: 'region',
-      header: 'Region',
-      width: 130,
-      sort: (r) => r.region,
-      render: (r) => regionLabel(r.region),
-    },
-    {
       key: 'result',
       header: 'Result',
       width: 120,
@@ -516,12 +514,12 @@ function ObservationLog({
     },
     {
       key: 'quorum',
-      header: 'Quorum',
+      header: 'Confirmed',
       width: 100,
       sort: (r) => (r.quorum_confirmed ? 0 : 1),
       render: (r) => (
         <span className="text-[12px] text-[var(--obc-text-3)]">
-          {r.quorum_confirmed ? 'confirmed' : 'single region'}
+          {r.quorum_confirmed ? 'confirmed' : 'not confirmed'}
         </span>
       ),
     },
@@ -553,7 +551,7 @@ function ObservationLog({
       ) : !sorted.length ? (
         <Empty
           title="No observations recorded"
-          body="Once the first check completes, every result is listed here with its region, latency, status code and quorum state."
+          body="Once the first check completes, every result is listed here with its latency, status code and confirmation state."
         />
       ) : (
         <>

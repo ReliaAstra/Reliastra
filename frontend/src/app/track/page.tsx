@@ -38,13 +38,13 @@ import {
 export const metadata: Metadata = {
   title: 'Public infrastructure observatory - independently measured dependency records',
   description:
-    'Independent, multi-region observation of the third-party APIs modern products depend on. Availability, latency and incident history measured by RELIASTRA probes, not self-reported by the vendor.',
+    'Independent observation of the third-party APIs modern products depend on. Availability, latency and incident history measured by RELIASTRA probes, not self-reported by the vendor.',
   alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.track) },
   robots: { index: true, follow: true },
   openGraph: {
     title: 'Public infrastructure observatory - RELIASTRA',
     description:
-      'Independent, multi-region records for third-party APIs. Measured, not self-reported.',
+      'Independent records for third-party APIs. Measured, not self-reported.',
     url: canonicalUrl(PUBLIC_ROUTES.track),
     type: 'website',
     images: [
@@ -180,7 +180,7 @@ export default async function ObservatoryIndexPage() {
             url: canonicalUrl(PUBLIC_ROUTES.track),
             name: 'Public infrastructure observatory',
             description:
-              'Independent, multi-region observation of third-party APIs: availability, latency and incident history.',
+              'Independent observation of third-party APIs: availability, latency and incident history.',
             isPartOf: { '@id': canonicalUrl('/#website') },
             inLanguage: 'en',
             hasPart: items.slice(0, 20).map((v) => ({

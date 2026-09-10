@@ -1,18 +1,18 @@
 import {
-  QUORUM_MIN_REGIONS,
-  QUORUM_WINDOW_SECONDS,
+  CHECK_INTERVAL_SECONDS,
+  DETECTION_FAILURE_CHECKS,
 } from '@/lib/product-contract';
 
 /**
  * One incident, told as a sequence, ending in the artifact.
  *
  * This is the fastest way to understand the product: an application sees
- * failures, RELIASTRA independently confirms them from outside, the quorum
- * rule is satisfied, the incident is attributed, the record is written. Every
- * step maps to a real backend behaviour:
+ * failures, RELIASTRA confirms them from outside the vendor's own reporting,
+ * the detection rule is satisfied, the incident is attributed, the record is
+ * written. Every step maps to a real backend behaviour:
  *
- *   - observations carry region, latency_ms, status_code, is_up
- *   - a fault needs QUORUM_MIN_REGIONS agreeing inside QUORUM_WINDOW_SECONDS
+ *   - observations carry executed_at, latency_ms, status_code, is_up
+ *   - a fault needs DETECTION_FAILURE_CHECKS consecutive failed checks
  *   - attribution returns a classification plus a confidence score
  *
  * The timestamps are illustrative and the panel says so.
@@ -20,7 +20,7 @@ import {
 
 type Beat = {
   time: string;
-  actor: 'application' | 'reliastra' | 'region' | 'engine' | 'record';
+  actor: 'application' | 'reliastra' | 'probe' | 'engine' | 'record';
   title: string;
   detail: string;
   /** Rendered in the right-hand column as monospace evidence. */
@@ -44,7 +44,7 @@ const BEATS: Beat[] = [
     time: '09:13:02',
     actor: 'reliastra',
     title: 'RELIASTRA observes external degradation',
-    detail: 'Independent checks against the same dependency, issued from infrastructure you and the vendor do not control.',
+    detail: `A scheduled check against the same dependency, issued every ${CHECK_INTERVAL_SECONDS}s from infrastructure the vendor does not control. One failure is recorded, not declared.`,
     data: [
       ['region', 'us-east'],
       ['status_code', '503'],
@@ -55,14 +55,14 @@ const BEATS: Beat[] = [
   },
   {
     time: '09:13:44',
-    actor: 'region',
-    title: 'Second region confirms inside the quorum window',
-    detail: `A single failing region is recorded, not declared. ${QUORUM_MIN_REGIONS} regions must agree within ${QUORUM_WINDOW_SECONDS} seconds.`,
+    actor: 'probe',
+    title: 'A second consecutive failure confirms the incident',
+    detail: `Confirmation is by persistence of failure: ${DETECTION_FAILURE_CHECKS} consecutive failed checks are required, and this is the second. No agreement between independent points is claimed.`,
     data: [
-      ['region', 'eu-west'],
+      ['executed_at', '09:13:44'],
       ['status_code', '503'],
       ['latency_ms', '3870'],
-      ['quorum_confirmed', 'true'],
+      ['detector_confirmed', 'true'],
     ],
     state: 'critical',
   },
@@ -81,7 +81,7 @@ const BEATS: Beat[] = [
     time: '09:16:03',
     actor: 'record',
     title: 'Evidence record finalized',
-    detail: 'The window, the regions, the retained observations and a SHA-256 checksum of the report.',
+    detail: 'The window, the detection rule, the retained observations and a SHA-256 checksum of the report.',
     data: [
       ['duration', '35m 25s'],
       ['observations', '142'],
@@ -94,7 +94,7 @@ const BEATS: Beat[] = [
 const ACTOR_LABEL: Record<Beat['actor'], string> = {
   application: 'Your application',
   reliastra: 'RELIASTRA',
-  region: 'RELIASTRA',
+  probe: 'RELIASTRA',
   engine: 'Attribution engine',
   record: 'Evidence record',
 };

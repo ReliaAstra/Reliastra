@@ -33,8 +33,8 @@ export default function QuickstartPage() {
             description: 'From organization to first observation in minutes.',
             step: [
               { '@type': 'HowToStep', name: 'Create an organization', text: 'Sign up; a 14-day Pro trial starts automatically, no card required.' },
-              { '@type': 'HowToStep', name: 'Add a dependency', text: 'Paste an endpoint URL you are authorized to monitor, pick regions and interval.' },
-              { '@type': 'HowToStep', name: 'Read observations', text: 'Checks start on the next tick; latency, status and outcome appear per region.' },
+              { '@type': 'HowToStep', name: 'Add a dependency', text: 'Paste an endpoint URL you are authorized to monitor and pick an interval.' },
+              { '@type': 'HowToStep', name: 'Read observations', text: 'Checks start on the next tick; latency, status and outcome appear per check.' },
               { '@type': 'HowToStep', name: 'Report an incident to correlate', text: 'Log your own incident window to compare against vendor observations.' },
             ],
           },
@@ -47,7 +47,7 @@ export default function QuickstartPage() {
         breadcrumbs={crumbs}
         sideNav={<DocsSideNav activeHref="/docs/quickstart" />}
         related={[
-          { label: 'Monitoring docs', href: '/docs/monitoring', description: 'Regions, intervals, states in depth.' },
+          { label: 'Monitoring docs', href: '/docs/monitoring', description: 'Observation points, intervals, states in depth.' },
           { label: 'Evidence docs', href: '/docs/evidence', description: 'Turn observations into reports.' },
           { label: 'Pricing', href: '/pricing', description: 'What the trial includes.' },
         ]}

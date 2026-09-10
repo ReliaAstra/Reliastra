@@ -274,7 +274,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     example:
       'At 14:02 your error rate spikes. RELIASTRA’s regional probes show your payment provider’s API timing out from two regions over the same window, while your database latency is flat. The investigation starts at the vendor, not in your codebase.',
     howReliastra:
-      'RELIASTRA checks each configured dependency on a fixed interval from independent regions, records latency, status codes and outcomes with timestamps, applies quorum rules before declaring incidents, and binds evidence reports to checksums you can verify.',
+      'RELIASTRA checks each configured dependency on a fixed interval from its own infrastructure, records latency, status codes and outcomes with timestamps, applies a deterministic rule before declaring incidents, and binds evidence reports to checksums you can verify.',
     related: [
       { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence' },
       { label: 'Incident attribution', href: '/glossary/incident-attribution' },
@@ -292,7 +292,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'A dependency that fails silently breaks your product while every internal dashboard stays green. Direct measurement closes that blind spot.',
     example:
-      'Your auth provider starts returning 500s to one region. RELIASTRA’s multi-region checks disagree - one origin fails, two succeed - distinguishing a regional path problem from a vendor-wide outage.',
+      'Your auth provider starts returning 500s intermittently. RELIASTRA’s scheduled checks record exactly which calls failed and for how long, separating a brief blip from a sustained vendor-wide outage.',
     howReliastra:
       'One scheduler dispatches one task per dependency per region through a message broker to workers. Every result carries its region. Recovery requires consecutive successes, so flapping does not page your team twice.',
     related: [
@@ -352,7 +352,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'Reliability determines architecture (retries, fallbacks, multi-vendor), contract terms (SLA clauses, credits), and incident readiness (who gets paged).',
     example:
-      'Two payment providers both claim four nines. Independent 30-day measurement shows one at 99.98% with a 340ms p95, the other at 99.91% with three multi-region incidents. The architecture decision writes itself.',
+      'Two payment providers both claim four nines. Independent 30-day measurement shows one at 99.98% with a 340ms p95, the other at 99.91% with three confirmed incidents. The architecture decision writes itself.',
     howReliastra:
       'RELIASTRA publishes aggregated posture only for vendors made public, always with window and methodology stated. Public Track pages show uptime, latency and incident history measured - not self-reported.',
     related: [

@@ -4,9 +4,9 @@ import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo';
 import { DocsSideNav } from '@/components/site/docs-side-nav';
 
 export const metadata = buildMetadata({
-  title: 'Monitoring docs - Checks, regions, states',
+  title: 'Monitoring docs - Checks, observation points, states',
   description:
-    'Configure RELIASTRA dependency monitoring: endpoints, regions, intervals, quorum incidents, the nine-state taxonomy, and retention.',
+    'Configure RELIASTRA dependency monitoring: endpoints, observation points, intervals, deterministic incident rules, the nine-state taxonomy, and retention.',
   path: '/docs/monitoring',
 });
 
@@ -28,7 +28,7 @@ export default function MonitoringDocsPage() {
       />
       <MarketingPage
         eyebrow="Docs · Monitoring"
-        title="Monitoring: checks, regions, states"
+        title="Monitoring: checks, observation points, states"
         lede="How to configure dependencies and read what the network reports - including the states that mean “we could not run the probe.”"
         breadcrumbs={crumbs}
         sideNav={<DocsSideNav activeHref="/docs/monitoring" />}
@@ -48,19 +48,26 @@ export default function MonitoringDocsPage() {
             link-local and metadata addresses are rejected and recorded as policy
             blocks, never as vendor outages.
           </p>
-          <h2>Regions and intervals</h2>
+          <h2>Observation points and intervals</h2>
           <p>
-            One scheduler dispatches one task per dependency per region per interval
-            through a message broker to workers. Free: 1-minute checks. Pro: down to
-            15 seconds. Each region resolves and connects independently, and every
-            stored result carries its origin region.
+            One scheduler dispatches one task per dependency per configured
+            observation label per interval through a message broker to workers.
+            Free: 1-minute checks. Pro: down to 15 seconds. Each scheduled check
+            resolves and connects on its own, and every stored result carries the
+            label it ran under. RELIASTRA currently operates a single observation
+            point, so those labels are scheduling slots on one worker rather than
+            independent geographic vantage points - the console says so rather
+            than implying a fleet.
           </p>
-          <h2>Incidents need quorum</h2>
+          <h2>Incidents need persistence</h2>
           <p>
-            A single failed request is never an incident. Declaration requires
-            failures across more than one region inside a short correlation window;
-            recovery requires consecutive successes. The window and region count are
-            fixed so the same evidence produces the same verdict everywhere.
+            A single failed request is never an incident. Declaration requires a
+            fixed number of consecutive failed checks; recovery requires
+            consecutive successes. The thresholds are configuration, not
+            heuristics: there is no timing guess, no randomness and no vote
+            between regions, so the same evidence produces the same verdict
+            everywhere. The rule that fired is recorded on the incident and
+            reproduced in the evidence report.
           </p>
           <h2>The state taxonomy</h2>
           <ul>

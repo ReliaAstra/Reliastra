@@ -30,14 +30,18 @@ from app.core.ssrf_protection import (
 )
 from app.modules.checks.constants import (
     BLOCKED_BY_SECURITY_POLICY_PREFIX,
-    CONSECUTIVE_RECOVERY_CHECKS,
     INFRASTRUCTURE_STATES,
-    QUORUM_MIN_REGIONS,
-    QUORUM_WINDOW_SECONDS,
     REDIRECT_BLOCKED_BY_SECURITY_POLICY_PREFIX,
     TARGET_STATES,
     TOO_MANY_REDIRECTS_PREFIX,
     CheckState,
+)
+from app.modules.checks.detection import (
+    CheckOutcome,
+    DetectionDecision,
+    ObservationTopology,
+    evaluate_detection,
+    policy_from_settings,
 )
 from app.modules.checks.models import CheckResult
 from app.modules.checks.repository import CheckRepository
@@ -436,73 +440,67 @@ class CheckService:
             result_id=result_id,
         )
 
-        # FIX 3: atomic quorum evaluation. Lock the dependency row so
-        # concurrent checks for the same dependency serialize here and cannot
-        # interleave "read recent results" with "write quorum status".
+        # FIX 3: atomic detection. Lock the dependency row so concurrent
+        # checks for the same dependency serialize here and cannot interleave
+        # "read recent results" with "write confirmation / open incident".
         lock_stmt = (
             select(Dependency).where(Dependency.id == dependency_id).with_for_update()
         )
         await session.execute(lock_stmt)
 
-        # Evaluate Quorum Logic
-        recent_results = await self.repository.list_recent_for_dependency(
-            session, dependency_id, window_seconds=QUORUM_WINDOW_SECONDS
+        decision = await self._evaluate_detection(
+            session=session,
+            dependency_id=dependency_id,
+            result=result,
+            is_up=is_up,
+            region=region,
         )
 
-        if not is_up:
-            # Failure quorum: >= 2 distinct regions report failure in 60s
-            failing_regions = {r.region for r in recent_results if not r.is_up}
-            failing_regions.add(region)
-            if len(failing_regions) >= QUORUM_MIN_REGIONS:
-                result.quorum_confirmed = True
-                session.add(result)
-                await session.flush()
-                from app.modules.incidents.service import incident_service
+        # `quorum_confirmed` is the detector-confirmation flag on the row. Under
+        # a single observation point it records "this failure cleared the
+        # consecutive-failure rule"; under multi it records "N independent
+        # points agreed". The column name predates the topology split; the
+        # meaning is "the detector confirmed this result", never "a human
+        # agreed".
+        if decision.confirmed != result.quorum_confirmed:
+            result.quorum_confirmed = decision.confirmed
+            session.add(result)
+            await session.flush()
 
-                await incident_service.check_and_create_incident(
-                    session=session,
-                    org_id=org_id,
-                    dependency_id=dependency_id,
-                    error_message=error_message or "Quorum confirmed failure",
-                )
-            else:
-                logger.info(
-                    "False positive or single region failure for dep %s in region %s",
-                    dependency_id,
-                    region,
-                )
-        else:
-            # Success: check if open incident exists and evaluate recovery quorum
+        if decision.open_incident:
+            from app.modules.incidents.service import incident_service
+
+            await incident_service.check_and_create_incident(
+                session=session,
+                org_id=org_id,
+                dependency_id=dependency_id,
+                error_message=error_message or "Detector confirmed failure",
+                detection=decision.as_metadata(),
+                # The outage began with the first failure of the run, not with
+                # the check that crossed the threshold.
+                started_at=decision.run_started_at,
+            )
+        elif decision.resolve_incident:
             from app.modules.incidents.repository import IncidentRepository
+            from app.modules.incidents.service import incident_service
 
             open_incident = await IncidentRepository.get_open_for_dependency(
                 session, dependency_id
             )
             if open_incident:
-                # Recovery quorum: the most recent N results must ALL be
-                # successful and span at least QUORUM_MIN_REGIONS distinct
-                # regions (N = consecutive checks per region x min regions).
-                # This is a genuine consecutiveness requirement - flapping
-                # successes inside the window keep the incident open. The N
-                # last results are read regardless of the 60s quorum window:
-                # slow check intervals must still be able to recover.
-                recovery_window_size = CONSECUTIVE_RECOVERY_CHECKS * QUORUM_MIN_REGIONS
-                recovery_window = await self.repository.list_for_dependency(
-                    session, dependency_id, limit=recovery_window_size
+                await incident_service.resolve_incident(
+                    session=session,
+                    incident_id=open_incident.id,
+                    org_id=open_incident.org_id,
+                    detection=decision.as_metadata(),
                 )
-                succeeding_regions = {r.region for r in recovery_window if r.is_up}
-                if (
-                    len(recovery_window) >= recovery_window_size
-                    and all(r.is_up for r in recovery_window)
-                    and len(succeeding_regions) >= QUORUM_MIN_REGIONS
-                ):
-                    from app.modules.incidents.service import incident_service
-
-                    await incident_service.resolve_incident(
-                        session=session,
-                        incident_id=open_incident.id,
-                        org_id=open_incident.org_id,
-                    )
+        else:
+            logger.info(
+                "No incident transition for dep %s in %s: %s",
+                dependency_id,
+                region,
+                decision.reason,
+            )
 
         await self._enqueue_observation_outbox(session, result, url, method)
 
@@ -524,6 +522,79 @@ class CheckService:
         await clear_check_dispatched(dependency_id)
         return result
 
+
+    async def _evaluate_detection(
+        self,
+        *,
+        session: AsyncSession,
+        dependency_id: uuid.UUID,
+        result: CheckResult,
+        is_up: bool,
+        region: str,
+    ) -> DetectionDecision:
+        """Gather the facts and ask the pure policy what they mean.
+
+        Two bounded reads, both on the same dependency and both inside the row
+        lock taken by the caller:
+
+        * ``history`` - the last N results, which is all a consecutive-run rule
+          can ever need. Read regardless of elapsed time so a slow check
+          interval can still confirm and still recover.
+        * ``window`` - only for the multi-observation quorum, which is about
+          agreement *at the same moment*, so it is bounded in time.
+
+        The just-written result is excluded from both and passed separately as
+        ``current``: it is already flushed, so it would otherwise be counted
+        twice and every threshold would be off by one.
+        """
+        from app.modules.incidents.repository import IncidentRepository
+
+        policy = policy_from_settings(settings)
+
+        stored = await self.repository.list_for_dependency(
+            session, dependency_id, limit=policy.history_limit()
+        )
+        history = [
+            CheckOutcome(
+                is_up=row.is_up,
+                observation_point=row.region,
+                executed_at=row.executed_at,
+            )
+            for row in reversed(stored)
+            if row.id != result.id
+        ]
+
+        window = history
+        if policy.topology is ObservationTopology.MULTI:
+            recent = await self.repository.list_recent_for_dependency(
+                session, dependency_id, window_seconds=policy.quorum_window_seconds
+            )
+            window = [
+                CheckOutcome(
+                    is_up=row.is_up,
+                    observation_point=row.region,
+                    executed_at=row.executed_at,
+                )
+                for row in reversed(recent)
+                if row.id != result.id
+            ]
+
+        open_incident = await IncidentRepository.get_open_for_dependency(
+            session, dependency_id
+        )
+
+        return evaluate_detection(
+            policy=policy,
+            current=CheckOutcome(
+                is_up=is_up,
+                observation_point=region,
+                executed_at=result.executed_at,
+            ),
+            history=history,
+            window=window,
+            has_open_incident=open_incident is not None,
+            now=datetime.now(timezone.utc),
+        )
 
     # ── Diagnostics ─────────────────────────────────────────────────────────
 

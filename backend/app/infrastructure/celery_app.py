@@ -180,6 +180,17 @@ celery_app.conf.update(
             # the older ones would have.
             "options": {"expires": 60},
         },
+        # Evidence generation is published from an ``after_commit`` hook, so a
+        # broker outage at the moment an incident resolves means the task was
+        # never enqueued and nothing records that. This sweep is the recovery
+        # path: it retries incidents stuck in ``failed``/``pending`` and any
+        # ``generating`` attempt older than the task's own time limit.
+        # Idempotent generation makes the sweep safe to run blindly.
+        "evidence-generation-retry": {
+            "task": "app.modules.evidence.tasks.retry_failed_evidence_generation",
+            "schedule": 300.0,
+            "options": {"expires": 240},
+        },
         "retention-cleanup-monthly": {
             "task": "app.modules.observations.tasks.retention_cleanup",
             "schedule": crontab(minute=0, hour=3, day_of_month=1),

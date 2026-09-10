@@ -38,6 +38,10 @@ def _wired_repos(dep_id: uuid.UUID, org_id: uuid.UUID, *, is_up: bool = True):
     dep_repo.get_by_id = AsyncMock(return_value=_fake_dep(dep_id, org_id))
     chk_repo.create = AsyncMock(return_value=fake_result)
     chk_repo.list_recent_for_dependency = AsyncMock(return_value=[fake_result])
+    # Detection reads the stored history through list_for_dependency. The row
+    # just written is excluded by the service, so returning only the current
+    # result models "first observation for this dependency".
+    chk_repo.list_for_dependency = AsyncMock(return_value=[fake_result])
     return chk_repo, dep_repo, fake_result
 
 
@@ -383,6 +387,11 @@ async def test_execute_check_blocks_redirect_to_private_target():
     ), patch(
         "app.modules.checks.http_probe.pinned_transport_for",
         return_value=FakeTransport(),
+    ), patch(
+        # Detection asks whether an incident is open before it decides on a
+        # recovery transition; the other execute_check tests stub this too.
+        "app.modules.incidents.repository.IncidentRepository.get_open_for_dependency",
+        new=AsyncMock(return_value=None),
     ):
         res = await service.execute_check(session, dep_id, "us-east")
 

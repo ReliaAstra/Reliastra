@@ -16,6 +16,16 @@ class StorageError(RuntimeError):
     """
 
 
+class StorageObjectMissing(StorageError):
+    """The key does not exist in the bucket.
+
+    Distinct from a transport/credential failure so callers can tell "we never
+    stored this" apart from "we could not reach the store". An evidence record
+    whose PDF is missing is a broken artifact and must be reported as one, not
+    handed to a customer as a download link that 404s.
+    """
+
+
 class StorageClient:
     """Supabase Storage S3 client (boto3 - the only supported backend).
 
@@ -183,6 +193,44 @@ class StorageClient:
             return response["Body"].read()
         except Exception as exc:
             raise StorageError(f"Download of '{object_name}' failed: {exc}") from exc
+
+    def stat_object(self, object_name: str) -> dict[str, object]:
+        """Return ``{"size_bytes", "etag"}`` for a stored object.
+
+        Raises :class:`StorageObjectMissing` when the key is absent, and
+        :class:`StorageError` for any other failure. Used to verify an
+        artifact really is in the bucket before it is reported as generated,
+        and to confirm a stored object still matches its recorded checksum.
+        """
+        self.ensure_bucket_exists()
+        client = self._get_client()
+        try:
+            response = client.head_object(Bucket=self.bucket, Key=object_name)
+        except client.exceptions.ClientError as exc:
+            code = exc.response.get("Error", {}).get("Code", "")
+            if code in {"404", "NoSuchKey", "NotFound"}:
+                raise StorageObjectMissing(
+                    f"Object '{object_name}' is not present in bucket "
+                    f"'{self.bucket}'"
+                ) from exc
+            raise StorageError(
+                f"Stat of '{object_name}' failed: {exc}"
+            ) from exc
+        except Exception as exc:
+            # Botocore raises ClientError for a 404; anything else (missing
+            # credentials, unreachable endpoint) is not "missing".
+            if exc.__class__.__name__ == "ClientError":
+                code = getattr(exc, "response", {}).get("Error", {}).get("Code", "")
+                if code in {"404", "NoSuchKey", "NotFound"}:
+                    raise StorageObjectMissing(
+                        f"Object '{object_name}' is not present in bucket "
+                        f"'{self.bucket}'"
+                    ) from exc
+            raise StorageError(f"Stat of '{object_name}' failed: {exc}") from exc
+        return {
+            "size_bytes": int(response.get("ContentLength") or 0),
+            "etag": str(response.get("ETag") or "").strip('"'),
+        }
 
     def download_file(self, object_name: str, dest_path: str) -> None:
         data = self.download_bytes(object_name)

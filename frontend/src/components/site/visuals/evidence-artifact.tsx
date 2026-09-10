@@ -12,8 +12,14 @@ import {
  * and the arithmetic between them is internally consistent:
  *
  *   window      09:12:41Z - 09:48:06Z = 2125 s
- *   24 h uptime (86400 - 2125) / 86400 = 97.54%
- *   degradation (100.0 - 97.54) / 100.0 = 2.46%
+ *   checks      36 measured in the window, 6 failed, 0 blocked
+ *   availability 30 / 36 = 83.3333%
+ *   degradation  100.0 - 83.3333 = 16.6667%
+ *   downtime     2125 s x 16.6667% = 354 s
+ *
+ * Every figure is computed from the incident window, exactly as the real
+ * report computes it - there is no rolling 24-hour number here, because the
+ * real report does not present one as the incident measurement either.
  *
  * A demonstration panel whose numbers do not agree with each other is worse
  * than no panel, because a technical buyer checks them.
@@ -27,14 +33,35 @@ const INCIDENT = {
   status: 'RESOLVED',
   startedAt: '2025-11-14 09:12:41+00:00',
   resolvedAt: '2025-11-14 09:48:06+00:00',
-  regions: 'us-east, eu-west',
+  window: '2025-11-14 09:12:41 \u2192 09:48:06 (2125s)',
+  topology: 'Single observation point \u2014 1 point recorded (us-east)',
+} as const;
+
+const DETECTION = {
+  rule: 'Consecutive failed checks (single observation point)',
+  identifier: 'single.consecutive_failures',
+  confirmed: 'CONFIRMED by consecutive failed checks (single observation point)',
+  basis: '2 consecutive failed checks (2 required)',
+} as const;
+
+const WINDOW = {
+  checks: '36 (36 reached the target)',
+  up: '30',
+  down: '6',
+  blocked: '0',
+  availability: '83.3333%',
+  failureRun: '6 consecutive failed check(s)',
+  latency: 'avg 412.3 \u00b7 p50 398.0 \u00b7 p95 812.4 \u00b7 min 121.0 \u00b7 max 934.6',
+  firstLast: '2025-11-14 09:12:41 \u2192 2025-11-14 09:47:41',
 } as const;
 
 const SLA = {
   planned: '100.0% (0s allowable outage)',
-  measured: '97.54',
-  impact: '2.46',
-  quorum: 'YES (Confirmed across multiple independent regions)',
+  measured: '83.3333',
+  impact: '16.6667',
+  downtime: '354s of 2125s',
+  allowance: 'YES',
+  basis: '6 of 36 measured checks failed inside the 2125s window (1 observation point)',
 } as const;
 
 const ATTRIBUTION = {
@@ -98,7 +125,7 @@ export function EvidenceArtifact() {
             RELIASTRA EXTERNAL SLA EVIDENCE REPORT
           </span>
           <span className="ob-artifact-sub">
-            Verified Independent Multi-Region Vendor Failure Evidence
+            Detector-Confirmed Vendor Failure Evidence
           </span>
         </div>
         <span className="ob-vis-flag">Illustrative values</span>
@@ -115,17 +142,38 @@ export function EvidenceArtifact() {
           />
           <Field label="Started At (UTC)" value={INCIDENT.startedAt} />
           <Field label="Resolved At (UTC)" value={INCIDENT.resolvedAt} />
-          <Field label="Verification Regions" value={INCIDENT.regions} />
+          <Field label="Measurement Window (UTC)" value={INCIDENT.window} />
+          <Field label="Observation Topology" value={INCIDENT.topology} />
         </ReportSection>
 
-        <ReportSection n="2" title="SLA Impact Calculation">
+        <ReportSection n="2" title="Detection Record">
+          <Field label="Detection Rule" value={DETECTION.rule} />
+          <Field label="Rule Identifier" value={DETECTION.identifier} />
+          <Field label="Detector Confirmation" value={DETECTION.confirmed} />
+          <Field label="Basis" value={DETECTION.basis} />
+        </ReportSection>
+
+        <ReportSection n="3" title="Incident Window Measurements">
+          <Field label="Checks In Window" value={WINDOW.checks} />
+          <Field label="Successful Checks" value={WINDOW.up} />
+          <Field label="Failed Checks" value={WINDOW.down} />
+          <Field label="Blocked Checks (Excluded)" value={WINDOW.blocked} />
+          <Field label="Measured Availability" value={WINDOW.availability} />
+          <Field label="Longest Failure Run" value={WINDOW.failureRun} />
+          <Field label="Latency (ms)" value={WINDOW.latency} />
+          <Field label="First / Last Observation" value={WINDOW.firstLast} />
+        </ReportSection>
+
+        <ReportSection n="4" title="SLA Impact Calculation">
           <Field label="Planned Target Uptime" value={SLA.planned} />
-          <Field label="Measured 24h Uptime" value={`${SLA.measured}%`} />
+          <Field label="Measured Availability In Window" value={`${SLA.measured}%`} />
           <Field label="SLA Degradation Impact" value={`${SLA.impact}%`} />
-          <Field label="Quorum Confirmed Failure" value={SLA.quorum} />
+          <Field label="Measured Downtime" value={SLA.downtime} />
+          <Field label="Allowance Exceeded" value={SLA.allowance} />
+          <Field label="Calculation Basis" value={SLA.basis} />
         </ReportSection>
 
-        <ReportSection n="5" title="Deterministic Attribution">
+        <ReportSection n="8" title="Deterministic Attribution">
           <Field label="Classification" value={ATTRIBUTION.classification} />
           <Field label="Confidence Score" value={ATTRIBUTION.confidence} />
           <Field label="Methodology" value={ATTRIBUTION.methodology} />
@@ -139,7 +187,7 @@ export function EvidenceArtifact() {
             value={`${FOOTER.hash.slice(0, 16)}…${FOOTER.hash.slice(-8)}`}
           />
           <Field
-            label={EVIDENCE_FOOTER_FIELDS[1]}
+            label={EVIDENCE_FOOTER_FIELDS[2]}
             value={FOOTER.verificationId}
           />
         </dl>

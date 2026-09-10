@@ -40,6 +40,28 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session", autouse=True)
+def _celery_in_memory_transports() -> Generator[None, None, None]:
+    """Keep Celery publishing off the network during tests.
+
+    ``apply_async`` touches both the broker and the result backend, and the
+    result backend is Redis in every real deployment. Without this, a test that
+    resolves an incident - which publishes evidence generation from an
+    ``after_commit`` hook - dies on a socket instead of exercising the code.
+    With it, publishing succeeds into a memory transport and no task runs,
+    which is the honest simulation: a worker is a separate process.
+    """
+    from app.infrastructure.celery_app import celery_app
+
+    previous = (celery_app.conf.broker_url, celery_app.conf.result_backend)
+    celery_app.conf.broker_url = "memory://"
+    celery_app.conf.result_backend = "cache+memory://"
+    try:
+        yield
+    finally:
+        celery_app.conf.broker_url, celery_app.conf.result_backend = previous
+
+
+@pytest.fixture(scope="session", autouse=True)
 def setup_test_db_server() -> Generator[str, None, None]:
     """Start embedded PostgreSQL server for session and apply migrations."""
     if pgserver is None:
@@ -247,3 +269,55 @@ async def auth_data(async_client: AsyncClient) -> dict[str, Any]:
         "org_id": org["id"],
         "org_slug": org["slug"],
     }
+
+
+class FakeEvidenceStorage:
+    """An in-memory object store standing in for Supabase S3 in tests.
+
+    Evidence generation is verified end to end in the test suite, and the
+    service checks what it uploaded before it writes a report row. A stub that
+    always claims success would make that verification vacuous, so this one
+    remembers the bytes: ``stat_object`` reports the size that was really
+    written, and a missing key raises the way the real client does.
+    """
+
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+
+    def upload_bytes(self, data: bytes, name: str, content_type: str) -> str:
+        self.objects[name] = data
+        return name
+
+    def stat_object(self, name: str) -> dict[str, object]:
+        from app.infrastructure.storage import StorageObjectMissing
+
+        if name not in self.objects:
+            raise StorageObjectMissing(name)
+        return {"size_bytes": len(self.objects[name]), "etag": "fake-etag"}
+
+    def download_bytes(self, name: str) -> bytes:
+        from app.infrastructure.storage import StorageObjectMissing
+
+        if name not in self.objects:
+            raise StorageObjectMissing(name)
+        return self.objects[name]
+
+    def get_presigned_url(self, name: str, expires_seconds: int = 3600) -> str:
+        return f"http://storage.test/{name}"
+
+
+@pytest.fixture(scope="function")
+def evidence_storage(mocker) -> FakeEvidenceStorage:
+    """Point the evidence service at :class:`FakeEvidenceStorage`.
+
+    Tests that exercise report generation opt into this explicitly; nothing is
+    patched globally, so a test that means to observe a storage failure still
+    can.
+    """
+    bucket = FakeEvidenceStorage()
+    target = "app.modules.evidence.service.storage_client"
+    mocker.patch(f"{target}.upload_bytes", new=bucket.upload_bytes)
+    mocker.patch(f"{target}.stat_object", new=bucket.stat_object)
+    mocker.patch(f"{target}.download_bytes", new=bucket.download_bytes)
+    mocker.patch(f"{target}.get_presigned_url", new=bucket.get_presigned_url)
+    return bucket

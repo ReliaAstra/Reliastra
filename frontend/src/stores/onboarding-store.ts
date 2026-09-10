@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { PRIMARY_OBSERVATION_REGION } from '@/lib/product-contract';
 
 /**
  * Observation configuration sequence state.
@@ -71,7 +72,9 @@ export const EMPTY_DRAFT: ObservationDraft = {
   endpointUrl: '',
   method: 'GET',
   expectedStatusCodes: [200],
-  regions: ['us-east', 'eu-west'],
+  // RELIASTRA probes from one place, so the draft carries exactly one
+  // scheduling label - the value the API requires, not a place.
+  regions: [PRIMARY_OBSERVATION_REGION],
   checkIntervalSeconds: 300,
   timeoutSeconds: 10,
   alertThresholdMs: null,

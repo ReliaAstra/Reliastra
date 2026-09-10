@@ -67,14 +67,14 @@ export default function EdiPage() {
           <h2>How it differs from uptime monitoring</h2>
           <ul>
             <li><strong>Subject:</strong> uptime monitoring watches your services; dependency intelligence watches your vendors.</li>
-            <li><strong>Origin:</strong> probes run from independent regions on infrastructure the vendor does not control.</li>
-            <li><strong>Verdict:</strong> quorum across regions, not a single failed request.</li>
+            <li><strong>Origin:</strong> probes run from RELIASTRA infrastructure the vendor does not control, so a green status page cannot hide a real failure.</li>
+            <li><strong>Verdict:</strong> persistent failure across consecutive checks, never a single failed request.</li>
             <li><strong>Artifact:</strong> checksummed fault reports, not screenshots.</li>
           </ul>
           <h2>How RELIASTRA produces it</h2>
           <p>
             Fixed-interval checks per dependency per region, every result stored with region
-            and timestamp, quorum-confirmed incidents, deterministic correlation against
+            and timestamp, deterministically confirmed incidents, deterministic correlation against
             your own incident history, and verifiable <a href="/sla-evidence">SLA evidence</a>.
             The full method is published in{' '}
             <a href="/research/how-reliastra-measures-vendor-reliability">how RELIASTRA measures vendor reliability</a> -

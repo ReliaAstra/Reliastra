@@ -10,7 +10,11 @@ import {
   ALLOWED_REGIONS,
   ATTRIBUTION_CLASSIFICATIONS,
   ATTRIBUTION_WEIGHTS,
+  CHECK_INTERVAL_SECONDS,
   CHECK_RESULT_FIELDS,
+  DETECTION_FAILURE_CHECKS,
+  OBSERVATION_POINT_COUNT,
+  OBSERVATION_POINT_LABEL,
   EVIDENCE_REPORT_FIELDS,
   QUORUM_MIN_REGIONS,
   QUORUM_WINDOW_SECONDS,
@@ -75,18 +79,25 @@ describe('evidence artifact', () => {
   });
 
   it('keeps its uptime arithmetic self-consistent', () => {
-    // window 09:12:41 -> 09:48:06 = 2125s of downtime in an 86400s day
-    const downtime = 2125;
-    const uptime = ((86400 - downtime) / 86400) * 100;
-    expect(uptime.toFixed(2)).toBe('97.54');
+    // The depicted figures are computed from the incident window, the way the
+    // real report computes them: 36 measured checks in a 2125s window, 6 failed.
+    const windowSeconds = 2125;
+    const measured = 36;
+    const failed = 6;
+    const availability = ((measured - failed) / measured) * 100;
+    expect(availability.toFixed(4)).toBe('83.3333');
 
-    // The artifact defines degradation as (Planned - Measured) / Planned,
-    // which is a ratio; it is rendered as a percentage, so scale by 100.
-    const impactPct = ((100 - uptime) / 100) * 100;
-    expect(impactPct.toFixed(2)).toBe('2.46');
+    const impactPct = 100 - availability;
+    expect(impactPct.toFixed(4)).toBe('16.6667');
 
-    expect(html.artifact).toContain('97.54%');
-    expect(html.artifact).toContain('2.46%');
+    const downtimeSeconds = Math.round((windowSeconds * impactPct) / 100);
+    expect(downtimeSeconds).toBe(354);
+
+    expect(html.artifact).toContain('83.3333%');
+    expect(html.artifact).toContain('16.6667%');
+    expect(html.artifact).toContain('354s of 2125s');
+    // No rolling 24-hour figure is presented as the incident measurement.
+    expect(html.artifact).not.toContain('Measured 24h Uptime');
   });
 });
 
@@ -131,13 +142,17 @@ describe('attribution signals', () => {
 });
 
 describe('dependency topology', () => {
-  it('only names regions the API accepts', () => {
-    const regions = html.topology.match(/<dt>([a-z]{2}-[a-z]+)<\/dt>/g) ?? [];
-    expect(regions.length).toBeGreaterThan(0);
-    for (const raw of regions) {
-      const code = raw.replace(/<\/?dt>/g, '');
-      expect(ALLOWED_REGIONS).toContain(code);
+  it('shows consecutive checks from one point, not independent regions', () => {
+    // RELIASTRA runs a single observation point, so the two readings per
+    // dependency are two timestamps, not two places. A diagram that named
+    // regions here would be claiming a fleet that does not exist.
+    const readings = html.topology.match(/<dt>(\d{2}:\d{2}:\d{2})<\/dt>/g) ?? [];
+    expect(readings.length).toBeGreaterThan(0);
+    for (const code of ALLOWED_REGIONS) {
+      expect(html.topology).not.toContain(`<dt>${code}</dt>`);
     }
+    expect(html.topology).toContain(String(OBSERVATION_POINT_COUNT));
+    expect(html.topology).toContain(`checked every ${CHECK_INTERVAL_SECONDS}s`);
   });
 
   it('surfaces only fields that exist on CheckResult', () => {
@@ -152,9 +167,12 @@ describe('dependency topology', () => {
 });
 
 describe('incident timeline', () => {
-  it('states the real quorum rule', () => {
-    expect(html.timeline).toContain(String(QUORUM_MIN_REGIONS));
-    expect(html.timeline).toContain(String(QUORUM_WINDOW_SECONDS));
+  it('states the real detection rule', () => {
+    expect(html.timeline).toContain(String(DETECTION_FAILURE_CHECKS));
+    expect(html.timeline).toContain('consecutive failed checks');
+    // The single-observation-point deployment never claims a regional vote.
+    expect(html.timeline).not.toContain('regions must agree');
+    expect(html.timeline).not.toContain('quorum');
   });
 
   it('labels itself as illustrative and not a real event', () => {
@@ -182,9 +200,14 @@ describe('latency chart', () => {
     expect(html.chart).toMatch(/aria-label="[^"]{40,}"/);
   });
 
-  it('annotates the quorum window', () => {
-    expect(html.chart).toContain('quorum window');
-    expect(html.chart).toContain(String(QUORUM_WINDOW_SECONDS));
+  it('annotates the incident window and the rule that confirmed it', () => {
+    expect(html.chart).toContain('incident window');
+    expect(html.chart).toContain(String(DETECTION_FAILURE_CHECKS));
+    expect(html.chart).toContain(String(CHECK_INTERVAL_SECONDS));
+    // One observation point: one series, and no claim of a regional vote.
+    expect(html.chart).toContain(OBSERVATION_POINT_LABEL);
+    expect(html.chart).not.toContain('quorum');
+    expect(html.chart.match(/<polyline/g)?.length).toBe(1);
   });
 
   it('is self-contained static SVG with no client runtime', () => {

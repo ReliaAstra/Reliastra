@@ -187,8 +187,8 @@ export function ReportsPage() {
 
       <p className="max-w-[82ch] py-5 text-[13px] leading-[1.7] text-[var(--obc-text-2)]">
         A report is the artifact generated from a confirmed incident: the observations that
-        triggered it, the regions they came from, their timestamps, and a SHA-256 checksum that
-        makes the file verifiable after it leaves this console. Download links are signed and
+        triggered it, their timestamps, and a SHA-256 checksum that makes the file verifiable
+        after it leaves this console. Download links are signed and
         expire; regenerating produces a new artifact from the same stored observations.
       </p>
 
@@ -239,7 +239,7 @@ export function ReportsPage() {
           {[
             [
               'Observations',
-              'Every check result inside the incident window, with region, latency, status code and transport error.',
+              'Every check result inside the incident window, with latency, status code and transport error.',
             ],
             [
               'Attribution',

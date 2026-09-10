@@ -220,7 +220,7 @@ export function CheckStrip({
   cells,
   label,
 }: {
-  cells: { at: string; up: boolean; latency?: number | null; region?: string }[];
+  cells: { at: string; up: boolean; latency?: number | null }[];
   label: string;
 }) {
   if (!cells.length) {
@@ -238,9 +238,7 @@ export function CheckStrip({
             key={`${c.at}-${i}`}
             title={`${new Date(c.at).toISOString().slice(0, 16).replace('T', ' ')} UTC · ${
               c.up ? 'up' : 'down'
-            }${c.latency != null ? ` · ${Math.round(c.latency)} ms` : ''}${
-              c.region ? ` · ${c.region}` : ''
-            }`}
+            }${c.latency != null ? ` · ${Math.round(c.latency)} ms` : ''}`}
             className="h-7 min-w-[3px] flex-1"
             style={{
               background: c.up ? 'var(--obc-ok)' : 'var(--obc-crit)',

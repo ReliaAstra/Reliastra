@@ -32,7 +32,9 @@ def test_http_server():
 
 
 @pytest.mark.asyncio
-async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker):
+async def test_full_e2e_flow(
+    async_client, db_session, test_http_server, mocker, evidence_storage
+):
     # This test intentionally uses a loopback HTTP fixture. Bypass URL
     # validation only in the test; production SSRF protection remains enabled.
     # FIX 26: the check service pins connections via a resolved target; the
@@ -54,18 +56,10 @@ async def test_full_e2e_flow(async_client, db_session, test_http_server, mocker)
         "app.modules.checks.http_probe.pinned_transport_for",
         return_value=httpx.AsyncHTTPTransport(),
     )
-    # FIX 35: storage failures raise - stub uploads in the test harness.
-    mocker.patch(
-        "app.modules.evidence.service.storage_client.upload_bytes",
-        return_value="evidence/x.pdf",
-    )
-    mocker.patch(
-        "app.modules.evidence.service.storage_client.get_presigned_url",
-        return_value="http://storage.test/evidence/x.pdf",
-    )
-    mocker.patch(
-        "app.modules.evidence.tasks.generate_evidence_report.apply_async"
-    )
+    # Storage is stubbed by the ``evidence_storage`` fixture (in-memory bucket
+    # that reports back the bytes it was given). Publishing is left alone: the
+    # Celery transports are in-memory for tests, so the after-commit dispatch
+    # runs for real and simply has no worker to pick it up.
     # Spy on notification sending
     send_email_spy = mocker.spy(email_client, "send_email")
 

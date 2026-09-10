@@ -7,7 +7,7 @@ import { LatencyChart } from '@/components/site/visuals/latency-chart';
 export const metadata = buildMetadata({
   title: 'SLA Evidence & Outage Proof',
   description:
-    'Turn vendor outages into timestamped, checksummed SLA evidence: independent multi-region observations, correlated impact, and credit-ready fault reports.',
+    'Turn vendor outages into timestamped, checksummed SLA evidence: independently measured observations, correlated impact, and credit-ready fault reports.',
   path: '/sla-evidence',
 });
 
@@ -73,7 +73,7 @@ export default function SlaEvidencePage() {
           <ul>
             <li>Dependency, failure window (UTC), and severity.</li>
             <li>Per-region observation timeline: latency, status codes, outcomes.</li>
-            <li>Quorum verdict and methodology reference.</li>
+            <li>The detection rule that fired, and a methodology reference.</li>
             <li>Correlated customer impact from your incident history.</li>
             <li>Computed credit figure under your plan’s SLA clause.</li>
             <li>SHA-256 checksum and public verification reference.</li>

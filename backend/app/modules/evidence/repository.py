@@ -42,6 +42,22 @@ class EvidenceRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_by_file_path(
+        session: AsyncSession, file_path: str
+    ) -> EvidenceReport | None:
+        """Resolve a report from its object key.
+
+        Used by the idempotency check: an ``EvidenceSnapshot`` records the path
+        it was generated to, and the report row is what the console reads, so
+        the path is the join between "these facts were already documented" and
+        "here is the artifact".
+        """
+        result = await session.execute(
+            select(EvidenceReport).where(EvidenceReport.file_path == file_path)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def get_by_incident(
         session: AsyncSession, incident_id: uuid.UUID
     ) -> EvidenceReport | None:

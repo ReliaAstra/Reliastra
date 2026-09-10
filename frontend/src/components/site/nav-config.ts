@@ -56,7 +56,7 @@ export const PRODUCT_PANEL: NavGroup[] = [
       {
         label: 'Dependency monitoring',
         href: PUBLIC_ROUTES.dependencyMonitoring,
-        description: 'Multi-region checks with quorum verdicts',
+        description: 'Fixed-interval checks with deterministic verdicts',
       },
       {
         label: 'Incident attribution',

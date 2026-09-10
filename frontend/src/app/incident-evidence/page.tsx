@@ -7,7 +7,7 @@ import { AttributionSignals } from '@/components/site/visuals/attribution-signal
 export const metadata = buildMetadata({
   title: 'Incident Evidence & Outage Attribution',
   description:
-    'Prove whether an incident originated from your infrastructure or an external provider: correlated timelines, quorum verdicts, and deterministic attribution.',
+    'Prove whether an incident originated from your infrastructure or an external provider: correlated timelines, the detection record, and deterministic attribution.',
   path: '/incident-evidence',
 });
 
@@ -73,7 +73,7 @@ export default function IncidentEvidencePage() {
           <h2>How attribution works</h2>
           <ul>
             <li><strong>Shared timeline:</strong> your incident window and the dependency’s independent observations on one axis.</li>
-            <li><strong>Quorum verdicts:</strong> multi-region failures confirm vendor-side degradation; single-region disagreement suggests a path problem.</li>
+            <li><strong>Deterministic verdicts:</strong> persistent failure across consecutive checks confirms vendor-side degradation, and the confirmation rule is recorded in the artifact itself.</li>
             <li><strong>Confidence levels:</strong> the engine reports how strongly the timelines overlap - never a bare “vendor did it.”</li>
             <li><strong>No causation claims:</strong> correlated failure is strong evidence for where to look first, not proof of cause.</li>
           </ul>

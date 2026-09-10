@@ -199,6 +199,25 @@ export interface CheckResult {
   quorum_confirmed: boolean;
 }
 
+/**
+ * Where evidence generation is up to, as reported by
+ * `incidents.evidence_status`.
+ *
+ * This exists because "no evidence" used to be the only thing the console
+ * could say, for four very different situations: not started yet, in flight,
+ * failed with a reason, and not included in the plan. Collapsing them into
+ * one word made a working feature look broken and a broken one look normal.
+ */
+export const EVIDENCE_STATUSES = [
+  'pending',
+  'generating',
+  'available',
+  'failed',
+  'not_entitled',
+] as const;
+
+export type EvidenceStatus = (typeof EVIDENCE_STATUSES)[number];
+
 export interface Incident {
   id: string;
   org_id: string;
@@ -210,6 +229,10 @@ export interface Incident {
   root_cause: string;
   description: string | null;
   evidence_report_id: string | null;
+  /** Optional so a cached or partial payload still type-checks. */
+  evidence_status?: EvidenceStatus | string;
+  evidence_error?: string | null;
+  evidence_attempted_at?: string | null;
   created_at: string;
   updated_at: string;
   display_id?: string;
