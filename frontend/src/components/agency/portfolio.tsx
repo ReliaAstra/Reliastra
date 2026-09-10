@@ -45,7 +45,8 @@ import {
   State,
 } from '@/components/console/primitives';
 import { DataTable, type Column } from '@/components/console/data-table';
-import { AgencyUnavailable, ClientCreateDialog, PortfolioShare } from './parts';
+import { AgencyGatedExperience } from './gated';
+import { ClientCreateDialog, PortfolioShare } from './parts';
 
 /**
  * AGENCY OPERATIONS - the multi-client console.
@@ -63,26 +64,34 @@ import { AgencyUnavailable, ClientCreateDialog, PortfolioShare } from './parts';
  *  - Incidents and evidence carry no client id. They are attributed by walking
  *    incident → dependency → application → client, and anything that does not
  *    resolve stays visibly unattributed rather than being assigned a guess.
+ *
+ * Entitlement: `hasAgencyWorkspace` gates BOTH the rendered surface and every
+ * request below. An organization without the capability renders the gated
+ * experience and issues no portfolio, client or attribution reads at all -
+ * client data is something a disabled organization must not even request.
+ * The backend independently re-checks authorization and organization scope
+ * on every endpoint; the client-side gate only prevents pointless requests
+ * and contradictory affordances.
  */
-export function AgencyPortfolioPage({ organizationOverview = false }: { organizationOverview?: boolean }) {
+export function AgencyPortfolioPage() {
   const router = useRouter();
   const org = useAppStore((s) => s.org);
   const plan = useAppStore((s) => s.plan);
   const agencyEnabled = hasAgencyWorkspace(org, plan);
   const [creating, setCreating] = useState(false);
 
-  const portfolio = usePortfolio();
-  const clients = useClients();
-  const deps = useDependencies();
-  const openIncidents = useIncidents('open', 50);
+  const portfolio = usePortfolio(agencyEnabled);
+  const clients = useClients(agencyEnabled);
+  const deps = useDependencies(agencyEnabled);
+  const openIncidents = useIncidents('open', 50, agencyEnabled);
   // Evidence is attributed through its incident, and an incident that produced
   // a report is usually resolved - so attribution reads the full list, not the
   // open one, or every historical report would render as "unattributed".
-  const allIncidents = useIncidents(undefined, 100);
-  const evidence = useEvidence();
+  const allIncidents = useIncidents(undefined, 100, agencyEnabled);
+  const evidence = useEvidence(agencyEnabled);
 
   const clientIds = useMemo(() => (clients.data ?? []).map((c) => c.id), [clients.data]);
-  const applications = useAllApplications(clientIds);
+  const applications = useAllApplications(clientIds, agencyEnabled);
 
   const index = useMemo(
     () => applicationIndex(applications.data ?? []),
@@ -132,7 +141,19 @@ export function AgencyPortfolioPage({ organizationOverview = false }: { organiza
   // Enterprise entitlement or explicit organization enablement grants this
   // workspace. Keep this identical to navigation, scope and command-palette
   // visibility so an operator never receives contradictory affordances.
-  if (org && !agencyEnabled) return <AgencyUnavailable />;
+  if (!org) {
+    // The session is still resolving: nothing is enabled yet, so the page
+    // shows the shape of the rollup - not an empty one and not a gated one.
+    return (
+      <>
+        <PageHead eyebrow="Agency operations" title="Client environments" />
+        <div className="py-6">
+          <RowsSkeleton rows={4} cols={6} />
+        </div>
+      </>
+    );
+  }
+  if (!agencyEnabled) return <AgencyGatedExperience />;
 
   if (portfolio.isError) {
     return (
@@ -254,13 +275,11 @@ export function AgencyPortfolioPage({ organizationOverview = false }: { organiza
   return (
     <>
       <PageHead
-        eyebrow={organizationOverview ? 'Organization' : 'Agency operations'}
+        eyebrow="Agency operations"
         title={
-          organizationOverview
-            ? (org?.name ?? 'Organization overview')
-            : org?.name
-              ? `${org.name} · client environments`
-              : 'Client environments'
+          org?.name
+            ? `${org.name} · client environments`
+            : 'Client environments'
         }
         meta={
           <>

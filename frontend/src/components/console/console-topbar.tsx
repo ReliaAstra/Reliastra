@@ -27,6 +27,7 @@ const LABELS: Record<string, string> = {
   dependencies: 'Dependencies',
   incidents: 'Incidents',
   evidence: 'Evidence',
+  agency: 'Agencies',
   organization: 'Organization',
   clients: 'Client environments',
   onboarding: 'Configuration',
@@ -160,7 +161,8 @@ function Inbox() {
  * navigation - there is no invisible filter that silently changes what the
  * other pages mean.
  *
- * It renders only for organizations the backend flagged `has_agency_mode`.
+ * It renders only when the shared entitlement is satisfied (Enterprise plan
+ * or explicit enablement), the same rule the sidebar and command palette use.
  */
 function ClientScope() {
   const org = useAppStore((s) => s.org);
@@ -206,7 +208,7 @@ function ClientScope() {
               role="menuitem"
               onClick={() => {
                 setOpen(false);
-                router.push('/organization');
+                router.push('/agency');
               }}
               className="block w-full border-b border-[var(--obc-line)] px-3 py-2.5 text-left"
             >

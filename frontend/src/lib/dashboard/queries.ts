@@ -47,20 +47,20 @@ export function useSummary() {
   const ready = useSessionReady();
   return useQuery({ queryKey: keys.summary, queryFn: api.summary, enabled: ready });
 }
-export function useHealth() {
+export function useHealth(enabled = true) {
   const ready = useSessionReady();
-  return useQuery({ queryKey: keys.health, queryFn: api.health, enabled: ready, refetchInterval: 15000, refetchIntervalInBackground: false, refetchOnWindowFocus: true });
+  return useQuery({ queryKey: keys.health, queryFn: api.health, enabled: enabled && ready, refetchInterval: 15000, refetchIntervalInBackground: false, refetchOnWindowFocus: true });
 }
 export function useVendors() {
   const ready = useSessionReady();
   return useQuery({ queryKey: keys.vendors, queryFn: api.vendors, enabled: ready });
 }
-export function useIncidents(status?: string, limit = 20) {
+export function useIncidents(status?: string, limit = 20, enabled = true) {
   const ready = useSessionReady();
   return useQuery({
     queryKey: keys.incidents(status),
     queryFn: () => api.incidents({ status, limit }),
-    enabled: ready,
+    enabled: enabled && ready,
   });
 }
 export function useIncident(id: string) {
@@ -79,9 +79,9 @@ export function useIncidentEvidence(id: string, enabled = false) {
     enabled: Boolean(id) && enabled && ready,
   });
 }
-export function useDependencies() {
+export function useDependencies(enabled = true) {
   const ready = useSessionReady();
-  return useQuery({ queryKey: keys.dependencies, queryFn: api.dependencies, enabled: ready });
+  return useQuery({ queryKey: keys.dependencies, queryFn: api.dependencies, enabled: enabled && ready });
 }
 export function useDependency(id: string) {
   const ready = useSessionReady();
@@ -118,9 +118,9 @@ export function useLatency(id?: string) {
     enabled: ready,
   });
 }
-export function useEvidence() {
+export function useEvidence(enabled = true) {
   const ready = useSessionReady();
-  return useQuery({ queryKey: keys.evidence, queryFn: api.evidence, enabled: ready });
+  return useQuery({ queryKey: keys.evidence, queryFn: api.evidence, enabled: enabled && ready });
 }
 /**
  * A single evidence record. Separate from `useEvidence()` so the record page

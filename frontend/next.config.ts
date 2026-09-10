@@ -70,6 +70,14 @@ const nextConfig: NextConfig = {
         destination: "/partner",
         permanent: true,
       },
+      // The PR #40 organization route is the agency operations overview; it
+      // moved to /agency (the public marketing page owns /agencies).
+      // Bookmarks and shared URLs keep working.
+      {
+        source: "/organization",
+        destination: "/agency",
+        permanent: true,
+      },
       // The program has one flat commission rate and no tier model; the
       // former tier/premium marketing pages resolve to the commission terms.
       {

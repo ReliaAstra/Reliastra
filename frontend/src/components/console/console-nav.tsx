@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '@/stores/app-store';
 import { useHealth, useIncidents } from '@/lib/dashboard/queries';
 import { getPlan, isPaid } from '@/lib/dashboard/plans';
-import { hasAgencyWorkspace } from '@/lib/agency/access';
+import { consoleNavGroups } from '@/lib/agency/navigation';
 import { Wordmark } from '@/components/site/wordmark';
 import { toState } from './primitives';
 import { cn } from '@/lib/utils';
@@ -15,9 +15,17 @@ import { cn } from '@/lib/utils';
  * Console navigation.
  *
  * Grouped by what the user is doing, not by database table: MONITORING is the
- * live surface, EVIDENCE is the record. Every href is a route that exists - * there is no invented section. `Agency` appears only for organizations the
- * backend has actually flagged `has_agency_mode`, instead of being a
- * permanently visible dead end.
+ * live surface, EVIDENCE is the record, AGENCIES is the multi-client
+ * workspace. The destination list comes from `consoleNavGroups` (the one
+ * model the mobile sheet, command palette and recent destinations also read),
+ * so every surface shows the same entries. Every href is a route that exists
+ * - there is no invented section.
+ *
+ * `Agencies` is a destination for every authenticated organization: the
+ * agency overview is always present, and an organization without the
+ * capability lands on the gated experience rather than a missing page. The
+ * client-management entries appear only when the entitlement
+ * (`hasAgencyWorkspace`) is satisfied.
  *
  * Two entries are worth explaining:
  *
@@ -37,47 +45,11 @@ const PRIMARY = [
   { href: '/evidence', label: 'Evidence' },
 ];
 
-const GROUPS: { label: string; items: { href: string; label: string; agencyOnly?: boolean }[] }[] = [
-  { label: '', items: [{ href: '/dashboard', label: 'Overview' }] },
-  {
-    label: 'Monitoring',
-    items: [
-      { href: '/dependencies', label: 'Dependencies' },
-      { href: '/incidents', label: 'Incidents' },
-    ],
-  },
-  {
-    label: 'Evidence',
-    items: [
-      { href: '/evidence', label: 'Evidence records' },
-      { href: '/reports', label: 'Reports' },
-    ],
-  },
-  {
-    label: 'Organization',
-    items: [
-      { href: '/organization', label: 'Organization overview', agencyOnly: true },
-      { href: '/clients', label: 'Client environments', agencyOnly: true },
-      { href: '/clients/onboarding', label: 'Add client environment', agencyOnly: true },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      { href: '/settings', label: 'Settings' },
-      { href: '/settings/billing', label: 'Billing' },
-      { href: '/settings/notifications', label: 'Notifications' },
-      { href: '/support', label: 'Support' },
-    ],
-  },
-];
-
 function useIsActive() {
   const pathname = usePathname();
-  return (href: string) =>
-    href === '/dashboard' || href === '/settings'
-      ? pathname === '/dashboard'
-      : pathname === href || pathname.startsWith(href + '/');
+  // Exact match, or any route nested under the destination (e.g. the
+  // Client environments entry stays lit on a specific client's page).
+  return (href: string) => pathname === href || pathname.startsWith(href + '/');
 }
 
 /**
@@ -151,12 +123,12 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const isActive = useIsActive();
   const org = useAppStore((s) => s.org);
   const plan = useAppStore((s) => s.plan);
-  const agency = hasAgencyWorkspace(org, plan);
+  const groups = consoleNavGroups(org, plan);
 
   return (
     <nav aria-label="Console" className="flex flex-col gap-5">
-      {GROUPS.map((group) => {
-        const items = group.items.filter((i) => !i.agencyOnly || agency);
+      {groups.map((group) => {
+        const items = group.items;
         if (!items.length) return null;
         return (
           <div key={group.label || 'root'}>

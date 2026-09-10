@@ -13,8 +13,9 @@ import {
   useUpdateDependency,
 } from '@/lib/dashboard/queries';
 import { applicationIndex, unassignedDependencies } from '@/lib/agency/portfolio';
-import { AgencyUnavailable } from '@/components/agency/parts';
+import { AgencyGatedExperience } from '@/components/agency/gated';
 import { hasAgencyWorkspace } from '@/lib/agency/access';
+import { RowsSkeleton } from '@/components/console/primitives';
 import {
   OptionButton,
   ReviewRow,
@@ -72,10 +73,12 @@ export function ClientSetupSequence() {
   const createApplication = useCreateApplication();
   const updateDependency = useUpdateDependency();
 
-  const clients = useClients();
-  const deps = useDependencies();
+  // Same entitlement gate as the navigation: a disabled organization neither
+  // sees the sequence nor requests the client data it would operate on.
+  const clients = useClients(agencyEnabled);
+  const deps = useDependencies(agencyEnabled);
   const clientIds = useMemo(() => (clients.data ?? []).map((c) => c.id), [clients.data]);
-  const allApplications = useAllApplications(clientIds);
+  const allApplications = useAllApplications(clientIds, agencyEnabled);
   const index = useMemo(
     () => applicationIndex(allApplications.data ?? []),
     [allApplications.data]
@@ -85,11 +88,22 @@ export function ClientSetupSequence() {
     [deps.data, index]
   );
 
-  if (org && !agencyEnabled) {
+  if (!org) {
+    // Session still resolving: the sequence shell without data is a lie, and
+    // the gated page would flash for an organization that may be eligible.
     return (
       <div className="obc min-h-screen bg-[var(--obc-void)] px-[var(--obc-gutter)] py-10">
         <div className="mx-auto max-w-[900px]">
-          <AgencyUnavailable />
+          <RowsSkeleton rows={4} cols={3} />
+        </div>
+      </div>
+    );
+  }
+  if (!agencyEnabled) {
+    return (
+      <div className="obc min-h-screen bg-[var(--obc-void)] px-[var(--obc-gutter)] py-10">
+        <div className="mx-auto max-w-[900px]">
+          <AgencyGatedExperience />
         </div>
       </div>
     );

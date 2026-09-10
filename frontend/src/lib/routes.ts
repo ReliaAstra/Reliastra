@@ -62,7 +62,15 @@ export const CONSOLE_ROUTES = {
   dashboard: '/dashboard',
   dependencies: '/dependencies',
   incidents: '/incidents',
+  /**
+   * The authenticated agency operations overview. The public marketing page
+   * owns `/agencies`, so the console destination lives at `/agency`; the
+   * sidebar label is "Agencies" either way. `/organization` (PR #40) is
+   * permanently redirected here.
+   */
+  agency: '/agency',
   clients: '/clients',
+  clientOnboarding: '/clients/onboarding',
   evidence: '/evidence',
   onboarding: '/onboarding',
   settings: '/settings',
