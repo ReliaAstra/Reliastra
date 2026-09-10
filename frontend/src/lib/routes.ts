@@ -122,7 +122,7 @@ export const RESEARCH_ARTICLES = [
     slug: 'how-reliastra-measures-vendor-reliability',
     title: 'How RELIASTRA measures vendor reliability',
     summary:
-      'The measurement methodology behind every check: regional origination, retry semantics, quorum rules, and the cases we deliberately refuse to call an outage.',
+      'The measurement methodology behind every check: where probes originate, retry semantics, the incident detection rule, and the cases we deliberately refuse to call an outage.',
     publishedAt: '2025-11-18',
     category: 'Methodology',
     tags: ['Measurement', 'Methodology'],

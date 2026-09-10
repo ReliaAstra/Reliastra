@@ -113,9 +113,48 @@ export const QUORUM_WINDOW_SECONDS = 60;
  * Region codes. These are scheduling labels on a single worker, not
  * geographic routing claims - the site never renders a world map, city names
  * or coordinates because of it.
+ *
+ * `backend/app/modules/checks/tasks.py` states the deployment outright: "The
+ * single-host deployment runs one worker that must execute every region's
+ * probes; region stays a result label."
  */
 export const ALLOWED_REGIONS = ['us-east', 'eu-west', 'ap-south', 'sa-east'] as const;
 export const DEFAULT_REGIONS = ['us-east', 'eu-west'] as const;
+
+/* ── Observation topology ───────────────────────────────────────────────── */
+
+/**
+ * How many independent places RELIASTRA currently probes from: one.
+ *
+ * Every probe is issued by the same single-host worker, so a `region` value on
+ * a check result is a scheduling label, not a second opinion. The console
+ * therefore never renders a region count, a per-region panel, a "regions that
+ * observed" figure or a regional-quorum claim: those would all describe a
+ * fleet that does not exist.
+ *
+ * `src/components/console/__tests__/single-observation-point.test.ts` fails the
+ * build if a multi-node claim returns to any console surface.
+ */
+export const OBSERVATION_POINT_COUNT = 1;
+
+/**
+ * Consecutive failed checks required before RELIASTRA calls an incident.
+ * Mirrors `SINGLE_TOPOLOGY_FAILURE_CHECKS` (default 2) in
+ * `backend/app/config.py`. This is the debounce: one dropped probe is recorded,
+ * not declared.
+ */
+export const DETECTION_FAILURE_CHECKS = 2;
+
+/** How the console names the single place measurements come from. */
+export const OBSERVATION_POINT_LABEL = 'RELIASTRA observation point';
+
+/**
+ * The scheduling label the API is sent when a dependency is created. The
+ * backend requires at least one entry from `ALLOWED_REGIONS`
+ * (`DependencyCreate.regions`, `min_length=1`), so the console sends exactly
+ * one and never exposes the choice.
+ */
+export const PRIMARY_OBSERVATION_REGION = 'us-east';
 
 /* ── Incidents ──────────────────────────────────────────────────────────── */
 
@@ -127,6 +166,14 @@ export const ROOT_CAUSES = [
   'config_error',
   'unknown',
 ] as const;
+
+/**
+ * Default check interval for a dependency, in seconds. Transcribed from
+ * `DependencyCreate.check_interval_seconds` (default 300) in
+ * `backend/app/modules/dependencies/schemas.py`. Anything that illustrates
+ * "how often RELIASTRA looks" must use this rather than inventing a cadence.
+ */
+export const CHECK_INTERVAL_SECONDS = 300;
 
 /** Default correlation window for cross-vendor correlation, in seconds. */
 export const CORRELATION_WINDOW_SECONDS = 300;
@@ -140,8 +187,11 @@ export const CORRELATION_WINDOW_SECONDS = 300;
  */
 export const EVIDENCE_REPORT_SECTIONS = [
   'Incident Metadata',
+  'Detection Record',
+  'Incident Window Measurements',
   'SLA Impact Calculation',
-  'Per-Region Latency & Uptime Chart',
+  'Observed Latency And Failures',
+  'Rolling 24-Hour Health (Context)',
   'Correlated Vendor Failures',
   'Deterministic Attribution',
 ] as const;
@@ -158,13 +208,27 @@ export const EVIDENCE_REPORT_FIELDS = {
     'Severity / Status',
     'Started At (UTC)',
     'Resolved At (UTC)',
-    'Verification Regions',
+    'Measurement Window (UTC)',
+    'Observation Topology',
+  ],
+  'Detection Record': ['Detection Rule', 'Rule Identifier', 'Detector Confirmation', 'Basis'],
+  'Incident Window Measurements': [
+    'Checks In Window',
+    'Successful Checks',
+    'Failed Checks',
+    'Blocked Checks (Excluded)',
+    'Measured Availability',
+    'Longest Failure Run',
+    'Latency (ms)',
+    'First / Last Observation',
   ],
   'SLA Impact Calculation': [
     'Planned Target Uptime',
-    'Measured 24h Uptime',
+    'Measured Availability In Window',
     'SLA Degradation Impact',
-    'Quorum Confirmed Failure',
+    'Measured Downtime',
+    'Allowance Exceeded',
+    'Calculation Basis',
   ],
   'Correlated Vendor Failures': [
     'Correlated Dependency ID',
@@ -179,10 +243,33 @@ export const EVIDENCE_REPORT_FIELDS = {
   ],
 } as const;
 
+/**
+ * Phrases that must never appear in the generated artifact.
+ *
+ * Each one was in the template at some point and each one described something
+ * RELIASTRA does not do: independent regional confirmation from a single host,
+ * a quorum that was never computed, a per-region chart that was hand-typed
+ * into the markup. They are listed here so a reintroduction fails a test
+ * rather than reaching a customer who intends to hand the document to a
+ * vendor.
+ */
+export const EVIDENCE_FORBIDDEN_CLAIMS = [
+  'Multi-Region',
+  'Quorum Confirmed',
+  'Verification Regions',
+  'Regions Observed',
+  'Region of First Detection',
+  'Per-Region Latency',
+  'Measured 24h Uptime',
+  'independent regional',
+] as const;
+
 /** Footer fields of the artifact. */
 export const EVIDENCE_FOOTER_FIELDS = [
   'Evidence Data Hash (SHA-256)',
+  'Document Checksum',
   'Public Verification ID',
+  'Evidence Schema Version',
 ] as const;
 
 export const EVIDENCE_EXPIRY_DAYS = 365;

@@ -49,7 +49,7 @@ export default function ApiDocsPage() {
           </p>
           <h2>Capabilities</h2>
           <ul>
-            <li><strong>Dependencies:</strong> create, list, update and remove monitored endpoints with regions and intervals.</li>
+            <li><strong>Dependencies:</strong> create, list, update and remove monitored endpoints with observation labels and intervals.</li>
             <li><strong>Incidents:</strong> report your own incident windows for correlation against vendor observations.</li>
             <li><strong>Evidence:</strong> generate fault reports from retained telemetry and mint verification references.</li>
             <li><strong>Public vendors:</strong> rate-limited, cached catalog, per-vendor detail and public incidents - the same source that powers <a href="/track">Track</a>.</li>

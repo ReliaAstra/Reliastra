@@ -23,6 +23,7 @@ __pycache__/
 *.so
 .Python
 .venv/
+.venv-test/
 venv/
 ENV/
 *.egg-info/

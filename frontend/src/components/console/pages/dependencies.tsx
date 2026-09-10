@@ -8,7 +8,6 @@ import {
   formatLatency,
   formatUptime,
   incidentCode,
-  regionLabel,
   timeAgo,
 } from '@/lib/dashboard/format';
 import {
@@ -87,7 +86,7 @@ export function DependenciesPage() {
         }
         if (segment === 'paused' && r.is_active) return false;
         if (!q) return true;
-        return [r.name, r.endpoint_url, ...r.regions].some((v) =>
+        return [r.name, r.endpoint_url].some((v) =>
           String(v).toLowerCase().includes(q)
         );
       })
@@ -154,20 +153,6 @@ export function DependenciesPage() {
         ),
     },
     {
-      key: 'regions',
-      header: 'Regions',
-      width: 96,
-      numeric: true,
-      sort: (r) => r.regions.length,
-      // A count, not a truncated list: the full set is on the record page.
-      render: (r) =>
-        r.regions.length ? (
-          <span title={r.regions.map(regionLabel).join(', ')}>{r.regions.length}</span>
-        ) : (
-          <span className="text-[var(--obc-text-4)]">none</span>
-        ),
-    },
-    {
       key: 'last',
       header: 'Last observation',
       width: 140,
@@ -231,7 +216,7 @@ export function DependenciesPage() {
 
       <Section
         title="Monitored endpoints"
-        hint="Checked from every configured region. A fault requires regions to agree."
+        hint="Checked on the configured interval from the RELIASTRA observation point."
       >
         {deps.isLoading ? (
           <RowsSkeleton rows={6} cols={6} />
@@ -256,7 +241,7 @@ export function DependenciesPage() {
             <TableFilters
               query={query}
               onQuery={setQuery}
-              placeholder="Filter by name, URL or region"
+              placeholder="Filter by name or URL"
               active={segment}
               onSegment={setSegment}
               segments={[

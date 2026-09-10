@@ -1,21 +1,24 @@
 import {
-  DEFAULT_REGIONS,
-  QUORUM_MIN_REGIONS,
-  QUORUM_WINDOW_SECONDS,
+  CHECK_INTERVAL_SECONDS,
+  DETECTION_FAILURE_CHECKS,
+  OBSERVATION_POINT_LABEL,
 } from '@/lib/product-contract';
 
 /**
- * Per-region latency across the incident window - the chart the evidence
- * artifact embeds as its section 3.
+ * Latency across the incident window - the shape of the chart the evidence
+ * artifact embeds.
  *
  * Static SVG, no client JavaScript: the shape never changes, so there is
- * nothing to hydrate. Two series (one per configured region), the
- * quorum window shaded, and a text alternative so the figure is not
- * information that only sighted visitors receive.
+ * nothing to hydrate. One series, because RELIASTRA observes from a single
+ * point; the shaded band marks the consecutive failed checks that confirmed
+ * the incident, and a text alternative keeps the figure from being information
+ * only sighted visitors receive.
  *
- * Series values are illustrative. The relationship between them is the point:
- * both regions degrade together, which is what makes it quorum-confirmable
- * rather than a local network problem.
+ * The previous version of this figure drew two series, one per region, with a
+ * "quorum window" between them. That described a fleet of independent vantage
+ * points that does not exist, in a diagram sitting next to a product whose
+ * entire promise is provable measurement. Values here are illustrative; the
+ * structure is not.
  */
 
 const W = 720;
@@ -26,15 +29,12 @@ const PLOT_W = W - PAD.left - PAD.right;
 const PLOT_H = H - PAD.top - PAD.bottom;
 
 /** Latency in ms, oldest to newest, one sample per 5 minutes. */
-const SERIES: Record<string, number[]> = {
-  'us-east': [104, 98, 112, 107, 4120, 3890, 3640, 118, 102, 96],
-  'eu-west': [131, 126, 138, 129, 3870, 3620, 3480, 144, 133, 127],
-};
+const SERIES = [104, 98, 112, 107, 4120, 3890, 3640, 118, 102, 96];
 
 const MAX_MS = 4500;
-const SAMPLES = SERIES['us-east'].length;
+const SAMPLES = SERIES.length;
 
-/** Index range where both regions exceed the failure threshold. */
+/** Index range of the consecutive failed checks that confirmed the incident. */
 const WINDOW_START = 4;
 const WINDOW_END = 6;
 
@@ -53,14 +53,10 @@ function toPoints(series: number[]) {
 const Y_TICKS = [0, 1000, 2000, 3000, 4000];
 
 export function LatencyChart() {
-  const regions = DEFAULT_REGIONS as unknown as string[];
-
   return (
     <figure className="ob-chart">
       <figcaption className="ob-chart-head">
-        <span className="ob-label">
-          3 · Per-Region Latency &amp; Uptime Chart
-        </span>
+        <span className="ob-label">Observed latency and failed checks</span>
         <span className="ob-vis-flag">Illustrative values</span>
       </figcaption>
 
@@ -68,10 +64,10 @@ export function LatencyChart() {
         <svg
           viewBox={`0 0 ${W} ${H}`}
           role="img"
-          aria-label={`Latency for ${regions.join(' and ')} over the incident window. Both regions stay near 100 to 140 milliseconds, then rise together to roughly 3500 to 4100 milliseconds across three consecutive samples before recovering. The shaded band marks the ${QUORUM_WINDOW_SECONDS}-second quorum window.`}
+          aria-label={`Latency from the ${OBSERVATION_POINT_LABEL} over the incident window. It stays near 100 to 120 milliseconds, then rises to roughly 3600 to 4100 milliseconds across three consecutive samples before recovering. The shaded band marks the ${DETECTION_FAILURE_CHECKS} consecutive failed checks that confirmed the incident.`}
           preserveAspectRatio="xMidYMid meet"
         >
-          {/* Quorum window */}
+          {/* The checks that confirmed the incident */}
           <rect
             x={x(WINDOW_START)}
             y={PAD.top}
@@ -103,27 +99,27 @@ export function LatencyChart() {
             </g>
           ))}
 
-          {/* Series */}
-          {regions.map((region, idx) => (
-            <polyline
-              key={region}
-              points={toPoints(SERIES[region])}
-              fill="none"
-              stroke={idx === 0 ? 'var(--ob-signal)' : 'var(--ob-text-3)'}
-              strokeWidth="1.75"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          ))}
+          {/* The measured series */}
+          <polyline
+            points={toPoints(SERIES)}
+            fill="none"
+            stroke="var(--ob-signal)"
+            strokeWidth="1.75"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
 
-          {/* Peak markers */}
-          {regions.map((region, idx) => (
+          {/* Peak marker */}
+          <circle cx={x(WINDOW_START)} cy={y(SERIES[WINDOW_START])} r="3" fill="var(--ob-signal)" />
+
+          {/* Failed checks, marked where the probe got no useful latency */}
+          {[WINDOW_START, WINDOW_START + 1, WINDOW_END].map((i) => (
             <circle
-              key={`peak-${region}`}
-              cx={x(WINDOW_START)}
-              cy={y(SERIES[region][WINDOW_START])}
+              key={`failed-${i}`}
+              cx={x(i)}
+              cy={PAD.top + PLOT_H - 4}
               r="3"
-              fill={idx === 0 ? 'var(--ob-signal)' : 'var(--ob-text-3)'}
+              fill="var(--ob-critical)"
             />
           ))}
 
@@ -134,7 +130,7 @@ export function LatencyChart() {
             textAnchor="middle"
             className="ob-chart-window"
           >
-            quorum window
+            incident window
           </text>
 
           {/* Baseline */}
@@ -146,38 +142,27 @@ export function LatencyChart() {
             stroke="var(--ob-line-2)"
             strokeWidth="1"
           />
-          <text
-            x={PAD.left}
-            y={H - 12}
-            className="ob-chart-tick"
-          >
+          <text x={PAD.left} y={H - 12} className="ob-chart-tick">
             09:00
           </text>
-          <text
-            x={W - PAD.right}
-            y={H - 12}
-            textAnchor="end"
-            className="ob-chart-tick"
-          >
+          <text x={W - PAD.right} y={H - 12} textAnchor="end" className="ob-chart-tick">
             09:45
           </text>
         </svg>
       </div>
 
       <ul className="ob-chart-legend">
-        {regions.map((region, idx) => (
-          <li key={region}>
-            <span
-              aria-hidden
-              className="ob-chart-key"
-              data-series={idx === 0 ? 'a' : 'b'}
-            />
-            <span className="ob-mono">{region}</span>
-          </li>
-        ))}
+        <li>
+          <span aria-hidden className="ob-chart-key" data-series="a" />
+          <span className="ob-mono">{OBSERVATION_POINT_LABEL}</span>
+        </li>
+        <li>
+          <span aria-hidden className="ob-chart-key" data-series="failed" />
+          <span className="ob-mono">failed check</span>
+        </li>
         <li className="ob-chart-rule">
-          {QUORUM_MIN_REGIONS} regions failing inside {QUORUM_WINDOW_SECONDS}s
-          confirms the fault
+          {DETECTION_FAILURE_CHECKS} consecutive failures, {CHECK_INTERVAL_SECONDS}s apart,
+          confirm the incident
         </li>
       </ul>
     </figure>

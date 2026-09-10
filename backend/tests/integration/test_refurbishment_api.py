@@ -132,7 +132,7 @@ async def test_agency_ai_and_dashboard_endpoints(
 
 @pytest.mark.asyncio
 async def test_observation_attribution_snapshot_and_verification(
-    async_client, auth_data, db_session, mocker
+    async_client, auth_data, db_session, mocker, evidence_storage
 ):
     headers = auth_data["headers"]
     org_id = auth_data["org_id"]
@@ -193,11 +193,9 @@ async def test_observation_attribution_snapshot_and_verification(
         db_session, dependency_id
     )
     assert incident is not None
-    # FIX 18: evidence generation is dispatched asynchronously via
-    # apply_async (with a commit-safety countdown), not executed inline.
-    mocker.patch(
-        "app.modules.evidence.tasks.generate_evidence_report.apply_async"
-    )
+    # Evidence generation is dispatched on commit (after_commit), not inline
+    # and not after a sleep: the worker must be able to see the resolved
+    # incident, so the publish cannot happen before the row exists.
     await incident_service.resolve_incident(
         db_session, incident.id, org_id=uuid.UUID(org_id)
     )
@@ -212,10 +210,9 @@ async def test_observation_attribution_snapshot_and_verification(
         "_html_to_pdf",
         new=AsyncMock(return_value=b"immutable-pdf"),
     )
-    mocker.patch(
-        "app.modules.evidence.service.storage_client.upload_bytes",
-        return_value="stored",
-    )
+    # Storage is the in-memory bucket from the ``evidence_storage`` fixture.
+    # It reports back the bytes it was given, which is what lets the service
+    # verify the upload before it writes a report row.
     await evidence_service.generate_for_incident(db_session, incident.id)
     snapshot = await EvidenceSnapshotRepository.get_latest_for_incident(
         db_session, incident.id

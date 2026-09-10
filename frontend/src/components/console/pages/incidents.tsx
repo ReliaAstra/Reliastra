@@ -7,9 +7,9 @@ import {
   durationBetween,
   formatUtc,
   incidentCode,
-  regionLabel,
   timeAgo,
 } from '@/lib/dashboard/format';
+import { evidenceRank, evidenceState } from '@/lib/dashboard/evidence-state';
 import {
   Empty,
   Fact,
@@ -154,28 +154,27 @@ export function IncidentsPage() {
       render: (r) => durationBetween(r.started_at, r.resolved_at),
     },
     {
-      key: 'region',
-      header: 'Region',
-      width: 110,
-      sort: (r) => r.region ?? '',
-      render: (r) =>
-        r.region ? (
-          regionLabel(r.region)
-        ) : (
-          <span className="text-[var(--obc-text-4)]">all regions</span>
-        ),
-    },
-    {
       key: 'evidence',
       header: 'Evidence',
-      width: 100,
-      sort: (r) => (r.evidence_report_id ? 0 : 1),
-      render: (r) =>
-        r.evidence_report_id ? (
-          <span className="text-[var(--obc-text-2)]">Available</span>
-        ) : (
-          <span className="text-[var(--obc-text-4)]">none</span>
-        ),
+      width: 110,
+      sort: (r) => evidenceRank(r),
+      // The state comes from the API rather than from whether a report id is
+      // present, so "generating", "failed - with the reason" and "not on your
+      // plan" are each distinguishable instead of all reading "none".
+      render: (r) => {
+        const view = evidenceState(r);
+        const toneClass =
+          view.tone === 'ok'
+            ? 'text-[var(--obc-text-2)]'
+            : view.tone === 'warn'
+              ? 'text-[var(--obc-crit)]'
+              : 'text-[var(--obc-text-4)]';
+        return (
+          <span className={toneClass} title={view.hint}>
+            {view.label}
+          </span>
+        );
+      },
     },
   ];
 
@@ -198,7 +197,7 @@ export function IncidentsPage() {
 
       <Section
         title="Incident log"
-        hint="An incident opens when independent regional checks lose quorum on a dependency. Active incidents are listed first."
+        hint="An incident opens when the detector confirms a sustained failure against a dependency. Active incidents are listed first."
       >
         {isLoading ? (
           <RowsSkeleton rows={6} cols={5} />
@@ -211,7 +210,7 @@ export function IncidentsPage() {
         ) : !all.length ? (
           <Empty
             title="No incidents recorded"
-            body="Nothing has lost quorum since monitoring began on this workspace. Incidents will appear here the moment two regions disagree with a dependency's expected response."
+            body="No confirmed failure has been recorded on this workspace yet. Incidents appear here as soon as the detector confirms one."
             action={
               <Link href="/dependencies" className="obc-btn obc-btn-sm">
                 Review monitored dependencies

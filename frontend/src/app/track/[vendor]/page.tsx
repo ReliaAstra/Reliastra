@@ -181,8 +181,8 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
           ? 'us-east-1'
           : undefined;
 
-  // The freshest observation across every region, which is what "last
-  // observation" means on a multi-region record.
+  // The freshest observation across every stored check, which is what "last
+  // observation" means on a record with more than one result.
   const observationTimes = [
     detail.last_check_at,
     ...record.regionObservations.map((r) => r.current?.timestamp ?? null),

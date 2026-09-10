@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import String, ForeignKey, DateTime, Float, Integer, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, UUIDMixin, TimestampMixin
 
@@ -41,6 +42,23 @@ class Incident(UUIDMixin, TimestampMixin, Base):
         ForeignKey("evidence_reports.id", ondelete="SET NULL"),
         nullable=True, index=True
     )
+    # ── Evidence generation state ────────────────────────────────────────
+    # A failed generation used to leave no trace here, so the console printed
+    # "none" forever and the only signal was a worker log line. These three
+    # columns make the outcome of an attempt part of the record.
+    evidence_status: Mapped[str] = mapped_column(
+        String(24), default="pending", nullable=False, index=True
+    )
+    evidence_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_attempted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # ── Detection provenance ─────────────────────────────────────────────
+    # Which rule opened this incident, and the figures behind it. Persisted at
+    # detection time because evidence artifacts are rendered asynchronously and
+    # must state the real rule instead of a hard-coded claim.
+    detection_rule: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    detection_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     correlations: Mapped[list["IncidentCorrelation"]] = relationship(
         "IncidentCorrelation",

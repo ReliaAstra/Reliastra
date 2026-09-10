@@ -34,6 +34,13 @@ class IncidentResponse(BaseModel):
     root_cause: str
     description: str | None = None
     evidence_report_id: uuid.UUID | None = None
+    #: Where evidence generation is up to, so the console can show "report
+    #: ready" / "generating" / "failed - retry" / "not on your plan" without a
+    #: second request per row, and without ever rendering a bare "none".
+    evidence_status: str = "pending"
+    #: Human-readable reason for a failed or skipped attempt, when there is one.
+    evidence_error: str | None = None
+    evidence_attempted_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

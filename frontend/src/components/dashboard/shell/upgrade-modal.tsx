@@ -53,7 +53,7 @@ export function EvidenceGateModal() {
       >
         <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Pro feature</h2>
         <p className="mt-2 text-sm leading-relaxed text-rs-text-secondary">
-          Generate verifiable SLA evidence backed by multi-region checks.
+          Generate verifiable SLA evidence backed by deterministic checks.
         </p>
         <div className="mt-6 flex items-center gap-3">
           <RsButton

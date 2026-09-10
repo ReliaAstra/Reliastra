@@ -159,7 +159,7 @@ export function EvidencePage() {
 
       <Section
         title="Record register"
-        hint="Each record is a timestamped, checksummed account of one incident: the observations behind it, the regions that made them, and the correlation used to attribute the fault."
+        hint="Each record is a timestamped, checksummed account of one incident: the observations behind it and the correlation used to attribute the fault."
       >
         {!allowed ? (
           <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-6 py-10">
@@ -194,7 +194,7 @@ export function EvidencePage() {
         ) : !evidence.data?.length ? (
           <Empty
             title="No evidence records"
-            body="A record is generated once an incident is confirmed by multiple regions and its observation window closes. Records appear here automatically; nothing needs to be requested."
+            body="A record is generated once an incident is confirmed and its observation window closes. Records appear here automatically; nothing needs to be requested."
             action={
               <Link href="/incidents" className="obc-btn obc-btn-sm">
                 View incidents

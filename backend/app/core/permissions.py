@@ -484,3 +484,21 @@ def is_paid_plan(plan: str) -> bool:
 
 def get_plan_billing_availability(plan: str) -> str:
     return PLAN_BILLING_AVAILABILITY.get(normalize_plan(plan), "contact_sales")
+
+
+def plan_allows_feature(org: object, feature: str) -> bool:
+    """Whether an organization's *effective* plan includes ``feature``.
+
+    The single authority for feature gates: it resolves the effective plan
+    (a Free org inside its evaluation window gets Pro features) and reads
+    ``PLAN_FEATURES``. Callers must not re-implement the dictionary lookup -
+    two copies of "is evidence generation allowed?" is how a background job
+    ends up disagreeing with the endpoint that advertises the feature.
+
+    Returns False for a missing org or an unknown feature, which is the safe
+    direction for a gate.
+    """
+    if org is None:
+        return False
+    effective = get_effective_plan_for_org(org)
+    return bool(PLAN_FEATURES.get(effective, {}).get(feature))

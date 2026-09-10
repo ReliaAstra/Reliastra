@@ -12,7 +12,6 @@ import {
   durationBetween,
   formatUtc,
   incidentCode,
-  regionLabel,
   reportCode,
 } from '@/lib/dashboard/format';
 import {
@@ -196,7 +195,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
 
       <Section
         title="Observations"
-        hint="The recorded events this document is built from. Timestamps are UTC as captured by the checking region."
+        hint="The recorded events this document is built from. Timestamps are UTC as captured at the RELIASTRA observation point."
       >
         {inc?.timeline?.length ? (
           <ol className="border border-[var(--obc-line)]">
@@ -246,13 +245,6 @@ export function EvidenceRecordPage({ id }: { id: string }) {
             <Row label="Correlation window" mono>
               {inc?.correlations?.[0] ? (
                 `${inc.correlations[0].time_window_seconds}s`
-              ) : (
-                <span className="text-[var(--obc-text-4)]">not recorded</span>
-              )}
-            </Row>
-            <Row label="Region of first detection" mono>
-              {inc?.region ? (
-                regionLabel(inc.region)
               ) : (
                 <span className="text-[var(--obc-text-4)]">not recorded</span>
               )}

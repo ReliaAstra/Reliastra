@@ -7,7 +7,7 @@ import { IncidentTimeline } from '@/components/site/visuals/incident-timeline';
 export const metadata = buildMetadata({
   title: 'Product - External Dependency Intelligence platform',
   description:
-    'How RELIASTRA works: multi-region dependency checks, quorum-confirmed incidents, deterministic attribution, and verifiable SLA evidence - in one platform.',
+    'How RELIASTRA works: fixed-interval dependency checks, deterministically confirmed incidents, deterministic attribution, and verifiable SLA evidence - in one platform.',
   path: '/product',
 });
 
@@ -52,7 +52,7 @@ export default function ProductPage() {
         visualCaption="Illustrative values. The topology, the observation fields and the incident sequence are the ones the product produces."
         related={[
           { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence', description: 'The category RELIASTRA defines and owns.' },
-          { label: 'Dependency monitoring', href: '/dependency-monitoring', description: 'How checks, regions and quorum work.' },
+          { label: 'Dependency monitoring', href: '/dependency-monitoring', description: 'How checks and incident confirmation work.' },
           { label: 'SLA evidence', href: '/sla-evidence', description: 'From observations to credit-ready reports.' },
           { label: 'Live vendor status', href: '/track', description: 'Independent posture for public vendors.' },
         ]}
@@ -82,7 +82,7 @@ export default function ProductPage() {
             <a href="/dependency-monitoring">dependency monitoring</a> and{' '}
             <a href="/docs/monitoring">monitoring docs</a>.
           </p>
-          <h3>2. Declare incidents by quorum, not by single failure</h3>
+          <h3>2. Declare incidents by persistence, not by single failure</h3>
           <p>
             A single failed request is never an incident. Declaration requires failures
             across more than one region inside a short window; recovery requires

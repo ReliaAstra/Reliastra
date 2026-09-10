@@ -12,17 +12,12 @@ import {
   useUpdateDependency,
 } from '@/lib/dashboard/queries';
 import { HelpTooltip } from '../ui/help-tooltip';
+import { OBSERVATION_POINT_LABEL, PRIMARY_OBSERVATION_REGION } from '@/lib/product-contract';
 import { RsButton } from '../ui/button';
 import { cn } from '@/lib/utils';
 
 const METHODS = ['GET', 'HEAD', 'POST'] as const;
 const CODES = [200, 201, 204, 301, 302];
-const REGIONS = [
-  { id: 'us-east', label: 'US East' },
-  { id: 'us-west', label: 'US West' },
-  { id: 'eu-west', label: 'EU West' },
-  { id: 'ap-south', label: 'AP Southeast' },
-];
 
 const field =
   'flex h-9 w-full rounded-[10px] border border-rs-border-subtle bg-rs-input px-3 text-sm text-rs-text placeholder:text-rs-text-tertiary outline-none transition-[border-color,box-shadow] duration-150 focus:border-rs-brand focus:ring-[3px] focus:ring-[rgb(37_99_235_/_0.20)] dark:focus:ring-[rgb(59_130_246_/_0.20)]';
@@ -54,7 +49,6 @@ export function AddDependencyPanel() {
   const [codes, setCodes] = useState<number[]>([200]);
   const [timeout, setTimeoutSec] = useState(10);
   const [interval, setInterval] = useState(60);
-  const [regions, setRegions] = useState<string[]>(['us-east']);
   const [threshold, setThreshold] = useState(500);
   const [active, setActive] = useState(true);
 
@@ -71,7 +65,6 @@ export function AddDependencyPanel() {
       setCodes(existing.expected_status_codes);
       setTimeoutSec(existing.timeout_seconds);
       setInterval(existing.check_interval_seconds);
-      setRegions(existing.regions);
       setThreshold(existing.alert_threshold_ms ?? 500);
       setActive(existing.is_active);
       setApplicationId(existing.application_id ?? '');
@@ -82,7 +75,6 @@ export function AddDependencyPanel() {
       setCodes([200]);
       setTimeoutSec(10);
       setInterval(60);
-      setRegions(['us-east']);
       setThreshold(500);
       setActive(true);
       setApplicationId('');
@@ -110,9 +102,6 @@ export function AddDependencyPanel() {
   function toggleCode(code: number) {
     setCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
   }
-  function toggleRegion(id: string) {
-    setRegions((prev) => (prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]));
-  }
 
   async function submit() {
     if (atLimit) {
@@ -126,7 +115,9 @@ export function AddDependencyPanel() {
       expected_status_codes: codes,
       timeout_seconds: timeout,
       check_interval_seconds: interval,
-      regions,
+      // The API requires at least one entry from the backend's allowed set;
+      // the value is a scheduling label, not a place, so exactly one is sent.
+      regions: [PRIMARY_OBSERVATION_REGION],
       alert_threshold_ms: threshold,
       is_active: active,
     };
@@ -286,26 +277,22 @@ export function AddDependencyPanel() {
               Check interval (seconds)
               <HelpTooltip
                 title="Check interval"
-                body="How often Reliastra probes this endpoint from each selected region. Paid plans can check more frequently."
+                body="How often Reliastra probes this endpoint from its observation point. Paid plans can check more frequently."
               />
             </span>
             <input className={cn(field, 'font-mono')} type="number" value={interval} onChange={(e) => setInterval(Number(e.target.value))} />
           </label>
           <div className="mb-4">
-            <span className="rs-label mb-1.5 block">Regions</span>
-            <div className="space-y-2">
-              {REGIONS.map((r) => (
-                <label key={r.id} className="flex h-12 items-center gap-2 text-sm text-rs-text">
-                  <input
-                    type="checkbox"
-                    checked={regions.includes(r.id)}
-                    onChange={() => toggleRegion(r.id)}
-                    className="h-4 w-4 accent-[var(--rs-brand)]"
-                  />
-                  {r.label}
-                </label>
-              ))}
-            </div>
+            <span className="rs-label mb-1.5 flex items-center gap-1">
+              Observation point
+              <HelpTooltip
+                title="Observation point"
+                body="Reliastra currently probes from a single location, so every check on this endpoint is issued from the same place. There is no region to choose."
+              />
+            </span>
+            <p className="flex h-12 items-center rounded-[10px] border border-rs-border-subtle bg-rs-input px-3 text-sm text-rs-text-secondary">
+              {OBSERVATION_POINT_LABEL}
+            </p>
           </div>
           <label className="mb-4 block">
             <span className="rs-label mb-1.5 flex items-center gap-1">

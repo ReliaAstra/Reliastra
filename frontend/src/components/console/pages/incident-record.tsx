@@ -13,7 +13,6 @@ import {
   formatLatency,
   formatUtc,
   incidentCode,
-  regionLabel,
   reportCode,
 } from '@/lib/dashboard/format';
 import {
@@ -29,6 +28,7 @@ import {
   toState,
 } from '@/components/console/primitives';
 import { CheckStrip, Plot } from '@/components/console/telemetry';
+import { evidenceState } from '@/lib/dashboard/evidence-state';
 import type { CheckResult, IncidentDetail } from '@/lib/dashboard/types';
 
 /**
@@ -46,8 +46,20 @@ export function IncidentRecordPage({ id }: { id: string }) {
   const { data, isLoading, isError, refetch } = useIncident(id);
   const dep = useDependency(data?.dependency_id ?? '');
   const results = useDependencyResults(data?.dependency_id ?? '');
+  // Explicit request only for an incident whose evidence has to be (re)made:
+  // a legacy record from before automatic generation, or a failed attempt the
+  // operator wants to retry. An incident that already has a report, or one
+  // that is still generating, needs no click at all.
   const [evidenceRequested, setEvidenceRequested] = useState(false);
-  const evidence = useIncidentEvidence(id, evidenceRequested || Boolean(data?.evidence_report_id));
+  const evidenceView = evidenceState(data ?? {});
+  const needsManualRequest =
+    evidenceView.key === 'unknown' || evidenceView.key === 'failed';
+  const evidence = useIncidentEvidence(
+    id,
+    evidenceView.key === 'available' ||
+      evidenceView.key === 'generating' ||
+      (evidenceRequested && needsManualRequest),
+  );
 
   if (isLoading) {
     return (
@@ -104,6 +116,26 @@ export function IncidentRecordPage({ id }: { id: string }) {
             <Link href={`/evidence/${evidence.data.id}`} className="obc-btn obc-btn-primary">
               Open evidence record
             </Link>
+          ) : evidenceView.action === 'retry' ? (
+            <button
+              type="button"
+              className="obc-btn"
+              onClick={() => {
+                setEvidenceRequested(true);
+                void evidence.refetch();
+              }}
+              disabled={evidence.isFetching}
+            >
+              {evidence.isFetching ? 'Retrying…' : 'Retry evidence generation'}
+            </button>
+          ) : evidenceView.action === 'upgrade' ? (
+            <Link href="/billing" className="obc-btn">
+              Upgrade to generate evidence
+            </Link>
+          ) : evidenceView.key === 'generating' ? (
+            <span className="obc-btn" aria-disabled>
+              Generating…
+            </span>
           ) : (
             <button
               type="button"
@@ -111,7 +143,7 @@ export function IncidentRecordPage({ id }: { id: string }) {
               onClick={() => setEvidenceRequested(true)}
               disabled={evidence.isFetching}
             >
-              {evidence.isFetching ? 'Checking…' : 'Check for evidence'}
+              {evidence.isFetching ? 'Checking…' : 'Request evidence'}
             </button>
           )
         }
@@ -170,10 +202,30 @@ export function IncidentRecordPage({ id }: { id: string }) {
           </div>
         ) : evidence.isFetching ? (
           <RowsSkeleton rows={2} cols={2} />
+        ) : evidenceView.key === 'failed' ? (
+          <Failure
+            title="Evidence generation failed"
+            body={evidenceView.hint}
+            onRetry={() => {
+              setEvidenceRequested(true);
+              void evidence.refetch();
+            }}
+          />
+        ) : evidenceView.key === 'not_entitled' ? (
+          <Empty title="Evidence is not included in this plan" body={evidenceView.hint} />
+        ) : evidenceView.key === 'generating' ? (
+          <Empty
+            title="Evidence is being generated"
+            body="Generation was requested when this incident resolved. This view updates when the report is stored."
+          />
         ) : (
           <Empty
-            title="No evidence record for this incident"
-            body="Evidence is generated once an incident is confirmed and its observation window has closed. Open incidents may not have a record yet."
+            title={
+              evidenceView.key === 'unknown'
+                ? 'No evidence record for this incident'
+                : 'Evidence not generated yet'
+            }
+            body={evidenceView.hint}
           />
         )}
       </Section>
@@ -235,9 +287,6 @@ function Attribution({ incident, depName }: { incident: IncidentDetail; depName?
         <Row label="Correlated dependencies" mono>
           {correlations.length || <Missing />}
         </Row>
-        <Row label="Region of first detection" mono>
-          {incident.region ? regionLabel(incident.region) : <Missing />}
-        </Row>
       </dl>
 
       {incident.other_dependencies && incident.other_dependencies.length > 0 && (
@@ -278,7 +327,7 @@ function Missing({ note = 'not supplied' }: { note?: string }) {
 const EVENT_WORD: Record<string, string> = {
   detection: 'Detected',
   vendor_spike: 'Vendor degradation',
-  confirmation: 'Quorum confirmed',
+  confirmation: 'Detector confirmed',
   resolution: 'Recovered',
 };
 
@@ -361,12 +410,9 @@ function Observations({
     if (!inWindow.length) return null;
     const latencies = inWindow.filter((r) => r.is_up && r.latency_ms > 0).map((r) => r.latency_ms);
     const failed = inWindow.filter((r) => !r.is_up).length;
-    const regions = new Set(inWindow.map((r) => r.region));
     return {
       observations: inWindow.length,
       failed,
-      regions: regions.size,
-      regionList: [...regions],
       peak: latencies.length ? Math.max(...latencies) : null,
       median: latencies.length
         ? [...latencies].sort((a, b) => a - b)[Math.floor(latencies.length / 2)]
@@ -381,7 +427,7 @@ function Observations({
   return (
     <Section
       title="Observations"
-      hint={`Checks recorded inside the incident window, from the regions that ran them.`}
+      hint="Checks recorded inside the incident window at the RELIASTRA observation point."
     >
       {loading ? (
         <RowsSkeleton rows={4} cols={4} />
@@ -397,11 +443,10 @@ function Observations({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] md:grid-cols-4">
             {[
               { label: 'Observations', value: stats.observations },
               { label: 'Failed checks', value: stats.failed, state: stats.failed ? ('crit' as const) : undefined },
-              { label: 'Regions', value: stats.regions },
               {
                 label: 'Peak latency',
                 value: stats.peak != null ? formatLatency(stats.peak) : null,
@@ -449,15 +494,11 @@ function Observations({
                   at: r.executed_at,
                   up: r.is_up,
                   latency: r.latency_ms,
-                  region: r.region,
                 }))}
                 label={`${inWindow.length} checks during the incident window`}
               />
               <dl className="mt-4">
-                <Row label="Regions that observed" mono>
-                  {stats.regionList.map(regionLabel).join(', ')}
-                </Row>
-                <Row label="Quorum-confirmed checks" mono>
+                <Row label="Detector-confirmed checks" mono>
                   {stats.quorum} of {stats.observations}
                 </Row>
                 <Row label="Window" mono>

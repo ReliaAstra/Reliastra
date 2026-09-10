@@ -347,6 +347,34 @@ class Settings(BaseSettings):
         "(see app.core.logging); set this to force JSON in other environments.",
     )
     CHECK_WORKER_REGION: Literal['us-east', 'eu-west', 'ap-south', 'sa-east'] = 'us-east'
+    # ── Observation topology ─────────────────────────────────────────────
+    OBSERVATION_TOPOLOGY: Literal["single", "multi"] = Field(
+        default="single",
+        description=(
+            "How many genuinely independent observation points probe a "
+            "dependency. 'single' is the deployed reality today - one host, one "
+            "worker - so incidents are confirmed by a deterministic "
+            "consecutive-failure rule (SINGLE_TOPOLOGY_FAILURE_CHECKS). "
+            "'multi' is for a real fleet of independent points, where an "
+            "incident requires quorum across QUORUM_MIN_REGIONS distinct "
+            "observation points inside QUORUM_WINDOW_SECONDS. "
+            "Two scheduling labels emitted by one worker are NOT two "
+            "observation points: never set 'multi' on a single-host "
+            "deployment, it would present one machine's opinion as a quorum."
+        ),
+    )
+    SINGLE_TOPOLOGY_FAILURE_CHECKS: int = Field(
+        default=2,
+        ge=1,
+        le=10,
+        description=(
+            "Consecutive failed checks required to open an incident under "
+            "OBSERVATION_TOPOLOGY=single. This is the debounce: 1 reacts to a "
+            "single dropped probe, 2 (the default) requires the failure to "
+            "survive one more check interval. Deterministic - no timing "
+            "heuristics, no randomness."
+        ),
+    )
     CHECK_SCHEDULE_SECONDS: float = Field(
         default=30.0,
         ge=5,

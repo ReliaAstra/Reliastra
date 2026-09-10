@@ -7,7 +7,7 @@ import { LatencyChart } from '@/components/site/visuals/latency-chart';
 export const metadata = buildMetadata({
   title: 'Third-Party Dependency Monitoring',
   description:
-    'Monitor any third-party API from independent regions with quorum-confirmed incidents. How RELIASTRA checks, what it records, and what it refuses to call an outage.',
+    'Monitor any third-party API on a fixed interval with deterministically confirmed incidents. How RELIASTRA checks, what it records, and what it refuses to call an outage.',
   path: '/dependency-monitoring',
 });
 
@@ -39,7 +39,7 @@ export default function DependencyMonitoringPage() {
       <MarketingPage
         eyebrow="Capability"
         title="Third-party dependency monitoring"
-        lede="Any HTTP endpoint, checked on a fixed interval from independent regions. Incidents declared by quorum."
+        lede="Any HTTP endpoint, checked on a fixed interval from infrastructure the vendor does not control. Incidents declared by a deterministic rule, not by guesswork."
         breadcrumbs={crumbs}
         visual={
           <div className="flex flex-col gap-12">
@@ -47,11 +47,11 @@ export default function DependencyMonitoringPage() {
             <LatencyChart />
           </div>
         }
-        visualCaption="Illustrative values. Region codes, status codes, latency and the quorum rule are the ones the product records and applies."
+        visualCaption="Illustrative values. Timestamps, status codes, latency and the detection rule are the ones the product records and applies."
         related={[
           { label: 'Live vendor status', href: '/track', description: 'Aggregated posture for public vendors.' },
-          { label: 'Monitoring docs', href: '/docs/monitoring', description: 'Configure checks, regions and intervals.' },
-          { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability', description: 'Scheduling, quorum, states, limitations.' },
+          { label: 'Monitoring docs', href: '/docs/monitoring', description: 'Configure checks, observation points and intervals.' },
+          { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability', description: 'Scheduling, detection rules, states, limitations.' },
           { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry', description: 'What every probe records.' },
         ]}
       >
@@ -67,13 +67,13 @@ export default function DependencyMonitoringPage() {
             API dependency monitoring, SaaS dependency monitoring, external API monitoring
             and dependency performance monitoring are the same practice at different
             scopes: request the endpoint like your product does, record what happened,
-            and compare across regions before alerting.
+            and require the failure to persist before alerting.
           </p>
           <h2>How checks run</h2>
           <ul>
-            <li><strong>Scheduled, not sampled on demand:</strong> one task per dependency per region per interval, via broker to workers.</li>
-            <li><strong>Separate origins:</strong> each region resolves and connects independently; every result carries its region.</li>
-            <li><strong>Quorum verdicts:</strong> multi-region failures inside a short window declare an incident; consecutive successes clear it.</li>
+            <li><strong>Scheduled, not sampled on demand:</strong> one task per dependency per configured observation label per interval, via broker to workers.</li>
+            <li><strong>Outside the vendor:</strong> every check resolves and connects from RELIASTRA infrastructure, and every result carries the label it ran under.</li>
+            <li><strong>Deterministic verdicts:</strong> a fixed number of consecutive failures declares an incident; consecutive successes clear it. The same inputs always produce the same decision.</li>
             <li><strong>Validated targets:</strong> SSRF policy rejects private/loopback/link-local/metadata addresses - recorded as policy blocks, never as vendor outages.</li>
             <li><strong>Explicit states:</strong> target problems, infrastructure problems and transitional states are distinct, because they have different owners.</li>
           </ul>

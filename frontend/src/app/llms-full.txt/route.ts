@@ -36,7 +36,7 @@ For agencies and MSPs operating client infrastructure: ${SITE_URL}/agencies.
 |---|---|
 | Watches your services | Watches your vendors' APIs |
 | Alerts "checkout is down" | Answers "was it you or Stripe?" |
-| Vendor status page as evidence | Independent multi-region probes as evidence |
+| Vendor status page as evidence | Independent scheduled probes as evidence |
 | Single-perspective timeline | Your incidents + vendor observations on one timeline |
 | Screenshots for SLA claims | Checksummed, verifiable fault reports for SLA claims |
 

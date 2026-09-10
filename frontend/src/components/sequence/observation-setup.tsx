@@ -12,7 +12,8 @@ import {
   useOnboardingStore,
   type SequenceStageId,
 } from '@/stores/onboarding-store';
-import { formatUtc, regionLabel, timeAgo } from '@/lib/dashboard/format';
+import { formatUtc, timeAgo } from '@/lib/dashboard/format';
+import { OBSERVATION_POINT_LABEL } from '@/lib/product-contract';
 import { getPlan } from '@/lib/dashboard/plans';
 import {
   OptionButton,
@@ -32,12 +33,12 @@ import type { CheckResult } from '@/lib/dashboard/types';
 
    Four stages and an activation surface. The user is not "setting up an app":
    they are configuring an observation system, and every screen is written and
-   composed as configuration: real constraints, real regions, a review of the
+   composed as configuration: real constraints, a review of the
    exact request RELIASTRA is about to start issuing, and then the first
    measurement it takes.
 
    Everything offered here is something the backend actually supports:
-   four observation regions (`ALLOWED_REGIONS`), three methods, an interval
+   a single observation point, three methods, an interval
    floor that comes from the organization's own plan, and a suggestion list
    built from the public dependency records RELIASTRA already observes.
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -49,13 +50,6 @@ const STAGES: Stage[] = [
   { id: 'confirm', index: '04', label: 'Confirm' },
 ];
 
-/** The regions the backend accepts. Anything else is rejected on create. */
-const REGIONS: Array<{ id: string; label: string }> = [
-  { id: 'us-east', label: 'US East' },
-  { id: 'eu-west', label: 'EU West' },
-  { id: 'ap-south', label: 'AP South' },
-  { id: 'sa-east', label: 'SA East' },
-];
 
 const INTERVALS = [15, 30, 60, 120, 300, 600, 1800];
 
@@ -286,43 +280,6 @@ export function ObservationSetupSequence() {
           />
 
           <StageBlock
-            title="Observation regions"
-            hint="An incident requires at least two regions to fail inside the same 60-second window. Choose two or more."
-          >
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {REGIONS.map((r) => {
-                const on = draft.regions.includes(r.id);
-                return (
-                  <OptionButton
-                    key={r.id}
-                    selected={on}
-                    title={r.label}
-                    meta={r.id}
-                    onClick={() =>
-                      store.setDraft({
-                        regions: on
-                          ? draft.regions.filter((x) => x !== r.id)
-                          : [...draft.regions, r.id],
-                      })
-                    }
-                  />
-                );
-              })}
-            </div>
-            {draft.regions.length === 1 && (
-              <p className="mt-3 text-[12px] text-[#E3BE7A]">
-                One region records failures but never confirms an incident. A second
-                region is required for quorum.
-              </p>
-            )}
-            {draft.regions.length === 0 && (
-              <p className="mt-3 text-[12px] text-[#E58C85]" role="alert">
-                At least one region is required.
-              </p>
-            )}
-          </StageBlock>
-
-          <StageBlock
             title="Cadence and tolerance"
             hint={`Plan minimum: ${minInterval} seconds.`}
           >
@@ -464,11 +421,8 @@ export function ObservationSetupSequence() {
             <ReviewRow label="Endpoint">{draft.endpointUrl}</ReviewRow>
             <ReviewRow label="Method">{draft.method}</ReviewRow>
             <ReviewRow label="Expected status">{draft.expectedStatusCodes.join(', ')}</ReviewRow>
-            <ReviewRow label="Regions">
-              {draft.regions.map((r) => regionLabel(r)).join(' · ')}{' '}
-              <span className="text-[var(--obc-text-4)]">
-                ({draft.regions.length} region{draft.regions.length === 1 ? '' : 's'})
-              </span>
+            <ReviewRow label="Observation point" mono={false}>
+              {OBSERVATION_POINT_LABEL}
             </ReviewRow>
             <ReviewRow label="Interval">
               every {draft.checkIntervalSeconds}s
@@ -489,8 +443,8 @@ export function ObservationSetupSequence() {
               )}
             </ReviewRow>
             <ReviewRow label="Incident rule" mono={false}>
-              An incident opens when at least two of the selected regions record a failure inside
-              the same 60-second window.
+              An incident opens when the detector confirms a sustained failure against this
+              endpoint.
             </ReviewRow>
           </dl>
 
@@ -681,7 +635,7 @@ function DependencyStage({
       </StageBlock>
 
       <StageActions
-        note="Next: regions, interval and success criteria."
+        note="Next: interval and success criteria."
         back={{ label: 'Back', onClick: onBack }}
       >
         <button
@@ -781,7 +735,7 @@ function HeadersBlock({
  *
  * Infrastructure coming online, not a celebration: the monitor exists, the
  * first observation is pending, and the moment a real result lands it is
- * printed with its region, latency and status code. Nothing here is
+ * printed with its latency and status code. Nothing here is
  * simulated - while the scheduler has not run yet, the surface says so.
  */
 function ActivationSurface({
@@ -834,7 +788,7 @@ function ActivationSurface({
         title={first ? `${name} is under observation` : `${name} is being brought online`}
         body={
           first
-            ? 'Collecting independent observations. Each result is a real request from a real region, stored with its timestamp.'
+            ? 'Collecting observations. Each result is a real request from the RELIASTRA observation point, stored with its timestamp.'
             : 'The monitor is scheduled. The first measurement appears when the scheduler reaches it.'
         }
       />
@@ -843,14 +797,14 @@ function ActivationSurface({
         title="First observation"
         hint={
           first
-            ? 'The most recent results across your configured regions.'
+            ? 'The most recent results from the RELIASTRA observation point.'
             : `Waiting for the first measurement. ${elapsed}s elapsed.`
         }
       >
         {first ? (
           <div className="border border-[var(--obc-line)]">
-            <div className="hidden grid-cols-[140px_minmax(0,1fr)_120px_120px_160px] gap-4 border-b border-[var(--obc-line)] px-3 py-2 sm:grid">
-              {['Region', 'Result', 'Latency', 'Status', 'Observed (UTC)'].map((h) => (
+            <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_160px] gap-4 border-b border-[var(--obc-line)] px-3 py-2 sm:grid">
+              {['Result', 'Latency', 'Status', 'Observed (UTC)'].map((h) => (
                 <span key={h} className="obc-label">
                   {h}
                 </span>
@@ -859,11 +813,8 @@ function ActivationSurface({
             {results!.map((r) => (
               <div
                 key={r.id}
-                className="grid grid-cols-2 gap-2 border-b border-[var(--obc-line)] px-3 py-2.5 last:border-b-0 sm:grid-cols-[140px_minmax(0,1fr)_120px_120px_160px] sm:items-center sm:gap-4"
+                className="grid grid-cols-2 gap-2 border-b border-[var(--obc-line)] px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_120px_120px_160px] sm:items-center sm:gap-4"
               >
-                <span className="font-[family-name:var(--ob-font-mono)] text-[12.5px] text-[var(--obc-text)]">
-                  {regionLabel(r.region)}
-                </span>
                 <State status={r.is_up ? 'operational' : 'down'} />
                 <span className="font-[family-name:var(--ob-font-mono)] text-[12.5px] tabular-nums text-[var(--obc-text-2)]">
                   {r.latency_ms ? (
@@ -909,7 +860,7 @@ function ActivationSurface({
             {
               href: '/incidents',
               label: 'Incidents',
-              body: 'Opened when two regions confirm a failure inside 60 seconds.',
+              body: 'Opened when the detector confirms a sustained failure against a monitor.',
             },
             {
               href: '/evidence',
@@ -1083,7 +1034,7 @@ function readableError(err: unknown): string {
   if (/duplicate|already exists/i.test(message))
     return 'A monitor for this endpoint already exists in your organization.';
   if (/region/i.test(message))
-    return 'One of the selected regions is not available. Choose from the four listed regions.';
+    return 'The observation point was rejected. Reload this step and try again.';
   if (/url|endpoint/i.test(message))
     return 'The endpoint was rejected. It must be an absolute http:// or https:// URL that resolves publicly.';
   if (/header/i.test(message))

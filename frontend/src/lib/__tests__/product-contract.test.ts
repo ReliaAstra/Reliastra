@@ -12,6 +12,7 @@ import {
   CORRELATION_WINDOW_SECONDS,
   EVIDENCE_EXPIRY_DAYS,
   EVIDENCE_FOOTER_FIELDS,
+  EVIDENCE_FORBIDDEN_CLAIMS,
   EVIDENCE_REPORT_FIELDS,
   EVIDENCE_REPORT_SECTIONS,
   INCIDENT_SEVERITIES,
@@ -204,5 +205,30 @@ describe('observation contract', () => {
     for (const field of CHECK_RESULT_FIELDS) {
       expect(model).toContain(`${field}: Mapped`);
     }
+  });
+});
+
+describe('the generated artifact makes no fabricated claims', () => {
+  const template = evidenceTemplate;
+
+  it.each(EVIDENCE_FORBIDDEN_CLAIMS)('never says %s', (claim) => {
+    expect(template).not.toContain(claim);
+  });
+
+  it('draws its chart from the observations it carries', () => {
+    // The static polyline that used to sit here was a fabricated measurement
+    // printed next to a real checksum.
+    expect(template).toContain('{{ chart_svg | safe }}');
+    expect(template).not.toMatch(/points="\d+,\d+ \d+,\d+/);
+  });
+
+  it('states the detection rule instead of asserting a quorum', () => {
+    expect(template).toContain('{{ detection.rule_label }}');
+    expect(template).toContain('{{ detection.rule or "not recorded" }}');
+  });
+
+  it('labels the rolling 24h figure as context, separate from the incident', () => {
+    expect(template).toContain('Rolling 24-Hour Health (Context)');
+    expect(template).toContain('Incident Window Measurements');
   });
 });

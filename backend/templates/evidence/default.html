@@ -47,7 +47,7 @@
         }
         .meta-table td.label {
             font-weight: bold;
-            width: 25%;
+            width: 32%;
             background-color: #f9f9f9;
         }
         .data-table th {
@@ -60,6 +60,19 @@
             border: 1px solid #eeeeee;
             background-color: #fafbfc;
             text-align: center;
+        }
+        .note {
+            font-size: 12px;
+            color: #6b6f76;
+            margin-top: 6px;
+        }
+        .warning {
+            font-size: 12px;
+            color: #8a4b00;
+            background-color: #fff7e8;
+            border: 1px solid #f0d9ad;
+            padding: 8px;
+            margin-top: 10px;
         }
         .footer {
             margin-top: 40px;
@@ -77,12 +90,17 @@
             color: #ffffff;
             background-color: #d9534f;
         }
+        .muted { color: #8a8f98; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="title">RELIASTRA EXTERNAL SLA EVIDENCE REPORT</div>
-        <div class="subtitle">Verified Independent Multi-Region Vendor Failure Evidence</div>
+        {# The subtitle describes the topology that actually produced this
+           record. It never claims independent multi-point confirmation when
+           the checks came from one place. #}
+        <div class="subtitle">{{ topology.topology_label }} &middot; Detector-Confirmed Vendor Failure Evidence</div>
+        <div class="note">{{ topology.topology_statement }}</div>
     </div>
 
     <div class="section">
@@ -113,51 +131,244 @@
                 <td>{{ incident.resolved_at or "OPEN / IN PROGRESS" }}</td>
             </tr>
             <tr>
-                <td class="label">Verification Regions</td>
-                <td>{{ dependency.regions|join(", ") }}</td>
+                <td class="label">Measurement Window (UTC)</td>
+                <td>{{ metrics.window_start }} &rarr; {{ metrics.window_end }}
+                    ({{ '%.0f'|format(metrics.window_seconds) }}s)</td>
+            </tr>
+            <tr>
+                <td class="label">Observation Topology</td>
+                <td>{{ topology.topology_label }}
+                    &mdash; {{ topology.observation_point_count }} observation
+                    point{{ '' if topology.observation_point_count == 1 else 's' }}
+                    recorded in this window
+                    {%- if metrics.observation_points %}
+                    ({{ metrics.observation_points|join(', ') }})
+                    {%- endif %}
+                </td>
             </tr>
         </table>
     </div>
 
     <div class="section">
-        <div class="section-title">2. SLA Impact Calculation</div>
+        <div class="section-title">2. Detection Record</div>
+        {# Everything here is the decision that was persisted when the
+           incident opened. This section replaced a hard-coded assertion that
+           the failure had been confirmed by a vote of regions, which a
+           single-observation-point deployment can never truthfully make. #}
+        <table class="meta-table">
+            <tr>
+                <td class="label">Detection Rule</td>
+                <td>{{ detection.rule_label }}</td>
+            </tr>
+            <tr>
+                <td class="label">Rule Identifier</td>
+                <td>{{ detection.rule or "not recorded" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Detector Confirmation</td>
+                <td>
+                    {%- if detection.confirmed is none -%}
+                        <span class="muted">not recorded</span>
+                    {%- elif detection.confirmed -%}
+                        CONFIRMED by {{ detection.rule_label|lower }}
+                    {%- else -%}
+                        not confirmed
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Basis</td>
+                <td>
+                    {%- if detection.reason -%}
+                        {{ detection.reason }}
+                    {%- else -%}
+                        <span class="muted">This incident was opened before detection
+                        provenance was recorded, so the exact basis is not
+                        available.</span>
+                    {%- endif -%}
+                </td>
+            </tr>
+            {% if detection.agreeing_observation_points %}
+            <tr>
+                <td class="label">Agreeing Observation Points</td>
+                <td>{{ detection.agreeing_observation_points|join(', ') }}
+                    ({{ detection.required }} required)</td>
+            </tr>
+            {% endif %}
+        </table>
+        {% if not topology.independent_confirmation %}
+        <p class="note">This deployment observes from a single point, so
+        confirmation is by persistence of failure rather than by agreement
+        between independent points. No independent cross-verification is
+        claimed in this document.</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="section-title">3. Incident Window Measurements</div>
+        <table class="meta-table">
+            <tr>
+                <td class="label">Checks In Window</td>
+                <td>{{ metrics.total_checks }}
+                    ({{ metrics.measured_checks }} reached the target)</td>
+            </tr>
+            <tr>
+                <td class="label">Successful Checks</td>
+                <td>{{ metrics.up_checks }}</td>
+            </tr>
+            <tr>
+                <td class="label">Failed Checks</td>
+                <td>{{ metrics.down_checks }}</td>
+            </tr>
+            <tr>
+                <td class="label">Blocked Checks (Excluded)</td>
+                <td>{{ metrics.blocked_checks }}
+                    <span class="muted">probe refused by security policy; not
+                    counted as target downtime</span></td>
+            </tr>
+            <tr>
+                <td class="label">Measured Availability</td>
+                <td>
+                    {%- if metrics.availability_pct is none -%}
+                        <span class="muted">not calculable &mdash; no measured checks</span>
+                    {%- else -%}
+                        {{ '%.4f'|format(metrics.availability_pct) }}%
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Longest Failure Run</td>
+                <td>{{ metrics.longest_failure_run }} consecutive failed check(s)</td>
+            </tr>
+            <tr>
+                <td class="label">Latency (ms)</td>
+                <td>
+                    {%- if metrics.avg_latency_ms is none -%}
+                        <span class="muted">no successful measurement in window</span>
+                    {%- else -%}
+                        avg {{ '%.1f'|format(metrics.avg_latency_ms) }}
+                        &middot; p50 {{ '%.1f'|format(metrics.p50_latency_ms) }}
+                        &middot; p95 {{ '%.1f'|format(metrics.p95_latency_ms) }}
+                        &middot; min {{ '%.1f'|format(metrics.min_latency_ms) }}
+                        &middot; max {{ '%.1f'|format(metrics.max_latency_ms) }}
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">First / Last Observation</td>
+                <td>{{ metrics.first_observed_at or "none" }} &rarr;
+                    {{ metrics.last_observed_at or "none" }}</td>
+            </tr>
+        </table>
+        {% if metrics.insufficient_data %}
+        <div class="warning"><strong>Data limitation:</strong> {{ metrics.data_note }}
+        Figures above are reported as measured and are not extrapolated.</div>
+        {% elif metrics.data_note %}
+        <p class="note">{{ metrics.data_note }}</p>
+        {% endif %}
+        {% if observations_truncated %}
+        <div class="warning"><strong>Truncated window:</strong>
+        {{ observations_available_in_window }} checks fall inside the incident
+        window; the first {{ observation_count }} are documented here and are
+        the basis of the figures above.</div>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <div class="section-title">4. SLA Impact Calculation</div>
         <table class="meta-table">
             <tr>
                 <td class="label">Planned Target Uptime</td>
-                <td>100.0% (0s allowable outage)</td>
+                <td>{{ '%.1f'|format(target_uptime_pct) }}%
+                    ({{ '%.0f'|format(impact.allowable_downtime_seconds) }}s
+                    allowable inside the window)</td>
             </tr>
             <tr>
-                <td class="label">Measured 24h Uptime</td>
-                <td>{{ uptime_pct }}%</td>
+                <td class="label">Measured Availability In Window</td>
+                <td>
+                    {%- if impact.measured_availability_pct is none -%}
+                        <span class="muted">not calculable</span>
+                    {%- else -%}
+                        {{ '%.4f'|format(impact.measured_availability_pct) }}%
+                    {%- endif -%}
+                </td>
             </tr>
             <tr>
                 <td class="label">SLA Degradation Impact</td>
-                <td><strong>{{ sla_impact_pct }}%</strong> ((Planned - Measured) / Planned)</td>
+                <td>
+                    {%- if impact.impact_pct is none -%}
+                        <span class="muted">not calculable &mdash; not assumed to be 0%</span>
+                    {%- else -%}
+                        <strong>{{ '%.4f'|format(impact.impact_pct) }}%</strong>
+                        (target &minus; measured, floored at zero)
+                    {%- endif -%}
+                </td>
             </tr>
             <tr>
-                <td class="label">Quorum Confirmed Failure</td>
-                <td>YES (Confirmed across multiple independent regions)</td>
+                <td class="label">Measured Downtime</td>
+                <td>{{ '%.0f'|format(impact.measured_downtime_seconds) }}s of
+                    {{ '%.0f'|format(metrics.window_seconds) }}s</td>
+            </tr>
+            <tr>
+                <td class="label">Allowance Exceeded</td>
+                <td>{{ 'YES' if impact.exceeded_allowance else 'NO' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Calculation Basis</td>
+                <td>{{ impact.basis }}</td>
             </tr>
         </table>
+        <p class="note">Computed from the incident window only
+        ({{ metrics.window_start }} &rarr; {{ metrics.window_end }}). The
+        rolling 24-hour figure in section 6 covers a different period and is
+        not used in this calculation.</p>
     </div>
 
     <div class="section">
-        <div class="section-title">3. Per-Region Latency & Uptime Chart</div>
+        <div class="section-title">5. Observed Latency And Failures</div>
         <div class="chart-box">
-            <!-- Embedded SVG Latency Chart -->
-            <svg width="500" height="120" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100%" height="100%" fill="#ffffff" />
-                <line x1="40" y1="90" x2="480" y2="90" stroke="#cccccc" stroke-width="1" />
-                <line x1="40" y1="10" x2="40" y2="90" stroke="#cccccc" stroke-width="1" />
-                <polyline fill="none" stroke="#0056b3" stroke-width="2" points="40,30 150,35 260,85 370,80 480,40" />
-                <circle cx="260" cy="85" r="4" fill="#d9534f" />
-                <text x="240" y="75" font-size="10" fill="#d9534f">Degradation</text>
-            </svg>
+            {# Rendered from the observations carried in this document. #}
+            {{ chart_svg | safe }}
         </div>
+        <p class="note">Drawn from {{ chart_facts.observations_available }}
+        observation(s) in the incident window
+        {%- if chart_facts.downsampled %}, reduced to
+        {{ chart_facts.observations_plotted }} worst-per-bucket points for
+        legibility{%- endif %}
+        {%- if chart_facts.failed_marks %}, with
+        {{ chart_facts.failed_marks }} failed check(s) marked{%- endif %}.
+        {%- if not chart_facts.rendered %} {{ chart_facts.note }}.{%- endif %}</p>
     </div>
 
     <div class="section">
-        <div class="section-title">4. Correlated Vendor Failures</div>
+        <div class="section-title">6. Rolling 24-Hour Health (Context)</div>
+        <table class="meta-table">
+            <tr>
+                <td class="label">Rolling 24h Availability</td>
+                <td>
+                    {%- if rolling.uptime_percentage is none -%}
+                        <span class="muted">no checks in the last 24 hours</span>
+                    {%- else -%}
+                        {{ rolling.uptime_percentage }}%
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Rolling 24h Average Latency</td>
+                <td>{{ rolling.avg_latency_ms }} ms</td>
+            </tr>
+            <tr>
+                <td class="label">Rolling 24h Checks</td>
+                <td>{{ rolling.total_checks }}</td>
+            </tr>
+        </table>
+        <p class="note">Context only. This is a rolling aggregate measured at
+        generation time, not the incident measurement, and it covers a
+        different window from sections 3 and 4.</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">7. Correlated Vendor Failures</div>
         <table class="data-table">
             <thead>
                 <tr>
@@ -177,7 +388,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="4">No automatic cross-vendor correlations detected in ±5m temporal window.</td>
+                    <td colspan="4">No automatic cross-vendor correlations were recorded for this incident.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -185,7 +396,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">5. Deterministic Attribution</div>
+        <div class="section-title">8. Deterministic Attribution</div>
         {% if attribution %}
         <table class="meta-table">
             <tr><td class="label">Classification</td><td>{{ attribution.classification }}</td></tr>
@@ -193,21 +404,32 @@
             <tr><td class="label">Methodology</td><td>{{ attribution.methodology_version }}</td></tr>
         </table>
         {% else %}
-        <p>No deterministic attribution result was available when this snapshot was created.</p>
+        <p>No deterministic attribution result was available when this record was generated. No classification is asserted.</p>
         {% endif %}
     </div>
 
     {% if ai_explanation %}
     <div class="section">
-        <div class="section-title">6. AI-Generated Explanation</div>
-        <p><em>This explanation was generated by Reliastra's AI from the pre-computed evidence above. It does not determine facts or attribution.</em></p>
+        <div class="section-title">9. AI-Generated Explanation</div>
+        <p><em>This explanation was generated by Reliastra's AI from the measured evidence above. It does not determine facts or attribution, and it is not covered by the evidence data hash.</em></p>
         <p>{{ ai_explanation }}</p>
     </div>
     {% endif %}
 
     <div class="footer">
         <p><strong>Evidence Data Hash (SHA-256):</strong> {{ data_hash }}</p>
+        <p><strong>Document Checksum:</strong> the SHA-256 of this PDF file is
+        recorded on the evidence record and in the accompanying machine-readable
+        JSON, and is returned by the public verification endpoint. It cannot be
+        printed inside the file it describes.</p>
         <p><strong>Public Verification ID:</strong> {{ verification_id }}</p>
+        <p><strong>Evidence Schema Version:</strong> {{ schema_version }} &middot;
+           Attribution Methodology: {{ methodology_version }}</p>
+        <p>The data hash covers the canonical evidence payload (incident,
+        dependency, time window, detection record, window measurements, SLA
+        impact, observations and attribution). The report checksum covers the
+        rendered PDF bytes. They are different values describing different
+        things.</p>
         <p>Generated by Reliastra External Dependency Intelligence Platform on {{ generated_at }}. This report is immutable and timestamped.</p>
     </div>
 </body>

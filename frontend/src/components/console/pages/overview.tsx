@@ -62,10 +62,6 @@ export function OverviewPage() {
   const evidence = useEvidence();
 
   const limit = plan?.max_dependencies ?? null;
-  // Region count is the union of the regions actually configured on this
-  // org's dependencies. It is never a constant: printing "3 regions" when the
-  // workspace observes from two would be a fabricated measurement claim.
-  const regionCount = new Set((deps.data ?? []).flatMap((d) => d.regions ?? [])).size;
   const monitored = health.data?.length ?? deps.data?.length ?? 0;
   const active = openIncidents.data ?? [];
   const isEmptyWorkspace =
@@ -99,12 +95,6 @@ export function OverviewPage() {
               value={String(active.length)}
               state={active.length > 0 ? 'crit' : undefined}
             />
-            {regionCount > 0 && (
-              <Fact
-                label="Observation regions"
-                value={String(regionCount)}
-              />
-            )}
           </>
         }
         actions={
@@ -137,7 +127,7 @@ export function OverviewPage() {
 
           <Section
             title="Dependency health"
-            hint="Latest endpoint observations. Incidents require regional quorum."
+            hint="Latest endpoint observations from the RELIASTRA observation point."
             action={<SectionLink href="/dependencies">All dependencies</SectionLink>}
           >
             <HealthTable
@@ -164,7 +154,7 @@ export function OverviewPage() {
             ) : !allIncidents.data?.length ? (
               <Empty
                 title="No incidents recorded"
-                body="Incidents appear when failed checks meet the regional quorum."
+                body="Incidents appear when the detector confirms a sustained failure against a dependency."
                 action={
                   <Link href="/dependencies" className="obc-btn">
                     Review dependencies
@@ -191,7 +181,7 @@ export function OverviewPage() {
             ) : !evidence.data?.length ? (
               <Empty
                 title="No evidence records yet"
-                body="An evidence record is generated when an incident is confirmed. Each one carries the observations underneath it, the regions that saw them, and a checksum you can verify."
+                body="An evidence record is generated when an incident is confirmed. Each one carries the observations underneath it and a checksum you can verify."
               />
             ) : (
               <ul className="border border-[var(--obc-line)]">

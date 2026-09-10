@@ -13,7 +13,7 @@ const BODY = `# RELIASTRA
 ## What RELIASTRA is
 
 RELIASTRA is an infrastructure trust platform. It monitors the third-party
-APIs and services your product depends on from independent regions, correlates
+APIs and services your product depends on from RELIASTRA infrastructure, correlates
 their failures with your own incidents, attributes the likely origin with a
 deterministic engine, and generates cryptographically verifiable SLA evidence
 reports (checksummed, bound to your organization).
@@ -31,8 +31,8 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 ## Key capabilities
 
-- Third-party dependency monitoring (any HTTP endpoint, multi-region checks)
-- Quorum-confirmed incidents (no single-failed-request alerts)
+- Third-party dependency monitoring (any HTTP endpoint, fixed-interval checks)
+- Deterministically confirmed incidents (no single-failed-request alerts)
 - Incident attribution with confidence levels (correlation, not claimed causation)
 - SLA evidence reports (timestamped, checksummed, verifiable without disclosing secrets)
 - Public vendor tracking for vendors made public (${SITE_URL}/track)
@@ -82,7 +82,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 One scheduler dispatches one check task per dependency per region through a
 message broker to workers. Every result carries its region. A single failed
-request is never an incident - quorum across regions inside a short window is
+request is never an incident - a fixed number of consecutive failed checks is
 required, and recovery needs consecutive successes. Targets are resolved and
 validated against an SSRF policy (private/loopback/link-local/metadata
 addresses rejected and recorded as policy blocks, never as vendor outages).

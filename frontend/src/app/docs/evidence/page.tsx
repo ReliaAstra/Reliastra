@@ -43,15 +43,16 @@ export default function EvidenceDocsPage() {
           <h2>When to generate</h2>
           <p>
             On detection or on demand: pick the dependency and the window (UTC).
-            Reports compile from retained telemetry - per-region observations,
-            quorum verdict, correlated customer impact - so generate before
-            retention prunes the window (24h Free, 90 days Pro).
+            Reports compile from retained telemetry - the observations inside
+            the incident window, the detection rule that fired, and correlated
+            customer impact - so generate before retention prunes the window
+            (24h Free, 90 days Pro).
           </p>
           <h2>What a report contains</h2>
           <ul>
             <li>Dependency, window, severity, and methodology reference.</li>
-            <li>Per-region timeline: latency, status codes, outcomes.</li>
-            <li>Quorum verdict with confidence framing (correlation, not causation).</li>
+            <li>The incident window measured from its own observations: availability, latency statistics, failed checks.</li>
+            <li>The detection record - which rule fired and on what basis - with confidence framing (correlation, not causation).</li>
             <li>Correlated incidents from your own history.</li>
             <li>Organization binding and SHA-256 checksum.</li>
           </ul>

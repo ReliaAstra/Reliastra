@@ -270,7 +270,7 @@ export function ObservationSection() {
 /**
  * One incident end to end. This is the section that explains the product
  * without asking the visitor to read a manual: failures appear, independent
- * observation confirms them, the quorum rule is met, the engine attributes,
+ * observation confirms them, the detection rule is met, the engine attributes,
  * the record is written.
  */
 export function IncidentStorySection() {
