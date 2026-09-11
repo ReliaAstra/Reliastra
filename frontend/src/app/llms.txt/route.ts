@@ -57,6 +57,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - SLA evidence: ${SITE_URL}/sla-evidence
 - Incident evidence: ${SITE_URL}/incident-evidence
 - Live vendor status: ${SITE_URL}/track
+- AI infrastructure hub (live status + research): ${SITE_URL}/research/ai-infrastructure
 - Pricing: ${SITE_URL}/pricing
 - Security: ${SITE_URL}/security
 - Documentation: ${SITE_URL}/docs
@@ -67,6 +68,8 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - Glossary: ${SITE_URL}/glossary
 - Research: ${SITE_URL}/research
 - Measurement methodology: ${SITE_URL}/research/how-reliastra-measures-vendor-reliability
+- “Is OpenAI down?” (what an honest answer looks like): ${SITE_URL}/research/ai-infrastructure/is-openai-down
+- AI API outage evidence playbook: ${SITE_URL}/research/ai-infrastructure/ai-api-outage-evidence
 - The Dependency Gap: ${SITE_URL}/research/the-dependency-gap
 - Research agenda: ${SITE_URL}/research/reliastra-research-agenda
 - About: ${SITE_URL}/about
@@ -88,6 +91,18 @@ validated against an SSRF policy (private/loopback/link-local/metadata
 addresses rejected and recorded as policy blocks, never as vendor outages).
 Missed probes are never backfilled. Retention follows the plan (24h Free,
 90 days Pro).
+
+## What the public observatory actually probes (scope, stated plainly)
+
+- Today's public catalog probes vendor-published status-site endpoints
+  (e.g. https://status.openai.com for OpenAI): HTTP availability and latency of
+  that endpoint, measured from a single RELIASTRA origin per vendor.
+- It does NOT read the status text published on those pages, does NOT measure
+  vendor APIs (unless and until an API endpoint is listed as an observed
+  target), and makes no statement about specific models or routes.
+- Public incident pages exist only for incidents on RELIASTRA's published
+  incident channel; an empty incident list is not evidence that no outage
+  occurred.
 
 ## Data limitations (stated plainly)
 

@@ -3,8 +3,10 @@ import {
   EXTERNAL_LINKS,
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
+  RESEARCH_HUBS,
   partnerRouteUrl,
   partnerUrl,
+  researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
 
@@ -149,6 +151,10 @@ export const FOOTER_GROUPS: NavGroup[] = [
     links: [
       { label: 'Public dependency index', href: PUBLIC_ROUTES.track },
       { label: 'Research', href: PUBLIC_ROUTES.research },
+      ...RESEARCH_HUBS.map((hub) => ({
+        label: hub.navLabel,
+        href: researchHubRoute(hub.slug),
+      })),
       ...RESEARCH_ARTICLES.map((a) => ({
         label: a.title,
         href: researchRoute(a.slug),

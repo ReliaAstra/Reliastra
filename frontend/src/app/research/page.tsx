@@ -9,7 +9,14 @@ import {
   Eyebrow,
   Section,
 } from '@/components/site/primitives';
-import { RESEARCH_ARTICLES, researchRoute, PUBLIC_ROUTES } from '@/lib/routes';
+import {
+  RESEARCH_ARTICLES,
+  RESEARCH_HUBS,
+  researchHubArticles,
+  researchHubRoute,
+  researchRoute,
+  PUBLIC_ROUTES,
+} from '@/lib/routes';
 import { JsonLd } from '@/components/seo/json-ld';
 import { SITE_URL, breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
 import { formatArticleDate, isoDate, readingTimeFor } from '@/lib/research-meta';
@@ -78,13 +85,21 @@ export default function ResearchIndexPage() {
               'Independent infrastructure intelligence: measurement methodology, dependency failure analysis and the standards RELIASTRA holds its own data to.',
             isPartOf: { '@id': `${SITE_URL}/#website` },
             inLanguage: 'en',
-            hasPart: RESEARCH_ARTICLES.map((a) => ({
+            hasPart: [
+              ...RESEARCH_HUBS.map((hub) => ({
+                '@type': 'CollectionPage',
+                name: hub.title,
+                description: hub.summary,
+                url: canonicalUrl(researchHubRoute(hub.slug)),
+              })),
+              ...RESEARCH_ARTICLES.map((a) => ({
               '@type': 'TechArticle',
               headline: a.title,
               description: a.summary,
-              datePublished: isoDate(a.publishedAt),
-              url: canonicalUrl(researchRoute(a.slug)),
-            })),
+                datePublished: isoDate(a.publishedAt),
+                url: canonicalUrl(researchRoute(a.slug)),
+              })),
+            ],
           },
         ]}
       />
@@ -155,6 +170,38 @@ export default function ResearchIndexPage() {
           </ul>
         </Container>
       </div>
+
+      {/* Hubs: standing collections that combine live data with research. */}
+      <Section tone="void" divider={false} aria-labelledby="hubs-heading">
+        <Container>
+          <h2 id="hubs-heading" className="ob-label mb-2">
+            Hubs
+          </h2>
+          {RESEARCH_HUBS.map((hub) => (
+            <Link
+              key={hub.slug}
+              href={researchHubRoute(hub.slug)}
+              className="group grid gap-6 border-t border-[var(--ob-line)] py-9 transition-colors hover:border-[var(--ob-line-3)] lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:gap-16"
+            >
+              <div className="flex flex-col gap-3">
+                <p className="ob-label text-[var(--ob-signal)]">
+                  Live research hub ·{' '}
+                  {researchHubArticles(hub.slug).length} papers · observatory data
+                </p>
+                <h3 className="ob-h2 max-w-[24ch] transition-colors group-hover:text-[var(--ob-signal)]">
+                  {hub.title}
+                </h3>
+                <p className="max-w-[68ch] text-[15px] leading-[1.65] text-[var(--ob-text-3)]">
+                  {hub.lede}
+                </p>
+              </div>
+              <p className="ob-label self-end lg:text-right">
+                Open the hub — current measurements and the research built on them →
+              </p>
+            </Link>
+          ))}
+        </Container>
+      </Section>
 
       {/* Lead paper */}
       <Section tone="void" divider={false} aria-labelledby="lead-heading">

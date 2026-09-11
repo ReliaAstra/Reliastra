@@ -42,6 +42,7 @@ import {
   StateSection,
 } from '@/components/observatory/record-sections';
 import { mergeIncidents } from '@/lib/observatory/incidents';
+import { articleFor, buildIsDownAnswer } from '@/lib/observatory/answer';
 import {
   TelemetryControls,
   TelemetryPanel,
@@ -60,6 +61,12 @@ import {
  *    never unmounts.
  *  - Range and region are URL state, which makes every view of this record a
  *    shareable and crawlable address.
+ *  - There is deliberately NO `loading.tsx` above this segment. A segment
+ *    loading boundary commits a 200 response before this page's async body
+ *    has decided anything, which turns `notFound()` - unknown vendors, and
+ *    unknown incident ids under `/incidents/[id]` - into a soft 404 that
+ *    search engines index. Removing that file restored correct status codes;
+ *    the regression guard asserting it stays absent lives in `seo.test.ts`.
  */
 
 export const revalidate = 60;
@@ -98,12 +105,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const name = detail.display_name;
   const regions = regionsOf(detail);
+  const endpoints = detail.endpoints ?? [];
+  const hosts = [...new Set(endpoints.map((e) => { try { return new URL(e.endpoint_url).host; } catch { return null; } }))]
+    .filter((h): h is string => !!h);
   const title = `${name} status and reliability record - independently measured`;
   const description =
-    `Independent observation of ${name}. Availability, latency, incident history ` +
-    `and published evidence measured by RELIASTRA probes` +
+    `Independent RELIASTRA measurement of ${name}` +
+    (hosts.length ? ` (${hosts.join(', ')})` : '') +
+    `: HTTP availability and latency` +
     (regions.length ? ` from ${regions.join(', ')}` : '') +
-    `, not taken from ${name}'s status page.`;
+    `, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.`;
 
   return {
     title,
@@ -205,6 +216,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
 
   const incidents = mergeIncidents(record.incidents, record.publicIncidents);
   const published = (record.publicIncidents ?? []).filter((p) => p.has_evidence_report);
+  const categoryWord = detail.category.replace(/[-_]/g, ' ');
 
   let catalog: TrackVendorListItem[] = [];
   try {
@@ -216,6 +228,26 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
   const m24 = record.metrics?.metrics?.['24h'] ?? null;
   const m30 = record.metrics?.metrics?.['30d'] ?? null;
   const basePath = SHARE_ROUTES.trackVendor(detail.vendor_name);
+
+  const primaryHost = (() => {
+    const url = detail.endpoints?.[0]?.endpoint_url;
+    if (!url) return null;
+    try {
+      return new URL(url).host;
+    } catch {
+      return null;
+    }
+  })();
+
+  const answer = buildIsDownAnswer({
+    name: detail.display_name,
+    endpointHost: primaryHost,
+    regions,
+    verdict,
+    current: freshest,
+    window24h: m24,
+    cadenceSeconds,
+  });
 
   return (
     <ObservatoryShell>
@@ -231,7 +263,11 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
             '@type': 'Dataset',
             '@id': `${canonicalUrl(basePath)}#dataset`,
             name: `${detail.display_name} availability and latency observations`,
-            description: `Independent observations of ${detail.display_name}'s public endpoints: availability, response latency and incident history measured by RELIASTRA.`,
+            description:
+              `Independent HTTP observations of the public endpoints listed for ${detail.display_name}: ` +
+              `endpoint availability and response latency measured by RELIASTRA probes, with published ` +
+              `incident records where they exist. Endpoint-scoped - not a measurement of ` +
+              `${detail.display_name}'s services as a whole.`,
             url: canonicalUrl(basePath),
             license: canonicalUrl(PUBLIC_ROUTES.terms),
             isAccessibleForFree: true,
@@ -273,6 +309,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
         verdict={verdict}
         lastObservation={lastObservation}
         cadenceSeconds={cadenceSeconds}
+        answer={answer}
       />
 
       {/* Crawlable summary, composed from the record. Visually hidden: every
@@ -283,12 +320,19 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
           <h2 id="summary-h">Summary of this record</h2>
           <div>
             <p>
-              {detail.display_name} is a {detail.category.replace(/[-_]/g, ' ')} dependency under
-              continuous observation by RELIASTRA. Requests are issued to its public endpoints from{' '}
-              {regions.length ? regions.join(', ') : 'RELIASTRA observation regions'}
-              {cadenceSeconds ? ` about every ${cadenceSeconds} seconds per region` : ''}, and every
-              response is stored with its latency, status code and timestamp. The last observation
-              recorded was {utcStamp(lastObservation) ?? NO_OBSERVATION}.
+              {detail.display_name} is observed by RELIASTRA as{' '}
+              {`${articleFor(categoryWord)} ${categoryWord} dependency`} under continuous
+              observation. Requests are issued to{' '}
+              {detail.endpoints?.length === 1 ? (
+                <code>{detail.endpoints[0].endpoint_url}</code>
+              ) : (
+                `${detail.endpoints?.length ?? 0} public endpoints`
+              )}{' '}
+              from{regions.length ? ` ${regions.join(', ')}` : ' RELIASTRA observation regions'}
+              {cadenceSeconds ? `, about every ${cadenceSeconds} seconds per region` : ''}. Each
+              observation records the response latency, the HTTP status code or transport error,
+              and a UTC timestamp. The last observation recorded was{' '}
+              {utcStamp(lastObservation) ?? NO_OBSERVATION}.
             </p>
             <p>
               Over the last 24 hours RELIASTRA recorded{' '}
@@ -297,14 +341,15 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
               mean response of {latency(m24?.avg_latency_ms)} ms; over 30 days,{' '}
               {availability(m30?.uptime_percentage, m30?.total_observations)}.{' '}
               {incidents.length
-                ? `${incidents.length} incident record${incidents.length === 1 ? '' : 's'} ${
-                    incidents.length === 1 ? 'has' : 'have'
-                  } been opened against this dependency, ${
-                    published.length ? `${published.length} with published evidence.` : 'none with published evidence yet.'
+                ? `RELIASTRA lists ${incidents.length} public incident record${
+                    incidents.length === 1 ? '' : 's'
+                  } for this dependency${
+                    published.length ? `, ${published.length} with a published evidence report.` : '.'
                   }`
-                : 'No public incident records are available.'}{' '}
-              Availability, latency and incident history below are measured, not reported by the
-              vendor.
+                : 'RELIASTRA currently lists no public incident records for this dependency; that is an absence of published records, not proof that no outage occurred.'}{' '}
+              Availability, latency and incident history on this page are measured by RELIASTRA
+              probes, not reported by the vendor, and describe the observed endpoints rather than
+              every service {detail.display_name} operates.
             </p>
           </div>
         </div>
@@ -367,6 +412,8 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
         incidents={incidents}
         unavailable={record.incidents === null && record.publicIncidents === null}
         vendorName={detail.display_name}
+        basePath={basePath}
+        regionCount={regions.length}
       />
 
       <EvidenceSection

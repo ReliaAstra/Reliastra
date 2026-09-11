@@ -14,7 +14,79 @@ import {
   utcDate,
   utcStamp,
 } from '@/lib/observatory/format';
+import { articleFor, buildIsDownAnswer } from '@/lib/observatory/answer';
 import { mergeIncidents } from '@/lib/observatory/incidents';
+
+describe('the direct answer', () => {
+  const base = {
+    name: 'Example',
+    endpointHost: 'status.example.com',
+    regions: ['us-east'],
+    current: {
+      timestamp: '2026-09-10T20:08:38.000Z',
+      latency_ms: 553,
+      status_code: 200,
+      is_up: true,
+    },
+    window24h: {
+      window: '24h',
+      total_observations: 276,
+      uptime_percentage: 100,
+      avg_latency_ms: 553,
+      p95_latency_ms: 798,
+    },
+    cadenceSeconds: 60,
+  };
+
+  it('answers a healthy endpoint with scope, numbers and no vendor-wide claim', () => {
+    const a = buildIsDownAnswer({
+      ...base,
+      verdict: deriveState('operational', base.current),
+    });
+    expect(a.question).toBe('Is Example down?');
+    expect(a.lead).toMatch(/No sign of it right now/);
+    expect(a.lead).toMatch(/status\.example\.com/);
+    // The scoping caveat is mandatory text, not decoration.
+    expect(a.caveats[0]).toMatch(/not a statement that every Example service/);
+    expect(a.facts[0]).toMatch(/HTTP 200 in 553 ms/);
+    expect(a.facts[0]).toMatch(/10 Sep 2026 20:08:38 UTC/);
+    expect(a.facts[1]).toMatch(/276 observations/);
+    // Never claims the whole vendor is healthy.
+    expect(a.lead).not.toMatch(/\bOpenAI\b/);
+  });
+
+  it('answers stale data by refusing to assert a current state', () => {
+    const a = buildIsDownAnswer({ ...base, verdict: deriveState('stale', base.current) });
+    expect(a.lead).toMatch(/Unknown/);
+    expect(a.lead).toMatch(/stale/);
+    // Facts still describe the stored observation, as history.
+    expect(a.facts[0]).toMatch(/Latest observation/);
+  });
+
+  it('answers a missing observation without fabricating one', () => {
+    const a = buildIsDownAnswer({
+      ...base,
+      current: null,
+      window24h: null,
+      cadenceSeconds: null,
+      verdict: deriveState('unknown', null),
+    });
+    expect(a.lead).toMatch(/Unknown/);
+    expect(a.facts[0]).toMatch(/no observation/);
+    expect(a.facts[1]).toMatch(/did not answer/);
+  });
+
+  it('never prints the metrics endpoint silence as a percentage', () => {
+    const a = buildIsDownAnswer({ ...base, window24h: null, verdict: deriveState('operational', base.current) });
+    expect(a.facts[1]).not.toMatch(/%/);
+  });
+
+  it('picks the article for the following word', () => {
+    expect(articleFor('OpenAI')).toBe('an');
+    expect(articleFor('Stripe')).toBe('a');
+    expect(articleFor('Auth0')).toBe('an');
+  });
+});
 import { formatCoordinate, regionInfo } from '@/lib/observatory/regions';
 import type { TrackIncident, TrackPublicIncident } from '@/lib/track-api';
 
@@ -126,6 +198,26 @@ describe('deriveState', () => {
   it('maps down-style vocabularies onto critical rather than unknown', () => {
     expect(deriveState('down', null).state).toBe('critical');
     expect(deriveState('outage', null).state).toBe('critical');
+  });
+
+  it('treats staleness as a precondition of every other state word', () => {
+    // 'stale' outranks even a failed latest observation: hours-old data
+    // describes the past, and "Not responding" would assert a present.
+    const stale = deriveState('stale', { is_up: false, timestamp: '2026-09-07T18:51:08Z' });
+    expect(stale.state).toBe('unknown');
+    expect(stale.word).toBe('Not observed recently');
+    expect(stale.qualifier).toMatch(/15-minute staleness/);
+    // A stale record whose last observation succeeded must never read "Responding".
+    expect(deriveState('stale', { is_up: true, timestamp: '2026-09-07T18:51:08Z' }).word).toBe(
+      'Not observed recently'
+    );
+  });
+
+  it('ties success wording to the probe rule, not to vendor health', () => {
+    const v = deriveState('operational', null);
+    expect(v.qualifier).toMatch(/expected response/);
+    expect(v.qualifier).not.toMatch(/operational|healthy service/i);
+    expect(deriveState('degraded', null).qualifier).toMatch(/status other than the one the probe expects/);
   });
 });
 

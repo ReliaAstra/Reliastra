@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   GLOSSARY_TERMS,
@@ -15,9 +16,15 @@ import {
   PARTNER_INDEXABLE_SLUGS,
   PARTNER_ROUTE_SLUGS,
   RESEARCH_ARTICLES,
+  RESEARCH_HUBS,
   isPartnerRouteSlug,
   partnerRouteUrl,
   partnerUrl,
+  researchArticle,
+  researchHubArticles,
+  researchHubRoute,
+  researchRoute,
+  researchStandaloneArticles,
 } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
@@ -83,6 +90,52 @@ describe('canonical URL architecture', () => {
     for (const slug of Object.keys(RESEARCH_ARTICLE_BODIES)) {
       expect(RESEARCH_ARTICLES.some((a) => a.slug === slug)).toBe(true);
     }
+  });
+
+  it('gives every article exactly one canonical URL through the hub architecture', () => {
+    // Hub articles live under the hub; the rest under /research directly.
+    for (const hub of RESEARCH_HUBS) {
+      expect(researchHubRoute(hub.slug)).toBe(`/research/${hub.slug}`);
+      for (const a of researchHubArticles(hub.slug)) {
+        expect(researchRoute(a.slug)).toBe(`/research/${hub.slug}/${a.slug}`);
+      }
+    }
+    for (const a of researchStandaloneArticles()) {
+      expect(researchRoute(a.slug)).toBe(`/research/${a.slug}`);
+    }
+    // A hub slug must never double as an article slug: both live at `/research/*`.
+    for (const hub of RESEARCH_HUBS) {
+      expect(RESEARCH_ARTICLES.some((a) => (a.slug as string) === (hub.slug as string))).toBe(false);
+    }
+    // Unknown slugs fall through to the flat pattern (they 404 at render).
+    expect(researchRoute('no-such-article')).toBe('/research/no-such-article');
+    expect(researchArticle('the-dependency-gap')?.title).toBe('The Dependency Gap');
+  });
+
+  it('keeps the vendor segment free of a segment-level loading boundary', () => {
+    // Soft-404 regression guard. `track/[vendor]/loading.tsx` committed a 200
+    // before the page body could call notFound(), so `/track/<unknown>` and
+    // `/track/<vendor>/incidents/<unknown>` served "not found" copy with an
+    // indexable 200. A loading boundary ABOVE a segment that can 404 is
+    // therefore forbidden; the boundary below (the telemetry Suspense) is
+    // fine because it only renders after the page has decided it exists.
+    const boundary = new URL('../../app/track/[vendor]/loading.tsx', import.meta.url);
+    expect(existsSync(boundary)).toBe(false);
+  });
+
+  it('keeps the sitemap source list canonical: hubs, glossary, no redirects', () => {
+    const paths = PUBLIC_PAGES.map((p) => p.path);
+    // Every glossary term is in PUBLIC_PAGES (indexable) - and vice versa.
+    for (const g of GLOSSARY_TERMS) {
+      expect(paths).toContain(`/glossary/${g.slug}`);
+    }
+    // Hubs are indexable and linked.
+    for (const hub of RESEARCH_HUBS) {
+      expect(paths).toContain(researchHubRoute(hub.slug));
+    }
+    // Redirecting legacy pages are NOT in the sitemap source (canonical-only).
+    expect(paths).not.toContain('/partner/tiers');
+    expect(paths).not.toContain('/partner/premium');
   });
 
   it('uses straightforward /partner URLs, never query-param links', () => {
@@ -192,6 +245,9 @@ describe('machine-readable discovery', () => {
     for (const path of ['/agencies', '/track', '/docs', '/pricing', '/security', '/research', '/partner']) {
       expect(body).toContain(`https://reliastra.com${path}`);
     }
+    // The AI infrastructure hub and its scope statement must be machine-readable.
+    expect(body).toContain('https://reliastra.com/research/ai-infrastructure');
+    expect(body).toContain('status.openai.com');
   });
 
   it('keeps public page titles unique across the IA', () => {
@@ -215,7 +271,8 @@ describe('machine-readable discovery', () => {
       'Evidence docs - Generate, share, verify',
       'API docs - Programmatic access',
       'Glossary - Dependency intelligence concepts',
-      'Research - RELIASTRA',
+      'Research - Independent infrastructure intelligence',
+      'AI infrastructure status & reliability - the independent observatory',
       'About - Why RELIASTRA exists',
       'Contact - Talk to RELIASTRA',
       'Status - Platform health',

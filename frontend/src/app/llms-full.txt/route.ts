@@ -1,5 +1,5 @@
 import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
-import { RESEARCH_ARTICLES } from '@/lib/routes';
+import { RESEARCH_ARTICLES, RESEARCH_HUBS, researchHubRoute, researchRoute } from '@/lib/routes';
 
 /**
  * /llms-full.txt - deeper machine-readable reference: full concept
@@ -12,7 +12,11 @@ export function GET() {
   ).join('\n\n');
 
   const research = RESEARCH_ARTICLES.map(
-    (a) => `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} - ${SITE_URL}/research/${a.slug}`
+    (a) => `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} - ${SITE_URL}${researchRoute(a.slug)}`
+  ).join('\n');
+
+  const hubs = RESEARCH_HUBS.map(
+    (h) => `- ${h.title}: ${h.summary} - ${SITE_URL}${researchHubRoute(h.slug)} (live hub: renders current measurement data, revalidated every 60 seconds)`
   ).join('\n');
 
   const body = `# RELIASTRA - Full reference (llms-full.txt)
@@ -52,6 +56,10 @@ For agencies and MSPs operating client infrastructure: ${SITE_URL}/agencies.
 
 ${glossary}
 
+## Research hubs
+
+${hubs}
+
 ## Research index
 
 ${research}
@@ -60,7 +68,9 @@ ${research}
 
 - Index: ${SITE_URL}/track
 - Detail pattern: ${SITE_URL}/track/{vendor} (only for vendors with real telemetry; empty/fabricated vendors are never generated)
-- Each vendor page exposes: current state, 24h/7d/30d uptime, latency, monitored endpoints with regions, incident history, methodology note, refresh cadence.
+- Incident pattern: ${SITE_URL}/track/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist
+- Each vendor page exposes: current state, 1h/6h/24h/7d/30d/90d availability windows with observation counts, latency (mean/p95), monitored endpoints with regions, incident history, methodology note, refresh cadence (60s), all timestamps UTC.
+- IMPORTANT - what the public records measure: scheduled HTTP GETs against the vendor's *listed public endpoint* (currently vendor status sites such as https://status.openai.com), recording HTTP status, latency and transport errors. A page never asserts that the vendor's API or product is up or down beyond the listed endpoint, and RELIASTRA does not read the status text the vendor publishes at those URLs. State word "Responding" = the endpoint answered with the expected response in the last five observations.
 
 ## Verification checklist for agents
 

@@ -18,6 +18,8 @@ import {
   PARTNER_PUBLIC_PAGES,
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
+  RESEARCH_HUBS,
+  researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
 
@@ -43,6 +45,7 @@ const STATIC_ROUTES = new Set<string>([
   ...Object.values(CONSOLE_ROUTES),
   ...Object.values(ADMIN_ROUTES),
   ...RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)),
+  ...RESEARCH_HUBS.map((h) => researchHubRoute(h.slug)),
 ]);
 
 const PARTNER_URLS = new Set([
@@ -144,7 +147,11 @@ describe('public navigation link integrity', () => {
   });
 
   it('links only to research slugs that are generated routes', () => {
-    const valid = new Set(RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)));
+    const valid = new Set<string>([
+      ...RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)),
+      // Hubs are generated static routes under the same prefix.
+      ...RESEARCH_HUBS.map((h) => researchHubRoute(h.slug)),
+    ]);
     const researchHrefs = allHrefs.filter((href) =>
       href.startsWith(`${PUBLIC_ROUTES.research}/`)
     );

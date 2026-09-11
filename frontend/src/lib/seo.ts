@@ -219,8 +219,10 @@ export const PUBLIC_PAGES = [
   { path: '/partner/how-it-works', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/partner/commission', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/partner/faq', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/partner/tiers', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/partner/premium', changeFrequency: 'monthly' as const, priority: 0.6 },
+  // /partner/tiers and /partner/premium are NOT listed: both permanently
+  // redirect to /partner/commission (see next.config), and a sitemap must
+  // contain canonical URLs only - a redirect entry asks crawlers to index a
+  // bounce.
   { path: '/partner/resources', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/security', changeFrequency: 'monthly' as const, priority: 0.7 },
   { path: '/docs', changeFrequency: 'weekly' as const, priority: 0.8 },
@@ -237,7 +239,15 @@ export const PUBLIC_PAGES = [
   { path: '/glossary/dependency-telemetry', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/glossary/infrastructure-evidence', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/glossary/external-dependency-fault-report', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/independent-measurement', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/quorum-detection', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/transport-error', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/vendor-reported-status', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/partial-outage', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/availability', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/latency', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/research', changeFrequency: 'weekly' as const, priority: 0.8 },
+  { path: '/research/ai-infrastructure', changeFrequency: 'hourly' as const, priority: 0.85 },
   { path: '/about', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/contact', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/status', changeFrequency: 'daily' as const, priority: 0.6 },
@@ -416,6 +426,146 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     related: [
       { label: 'SLA evidence', href: '/sla-evidence' },
       { label: 'Evidence docs', href: '/docs/evidence' },
+    ],
+  },
+  {
+    slug: 'independent-measurement',
+    term: 'Independent Measurement',
+    short: 'A record produced by an observer with no stake in the outcome, from its own requests.',
+    definition:
+      'Independent measurement is observation performed by a party that neither operates the observed service nor depends on it: the observer issues its own requests, from its own infrastructure, records the raw results, and publishes the method that produced them.',
+    problem:
+      'Every account of an outage is written by someone. The operator’s logs, the vendor’s status page and the customer’s dashboards all describe the same window from positions with different incentives and different blind spots.',
+    whyItMatters:
+      'A record is only useful in a dispute if neither party authored it. Independent measurement converts “you say / we say” into one timestamped dataset both sides can check the provenance of.',
+    example:
+      'RELIASTRA’s public records measure the HTTP behaviour of a vendor’s listed endpoint from RELIASTRA infrastructure on a fixed schedule; the vendor’s own status text is never read, parsed or reconciled into the number.',
+    howReliastra:
+      'Independence is stated as scope, not claimed as authority: which endpoint, which origin, which method, which limits - published in the record itself so a reader can weigh the observation without trusting the brand. See the measurement methodology.',
+    related: [
+      { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
+      { label: 'Public observatory', href: '/track' },
+      { label: 'Vendor-reported status', href: '/glossary/vendor-reported-status' },
+    ],
+  },
+  {
+    slug: 'quorum-detection',
+    term: 'Quorum Detection',
+    short: 'Confirming a dependency incident only when independent observation points agree.',
+    definition:
+      'Quorum detection is the rule that an incident is confirmed only when a required number of independent observation points report failure within the same short correlation window - and recovery only when they agree it ended. Under a single-origin deployment the equivalent confirmation is persistence: the same point failing a fixed number of consecutive checks.',
+    problem:
+      'One failed probe can mean a dead vendor, a saturated network path, a DNS hiccup or a bug in the probe. Alerting on any single failure produces noise precisely when a team can least afford it.',
+    whyItMatters:
+      'An incident label is a claim. Corroboration is what lets a team act on it - page someone, fail over, open the credit conversation - without first spending thirty minutes deciding whether the alert is real.',
+    example:
+      'RELIASTRA’s shipped multi-origin rule: two or more genuinely distinct observation points must fail inside the same 60-second window to open an incident; two consecutive successes across them close it. The deployed public records run one origin, so they use the persistence rule and say so.',
+    howReliastra:
+      'The rule is a deterministic pure function of stored check results - no heuristics, no randomness - so any incident can be re-derived from the record. Two labels from one worker never count as two points; that asymmetry is the point.',
+    related: [
+      { label: 'Methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
+      { label: 'Dependency monitoring', href: '/glossary/dependency-monitoring' },
+      { label: 'Transport error', href: '/glossary/transport-error' },
+    ],
+  },
+  {
+    slug: 'transport-error',
+    term: 'Transport Error',
+    short: 'A failure below HTTP: the request never produced a complete response.',
+    definition:
+      'A transport error is a probe failure that occurs before an HTTP status could be exchanged - DNS resolution failure, TCP refusal or reset, TLS handshake failure, or a timeout past the probe deadline. It is categorically different from receiving a 4xx or 5xx status.',
+    problem:
+      'Monitoring that collapses “no response” and “server returned 500” into one red dot destroys the distinction between an unreachable service and a reachable-but-failing one - two incidents with different owners, symptoms and fixes.',
+    whyItMatters:
+      'Transport errors localize: persistent failures from one origin but not another suggest a path or edge problem; failures from every origin suggest the target; timeouts under load can precede outright refusal and mark a degradation arc.',
+    example:
+      'RELIASTRA stores each observation with its outcome: status code and latency when a response arrived; an explicit error type when it did not. Availability counts “no expected response,” so the taxonomy stays visible in every aggregate.',
+    howReliastra:
+      'Probes run under a fixed deadline (15 seconds on public records) with bounded redirect handling, and the security policy can refuse a target before any request leaves - recorded as a policy block, a RELIASTRA-side fact, never as vendor downtime.',
+    related: [
+      { label: 'Quorum detection', href: '/glossary/quorum-detection' },
+      { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
+      { label: 'Availability', href: '/glossary/availability' },
+    ],
+  },
+  {
+    slug: 'vendor-reported-status',
+    term: 'Vendor-Reported Status',
+    short: 'What a provider says about itself - one record among several, not the ground truth.',
+    definition:
+      'Vendor-reported status is the state a provider publishes about its own services - the status page, the @-account, the email. It is authored by the party whose reliability is in question, scoped to incidents it chooses to declare, and updated on its own schedule.',
+    problem:
+      '“The status page says operational” is routinely treated as a measurement. It is a statement: often honest, occasionally delayed, structurally unable to describe what the vendor is not looking at.',
+    whyItMatters:
+      'During an incident, the gap between “not yet declared” and “not happening” is exactly where customer-side decisions live: fail over now or keep waiting. Decisions need evidence with a timestamp, and vendor statements are one input, not the clock.',
+    example:
+      'A status site can be fully operational while the API it reports on degrades; conversely a measured status-site failure during a traffic spike is real information about the vendor’s edge, whatever the API is doing. Neither record substitutes for the other.',
+    howReliastra:
+      'RELIASTRA never ingests, mirrors or reconciles vendor-reported status into its figures - and publishes the two records side by side conceptually, so disagreement is readable rather than averaged away. Where a vendor’s status endpoint is itself the observed target, the record says so explicitly.',
+    related: [
+      { label: 'Independent measurement', href: '/glossary/independent-measurement' },
+      { label: 'Vendor reliability', href: '/glossary/vendor-reliability' },
+      { label: 'Public observatory', href: '/track' },
+    ],
+  },
+  {
+    slug: 'partial-outage',
+    term: 'Partial Outage',
+    short: 'A dependency failing for some traffic, regions, routes or models - not all of them.',
+    definition:
+      'A partial outage is a failure window in which a service is unavailable or degraded for a subset of its surface: one region, one API route, one model tier, one auth path, one traffic class - while the rest functions normally. “Up” and “down” are both false descriptions of it.',
+    problem:
+      'Binary status vocabulary forces partial outages into the wrong bucket. A vendor reporting “no incidents” can be simultaneously true (no global outage) and useless (your route is timing out).',
+    whyItMatters:
+      'Partial outages are the most common failure mode of large platforms, they break failover logic that assumes whole-system down, and they are the hardest windows to evidence afterwards because every aggregate smooths them away.',
+    example:
+      'One region of a provider returning 5xx while two others serve normally; completions fast while realtime routes hang; public API degraded while the consumer app is untouched. Each is invisible to any single number - and to any observation from one vantage point.',
+    howReliastra:
+      'Per-observation storage with region, status and error type is what makes a partial outage visible: RELIASTRA reports exactly which origins, endpoints and windows observed failure, and prints “insufficient data” where its single-origin public record cannot speak to the rest.',
+    related: [
+      { label: 'Quorum detection', href: '/glossary/quorum-detection' },
+      { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
+      { label: 'AI infrastructure hub', href: '/research/ai-infrastructure' },
+    ],
+  },
+  {
+    slug: 'availability',
+    term: 'Availability',
+    short: 'The share of scheduled observations that received the expected response, per stated window.',
+    definition:
+      'Availability, as RELIASTRA measures it, is the number of observations in which the probe received the response its target expects (for public vendor records: HTTP 200 within 15 seconds), divided by all scheduled observations in a stated window, reported with the observation count and origins that produced it.',
+    problem:
+      '“99.99% uptime” without window, sample size and success definition is not a measurement - it is a decoration. The same month reads 100% from one origin and 99.2% from a region the observer did not run.',
+    whyItMatters:
+      'Four nines and three nines are 10x apart in downtime; a figure whose denominator is unstated cannot support an architecture decision, a contract clause, or a credit claim - it can only support a marketing bullet.',
+    example:
+      'On a RELIASTRA record, every window is printed as availability + observation count + latency quantiles, and a window with zero observations renders as “insufficient data” - never as 100%.',
+    howReliastra:
+      'Availability is derived at read time from stored observations only; nothing is backfilled or smoothed. The denominator is scheduled probes, so “we never ran the check” surfaces as freshness (staleness) rather than hiding inside the percentage.',
+    related: [
+      { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
+      { label: 'Transport error', href: '/glossary/transport-error' },
+      { label: 'Public observatory', href: '/track' },
+    ],
+  },
+  {
+    slug: 'latency',
+    term: 'Latency',
+    short: 'Time from probe dispatch to complete response - the leading indicator of degradation.',
+    definition:
+      'Probe latency is the wall-clock time between a scheduled check issuing its request and receiving the complete response (including any policy-validated redirect hops), recorded per observation and aggregated as a mean and 95th percentile per window.',
+    problem:
+      'Availability says whether a request completed; only latency says what clients experienced while it did. Most dependency incidents spend minutes-to-hours in “up but slow” territory before, during, and after the visible outage - and availability dashboards show green the whole time.',
+    whyItMatters:
+      'Timeouts are latency failures viewed from the client: a route degrading to 3 seconds turns into “outage” the moment it crosses the caller’s deadline. Watching the p95 is what separates a capacity conversation from a postmortem about a cliff nobody saw.',
+    example:
+      'A record showing p95 climbing while the mean holds describes long-tail failure (one shard, one region). RELIASTRA charts the mean per bucket with failed buckets breaking the line, and prints the p95 threshold beside it.',
+    howReliastra:
+      'Latency is measured from outside both networks, on the same schedule as availability, so a drift is timestamped in the same series that will later be cited as evidence. An aggregate mean of zero means “no successful response recorded,” and is printed as no data, never as a fast response.',
+    related: [
+      { label: 'Availability', href: '/glossary/availability' },
+      { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
+      { label: 'Methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
     ],
   },
 ];

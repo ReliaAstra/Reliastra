@@ -29,6 +29,8 @@ import {
   type StateVerdict,
 } from '@/lib/observatory/format';
 import { mergeIncidents, type MergedIncident } from '@/lib/observatory/incidents';
+import type { BuiltAnswer } from '@/lib/observatory/answer';
+import { regionInfo } from '@/lib/observatory/regions';
 import {
   Readout,
   RecordSection,
@@ -46,6 +48,7 @@ import {
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
   SHARE_ROUTES,
+  researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
 
@@ -118,11 +121,18 @@ export function Masthead({
   verdict,
   lastObservation,
   cadenceSeconds,
+  answer,
 }: {
   record: VendorRecord;
   verdict: StateVerdict;
   lastObservation: string | null;
   cadenceSeconds: number | null;
+  /**
+   * The data-composed direct answer to "is {vendor} down?" (see
+   * `lib/observatory/answer`). Built by the page from the same record so the
+   * masthead, the answer and the sections can never disagree.
+   */
+  answer: BuiltAnswer;
 }) {
   const { detail, regions } = record;
   const primaryEndpoint = detail.endpoints?.[0];
@@ -149,14 +159,20 @@ export function Masthead({
             first. Ordering is CSS, so the DOM order stays the reading order. */}
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:gap-16">
           <p className="obs-descriptor order-1 max-w-[56ch] lg:col-start-1 lg:row-start-1">
-            Independent observation of {detail.display_name}&apos;s public{' '}
-            {detail.category.replace(/[-_]/g, ' ')} endpoint
-            {detail.endpoints.length === 1 ? '' : 's'}
+            {detail.display_name} is observed by probing{' '}
+            {detail.endpoints.length === 1 ? 'its public' : 'the public'}{' '}
+            {detail.endpoints.length === 1 ? (
+              <code className="ob-mono text-[0.92em]">{primaryEndpoint.endpoint_url}</code>
+            ) : (
+              `${detail.endpoints.length} endpoints`
+            )}{' '}
             {regions.length > 0
-              ? ` from ${regions.length} region${regions.length === 1 ? '' : 's'}`
-              : ''}
-            . Not read from the vendor&apos;s status page.
+              ? `from ${regions.length} observation region${regions.length === 1 ? '' : 's'}`
+              : 'from no declared regions yet'}
+            . RELIASTRA measures the HTTP behaviour of the listed endpoint - its state is not a
+            statement about every service {detail.display_name} operates.
           </p>
+
 
           <div className="order-2 flex flex-col gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
             <div className="flex flex-col gap-3 border-t border-[var(--ob-line-2)] pt-5">
@@ -195,6 +211,49 @@ export function Masthead({
             </div>
           )}
         </div>
+
+        {/* The direct answer. A reader who arrived searching "is {vendor}
+            down?" gets a complete, quotable answer here - question as a real
+            heading, answer composed from the same facts the sections below
+            expand. Nothing in this block is prose decoration: every clause
+            traces to a field the measurement API returned. */}
+        <section
+          id="is-down-answer"
+          aria-labelledby="is-down-h"
+          className="mt-12 flex flex-col gap-4 border-t border-[var(--ob-line-2)] pt-6"
+        >
+          <h2 id="is-down-h" className="ob-h4 max-w-[40ch]">
+            {answer.question}
+          </h2>
+          <p className="max-w-[74ch] text-[15px] leading-[1.65] text-[var(--ob-text-2)]">
+            {answer.lead}
+          </p>
+          <ul className="flex flex-col gap-1.5" aria-label="Measured facts behind the answer">
+            {answer.facts.map((f) => (
+              <li key={f} className="ob-small max-w-[88ch]">
+                {f}
+              </li>
+            ))}
+          </ul>
+          <p className="ob-small max-w-[88ch] text-[var(--ob-text-4)]">{answer.caveats[0]}</p>
+          <p className="ob-small max-w-[88ch] text-[var(--ob-text-4)]">{answer.caveats[1]}</p>
+          <p className="ob-small">
+            {detail.category === 'ai' && (
+              <>
+                <Link href={researchHubRoute('ai-infrastructure')} className="ob-link">
+                  AI infrastructure hub
+                </Link>{' '}
+                ·{' '}
+              </>
+            )}
+            <Link
+              href={researchRoute('how-reliastra-measures-vendor-reliability')}
+              className="ob-link"
+            >
+              measurement methodology
+            </Link>
+          </p>
+        </section>
 
         {/* Record strip: the identity facts, inline, no cards. */}
         <dl className="mt-12 grid gap-x-8 gap-y-6 border-t border-[var(--ob-line-2)] pt-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -240,9 +299,19 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
     {
       key: 'region',
       head: 'Region',
-      width: 'minmax(0,140px)',
+      width: 'minmax(0,190px)',
       mobile: 'lead',
-      cell: (r) => <span className="obs-num obs-num-sm">{r.region}</span>,
+      cell: (r) => {
+        const info = regionInfo(r.region);
+        return (
+          <span className="flex flex-col">
+            <span className="obs-num obs-num-sm">{r.region}</span>
+            {info.place && (
+              <span className="ob-small text-[var(--ob-text-4)]">{info.place}</span>
+            )}
+          </span>
+        );
+      },
     },
     {
       key: 'latency',
@@ -306,7 +375,11 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
           rows={rows}
           rowKey={(r) => r.region}
           from="lg"
-          caption="A region reporting no response is not automatically an outage: RELIASTRA opens an incident only when at least two regions fail inside the same 60-second window."
+          caption={
+            rows.length >= 2
+              ? 'A region reporting no response is not automatically an outage: an incident is confirmed when independent observation points agree - two or more within the same 60-second window where a multi-origin fleet is in place, or consecutive failures from the single observation point under the deployed single-origin topology.'
+              : 'These observations come from a single origin, so they can show that the endpoint answered or did not - they cannot corroborate a vendor-wide outage, and no incident record is opened from them. A region reporting no response is a fact about this path, at this minute.'
+          }
         />
       ) : (
         <Notice title="No observation regions declared">
@@ -401,8 +474,10 @@ export function StateSection({
       title="Observed state and availability"
       note={
         <>
-          Availability is the share of observations that returned a status code with no
-          transport error. No observations reads as insufficient data, never 100%.
+          An observation counts as successful when the probe received the response its target
+          expects - for these public records, HTTP 200 within a 15-second deadline. Timeouts,
+          transport errors and other status codes count as failures. No observations reads as
+          insufficient data, never 100%.
         </>
       }
       aside={
@@ -523,10 +598,16 @@ export function IncidentsSection({
   incidents,
   unavailable,
   vendorName,
+  basePath,
+  regionCount,
 }: {
   incidents: MergedIncident[];
   unavailable: boolean;
   vendorName: string;
+  /** Vendor record path; incident rows link to their permanent records. */
+  basePath: string;
+  /** Regions declared on the record - decides the corroboration sentence. */
+  regionCount: number;
 }) {
   const columns: RecordColumn<MergedIncident>[] = [
     {
@@ -548,7 +629,14 @@ export function IncidentsSection({
       head: 'Record',
       width: 'minmax(0,1fr)',
       mobile: 'lead',
-      cell: (i) => <span className="text-[13.5px] text-[var(--ob-text)]">{i.title}</span>,
+      cell: (i) => (
+        <Link
+          href={`${basePath}/incidents/${i.incident_id}`}
+          className="ob-link text-[13.5px]"
+        >
+          {i.title} →
+        </Link>
+      ),
     },
     {
       key: 'duration',
@@ -604,8 +692,15 @@ export function IncidentsSection({
       title="Observed incidents"
       note={
         <>
-          Opened when at least two regions fail against {vendorName} inside the same 60-second
-          window. Closed on consecutive successes from at least two regions.
+          Public incident records for {vendorName} are published when the organisation holding the
+          monitoring releases an evidence report. The public probing pipeline itself stores
+          endpoint observations; it does not open incident records, and this record is observed
+          from{' '}
+          {regionCount > 1
+            ? `${regionCount} origins`
+            : 'a single origin'}
+          , so an empty list here is a statement about the public
+          incident channel - never a claim that no outage occurred.
         </>
       }
       aside={
@@ -628,12 +723,14 @@ export function IncidentsSection({
           rows={incidents}
           rowKey={(i) => i.incident_id}
           from="xl"
-          caption="Times are UTC. An open incident has no resolution time because RELIASTRA has not yet observed a qualifying recovery."
+          caption="Times are UTC. An open incident has no resolution time because RELIASTRA has not yet observed a qualifying recovery. Every row is a permanent record at its own address."
         />
       ) : (
         <Notice title="No public incident records">
-          No public incident records are available. Use the endpoint observations above;
-          an empty incident list does not establish the absence of outages.
+          RELIASTRA holds no public incident record for {vendorName} in the rolling 90-day
+          published-evidence window. That is an absence of published records, not evidence of an
+          absence of outages: endpoint-level failures that did not produce a released evidence
+          report never enter this channel. Use the observations above for what was measured.
         </Notice>
       )}
     </RecordSection>
@@ -776,14 +873,16 @@ export function MethodologySection({
     >
       <dl className="flex flex-col">
         <SpecRow term="Source" wide>
-          Scheduled workers issue real requests to {detail.display_name}&apos;s public endpoints
-          from{' '}
+          Scheduled workers issue real HTTP requests to the endpoints listed at the bottom of
+          this record, from{' '}
           {regions.length ? (
             <span className="obs-num obs-num-sm">{regions.join(', ')}</span>
           ) : (
             'RELIASTRA regions'
           )}
-          . Nothing is read from a vendor status page, an aggregator or customer logs.
+          . Where a listed endpoint is {detail.display_name}&apos;s public status site, the probe
+          measures that site&apos;s own availability and response time as an HTTP service; the
+          status text it publishes is not read, parsed, ingested or reconciled.
         </SpecRow>
         <SpecRow term="Interval" wide>
           {cadenceSeconds
@@ -791,34 +890,49 @@ export function MethodologySection({
             : 'Not derivable from the current window. '}
           The configured interval is not exposed publicly.
         </SpecRow>
+        <SpecRow term="Success" wide>
+          The probe records a success when the endpoint returns the response it is configured to
+          expect - HTTP 200 for every public record, within a 15-second deadline, following at
+          most five redirect hops. A slow but correct response is latency, not downtime.
+        </SpecRow>
         <SpecRow term="Failure" wide>
-          No HTTP status code recorded, or a transport error. A slow but valid response is
-          latency, not downtime.
+          A timeout, a transport error, a redirect the security policy blocks, or any status code
+          other than the expected one. Each is stored with its error type so the causes stay
+          distinguishable.
         </SpecRow>
         <SpecRow term="Incident opens" wide>
-          At least two regions record a failure inside the same 60-second window.
+          For public records like this one, nothing: the public pipeline stores observations and
+          does not open incidents. Customer monitoring under the deployed single-origin topology
+          opens an incident after two consecutive failed checks from one observation point; with
+          a genuine multi-origin fleet, two or more independent points must agree inside a
+          60-second window. Two labels from one worker never count as agreement.
         </SpecRow>
         <SpecRow term="Incident closes" wide>
-          Consecutive successful observations from at least two regions.
+          Two consecutive successful observations from the same observation point - or, under a
+          multi-origin fleet, from at least two points - so flapping does not open and close a
+          record repeatedly.
         </SpecRow>
         <SpecRow term="Availability" wide>
-          Observations with a status code and no transport error, divided by all observations in
-          the window. A window with no observations is insufficient data, never 100%.
+          Successful observations divided by all observations in the window. A window with no
+          observations is insufficient data, never 100%.
         </SpecRow>
         <SpecRow term="Latency" wide>
           Mean and 95th percentile of response times in the window, in milliseconds, across all
           regions. The chart breaks the line where a bucket has no successful response.
         </SpecRow>
         <SpecRow term="Freshness" wide>
-          Rendered on the server and revalidated every 60 seconds. All timestamps are UTC.
+          Rendered on the server and revalidated every 60 seconds. An observation older than 15
+          minutes marks the record stale rather than healthy or down. All timestamps are UTC.
         </SpecRow>
         <SpecRow term="Not vendor status" wide>
-          {detail.display_name}&apos;s own status page is not ingested, mirrored or reconciled.
-          The two can disagree. Read both.
+          {detail.display_name}&apos;s own status reporting is not ingested, mirrored or
+          reconciled. The two can disagree - a measured endpoint can be up while services are
+          degraded, and vice versa. Read both.
         </SpecRow>
         <SpecRow term="Limits" wide>
           These figures describe the listed endpoints, observed from the listed regions. They are
-          not a statement about every service the vendor operates or about your integration.
+          not a statement about every service the vendor operates, about specific API routes or
+          models, or about your integration.
         </SpecRow>
       </dl>
     </RecordSection>
@@ -850,6 +964,26 @@ export function DistinctionSection({ record }: { record: VendorRecord }) {
       note="What this record is, and what it deliberately is not."
     >
       <dl className="flex flex-col">
+        <SpecRow term="Endpoint vs service" wide>
+          {detail.endpoints?.length === 1 &&
+          /status/i.test(detail.endpoints[0].endpoint_url) ? (
+            <>
+              The endpoint observed here ({endpointParts(detail.endpoints[0].endpoint_url).host})
+              is {detail.display_name}&apos;s public status site. This record measures that
+              endpoint&apos;s HTTP behaviour - whether it answers, how fast, with what status. A
+              status site can be perfectly reachable while the services it reports on are
+              degraded, and unreachable while they are healthy. This record answers neither
+              question; it answers the first one exactly.
+            </>
+          ) : (
+            <>
+              This record measures the behaviour of the listed endpoints only. Whether an endpoint
+              stands for a whole service is a property of what RELIASTRA observes, not of this
+              page: no endpoint here is treated as a proxy for every service{' '}
+              {detail.display_name} operates.
+            </>
+          )}
+        </SpecRow>
         <SpecRow term="Official vendor status" wide>
           This is not {detail.display_name}&apos;s official vendor status page, and
           it is not affiliated with or endorsed by them. It is an independent

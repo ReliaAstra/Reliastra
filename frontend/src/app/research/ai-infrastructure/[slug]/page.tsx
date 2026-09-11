@@ -1,41 +1,54 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, permanentRedirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
+
 import { ArticleTemplate } from '@/components/content/article-template';
 import { SiteShell } from '@/components/site/site-shell';
 import { Breadcrumb, Container } from '@/components/site/primitives';
 import { JsonLd } from '@/components/seo/json-ld';
-import { RESEARCH_ARTICLES, researchRoute, PUBLIC_ROUTES } from '@/lib/routes';
+import {
+  RESEARCH_ARTICLES,
+  researchHubRoute,
+  researchRoute,
+  type ResearchHubSlug,
+} from '@/lib/routes';
+import { PUBLIC_ROUTES } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import { breadcrumbJsonLd, canonicalUrl, SITE_URL } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
 
+/**
+ * Articles inside a research hub: `/research/{hub}/{slug}`.
+ *
+ * The hub prefix is part of the article's identity, not decoration: the
+ * canonical URL, the sitemap entry, the breadcrumb and every internal link
+ * are produced by the same `researchRoute()` helper, so an article can exist
+ * at exactly one address. The top-level `/research/[slug]` route refuses
+ * hub-qualified slugs, which makes a duplicate URL structurally impossible.
+ */
+
 type Params = { params: Promise<{ slug: string }> };
 
-/**
- * Statically generate exactly the published slugs.
- *
- * Derived from the same `RESEARCH_ARTICLES` constant that the footer links, the
- * research index and the sitemap use, so a linked slug and a generated route
- * cannot drift apart - the divergence that produced the original 404s.
- */
+const HUB: ResearchHubSlug = 'ai-infrastructure';
+
 export function generateStaticParams() {
-  // Only top-level articles: hub-qualified slugs live at
-  // `/research/{hub}/{slug}` and are redirected from here, so no article is
-  // ever reachable at two addresses.
-  return RESEARCH_ARTICLES.filter((a) => !('hub' in a && a.hub)).map((article) => ({
-    slug: article.slug,
+  return RESEARCH_ARTICLES.filter((a) => 'hub' in a && a.hub === HUB).map((a) => ({
+    slug: a.slug,
   }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const article = RESEARCH_ARTICLES.find((a) => a.slug === slug);
+  const article = RESEARCH_ARTICLES.find(
+    (a) => a.slug === slug && 'hub' in a && a.hub === HUB
+  );
   if (!article) return { title: 'Not found', robots: { index: false } };
 
-  const url = canonicalUrl(researchRoute(slug));
+  const path = researchRoute(slug);
+  const url = canonicalUrl(path);
+  const updatedAt = 'updatedAt' in article ? article.updatedAt : undefined;
   return {
-    title: `${article.title} - RELIASTRA Research`,
+    title: `${article.title} - RELIASTRA AI infrastructure research`,
     description: article.summary,
     keywords: [...article.tags],
     alternates: { canonical: url },
@@ -45,6 +58,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       title: article.title,
       description: article.summary,
       publishedTime: isoDate(article.publishedAt),
+      ...(updatedAt ? { modifiedTime: isoDate(updatedAt) } : {}),
       section: article.category,
       tags: [...article.tags],
       url,
@@ -54,7 +68,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
           url: `${SITE_URL}/opengraph-image.png`,
           width: 1200,
           height: 630,
-          alt: article.title,
+          alt: `${article.title} - RELIASTRA research`,
         },
       ],
     },
@@ -67,27 +81,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-/**
- * Unknown slugs return a real 404 rather than a placeholder or a redirect to
- * `/research`. Silently redirecting would hide broken links instead of
- * surfacing them, and would make a stale navigation link look healthy.
- */
-export default async function ResearchArticlePage({ params }: Params) {
+export default async function HubArticlePage({ params }: Params) {
   const { slug } = await params;
-  const article = RESEARCH_ARTICLES.find((a) => a.slug === slug);
+  const article = RESEARCH_ARTICLES.find(
+    (a) => a.slug === slug && 'hub' in a && a.hub === HUB
+  );
   const content = RESEARCH_ARTICLE_BODIES[slug];
+  if (!article || !content) notFound();
 
-  if (!article || !content) {
-    notFound();
-  }
-
-  // A hub-qualified slug asked of the top-level route is answered by its
-  // canonical address - a permanent redirect, never a second render, so the
-  // corpus cannot fork into two indexable URLs.
-  if ('hub' in article && article.hub) {
-    permanentRedirect(researchRoute(slug));
-  }
-
+  const hubTitle = 'AI Infrastructure Status & Reliability';
   const updatedAt = 'updatedAt' in article ? article.updatedAt : undefined;
 
   return (
@@ -96,6 +98,7 @@ export default async function ResearchArticlePage({ params }: Params) {
         data={breadcrumbJsonLd([
           { name: 'Home', path: '/' },
           { name: 'Research', path: PUBLIC_ROUTES.research },
+          { name: hubTitle, path: researchHubRoute(HUB) },
           { name: article.title, path: researchRoute(slug) },
         ])}
       />
@@ -106,14 +109,15 @@ export default async function ResearchArticlePage({ params }: Params) {
             items={[
               { name: 'Home', href: '/' },
               { name: 'Research', href: PUBLIC_ROUTES.research },
+              { name: hubTitle, href: researchHubRoute(HUB) },
               { name: article.title, href: researchRoute(slug) },
             ]}
           />
           <Link
-            href={PUBLIC_ROUTES.research}
+            href={researchHubRoute(HUB)}
             className="ob-label transition-colors hover:text-[var(--ob-signal)]"
           >
-            ← All research
+            ← AI infrastructure hub
           </Link>
         </Container>
       </div>
@@ -134,11 +138,8 @@ export default async function ResearchArticlePage({ params }: Params) {
         related={content.related}
         vendorLinks={[
           { href: PUBLIC_ROUTES.track, label: 'Public dependency index' },
+          { href: researchHubRoute(HUB), label: 'AI infrastructure hub' },
           { href: PUBLIC_ROUTES.research, label: 'Research home' },
-          {
-            href: PUBLIC_ROUTES.externalDependencyIntelligence,
-            label: 'External Dependency Intelligence',
-          },
         ]}
       >
         {content.body}

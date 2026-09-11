@@ -179,12 +179,26 @@ export interface StateVerdict {
  * Derive the state of the record from the two facts the API returns, in
  * precedence order:
  *
- *  1. The most recent observation itself (`current.is_up`). A failed latest
+ *  1. `recent_status === 'stale'` from the measurement API: the newest
+ *     stored observation is older than the API's 15-minute staleness
+ *     threshold. Freshness is a precondition of every other claim - a state
+ *     word printed over hours-old data is the exact failure mode this record
+ *     exists to prevent, so `stale` outranks even a failed latest observation
+ *     (which, being old, describes the past, not the present).
+ *  2. The most recent observation itself (`current.is_up`). A failed latest
  *     observation is the strongest, most current signal there is.
- *  2. The rolled-up `recent_status` over the last five observations.
+ *  3. The rolled-up `recent_status` over the last five observations.
  *
  * When neither exists the state is `unknown`. There is no fallback to
  * "operational": an absence of observations is not health.
+ *
+ * The wording below tracks the probe's actual success rule for public
+ * records: the scheduled probe expects the endpoint's configured status
+ * (HTTP 200 for every seeded public vendor endpoint) within a 15-second
+ * deadline. A response with any other status, a transport error or a timeout
+ * is recorded as a failed observation. "A valid response" and "the vendor is
+ * operational" are therefore not the same statement, and only the first is
+ * ever printed.
  */
 export function deriveState(
   recentStatus: string | null | undefined,
@@ -193,12 +207,23 @@ export function deriveState(
   const rolled = (recentStatus ?? '').toLowerCase();
   const hasCurrent = !!current && current.timestamp !== null && current.is_up !== null;
 
+  if (rolled === 'stale') {
+    return {
+      state: 'unknown',
+      word: 'Not observed recently',
+      qualifier:
+        'The newest stored observation is older than the measurement API’s 15-minute staleness ' +
+        'threshold, so no current state is reported. The observations below are historical ' +
+        'facts, not a statement about right now.',
+    };
+  }
+
   if (hasCurrent && current!.is_up === false) {
     return {
       state: 'critical',
       word: 'Not responding',
       qualifier:
-        'The most recent observation did not receive a valid response from this endpoint.',
+        'The most recent observation did not receive the expected response from this endpoint.',
     };
   }
 
@@ -211,7 +236,7 @@ export function deriveState(
       state: 'critical',
       word: 'Not responding',
       qualifier:
-        'The most recent observations recorded no valid response from this endpoint.',
+        'The most recent observations recorded no expected response from this endpoint.',
     };
   }
 
@@ -220,7 +245,8 @@ export function deriveState(
       state: 'degraded',
       word: 'Degraded',
       qualifier:
-        'At least one of the five most recent observations failed to return a valid response.',
+        'At least one of the five most recent observations recorded a timeout, a transport ' +
+        'error, or a status other than the one the probe expects.',
     };
   }
 
@@ -229,7 +255,8 @@ export function deriveState(
       state: 'healthy',
       word: 'Responding',
       qualifier:
-        'The five most recent observations each returned a valid response from this endpoint.',
+        'The five most recent observations each received the expected response from this ' +
+        'endpoint within its deadline.',
     };
   }
 
@@ -237,7 +264,8 @@ export function deriveState(
     return {
       state: 'healthy',
       word: 'Responding',
-      qualifier: 'The most recent observation returned a valid response from this endpoint.',
+      qualifier:
+        'The most recent observation received the expected response from this endpoint.',
     };
   }
 
