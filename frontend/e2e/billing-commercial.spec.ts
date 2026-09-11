@@ -17,7 +17,7 @@ test.describe('commercial billing experience', () => {
     await resetPaystackMock(request);
   });
 
-  test('pricing, refund policy and checkout all state $19 with no money-back window', async ({
+  test('pricing, refund policy and checkout all state $39 with no money-back window', async ({
     page,
     request,
   }) => {
@@ -25,8 +25,8 @@ test.describe('commercial billing experience', () => {
     expect(pricing.ok()).toBeTruthy();
     const body = await pricing.json();
     const pro = body.plans.find((p: { plan: string }) => p.plan === 'pro');
-    expect(pro.price_usd).toBe(19);
-    expect(pro.price_annual_usd).toBe(190);
+    expect(pro.price_usd).toBe(39);
+    expect(pro.price_annual_usd).toBe(390);
     expect(pro.transparency.monthly.product_price).toBe(CONTRACT.productAmountDisplay);
     expect(body.refund_policy_path).toBe('/refund-policy');
     expect(body.refund_summary).toMatch(/does not advertise a fixed money-back window/i);
@@ -34,7 +34,7 @@ test.describe('commercial billing experience', () => {
     const terms = await request.get('/api/v1/billing/terms');
     expect(terms.ok()).toBeTruthy();
     const policy = await terms.json();
-    expect(policy.pro_price_usd).toBe(19);
+    expect(policy.pro_price_usd).toBe(39);
     expect(policy.refund_period_days).toBeNull();
     expect(policy.trial_length_days).toBe(14);
     expect(policy.trial_requires_payment).toBe(false);
@@ -42,8 +42,9 @@ test.describe('commercial billing experience', () => {
     await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
     const proCard = page.locator('[data-testid="pricing-card-pro"]');
     await expect(proCard).toBeVisible({ timeout: 30_000 });
-    expectTextContains(await flatText(proCard), 'Product price $19.00 (USD)');
-    expect(await flatText(page.locator('main'))).not.toMatch(/\$39/);
+    expectTextContains(await flatText(proCard), 'Product price $39.00 (USD)');
+    expect(await flatText(page.locator('main'))).toMatch(/\$39/);
+    expect(await flatText(page.locator('main'))).not.toMatch(/\$19\.00/);
 
     await page.goto('/refund-policy', { waitUntil: 'domcontentloaded' });
     const refund = await flatText(page.locator('main'));
@@ -135,7 +136,7 @@ test.describe('commercial billing experience', () => {
     expect(invoice.ok()).toBeTruthy();
     expect(invoice.headers()['content-type'] ?? '').toMatch(/html/);
     const invoiceHtml = await invoice.text();
-    expect(invoiceHtml).toContain('$19.00 (USD)');
+    expect(invoiceHtml).toContain('$39.00 (USD)');
     expect(invoiceHtml).toContain(init!.reference);
 
     const receipt = await request.get(

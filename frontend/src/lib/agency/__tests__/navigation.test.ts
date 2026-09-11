@@ -30,11 +30,15 @@ describe('agenciesNavItems', () => {
   });
 
   it('does not expose client-management destinations to a non-eligible organization', () => {
-    for (const p of [plan('free'), plan('pro')] as PlanDetails[]) {
-      const hrefs = agenciesNavItems(org(false), p).map((i) => i.href);
-      expect(hrefs).not.toContain('/clients');
-      expect(hrefs).not.toContain('/clients/onboarding');
-    }
+    const hrefs = agenciesNavItems(org(false), plan('free')).map((i) => i.href);
+    expect(hrefs).not.toContain('/clients');
+    expect(hrefs).not.toContain('/clients/onboarding');
+  });
+
+  it('a Pro organization gets the full client hierarchy', () => {
+    expect(
+      agenciesNavItems(org(false), plan('pro')).map((i) => i.href)
+    ).toEqual(['/agency', '/clients', '/clients/onboarding']);
   });
 
   it('an Enterprise organization gets the full client hierarchy', () => {
@@ -80,6 +84,11 @@ describe('consoleNavGroups', () => {
     const withClients = (o: Organization, p: PlanDetails) =>
       consoleNavGroups(o, p).find((g) => g.label === 'Agencies')?.items.map((i) => i.href);
     expect(withClients(org(false), plan('free'))).toEqual(['/agency']);
+    expect(withClients(org(false), plan('pro'))).toEqual([
+      '/agency',
+      '/clients',
+      '/clients/onboarding',
+    ]);
     expect(withClients(org(false), plan('enterprise'))).toEqual([
       '/agency',
       '/clients',

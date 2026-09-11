@@ -11,22 +11,22 @@ export const MAIL_SINK = process.env.E2E_MAILHOG_URL ?? 'http://127.0.0.1:8025';
  * stack pins that rate (``FX_NGN_RATE=1650.00`` in the Paystack mock), so the
  * amounts below are exactly the conversion the backend computes:
  *
- *   monthly  $19.00  -> 1900 cents x 1650  = 3,135,000 kobo = ₦31,350.00
- *   annual   $190.00 -> 19000 cents x 1650 = 31,350,000 kobo = ₦313,500.00
+ *   monthly  $39.00  -> 3900 cents x 1650  = 6,435,000 kobo = ₦64,350.00
+ *   annual   $390.00 -> 39000 cents x 1650 = 64,350,000 kobo = ₦643,500.00
  */
 export const CONTRACT = {
-  productAmountDisplay: '$19.00 (USD)',
-  productAmountMinor: 1900,
+  productAmountDisplay: '$39.00 (USD)',
+  productAmountMinor: 3900,
   productCurrency: 'USD',
-  actualChargeDisplay: '₦31,350.00 (NGN)',
-  paymentAmountMinor: 3_135_000, // kobo - 1900 cents x 1650 rate
+  actualChargeDisplay: '₦64,350.00 (NGN)',
+  paymentAmountMinor: 6_435_000, // kobo - 3900 cents x 1650 rate
   paymentCurrency: 'NGN',
   provider: 'Paystack',
   notice:
     "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
-  annualProductDisplay: '$190.00 (USD)',
-  annualChargeDisplay: '₦313,500.00 (NGN)',
-  annualAmountMinor: 31_350_000,
+  annualProductDisplay: '$390.00 (USD)',
+  annualChargeDisplay: '₦643,500.00 (NGN)',
+  annualAmountMinor: 64_350_000,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));

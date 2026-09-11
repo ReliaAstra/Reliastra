@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * or client data.
  *
  * The entitlement rule under test is the real one: `hasAgencyWorkspace`
- * (organization flag OR effective Enterprise plan). The store, the query
+ * (organization flag OR effective Pro-or-better plan, trial included). The store, the query
  * layer and the navigation are the mocks; nothing in between is.
  */
 
@@ -134,7 +134,7 @@ const plan = (id: 'free' | 'pro' | 'enterprise') =>
     plan: id,
     effective_plan: id,
     subscription_status: 'active',
-    price_usd: id === 'pro' ? 19 : 0,
+    price_usd: id === 'pro' ? 39 : 0,
     max_dependencies: null,
     min_check_interval_seconds: null,
   }) as PlanDetails;
@@ -187,6 +187,14 @@ describe('console navigation', () => {
     expect(html).not.toContain('href="/clients/onboarding"');
   });
 
+  it('a Pro user without agency mode sees the client navigation and management actions', () => {
+    setSession(org(false), plan('pro'));
+    const html = renderToStaticMarkup(<ConsoleRail />);
+    expect(html).toContain('href="/agency"');
+    expect(html).toContain('href="/clients"');
+    expect(html).toContain('href="/clients/onboarding"');
+  });
+
   it('an Enterprise user sees the client navigation and management actions', () => {
     setSession(org(false), plan('enterprise'));
     const html = renderToStaticMarkup(<ConsoleRail />);
@@ -232,7 +240,7 @@ describe('gated experience', () => {
   });
 
   it('presents the restrained capability preview', () => {
-    setSession(org(false), plan('pro'));
+    setSession(org(false), plan('free'));
     const html = renderToStaticMarkup(<AgencyGatedExperience />);
     for (const capability of [
       'Multi-client operational overview',
@@ -261,10 +269,11 @@ describe('gated experience', () => {
     expect(html).toContain('href="/contact"');
     expect(html).toContain('href="/pricing"');
     expect(html).toContain('Talk to RELIASTRA');
-    expect(html).toContain('Review Enterprise capabilities');
+    expect(html).toContain('Review plans');
     expect(html).toContain(
-      'Agency operations is available to Enterprise organizations and organizations explicitly enabled by RELIASTRA.'
+      'Agency operations is available to Pro and Enterprise organizations'
     );
+    expect(html).toContain('White-label branding remains an Enterprise capability.');
     // Enterprise is contact-sales only: no invented checkout, no price.
     expect(html).not.toMatch(/\$\d/);
   });
@@ -280,7 +289,7 @@ describe('gated experience', () => {
   });
 
   it('renders for ineligible users on the /agency route itself', () => {
-    setSession(org(false), plan('pro'));
+    setSession(org(false), plan('free'));
     const html = renderToStaticMarkup(<AgencyPortfolioPage />);
     expect(html).toContain('Manage every client environment from one operational view');
     expect(html).not.toContain('Meridian Health');
@@ -302,11 +311,11 @@ describe('request gating', () => {
     expect(allFalse('evidence')).toBe(true);
   });
 
-  it('the /agency page issues no requests for a Pro organization without agency mode', () => {
+  it('the /agency page issues portfolio and client requests for a Pro organization', () => {
     setSession(org(false), plan('pro'));
     renderToStaticMarkup(<AgencyPortfolioPage />);
-    expect(allFalse('portfolio')).toBe(true);
-    expect(allFalse('clients')).toBe(true);
+    expect(calls.portfolio.every((a) => a[0] === true)).toBe(true);
+    expect(calls.clients.every((a) => a[0] === true)).toBe(true);
   });
 
   it('the client environment route requests no client data while gated', () => {
@@ -321,7 +330,7 @@ describe('request gating', () => {
   });
 
   it('the client setup sequence requests no client data while gated', () => {
-    setSession(org(false), plan('pro'));
+    setSession(org(false), plan('free'));
     const html = renderToStaticMarkup(<ClientSetupSequence />);
     expect(html).toContain('Manage every client environment from one operational view');
     expect(html).not.toContain('Establish a client environment');
@@ -360,6 +369,17 @@ describe('enabled experience', () => {
     // Cross-client sections.
     expect(html).toContain('Active incidents across clients');
     expect(html).toContain('Recent evidence by client');
+  });
+
+  it('a Pro organization without agency mode sees the live portfolio, not the gated page', () => {
+    setSession(org(false), plan('pro'));
+    const html = renderToStaticMarkup(<AgencyPortfolioPage />);
+    expect(html).not.toContain('Manage every client environment from one operational view');
+    expect(html).toContain('Northwind Systems \u00b7 client environments');
+    expect(html).toContain('Meridian Health');
+    expect(html).toContain('Verdant Energy');
+    expect(html).toContain('Add client environment');
+    expect(html).toContain('Open client portal');
   });
 
   it('an explicitly enabled non-Enterprise organization sees the live portfolio', () => {

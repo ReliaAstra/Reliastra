@@ -8,7 +8,9 @@ import { expect, test, type Page } from '@playwright/test';
  * agency operations overview at /agency, and the protected capability stays
  * gated - non-eligible organizations get a premium feature-discovery
  * presentation and no agency portfolio/client requests, while eligible ones
- * (Enterprise or explicitly enabled) get the live multi-client experience.
+ * (Pro, Enterprise, trial, or explicitly enabled) get the live multi-client
+ * experience. The fixture org is Free past its trial, so the agency flag
+ * alone decides eligibility here.
  *
  * The public marketing page owns /agencies and is asserted untouched; the
  * authenticated route is /agency. The fixture backend (127.0.0.1:8787)
@@ -142,15 +144,16 @@ test.describe('gated state', () => {
       'href',
       '/contact'
     );
-    await expect(page.getByRole('link', { name: 'Review Enterprise capabilities' }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'Review plans' }).first()).toHaveAttribute(
       'href',
       '/pricing'
     );
     const body = await page.locator('body').innerText();
     // Accurate entitlement statement, no selling, no fabricated numbers.
     expect(body).toContain(
-      'Agency operations is available to Enterprise organizations and organizations explicitly enabled by RELIASTRA.'
+      'Agency operations is available to Pro and Enterprise organizations'
     );
+    expect(body).toContain('White-label branding remains an Enterprise capability.');
     expect(body).not.toMatch(/upgrade to|\$\d|enterprise tier/i);
   });
 

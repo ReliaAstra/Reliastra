@@ -1,6 +1,6 @@
 """Live exchange rate - the single source that prices the NGN charge.
 
-RELIASTRA lists prices in USD ($19) and collects payment in NGN. The NGN
+RELIASTRA lists prices in USD ($39) and collects payment in NGN. The NGN
 charge is the USD price converted at the **live market rate** this module
 fetches, so the number a customer sees as "the rate" is the very number the
 charge was computed from:

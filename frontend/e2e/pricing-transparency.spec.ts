@@ -46,7 +46,7 @@ test.describe('pricing transparency (public)', () => {
     const currency = await apiGet<CurrencyInfo>(request, '/api/v1/billing/currency');
 
     // The backend itself is the contract: NGN prices are the USD product
-    // price converted at the live rate (₦31,350.00 = $19.00 x 1650), and the
+    // price converted at the live rate (₦64,350.00 = $39.00 x 1650), and the
     // USD product price is stated separately.
     expect(currency.product_currency).toBe(CONTRACT.productCurrency);
     expect(currency.payment_currency).toBe(CONTRACT.paymentCurrency);
@@ -59,16 +59,16 @@ test.describe('pricing transparency (public)', () => {
     await page.evaluate(() => document.querySelector('#pricing')?.scrollIntoView());
 
     // Every plan carries the mandated three-line disclosure. First anchor on
-    // the resolved backend figure (the card renders a "pending" placeholder
-    // for a beat while the currency call is in flight on a cold dev server).
+    // the resolved backend figure (the card shows the calculated USD product
+    // price until the currency call resolves on a cold dev server).
     const pro = page.locator('[data-testid="pricing-card-pro"]');
     await expect(pro).toBeVisible();
     await expect(
       page.locator('[data-testid="payment-charge-pro"]').first(),
     ).toHaveText(CONTRACT.actualChargeDisplay, { timeout: 30_000 });
     const proText = await flatText(pro);
-    expectTextContains(proText, 'Product price $19.00 (USD)');
-    expectTextContains(proText, 'Actual charge ₦31,350.00 (NGN) per month');
+    expectTextContains(proText, 'Product price $39.00 (USD)');
+    expectTextContains(proText, 'Actual charge ₦64,350.00 (NGN) per month');
     expectTextContains(proText, 'Payment provider Paystack');
 
     // The notice is full-size and verbatim - not a footnote. (The container
@@ -85,8 +85,8 @@ test.describe('pricing transparency (public)', () => {
       { timeout: 15_000 },
     );
     const annualText = await flatText(pro);
-    expectTextContains(annualText, 'Product price $190.00 (USD)');
-    expectTextContains(annualText, 'Actual charge ₦313,500.00 (NGN) per year');
+    expectTextContains(annualText, 'Product price $390.00 (USD)');
+    expectTextContains(annualText, 'Actual charge ₦643,500.00 (NGN) per year');
 
     // Enterprise: contact-sales only, zero self-serve checkout figures.
     const ent = page.locator('[data-testid="pricing-card-enterprise"]');

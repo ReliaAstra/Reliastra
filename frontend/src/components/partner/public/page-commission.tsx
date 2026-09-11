@@ -126,7 +126,7 @@ export function PageCommission() {
                       Customer pays
                     </p>
                     <p className="font-mono text-2xl font-bold text-foreground sm:text-3xl">
-                      $19/mo
+                      $39/mo
                     </p>
                   </div>
 
@@ -142,7 +142,7 @@ export function PageCommission() {
                       You earn (30%)
                     </p>
                     <p className="font-mono text-2xl font-bold text-foreground sm:text-3xl">
-                      $5.70/mo
+                      $11.70/mo
                     </p>
                   </div>
                 </div>
@@ -225,9 +225,9 @@ export function PageCommission() {
                 },
                 {
                   plan: 'Pro',
-                  fee: '$19/mo',
-                  commission: '$5.70',
-                  annual: '$68.40',
+                  fee: '$39/mo',
+                  commission: '$11.70',
+                  annual: '$140.40',
                 },
                 {
                   plan: 'Enterprise',

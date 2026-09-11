@@ -109,7 +109,7 @@ export interface PricingPlan {
   /** Published payment amount for this plan (processing currency), if any. */
   payment_amount_display?: string | null;
   payment_annual_amount_display?: string | null;
-  /** Product list price, pre-formatted by the backend ("$19.00 (USD)"). */
+  /** Product list price, pre-formatted by the backend ("$39.00 (USD)"). */
   product_price_display?: string | null;
   product_annual_price_display?: string | null;
   /** The mandatory transparency triple, per billing interval, backend-formatted. */
@@ -375,11 +375,11 @@ export interface BillingTransactionItem {
   status: 'success' | 'refunded' | 'disputed' | string;
   product_currency: string;
   product_amount_minor: number | null;
-  /** Pre-formatted from the backend, e.g. "$19.00 (USD)". */
+  /** Pre-formatted from the backend, e.g. "$39.00 (USD)". */
   product_price_display: string | null;
   charged_currency: string;
   charged_amount_minor: number;
-  /** Pre-formatted from the backend, e.g. "₦25,118.00 (NGN)". */
+  /** Pre-formatted from the backend, e.g. "₦51,558.00 (NGN)". */
   charged_amount_display: string;
   paid_at: string | null;
   period_start: string | null;

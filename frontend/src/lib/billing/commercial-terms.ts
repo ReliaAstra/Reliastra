@@ -6,8 +6,8 @@
 
 export const REFUND_POLICY_PATH = '/refund-policy';
 export const BILLING_EMAIL = 'billing@reliastra.com';
-export const PRO_PRICE_USD = 19;
-export const PRO_ANNUAL_USD = 190;
+export const PRO_PRICE_USD = 39;
+export const PRO_ANNUAL_USD = 390;
 export const TRIAL_DAYS = 14;
 
 export const COMMERCIAL_COPY = {

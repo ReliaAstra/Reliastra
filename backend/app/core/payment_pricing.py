@@ -12,8 +12,8 @@ Two distinct concepts, deliberately kept separate:
     (``settings.PAYSTACK_CURRENCY`` - NGN for the current merchant account).
     For a currency other than USD, the payment amount is the USD product price
     converted at the **live exchange rate**: ``round(USD minor units x rate)``,
-    where ``rate`` is payment-currency units per 1 USD (e.g. $19.00 at
-    ₦1,322/USD -> ₦25,118.00).
+    where ``rate`` is payment-currency units per 1 USD (e.g. $39.00 at
+    ₦1,322/USD -> ₦51,558.00).
 
 Rules this module enforces
 --------------------------
@@ -157,7 +157,7 @@ def currency_name(code: str) -> str:
 
 
 def format_money(minor_units: int | None, currency: str) -> str:
-    """Render a minor-unit amount as ``\u20a625,118.00 (NGN)``.
+    """Render a minor-unit amount as ``\u20a651,558.00 (NGN)``.
 
     The ISO code is always part of the output - a bare symbol is not acceptable
     here: screen readers, plain-text email clients and forwarded receipts must
@@ -171,7 +171,7 @@ def format_money(minor_units: int | None, currency: str) -> str:
 
 
 def format_product_price(plan: str, interval: str = MONTHLY) -> str | None:
-    """Human product-price string for a plan (``$19``). None for custom."""
+    """Human product-price string for a plan (``$39``). None for custom."""
     normalized = normalize_plan(plan)
     usd = (
         get_plan_annual_price_usd(normalized)
@@ -189,7 +189,7 @@ def converted_payment_amount(product_minor: int, rate: float) -> int:
     ``product_minor`` is USD cents and ``rate`` is payment-currency units per
     1 USD, so the product ``cents x (units/USD)`` is already expressed in
     payment-currency minor units (kobo for NGN). Rounded to the nearest minor
-    unit - $19.00 at ₦1,322/USD -> 1,900 x 1,322 = 2,511,800 kobo = ₦25,118.00.
+    unit - $39.00 at ₦1,322/USD -> 3,900 x 1,322 = 5,155,800 kobo = ₦51,558.00.
     """
     return int(round(product_minor * rate))
 
@@ -381,8 +381,8 @@ def transparency_lines(
     Renders exactly the three facts the product spec requires on every
     RELIASTRA-owned payment surface::
 
-        Product price:     $19.00 (USD)
-        Actual charge:     ₦25,118.00 (NGN)
+        Product price:     $39.00 (USD)
+        Actual charge:     ₦51,558.00 (NGN)
         Payment provider:  Paystack
 
     ``actual_charge`` is the *resolved payment price* - the USD list price

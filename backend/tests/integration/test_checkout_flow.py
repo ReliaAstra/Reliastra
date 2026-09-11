@@ -39,7 +39,7 @@ def _paystack_verify_success(**overrides: Any) -> dict[str, Any]:
     """A provider verification response, in the shape Paystack actually returns."""
     data: dict[str, Any] = {
         "status": "success",
-        "amount": 2_511_800,
+        "amount": 5_155_800,
         "currency": "NGN",
         "channel": "card",
         "reference": overrides.pop("reference", "ref_x"),
@@ -136,8 +136,8 @@ async def test_quote_is_the_render_model_and_offers_card_only(
     assert res.status_code == 200, res.text
     quote = res.json()
     # The transparency triple, as strings, from the server.
-    assert quote["product_price_display"] == "$19.00 (USD)"
-    assert quote["payment_amount_display"] == "\u20a625,118.00 (NGN)"
+    assert quote["product_price_display"] == "$39.00 (USD)"
+    assert quote["payment_amount_display"] == "\u20a651,558.00 (NGN)"
     assert quote["payment_provider"] == "Paystack"
     assert quote["payment_currency"] == "NGN"
     assert quote["product_currency"] == "USD"
@@ -189,9 +189,9 @@ async def test_fx_reference_rates_the_charge(
     assert quote["fx_reference"]["provider"] == "Test Source"
     assert quote["fx_reference"]["source_timestamp"]
     assert "converted" in quote["fx_reference"]["disclaimer"]
-    # The charge is exactly that conversion: 1900 cents x 1650 = ₦31,350.00.
-    assert quote["payment_amount_minor"] == 3_135_000
-    assert quote["payment_amount_display"] == "\u20a631,350.00 (NGN)"
+    # The charge is exactly that conversion: 3900 cents x 1650 = ₦64,350.00.
+    assert quote["payment_amount_minor"] == 6_435_000
+    assert quote["payment_amount_display"] == "\u20a664,350.00 (NGN)"
 
 
 @pytest.mark.asyncio
@@ -226,8 +226,8 @@ async def test_annual_quote_prices_the_year_not_twelve_months(async_client, auth
     quote = res.json()
     assert quote["billing_interval"] == "annual"
     assert quote["period_word"] == "year"
-    assert quote["product_price_display"] == "$190.00 (USD)"
-    assert quote["payment_amount_display"] == "\u20a6251,180.00 (NGN)"
+    assert quote["product_price_display"] == "$390.00 (USD)"
+    assert quote["payment_amount_display"] == "\u20a6515,580.00 (NGN)"
 
 
 @pytest.mark.asyncio
@@ -253,7 +253,9 @@ async def test_quote_refuses_to_offer_checkout_it_cannot_honour(
     assert quote["available"] is False
     assert quote["unavailable_reason"] == CheckoutReason.PRICE_NOT_CONFIGURED
     assert quote["payment_amount_display"] is None
-    assert "being finalized" in quote["unavailable_message"]
+    assert "cannot price this plan" in quote["unavailable_message"]
+    assert "$39.00 (USD)" in quote["unavailable_message"]
+    assert quote["product_price_display"] == "$39.00 (USD)"
 
 
 @pytest.mark.asyncio
@@ -307,7 +309,7 @@ async def test_transaction_is_opened_with_a_card_only_channel_array(
     assert res.status_code == 200, res.text
     body = captured["body"]
     assert body["channels"] == ["card"], "the wire must not offer a local rail"
-    assert body["amount"] == 2_511_800
+    assert body["amount"] == 5_155_800
     assert body["currency"] == "NGN"
     assert "plan" not in body, "a plan code would override the amount"
     payload = res.json()
@@ -381,7 +383,7 @@ async def test_a_client_volunteering_an_amount_is_ignored_not_rejected(
     )
     assert res.status_code == 200, res.text
     body = captured["body"]
-    assert body["amount"] == 2_511_800
+    assert body["amount"] == 5_155_800
     assert body["currency"] == "NGN"
     assert body["channels"] == ["card"]
     # The payer identity is the organization's owner, not whoever the body named.
@@ -470,7 +472,7 @@ async def test_verified_payment_activates_and_records_who_and_when(
     assert payload["activated"] is True
     assert payload["duplicate_payment"] is False
     assert payload["period_word"] == "month"
-    assert payload["amount_display"] == "\u20a625,118.00 (NGN)"
+    assert payload["amount_display"] == "\u20a651,558.00 (NGN)"
 
     plan = await async_client.get("/v1/billing/plan", headers=auth_data["headers"])
     assert plan.json()["plan"] == "pro"
@@ -576,7 +578,7 @@ async def test_wrong_currency_payment_is_not_activated(
         monkeypatch,
         _paystack_verify_success(
             reference=reference,
-            amount=1900,
+            amount=3900,
             currency="USD",
             metadata={
                 "org_id": auth_data["org_id"],
@@ -671,7 +673,7 @@ async def test_metadata_arriving_as_a_json_string_still_provisions(
     throws on the way into the database is money taken and a plan not delivered.
     """
     reference = f"ref_strmeta_{_uuid.uuid4().hex[:8]}"
-    payload = _paystack_verify_success(reference=reference, amount=25_118_000)
+    payload = _paystack_verify_success(reference=reference, amount=51_558_000)
     payload["data"]["metadata"] = _json.dumps(
         {
             "org_id": auth_data["org_id"],
@@ -755,8 +757,8 @@ async def test_history_states_what_was_charged_even_after_a_repricing(
     row = next(
         t for t in hist.json()["items"] if t["reference"] == reference
     )
-    assert row["charged_amount_minor"] == 2_511_800
-    assert row["charged_amount_display"] == "\u20a625,118.00 (NGN)"
+    assert row["charged_amount_minor"] == 5_155_800
+    assert row["charged_amount_display"] == "\u20a651,558.00 (NGN)"
     assert row["charged_currency"] == "NGN"
     assert row["provider"].lower() == "paystack"
 

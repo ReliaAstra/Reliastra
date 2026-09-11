@@ -122,7 +122,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setDemoPlan: (planId) => {
     const prices: Record<PlanId, number> = {
       free: 0,
-      pro: 19,
+      pro: 39,
       enterprise: 0,
     };
     const limits: Record<PlanId, number | null> = {

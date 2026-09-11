@@ -191,8 +191,8 @@ pre-payment confirmation step, and the billing page.
   customer can reproduce the number themselves. The same fetched rate is the
   basis of the charge: the NGN amount is the USD price converted at this rate
   (`round(USD minor units × rate)`). When a product price is in context the
-  panel adds a labelled live-conversion line ("Your $19.00 USD plan converts
-  to ₦25,118.00 NGN at this rate"), and the backend-resolved charge is exactly
+  panel adds a labelled live-conversion line ("Your $39.00 USD plan converts
+  to ₦51,558.00 NGN at this rate"), and the backend-resolved charge is exactly
   that conversion - never a separate fixed figure.
 - **Gate.** On the checkout review, the "Continue to secure payment" button is
   disabled until that verified rate exists; a failed fetch shows a plain

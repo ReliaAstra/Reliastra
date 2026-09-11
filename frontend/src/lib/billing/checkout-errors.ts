@@ -155,8 +155,8 @@ export const CHECKOUT_FAILURE_COPY: Record<string, CheckoutFailureCopy> = {
     support: true,
   },
   price_not_configured: {
-    title: 'Online checkout is being finalized',
-    body: 'Our price for this plan in your payment currency is being confirmed, so we are not taking payment here rather than quote you a figure we have not resolved.',
+    title: 'Online checkout unavailable for this currency',
+    body: 'We could not resolve this plan\u2019s charge in your payment currency, so we are not taking payment here rather than quote you a figure we have not resolved. The plan price above is the calculated USD price.',
     action: 'Contact billing@reliastra.com and we will set up your subscription directly.',
     tone: 'attention',
     retry: false,
