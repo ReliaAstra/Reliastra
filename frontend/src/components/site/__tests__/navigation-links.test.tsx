@@ -177,8 +177,15 @@ describe('public navigation link integrity', () => {
   it('points every status-labelled link at the status route', () => {
     // Regression guard: the previous footer labelled an entry "System status"
     // and pointed it at the vendor index, which is a different page entirely.
+    //
+    // The pattern matches a *destination* label - "Status", "System status" -
+    // and deliberately not any label containing the word. Research titles are
+    // allowed to discuss status pages ("/research/ai-infrastructure/
+    // status-page-payload-anatomy" is titled "What a status-page payload
+    // actually asserts"), and a broad /\bstatus\b/ misfires on them: it fails
+    // a correct link rather than catching a wrong one.
     const statusLinks = linksOf(footerMarkup).filter((l) =>
-      /\bstatus\b/i.test(l.label)
+      /^(system |service |platform |vendor |network )?status$/i.test(l.label.trim())
     );
     expect(statusLinks.length).toBeGreaterThan(0);
     for (const l of statusLinks) {

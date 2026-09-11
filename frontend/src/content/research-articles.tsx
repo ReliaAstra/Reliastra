@@ -1,6 +1,18 @@
 import type { ReactNode } from 'react';
 import { PUBLIC_ROUTES, SHARE_ROUTES, researchHubRoute, researchRoute } from '@/lib/routes';
 import type { RelatedLink } from '@/components/content/article-template';
+import { availabilityRecordAudit } from './research/availability-record-audit';
+import { probeIntervalPaper } from './research/probe-interval-from-bucketed-telemetry';
+import { aiApiTrustBoundary } from './research/ai-api-trust-boundary';
+import { statusPagePayloadAnatomy } from './research/status-page-payload-anatomy';
+
+/** Keyed by slug, so the spread below cannot attach a body to the wrong paper. */
+const availabilityRecordAuditModule = { 'availability-record-audit': availabilityRecordAudit };
+const probeIntervalModule = {
+  'probe-interval-from-bucketed-telemetry': probeIntervalPaper,
+};
+const aiApiTrustBoundaryModule = { 'ai-api-trust-boundary': aiApiTrustBoundary };
+const statusPageModule = { 'status-page-payload-anatomy': statusPagePayloadAnatomy };
 
 /**
  * Body copy for `/research/[slug]`.
@@ -17,29 +29,16 @@ export type ResearchArticleBody = {
   evidence: ReactNode;
   methodology: ReactNode;
   related: RelatedLink[];
+  /**
+   * In-page section anchors, in reading order. Declared rather than scraped
+   * from the rendered DOM: the contents nav is part of the document contract,
+   * and a heading that is not listed here simply does not appear in it.
+   */
+  sections?: { id: string; label: string }[];
 };
 
-/**
- * Semantic-only wrappers.
- *
- * These used to carry hard-coded colour and spacing classes, which meant the
- * article body could never be restyled without editing every paragraph of
- * every article. Typography now comes from the `.ob-prose` block in
- * globals.css, so the content file contains content and nothing else.
- */
-const P = ({ children }: { children: ReactNode }) => <p>{children}</p>;
-
-const H = ({ children }: { children: ReactNode }) => <h2>{children}</h2>;
-
-const LI = ({ children }: { children: ReactNode }) => <li>{children}</li>;
-
-const CODE = ({ children }: { children: ReactNode }) => <code>{children}</code>;
-
-const PRE = ({ children }: { children: ReactNode }) => (
-  <pre>
-    <code>{children}</code>
-  </pre>
-);
+// Shared semantic wrappers - see ./research/prose.
+import { CODE, H, LI, P, PRE } from './research/prose';
 
 export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
   'the-dependency-gap': {
@@ -942,4 +941,16 @@ done`}</PRE>
       },
     ],
   },
+
+  /* ── Papers with a full research record ──────────────────────────────────
+   *
+   * These four live in their own modules because they are long, they carry
+   * figures, and each one is the whole subject of a category or a hub entry.
+   * They are merged here so `RESEARCH_ARTICLE_BODIES` stays the single place
+   * a route looks for a body.
+   */
+  ...availabilityRecordAuditModule,
+  ...probeIntervalModule,
+  ...aiApiTrustBoundaryModule,
+  ...statusPageModule,
 };

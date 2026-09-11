@@ -353,21 +353,83 @@ const RESOLUTION_SECONDS: Record<string, number> = {
 };
 
 /**
- * The interval at which observations have actually been arriving, derived
- * from the timeline's own bucket density (bucket length / mean observations
- * per bucket).
+ * The interval at which observations have actually been arriving, estimated
+ * from the timeline itself.
  *
  * The configured check interval is not exposed on any public endpoint, so the
  * record reports the cadence it can *measure* instead of asserting a schedule
  * it cannot see. Returns null when the window carries no observations.
+ *
+ * ── Why this is not simply `bucket / mean observations per bucket` ─────────
+ *
+ * It used to be, and that estimator is bounded above by the bucket length: an
+ * occupied bucket holds at least one observation, so the mean over occupied
+ * buckets is never below 1 and `bucket / mean` never exceeds `bucket`. When
+ * the true interval is longer than the resolution - a 300-second schedule
+ * aggregated into one-minute buckets, which is the deployed case - every
+ * occupied bucket holds exactly one observation, the mean is 1, and the
+ * estimator returns the bucket length. The public record printed "about every
+ * 60 seconds" for a dependency probed every 300 seconds as a result.
+ *
+ * Density and spacing are complementary, so the estimator picks by regime:
+ *
+ *  - More than one observation per occupied bucket → the schedule is finer
+ *    than the resolution, density carries the interval, and the bucket is not
+ *    a ceiling. `bucket / mean` is correct here.
+ *  - One observation per occupied bucket → density carries nothing (the empty
+ *    buckets that would have carried it are not returned by the API at all),
+ *    so the spacing between occupied bucket starts is used instead. The median
+ *    rather than the mean, so a single missed probe does not move the answer.
+ *
+ * Both branches are resolution-independent in the regime they handle, which is
+ * the property the old estimator lacked. The bound and the captured series
+ * that exposed it are written up at
+ * /research/measurement-integrity/probe-interval-from-bucketed-telemetry.
  */
 export function observedCadenceSeconds(timeline: TrackTimeline | null): number | null {
   if (!timeline || !timeline.points.length) return null;
+
   const bucket = RESOLUTION_SECONDS[timeline.resolution];
-  if (!bucket) return null;
-  const counts = timeline.points.map((p) => p.observation_count).filter((n) => n > 0);
-  if (!counts.length) return null;
-  const mean = counts.reduce((a, b) => a + b, 0) / counts.length;
-  if (mean <= 0) return null;
-  return Math.round(bucket / mean);
+  const occupied = timeline.points.filter((p) => p.observation_count > 0);
+  if (!occupied.length) return null;
+
+  const total = occupied.reduce((sum, p) => sum + p.observation_count, 0);
+  const mean = total / occupied.length;
+
+  // Regime 1: denser than the resolution.
+  if (bucket && mean > 1) return Math.max(1, Math.round(bucket / mean));
+
+  // Regime 2: sparser than the resolution - measure the spacing instead.
+  const starts = occupied
+    .map((p) => Date.parse(p.timestamp))
+    .filter((t) => Number.isFinite(t))
+    .sort((a, b) => a - b);
+
+  if (starts.length >= 2) {
+    const deltas: number[] = [];
+    for (let i = 1; i < starts.length; i += 1) {
+      const delta = (starts[i] - starts[i - 1]) / 1000;
+      if (delta > 0) deltas.push(delta);
+    }
+    if (deltas.length) {
+      deltas.sort((a, b) => a - b);
+      const mid = Math.floor(deltas.length / 2);
+      const median =
+        deltas.length % 2 === 1 ? deltas[mid] : (deltas[mid - 1] + deltas[mid]) / 2;
+      return Math.max(1, Math.round(median));
+    }
+  }
+
+  // Fallback: a single occupied bucket, so no spacing exists. Window length
+  // over total observations is still resolution-independent, but it assumes
+  // the window is fully covered - which a brand-new dependency's is not.
+  const from = Date.parse(timeline.from);
+  const to = Date.parse(timeline.to);
+  if (Number.isFinite(from) && Number.isFinite(to) && total > 0) {
+    return Math.max(1, Math.round((to - from) / 1000 / total));
+  }
+
+  // Not derivable. Printing the bucket length here is exactly the error this
+  // function was rewritten to stop making.
+  return null;
 }

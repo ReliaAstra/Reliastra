@@ -246,8 +246,23 @@ export const PUBLIC_PAGES = [
   { path: '/glossary/partial-outage', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/glossary/availability', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/glossary/latency', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/observation-density', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/telemetry-integrity', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/dependency-blast-radius', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/failure-domain', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/control-plane', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/data-plane', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/external-trust-boundary', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/ai-api-dependency', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/model-routing', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/observability-blind-spot', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/research', changeFrequency: 'weekly' as const, priority: 0.8 },
   { path: '/research/ai-infrastructure', changeFrequency: 'hourly' as const, priority: 0.85 },
+  // Research categories. A category is listed only when it has papers - an
+  // empty category is a thin page, and the category route 404s rather than
+  // rendering one.
+  { path: '/research/measurement-integrity', changeFrequency: 'weekly' as const, priority: 0.8 },
+  { path: '/research/cloud-security', changeFrequency: 'weekly' as const, priority: 0.8 },
   { path: '/about', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/contact', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/status', changeFrequency: 'daily' as const, priority: 0.6 },
@@ -566,6 +581,206 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
       { label: 'Availability', href: '/glossary/availability' },
       { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
       { label: 'Methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
+    ],
+  },
+  {
+    slug: 'observation-density',
+    term: 'Observation density',
+    short: 'Observations that exist, against observations the schedule implies.',
+    definition:
+      'Observation density is the ratio of observations actually recorded in a window to the number the probe schedule implies should exist there: total_observations divided by (window_seconds / probe_interval). It is a measure of the measurement, not of the endpoint.',
+    problem:
+      'Availability is blind to the absence of measurement. A scheduler that stops issuing probes produces no failed observations and therefore no availability deficit - the record stays green while the evidence stops accumulating, and an availability figure computed over a near-empty window is indistinguishable from one computed over a full one.',
+    whyItMatters:
+      'Density is the signal that separates an endpoint failing from a measurement pipeline failing. They have different causes, different owners and different fixes, and they produce opposite readings on the same availability chart.',
+    example:
+      'On 11 September 2026 the RELIASTRA public record for one dependency returned 277 observations in a 24-hour window against 288 expected (96.2% density) and 595 in a 90-day window against 25,920 expected (2.3%). Availability read 100.0% in both. The falling density, not the availability, was the finding.',
+    howReliastra:
+      'RELIASTRA publishes the observation count beside every availability figure and audits its own records for density. The three-check audit - window monotonicity, history depth, expected-versus-observed density - is published with its script and its captured data so anyone can run it against their own monitoring supplier.',
+    related: [
+      { label: 'Availability', href: '/glossary/availability' },
+      { label: 'Telemetry integrity', href: '/glossary/telemetry-integrity' },
+      { label: 'Availability-record audit', href: '/research/measurement-integrity/availability-record-audit' },
+    ],
+  },
+  {
+    slug: 'telemetry-integrity',
+    term: 'Telemetry integrity',
+    short: 'Whether a record can be trusted to be complete, correctly labelled and auditable.',
+    definition:
+      'Telemetry integrity is the property of an observation record that its contents are what they claim to be: observations actually taken, windows that the stored data can fill, labels that match the underlying sample, and enough disclosed provenance - count, window bounds, probe interval, origin - for a reader to check the arithmetic.',
+    problem:
+      'Incident attribution depends on the completeness of a record as much as on its accuracy. An incomplete record does not merely miss failures; it makes absences ambiguous, so "no failures were recorded" and "no measurements were taken" become indistinguishable.',
+    whyItMatters:
+      'An attacker who can suppress measurements achieves the same evidentiary effect as one who can falsify them, at lower cost and with less detectability. Publishing the denominator is what closes that ambiguity, which makes telemetry integrity a security property and not only a data-quality one.',
+    example:
+      'A 90-day availability figure computed over 2.1 days of observations is arithmetically correct and evidentially thin. Both properties have to be visible in the record, or a reader - or a retrieval system quoting the page - cannot tell which one they are looking at.',
+    howReliastra:
+      'Observations are written with their origin and timestamp, never backfilled, and pruned by scheduled jobs rather than silently truncated. Evidence reports are checksummed and bound to the organisation that produced them. Where the public record falls short of this standard, RELIASTRA publishes the audit that found it.',
+    related: [
+      { label: 'Observation density', href: '/glossary/observation-density' },
+      { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
+      { label: 'Availability-record audit', href: '/research/measurement-integrity/availability-record-audit' },
+    ],
+  },
+  {
+    slug: 'dependency-blast-radius',
+    term: 'Dependency blast radius',
+    short: 'The set of your functionality that fails when one external dependency does.',
+    definition:
+      'Dependency blast radius is the set of application functionality, data paths and user journeys that degrade or fail when a single external dependency degrades - including the parts that never call it directly, reached through shared workers, connection pools, queues and retry amplification.',
+    problem:
+      'The obvious blast radius is the feature that calls the dependency. The real one is larger: long-running calls hold connections and workers that unrelated features also need, so a partial upstream problem becomes a full application outage and produces an incident report naming the wrong component.',
+    whyItMatters:
+      'Blast radius is what makes a dependency a risk rather than a line item. It determines how much isolation an architecture needs, and it is usually discovered during an incident rather than designed for beforehand.',
+    example:
+      'A model provider degrades. Client timeouts hold sockets, retries multiply the load, queues grow, workers saturate - and the alert fires in a background job that never called the provider API, six hops from the cause.',
+    howReliastra:
+      'RELIASTRA keeps an independent, timestamped record of the dependency side of the timeline, so the outer edge of the blast radius can be correlated against the moment the dependency was independently observed failing rather than inferred from the alert that fired first.',
+    related: [
+      { label: 'Failure domain', href: '/glossary/failure-domain' },
+      { label: 'Incident attribution', href: '/glossary/incident-attribution' },
+      { label: 'AI API trust boundary', href: '/research/cloud-security/ai-api-trust-boundary' },
+    ],
+  },
+  {
+    slug: 'failure-domain',
+    term: 'Failure domain',
+    short: 'The set of components that fail together, and therefore must be reasoned about together.',
+    definition:
+      'A failure domain is the set of components that share a failure cause: a region, an availability zone, a connection pool, a worker fleet, a provider account, a DNS resolver. Components in the same domain do not provide redundancy for each other, however many of them there are.',
+    problem:
+      'Redundancy is routinely counted in instances rather than in domains. Two workers on one host, two regions behind one control plane, or two "independent" probes issued by one process are one failure domain wearing several names - and a quorum computed across them confirms a single opinion.',
+    whyItMatters:
+      'Failure-domain reasoning is what turns "we have redundancy" into a statement that can be checked. It also bounds blast radius: isolating a dependency into its own domain is the difference between a degraded feature and a degraded product.',
+    example:
+      'Two scheduling labels emitted by one worker are one observation point. Treating their agreement as a quorum reports one machine\u2019s opinion as independent confirmation, which is why RELIASTRA\u2019s detection policy distinguishes a single observation topology from a multi-point one and applies a different rule to each.',
+    howReliastra:
+      'Every observation carries the origin that produced it, and the incident detection rule is explicit about topology: persistence when there is one observation point, agreement across distinct points when there are genuinely several. Labels are never promoted into independence.',
+    related: [
+      { label: 'Quorum detection', href: '/glossary/quorum-detection' },
+      { label: 'Dependency blast radius', href: '/glossary/dependency-blast-radius' },
+      { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
+    ],
+  },
+  {
+    slug: 'control-plane',
+    term: 'Control plane',
+    short: 'The part of a system that decides what should happen.',
+    definition:
+      'The control plane is the set of components that decide and direct behaviour: schedulers, configuration services, orchestration APIs, routing decisions, credential issuance. It issues instructions; it does not carry the workload\u2019s data. In a measurement system the scheduler and broker are the control plane and the workers are the data plane.',
+    problem:
+      'Control-plane failure looks nothing like data-plane failure and is routinely misread as one. A scheduler that stops produces no errors - it produces an absence of work, which surfaces as missing observations, stale configuration or checks that silently stop running while every health endpoint still returns 200.',
+    whyItMatters:
+      'Availability of the data plane says nothing about the control plane. During cloud incidents the two fail on different schedules and recover independently, and an incident report that does not distinguish them will recommend the wrong fix.',
+    example:
+      'When RELIASTRA\u2019s scheduler, broker or worker is unavailable, checks simply do not run - and the system reports that. A missed probe is never backfilled with a synthesised result, because an observation that did not happen must never appear in a history anyone intends to rely on.',
+    howReliastra:
+      'Checks never run inside the API process that serves the dashboard, so a busy dashboard cannot delay a probe and a slow probe cannot block the API. Scheduler health is reported separately from check outcomes, and the absence of observations is surfaced rather than defaulted to a healthy value.',
+    related: [
+      { label: 'Data plane', href: '/glossary/data-plane' },
+      { label: 'Observation density', href: '/glossary/observation-density' },
+      { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
+    ],
+  },
+  {
+    slug: 'data-plane',
+    term: 'Data plane',
+    short: 'The part of a system that carries the workload.',
+    definition:
+      'The data plane is the path that actually carries requests and responses: the network, the load balancers, the proxies, the workers that execute work and the storage that holds it. It is where latency, throughput and errors are observable, and it can be healthy while the control plane that directs it is not.',
+    problem:
+      'Monitoring almost always watches the data plane, because that is where the measurable signals are. The consequence is that control-plane failures are inferred from data-plane symptoms - usually as an unexplained drop in traffic - rather than detected directly.',
+    whyItMatters:
+      'Separating the two planes is what makes an incident attributable. "Requests are failing" and "no requests were issued" are different events with different causes, and only the second is a control-plane failure.',
+    example:
+      'A probe worker fleet that is running but has received no dispatch instructions shows a healthy data plane and zero observations. The correct reading is a control-plane failure; the data-plane-only reading is that nothing happened.',
+    howReliastra:
+      'RELIASTRA reports both sides separately: scheduler and worker health as control-plane state, and per-observation latency, status and outcome as data-plane evidence. The two are never merged into a single "system healthy" value.',
+    related: [
+      { label: 'Control plane', href: '/glossary/control-plane' },
+      { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
+      { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
+    ],
+  },
+  {
+    slug: 'external-trust-boundary',
+    term: 'External trust boundary',
+    short: 'The line where your controls stop and a third party\u2019s begin.',
+    definition:
+      'An external trust boundary is the point at which data, credentials or control leave the domain governed by your organisation and enter one governed by someone else. Everything downstream of it is subject to that party\u2019s controls, and most of it is not observable from your side.',
+    problem:
+      'Boundaries are usually drawn around the network perimeter, which is where they stopped being meaningful. A dependency call crosses a boundary wherever payload or credential leaves the domain - through a managed gateway, a resolver, a provider edge - and those crossings are frequently absent from both the dependency inventory and the security review.',
+    whyItMatters:
+      'A control that cannot be enforced at a boundary has to be enforced before it, or accepted as trust. Knowing which is which is the difference between an architecture with stated assumptions and one with unstated ones.',
+    example:
+      'Mutual TLS and workload identity establish who is calling. They establish nothing about what the callee does with the payload, which model serves it, or where inference is executed - so the enforceable controls at a model-API boundary are architectural and contractual, not cryptographic.',
+    howReliastra:
+      'RELIASTRA observes dependencies from outside both stacks, which makes the boundary itself measurable: an independent, timestamped record of what the external side did, kept separate from your own incident history so the two can be compared rather than merged.',
+    related: [
+      { label: 'AI API dependency', href: '/glossary/ai-api-dependency' },
+      { label: 'External Dependency Intelligence', href: '/glossary/external-dependency-intelligence' },
+      { label: 'AI API trust boundary', href: '/research/cloud-security/ai-api-trust-boundary' },
+    ],
+  },
+  {
+    slug: 'ai-api-dependency',
+    term: 'AI API dependency',
+    short: 'A model reached over the network - a dependency whose payload you only partly control.',
+    definition:
+      'An AI API dependency is a hosted model service consumed over the network, where the request payload is composed at call time from system instructions, retrieved documents, prior conversation turns and tool output, and where routing to the underlying model, serving tier and region is decided inside the provider\u2019s trust domain.',
+    problem:
+      'It is treated as a larger version of a conventional SaaS API dependency, and it is not. The payload is partly authored by a retrieval step rather than by the application, retries are a cost and quota control as well as a reliability one, and the provider\u2019s status plane and serving plane fail independently.',
+    whyItMatters:
+      'Each of those differences changes a control. Data classification has to move upstream of the call; failure-domain isolation becomes a reliability requirement with a security benefit; and an availability figure for "the provider" is a measurement of one endpoint, not of the service.',
+    example:
+      'RELIASTRA\u2019s public record for OpenAI observes https://status.openai.com from one region. That record is evidence about the status site. It is not evidence about the inference API, and the public page says so rather than letting the vendor name imply otherwise.',
+    howReliastra:
+      'RELIASTRA monitors the externally observable endpoints of AI providers from its own infrastructure, names each endpoint and region explicitly, and keeps the status plane and the serving plane as separate records rather than one vendor-level availability figure.',
+    related: [
+      { label: 'Model routing', href: '/glossary/model-routing' },
+      { label: 'External trust boundary', href: '/glossary/external-trust-boundary' },
+      { label: 'AI infrastructure hub', href: '/research/ai-infrastructure' },
+    ],
+  },
+  {
+    slug: 'model-routing',
+    term: 'Model routing',
+    short: 'The provider-side decision about what actually serves your request.',
+    definition:
+      'Model routing is the set of provider-side decisions that map an API request to a serving path: which model version, which serving tier, which region, and whether the request is served directly, queued, cached or redirected to a different backend. It happens inside the provider\u2019s trust domain.',
+    problem:
+      'The consumer addresses a model name and observes a response. Everything between the two is invisible unless the provider chooses to disclose it in response metadata, so a change of underlying version, tier or region is not detectable at the API boundary in advance.',
+    whyItMatters:
+      'Routing is where behavioural and reliability differences originate. An application pinned to a model name can experience a change it did not request and cannot see, and an incident attributed to "the model" may in fact be a routing change.',
+    example:
+      'Latency and error-rate shifts that correlate with nothing the consumer changed are the signature of a routing or serving-tier change. Detecting them after the fact requires capturing response metadata, not just status codes.',
+    howReliastra:
+      'RELIASTRA records what it can observe - endpoint, region, status, latency, timestamp - and states explicitly what its record does not cover. Model-level endpoints and per-route API latency are not part of the public observatory today, and the hub says so in its own sections rather than in a footnote.',
+    related: [
+      { label: 'AI API dependency', href: '/glossary/ai-api-dependency' },
+      { label: 'Partial outage', href: '/glossary/partial-outage' },
+      { label: 'AI infrastructure hub', href: '/research/ai-infrastructure' },
+    ],
+  },
+  {
+    slug: 'observability-blind-spot',
+    term: 'Observability blind spot',
+    short: 'A failure mode your instrumentation is structurally unable to report.',
+    definition:
+      'An observability blind spot is a class of failure that a monitoring system cannot report, not because of a configuration gap but because of what it measures. The classic case: an availability metric cannot report the absence of measurement, because a missing probe produces no failed observation.',
+    problem:
+      'Blind spots are invisible by definition. A dashboard that has never shown a particular failure mode looks complete, and the gap is discovered during the incident it failed to report.',
+    whyItMatters:
+      'A blind spot is a property of the instrument, so it cannot be closed by adding more of the same signal. It needs a different measurement - density against expectation, control-plane health, an independent observation from outside the system being watched.',
+    example:
+      'A monitoring system that watches only your own services has a blind spot shaped exactly like your dependency graph. A scheduler that stops shows a healthy availability record and no observations. A cadence estimated from bucketed telemetry reports the chart resolution rather than the probe interval.',
+    howReliastra:
+      'RELIASTRA observes dependencies from outside both stacks, publishes the observation count beside every percentage, states what its records do not cover, and publishes audits of its own instrument when one is found - including the estimator defect documented in the probe-interval paper.',
+    related: [
+      { label: 'Observation density', href: '/glossary/observation-density' },
+      { label: 'Telemetry integrity', href: '/glossary/telemetry-integrity' },
+      { label: 'Probe interval estimation', href: '/research/measurement-integrity/probe-interval-from-bucketed-telemetry' },
     ],
   },
 ];
