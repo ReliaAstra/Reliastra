@@ -60,6 +60,7 @@ from app.modules.analytics.router import public_analytics_router
 from app.modules.email_events.router import router as email_webhook_router
 from app.modules.email_events.admin_router import router as email_admin_router
 from app.modules.email_center.router import router as email_center_router
+from app.modules.outreach.router import router as outreach_admin_router
 
 logger = logging.getLogger(__name__)
 
@@ -404,6 +405,7 @@ def create_app() -> FastAPI:
     app.include_router(email_webhook_router)
     app.include_router(email_admin_router)
     app.include_router(email_center_router)
+    app.include_router(outreach_admin_router)
 
     async def _run_health_checks() -> tuple[dict[str, Any], int]:
         checks: dict[str, Any] = {}

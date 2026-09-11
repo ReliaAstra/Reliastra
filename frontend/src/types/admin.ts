@@ -449,6 +449,56 @@ export interface Announcement {
 
 export type AnnouncementListResponse = PaginatedResponse<Announcement>;
 
+export interface OutreachOverview {
+  queued_today: number;
+  sent_today: number;
+  daily_cap: number;
+  warmup_ceiling: number;
+  paused: boolean;
+  pause_reason?: string | null;
+  totals: Record<string, number>;
+  kill_breakdown: Record<string, number>;
+}
+
+export interface OutreachLead {
+  id: string;
+  domain: string;
+  website: string;
+  agency_name?: string | null;
+  country?: string | null;
+  city?: string | null;
+  size_band?: string | null;
+  founder_name?: string | null;
+  contact_email?: string | null;
+  contact_route?: string | null;
+  linkedin_url?: string | null;
+  care_plan_url?: string | null;
+  care_plan_tiers?: string | null;
+  status: string;
+  kill_reason?: string | null;
+  seed_source?: string | null;
+  created_at: string;
+}
+
+export interface OutreachDraft {
+  id: string;
+  lead_id: string;
+  agency_name?: string | null;
+  domain?: string | null;
+  contact_email?: string | null;
+  subject: string;
+  body_text: string;
+  angle?: string | null;
+  status: string;
+  sent_at?: string | null;
+  send_error?: string | null;
+}
+
+export interface OutreachQaAnswer {
+  answer: string;
+  rows: Array<Record<string, unknown>>;
+}
+
 export interface PartnerStatsResponse {
   total_partners: number;
   active_partners: number;

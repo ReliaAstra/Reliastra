@@ -319,6 +319,38 @@ class Settings(BaseSettings):
         "Only sender aliases on this domain may be used, and only when the "
         "domain reports a verified status in the Resend account.",
     )
+    # ── Outreach hunter (cold agency outbound, isolated stream) ──────────
+    OUTREACH_FROM_EMAIL: str = Field(
+        default="Reliastra <hello@outreach.reliastra.com>",
+        description="From for outreach hunter sends. Must be on a Resend-verified "
+        "subdomain (e.g. outreach.reliastra.com) - never the product stream.",
+    )
+    OUTREACH_REPLY_TO: str = Field(
+        default="hello@reliastra.com",
+        description="Reply-To for outreach sends (monitored ImprovMX alias).",
+    )
+    OUTREACH_DAILY_CAP: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+        description="Warmup cap: reviewer sends allowed per day. Raise 5->10->20->35->50 "
+        "only after bounce<3% and complaint<0.1%. Hard ceiling is 50.",
+    )
+    OUTREACH_SEEDS: str = Field(
+        default="",
+        description="Comma-separated seed URLs for the daily hunter Beat task. "
+        "Empty disables the scheduled hunt (manual POST /v1/admin/outreach/hunt still works).",
+    )
+    OUTREACH_DISCOVERY_QUERIES: str = Field(
+        default="",
+        description="Newline-separated DuckDuckGo killer queries for daily discovery. "
+        "Empty uses the built-in care-plan/geo-TLD rotation (one query per day).",
+    )
+    OUTREACH_DISCOVERY_SOURCES: str = Field(
+        default="",
+        description="Comma-separated directory listing pages whose outbound links are "
+        "harvested as hunt candidates (e.g. partner directories). Max 10/day.",
+    )
     # ── Human inbound aliases (ImprovMX forwarding) ───────────────────
     SUPPORT_EMAIL: str = Field(default="support@reliastra.com")
     SECURITY_EMAIL: str = Field(default="security@reliastra.com")

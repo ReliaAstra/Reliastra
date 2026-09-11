@@ -42,6 +42,7 @@ from app.modules import (  # noqa: F401
     notifications,
     observations,
     organizations,
+    outreach,
     partners,
     referrals,
     status_pages,
@@ -66,6 +67,7 @@ from app.modules.incidents import models as _incident_models  # noqa: F401
 from app.modules.notifications import models as _notif_models  # noqa: F401
 from app.modules.observations import models as _obs_models  # noqa: F401
 from app.modules.organizations import models as _org_models  # noqa: F401
+from app.modules.outreach import models as _outreach_models  # noqa: F401
 from app.modules.partners import models as _partner_models  # noqa: F401
 from app.modules.referrals import models as _referral_models  # noqa: F401
 from app.modules.status_pages import models as _status_models  # noqa: F401
@@ -90,6 +92,7 @@ celery_app = Celery(
         "app.modules.billing.tasks",
         "app.modules.partners.tasks",
         "app.modules.email_events.tasks",
+        "app.modules.outreach.tasks",
     ],
 )
 
@@ -235,6 +238,22 @@ celery_app.conf.update(
         "billing-renewal-reminder": {
             "task": "app.modules.billing.tasks.notify_upcoming_renewals",
             "schedule": crontab(minute=40, hour=2),
+        },
+        # ── Outreach hunter ─────────────────────────────────────────
+        # Discovery runs first (free grounds -> candidates), then the seed
+        # hunt. Both are fetch -> kill-first -> upsert. Neither ever sends
+        # (sends are manual-only from the admin review queue).─
+        # Daily agency-hunter sweep over OUTREACH_SEEDS. No-op when empty.
+        # Fetch -> kill-first -> upsert. Never sends (sends are manual-only).
+        "outreach-discover-daily": {
+            "task": "app.modules.outreach.tasks.discover_daily",
+            "schedule": crontab(minute=30, hour=5),
+            "options": {"expires": 3600},
+        },
+        "outreach-hunt-daily": {
+            "task": "app.modules.outreach.tasks.hunt_daily",
+            "schedule": crontab(minute=20, hour=6),
+            "options": {"expires": 3600},
         },
     },
 )

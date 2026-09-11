@@ -35,6 +35,10 @@ import type {
   GrowthFunnelResponse,
   GrowthOverviewResponse,
   OperationsOverviewResponse,
+  OutreachLead,
+  OutreachOverview,
+  OutreachQaAnswer,
+  OutreachDraft,
   PartnerAdminListResponse,
   PartnerDetailResponse,
   PartnerStatsResponse,
@@ -417,6 +421,27 @@ export const adminApi = {
       method: 'PATCH',
       body: data,
     }),
+
+  outreachOverview: () => request<OutreachOverview>('/outreach/overview'),
+  outreachLeads: (params: QueryParams = {}) =>
+    request<OutreachLead[]>('/outreach/leads', { params }),
+  outreachReviewLead: (leadId: string, data: { status?: string; kill_reason?: string }) =>
+    request<OutreachLead>(`/outreach/leads/${leadId}`, { method: 'PATCH', body: data }),
+  outreachDrafts: (params: QueryParams = {}) =>
+    request<OutreachDraft[]>('/outreach/drafts', { params }),
+  outreachReviewDraft: (
+    draftId: string,
+    data: { subject?: string; body_text?: string; status?: string }
+  ) => request<OutreachDraft>(`/outreach/drafts/${draftId}`, { method: 'PATCH', body: data }),
+  outreachSendDraft: (draftId: string) =>
+    request<{ send_id: string; resend_id: string | null; status: string }>(
+      `/outreach/drafts/${draftId}/send`,
+      { method: 'POST' }
+    ),
+  outreachHunt: (data: { urls: string[]; seed_source?: string }) =>
+    request<{ accepted: number }>('/outreach/hunt', { method: 'POST', body: data }),
+  outreachQa: (q: string) =>
+    request<OutreachQaAnswer>('/outreach/qa', { params: { q } }),
 
   partnerStats: () => request<PartnerStatsResponse>('/partners/stats'),
   partners: (params: QueryParams = {}) =>
