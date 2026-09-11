@@ -1,5 +1,13 @@
 import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
-import { RESEARCH_ARTICLES, RESEARCH_HUBS, researchHubRoute, researchRoute } from '@/lib/routes';
+import {
+  RESEARCH_ARTICLES,
+  RESEARCH_CATEGORIES,
+  RESEARCH_HUBS,
+  researchCategoryRoute,
+  researchHubRoute,
+  researchRoute,
+} from '@/lib/routes';
+import { researchPaper } from '@/lib/research/corpus';
 
 /**
  * /llms-full.txt - deeper machine-readable reference: full concept
@@ -11,8 +19,67 @@ export function GET() {
       `### ${g.term}\n${g.definition}\nProblem: ${g.problem}\nWhy it matters: ${g.whyItMatters}\nExample: ${g.example}\nRELIASTRA approach: ${g.howReliastra}\nURL: ${SITE_URL}/glossary/${g.slug}`
   ).join('\n\n');
 
-  const research = RESEARCH_ARTICLES.map(
-    (a) => `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} - ${SITE_URL}${researchRoute(a.slug)}`
+  const research = RESEARCH_ARTICLES.map((a) => {
+    const url = `${SITE_URL}${researchRoute(a.slug)}`;
+    const p = researchPaper(a.slug);
+    if (!p) {
+      return `- ${a.title} (${a.category}, ${a.publishedAt}): ${a.summary} - ${url}`;
+    }
+    const lines = [
+      `### ${a.title}`,
+      `URL: ${url}`,
+      `Published: ${p.publishedAt}${p.updatedAt ? ` · Updated: ${p.updatedAt}` : ''}`,
+      `Category: ${a.category} · Type: ${p.researchType} · Evidence basis: ${p.evidenceBasis}`,
+      `Domains: ${p.domains.join(', ')}`,
+      `Research question: ${p.researchQuestion}`,
+      `Abstract: ${p.abstract}`,
+      `Scope: ${p.scope}`,
+      `Methodology: ${p.methodologySummary}`,
+      'Key findings:',
+      ...p.keyFindings.map((f, i) => `  ${i + 1}. [${f.basis}] ${f.claim}`),
+      `Entities: ${p.entities
+        .map((e) => `${e.role}=${e.name}${e.note ? ` (${e.note})` : ''}`)
+        .join('; ')}`,
+    ];
+    if (p.observation) {
+      lines.push(
+        `Measurement window: ${p.observation.startedAt} to ${p.observation.endedAt} · ` +
+          `source ${p.observation.source} · protocol ${p.observation.protocol} · ` +
+          `regions ${p.observation.regions.join(', ')} · ` +
+          `observations ${p.observation.observations ?? 'not counted'}`
+      );
+    }
+    if (p.dataset) {
+      lines.push(
+        `Dataset: ${p.dataset.name} (${p.dataset.format}, ${p.dataset.license}) at ${p.dataset.path} in the ReliaAstra/Reliastra repository`
+      );
+    }
+    if (p.artifacts.length) {
+      lines.push(
+        `Artifacts: ${p.artifacts
+          .map((x) => `${x.kind}: ${x.label}${x.path ? ` (${x.path})` : ''}`)
+          .join('; ')}`
+      );
+    }
+    lines.push('Limitations:', ...p.limitations.map((l) => `  - ${l}`));
+    lines.push(
+      'Recommendations:',
+      ...p.recommendations.map((r) => `  - ${r.title}: ${r.detail}`)
+    );
+    lines.push(
+      'References:',
+      ...p.references.map(
+        (r, i) =>
+          `  [${i + 1}] ${r.title}${r.identifier ? ` (${r.identifier})` : ''}${
+            r.publisher ? `, ${r.publisher}` : ''
+          }${r.url ? `, ${r.url}` : ''}${r.accessedAt ? `, accessed ${r.accessedAt}` : ''}`
+      )
+    );
+    return lines.join('\n');
+  }).join('\n\n');
+
+  const categories = RESEARCH_CATEGORIES.map(
+    (c) => `- ${c.title}: ${c.lede} - ${SITE_URL}${researchCategoryRoute(c.slug)}`
   ).join('\n');
 
   const hubs = RESEARCH_HUBS.map(
@@ -60,6 +127,8 @@ ${glossary}
 ## Research hubs
 
 ${hubs}
+
+${categories}
 
 ## Research index
 

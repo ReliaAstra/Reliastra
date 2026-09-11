@@ -1,0 +1,7 @@
+window,window_seconds,expected_observations,total_observations,density_ratio,uptime_percentage
+1h,3600,12,12,1.0000,100.0
+6h,21600,72,69,0.9580,100.0
+24h,86400,288,277,0.9620,100.0
+7d,604800,2016,595,0.2950,100.0
+30d,2592000,8640,595,0.0690,100.0
+90d,7776000,25920,595,0.0230,100.0

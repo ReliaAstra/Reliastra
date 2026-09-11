@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ArticleTemplate } from '@/components/content/article-template';
+import { ResearchPaperTemplate } from '@/components/research/research-paper';
+import { researchPaper } from '@/lib/research/corpus';
 import { SiteShell } from '@/components/site/site-shell';
 import { Breadcrumb, Container } from '@/components/site/primitives';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -122,7 +123,7 @@ export default async function HubArticlePage({ params }: Params) {
         </Container>
       </div>
 
-      <ArticleTemplate
+      <ResearchPaperTemplate
         meta={{
           title: article.title,
           summary: article.summary,
@@ -130,9 +131,12 @@ export default async function HubArticlePage({ params }: Params) {
           ...(updatedAt ? { updatedAt } : {}),
           category: article.category,
           tags: [...article.tags],
-          organization: 'Reliastra',
           path: researchRoute(slug),
+          authorId: researchPaper(slug)?.author,
+          parent: { name: hubTitle, href: researchHubRoute(HUB) },
         }}
+        paper={researchPaper(slug)}
+        sections={content.sections}
         evidence={content.evidence}
         methodology={content.methodology}
         related={content.related}
@@ -143,7 +147,7 @@ export default async function HubArticlePage({ params }: Params) {
         ]}
       >
         {content.body}
-      </ArticleTemplate>
+      </ResearchPaperTemplate>
     </SiteShell>
   );
 }

@@ -149,6 +149,42 @@ export const RESEARCH_HUBS = [
 export type ResearchHubSlug = (typeof RESEARCH_HUBS)[number]['slug'];
 
 /**
+ * Research categories. A category is a URL segment under `/research` that
+ * groups papers by technical discipline: `/research/{category}/{slug}`.
+ *
+ * Two rules, both enforced by tests:
+ *
+ *  1. A category is created only when a paper exists for it. An empty
+ *     category is a thin page, and thin pages are not indexed.
+ *  2. A category slug must not collide with a hub slug or with a top-level
+ *     article slug - all three live at `/research/{segment}`.
+ *
+ * A category page is a real file (`src/app/research/{slug}/page.tsx`), not a
+ * dynamic route. That is deliberate: it keeps the segment free of the
+ * `[slug]` route that serves top-level articles, gives each category its own
+ * metadata, and makes adding a discipline a reviewed act rather than a
+ * parameter.
+ */
+export const RESEARCH_CATEGORIES = [
+  {
+    slug: 'measurement-integrity',
+    title: 'Measurement integrity',
+    lede:
+      'What a reliability record actually measures, what it silently omits, and the audits that expose the difference. ' +
+      'Papers here treat RELIASTRA’s own public record as the primary subject.',
+  },
+  {
+    slug: 'cloud-security',
+    title: 'Cloud & AI infrastructure security',
+    lede:
+      'Trust boundaries, failure domains and attack surface in architectures that depend on cloud control planes and hosted model APIs.',
+  },
+] as const;
+
+export type ResearchCategorySlug = (typeof RESEARCH_CATEGORIES)[number]['slug'];
+
+
+/**
  * Research articles. The slug is the URL segment, so this list *is* the set of
  * valid `/research/[slug]` routes: `generateStaticParams` and the sitemap both
  * read it, which means a slug cannot exist in one place and not the other.
@@ -208,6 +244,46 @@ export const RESEARCH_ARTICLES = [
     category: 'AI infrastructure',
     tags: ['Incident response', 'Evidence', 'Attribution'],
   },
+  {
+    slug: 'status-page-payload-anatomy',
+    hub: 'ai-infrastructure',
+    title: 'What a status-page payload actually asserts',
+    summary:
+      'RELIASTRA read the machine-readable summary behind OpenAI’s status site: 25 components, one aggregate indicator, and a last-change timestamp sixty-four days old. A structural analysis of what a status page can and cannot support as evidence.',
+    publishedAt: '2026-09-11',
+    category: 'AI infrastructure',
+    tags: ['Status pages', 'Incident evidence', 'OpenAI'],
+  },
+  {
+    slug: 'availability-record-audit',
+    section: 'measurement-integrity',
+    title: 'How much evidence stands behind a published availability figure?',
+    summary:
+      'RELIASTRA audited its own public availability record and found the 30- and 90-day windows returning aggregates identical to the 7-day window, and roughly 2.1 days of observations behind a "90 days" label. Three checks - window monotonicity, history depth, expected-versus-observed density - that expose a thin denominator in any availability record.',
+    publishedAt: '2026-09-11',
+    category: 'Measurement integrity',
+    tags: ['Availability', 'Observability', 'Audit', 'Telemetry integrity'],
+  },
+  {
+    slug: 'probe-interval-from-bucketed-telemetry',
+    section: 'measurement-integrity',
+    title: 'Why an interval estimated from bucketed telemetry converges on the bucket length',
+    summary:
+      'A production record printed "about every 60 seconds" for a dependency probed every 300 seconds, and printed 300 seconds for the same schedule elsewhere on the same page. The estimator is bounded above by the resolution it is fed. The bound, the proof, the fix and the regression test.',
+    publishedAt: '2026-09-11',
+    category: 'Measurement integrity',
+    tags: ['Telemetry', 'Estimation', 'Observability', 'Defect analysis'],
+  },
+  {
+    slug: 'ai-api-trust-boundary',
+    section: 'cloud-security',
+    title: 'The trust boundary of an AI API dependency',
+    summary:
+      'What changes about an application’s trust boundary when its model is a network call: prompt content leaving the domain, routing the consumer cannot observe, retries that are a cost control as well as a reliability one - and the controls that follow from each.',
+    publishedAt: '2026-09-11',
+    category: 'Cloud security',
+    tags: ['Zero trust', 'AI infrastructure', 'Trust boundaries', 'Dependency security'],
+  },
 ] as const;
 
 export type ResearchSlug = (typeof RESEARCH_ARTICLES)[number]['slug'];
@@ -222,9 +298,11 @@ export function researchHubArticles(hub: ResearchHubSlug) {
   return RESEARCH_ARTICLES.filter((a) => 'hub' in a && a.hub === hub);
 }
 
-/** Articles that live at the top level of `/research` (no hub). */
+/** Articles that live at the top level of `/research` (no hub, no category). */
 export function researchStandaloneArticles() {
-  return RESEARCH_ARTICLES.filter((a) => !('hub' in a && a.hub));
+  return RESEARCH_ARTICLES.filter(
+    (a) => !('hub' in a && a.hub) && !('section' in a && a.section)
+  );
 }
 
 /** Canonical URL of a research hub. */
@@ -232,14 +310,40 @@ export function researchHubRoute(hub: ResearchHubSlug | string): string {
   return `${PUBLIC_ROUTES.research}/${hub}`;
 }
 
+/** Canonical URL of a research category. */
+export function researchCategoryRoute(slug: ResearchCategorySlug | string): string {
+  return `${PUBLIC_ROUTES.research}/${slug}`;
+}
+
+/** Articles belonging to a category, newest first. */
+export function researchCategoryArticles(slug: string) {
+  return RESEARCH_ARTICLES.filter((a) => 'section' in a && a.section === slug);
+}
+
+/** True when `slug` is a declared research category. */
+export function isResearchCategory(slug: string): slug is ResearchCategorySlug {
+  return RESEARCH_CATEGORIES.some((c) => c.slug === slug);
+}
+
 /**
  * Build the single canonical article URL from a known slug. Hub articles
- * resolve under their hub; everything else under `/research` directly.
+ * resolve under their hub, category articles under their category, and
+ * everything else under `/research` directly.
+ *
+ * This is the only function allowed to build an article URL. Published URLs
+ * are stable: an article that already resolves at `/research/{slug}` must
+ * never be moved to `/research/{category}/{slug}` after publication, because
+ * the old address is already in sitemaps, backlinks and cached SERPs. New
+ * papers take the category form from the start; the five papers published
+ * before categories existed keep their addresses.
  */
 export function researchRoute(slug: ResearchSlug | string): string {
   const article = researchArticle(slug);
   if (article && 'hub' in article && article.hub) {
     return `${researchHubRoute(article.hub)}/${slug}`;
+  }
+  if (article && 'section' in article && article.section) {
+    return `${researchCategoryRoute(article.section)}/${slug}`;
   }
   return `${PUBLIC_ROUTES.research}/${slug}`;
 }

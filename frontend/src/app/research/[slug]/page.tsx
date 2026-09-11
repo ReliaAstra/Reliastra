@@ -1,11 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { ArticleTemplate } from '@/components/content/article-template';
+import { ResearchPaperTemplate } from '@/components/research/research-paper';
+import { researchPaper } from '@/lib/research/corpus';
 import { SiteShell } from '@/components/site/site-shell';
 import { Breadcrumb, Container } from '@/components/site/primitives';
 import { JsonLd } from '@/components/seo/json-ld';
-import { RESEARCH_ARTICLES, researchRoute, PUBLIC_ROUTES } from '@/lib/routes';
+import {
+  RESEARCH_ARTICLES,
+  researchHubRoute,
+  researchRoute,
+  researchStandaloneArticles,
+  PUBLIC_ROUTES,
+} from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import { breadcrumbJsonLd, canonicalUrl, SITE_URL } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
@@ -13,19 +20,18 @@ import { isoDate } from '@/lib/research-meta';
 type Params = { params: Promise<{ slug: string }> };
 
 /**
- * Statically generate exactly the published slugs.
+ * Statically generate exactly the published top-level slugs.
  *
  * Derived from the same `RESEARCH_ARTICLES` constant that the footer links, the
  * research index and the sitemap use, so a linked slug and a generated route
  * cannot drift apart - the divergence that produced the original 404s.
  */
 export function generateStaticParams() {
-  // Only top-level articles: hub-qualified slugs live at
-  // `/research/{hub}/{slug}` and are redirected from here, so no article is
-  // ever reachable at two addresses.
-  return RESEARCH_ARTICLES.filter((a) => !('hub' in a && a.hub)).map((article) => ({
-    slug: article.slug,
-  }));
+  // Top-level articles only. Hub-qualified slugs live at
+  // `/research/{hub}/{slug}` and category articles at
+  // `/research/{category}/{slug}`; both are redirected from here, so no
+  // article is ever reachable at two addresses.
+  return researchStandaloneArticles().map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -81,10 +87,10 @@ export default async function ResearchArticlePage({ params }: Params) {
     notFound();
   }
 
-  // A hub-qualified slug asked of the top-level route is answered by its
-  // canonical address - a permanent redirect, never a second render, so the
-  // corpus cannot fork into two indexable URLs.
-  if ('hub' in article && article.hub) {
+  // A hub- or category-qualified slug asked of the top-level route is
+  // answered by its canonical address - a permanent redirect, never a second
+  // render, so the corpus cannot fork into two indexable URLs.
+  if (researchRoute(slug) !== `/research/${slug}`) {
     permanentRedirect(researchRoute(slug));
   }
 
@@ -118,7 +124,7 @@ export default async function ResearchArticlePage({ params }: Params) {
         </Container>
       </div>
 
-      <ArticleTemplate
+      <ResearchPaperTemplate
         meta={{
           title: article.title,
           summary: article.summary,
@@ -126,9 +132,11 @@ export default async function ResearchArticlePage({ params }: Params) {
           ...(updatedAt ? { updatedAt } : {}),
           category: article.category,
           tags: [...article.tags],
-          organization: 'Reliastra',
           path: researchRoute(slug),
+          authorId: researchPaper(slug)?.author,
         }}
+        paper={researchPaper(slug)}
+        sections={content.sections}
         evidence={content.evidence}
         methodology={content.methodology}
         related={content.related}
@@ -142,7 +150,7 @@ export default async function ResearchArticlePage({ params }: Params) {
         ]}
       >
         {content.body}
-      </ArticleTemplate>
+      </ResearchPaperTemplate>
     </SiteShell>
   );
 }

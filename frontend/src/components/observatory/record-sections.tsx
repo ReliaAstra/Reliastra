@@ -580,7 +580,7 @@ export function NetworkSection({
             columns={columns}
             rows={rows}
             rowKey={(r) => r.region}
-            caption="Cadence is measured from the density of observations in the last hour, not read from a configured schedule: the public API does not expose the check interval, so this record reports the interval it can verify."
+            caption="Cadence is estimated from the spacing of observations in the last hour, not read from a configured schedule: the public API does not expose the check interval, so this record reports the interval it can verify. An interval longer than the chart resolution is read from the gap between observations, not from their density."
           />
         ) : (
           <Notice title="No regions declared">

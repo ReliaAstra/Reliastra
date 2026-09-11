@@ -70,8 +70,15 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - Measurement methodology: ${SITE_URL}/research/how-reliastra-measures-vendor-reliability
 - “Is OpenAI down?” (what an honest answer looks like): ${SITE_URL}/research/ai-infrastructure/is-openai-down
 - AI API outage evidence playbook: ${SITE_URL}/research/ai-infrastructure/ai-api-outage-evidence
+- What a status-page payload actually asserts: ${SITE_URL}/research/ai-infrastructure/status-page-payload-anatomy
 - The Dependency Gap: ${SITE_URL}/research/the-dependency-gap
 - Research agenda: ${SITE_URL}/research/reliastra-research-agenda
+- Measurement integrity (category): ${SITE_URL}/research/measurement-integrity
+- Availability-record audit (how much evidence is behind a published %): ${SITE_URL}/research/measurement-integrity/availability-record-audit
+- Probe-interval estimation from bucketed telemetry: ${SITE_URL}/research/measurement-integrity/probe-interval-from-bucketed-telemetry
+- Cloud & AI infrastructure security (category): ${SITE_URL}/research/cloud-security
+- The trust boundary of an AI API dependency: ${SITE_URL}/research/cloud-security/ai-api-trust-boundary
+- Research artifacts and datasets (reproducible): https://github.com/ReliaAstra/Reliastra/tree/main/research
 - About: ${SITE_URL}/about
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status
@@ -110,6 +117,18 @@ Missed probes are never backfilled. Retention follows the plan (24h Free,
 - Server-to-server responses only; not end-user experience.
 - Authenticated checks use customer-supplied credentials; a rotation can present as a target failure.
 - Public Track pages show aggregated posture only for vendors made public - never customer endpoints.
+
+## Research corpus (what it is and is not)
+
+- Every paper states a research question, its evidence basis, its limitations
+  and its sources. Findings are labelled measured, derived, sourced or reasoned.
+- Papers built on measurement carry a captured dataset and a script under
+  research/ in the monorepo, so the arithmetic can be re-run against the same
+  bytes.
+- Two published papers audit RELIASTRA's own public record and report defects
+  in it. That is deliberate: an availability record that cannot be audited from
+  the outside is not evidence.
+- Nothing in the corpus is synthetic, backfilled or estimated to fill a gap.
 
 ## Contact
 
