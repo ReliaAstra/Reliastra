@@ -377,10 +377,11 @@ def create_app() -> FastAPI:
     # a dashboard-first onboarding) is now met, so the module that was always
     # preserved in app/modules/agencies/ is exposed again.
     #
-    # Authorization is unchanged: every route is org-scoped through
-    # get_current_org, and both writes carry require_admin. Visibility of the
-    # surface is a separate concern, gated client-side on
-    # Organization.has_agency_mode.
+    # Authorization: every route is org-scoped through get_current_org,
+    # both writes carry require_admin, and the service enforces the
+    # client-groups / client-reports entitlements (Pro and above, including
+    # the 14-day trial). Visibility of the surface is a separate concern,
+    # gated client-side on the same entitlement.
     app.include_router(agencies_router)
     app.include_router(verification_router)
     app.include_router(referrals_router)

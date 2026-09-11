@@ -125,10 +125,10 @@ async def test_initialize_payment(monkeypatch):
     )
     assert response.reference == "ref_test"
     assert response.currency == "NGN"
-    assert response.amount_minor == 2_511_800
+    assert response.amount_minor == 5_155_800
     client.initialize_transaction.assert_awaited_once()
     sent = client.initialize_transaction.await_args.kwargs
-    assert sent["amount"] == 2_511_800
+    assert sent["amount"] == 5_155_800
     assert sent["currency"] == "NGN"
 
 
@@ -149,13 +149,41 @@ async def test_initialize_payment_refuses_without_a_rate(monkeypatch):
     client.initialize_transaction = AsyncMock()
 
     service = BillingService(repository=repository, client=client)
-    with pytest.raises(ValidationException, match="being finalized"):
+    with pytest.raises(ValidationException, match="cannot price this plan"):
         await service.initialize_payment(
             AsyncMock(),
             org_id,
             InitializePaymentRequest(plan="pro", email="owner@example.com", terms_accepted=True),
         )
     client.initialize_transaction.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_initialize_payment_refusal_states_the_calculated_price(monkeypatch):
+    """No rate => refusal, but the message still shows the $39 list price."""
+    import pytest
+
+    from app.core.exceptions import ValidationException
+
+    _stub_fx_rate(monkeypatch, None)
+    org_id = uuid.uuid4()
+    repository = MagicMock()
+    repository.get_org = AsyncMock(
+        return_value=MagicMock(id=org_id, plan=Plan.FREE.value)
+    )
+    client = MagicMock()
+    client.initialize_transaction = AsyncMock()
+
+    service = BillingService(repository=repository, client=client)
+    with pytest.raises(ValidationException) as exc_info:
+        await service.initialize_payment(
+            AsyncMock(),
+            org_id,
+            InitializePaymentRequest(plan="pro", email="owner@example.com", terms_accepted=True),
+        )
+    assert "$39.00 (USD)" in str(exc_info.value)
+    assert "being finalized" not in str(exc_info.value).lower()
+    assert "pending" not in str(exc_info.value).lower()
 
 
 @pytest.mark.asyncio

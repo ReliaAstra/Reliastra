@@ -222,8 +222,8 @@ test.describe('checkout entry and return', () => {
     const receiptText = decodeMailRaw(receipt!.raw);
     expectTextContains(
       receiptText,
-      'Product price: $19.00 (USD)',
-      'Actual charge: ₦31,350.00 (NGN)',
+      'Product price: $39.00 (USD)',
+      'Actual charge: ₦64,350.00 (NGN)',
       'Payment provider: Paystack',
     );
     // The reference belongs on the receipt: it is the only thing a customer can

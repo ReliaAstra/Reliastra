@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export const metadata = buildMetadata({
   title: 'Pricing - Free, Pro and Enterprise',
   description:
-    'RELIASTRA pricing: Free (3 dependencies, 1-minute checks), Pro $19/month (50 dependencies, 15-second checks, attribution and evidence), Enterprise (custom scale, client isolation, white-label). Every plan limit is enforced server-side.',
+    'RELIASTRA pricing: Free (3 dependencies, 1-minute checks), Pro $39/month (50 dependencies, 15-second checks, attribution, evidence, client groups and client-facing reports), Enterprise (custom scale, white-label). Every plan limit is enforced server-side.',
   path: PUBLIC_ROUTES.pricing,
 });
 

@@ -57,7 +57,7 @@ const CAPABILITIES: Array<{ name: string; detail: string }> = [
   {
     name: 'Enterprise controls and scalable monitoring',
     detail:
-      'The Enterprise plan’s custom limits, retention and monitoring controls.',
+      'Enterprise-only: custom limits, retention and monitoring controls beyond the Pro workspace.',
   },
   {
     name: 'Clear organization and client scope',
@@ -133,7 +133,7 @@ export function AgencyGatedExperience() {
               Talk to RELIASTRA
             </Link>
             <Link href={PUBLIC_ROUTES.pricing} className="obc-btn">
-              Review Enterprise capabilities
+              Review plans
             </Link>
           </>
         }
@@ -183,8 +183,10 @@ export function AgencyGatedExperience() {
       >
         <div className="max-w-[72ch] space-y-4 text-[13px] leading-[1.7] text-[var(--obc-text-2)]">
           <p>
-            Agency operations is available to Enterprise organizations and
-            organizations explicitly enabled by RELIASTRA.
+            Agency operations is available to Pro and Enterprise
+            organizations, including the 14-day Pro trial, and to
+            organizations explicitly enabled by RELIASTRA. White-label
+            branding remains an Enterprise capability.
           </p>
           <p className="text-[12.5px] leading-[1.65] text-[var(--obc-text-3)]">
             Enterprise is engaged through RELIASTRA sales; there is no
@@ -197,7 +199,7 @@ export function AgencyGatedExperience() {
             Talk to RELIASTRA
           </Link>
           <Link href={PUBLIC_ROUTES.pricing} className="obc-btn">
-            Review Enterprise capabilities
+            Review plans
           </Link>
         </div>
       </Section>

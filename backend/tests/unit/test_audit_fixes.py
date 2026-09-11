@@ -321,14 +321,14 @@ def test_payment_price_is_live_converted():
 
     ``resolve_payment_price`` converts ``USD minor units x rate``. With no
     rate it refuses rather than reusing the USD minor units, which would bill
-    1900 (i.e. ₦19.00) for a $19 plan.
+    3900 (i.e. ₦39.00) for a $39 plan.
     """
     from app.core import payment_pricing
 
     priced = payment_pricing.resolve_payment_price("pro", "monthly", rate=1322.0)
-    assert priced.product_amount == 1900  # USD list price, untouched
+    assert priced.product_amount == 3900  # USD list price, untouched
     assert priced.payment_currency == "NGN"
-    assert priced.payment_amount == 2_511_800
+    assert priced.payment_amount == 5_155_800
     assert priced.is_configured is True
 
     unpriced = payment_pricing.resolve_payment_price("pro", "monthly")
@@ -337,7 +337,7 @@ def test_payment_price_is_live_converted():
     with pytest.raises(payment_pricing.PaymentPriceNotConfigured):
         payment_pricing.checkout_amount("pro", "monthly")
     # Still derived from the USD price: the list price is unchanged by any rate.
-    assert unpriced.product_amount == 1900
+    assert unpriced.product_amount == 3900
 
 
 # ---------------------------------------------------------------------------

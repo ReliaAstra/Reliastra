@@ -12,6 +12,7 @@ import {
 import { api } from '@/lib/dashboard/api';
 import { useAppStore } from '@/stores/app-store';
 import { applicationIndex, attributeEvidence } from '@/lib/agency/portfolio';
+import { hasAgencyWorkspace } from '@/lib/agency/access';
 import { formatUtc, incidentCode, reportCode, timeAgo } from '@/lib/dashboard/format';
 import {
   Empty,
@@ -41,13 +42,15 @@ import type { EvidenceReport } from '@/lib/dashboard/types';
  */
 export function ReportsPage() {
   const org = useAppStore((s) => s.org);
+  const plan = useAppStore((s) => s.plan);
+  const agencyEnabled = hasAgencyWorkspace(org, plan);
   const reports = useEvidence();
   const incidents = useIncidents(undefined, 100);
   const deps = useDependencies();
-  const clients = useClients(Boolean(org?.has_agency_mode));
+  const clients = useClients(agencyEnabled);
 
   const clientIds = useMemo(() => (clients.data ?? []).map((c) => c.id), [clients.data]);
-  const applications = useAllApplications(clientIds, Boolean(org?.has_agency_mode));
+  const applications = useAllApplications(clientIds, agencyEnabled);
   const index = useMemo(
     () => applicationIndex(applications.data ?? []),
     [applications.data]
@@ -65,7 +68,7 @@ export function ReportsPage() {
     [reports.data, incidents.data, deps.data, index, clients.data]
   );
 
-  const agency = Boolean(org?.has_agency_mode);
+  const agency = agencyEnabled;
 
   const columns: Column<(typeof attributed)[number]>[] = [
     {

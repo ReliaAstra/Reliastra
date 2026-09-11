@@ -124,20 +124,20 @@ async def test_initialize_sends_the_converted_ngn_amount_and_currency(
     assert res.status_code == 200, res.text
     body = captured["body"]
     # The exact Paystack contract: minor units of NGN + explicit currency.
-    assert body["amount"] == 2_511_800
+    assert body["amount"] == 5_155_800
     assert body["currency"] == "NGN"
     assert body["amount"] != 3900, "USD minor units must never be billed as Naira"
     # Metadata carries both sides for reconciliation and the webhook path.
     meta = body["metadata"]
     assert meta["currency"] == "NGN"
-    assert meta["amount_minor"] == "2511800"
+    assert meta["amount_minor"] == "5155800"
     assert meta["product_currency"] == "USD"
-    assert meta["product_amount_minor"] == "1900"
+    assert meta["product_amount_minor"] == "3900"
     payload = res.json()
-    assert payload["amount_minor"] == 2_511_800
+    assert payload["amount_minor"] == 5_155_800
     assert payload["currency"] == "NGN"
-    assert payload["amount_display"] == "\u20a625,118.00 (NGN)"
-    assert payload["product_price_display"] == "$19.00 (USD)"
+    assert payload["amount_display"] == "\u20a651,558.00 (NGN)"
+    assert payload["product_price_display"] == "$39.00 (USD)"
     assert payload["payment_provider"] == "Paystack"
 
 
@@ -152,7 +152,7 @@ async def test_initialize_annual_uses_the_annual_payment_price(
         json={"plan": "pro", "billing_interval": "annual", "terms_accepted": True},
     )
     assert res.status_code == 200, res.text
-    assert captured["body"]["amount"] == 25_118_000
+    assert captured["body"]["amount"] == 51_558_000
     assert captured["body"]["currency"] == "NGN"
 
 
@@ -208,7 +208,8 @@ async def test_no_rate_disables_checkout_instead_of_guessing(
     # RELIASTRA's own words instead of surfacing a provider error.
     assert body["error"]["code"] == "CHECKOUT_FAILED"
     assert {"field": "reason", "issue": "price_not_configured"} in body["error"]["details"]
-    assert "being finalized" in body["error"]["message"]
+    assert "cannot price this plan" in body["error"]["message"]
+    assert "$39.00 (USD)" in body["error"]["message"]
     inits = [c for c in captured["calls"] if "transaction/initialize" in c[0]]
     assert inits == [], "no checkout may start without a rate to convert with"
 
@@ -223,7 +224,7 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
         "status": True,
         "data": {
             "status": "success",
-            "amount": 2_511_800,
+            "amount": 5_155_800,
             "currency": "NGN",
             "reference": reference,
             "id": 12345,
@@ -259,8 +260,8 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
     payload = res.json()
     assert payload["verified"] is True
     assert payload["currency"] == "NGN"
-    assert payload["amount_minor"] == 2_511_800
-    assert payload["product_price_display"] == "$19.00 (USD)"
+    assert payload["amount_minor"] == 5_155_800
+    assert payload["product_price_display"] == "$39.00 (USD)"
 
     hist = await async_client.get(
         "/v1/billing/transactions", headers=auth_data["headers"]
@@ -268,10 +269,10 @@ async def test_verify_persists_the_actual_charge_and_history_lists_it(
     assert hist.status_code == 200, hist.text
     items = hist.json()["items"]
     row = next(t for t in items if t["reference"] == reference)
-    assert row["charged_amount_minor"] == 2_511_800
+    assert row["charged_amount_minor"] == 5_155_800
     assert row["charged_currency"] == "NGN"
-    assert row["charged_amount_display"] == "\u20a625,118.00 (NGN)"
-    assert row["product_amount_minor"] == 1900
+    assert row["charged_amount_display"] == "\u20a651,558.00 (NGN)"
+    assert row["product_amount_minor"] == 3900
     assert row["product_currency"] == "USD"
     assert row["status"] == "success"
     assert row["provider"].lower() == "paystack"
@@ -299,7 +300,7 @@ async def test_refund_webhook_marks_the_persisted_transaction(
         "status": True,
         "data": {
             "status": "success",
-            "amount": 2_511_800,
+            "amount": 5_155_800,
             "currency": "NGN",
             "reference": reference,
             "paid_at": "2026-01-05T10:00:00+00:00",
@@ -347,8 +348,14 @@ async def test_pricing_endpoint_transparency_triple(async_client):
     assert res.status_code == 200
     data = res.json()
     pro = next(p for p in data["plans"] if p["plan"] == "pro")
-    assert pro["transparency"]["monthly"]["product_price"] == "$19.00 (USD)"
-    assert pro["transparency"]["monthly"]["actual_charge"] == "\u20a625,118.00 (NGN)"
+    assert pro["price_usd"] == 39
+    assert pro["price_annual_usd"] == 390
+    assert pro["features"]["client_groups_isolation"] is True
+    assert pro["features"]["client_facing_reports"] is True
+    assert pro["features"]["agency_branding"] is False
+    assert pro["features"]["custom_branded_evidence"] is False
+    assert pro["transparency"]["monthly"]["product_price"] == "$39.00 (USD)"
+    assert pro["transparency"]["monthly"]["actual_charge"] == "\u20a651,558.00 (NGN)"
     assert pro["transparency"]["monthly"]["payment_provider"] == "Paystack"
     ent = next(p for p in data["plans"] if p["plan"] == "enterprise")
     assert ent["billing_availability"] == "contact_sales"
@@ -379,7 +386,7 @@ async def test_commercial_terms_are_public(async_client):
     res = await async_client.get("/v1/billing/terms")
     assert res.status_code == 200, res.text
     body = res.json()
-    assert body["pro_price_usd"] == 19
+    assert body["pro_price_usd"] == 39
     assert body["refund_period_days"] is None
     assert body["trial_length_days"] == 14
     assert body["trial_requires_payment"] is False
@@ -399,7 +406,7 @@ async def test_cancel_resume_and_invoice_document(async_client, auth_data, mocke
         "status": True,
         "data": {
             "status": "success",
-            "amount": 2_511_800,
+            "amount": 5_155_800,
             "currency": "NGN",
             "reference": reference,
             "paid_at": paid_at,
@@ -450,7 +457,7 @@ async def test_cancel_resume_and_invoice_document(async_client, auth_data, mocke
     )
     assert invoice.status_code == 200, invoice.text
     assert "text/html" in invoice.headers["content-type"]
-    assert "$19.00 (USD)" in invoice.text
+    assert "$39.00 (USD)" in invoice.text
     assert reference in invoice.text
     receipt = await async_client.get(
         f"/v1/billing/transactions/{row['id']}/receipt",

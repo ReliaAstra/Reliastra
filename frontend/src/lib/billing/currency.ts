@@ -177,7 +177,7 @@ export function isCheckoutReady(info: PaymentCurrencyInfo | null | undefined): b
 
 /**
  * The resolved payment amount for a plan/interval, as a ready-made string
- * from the backend (e.g. "\u20a625,118.00 (NGN)"). `null` when no rate was
+ * from the backend (e.g. "\u20a651,558.00 (NGN)"). `null` when no rate was
  * available to convert the price - callers must then omit the amount rather
  * than compute one.
  */

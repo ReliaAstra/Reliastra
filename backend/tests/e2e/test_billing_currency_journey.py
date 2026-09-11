@@ -435,7 +435,7 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     card_note = _flat(per_card["text"])
     assert "nigerian naira" in card_note or "ngn" in card_note
     # The mandatory triple: Product price / Actual charge / Payment provider.
-    assert "product price $19.00 (usd)" in card_note, (
+    assert "product price $39.00 (usd)" in card_note, (
         "every card names the USD product price, even on the marketing page"
     )
     assert re.search(r"actual charge ₦[\d,]+\.\d{2} ?\(ngn\) ?per month", card_note), (
@@ -444,7 +444,7 @@ async def test_pricing_page_discloses_the_charged_currency(page: Any, viewport) 
     assert re.search(r"payment provider paystack", card_note), (
         "the card must name who takes the money"
     )
-    assert "$19" in per_card["card"], (
+    assert "$39" in per_card["card"], (
         "the USD list price stays visible - the disclosure explains, it hides nothing"
     )
 
@@ -521,7 +521,7 @@ async def test_upgrade_flow_confirms_then_charges_the_converted_amount(
         "the plan chooser carries the disclosure, not only the payment step"
     )
     resolved = api.get("/billing/currency").json()["plan_payment_amounts"]["pro"]
-    # The digits of the resolved amount (e.g. "₦25,118.00 (NGN)") are exactly
+    # The digits of the resolved amount (e.g. "₦51,558.00 (NGN)") are exactly
     # the minor units the backend converted from the USD price at the live
     # rate, so every amount below is derived from the API rather than from a
     # figure this test happens to know.
@@ -548,7 +548,7 @@ async def test_upgrade_flow_confirms_then_charges_the_converted_amount(
     review_block = _flat(
         await modal.locator('[data-testid="payment-transparency-pro"]').inner_text()
     )
-    assert "product price $19.00 (usd)" in review_block, (
+    assert "product price $39.00 (usd)" in review_block, (
         "the last RELIASTRA screen before Paystack restates the product price"
     )
     assert "payment provider paystack - secure hosted checkout" in review_block
@@ -664,7 +664,7 @@ async def test_upgrade_flow_confirms_then_charges_the_converted_amount(
             # The triple belongs on payment documents too; the USD figure may
             # only appear as a *labelled product price*, never as the charge.
             assert "Payment provider: Paystack" in joined
-            assert "Product price: $19.00 (USD)" in joined
+            assert "Product price: $39.00 (USD)" in joined
             assert "Actual charge: ₦" in joined, (
                 "the charge line itself must be in the currency actually charged"
             )

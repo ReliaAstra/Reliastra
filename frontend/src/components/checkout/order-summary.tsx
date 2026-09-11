@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
  *
  * Three rules this component obeys, because the whole checkout is built on them:
  *
- * 1. **Every figure is a string from the backend.** `₦25,118.00 (NGN)` is
+ * 1. **Every figure is a string from the backend.** `₦51,558.00 (NGN)` is
  *    rendered exactly as the resolver that prices the Paystack transaction
  *    formatted it. There is no currency table, no multiplier and no `*`
  *    footnote computed here: an amount a browser composes is an amount a
@@ -79,7 +79,7 @@ export function OrderSummary({
           />
           <PriceCard
             label="Amount charged today"
-            value={quote.payment_amount_display ?? 'To be confirmed'}
+            value={quote.payment_amount_display ?? quote.product_price_display ?? '-'}
             sub={`Sent to ${quote.payment_provider} in ${quote.payment_currency_name}`}
             accent
             dataTestId="checkout-charge-amount"

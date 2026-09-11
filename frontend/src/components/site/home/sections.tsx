@@ -366,8 +366,8 @@ export function AgenciesSection() {
               </div>
             ))}
             <p className="ob-small mt-5 max-w-[58ch]">
-              Client groups, client reports and white-label branding are
-              Enterprise capabilities. The{' '}
+              Client groups and client reports are included in Pro.
+              White-label branding is an Enterprise capability. The{' '}
               <Link href={PUBLIC_ROUTES.agencies} className="ob-link">
                 agency page
               </Link>{' '}

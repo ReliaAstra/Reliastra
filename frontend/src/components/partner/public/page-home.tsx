@@ -68,7 +68,7 @@ export function PageHome() {
             </dl>
           </div>
           <p className="ob-small mt-8">
-            Example: a $19 Pro subscription earns $5.70 per month. Binding terms are in the{' '}
+            Example: a $39 Pro subscription earns $11.70 per month. Binding terms are in the{' '}
             <Link href={`/partner/terms`} className="ob-link">
               partner agreement
             </Link>

@@ -192,8 +192,8 @@ export function AgenciesPage() {
           </div>
 
           <div className="agency-enterprise-note">
-            <span className="agency-kicker agency-kicker-dark">For enterprise agency teams</span>
-            <p>Client isolation, client-facing reports and white-label branding are available as Enterprise capabilities.</p>
+            <span className="agency-kicker agency-kicker-dark">For agency teams</span>
+            <p>Client isolation and client-facing reports are included in Pro, including the 14-day trial. White-label branding is an Enterprise capability.</p>
             <Link href={PUBLIC_ROUTES.pricing} className="agency-text-link agency-text-link-dark">See plans <span aria-hidden>↗</span></Link>
           </div>
         </Container>

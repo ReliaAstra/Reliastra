@@ -7,7 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.core.exceptions import ResourceNotFoundException
+from app.core.exceptions import ForbiddenException, ResourceNotFoundException
+from app.core.permissions import plan_allows_feature
 from app.modules.agencies.repository import AgencyRepository
 from app.modules.agencies.schemas import (
     ApplicationCreateRequest,
@@ -32,10 +33,27 @@ class AgencyService:
             raise ResourceNotFoundException("Organization not found")
         return org
 
+    @staticmethod
+    def _require_feature(org, feature: str, message: str) -> None:
+        """Raise unless the organization's *effective* plan includes ``feature``.
+
+        Trial-aware: a Free org inside its 14-day evaluation window carries
+        Pro features, so client groups and client-facing reports work during
+        the trial and stop when it lapses. Client state is never trusted.
+        """
+        if not plan_allows_feature(org, feature):
+            raise ForbiddenException(message)
+
     async def list_clients(
         self, session: AsyncSession, org_id: uuid.UUID
     ) -> list[ClientResponse]:
-        await self._require_org(session, org_id)
+        org = await self._require_org(session, org_id)
+        self._require_feature(
+            org,
+            "client_groups_isolation",
+            "Client environments are not available on your current plan. "
+            "Upgrade to Pro or higher to manage client groups.",
+        )
         rows = await self.repository.list_clients(session, org_id)
         return [ClientResponse.model_validate(row) for row in rows]
 
@@ -46,6 +64,12 @@ class AgencyService:
         request: ClientCreateRequest,
     ) -> ClientResponse:
         org = await self._require_org(session, org_id)
+        self._require_feature(
+            org,
+            "client_groups_isolation",
+            "Client environments are not available on your current plan. "
+            "Upgrade to Pro or higher to manage client groups.",
+        )
         client = await self.repository.create_client(
             session, org_id, request.name, request.description
         )
@@ -59,6 +83,13 @@ class AgencyService:
         org_id: uuid.UUID,
         client_id: uuid.UUID,
     ) -> list[ApplicationResponse]:
+        org = await self._require_org(session, org_id)
+        self._require_feature(
+            org,
+            "client_groups_isolation",
+            "Client environments are not available on your current plan. "
+            "Upgrade to Pro or higher to manage client groups.",
+        )
         await self._require_client(session, org_id, client_id)
         rows = await self.repository.list_applications(session, org_id, client_id)
         return [ApplicationResponse.model_validate(row) for row in rows]
@@ -70,6 +101,13 @@ class AgencyService:
         client_id: uuid.UUID,
         request: ApplicationCreateRequest,
     ) -> ApplicationResponse:
+        org = await self._require_org(session, org_id)
+        self._require_feature(
+            org,
+            "client_groups_isolation",
+            "Client environments are not available on your current plan. "
+            "Upgrade to Pro or higher to manage client groups.",
+        )
         await self._require_client(session, org_id, client_id)
         application = await self.repository.create_application(
             session,
@@ -144,6 +182,12 @@ class AgencyService:
         from app.modules.dependencies.models import Dependency
 
         org = await self._require_org(session, org_id)
+        self._require_feature(
+            org,
+            "client_facing_reports",
+            "Client-facing reports are not available on your current plan. "
+            "Upgrade to Pro or higher to share reliability reports with clients.",
+        )
 
         clients = await self.repository.list_clients(session, org_id)
         applications = await self.repository.list_applications_for_org(session, org_id)

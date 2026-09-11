@@ -1,6 +1,6 @@
 """Live FX rate: sourced, timestamped, labelled - and the basis of the charge.
 
-The rate converts the $19 list price into the NGN charge. These tests pin the
+The rate converts the $39 list price into the NGN charge. These tests pin the
 honesty rules of that panel:
 
 * the payload carries the provider name, a human-checkable URL, the source's
@@ -147,8 +147,8 @@ async def test_currency_payload_embeds_reference_and_resolves_amounts(mock_httpx
     payload = await currency_payload()
     assert payload["fx_reference"]["rate"] == 1611.0
     # The amounts are the USD price converted at that same rate:
-    # 1900 cents x 1611 = 3,060,900 kobo = ₦30,609.00.
-    assert payload["plan_payment_amounts"]["pro"]["monthly"] == "\u20a630,609.00 (NGN)"
+    # 3900 cents x 1611 = 6,282,900 kobo = ₦62,829.00.
+    assert payload["plan_payment_amounts"]["pro"]["monthly"] == "\u20a662,829.00 (NGN)"
     assert payload["checkout_ready"] is True
     assert json.loads(json.dumps(payload))  # serializable for the API layer
 

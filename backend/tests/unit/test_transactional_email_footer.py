@@ -122,7 +122,7 @@ def _payment(**overrides) -> PaymentSummary:
     base = dict(
         plan="pro",
         billing_interval="monthly",
-        amount_minor=2511800,  # $19.00 x 1322 -> ₦25,118.00
+        amount_minor=5155800,  # $39.00 x 1322 -> ₦51,558.00
         currency="NGN",
         reference="ref_" + uuid.uuid4().hex[:8],
         paid_at=datetime.now(timezone.utc),
@@ -147,8 +147,8 @@ def test_footer_in_payment_receipt():
         user_name="Ada", org_name="Acme", payment=_payment()
     )
     assert_footer_contract(text, html, label="payment receipt")
-    assert "\u20a625,118.00 (NGN)" in text
-    assert "\u20a625,118.00 (NGN)" in html
+    assert "\u20a651,558.00 (NGN)" in text
+    assert "\u20a651,558.00 (NGN)" in html
 
 
 def test_footer_in_renewal_notice():

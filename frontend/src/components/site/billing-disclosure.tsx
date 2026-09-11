@@ -6,7 +6,6 @@ import {
   currencyNotice,
   formatFxRate,
   fxReference,
-  isCheckoutReady,
   paymentAmountFor,
   paymentProviderName,
   usableFxReference,
@@ -92,13 +91,12 @@ export function PlanChargeSummary({
 }: {
   plan: string;
   interval: 'monthly' | 'annual';
-  /** Pre-formatted list price, e.g. "$19.00 (USD)". */
+  /** Pre-formatted list price, e.g. "$39.00 (USD)". */
   productPrice: string;
   className?: string;
 }) {
   const { currency } = usePaymentCurrency();
   const charged = paymentAmountFor(currency, plan, interval);
-  const ready = isCheckoutReady(currency);
   const period = interval === 'annual' ? 'year' : 'month';
 
   return (
@@ -110,17 +108,11 @@ export function PlanChargeSummary({
       <Row
         label="Actual charge"
         value={
+          // No pending-price state: when the backend has not resolved the
+          // NGN charge, the triple shows the calculated USD product price.
           <span data-testid={`payment-charge-${plan}`}>
-            {charged ? (
-              <>
-                <span className="text-[var(--ob-text)]">{charged}</span>{' '}
-                <span className="text-[var(--ob-text-4)]">per {period}</span>
-              </>
-            ) : ready ? (
-              'Confirmed at checkout'
-            ) : (
-              'Pending price confirmation'
-            )}
+            <span className="text-[var(--ob-text)]">{charged ?? productPrice}</span>{' '}
+            <span className="text-[var(--ob-text-4)]">per {period}</span>
           </span>
         }
       />

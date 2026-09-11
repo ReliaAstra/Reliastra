@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ForbiddenException, ResourceNotFoundException
 from app.core.rate_limit import enforce_rate_limit, public_vendor_limiter
 from app.db.session import get_db
 from app.dependencies import get_current_org, require_admin
@@ -85,7 +86,11 @@ async def get_agency_portfolio(
     current_org: Organization = Depends(get_current_org),
     _admin_guard=Depends(require_admin),
 ) -> PortfolioResponse:
-    """Rolled-up SLA posture for every client - the Enterprise artifact."""
+    """Rolled-up SLA posture for every client - the client-facing artifact.
+
+    Entitlement (Pro and above, including the 14-day trial) is enforced in
+    the service; this route only adds org scope and the admin role.
+    """
     return await agency_service.get_portfolio(db, current_org.id)
 
 
@@ -102,8 +107,13 @@ async def get_public_agency_portfolio(
     """Unauthenticated, HMAC-verified share link for the client portal page.
 
     The payload only ever contains display data (names, uptime, incident
-    counts), never endpoints or secrets.
+    counts), never endpoints or secrets. An organization whose plan no longer
+    includes client-facing reports renders the link invalid rather than
+    leaking its client list.
     """
     await enforce_rate_limit(request, public_vendor_limiter)
     org_id = AgencyService.verify_portfolio_share_token(token)
-    return await agency_service.get_portfolio(db, org_id)
+    try:
+        return await agency_service.get_portfolio(db, org_id)
+    except ForbiddenException as exc:
+        raise ResourceNotFoundException("Report link is invalid") from exc

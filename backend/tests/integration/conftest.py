@@ -5,8 +5,8 @@ from ``app.core.fx_reference``. Integration tests must not reach the public
 rate source, so the fetch is stubbed to a fixed, contract-testing rate of
 1322.0 NGN/USD - the figure the bug report names - giving deterministic prices:
 
-    Pro monthly  $19.00  -> 1900 x 1322  = 2,511,800 kobo = ₦25,118.00
-    Pro annual   $190.00 -> 19000 x 1322 = 25,118,000 kobo = ₦251,180.00
+    Pro monthly  $39.00  -> 3900 x 1322  = 5,155,800 kobo = ₦51,558.00
+    Pro annual   $390.00 -> 39000 x 1322 = 51,558,000 kobo = ₦515,580.00
 
 Caching is neutralised too (both Redis and the process-local cache), so every
 FX read resolves through the stub and no test can inherit another test's rate.

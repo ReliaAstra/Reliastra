@@ -230,8 +230,8 @@ test.describe('the checkout page', () => {
     expect(receipt, 'no receipt email for this payment').toBeTruthy();
     expectTextContains(
       decodeMailRaw(receipt!.raw),
-      'Product price: $19.00 (USD)',
-      'Actual charge: ₦31,350.00 (NGN)',
+      'Product price: $39.00 (USD)',
+      'Actual charge: ₦64,350.00 (NGN)',
       'Payment provider: Paystack',
     );
   });

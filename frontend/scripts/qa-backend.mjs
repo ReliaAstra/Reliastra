@@ -27,10 +27,12 @@ const ORG = {
   id: 'org_9f2c41',
   name: 'Northwind Systems',
   slug: 'northwind',
-  plan: 'pro',
+  plan: 'free',
   // Agency mode is on by default so the multi-client console can be built and
   // exercised. PATCH /v1/orgs/current mutates this object, which is how the
   // e2e suite flips the capability off and asserts the not-enabled state.
+  // The fixture plan is Free past its trial (created 190 days ago), so the
+  // flag alone decides the agency entitlement: Pro would be eligible anyway.
   has_agency_mode: true,
   ai_explanations_enabled: false,
   created_at: iso(190 * DAY),
@@ -50,18 +52,18 @@ const USER = {
 
 const PLAN = {
   org_id: ORG.id,
-  plan: 'pro',
-  effective_plan: 'pro',
+  plan: 'free',
+  effective_plan: 'free',
   is_trial_active: false,
   is_evaluation_active: false,
   evaluation_days_remaining: 0,
-  max_dependencies: 50,
-  max_team_members: 10,
-  min_check_interval_seconds: 15,
-  data_retention_days: 90,
+  max_dependencies: 3,
+  max_team_members: 1,
+  min_check_interval_seconds: 60,
+  data_retention_days: 1,
   subscription_status: 'active',
   current_period_end: iso(-19 * DAY),
-  price_usd: 19,
+  price_usd: 0,
   billing_interval: 'monthly',
   // Shape must match `PaymentCurrencyInfo` exactly - a partial payload is how
   // the console ends up printing "undefined" where a currency belongs.
@@ -561,7 +563,7 @@ function portfolio() {
 const PRICING = {
   plans: [
     { plan: 'free', display_name: 'Free', description: 'Observation for a small stack.', tag: null, price_usd: 0, price_annual_usd: 0, max_dependencies: 3, max_team_members: 1, min_check_interval_seconds: 60, data_retention_days: 1, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$0.00 (USD)' },
-    { plan: 'pro', display_name: 'Pro', description: 'Evidence for a production stack.', tag: 'Current', price_usd: 19, price_annual_usd: 190, max_dependencies: 50, max_team_members: 10, min_check_interval_seconds: 15, data_retention_days: 90, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$19.00 (USD)', payment_amount_display: '₦60,000.00 (NGN)' },
+    { plan: 'pro', display_name: 'Pro', description: 'Evidence for a production stack.', tag: 'Current', price_usd: 39, price_annual_usd: 390, max_dependencies: 50, max_team_members: 10, min_check_interval_seconds: 15, data_retention_days: 90, features: {}, billing_availability: 'self_serve', is_enterprise: false, is_custom_pricing: false, product_price_display: '$39.00 (USD)', payment_amount_display: '₦60,000.00 (NGN)' },
     { plan: 'enterprise', display_name: 'Enterprise', description: 'Agency and multi-client operations.', tag: null, price_usd: 0, price_annual_usd: null, max_dependencies: null, max_team_members: null, min_check_interval_seconds: null, data_retention_days: null, features: {}, billing_availability: 'sales', is_enterprise: true, is_custom_pricing: true },
   ],
   payment: PLAN.payment,
@@ -582,8 +584,8 @@ const routes = [
   ['GET', /^\/v1\/pricing$/, () => PRICING],
   ['GET', /^\/v1\/billing\/transactions$/, () => ({
     items: [
-      { id: 'txn_1', reference: 'psk_4412ff', provider: 'paystack', plan: 'pro', display_plan: 'Pro', billing_interval: 'monthly', status: 'success', product_currency: 'USD', product_amount_minor: 1900, product_price_display: '$19.00 (USD)', charged_currency: 'NGN', charged_amount_minor: 6_000_000, charged_amount_display: '₦60,000.00 (NGN)', paid_at: iso(11 * DAY), period_start: iso(11 * DAY), period_end: iso(-19 * DAY), created_at: iso(11 * DAY) },
-      { id: 'txn_2', reference: 'psk_39a1b0', provider: 'paystack', plan: 'pro', display_plan: 'Pro', billing_interval: 'monthly', status: 'success', product_currency: 'USD', product_amount_minor: 1900, product_price_display: '$19.00 (USD)', charged_currency: 'NGN', charged_amount_minor: 6_000_000, charged_amount_display: '₦60,000.00 (NGN)', paid_at: iso(41 * DAY), period_start: iso(41 * DAY), period_end: iso(11 * DAY), created_at: iso(41 * DAY) },
+      { id: 'txn_1', reference: 'psk_4412ff', provider: 'paystack', plan: 'pro', display_plan: 'Pro', billing_interval: 'monthly', status: 'success', product_currency: 'USD', product_amount_minor: 3900, product_price_display: '$39.00 (USD)', charged_currency: 'NGN', charged_amount_minor: 6_000_000, charged_amount_display: '₦60,000.00 (NGN)', paid_at: iso(11 * DAY), period_start: iso(11 * DAY), period_end: iso(-19 * DAY), created_at: iso(11 * DAY) },
+      { id: 'txn_2', reference: 'psk_39a1b0', provider: 'paystack', plan: 'pro', display_plan: 'Pro', billing_interval: 'monthly', status: 'success', product_currency: 'USD', product_amount_minor: 3900, product_price_display: '$39.00 (USD)', charged_currency: 'NGN', charged_amount_minor: 6_000_000, charged_amount_display: '₦60,000.00 (NGN)', paid_at: iso(41 * DAY), period_start: iso(41 * DAY), period_end: iso(11 * DAY), created_at: iso(41 * DAY) },
     ],
     payment: PLAN.payment,
   })],

@@ -7,7 +7,6 @@ import {
   formatFxRate,
   usableFxReference,
   fxReference,
-  isCheckoutReady,
   paymentAmountFor,
   paymentProviderName,
   type FxReference,
@@ -35,15 +34,16 @@ import {
  * The mandatory transparency triple, rendered as a hairline table so it reads
  * as product documentation rather than a disclaimer:
  *
- *   Product price     $19.00 (USD)
- *   Actual charge     ₦25,118.00 (NGN)  per month
+ *   Product price     $39.00 (USD)
+ *   Actual charge     ₦51,558.00 (NGN)  per month
  *   Payment provider  Paystack
  *
  * Every figure is a backend-resolved string ({@linkcode paymentAmountFor}):
  * the charge line is literally the minor-unit amount the API sends to
  * Paystack, formatted server-side. When no rate is available to convert the
- * price the charge line states that honestly - the component never derives a
- * number, and neither may any caller.
+ * price, the charge line falls back to the USD product price - the
+ * calculated list figure - so production never shows a pending-price state.
+ * The component never derives a number, and neither may any caller.
  *
  * `emphasis`:
  * - `card` - compact block for pricing cards and plan choosers;
@@ -60,13 +60,12 @@ export function PlanPaymentSummary({
   info?: PaymentCurrencyInfo | null;
   plan: string;
   interval?: 'monthly' | 'annual';
-  /** USD product list price, pre-formatted by the caller (e.g. "$19.00 (USD)"). */
+  /** USD product list price, pre-formatted by the caller (e.g. "$39.00 (USD)"). */
   productPrice: string;
   emphasis?: 'card' | 'panel';
   className?: string;
 }) {
   const charged = paymentAmountFor(info, plan, interval);
-  const checkoutReady = isCheckoutReady(info);
   // The compact triple shows the processor's name; the longer
   // "secure hosted checkout" phrasing belongs to the checkout review,
   // where the full line has room.
@@ -79,23 +78,14 @@ export function PlanPaymentSummary({
       <TransparencyRow
         label="Actual charge"
         value={
-          charged ? (
-            <span
-              className="font-mono font-semibold text-[#09090B] dark:text-[#FAFAFA]"
-              data-testid={`payment-charge-${plan}`}
-            >
-              {charged}
-            </span>
-          ) : (
-            <span
-              className="text-[#52525B] dark:text-[#A1A1AA]"
-              data-testid={`payment-charge-${plan}`}
-            >
-              {checkoutReady ? 'Confirmed at checkout' : 'Pending price confirmation'}
-            </span>
-          )
+          <span
+            className="font-mono font-semibold text-[#09090B] dark:text-[#FAFAFA]"
+            data-testid={`payment-charge-${plan}`}
+          >
+            {charged ?? productPrice}
+          </span>
         }
-        hint={charged ? `per ${periodWord}` : undefined}
+        hint={`per ${periodWord}`}
         emphasize={emphasis === 'panel'}
       />
       <TransparencyRow label="Payment provider" value={provider} last />
@@ -127,12 +117,6 @@ export function PlanPaymentSummary({
           {rows}
         </dl>
       </div>
-      {!isCheckoutReady(info) ? (
-        <p className="text-[11px] font-medium text-[#71717A] dark:text-[#8A8A93]">
-          Our {info?.payment_currency_name ?? 'NGN'} price for this plan is being
-          confirmed - billing will set it up directly.
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -163,7 +147,7 @@ function TransparencyRow({
       </dt>
       <dd className="min-w-0 text-right text-[12px] leading-snug">
         {/* The figure and its unit stay one unbreakable unit: a wrapped
-            "₦25,118.00 (NGN) per month" is how amounts get misread. */}
+            "₦51,558.00 (NGN) per month" is how amounts get misread. */}
         <span className="whitespace-nowrap">
           {value}
           {hint ? (

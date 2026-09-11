@@ -132,7 +132,7 @@ export function BillingPage() {
               ? (evaluation ? 'No charge during evaluation' : 'No charge')
               : current.id === 'enterprise'
                 ? 'Custom pricing'
-                : price ?? listUsd ?? 'Price unavailable'}
+                : price ?? listUsd}
             {paid && (price || listUsd) && (
               <span className="ml-2 text-[12px] text-[var(--obc-text-3)]">/ {annual ? 'year' : 'month'}</span>
             )}

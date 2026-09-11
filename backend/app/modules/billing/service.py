@@ -855,7 +855,7 @@ class BillingService:
 
         Why an endpoint instead of letting the checkout page compute from the
         pricing list it already fetched: the page would then be *composing* a
-        price - plan id plus interval in, "₦25,118" out - and any bug in that
+        price - plan id plus interval in, "₦51,558" out - and any bug in that
         composition is a customer who was shown one number and charged another.
         So the page asks, and displays. It receives the product price, the
         payment amount, the currency names, the disclosure, the FX reference and
@@ -924,10 +924,16 @@ class BillingService:
             )
         elif not price.is_configured:
             available, reason = False, CheckoutReason.PRICE_NOT_CONFIGURED
+            product_display = format_money(
+                price.product_amount, price.product_currency
+            ) or "the USD list price"
+            period = "year" if interval == ANNUAL_INTERVAL else "month"
             message = (
-                f"Our {price.payment_currency} price for this plan is being "
-                "finalized. Contact billing@reliastra.com and we will set up "
-                "your subscription directly."
+                f"Online checkout cannot price this plan in "
+                f"{price.payment_currency} right now. The plan price is "
+                f"{product_display} per {period}; contact "
+                "billing@reliastra.com and we will set up your subscription "
+                "directly."
             )
         elif not settings.PAYSTACK_SECRET_KEY:
             # Configuration gap, never a customer-facing detail: the checkout
@@ -1065,11 +1071,17 @@ class BillingService:
                 interval,
                 price.payment_currency,
             )
+            product_display = format_money(
+                price.product_amount, price.product_currency
+            ) or "the USD list price"
+            period = "year" if interval == ANNUAL_INTERVAL else "month"
             raise CheckoutRejectedException(
                 CheckoutReason.PRICE_NOT_CONFIGURED,
-                f"Our {price.payment_currency} price for this plan is being "
-                "finalized. Contact billing@reliastra.com and we will set up "
-                "your subscription directly.",
+                f"Online checkout cannot price this plan in "
+                f"{price.payment_currency} right now. The plan price is "
+                f"{product_display} per {period}; contact "
+                "billing@reliastra.com and we will set up your subscription "
+                "directly.",
                 status_code=409,
             )
         base_amount = int(price.payment_amount or 0)
@@ -1497,7 +1509,7 @@ class BillingService:
         # of the processing currency, so the integer comparison below is
         # meaningless until the denomination is known to match. A multi-currency
         # Paystack account can settle the same nominal amount in a far weaker
-        # currency (3900 NGN is about $2.50, not the $19 Pro plan) and clear an
+        # currency (3900 NGN is about $2.50, not the $39 Pro plan) and clear an
         # amount-only check. Checkout always initializes in the resolved
         # payment currency, so anything else did not come from our checkout.
         #
