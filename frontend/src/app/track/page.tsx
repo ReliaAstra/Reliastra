@@ -12,7 +12,14 @@ import { deriveState, NO_OBSERVATION, utcStamp, elapsed } from '@/lib/observator
 import { canonicalUrl, breadcrumbJsonLd } from '@/lib/seo';
 import { JsonLd } from '@/components/seo/json-ld';
 import { PreferredSourceSection } from '@/components/seo/preferred-source';
-import { AUTH_ROUTES, PUBLIC_ROUTES, RESEARCH_ARTICLES, SHARE_ROUTES, researchRoute } from '@/lib/routes';
+import {
+  AUTH_ROUTES,
+  PUBLIC_ROUTES,
+  RESEARCH_ARTICLES,
+  SHARE_ROUTES,
+  researchHubRoute,
+  researchRoute,
+} from '@/lib/routes';
 import { Breadcrumb } from '@/components/site/primitives';
 import {
   Notice,
@@ -38,7 +45,7 @@ import {
 export const metadata: Metadata = {
   title: 'Public infrastructure observatory - independently measured dependency records',
   description:
-    'Independent observation of the third-party APIs modern products depend on. Availability, latency and incident history measured by RELIASTRA probes, not self-reported by the vendor.',
+    'Independent HTTP observation of the public endpoints behind third-party services - availability, latency and incident history measured by RELIASTRA probes, never copied from a vendor status page.',
   alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.track) },
   robots: { index: true, follow: true },
   openGraph: {
@@ -180,7 +187,7 @@ export default async function ObservatoryIndexPage() {
             url: canonicalUrl(PUBLIC_ROUTES.track),
             name: 'Public infrastructure observatory',
             description:
-              'Independent observation of third-party APIs: availability, latency and incident history.',
+              'Independent HTTP observation of public third-party endpoints: availability, latency and incident history measured by RELIASTRA probes.',
             isPartOf: { '@id': canonicalUrl('/#website') },
             inLanguage: 'en',
             hasPart: items.slice(0, 20).map((v) => ({
@@ -212,8 +219,12 @@ export default async function ObservatoryIndexPage() {
           </p>
           <h1 className="obs-name mt-6 max-w-[15ch]">Dependency records</h1>
           <p className="obs-descriptor mt-6 max-w-[62ch]">
-            Independent observations of public third-party APIs. Nothing is read from a vendor
-            status page.
+            RELIASTRA probes public third-party endpoints - today, mostly vendor status sites and
+            public health endpoints - and publishes what those probes measured: availability,
+            latency and the records an observation produced. Each vendor page states exactly which
+            endpoint stands behind its numbers. The status text a vendor publishes is never read,
+            mirrored or reconciled; where a vendor page and this record disagree, both are worth
+            reading.
           </p>
 
           <dl className="mt-12 grid gap-x-8 gap-y-6 border-t border-[var(--ob-line-2)] pt-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -271,27 +282,37 @@ export default async function ObservatoryIndexPage() {
       >
         <dl className="flex flex-col">
           <SpecRow term="Observed state" wide>
-            From the five most recent observations: responding when all five returned a valid
-            response, degraded when any did not.
+            From the five most recent observations of the listed endpoint: responding when all five
+            received the expected response, degraded when any did not, and “not observed
+            recently” when the newest observation is older than fifteen minutes. A state describes
+            the endpoint, not the vendor’s whole service estate.
           </SpecRow>
           <SpecRow term="Last observation" wide>
             The most recent completed check. Freshness, not health.
           </SpecRow>
           <SpecRow term="Regions" wide>
-            Observation regions scheduled for the dependency. Two are required before an incident
-            is opened.
+            Observation regions scheduled for the dependency. Public records today run from a
+            single origin per vendor; corroboration across independent origins is a property of
+            customer monitoring deployments that have more than one probe site.
           </SpecRow>
           <SpecRow term="Independence" wide>
-            Every figure originates from a RELIASTRA probe. Vendor status pages are not ingested.
+            Every figure originates from a RELIASTRA probe. The status text on vendor status
+            pages is not ingested - where one is listed as an observed endpoint, only its HTTP
+            behaviour is measured.
           </SpecRow>
           <SpecRow term="Scope" wide>
-            Public endpoints only. Customer endpoints and credentials never appear here.
+            Public endpoints only. Customer endpoints and credentials never appear here. An empty
+            incident list is an absence of published records, not proof that no outage occurred.
           </SpecRow>
         </dl>
         <p className="ob-small mt-8">
           Method:{' '}
           <Link href={researchRoute('how-reliastra-measures-vendor-reliability')} className="ob-link">
             {RESEARCH_ARTICLES[1].title}
+          </Link>
+          . Topic hub:{' '}
+          <Link href={researchHubRoute('ai-infrastructure')} className="ob-link">
+            AI infrastructure status &amp; reliability
           </Link>
           .
         </p>

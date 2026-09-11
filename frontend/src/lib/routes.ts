@@ -101,6 +101,14 @@ export const SHARE_ROUTES = {
   report: (token: string) => `/reports/${token}`,
   trackVendor: (vendor: string) => `/track/${vendor}`,
   /**
+   * Permanent public incident record for one measured vendor. The URL is
+   * derived from the incident id exactly as the measurement API returns it,
+   * so an incident record is stable forever: the list page is where freshness
+   * lives, the incident page is a historical artifact and never re-truthed.
+   */
+  trackIncident: (vendor: string, incidentId: string) =>
+    `/track/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,
+  /**
    * Canonical partner referral URL. Partners share this; `/r/{code}` records
    * the click, sets the attribution cookie, and redirects into the public
    * signup/landing flow. Do not confuse with the PLG `/ref/{code}` programme.
@@ -112,9 +120,44 @@ export const SHARE_ROUTES = {
 // ── Research ────────────────────────────────────────────────────────────────
 
 /**
+ * Research hubs (pillars). A hub is a real route under `/research`, so the
+ * static segment `ai-infrastructure` must never also be readable as an
+ * article slug: the hub slug list and the article list are checked for
+ * disjointness by `seo.test.ts`.
+ *
+ * A hub clusters articles *and* live observatory data for one topic. It is
+ * not a tag page: it renders current measurements, so it is ISR'd on the
+ * same cadence as the records it cites.
+ */
+export const RESEARCH_HUBS = [
+  {
+    slug: 'ai-infrastructure',
+    title: 'AI Infrastructure Status & Reliability',
+    /** Compact label for nav/footer; the full title is the page identity. */
+    navLabel: 'AI infrastructure hub',
+    lede:
+      'An independent, continuously measured public record of the endpoints AI ' +
+      'infrastructure is reached through - what RELIASTRA observed, from where, ' +
+      'when, and what those observations do and do not establish.',
+    summary:
+      'Live status records, measured reliability windows, incident history and ' +
+      'technical methodology for AI API providers - independently observed by ' +
+      'RELIASTRA, not read from vendor status pages.',
+  },
+] as const;
+
+export type ResearchHubSlug = (typeof RESEARCH_HUBS)[number]['slug'];
+
+/**
  * Research articles. The slug is the URL segment, so this list *is* the set of
  * valid `/research/[slug]` routes: `generateStaticParams` and the sitemap both
  * read it, which means a slug cannot exist in one place and not the other.
+ *
+ * An article that carries a `hub` lives under the hub URL
+ * (`/research/{hub}/{slug}`) instead of the top-level article URL. The hub
+ * field is part of the identity of the route, not a label - `researchRoute()`
+ * is the only function allowed to build an article URL, so a hub article can
+ * never be linked at two addresses.
  */
 export const RESEARCH_ARTICLES = [
   {
@@ -132,6 +175,7 @@ export const RESEARCH_ARTICLES = [
     summary:
       'The measurement methodology behind every check: where probes originate, retry semantics, the incident detection rule, and the cases we deliberately refuse to call an outage.',
     publishedAt: '2025-11-18',
+    updatedAt: '2026-09-10',
     category: 'Methodology',
     tags: ['Measurement', 'Methodology'],
   },
@@ -144,12 +188,59 @@ export const RESEARCH_ARTICLES = [
     category: 'Research',
     tags: ['Agenda'],
   },
+  {
+    slug: 'is-openai-down',
+    hub: 'ai-infrastructure',
+    title: '“Is OpenAI down?” - how to answer the question honestly',
+    summary:
+      'The question hides three different claims - API, consumer app, status site. What an outside observer can measure, what RELIASTRA actually measures today, and a probe you can reproduce in thirty seconds.',
+    publishedAt: '2026-09-10',
+    category: 'AI infrastructure',
+    tags: ['OpenAI', 'Status semantics', 'Measurement'],
+  },
+  {
+    slug: 'ai-api-outage-evidence',
+    hub: 'ai-infrastructure',
+    title: 'When an AI API misbehaves: an evidence playbook',
+    summary:
+      'What to capture in the first ten minutes of an AI-provider incident so the window is still checkable a month later - and how independent observations turn a bad evening into an attributable record.',
+    publishedAt: '2026-09-10',
+    category: 'AI infrastructure',
+    tags: ['Incident response', 'Evidence', 'Attribution'],
+  },
 ] as const;
 
 export type ResearchSlug = (typeof RESEARCH_ARTICLES)[number]['slug'];
 
-/** Build a `/research/[slug]` URL from a known slug. */
+/** The article record behind a slug, or undefined when it is not published. */
+export function researchArticle(slug: string) {
+  return RESEARCH_ARTICLES.find((a) => a.slug === slug);
+}
+
+/** Articles belonging to a hub, in publication order. */
+export function researchHubArticles(hub: ResearchHubSlug) {
+  return RESEARCH_ARTICLES.filter((a) => 'hub' in a && a.hub === hub);
+}
+
+/** Articles that live at the top level of `/research` (no hub). */
+export function researchStandaloneArticles() {
+  return RESEARCH_ARTICLES.filter((a) => !('hub' in a && a.hub));
+}
+
+/** Canonical URL of a research hub. */
+export function researchHubRoute(hub: ResearchHubSlug | string): string {
+  return `${PUBLIC_ROUTES.research}/${hub}`;
+}
+
+/**
+ * Build the single canonical article URL from a known slug. Hub articles
+ * resolve under their hub; everything else under `/research` directly.
+ */
 export function researchRoute(slug: ResearchSlug | string): string {
+  const article = researchArticle(slug);
+  if (article && 'hub' in article && article.hub) {
+    return `${researchHubRoute(article.hub)}/${slug}`;
+  }
   return `${PUBLIC_ROUTES.research}/${slug}`;
 }
 
