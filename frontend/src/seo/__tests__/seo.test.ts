@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   GLOSSARY_TERMS,
@@ -28,6 +28,7 @@ import {
 } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
+import { PAPER_OG_IMAGES, researchSocialImage } from '@/lib/research/social';
 
 const PRIVATE_FRAGMENTS = [
   '/admin',
@@ -211,6 +212,37 @@ describe('structured data', () => {
       expect((b as any)['@context']).toBe('https://schema.org');
     }
     expect((blocks[0] as any)['@id']).toContain('#organization');
+  });
+});
+
+describe('research paper social artwork', () => {
+  it('declares committed 1200x630 cards only for papers that exist', () => {
+    for (const [slug, card] of Object.entries(PAPER_OG_IMAGES)) {
+      // The card must belong to a published paper, or it is dead weight in
+      // the metadata path.
+      expect(researchArticle(slug)).toBeDefined();
+      expect(card.path).toMatch(/^\/social\/research\/[a-z0-9-]+-og\.png$/);
+      const file = new URL(`../../../public${card.path}`, import.meta.url);
+      expect(existsSync(file), `${card.path} must be committed`).toBe(true);
+      // A card the wrong size silently becomes a cropped preview on the
+      // platforms that matter. Read the IHDR rather than trust the filename.
+      const png = readFileSync(file);
+      expect(png.readUInt32BE(16)).toBe(1200);
+      expect(png.readUInt32BE(20)).toBe(630);
+      expect(card.alt.length).toBeGreaterThan(40);
+    }
+  });
+
+  it('falls back to the site-wide card for papers without one', () => {
+    const img = researchSocialImage('the-dependency-gap', 'The Dependency Gap');
+    expect(img.url).toBe('https://reliastra.com/opengraph-image.png');
+    const card = researchSocialImage(
+      'aws-iam-policy-evaluation-order',
+      'AWS IAM policy evaluation logic: identity vs resource'
+    );
+    expect(card.url).toBe(
+      'https://reliastra.com/social/research/aws-iam-policy-evaluation-order-og.png'
+    );
   });
 });
 

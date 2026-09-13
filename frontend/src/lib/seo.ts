@@ -256,6 +256,12 @@ export const PUBLIC_PAGES = [
   { path: '/glossary/ai-api-dependency', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/glossary/model-routing', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/glossary/observability-blind-spot', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/explicit-deny', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/implicit-deny', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/identity-based-policy', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/resource-based-policy', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/permissions-boundary', changeFrequency: 'monthly' as const, priority: 0.6 },
+  { path: '/glossary/non-human-identity', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/research', changeFrequency: 'weekly' as const, priority: 0.8 },
   { path: '/research/ai-infrastructure', changeFrequency: 'hourly' as const, priority: 0.85 },
   // Research categories. A category is listed only when it has papers - an
@@ -781,6 +787,126 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
       { label: 'Observation density', href: '/glossary/observation-density' },
       { label: 'Telemetry integrity', href: '/glossary/telemetry-integrity' },
       { label: 'Probe interval estimation', href: '/research/measurement-integrity/probe-interval-from-bucketed-telemetry' },
+    ],
+  },
+  {
+    slug: 'explicit-deny',
+    term: 'Explicit deny',
+    short: 'A policy statement with Effect Deny that overrides every Allow it matches.',
+    definition:
+      'An explicit deny is a statement in any applicable policy whose Effect is Deny. In AWS IAM policy evaluation it is checked first, across every policy type in scope, and a match ends the request: no later stage is reached and no Allow anywhere in the set survives it. It is the only mechanism in the procedure that overrides a grant rather than capping one.',
+    problem:
+      'Deny is the one mechanism that cannot be worked around by adding a grant elsewhere, which makes it the most dangerous line in a policy set. A Deny written to exclude a handful of principals can, through the NotPrincipal and permissions-boundary interaction, exclude every governed principal in the account - and still read correctly in review.',
+    whyItMatters:
+      'A denial caused by a matching Deny and a denial caused by an absent Allow produce the same API response and opposite fixes. The first is repaired by narrowing or removing a statement; the second by adding a grant, which changes nothing at all against a matching Deny. Telling them apart is the first step of any authorisation investigation.',
+    example:
+      'An identity policy allows s3:GetObject and a bucket policy denies the same action for the same principal. The request is denied at stage one, before the identity-based Allow is consulted - and re-granting in the identity policy cannot change the outcome.',
+    howReliastra:
+      'RELIASTRA keeps the same distinction in its own records: a dependency refusing a request is a different observation from a request that was never made, and neither is inferred from the other. An absence is reported as an absence.',
+    related: [
+      { label: 'Implicit deny', href: '/glossary/implicit-deny' },
+      { label: 'Permissions boundary', href: '/glossary/permissions-boundary' },
+      { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
+    ],
+  },
+  {
+    slug: 'implicit-deny',
+    term: 'Implicit deny',
+    short: 'The default refusal a request receives when nothing in scope explicitly allows it.',
+    definition:
+      'Implicit deny is the absence of an Allow. AWS denies every request by default, with the single documented exception of the account root user, so a request succeeds only if some applicable policy grants it and no statement denies it. Nothing was evaluated against the request except a search for a matching Allow, and the search came up empty.',
+    problem:
+      'Implicit deny produces no statement to point at. The defect is a missing line rather than a present one, and the absence usually sits in a different policy class from the one being read - most often a resource-based policy on the other side of the search, or a ceiling two stages earlier in the procedure.',
+    whyItMatters:
+      'Implicit deny is a safety property and an audit hazard at once. It is why an unattached role has no permissions and fails closed, and it is why "nothing denied it" is weak evidence of anything. A system that defaults to deny must record what granted each allowed request, or the grant stays invisible until it is wrong.',
+    example:
+      'A new IAM role with no policies attached returns AccessDenied on every call. So does a role whose identity policy allows the action but whose request is stopped by a service control policy two stages earlier. Both are implicit denials, at different stages, and only the deciding stage distinguishes them.',
+    howReliastra:
+      'RELIASTRA applies the same default to observation: a dependency that has never been checked is reported as unobserved rather than healthy, and a missed probe is never backfilled with a synthesised result. Absence of evidence is recorded as absence.',
+    related: [
+      { label: 'Explicit deny', href: '/glossary/explicit-deny' },
+      { label: 'Observation density', href: '/glossary/observation-density' },
+      { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
+    ],
+  },
+  {
+    slug: 'identity-based-policy',
+    term: 'Identity-based policy',
+    short: 'A policy attached to an IAM principal that states what that principal may do.',
+    definition:
+      'An identity-based policy is attached to an IAM user, group or role and grants or denies actions to the principal it is attached to. Inside one account it is one of the two granting classes: with resource-based policies it combines by union, so an Allow in either is sufficient, and an explicit Deny in either overrides the Allow.',
+    problem:
+      'Because the union is easy to forget, teams search the class they author most often. A role found reading a bucket it should not is usually blamed on its identity policy while the grant sits in the bucket policy - equally sufficient, and invisible from the identity side.',
+    whyItMatters:
+      'The class a grant lives in decides who owns it, who reviews it and what caps it. An identity-based grant travels with the principal and is capped by that principal\u2019s permissions boundary and session policies. A resource-based grant does not, and can bypass ceilings the author of the identity policy assumed applied.',
+    example:
+      'The same s3:GetObject Allow written in a role policy is capped by the boundary attached to that role. Written instead in the bucket policy naming the role session ARN, it is not. The two grants are one ARN format apart and behave differently under the same boundary.',
+    howReliastra:
+      'RELIASTRA treats the two planes as separate objects of evidence. When a dependency refuses a call, the record shows the outcome and its timestamp; which policy on the dependency side produced it is a claim RELIASTRA does not make without evidence that reaches it.',
+    related: [
+      { label: 'Resource-based policy', href: '/glossary/resource-based-policy' },
+      { label: 'Permissions boundary', href: '/glossary/permissions-boundary' },
+      { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
+    ],
+  },
+  {
+    slug: 'resource-based-policy',
+    term: 'Resource-based policy',
+    short: 'A policy attached to a resource that states who may act on it.',
+    definition:
+      'A resource-based policy is attached to the resource - a bucket policy, a KMS key policy, an IAM role trust policy, a queue policy - and names the principals that may act on it. Inside one account it is a granting class and combines with identity-based policies by union. Across accounts it is the trusting side of a two-evaluation conjunction: the request is allowed only if both accounts allow it.',
+    problem:
+      'Its meaning changes with the principal form it names and with the account boundary it sits on. The same document is a grant in one row of the evaluation matrix and a ceiling in the next, and inside one account it cannot reduce what an identity-based policy grants at all: the tightening design most teams intend is a union, not an intersection.',
+    whyItMatters:
+      'It is the only class a resource owner controls without editing anyone else\u2019s identity policies, which is why it is the correct plane for cross-account sharing - and why a restrictive resource policy written to constrain a colleague\u2019s role inside one account constrains nothing at all.',
+    example:
+      'A bucket policy naming arn:aws:iam::111122223333:role/examplerole is capped by that role\u2019s permissions boundary. The same policy naming arn:aws:sts::111122223333:assumed-role/examplerole/sessionname is not. Both read, in review, as "the bucket allows the role".',
+    howReliastra:
+      'As with identity-based policies: RELIASTRA records the outcome a dependency produced and the moment it produced it, and keeps that record separate from any claim about the dependency\u2019s own policy set, which RELIASTRA does not observe.',
+    related: [
+      { label: 'Identity-based policy', href: '/glossary/identity-based-policy' },
+      { label: 'External trust boundary', href: '/glossary/external-trust-boundary' },
+      { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
+    ],
+  },
+  {
+    slug: 'permissions-boundary',
+    term: 'Permissions boundary',
+    short: 'A policy that caps the maximum permissions an IAM principal can be granted.',
+    definition:
+      'A permissions boundary is attached to an IAM user or role and sets the maximum permissions that principal may have. It is a ceiling, not a grant: it removes permission an identity-based policy would otherwise give and can never add any. Whether it also caps a resource-based grant depends on which document it is attached to and which principal form the grant names.',
+    problem:
+      'It is routinely described as limiting identity-based policies only, which is incomplete in a way that produces real defects. The same bucket policy caps one role and not another depending on whether it names the role or the role session, and a boundary attached to the principal is invisible to the trusting account\u2019s evaluation in a cross-account request.',
+    whyItMatters:
+      'The boundary is the per-principal ceiling: it travels with the principal, unlike a service control policy (per account) or a resource control policy (per resource). Choosing between the three is an architecture decision with different blast radii, and it cannot be made correctly while the boundary is modelled as a filter on identity policies alone.',
+    example:
+      'A role whose boundary allows read-only S3 actions is granted s3:PutObject by its identity policy: the write is denied at the boundary stage. The same grant arriving from a bucket policy that names the role session ARN bypasses the boundary entirely.',
+    howReliastra:
+      'The boundary is why RELIASTRA\u2019s attribution habit starts with the CloudTrail principal type rather than with a policy: whether any ceiling could have applied to a request is a property of the identity that made it, and only the record says which identity that was.',
+    related: [
+      { label: 'Implicit deny', href: '/glossary/implicit-deny' },
+      { label: 'Identity-based policy', href: '/glossary/identity-based-policy' },
+      { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
+    ],
+  },
+  {
+    slug: 'non-human-identity',
+    term: 'Non-human identity',
+    short: 'A principal that is a workload rather than a person: service roles, pipelines, agents.',
+    definition:
+      'A non-human identity is any principal that is not a person at a keyboard: service-linked roles, assumed roles in CI pipelines, federated sessions minted by GetFederationToken, and agents holding temporary credentials. Authorisation systems evaluate them with the same procedure as human principals; what differs is the population\u2019s shape - short-lived sessions, grants chosen in code, and review cadences that do not match grant cadences.',
+    problem:
+      'Sessions outnumber identities, and the principal making a request under an assumed role is the role session ARN, not the role ARN. A resource-based policy naming the session form bypasses ceilings that would have applied to the role form, so a population of short-lived sessions is systematically less constrained by boundaries than a population of users.',
+    whyItMatters:
+      'Most access in a modern account is machine access, and most of it is granted at session-mint time in code that no policy review reads. The interaction that decides effective permissions - which principal form the resource-based policy names - is chosen by whoever writes the assume-role call.',
+    example:
+      'A CI pipeline assumes a role and passes the session ARN to a downstream integration, which writes it into a bucket policy. The grant now bypasses the boundary attached to the role. No policy changed; the effective permissions did.',
+    howReliastra:
+      'RELIASTRA\u2019s own checks are non-human callers of other companies\u2019 control planes - scheduled workers rather than people - so the population this term describes is the population RELIASTRA adds to the internet, and the same principal-type rules apply to its credentials as to anyone else\u2019s.',
+    related: [
+      { label: 'Resource-based policy', href: '/glossary/resource-based-policy' },
+      { label: 'Control plane', href: '/glossary/control-plane' },
+      { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
     ],
   },
 ];

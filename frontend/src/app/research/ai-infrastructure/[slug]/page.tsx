@@ -17,6 +17,7 @@ import { PUBLIC_ROUTES } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import { breadcrumbJsonLd, canonicalUrl, SITE_URL } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
+import { researchSocialImage } from '@/lib/research/social';
 
 /**
  * Articles inside a research hub: `/research/{hub}/{slug}`.
@@ -48,6 +49,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const path = researchRoute(slug);
   const url = canonicalUrl(path);
   const updatedAt = 'updatedAt' in article ? article.updatedAt : undefined;
+  const ogImage = researchSocialImage(slug, article.title);
+
   return {
     title: `${article.title} - RELIASTRA AI infrastructure research`,
     description: article.summary,
@@ -64,20 +67,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       tags: [...article.tags],
       url,
       siteName: 'RELIASTRA',
-      images: [
-        {
-          url: `${SITE_URL}/opengraph-image.png`,
-          width: 1200,
-          height: 630,
-          alt: `${article.title} - RELIASTRA research`,
-        },
-      ],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
       description: article.summary,
-      images: [`${SITE_URL}/opengraph-image.png`],
+      images: [ogImage.url],
     },
   };
 }

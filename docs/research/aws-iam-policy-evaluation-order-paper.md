@@ -38,6 +38,12 @@ with a wider margin.
 | `frontend/src/lib/research/corpus.ts` | `ResearchPaper` record in the existing Cloud security section |
 | `frontend/src/lib/research/authors.ts` | First declared author (see §4) |
 | `frontend/src/app/llms.txt/route.ts` | One line under "Important public pages" |
+| `frontend/src/lib/seo.ts` | Six glossary terms (`explicit-deny`, `implicit-deny`, `identity-based-policy`, `resource-based-policy`, `permissions-boundary`, `non-human-identity`) and their six `PUBLIC_PAGES` entries |
+| `frontend/src/lib/research/social.ts` | New: the per-paper social-card registry and its fallback |
+| `frontend/scripts/generate-paper-og-image.mjs` | New: generates a paper's 1200×630 card from the page's own `TechArticle` JSON-LD |
+| `frontend/public/social/research/` | New: committed card SVG source and PNG for this paper |
+| `frontend/src/app/research/*/[slug]/page.tsx` (4) | Metadata now takes its social image from `researchSocialImage()` |
+| `frontend/src/seo/__tests__/seo.test.ts` | Gate: a declared card must belong to a published paper and be a committed 1200×630 PNG |
 | `research/aws-iam-evaluation-order/` | New artifact directory: `README.md`, `sources.md`, `LICENSE`, `figures/` |
 
 `/llms-full.txt` and `/sitemap.xml` needed no edit: both derive from the
@@ -124,7 +130,16 @@ propagates.
 5. **`/llms.txt`** gains one line. **`/llms-full.txt`** prints the paper's
    research question, abstract, scope, methodology, every finding with its
    basis, the entity list and the artifact paths, with no edit to the route.
-6. **`FAQPage` JSON-LD was deliberately not added.** Google restricted FAQ rich
+6. **Each shared link carries its own card.** `scripts/generate-paper-og-image.mjs`
+   resolves the slug against the live sitemap, fetches the rendered paper and
+   reads the title, category, reading time and byline out of the page's own
+   `TechArticle` node, then draws a 1200×630 card in the observatory vocabulary
+   - graph-paper ground, mono labels, one accent, the seven-stage band with each
+   stage's algebraic role printed in its cell. The PNG and its SVG source are
+   committed, because production serves them without runtime rendering, and a
+   test fails the build if a declared card is missing, wrongly sized, or
+   registered against a slug that is not a published paper.
+7. **`FAQPage` JSON-LD was deliberately not added.** Google restricted FAQ rich
    results to well-known authoritative government and health sites in 2023, so
    the markup earns no SERP feature and adds an embellishment risk. The Q&A
    headings and answer-first paragraphs stay; the schema does not.
@@ -132,16 +147,23 @@ propagates.
 ### Deliberately NOT done
 
 - **No `Dataset` node.** The paper ships no dataset, and a `dataset` field with
-  no file on disk fails the build. `datasetJsonLd` returns null, correctly.
-- **No glossary expansion in this change set.** Six terms would support this
-  paper (`Explicit Deny`, `Implicit Deny`, `Identity-based policy`,
-  `Resource-based policy`, `Permissions boundary`, `Non-human identity`). They
-  are a separate change set, because each glossary page is its own indexable
-  URL with its own claim to keep true, and adding them under a paper change set
-  would bury the review.
-- **No per-paper OG image.** The paper uses the site-wide
-  `/opengraph-image.png`. A paper-specific card needs a genuine 1200×630 asset;
-  a placeholder is worse than the shared card.
+  no file on disk fails the build. `datasetJsonLd` returns null, correctly, and
+  the emitted `TechArticle` carries no `mentions` property.
+- **No separate SEO title.** The `<title>` tag is the templated
+  `{title} - RELIASTRA Research` over the same string as the H1, which is how
+  every other paper in the corpus behaves. A longer, keyword-stuffed variant
+  would push the brand suffix past the truncation point without adding a
+  ranking signal the H1, the slug, the description and the six glossary pages do
+  not already carry. The query-matched phrasing lives in the title itself:
+  "AWS IAM policy evaluation logic: identity vs resource", 53 characters.
+- **Six glossary pages, added with care rather than speed.** Each term page is
+  its own indexable URL, so each carries its own claim to keep true. The
+  `howReliastra` field on an IAM term cannot honestly describe an IAM feature
+  RELIASTRA does not sell; each one therefore states the discipline the corpus
+  already applies - recording a refusal as distinct from an absence, starting
+  attribution at the CloudTrail principal type, treating its own probes as
+  non-human callers of other companies' control planes - or it would be
+  fabrication in a field named after the company.
 - **No measurement.** A tier of this work that captures simulator responses
   verbatim for the rows of Table 3 would add a `data/` directory, promote the
   evidence basis to `measured`, and require an `observation` window. That is a
