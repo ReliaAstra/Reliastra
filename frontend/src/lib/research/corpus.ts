@@ -658,6 +658,425 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
     publishedAt: '2026-09-11',
   },
 
+  {
+    slug: 'aws-iam-policy-evaluation-order',
+    researchQuestion:
+      'What is the exact decision procedure AWS executes when identity-based and resource-based policies disagree, and which parts of that procedure can an engineer verify before deployment rather than after a denial?',
+    abstract:
+      'AWS evaluates every request against a single deterministic procedure spanning seven classes of policy, and the order is published: an explicit deny short-circuits across all of them, then Organizations resource control policies, then service control policies, then resource-based policies, then identity-based policies, then permissions boundaries, then session policies. ' +
+      'Only two of the seven can grant anything; four are ceilings that can only subtract. ' +
+      'This paper restates the procedure as an algebra - short-circuit, cap, grant - and works through three consequences that summaries of the documentation omit. ' +
+      'First, the union of identity-based and resource-based permissions inside one account means a restrictive resource policy cannot tighten a permissive identity policy; reduction requires a ceiling or an explicit Deny. ' +
+      'Second, whether a resource-based Allow survives an implicit deny in a permissions boundary or session policy depends on the principal form the policy names: a grant to an IAM user ARN or to a role session ARN is not capped, a grant to a role ARN is. ' +
+      'Third, no verification route available before deployment evaluates all seven classes - the IAM Policy Simulator does not evaluate RCPs, does not accept session policies and does not simulate resource-based policies for IAM roles, while Access Analyzer custom policy checks take policy documents rather than request contexts. ' +
+      'The paper closes with the attribution consequence: the decoded authorization message distinguishes an explicit deny from an absent allow but does not name the deciding class, so the CloudTrail principal type is the input that selects which branch of the procedure applied. ' +
+      'Nothing here was measured. No AWS account was used, no simulator response was captured and no policy was evaluated against a live control plane; every finding is cited to an AWS primary source or argued from one, and the two places where the documentation does not settle a question are reported as unsettled rather than resolved.',
+    keyFindings: [
+      {
+        claim:
+          'The documented procedure evaluates seven policy classes in a fixed order - explicit deny first across all of them, then Organizations RCPs, then SCPs, then resource-based policies, then identity-based policies, then permissions boundaries, then session policies - and only two of the seven can grant anything. An Allow written into an SCP, an RCP, a permissions boundary or a session policy is inert by construction.',
+        basis: 'sourced',
+      },
+      {
+        claim:
+          'Inside one account the two granting classes combine by union, so a restrictive resource-based policy cannot reduce what a permissive identity-based policy grants. The common design of a broad role policy plus a tight bucket policy does not narrow effective permissions; only a ceiling or an explicit Deny does.',
+        basis: 'sourced',
+      },
+      {
+        claim:
+          'Whether a resource-based Allow survives an implicit deny in a permissions boundary or a session policy is a function of the principal form the policy names. A grant to an IAM user ARN or to an IAM role session ARN is not so limited; a grant to an IAM role ARN is; and a grant made through the aws:PrincipalArn condition key with a wildcard Principal is limited only by an explicit deny in the identity-based policies.',
+        basis: 'sourced',
+      },
+      {
+        claim:
+          'The documented order of RCPs before SCPs cannot change any verdict. Both are ceilings that deny only when no applicable Allow exists, and an explicit Deny short-circuits the whole procedure at stage one, so the two commute. The order describes the implementation rather than a priority, which matters when a denial has to be attributed to one of them.',
+        basis: 'reasoned',
+      },
+      {
+        claim:
+          'A cross-account request is two independent evaluations - the trusted account on the principal side and the trusting account on the resource side - and the request is allowed only if both return Allow. The same-account union rule does not survive the trust boundary, which is why a caller-side policy validated in isolation still produces a denial.',
+        basis: 'sourced',
+      },
+      {
+        claim:
+          'No verification route available before deployment evaluates all seven classes. The IAM Policy Simulator does not evaluate RCPs, does not accept session policies, and - in AWS words - does not support simulation of resource-based policies for IAM roles; Access Analyzer custom policy checks compare policy documents and take no request context, so no principal and no ceiling is in scope.',
+        basis: 'sourced',
+      },
+      {
+        claim:
+          'Attributing a denial requires more than the denial itself. The decoded authorization message states whether the request was denied by an explicit deny or by the absence of an explicit allow, and names the principal, action, resource and condition values, but it does not name the deciding policy class. The CloudTrail principal type is what selects the branch of the resource-based rule the request took, and it is usually read last.',
+        basis: 'sourced',
+      },
+    ],
+    scope:
+      'The single-account authorisation procedure and the cross-account conjunction, as AWS documents them, together with the verification and attribution consequences of both. ' +
+      'Per-service semantics, privilege escalation paths, VPC endpoint policies and attribute-based access control as a design pattern are out of scope. ' +
+      'So is any measurement: no AWS account was used for this paper, no request was issued and no policy was evaluated against a live control plane.',
+    methodologySummary:
+      'Close reading of AWS primary documentation - the IAM User Guide pages on policy evaluation logic, cross-account evaluation and permissions boundaries, the Organizations User Guide pages on SCPs and RCPs, and the API and CLI references for each verification route - restated as an algebra over policy classes and then applied exhaustively to enumerate a decision matrix of twenty-six request contexts. ' +
+      'The documented exceptions are expressed as predicates that fire before the general procedure is allowed to conclude anything about a grant. ' +
+      'Verification routes are compared by the shape of question each can answer rather than by feature list, which is what exposes the gap. ' +
+      'Peer-reviewed accounts of the engine AWS operates against its own policy language are cited for the complexity of the underlying problem. All sources were read on 13 September 2026.',
+    domains: ['Cloud security', 'Zero trust', 'Dependency security'],
+    researchType: 'Architecture analysis',
+    evidenceBasis: 'sourced',
+    entities: [
+      { role: 'vendor', name: 'Amazon Web Services', note: 'the control plane whose authorisation procedure is analysed' },
+      { role: 'system', name: 'AWS Identity and Access Management', note: 'the service that evaluates the request; the procedure under analysis' },
+      { role: 'system', name: 'AWS Organizations', note: 'attaches the two organisational ceilings above the account' },
+      { role: 'system', name: 'Resource control policy', note: 'ceiling attached on the resource side; evaluated second' },
+      { role: 'system', name: 'Service control policy', note: 'ceiling attached on the principal side; evaluated third' },
+      { role: 'system', name: 'IAM permissions boundary', note: 'ceiling on an IAM user or role; caps the identity-based grant' },
+      { role: 'system', name: 'AWS STS session policy', note: 'ceiling carried by a temporary session; evaluated last' },
+      { role: 'system', name: 'IAM Policy Simulator', note: 'SimulatePrincipalPolicy and SimulateCustomPolicy; a verification route, not the enforcement engine' },
+      { role: 'system', name: 'IAM Access Analyzer', note: 'custom policy checks: check-no-new-access and check-access-not-granted' },
+      { role: 'system', name: 'Zelkova', note: 'the SMT-based policy analysis engine behind Access Analyzer' },
+      { role: 'system', name: 'AWS CloudTrail', note: 'the record from which the principal type is read' },
+      { role: 'system', name: 'sts:DecodeAuthorizationMessage', note: 'returns explicit deny versus absent allow, not the deciding policy class' },
+      { role: 'dependency', name: 'Amazon S3', note: 'the example resource carrying a resource-based policy' },
+      { role: 'dependency', name: 'AWS KMS', note: 'the documented exception in which the key policy is authoritative' },
+      { role: 'standard', name: 'NIST SP 800-207', note: 'zero-trust vocabulary: per-request authorisation, no trust by location' },
+    ],
+    limitations: [
+      'AWS publishes the evaluation algorithm as a specification and does not publish the enforcement code. Every claim here is about documented behaviour, not about an implementation, and the difference is not recoverable from documentation.',
+      'This paper measured nothing. No AWS account was used, no request was issued, no simulator response was captured and no policy was evaluated against a live control plane. Findings are cited or reasoned and are labelled as one or the other.',
+      'Two cases are left unsettled because AWS does not settle them: whether a permissions boundary or session policy caps a resource-based grant written against an IAM role ARN in the presence of an identity-based implicit deny, and the third bullet of the session-policy stage, which read in sequence appears to allow a role session that the preceding bullet has already denied. Both are reported rather than resolved.',
+      'Behaviour is service-specific. Which actions support resource-based policies, and how a given service combines them with identity-based policies, is documented per service. This paper names S3, KMS and IAM role trust policies as examples and does not enumerate services.',
+      'The verification-capability matrix reflects published documentation and third-party reports as of the access dates shown. AWS changed the simulator surface in July 2026 and can change it again; two entries in that matrix rest on third-party reports and are labelled as reports at the point of use.',
+      'No customer policy, account identifier, principal name or credential appears in this paper or in its artifact directory. Every ARN, principal name and bucket name in an example is an invented fixture and is presented as one.',
+    ],
+    recommendations: [
+      {
+        title: 'Decide which plane is primary, at design time',
+        detail:
+          'For a resource shared across accounts or teams the resource is the control plane and its policy is the authoritative statement; for a workload inside one account the identity is primary and resource policies are additions rather than constraints. Writing the choice down is the cheapest control available and it is what makes the other five reviewable.',
+      },
+      {
+        title: 'Stop tightening with resource policies inside one account',
+        detail:
+          'A restrictive bucket policy against a permissive role policy is a union, and the permissive side wins. Use a permissions boundary, a service control policy, a resource control policy or an explicit Deny - the only four mechanisms that reduce effective permissions inside an account.',
+      },
+      {
+        title: 'Name the principal form deliberately in every resource-based policy',
+        detail:
+          'A grant to a role ARN is capped by the boundary and session policy attached to that role; a grant to the role session ARN is not. If the boundary is meant to apply, the policy has to name the role, and that decision is currently made in code and reviewed nowhere.',
+      },
+      {
+        title: 'Gate policy changes with a diff check rather than a simulation',
+        detail:
+          'check-no-new-access answers the question a pipeline can actually ask, and it answers it formally. Reserve the simulator for request-shaped questions and accept that it cannot answer the ones involving RCPs, session policies or resource-based grants to IAM roles.',
+      },
+      {
+        title: 'Write Deny conditions with BoolIfExists',
+        detail:
+          'Bool treats an absent context key as no match, so a Deny guarding MFA written with Bool does not fire for the session that has no MFA context - the session the statement was written to stop. BoolIfExists treats the absent key as a match.',
+      },
+      {
+        title: 'Attribute a denial from the record, not from the message',
+        detail:
+          'Read the CloudTrail principal type first, then the decoded authorization message if the operation returned one, then the policy inventory. Reading policies first is how an hour disappears into a permissions boundary that never applied to the principal that made the request.',
+      },
+    ],
+    references: [
+      {
+        id: 'iam-eval-logic',
+        kind: 'vendor-documentation',
+        title: 'Policy evaluation logic',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html',
+        accessedAt: '2026-09-13',
+        note: 'The union of identity-based and resource-based permissions inside one account; the intersection of identity-based policies with a permissions boundary; the intersection of all three with an SCP.',
+      },
+      {
+        id: 'iam-eval-denyallow',
+        kind: 'vendor-documentation',
+        title: 'How AWS enforcement code logic evaluates requests to allow or deny access',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic_policy-eval-denyallow.html',
+        accessedAt: '2026-09-13',
+        note: 'The stage order quoted in this paper, the root-user exception, RCPFullAWSAccess, and the principal-type branch of the resource-based stage.',
+      },
+      {
+        id: 'iam-eval-cross-account',
+        kind: 'vendor-documentation',
+        title: 'Cross-account policy evaluation logic',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic-cross-account.html',
+        accessedAt: '2026-09-13',
+        note: 'Trusted and trusting accounts, the two evaluations, and the requirement that both return Allow. Also notes that RAM policy fragments can affect evaluation.',
+      },
+      {
+        id: 'iam-boundaries',
+        kind: 'vendor-documentation',
+        title: 'Permissions boundaries for IAM entities',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html',
+        accessedAt: '2026-09-13',
+        note: 'Evaluating effective permissions with boundaries, by principal form; and the warning that a Deny carrying NotPrincipal always denies a principal with a boundary attached.',
+      },
+      {
+        id: 'iam-role-principals',
+        kind: 'vendor-documentation',
+        title: 'AWS JSON policy elements: Principal - role and role session principals',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html',
+        accessedAt: '2026-09-13',
+        note: 'The ARN forms distinguished in Table 2: role, assumed-role session, and federated user session.',
+      },
+      {
+        id: 'iam-cross-account-resource-access',
+        kind: 'vendor-documentation',
+        title: 'Cross account resource access in IAM',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies-cross-account-resource-access.html',
+        accessedAt: '2026-09-13',
+        note: 'Why role trust policies and KMS key policies are exceptions to the union rule.',
+      },
+      {
+        id: 'org-rcps',
+        kind: 'vendor-documentation',
+        title: 'Resource control policies',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html',
+        accessedAt: '2026-09-13',
+        note: 'RCPs attach on the resource side of the account where they are applied.',
+      },
+      {
+        id: 'org-scps',
+        kind: 'vendor-documentation',
+        title: 'Service control policies',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html',
+        accessedAt: '2026-09-13',
+        note: 'SCPs attach on the principal side; they filter permissions and never grant them.',
+      },
+      {
+        id: 'kms-key-policies',
+        kind: 'vendor-documentation',
+        title: 'Key policies',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html',
+        accessedAt: '2026-09-13',
+        note: 'The key policy is authoritative for a customer managed key: an identity-based Allow is insufficient unless the key policy grants or delegates.',
+      },
+      {
+        id: 'iam-notprincipal',
+        kind: 'vendor-documentation',
+        title: 'AWS JSON policy elements: NotPrincipal',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html',
+        accessedAt: '2026-09-13',
+        note: 'The element AWS recommends replacing with ArnNotEquals on aws:PrincipalArn when a Deny has to exclude named principals.',
+      },
+      {
+        id: 'sim-principal',
+        kind: 'vendor-documentation',
+        title: 'SimulatePrincipalPolicy - AWS IAM API Reference',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html',
+        accessedAt: '2026-09-13',
+        note: 'The request-shaped verification route: a principal, an action list, resource ARNs and context entries.',
+      },
+      {
+        id: 'sim-custom',
+        kind: 'vendor-documentation',
+        title: 'SimulateCustomPolicy - AWS IAM API Reference',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulateCustomPolicy.html',
+        accessedAt: '2026-09-13',
+        note: 'Quoted in this paper: the simulator evaluates identity-based policies and SCPs including their condition keys and resource scoping; simulation of resource-based policies is not supported for IAM roles; results can differ from the live environment.',
+      },
+      {
+        id: 'aa-check-no-new-access',
+        kind: 'vendor-documentation',
+        title: 'check-no-new-access - AWS CLI Command Reference',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/cli/latest/reference/accessanalyzer/check-no-new-access.html',
+        accessedAt: '2026-09-13',
+        note: 'Two policy documents and a policy type in; PASS or FAIL with reasons out. No request context is an input.',
+      },
+      {
+        id: 'sts-decode-auth',
+        kind: 'vendor-documentation',
+        title: 'DecodeAuthorizationMessage - AWS Security Token Service API Reference',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/STS/latest/APIReference/API_DecodeAuthorizationMessage.html',
+        accessedAt: '2026-09-13',
+        note: 'The documented contents of a decoded message: explicit deny versus absent allow, principal, action, resource, condition key values. Only certain operations return one.',
+      },
+      {
+        id: 'ct-useridentity',
+        kind: 'vendor-documentation',
+        title: 'CloudTrail userIdentity element',
+        publisher: 'Amazon Web Services',
+        url: 'https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html',
+        accessedAt: '2026-09-13',
+        note: 'Principal type, ARN and session context - including sessionIssuer and session attributes - as recorded for each call.',
+      },
+      {
+        id: 'zelkova-fmcad-2018',
+        kind: 'academic',
+        title: 'Semantic-based Automated Reasoning for AWS Access Policies using SMT',
+        publisher: 'IEEE, Formal Methods in Computer-Aided Design (FMCAD)',
+        identifier: 'DOI 10.23919/FMCAD.2018.8602994',
+        publishedAt: '2018-10-01',
+        url: 'https://ieeexplore.ieee.org/document/8602994',
+        note: 'The formalisation of the AWS policy language and the Zelkova analysis tool; the underlying problem is described as PSPACE-complete.',
+      },
+      {
+        id: 'stratified-abstraction-cav-2020',
+        kind: 'academic',
+        title: 'Stratified Abstraction of Access Control Policies',
+        publisher: 'Springer, Computer Aided Verification (CAV 2020), LNCS 12224',
+        identifier: 'DOI 10.1007/978-3-030-53288-8_9',
+        publishedAt: '2020-07-14',
+        url: 'https://link.springer.com/chapter/10.1007/978-3-030-53288-8_9',
+        note: 'Stratified predicate abstraction, deployed as the engine behind IAM Access Analyzer, with the account as the zone of trust.',
+      },
+      {
+        id: 'billion-smt-queries-tacas-2022',
+        kind: 'academic',
+        title: 'A Billion SMT Queries a Day (Invited Paper)',
+        publisher: 'Springer, Tools and Algorithms for the Construction and Analysis of Systems (TACAS)',
+        identifier: 'DOI 10.1007/978-3-031-13185-1_1',
+        publishedAt: '2022-08-24',
+        url: 'https://link.springer.com/chapter/10.1007/978-3-031-13185-1_1',
+        note: 'Scaling Zelkova from a thousand SMT invocations a day to a billion in five years, with a synchronous call on policy attachment.',
+      },
+      {
+        id: 'nist-800-207',
+        kind: 'standard',
+        title: 'Zero Trust Architecture',
+        publisher: 'National Institute of Standards and Technology',
+        identifier: 'NIST SP 800-207',
+        publishedAt: '2020-08-11',
+        url: 'https://csrc.nist.gov/pubs/sp/800/207/final',
+        accessedAt: '2026-09-13',
+        note: 'Per-request authorisation and the requirement that no resource be trusted by virtue of its location.',
+      },
+      {
+        id: 'awscli-issue-10314',
+        kind: 'web',
+        title: 'iam simulate-principal-policy and simulate-custom-policy ignore --resource-policy for sts:Assume* actions',
+        publisher: 'aws-cli issue #10314, filed by a third party',
+        publishedAt: '2026-05-15',
+        url: 'https://github.com/aws/aws-cli/issues/10314',
+        accessedAt: '2026-09-13',
+        note: 'A third-party report, not confirmed by AWS, that a trust policy passed to the simulator is parsed and then discarded for sts:Assume* actions. Recorded here as a report.',
+      },
+      {
+        id: 'simulator-console-migration',
+        kind: 'web',
+        title: 'IAM Policy Simulator has migrated to the IAM console',
+        publisher: 'Classmethod DevelopersIO',
+        publishedAt: '2026-08-02',
+        url: 'https://dev.classmethod.jp/en/articles/iam-policy-simulator-iam-console-update/',
+        accessedAt: '2026-09-13',
+        note: 'Third-party write-up of the July 2026 change, reporting the retirement of the standalone simulator site and the new policy-exclusion parameter. The AWS announcement URL it cites was not fetched directly for this paper.',
+      },
+      {
+        id: 'reliastra-research-agenda',
+        kind: 'reliastra-measurement',
+        title: 'The RELIASTRA research agenda',
+        publisher: 'Reliastra, Inc.',
+        url: 'https://reliastra.com/research/reliastra-research-agenda',
+        accessedAt: '2026-09-13',
+        note: 'The standard this paper is written against, including what RELIASTRA refuses to publish.',
+      },
+      {
+        id: 'reliastra-ai-trust-boundary',
+        kind: 'reliastra-measurement',
+        title: 'The trust boundary of an AI API dependency',
+        publisher: 'Reliastra, Inc.',
+        url: 'https://reliastra.com/research/cloud-security/ai-api-trust-boundary',
+        accessedAt: '2026-09-13',
+        note: 'The same trust boundary in a different plane: what leaves a domain you control, rather than what it accepts from outside.',
+      },
+    ],
+    artifacts: [
+      {
+        kind: 'repository',
+        label: 'Paper artifact directory',
+        description:
+          'The bibliography with access dates and the method used to verify each source, the figure index, the license for material RELIASTRA authored, and the reproduction steps for re-checking any claim in this paper against its primary source.',
+        path: 'research/aws-iam-evaluation-order',
+      },
+      {
+        kind: 'script',
+        label: 'Figure exporter',
+        description:
+          'Reads the rendered paper, lifts each figure SVG out of the HTML and rewrites the closed set of Tailwind class tokens into presentation attributes, producing the five standalone files listed above. An unrecognised token is a hard failure, so an export cannot drift from the published figure. PNG output is produced only when an SVG rasteriser is present; the SVG is the artifact of record.',
+        path: 'research/aws-iam-evaluation-order/figures/export-figures.mjs',
+        format: 'text/javascript',
+      },
+      {
+        kind: 'diagram',
+        label: 'Figure 1 - the seven stages of the single-account procedure',
+        description:
+          'Each stage labelled with its algebraic role: one short-circuit, four ceilings, two grants, plus the root-user bypass and both terminals.',
+        path: 'research/aws-iam-evaluation-order/figures/fig-1-evaluation-pipeline.svg',
+        format: 'image/svg+xml',
+        sha256: 'e507e42f24b150b30ff404530744d7ed60e0c80334395488c9429d170f2b4b92',
+      },
+      {
+        kind: 'diagram',
+        label: 'Figure 2 - union, ceilings, and the cross-account conjunction',
+        description:
+          'Same-account union of the two granting classes; the four ceilings as nested rings; two account bands divided by a trust boundary, each producing its own verdict.',
+        path: 'research/aws-iam-evaluation-order/figures/fig-2-policy-algebra.svg',
+        format: 'image/svg+xml',
+        sha256: '7262bfc25cccedf44e69da33e717942b385067a20f2d3e327deffcb9a581e39c',
+      },
+      {
+        kind: 'diagram',
+        label: 'Figure 3 - the same-account tightening fallacy',
+        description:
+          'The designer model against the documented outcome, and the four mechanisms that do reduce effective permissions inside one account.',
+        path: 'research/aws-iam-evaluation-order/figures/fig-3-tightening-fallacy.svg',
+        format: 'image/svg+xml',
+        sha256: 'e965c792d5df10d79c479ab121771a11d9519ea29c3994cff539a44cc9ffc0b0',
+      },
+      {
+        kind: 'diagram',
+        label: 'Figure 4 - the verification gap',
+        description:
+          'Seven policy classes against four verification routes, each cell marked evaluated, conditional or unsupported.',
+        path: 'research/aws-iam-evaluation-order/figures/fig-4-verification-gap.svg',
+        format: 'image/svg+xml',
+        sha256: '3c11581de38e1d90c23d7513bbf93a800c4c08e840d7eda8cffb51f6935f4428',
+      },
+      {
+        kind: 'diagram',
+        label: 'Figure 5 - the attribution path',
+        description:
+          'From an observed AccessDenied to the deciding policy class, through the error message, the decoded authorization message, the CloudTrail principal type and the account policy inventory.',
+        path: 'research/aws-iam-evaluation-order/figures/fig-5-attribution-path.svg',
+        format: 'image/svg+xml',
+        sha256: 'aba424c1846949ae410b564b3f53fefd484c70e61ffeb5b267f36dca537e7a2a',
+      },
+    ],
+    relatedEvidence: [
+      {
+        href: '/research/cloud-security/ai-api-trust-boundary',
+        label: 'The trust boundary of an AI API dependency',
+        description:
+          'The same boundary in a different plane, and the same failure mode: an error that names the wrong component.',
+      },
+      {
+        href: '/glossary/control-plane',
+        label: 'Control plane',
+        description: 'The definition, and why a control-plane failure presents as an application bug.',
+      },
+      {
+        href: '/track',
+        label: 'Public dependency index',
+        description: 'Independently measured records for the vendors RELIASTRA makes public.',
+      },
+    ],
+    author: 'adeshina-emmanuel',
+    publishedAt: '2026-09-13',
+  },
+
   /* ── AI infrastructure (hub) ───────────────────────────────────────────── */
   {
     slug: 'status-page-payload-anatomy',

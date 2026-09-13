@@ -4,6 +4,7 @@ import { RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
 import { canonicalUrl, SITE_URL } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
 import { researchPaper } from '@/lib/research/corpus';
+import { researchSocialImage } from '@/lib/research/social';
 
 const CATEGORY = 'measurement-integrity';
 const CATEGORY_TITLE = 'Measurement integrity';
@@ -29,6 +30,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
   const url = canonicalUrl(researchRoute(slug));
   const paper = researchPaper(slug);
+  const ogImage = researchSocialImage(slug, article.title);
+
   return {
     title: `${article.title} - RELIASTRA Research`,
     description: article.summary,
@@ -44,20 +47,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       tags: [...article.tags],
       url,
       siteName: 'RELIASTRA',
-      images: [
-        {
-          url: `${SITE_URL}/opengraph-image.png`,
-          width: 1200,
-          height: 630,
-          alt: article.title,
-        },
-      ],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
       description: article.summary,
-      images: [`${SITE_URL}/opengraph-image.png`],
+      images: [ogImage.url],
     },
   };
 }

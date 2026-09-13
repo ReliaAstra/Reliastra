@@ -284,6 +284,23 @@ export const RESEARCH_ARTICLES = [
     category: 'Cloud security',
     tags: ['Zero trust', 'AI infrastructure', 'Trust boundaries', 'Dependency security'],
   },
+  {
+    slug: 'aws-iam-policy-evaluation-order',
+    section: 'cloud-security',
+    title: 'AWS IAM policy evaluation logic: identity vs resource',
+    summary:
+      'The seven policy classes AWS evaluates, in order: which short-circuit, which cap, which grant. Same-account union, cross-account conjunction, the principal-type branch that decides whether a ceiling applies - and the classes no pre-deployment tool can verify.',
+    publishedAt: '2026-09-13',
+    category: 'Cloud security',
+    tags: [
+      'AWS IAM',
+      'Policy evaluation',
+      'Least privilege',
+      'Zero trust',
+      'Access control',
+      'CloudTrail',
+    ],
+  },
 ] as const;
 
 export type ResearchSlug = (typeof RESEARCH_ARTICLES)[number]['slug'];

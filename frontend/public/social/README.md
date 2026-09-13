@@ -8,6 +8,25 @@
 
 The silver wordmark is a vector interpretation of the user-provided visual reference, not the original uploaded file (which was unavailable in the workspace). Replace the glyph paths with official source artwork when available. The favicon and other site branding are unchanged.
 
-Regenerate from the frontend directory with `node scripts/generate-social-images.mjs` (optionally pass an asset name, e.g. `reliastra-email-avatar`, to regenerate only that one). Requires installed dependencies (`sharp`) and DejaVu Sans on the machine. PNGs are committed so production serves them without font downloads or runtime image rendering.
+## Research paper cards
+
+`public/social/research/<slug>-og.png`: 1200×630 Open Graph card per paper, used
+by `openGraph.images` and `twitter.images` on that paper's route only. Every
+other page keeps the site-wide card above.
+
+A card is generated, not hand-lettered: `node scripts/generate-paper-og-image.mjs`
+(with the site running) resolves the slug against the live sitemap and reads the
+title, category, reading time and byline from the page's own `TechArticle`
+JSON-LD, so a card cannot disagree with the record it illustrates. What is
+authored in the script is the card's design content - the thesis line and the
+stage band, which mirrors Table 1 of the paper - and the script refuses to run
+for a slug with no card content, rather than emitting a generic image.
+
+The registry of which paper has a card lives in
+`src/lib/research/social.ts`; a test fails the build if a registered card is not
+a committed 1200×630 PNG, or is registered against a slug that is not a
+published paper.
+
+Regenerate the site-wide assets from the frontend directory with `node scripts/generate-social-images.mjs` (optionally pass an asset name, e.g. `reliastra-email-avatar`, to regenerate only that one). Requires installed dependencies (`sharp`) and DejaVu Sans on the machine. PNGs are committed so production serves them without font downloads or runtime image rendering.
 
 Existing `/opengraph-image` links redirect to the new PNG URL. Social services may retain a cached preview after deployment; use their re-scrape/inspection tools to refresh it.

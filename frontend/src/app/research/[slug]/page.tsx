@@ -16,6 +16,7 @@ import {
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import { breadcrumbJsonLd, canonicalUrl, SITE_URL } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
+import { researchSocialImage } from '@/lib/research/social';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -40,6 +41,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!article) return { title: 'Not found', robots: { index: false } };
 
   const url = canonicalUrl(researchRoute(slug));
+  const ogImage = researchSocialImage(slug, article.title);
+
   return {
     title: `${article.title} - RELIASTRA Research`,
     description: article.summary,
@@ -55,20 +58,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       tags: [...article.tags],
       url,
       siteName: 'RELIASTRA',
-      images: [
-        {
-          url: `${SITE_URL}/opengraph-image.png`,
-          width: 1200,
-          height: 630,
-          alt: article.title,
-        },
-      ],
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: article.title,
       description: article.summary,
-      images: [`${SITE_URL}/opengraph-image.png`],
+      images: [ogImage.url],
     },
   };
 }
