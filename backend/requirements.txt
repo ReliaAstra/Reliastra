@@ -12,6 +12,11 @@ httpx>=0.27.0
 jinja2>=3.1.0
 playwright>=1.44.0
 xhtml2pdf>=0.2.16
+# QR for the verification address printed in evidence artifacts (pure python for
+# the SVG path factory - no raster dependency enters the worker image).
+# Optional by contract: app/modules/evidence/qr.py degrades to a text-only
+# link when it is absent, and a report must never fail over a missing mark.
+qrcode>=7.4.2
 pyjwt>=2.8.0
 bcrypt>=4.1.0
 cryptography>=42.0.0

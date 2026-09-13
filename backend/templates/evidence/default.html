@@ -2,435 +2,961 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reliastra SLA Evidence Report - {{ incident.id }}</title>
+    <title>RELIASTRA Evidence Report {{ document.reference }} - {{ dependency.name }}</title>
     <style>
+        /*
+         * Print-first document styling, and deliberately conservative CSS.
+
+         * Two renderers can produce this file: Chromium (Playwright), which is
+         * what the image is built with, and xhtml2pdf, which only exists so a
+         * broken install still yields an artifact. Everything here is therefore
+         * limited to what both understand: tables for layout (including the
+         * section heads and the letterhead), hairline borders, and @page
+         * margins - Chromium honours @page margin even though it cannot render
+         * @page margin-box content, so page numbers and the running footer come
+         * from the renderer (see `_html_to_pdf`), not from CSS. No custom
+         * properties, no flex or grid, no `text-transform` dependence for
+         * meaning: if the fallback renderer drops a decoration, the document
+         * must still be complete.
+         *
+         * Colour is limited to one accent (#D9A441, the brand signal) plus
+         * state colours used *with words*, never as the only carrier of
+         * meaning - a black-and-white photocopy of this report must say
+         * everything the original does.
+         */
+        @page {
+            size: A4;
+            margin: 17mm 15mm 18mm 15mm;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            color: #333333;
-            line-height: 1.5;
+            margin: 0;
+            color: #0B1220;
+            background: #ffffff;
+            font-family: "Inter", "Helvetica Neue", Helvetica, Arial,
+                         "Liberation Sans", "DejaVu Sans", sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.52;
+            font-variant-numeric: tabular-nums;
         }
-        .header {
-            border-bottom: 2px solid #0056b3;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+
+        .mono {
+            font-family: "SFMono-Regular", "JetBrains Mono", Menlo, Consolas,
+                         "DejaVu Sans Mono", monospace;
+            font-size: 8.2pt;
         }
-        .title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #0056b3;
+
+        /* ── Letterhead ─────────────────────────────────────────────────── */
+        .letterhead { border-bottom: 2px solid #0B1220; padding-bottom: 10px; }
+        .lh-row { width: 100%; border-collapse: collapse; }
+        .lh-row td { border: 0; padding: 0; vertical-align: bottom; }
+        .mark { width: 22px; height: 22px; vertical-align: -5px; margin-right: 9px; }
+        .issuer { font-size: 12.5pt; font-weight: 700; letter-spacing: 0.13em; }
+        .issuer-sub {
+            display: block;
+            margin-top: 3px;
+            font-size: 7.4pt;
+            letter-spacing: 0.1em;
+            color: #5A6472;
         }
-        .subtitle {
-            font-size: 14px;
-            color: #666666;
+        .lh-right { text-align: right; white-space: nowrap; }
+        .ref { font-size: 9.6pt; font-weight: 600; }
+        .kicker {
+            display: block;
+            font-size: 7pt;
+            letter-spacing: 0.13em;
+            color: #8A94A3;
+            margin-bottom: 3px;
         }
-        .section {
-            margin-top: 25px;
-            margin-bottom: 15px;
+
+        /* ── Title block ────────────────────────────────────────────────── */
+        .doc-kicker {
+            margin: 16px 0 0 0;
+            font-size: 7.2pt;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            color: #A9761F;
         }
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            border-bottom: 1px solid #dddddd;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+        h1.doc-title {
+            margin: 7px 0 0 0;
+            font-size: 19pt;
+            line-height: 1.18;
+            font-weight: 700;
+            max-width: 30em;
         }
-        .meta-table, .data-table {
+        .doc-sub { margin: 7px 0 0 0; font-size: 10pt; color: #3C4655; max-width: 62ch; }
+
+        table.meta-band {
+            width: 100%;
+            margin: 15px 0 0 0;
+            border-collapse: collapse;
+            border-top: 1px solid #DFE4EB;
+            border-bottom: 1px solid #DFE4EB;
+        }
+        .meta-band td {
+            border: 0;
+            border-left: 1px solid #DFE4EB;
+            padding: 8px 12px 9px 12px;
+            width: 25%;
+            vertical-align: top;
+        }
+        .meta-band td.first { border-left: 0; padding-left: 0; }
+        .meta-band .k {
+            display: block;
+            font-size: 6.8pt;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            color: #8A94A3;
+        }
+        .meta-band .v { display: block; margin-top: 3px; font-size: 9pt; font-weight: 600; }
+        .meta-band .v.wrap { font-weight: 500; word-break: break-all; }
+
+        /* ── Finding ────────────────────────────────────────────────────── */
+        .finding {
+            margin-top: 18px;
+            padding: 13px 15px 4px 15px;
+            border: 1px solid #C6CFDB;
+            border-left: 3px solid #D9A441;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .finding h2 {
+            margin: 0 0 7px 0;
+            font-size: 7.2pt;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            color: #5A6472;
+        }
+        .finding ul { margin: 0 0 9px 0; padding-left: 15px; }
+        .finding li { margin-bottom: 5px; max-width: 96ch; }
+
+        /* ── Figures ────────────────────────────────────────────────────── */
+        table.figures {
+            width: 100%;
+            margin-top: 14px;
+            border-collapse: collapse;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        table.figures td {
+            border: 0;
+            border-top: 1px solid #0B1220;
+            padding: 9px 14px 11px 0;
+            width: 25%;
+            vertical-align: top;
+        }
+        .fig-k {
+            display: block;
+            font-size: 6.8pt;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #5A6472;
+        }
+        .fig-v {
+            display: block;
+            margin-top: 5px;
+            font-size: 15.5pt;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .fig-n {
+            display: block;
+            margin-top: 5px;
+            font-size: 7.6pt;
+            line-height: 1.45;
+            color: #5A6472;
+        }
+
+        /* ── Sections ───────────────────────────────────────────────────── */
+        section { margin-top: 22px; }
+        table.section-head {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            border-bottom: 1px solid #0B1220;
+            margin-bottom: 10px;
+            break-after: avoid;
+            page-break-after: avoid;
         }
-        .meta-table td, .data-table th, .data-table td {
-            border: 1px solid #dddddd;
-            padding: 8px;
-            font-size: 13px;
+        table.section-head td { border: 0; padding: 0 0 5px 0; vertical-align: bottom; }
+        table.section-head td.note-cell { text-align: right; width: 38%; }
+        .section-title { font-size: 11pt; font-weight: 700; }
+        .section-note { font-size: 7pt; letter-spacing: 0.1em; color: #8A94A3; }
+
+        /* Label/value records: hairlines, never cell borders. Cell borders turn
+           a record into a spreadsheet; that is the difference between a document
+           that reads as issued and one that reads as exported. */
+        table.records { width: 100%; border-collapse: collapse; }
+        table.records tr { break-inside: avoid; page-break-inside: avoid; }
+        table.records td {
+            border: 0;
+            border-bottom: 1px solid #DFE4EB;
+            padding: 6px 0;
+            vertical-align: top;
+            font-size: 9.2pt;
         }
-        .meta-table td.label {
-            font-weight: bold;
-            width: 32%;
-            background-color: #f9f9f9;
+        table.records td.k {
+            width: 27%;
+            padding-right: 16px;
+            font-size: 7.4pt;
+            font-weight: 600;
+            line-height: 1.6;
+            letter-spacing: 0.08em;
+            color: #5A6472;
         }
-        .data-table th {
-            background-color: #f0f4f8;
+        table.records td.v.num { font-weight: 600; }
+
+        table.grid { width: 100%; border-collapse: collapse; margin-top: 2px; }
+        table.grid th {
+            border: 0;
+            border-bottom: 1px solid #0B1220;
+            padding: 5px 10px 5px 0;
             text-align: left;
+            font-size: 6.9pt;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: #5A6472;
+            white-space: nowrap;
         }
-        .chart-box {
-            margin: 20px 0;
-            padding: 10px;
-            border: 1px solid #eeeeee;
-            background-color: #fafbfc;
-            text-align: center;
+        table.grid td {
+            border: 0;
+            border-bottom: 1px solid #DFE4EB;
+            padding: 5px 10px 5px 0;
+            font-size: 8.6pt;
+            vertical-align: top;
         }
-        .note {
-            font-size: 12px;
-            color: #6b6f76;
-            margin-top: 6px;
-        }
-        .warning {
-            font-size: 12px;
-            color: #8a4b00;
-            background-color: #fff7e8;
-            border: 1px solid #f0d9ad;
-            padding: 8px;
-            margin-top: 10px;
-        }
-        .footer {
-            margin-top: 40px;
-            padding-top: 10px;
-            border-top: 1px solid #cccccc;
-            font-size: 11px;
-            color: #777777;
-        }
-        .badge {
+        table.grid tr { break-inside: avoid; page-break-inside: avoid; }
+        table.grid td.right, table.grid th.right { text-align: right; padding-right: 0; }
+        table.grid td.mid, table.grid th.mid { text-align: center; }
+        .void { color: #8A94A3; }
+
+        .state { font-weight: 700; }
+        .state-up { color: #17615A; }
+        .state-down { color: #8A1C12; }
+
+        .severity {
             display: inline-block;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #d9534f;
+            padding: 0 5px;
+            border: 1px solid currentColor;
+            font-size: 7.2pt;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            line-height: 1.55;
         }
-        .muted { color: #8a8f98; }
+        .sev-critical { color: #8A1C12; }
+        .sev-major { color: #9A5B0B; }
+        .sev-minor { color: #5A6472; }
+
+        .chart-frame { border: 1px solid #DFE4EB; padding: 8px 8px 2px 8px; }
+        /* The chart is authored at 720 units and the page is narrower. Scale it
+           instead of clipping it: the right-hand end is the recovery, and a
+           report that cuts off its own conclusion is worse than no chart. */
+        .chart-frame svg { width: 100%; height: auto; max-width: 100%; }
+
+        .note { margin: 7px 0 0 0; font-size: 8pt; line-height: 1.55; color: #5A6472; max-width: 100ch; }
+        .caution {
+            margin: 9px 0 0 0;
+            padding: 7px 10px;
+            border: 1px solid #C6CFDB;
+            border-left: 3px solid #9A5B0B;
+            font-size: 8.1pt;
+            line-height: 1.55;
+            color: #3C4655;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        .caution strong { color: #0B1220; }
+
+        /* ── Authenticity block ─────────────────────────────────────────── */
+        table.verify {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #C6CFDB;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        table.verify td {
+            border: 0;
+            border-bottom: 1px solid #DFE4EB;
+            padding: 7px 10px;
+            font-size: 8.6pt;
+            vertical-align: top;
+        }
+        table.verify td.k {
+            width: 26%;
+            font-size: 7.2pt;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            color: #5A6472;
+        }
+        .qr-cell { width: 118px; text-align: center; vertical-align: middle; }
+        .qr { width: 88px; height: 88px; margin: 0 auto; }
+        .qr svg { width: 100%; height: auto; display: block; }
+        .signed { color: #17615A; font-weight: 700; }
+        .unsigned { color: #9A5B0B; font-weight: 700; }
+
+        /* ── Footer ─────────────────────────────────────────────────────── */
+        .doc-footer {
+            margin-top: 22px;
+            padding-top: 9px;
+            border-top: 1px solid #0B1220;
+            font-size: 7.6pt;
+            line-height: 1.6;
+            color: #5A6472;
+        }
+        .doc-footer .frow { width: 100%; border-collapse: collapse; }
+        .doc-footer .frow td { border: 0; padding: 0; vertical-align: top; }
+        .doc-footer .right { text-align: right; white-space: nowrap; }
+        .scope { margin-top: 7px; padding-top: 7px; border-top: 1px solid #DFE4EB; max-width: 112ch; }
+
+        @media screen {
+            body { background: #EEF1F5; padding: 26px 0; }
+            .sheet {
+                max-width: 794px;
+                margin: 0 auto;
+                background: #fff;
+                padding: 46px 56px 52px 56px;
+                box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 18px 48px rgba(15,23,42,.10);
+            }
+        }
+        @media print {
+            .sheet { padding: 0; }
+            section { margin-top: 18px; }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="title">RELIASTRA EXTERNAL SLA EVIDENCE REPORT</div>
-        {# The subtitle describes the topology that actually produced this
-           record. It never claims independent multi-point confirmation when
-           the checks came from one place. #}
-        <div class="subtitle">{{ topology.topology_label }} &middot; Detector-Confirmed Vendor Failure Evidence</div>
-        <div class="note">{{ topology.topology_statement }}</div>
+<div class="sheet">
+
+    <header class="letterhead">
+        <table class="lh-row">
+            <tr>
+                <td>
+                    <svg class="mark" viewBox="0 0 24 24" role="img" aria-label="RELIASTRA">
+                        <rect x="0.75" y="0.75" width="22.5" height="22.5" fill="none"
+                              stroke="#0B1220" stroke-opacity="0.35" stroke-width="1.5"/>
+                        <path d="M4 16.5h16" stroke="#0B1220" stroke-opacity="0.3" stroke-width="1.5"/>
+                        <path d="M8 16.5V11" stroke="#0B1220" stroke-opacity="0.5" stroke-width="1.5"/>
+                        <path d="M16 16.5v-3" stroke="#0B1220" stroke-opacity="0.5" stroke-width="1.5"/>
+                        <path d="M12 16.5V6.5" stroke="#D9A441" stroke-width="1.75"/>
+                    </svg>
+                    <span class="issuer">RELIASTRA</span>
+                    <span class="issuer-sub">External dependency intelligence &middot; measurement record</span>
+                </td>
+                <td class="lh-right">
+                    <span class="kicker">Report reference</span>
+                    <span class="ref mono">{{ document.reference }}</span>
+                </td>
+            </tr>
+        </table>
+    </header>
+
+    <p class="doc-kicker">{{ document.class_line }}</p>
+    <h1 class="doc-title">{{ dependency.name }}</h1>
+    <p class="doc-sub">{{ verdict.headline }}</p>
+
+    <table class="meta-band">
+        <tr>
+            <td class="first">
+                <span class="k">Prepared for</span>
+                <span class="v">{{ document.prepared_for }}</span>
+            </td>
+            <td>
+                <span class="k">Issued</span>
+                <span class="v">{{ document.issued_stamp }}</span>
+            </td>
+            <td>
+                <span class="k">Record window</span>
+                <span class="v">{{ document.window }}</span>
+            </td>
+            <td>
+                <span class="k">Endpoint under observation</span>
+                <span class="v wrap">{{ dependency.endpoint_url }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="finding">
+        <h2>WHAT THE RECORD SHOWS</h2>
+        <ul>
+            {%- for sentence in verdict.sentences %}
+            <li>{{ sentence }}</li>
+            {%- endfor %}
+        </ul>
     </div>
 
-    <div class="section">
-        <div class="section-title">1. Incident Metadata</div>
-        <table class="meta-table">
+    <table class="figures">
+        <tr>
+            {%- for tile in figures %}
+            <td>
+                <span class="fig-k">{{ tile.label }}</span>
+                <span class="fig-v">{{ tile.value }}</span>
+                <span class="fig-n">{{ tile.note }}</span>
+            </td>
+            {%- endfor %}
+        </tr>
+    </table>
+
+    <section aria-label="incident record">
+        <table class="section-head">
             <tr>
-                <td class="label">Incident ID</td>
-                <td>{{ incident.id }}</td>
+                <td><div class="section-title">1. Incident Record</div></td>
+                <td class="note-cell"><span class="section-note">{{ document.record_state }}</span></td>
+            </tr>
+        </table>
+        <table class="records">
+            <tr>
+                <td class="k">Report Reference</td>
+                <td class="v mono">{{ document.reference }}</td>
             </tr>
             <tr>
-                <td class="label">Organization ID</td>
-                <td>{{ incident.org_id }}</td>
+                <td class="k">Incident ID</td>
+                <td class="v mono">{{ incident.id }}</td>
             </tr>
             <tr>
-                <td class="label">Monitored Dependency</td>
-                <td>{{ dependency.name }} ({{ dependency.endpoint_url }})</td>
+                <td class="k">Organization</td>
+                <td class="v">{{ document.prepared_for }} <span class="void">({{ document.org_ref }})</span></td>
             </tr>
             <tr>
-                <td class="label">Severity / Status</td>
-                <td><span class="badge">{{ incident.severity|upper }}</span> / {{ incident.status|upper }}</td>
+                <td class="k">Monitored Dependency</td>
+                <td class="v">{{ dependency.name }} <span class="void">({{ dependency.endpoint_url }})</span></td>
             </tr>
             <tr>
-                <td class="label">Started At (UTC)</td>
-                <td>{{ incident.started_at }}</td>
+                <td class="k">Severity / Status</td>
+                <td class="v">
+                    <span class="severity sev-{{ incident.severity }}">{{ incident.severity | severity_label }}</span>
+                    &nbsp;/&nbsp; {{ incident.status | status_label }}
+                </td>
             </tr>
             <tr>
-                <td class="label">Resolved At (UTC)</td>
-                <td>{{ incident.resolved_at or "OPEN / IN PROGRESS" }}</td>
+                <td class="k">Started At (UTC)</td>
+                <td class="v">{{ incident.started_at | utc }}</td>
             </tr>
             <tr>
-                <td class="label">Measurement Window (UTC)</td>
-                <td>{{ metrics.window_start }} &rarr; {{ metrics.window_end }}
-                    ({{ '%.0f'|format(metrics.window_seconds) }}s)</td>
+                <td class="k">Resolved At (UTC)</td>
+                <td class="v">
+                    {%- if incident.resolved_at -%}
+                        {{ incident.resolved_at | utc }}
+                    {%- else -%}
+                        <span class="void">open at time of issue &mdash; this window is still moving</span>
+                    {%- endif -%}
+                </td>
             </tr>
             <tr>
-                <td class="label">Observation Topology</td>
-                <td>{{ topology.topology_label }}
+                <td class="k">Measurement Window (UTC)</td>
+                <td class="v">{{ document.window }} &middot; {{ metrics.window_seconds | secs }}</td>
+            </tr>
+            <tr>
+                <td class="k">Observation Topology</td>
+                <td class="v">
+                    {{ topology.topology_label }}
                     &mdash; {{ topology.observation_point_count }} observation
                     point{{ '' if topology.observation_point_count == 1 else 's' }}
                     recorded in this window
                     {%- if metrics.observation_points %}
-                    ({{ metrics.observation_points|join(', ') }})
+                        ({{ metrics.observation_points | join(', ') }})
                     {%- endif %}
                 </td>
             </tr>
         </table>
-    </div>
+        <p class="note">{{ topology.topology_statement }}</p>
+    </section>
 
-    <div class="section">
-        <div class="section-title">2. Detection Record</div>
-        {# Everything here is the decision that was persisted when the
-           incident opened. This section replaced a hard-coded assertion that
-           the failure had been confirmed by a vote of regions, which a
-           single-observation-point deployment can never truthfully make. #}
-        <table class="meta-table">
+    <section aria-label="detection record">
+        <table class="section-head">
             <tr>
-                <td class="label">Detection Rule</td>
-                <td>{{ detection.rule_label }}</td>
+                <td><div class="section-title">2. Detection Record</div></td>
+            </tr>
+        </table>
+        <table class="records">
+            <tr>
+                <td class="k">Detection Rule</td>
+                <td class="v">{{ detection.rule_label }}</td>
             </tr>
             <tr>
-                <td class="label">Rule Identifier</td>
-                <td>{{ detection.rule or "not recorded" }}</td>
+                <td class="k">Rule Identifier</td>
+                <td class="v mono">{{ detection.rule or "not recorded" }}</td>
             </tr>
             <tr>
-                <td class="label">Detector Confirmation</td>
-                <td>
+                <td class="k">Detector Confirmation</td>
+                <td class="v">
                     {%- if detection.confirmed is none -%}
-                        <span class="muted">not recorded</span>
+                        <span class="void">not recorded</span>
                     {%- elif detection.confirmed -%}
-                        CONFIRMED by {{ detection.rule_label|lower }}
+                        confirmed &mdash; {{ detection.rule_label | lower }}
                     {%- else -%}
                         not confirmed
                     {%- endif -%}
                 </td>
             </tr>
             <tr>
-                <td class="label">Basis</td>
-                <td>
+                <td class="k">Basis</td>
+                <td class="v">
                     {%- if detection.reason -%}
                         {{ detection.reason }}
                     {%- else -%}
-                        <span class="muted">This incident was opened before detection
-                        provenance was recorded, so the exact basis is not
-                        available.</span>
+                        <span class="void">This incident opened before detection provenance was
+                        recorded, so the exact basis is not available.</span>
                     {%- endif -%}
                 </td>
             </tr>
             {% if detection.agreeing_observation_points %}
             <tr>
-                <td class="label">Agreeing Observation Points</td>
-                <td>{{ detection.agreeing_observation_points|join(', ') }}
+                <td class="k">Agreeing Observation Points</td>
+                <td class="v">{{ detection.agreeing_observation_points | join(', ') }}
                     ({{ detection.required }} required)</td>
             </tr>
             {% endif %}
         </table>
         {% if not topology.independent_confirmation %}
-        <p class="note">This deployment observes from a single point, so
-        confirmation is by persistence of failure rather than by agreement
-        between independent points. No independent cross-verification is
-        claimed in this document.</p>
+        <p class="note">This deployment observes from a single point, so confirmation is by
+        persistence of failure rather than by agreement between independent points. No independent
+        cross-verification is claimed in this document.</p>
         {% endif %}
-    </div>
+    </section>
 
-    <div class="section">
-        <div class="section-title">3. Incident Window Measurements</div>
-        <table class="meta-table">
+    <section aria-label="window measurements">
+        <table class="section-head">
             <tr>
-                <td class="label">Checks In Window</td>
-                <td>{{ metrics.total_checks }}
-                    ({{ metrics.measured_checks }} reached the target)</td>
+                <td><div class="section-title">3. Incident Window Measurements</div></td>
+            </tr>
+        </table>
+        <table class="records">
+            <tr>
+                <td class="k">Checks In Window</td>
+                <td class="v num">{{ metrics.total_checks | int }}
+                    <span class="void">({{ metrics.measured_checks | int }} that reached the endpoint
+                    are the denominator)</span></td>
             </tr>
             <tr>
-                <td class="label">Successful Checks</td>
-                <td>{{ metrics.up_checks }}</td>
+                <td class="k">Successful Checks</td>
+                <td class="v num">{{ metrics.up_checks | int }}</td>
             </tr>
             <tr>
-                <td class="label">Failed Checks</td>
-                <td>{{ metrics.down_checks }}</td>
+                <td class="k">Failed Checks</td>
+                <td class="v num">{{ metrics.down_checks | int }}</td>
             </tr>
             <tr>
-                <td class="label">Blocked Checks (Excluded)</td>
-                <td>{{ metrics.blocked_checks }}
-                    <span class="muted">probe refused by security policy; not
-                    counted as target downtime</span></td>
+                <td class="k">Blocked Checks (Excluded)</td>
+                <td class="v">{{ metrics.blocked_checks | int }}
+                    <span class="void">&mdash; probe refused by RELIASTRA's outbound security policy;
+                    excluded from every figure above and not counted as downtime at the target,
+                    because it was never issued</span></td>
             </tr>
             <tr>
-                <td class="label">Measured Availability</td>
-                <td>
+                <td class="k">Measured Availability</td>
+                <td class="v num">
                     {%- if metrics.availability_pct is none -%}
-                        <span class="muted">not calculable &mdash; no measured checks</span>
+                        <span class="void">not calculable &mdash; no measured checks</span>
                     {%- else -%}
-                        {{ '%.4f'|format(metrics.availability_pct) }}%
+                        {{ metrics.availability_pct | percent }}
+                        <span class="void">over {{ metrics.measured_checks | int }} measured checks</span>
                     {%- endif -%}
                 </td>
             </tr>
             <tr>
-                <td class="label">Longest Failure Run</td>
-                <td>{{ metrics.longest_failure_run }} consecutive failed check(s)</td>
+                <td class="k">Longest Failure Run</td>
+                <td class="v">{{ metrics.longest_failure_run }} consecutive failed check(s)</td>
             </tr>
             <tr>
-                <td class="label">Latency (ms)</td>
-                <td>
+                <td class="k">Latency (ms)</td>
+                <td class="v">
                     {%- if metrics.avg_latency_ms is none -%}
-                        <span class="muted">no successful measurement in window</span>
+                        <span class="void">no successful measurement in window</span>
                     {%- else -%}
-                        avg {{ '%.1f'|format(metrics.avg_latency_ms) }}
-                        &middot; p50 {{ '%.1f'|format(metrics.p50_latency_ms) }}
-                        &middot; p95 {{ '%.1f'|format(metrics.p95_latency_ms) }}
-                        &middot; min {{ '%.1f'|format(metrics.min_latency_ms) }}
-                        &middot; max {{ '%.1f'|format(metrics.max_latency_ms) }}
+                        mean {{ metrics.avg_latency_ms | ms }} &middot;
+                        p50 {{ metrics.p50_latency_ms | ms }} &middot;
+                        p95 {{ metrics.p95_latency_ms | ms }} &middot;
+                        min {{ metrics.min_latency_ms | ms }} &middot;
+                        max {{ metrics.max_latency_ms | ms }}
                     {%- endif -%}
                 </td>
             </tr>
             <tr>
-                <td class="label">First / Last Observation</td>
-                <td>{{ metrics.first_observed_at or "none" }} &rarr;
-                    {{ metrics.last_observed_at or "none" }}</td>
+                <td class="k">First / Last Observation</td>
+                <td class="v">{{ metrics.first_observed_at | utc }} &rarr; {{ metrics.last_observed_at | utc }}</td>
             </tr>
         </table>
         {% if metrics.insufficient_data %}
-        <div class="warning"><strong>Data limitation:</strong> {{ metrics.data_note }}
+        <div class="caution"><strong>Data limitation.</strong> {{ metrics.data_note }}
         Figures above are reported as measured and are not extrapolated.</div>
         {% elif metrics.data_note %}
         <p class="note">{{ metrics.data_note }}</p>
         {% endif %}
         {% if observations_truncated %}
-        <div class="warning"><strong>Truncated window:</strong>
-        {{ observations_available_in_window }} checks fall inside the incident
-        window; the first {{ observation_count }} are documented here and are
-        the basis of the figures above.</div>
+        <div class="caution"><strong>The documented window is a sample.</strong>
+        {{ observations_available_in_window | int }} checks fall inside the incident window and
+        {{ observation_count | int }} are carried here (section 10); those carried are the basis of
+        every figure above. The remaining
+        {{ (observations_available_in_window - observation_count) | int }} are retained in storage
+        and included in the machine-readable payload addressed by the data hash.</div>
         {% endif %}
-    </div>
+    </section>
 
-    <div class="section">
-        <div class="section-title">4. SLA Impact Calculation</div>
-        <table class="meta-table">
+    <section aria-label="sla impact">
+        <table class="section-head">
             <tr>
-                <td class="label">Planned Target Uptime</td>
-                <td>{{ '%.1f'|format(target_uptime_pct) }}%
-                    ({{ '%.0f'|format(impact.allowable_downtime_seconds) }}s
-                    allowable inside the window)</td>
-            </tr>
-            <tr>
-                <td class="label">Measured Availability In Window</td>
-                <td>
-                    {%- if impact.measured_availability_pct is none -%}
-                        <span class="muted">not calculable</span>
-                    {%- else -%}
-                        {{ '%.4f'|format(impact.measured_availability_pct) }}%
-                    {%- endif -%}
-                </td>
-            </tr>
-            <tr>
-                <td class="label">SLA Degradation Impact</td>
-                <td>
-                    {%- if impact.impact_pct is none -%}
-                        <span class="muted">not calculable &mdash; not assumed to be 0%</span>
-                    {%- else -%}
-                        <strong>{{ '%.4f'|format(impact.impact_pct) }}%</strong>
-                        (target &minus; measured, floored at zero)
-                    {%- endif -%}
-                </td>
-            </tr>
-            <tr>
-                <td class="label">Measured Downtime</td>
-                <td>{{ '%.0f'|format(impact.measured_downtime_seconds) }}s of
-                    {{ '%.0f'|format(metrics.window_seconds) }}s</td>
-            </tr>
-            <tr>
-                <td class="label">Allowance Exceeded</td>
-                <td>{{ 'YES' if impact.exceeded_allowance else 'NO' }}</td>
-            </tr>
-            <tr>
-                <td class="label">Calculation Basis</td>
-                <td>{{ impact.basis }}</td>
+                <td><div class="section-title">4. SLA Impact Calculation</div></td>
             </tr>
         </table>
-        <p class="note">Computed from the incident window only
-        ({{ metrics.window_start }} &rarr; {{ metrics.window_end }}). The
-        rolling 24-hour figure in section 6 covers a different period and is
-        not used in this calculation.</p>
-    </div>
+        <table class="records">
+            <tr>
+                <td class="k">Planned Target Uptime</td>
+                <td class="v">{{ target_uptime_pct | percent(1) }}
+                    <span class="void">({{ impact.allowable_downtime_seconds | secs }} allowable inside
+                    this window)</span></td>
+            </tr>
+            <tr>
+                <td class="k">Measured Availability In Window</td>
+                <td class="v num">
+                    {%- if impact.measured_availability_pct is none -%}
+                        <span class="void">not calculable</span>
+                    {%- else -%}
+                        {{ impact.measured_availability_pct | percent }}
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="k">SLA Degradation Impact</td>
+                <td class="v num">
+                    {%- if impact.impact_pct is none -%}
+                        <span class="void">not calculable &mdash; not assumed to be 0%</span>
+                    {%- else -%}
+                        {{ impact.impact_pct | percent }}
+                        <span class="void">(target &minus; measured, floored at zero)</span>
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="k">Measured Downtime</td>
+                <td class="v">{{ impact.measured_downtime_seconds | duration }}
+                    <span class="void">({{ impact.measured_downtime_seconds | secs }}, measured share
+                    of the window)</span></td>
+            </tr>
+            <tr>
+                <td class="k">Allowance Exceeded</td>
+                <td class="v">{% if impact.exceeded_allowance %}yes{% else %}no{% endif %}</td>
+            </tr>
+            <tr>
+                <td class="k">Calculation Basis</td>
+                <td class="v">{{ impact.basis }}</td>
+            </tr>
+        </table>
+        <p class="note">Computed from the incident window only. The rolling 24-hour figure in
+        section 6 covers a different period and is not used here. This section states a measured
+        shortfall against a stated target; it determines no entitlement, credit or liability,
+        which are matters of the agreement between the parties.</p>
+    </section>
 
-    <div class="section">
-        <div class="section-title">5. Observed Latency And Failures</div>
-        <div class="chart-box">
-            {# Rendered from the observations carried in this document. #}
+    <section aria-label="latency chart">
+        <table class="section-head">
+            <tr>
+                <td><div class="section-title">5. Observed Latency And Failures</div></td>
+                <td class="note-cell"><span class="section-note">{{ document.chart_note }}</span></td>
+            </tr>
+        </table>
+        <div class="chart-frame">
+            {# Drawn from the observations carried in this document. #}
             {{ chart_svg | safe }}
         </div>
-        <p class="note">Drawn from {{ chart_facts.observations_available }}
-        observation(s) in the incident window
-        {%- if chart_facts.downsampled %}, reduced to
-        {{ chart_facts.observations_plotted }} worst-per-bucket points for
-        legibility{%- endif %}
-        {%- if chart_facts.failed_marks %}, with
-        {{ chart_facts.failed_marks }} failed check(s) marked{%- endif %}.
-        {%- if not chart_facts.rendered %} {{ chart_facts.note }}.{%- endif %}</p>
-    </div>
+        <p class="note">Drawn from {{ chart_facts.observations_available | int }} observation(s) in
+        the incident window
+        {%- if chart_facts.downsampled %}, reduced to {{ chart_facts.observations_plotted | int }}
+        worst-latency observation per bucket for legibility{%- endif %}
+        {%- if chart_facts.failed_marks %}, with {{ chart_facts.failed_marks | int }} failed check(s)
+        marked on the baseline{%- endif %}.
+        {%- if not chart_facts.rendered %} {{ chart_facts.note }}.{%- endif %}
+        A gap in the line is a gap in observation, not a healthy interval.</p>
+    </section>
 
-    <div class="section">
-        <div class="section-title">6. Rolling 24-Hour Health (Context)</div>
-        <table class="meta-table">
+    <section aria-label="rolling context">
+        <table class="section-head">
             <tr>
-                <td class="label">Rolling 24h Availability</td>
-                <td>
-                    {%- if rolling.uptime_percentage is none -%}
-                        <span class="muted">no checks in the last 24 hours</span>
+                <td><div class="section-title">6. Rolling 24-Hour Health (Context)</div></td>
+            </tr>
+        </table>
+        <table class="records">
+            <tr>
+                <td class="k">Rolling 24h Availability</td>
+                <td class="v">
+                    {%- if rolling.get('uptime_percentage') is none -%}
+                        <span class="void">no checks in the last 24 hours</span>
                     {%- else -%}
-                        {{ rolling.uptime_percentage }}%
+                        {{ rolling.get('uptime_percentage') | percent(2) }}
                     {%- endif -%}
                 </td>
             </tr>
             <tr>
-                <td class="label">Rolling 24h Average Latency</td>
-                <td>{{ rolling.avg_latency_ms }} ms</td>
+                <td class="k">Rolling 24h Average Latency</td>
+                <td class="v">{{ rolling.get('avg_latency_ms') | ms }}</td>
             </tr>
             <tr>
-                <td class="label">Rolling 24h Checks</td>
-                <td>{{ rolling.total_checks }}</td>
+                <td class="k">Rolling 24h Checks</td>
+                <td class="v">{{ rolling.get('total_checks') | int }}</td>
             </tr>
         </table>
-        <p class="note">Context only. This is a rolling aggregate measured at
-        generation time, not the incident measurement, and it covers a
-        different window from sections 3 and 4.</p>
-    </div>
+        <p class="note"><span class="void">A rolling aggregate may lack a field the day it is
+        read; an absent field prints as a dash, never as a zero.</span> Context only. This is an
+        aggregate evaluated when the document was generated:
+        it is not the incident measurement, it covers a different window, and it is deliberately
+        excluded from the evidence data hash because re-running it would change the hash without changing
+        any fact.</p>
+    </section>
 
-    <div class="section">
-        <div class="section-title">7. Correlated Vendor Failures</div>
-        <table class="data-table">
+    <section aria-label="correlated events">
+        <table class="section-head">
+            <tr>
+                <td><div class="section-title">7. Correlated Dependency Events</div></td>
+            </tr>
+        </table>
+        <table class="grid">
             <thead>
                 <tr>
-                    <th>Correlated Dependency ID</th>
-                    <th>Correlation Method</th>
-                    <th>Time Window</th>
-                    <th>Confidence Score</th>
+                    <th>Correlated Dependency</th>
+                    <th class="mid">Correlation Method</th>
+                    <th class="right">Time Window</th>
+                    <th class="right">Confidence</th>
                 </tr>
             </thead>
             <tbody>
                 {% for corr in correlations %}
                 <tr>
-                    <td>{{ corr.correlated_dependency_id }}</td>
-                    <td>{{ corr.correlation_method|upper }}</td>
-                    <td>{{ corr.time_window_seconds }}s</td>
-                    <td>{{ corr.correlation_confidence * 100 }}%</td>
+                    <td>{{ corr.name }} <span class="void">({{ corr.endpoint_url }})</span></td>
+                    <td class="mid">{{ corr.correlation_method | method_label }}</td>
+                    <td class="right">{{ corr.time_window_seconds | secs }}</td>
+                    <td class="right">{{ corr.correlation_confidence | share_pct }}</td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="4">No automatic cross-vendor correlations were recorded for this incident.</td>
+                    <td colspan="4"><span class="void">No cross-dependency correlation was recorded
+                    for this incident. Absence of correlated events is not evidence that no other
+                    dependency was affected.</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+        <p class="note">Correlation states that two timelines overlap in this organization's own
+        monitoring. It is not a causal claim, and no causal claim is made anywhere in this
+        document.</p>
+    </section>
 
-    <div class="section">
-        <div class="section-title">8. Deterministic Attribution</div>
-        {% if attribution %}
-        <table class="meta-table">
-            <tr><td class="label">Classification</td><td>{{ attribution.classification }}</td></tr>
-            <tr><td class="label">Confidence Score</td><td>{{ attribution.confidence_score }}%</td></tr>
-            <tr><td class="label">Methodology</td><td>{{ attribution.methodology_version }}</td></tr>
+    <section aria-label="attribution">
+        <table class="section-head">
+            <tr>
+                <td><div class="section-title">8. Deterministic Attribution</div></td>
+            </tr>
         </table>
+        {% if attribution %}
+        <table class="records">
+            <tr>
+                <td class="k">Classification</td>
+                <td class="v">{{ attribution.classification | classification_label }}</td>
+            </tr>
+            <tr>
+                <td class="k">Confidence Score</td>
+                <td class="v num">{{ attribution.confidence_score | percent(2) }}</td>
+            </tr>
+            <tr>
+                <td class="k">Methodology</td>
+                <td class="v mono">{{ attribution.methodology_version }}</td>
+            </tr>
+            {% if attribution.signal_breakdown %}
+            <tr>
+                <td class="k">Signals</td>
+                <td class="v">
+                    {%- for name, value in attribution.signal_breakdown | dictsort %}
+                        {{ name | replace('_', ' ') }} {{ value | share_pct }}
+                        {%- if not loop.last %} &middot; {% endif -%}
+                    {%- endfor %}
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+        <p class="note">Deterministic and reproducible: computed from the retained observations under
+        the versioned methodology named above, with no model inference. Where the timelines do not
+        support a claim, none is made.</p>
         {% else %}
-        <p>No deterministic attribution result was available when this record was generated. No classification is asserted.</p>
+        <div class="caution" style="margin-top:0">No attribution result was recorded when this
+        document was generated, so no classification is asserted. The measurements in sections 3 to 5
+        stand on their own and are unaffected.</div>
         {% endif %}
-    </div>
+    </section>
 
     {% if ai_explanation %}
-    <div class="section">
-        <div class="section-title">9. AI-Generated Explanation</div>
-        <p><em>This explanation was generated by Reliastra's AI from the measured evidence above. It does not determine facts or attribution, and it is not covered by the evidence data hash.</em></p>
-        <p>{{ ai_explanation }}</p>
-    </div>
+    <section aria-label="ai explanation">
+        <table class="section-head">
+            <tr>
+                <td><div class="section-title">9. AI-Generated Explanation</div></td>
+            </tr>
+        </table>
+        <p class="note" style="margin-top:0"><em>Written by RELIASTRA's assistant from the measured
+        evidence above. It determines no fact and no attribution, and it is excluded from the
+        evidence data hash.</em></p>
+        <p style="margin:8px 0 0 0; max-width: 108ch;">{{ ai_explanation }}</p>
+    </section>
     {% endif %}
 
-    <div class="footer">
-        <p><strong>Evidence Data Hash (SHA-256):</strong> {{ data_hash }}</p>
-        <p><strong>Document Checksum:</strong> the SHA-256 of this PDF file is
-        recorded on the evidence record and in the accompanying machine-readable
-        JSON, and is returned by the public verification endpoint. It cannot be
-        printed inside the file it describes.</p>
-        <p><strong>Public Verification ID:</strong> {{ verification_id }}</p>
-        <p><strong>Evidence Schema Version:</strong> {{ schema_version }} &middot;
-           Attribution Methodology: {{ methodology_version }}</p>
-        <p>The data hash covers the canonical evidence payload (incident,
-        dependency, time window, detection record, window measurements, SLA
-        impact, observations and attribution). The report checksum covers the
-        rendered PDF bytes. They are different values describing different
-        things.</p>
-        <p>Generated by Reliastra External Dependency Intelligence Platform on {{ generated_at }}. This report is immutable and timestamped.</p>
-    </div>
+    <section aria-label="observations">
+        <table class="section-head">
+            <tr>
+                <td><div class="section-title">10. Documented Observations</div></td>
+                <td class="note-cell"><span class="section-note">{{ document.observation_caption }}</span></td>
+            </tr>
+        </table>
+        {% if observations %}
+        <table class="grid">
+            <thead>
+                <tr>
+                    <th>Executed At (UTC)</th>
+                    <th>Observation Point</th>
+                    <th class="mid">Result</th>
+                    <th class="right">Latency</th>
+                    <th class="right">Status</th>
+                    <th>Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in observations %}
+                <tr>
+                    <td class="mono">{{ row.executed_at | utc }}</td>
+                    <td>{{ row.observation_point }}</td>
+                    <td class="mid">
+                        {%- if row.is_up -%}
+                            <span class="state state-up">up</span>
+                        {%- else -%}
+                            <span class="state state-down">down</span>
+                        {%- endif -%}
+                    </td>
+                    <td class="right mono">{{ row.latency_ms | ms }}</td>
+                    <td class="right mono">{{ row.status_code if row.status_code is not none else '&mdash;' }}</td>
+                    <td>{{ row.error_message or '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="caution" style="margin-top:0">No individual observation rows are reproduced in
+        this document. The window aggregates in section 3 remain the measured record; the full
+        observation set is issued in the machine-readable payload addressed by the data hash.</div>
+        {% endif %}
+    </section>
+
+    <section aria-label="authenticity">
+        <table class="section-head">
+            <tr>
+                <td><div class="section-title">11. Authenticity, Retention and Verification</div></td>
+            </tr>
+        </table>
+        <table class="verify">
+            <tr>
+                <td class="k">Verify this record</td>
+                <td>
+                    <span class="mono">{{ document.verification_url }}</span>
+                    <div class="note" style="margin-top:4px">Any party may open this address, with
+                    no account and no consent required from the organization named above. It returns
+                    the stored hashes, the signature and the retention state.</div>
+                </td>
+                <td class="qr-cell" rowspan="2">
+                    {% if document.qr_svg %}
+                    <div class="qr">{{ document.qr_svg | safe }}</div>
+                    <div class="note" style="margin-top:4px">Scan to open</div>
+                    {% else %}
+                    <div class="note" style="margin-top:4px">No public verification address is
+                    configured for this deployment, so no link or code is printed.</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="k">Public Verification ID</td>
+                <td><span class="mono">{{ verification_id }}</span></td>
+            </tr>
+            <tr>
+                <td class="k">Evidence Data Hash (SHA-256)</td>
+                <td colspan="2"><span class="mono">{{ data_hash }}</span>
+                    <div class="note" style="margin-top:3px">SHA-256 of the canonical machine-readable
+                    payload for this incident &mdash; the facts, independent of this arrangement of
+                    them, and independent of the renderer that produced these pages.</div>
+                </td>
+            </tr>
+            <tr>
+                <td class="k">Document Checksum</td>
+                <td colspan="2"><span class="void">A file cannot contain the checksum of itself.</span>
+                    The SHA-256 of these PDF bytes is written beside this document in the
+                    machine-readable payload issued with it, and returned by the address above; a
+                    PDF whose bytes differ from that value is not the artifact that was issued.</td>
+            </tr>
+            <tr>
+                <td class="k">Signature</td>
+                <td colspan="2">
+                    {%- if signature -%}
+                        <span class="signed">Signed &mdash; {{ signature.alg }}, key
+                        {{ signature.key_id }}</span>
+                        <div class="mono" style="margin-top:3px">{{ signature.value }}</div>
+                        <div class="note" style="margin-top:4px">The signature covers the canonical
+                        payload bytes, not these pages. Public key: <span class="mono">{{ document.jwks_url }}</span>.
+                        Any party can reproduce the verification independently; RELIASTRA's ability to
+                        verify its own record is not part of the proof.</div>
+                    {%- else -%}
+                        <span class="unsigned">Unsigned</span>
+                        &mdash; this deployment has no signing key configured, so the hashes above
+                        attest internal consistency only. They do not authenticate the issuer.
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="k">Evidence Schema Version</td>
+                <td colspan="2"><span class="mono">{{ schema_version }}</span>
+                    <span class="void">&middot; attribution methodology
+                    <span class="mono">{{ methodology_version }}</span></span></td>
+            </tr>
+            <tr>
+                <td class="k">Retention</td>
+                <td colspan="2">Issued {{ document.issued_date }} &middot; artifacts retained until
+                    <strong>{{ document.expires_date }}</strong> ({{ document.retention_days }} days)
+                    {%- if document.expired -%}
+                        &mdash; <strong>expired</strong>; the record's hashes remain, the stored files
+                        may not.
+                    {%- else -%}
+                        . After retention the files are deleted and only the hashes recorded at the
+                        address above remain verifiable.
+                    {%- endif -%}
+                </td>
+            </tr>
+            <tr>
+                <td class="k">Rendered By</td>
+                <td colspan="2">{{ document.renderer }}
+                    <span class="void">&middot; generated {{ document.issued_stamp }} &middot; document
+                    identity <span class="mono">{{ document.reference }}</span></span></td>
+            </tr>
+        </table>
+    </section>
+
+    <footer class="doc-footer">
+        <table class="frow">
+            <tr>
+                <td>
+                    Generated by RELIASTRA &middot; External Dependency Intelligence Platform
+                    &middot; {{ document.site_url }}<br>
+                    Evidence questions: {{ document.support_email }} &middot; quote reference
+                    {{ document.reference }}
+                </td>
+                <td class="right">
+                    {{ document.reference }}<br>
+                    Issued {{ document.issued_stamp }}
+                </td>
+            </tr>
+        </table>
+        <p class="scope">
+            <strong>Scope.</strong> This is a measurement record: what RELIASTRA's probes observed,
+            from where, when, and what was computed from those observations. It assigns no liability,
+            certifies no service credit, and offers no legal opinion. Its limits are stated in the
+            sections above and are not curable by request:
+            {%- for limit in document.limitations %} {{ limit }}.{% endfor %}
+        </p>
+    </footer>
+</div>
 </body>
 </html>

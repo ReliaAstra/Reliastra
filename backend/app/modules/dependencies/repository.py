@@ -19,6 +19,27 @@ class DependencyRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
+    @staticmethod
+    async def get_names_by_ids(
+        session: AsyncSession, ids: set[uuid.UUID]
+    ) -> dict[uuid.UUID, dict[str, Any]]:
+        """Names and endpoints for a set of dependency ids, in one query.
+
+        Documents and share views need to *say* which dependency an id refers
+        to; resolving them one at a time turns a footnote into a query storm,
+        so the batch lives here instead of in each caller.
+        """
+        if not ids:
+            return {}
+        query = select(Dependency.id, Dependency.name, Dependency.endpoint_url).where(
+            Dependency.id.in_(tuple(ids))
+        )
+        result = await session.execute(query)
+        return {
+            row[0]: {"name": row[1], "endpoint_url": row[2]}
+            for row in result.all()
+        }
+
     async def list_for_org(
         session: AsyncSession,
         org_id: uuid.UUID,

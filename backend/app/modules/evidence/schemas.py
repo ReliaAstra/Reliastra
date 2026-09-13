@@ -15,6 +15,12 @@ class EvidenceReportResponse(BaseModel):
     expires_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    #: Which renderer produced the bytes whose checksum is above. Optional
+    #: because artifacts issued before provenance was recorded carry none, and a
+    #: missing renderer is information a support agent needs, not a validation
+    #: error worth failing a response over.
+    renderer: str | None = None
+    renderer_version: str | None = None
 
 
 class EvidenceReportDownloadResponse(EvidenceReportResponse):

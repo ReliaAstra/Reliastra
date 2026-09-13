@@ -49,7 +49,10 @@ from app.core.audit_log import AuditLogService
 from app.core.exceptions import ForbiddenException, ResourceNotFoundException
 from app.infrastructure.storage import StorageError, storage_client
 from app.modules.checks.repository import CheckRepository
+from app.modules.evidence import design, signing
+from app.modules.evidence.chart import HEIGHT as CHART_HEIGHT, WIDTH as CHART_WIDTH
 from app.modules.evidence.chart import render_latency_svg
+from app.modules.evidence.qr import render_qr_svg
 from app.modules.evidence.constants import (
     DEFAULT_EVIDENCE_EXPIRY_DAYS,
     EVIDENCE_TEMPLATE_PATH,
@@ -95,6 +98,22 @@ MAX_DOCUMENTED_OBSERVATIONS = 5000
 #: ("0s allowable outage"); it is stated in the document, not implied.
 TARGET_UPTIME_PCT = 100.0
 
+#: How many individual checks are reproduced inside the PDF itself. The metrics
+#: are computed from the whole documented window either way; this is the size of
+#: the *appendix*, chosen so a typical incident prints in full while a
+#: pathological one stays printable. Anything withheld is counted on the page
+#: and present in the machine-readable payload.
+DOCUMENTED_OBSERVATION_ROWS = 60
+DOCUMENTED_OBSERVATION_HEAD = 40
+DOCUMENTED_OBSERVATION_TAIL = 20
+
+#: Renderer identities, recorded on the artifact and printed on it. Not
+#: cosmetic: the two renderers lay this template out differently, so pagination
+#: is only reproducible together with the renderer that produced the bytes whose
+#: checksum is published.
+RENDERER_CHROMIUM = "chromium (playwright)"
+RENDERER_XHTML2PDF = "xhtml2pdf"
+
 
 class EvidenceNotEntitledError(ForbiddenException):
     """The organization's plan does not include evidence generation.
@@ -127,6 +146,38 @@ def canonical_json_bytes(payload: dict[str, Any]) -> bytes:
     ).encode("utf-8")
 
 
+def _footer_template(note: str) -> str:
+    """The running footer Chromium prints in the bottom margin.
+
+    Page numbers cannot come from CSS here: Chromium implements ``@page``
+    margins but not ``@page`` margin-box content, so ``counter(page)`` is a
+    Firefox-only route to pagination. The renderer's own header/footer template
+    is the one mechanism both this layout and a real print dialog agree on, and
+    it carries the report reference so a loose page still identifies itself.
+
+    ``xhtml2pdf`` has no equivalent, which is precisely why the artifact records
+    which renderer produced it.
+    """
+    safe = (
+        str(note)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    style = (
+        "width:100%;padding:0 15mm;font-size:7pt;color:#5A6472;"
+        "font-family:Inter,Helvetica,Arial,'Liberation Sans',sans-serif;"
+        "display:flex;justify-content:space-between;letter-spacing:0.06em;"
+    )
+    return (
+        f'<div style="{style}">'
+        f"<div>RELIASTRA · {safe}</div>"
+        '<div>Page <span class="pageNumber"></span> of '
+        '<span class="totalPages"></span></div>'
+        "</div>"
+    )
+
+
 class EvidenceService:
     def __init__(
         self,
@@ -140,6 +191,36 @@ class EvidenceService:
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(os.path.dirname(_TEMPLATE_PATH)),
             autoescape=True,
+            # A typo in a document template must fail the generation attempt, not
+            # print an empty cell in a document meant to be quoted in a dispute.
+            # Silence is the worst available failure mode here.
+            undefined=jinja2.StrictUndefined,
+        )
+        # Every figure the artifact prints passes through one of these, so
+        # precision, absence markers and enum wording live in one module instead
+        # of being re-derived field by field in markup. That is how
+        # ``0.73 * 100 -> 73.00000000000001%`` once reached a customer document.
+        self.jinja_env.filters.update(
+            {
+                "utc": design.utc_stamp,
+                "utcdate": design.utc_date,
+                "int": design.int_grouped,
+                "percent": design.percent,
+                "ms": design.milliseconds,
+                "secs": design.seconds,
+                "duration": design.duration,
+                "share_pct": design.share_percent,
+                "severity_label": lambda value: design.label(
+                    value, design.SEVERITY_LABELS
+                ),
+                "status_label": lambda value: design.label(value, design.STATUS_LABELS),
+                "classification_label": lambda value: design.label(
+                    value, design.CLASSIFICATION_LABELS
+                ),
+                "method_label": lambda value: design.label(
+                    value, design.CORRELATION_METHOD_LABELS
+                ),
+            }
         )
 
     # ── rendering ─────────────────────────────────────────────────────────
@@ -164,8 +245,17 @@ class EvidenceService:
             raise EvidenceGenerationError("PDF renderer produced an empty document")
         return data
 
-    async def _html_to_pdf(self, html_str: str) -> bytes:
-        """Render HTML to PDF. Playwright first, xhtml2pdf as a fallback.
+    async def _html_to_pdf(
+        self, html_str: str, *, footer_note: str = ""
+    ) -> tuple[bytes, dict[str, Any]]:
+        """Render HTML to PDF and report which renderer produced the bytes.
+
+        Returns ``(pdf_bytes, provenance)``. Provenance belongs to the record,
+        not to a log line: the artifact prints its renderer and the row stores
+        it, because a PDF's pagination is a property of the renderer as much as
+        of the markup. A silent fallback used to be possible here; now a
+        fallback is possible but legible, and the image build refuses to ship an
+        artifact renderer that cannot launch (see ``Dockerfile``).
 
         Both paths raise on failure: an artifact that cannot be rendered must
         fail the generation attempt rather than produce an empty or partial
@@ -174,30 +264,310 @@ class EvidenceService:
         try:
             from playwright.async_api import async_playwright
         except Exception as exc:  # pragma: no cover - optional dependency
-            logger.info("Playwright unavailable (%s), using xhtml2pdf", exc)
+            logger.warning(
+                "evidence: playwright is not importable (%s); rendering with "
+                "xhtml2pdf and recording it on the artifact",
+                exc,
+            )
         else:
             try:
                 async with async_playwright() as playwright:
                     browser = await playwright.chromium.launch(headless=True)
                     try:
+                        version = browser.version
                         page = await browser.new_page()
                         await page.set_content(html_str)
-                        data = await page.pdf(format="A4", print_background=True)
+                        data = await page.pdf(
+                            format="A4",
+                            print_background=True,
+                            # The stylesheet carries @page margins that
+                            # xhtml2pdf honours too; Chromium needs the same
+                            # frame passed here because the running footer is
+                            # drawn inside the bottom margin.
+                            margin={
+                                "top": "17mm",
+                                "bottom": "18mm",
+                                "left": "15mm",
+                                "right": "15mm",
+                            },
+                            display_header_footer=True,
+                            header_template="<div></div>",
+                            footer_template=_footer_template(footer_note),
+                        )
                     finally:
                         await browser.close()
                 if not data:
                     raise EvidenceGenerationError(
                         "Playwright produced an empty document"
                     )
-                return data
+                return data, {
+                    "renderer": RENDERER_CHROMIUM,
+                    "renderer_version": version,
+                    "pagination": "running footer with page numbers",
+                }
             except Exception as exc:
-                logger.info(
-                    "Playwright PDF generation unavailable (%s), using "
-                    "xhtml2pdf fallback",
+                logger.warning(
+                    "evidence: chromium rendering failed (%s); falling back to "
+                    "xhtml2pdf and recording it on the artifact",
                     exc,
                 )
 
-        return await asyncio.to_thread(self._pdf_via_xhtml2pdf, html_str)
+        data = await asyncio.to_thread(self._pdf_via_xhtml2pdf, html_str)
+        try:
+            import xhtml2pdf as xhtml2pdf_module
+
+            fallback_version = str(getattr(xhtml2pdf_module, "__version__", "unknown"))
+        except Exception:  # pragma: no cover - the import already succeeded
+            fallback_version = "unknown"
+        return data, {
+            "renderer": RENDERER_XHTML2PDF,
+            "renderer_version": fallback_version,
+            "pagination": "no running footer (page numbers unavailable)",
+        }
+
+    # ── presentation ──────────────────────────────────────────────────────
+
+    @staticmethod
+    async def _organization_for(
+        session: AsyncSession, org_id: uuid.UUID
+    ) -> Any | None:
+        """The organization row, or ``None``. Never a reason to refuse an artifact.
+
+        The name is what a recipient reads as the addressee; the identifier is
+        what a support agent resolves. If the name cannot be read, the document
+        falls back to the identifier it has always printed rather than inventing
+        an addressee.
+        """
+        from app.modules.organizations.repository import OrganizationRepository
+
+        try:
+            return await OrganizationRepository.get_by_id(session, org_id)
+        except Exception:  # pragma: no cover - defensive against a read failure
+            logger.warning(
+                "evidence: organization name could not be read for %s",
+                org_id,
+                exc_info=True,
+            )
+            return None
+
+    @staticmethod
+    def _addressee(organization: Any | None, org_id: uuid.UUID) -> tuple[str, str]:
+        """``(prepared_for, org_ref)``. Only a real string counts as a name.
+
+        ``getattr`` on a half-populated object can yield anything; the document
+        prints a name or it prints the identifier, so the type is checked rather
+        than trusted.
+        """
+        name = getattr(organization, "name", None)
+        if isinstance(name, str) and name.strip():
+            return name.strip(), str(org_id)
+        return f"Organization {org_id}", str(org_id)
+
+    @staticmethod
+    async def _correlation_view(
+        session: AsyncSession, rows: Sequence[Any]
+    ) -> list[dict[str, Any]]:
+        """Correlated dependencies, named - in one batched query.
+
+        The document must read "Payments Webhook", not ``dep_01J8\u2026``: a
+        reader who cannot name the second dependency cannot use the correlation.
+        An id that no longer resolves is stated as unresolved instead of being
+        dropped, because a silently shrinking table is how a record becomes
+        unreliable.
+        """
+        if not rows:
+            return []
+        from app.modules.dependencies.repository import DependencyRepository
+
+        ids = {row.correlated_dependency_id for row in rows}
+        try:
+            found = await DependencyRepository.get_names_by_ids(session, ids)
+        except Exception:  # pragma: no cover - defensive against a read failure
+            logger.warning(
+                "evidence: correlated dependency names could not be read",
+                exc_info=True,
+            )
+            found = {}
+        return [
+            {
+                "name": (found.get(row.correlated_dependency_id) or {}).get("name")
+                or f"unresolved dependency {str(row.correlated_dependency_id)[:8]}",
+                "endpoint_url": (
+                    found.get(row.correlated_dependency_id) or {}
+                ).get("endpoint_url") or "endpoint not recorded",
+                "correlation_method": row.correlation_method,
+                "time_window_seconds": row.time_window_seconds,
+                "correlation_confidence": row.correlation_confidence,
+            }
+            for row in rows
+        ]
+
+    @staticmethod
+    def _documented_observations(
+        rows: Sequence[Any], *, limit: int = DOCUMENTED_OBSERVATION_ROWS
+    ) -> tuple[list[Any], str]:
+        """The checks reproduced in the appendix, oldest first, with a caption.
+
+        The caption is part of the return value on purpose: an appendix that
+        does not state its own coverage is the failure this template used to
+        have, when it promised "the first N are documented here" and documented
+        nothing. When the window is longer than the appendix it shows the opening
+        and the end, because first-failure and recovery are the two rows a
+        reader looks for.
+        """
+        ordered = sorted(rows, key=lambda row: (row.executed_at, str(row.id)))
+        if len(ordered) <= limit:
+            return ordered, f"All {len(ordered)} documented check(s)"
+        head = ordered[:DOCUMENTED_OBSERVATION_HEAD]
+        tail = ordered[-DOCUMENTED_OBSERVATION_TAIL:]
+        withheld = len(ordered) - len(head) - len(tail)
+        return (
+            [*head, *tail],
+            (
+                f"First {len(head)} and last {len(tail)} of {len(ordered)} documented "
+                f"check(s); {withheld} withheld from print, present in the payload"
+            ),
+        )
+
+    def _presentation_context(
+        self,
+        *,
+        incident: Any,
+        dependency: Any,
+        organization: Any | None,
+        metrics: IncidentWindowMetrics,
+        impact: Any,
+        detection: dict[str, Any],
+        topology: dict[str, Any],
+        attribution: dict[str, Any] | None,
+        methodology_version: str,
+        correlations: list[dict[str, Any]],
+        documented_rows: list[Any],
+        observation_caption: str,
+        total_in_window: int,
+        verification_id: str,
+        generated_at: datetime,
+        expires_at: datetime,
+        signature: dict[str, str] | None,
+        renderer: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Everything the document shows that the payload does not carry.
+
+        Built in Python rather than in markup on purpose: a report of record
+        needs its wording derived from the same objects the JSON artifact is
+        built from, and a function is testable in a way a template is not. The
+        finding block, the four figures, the limitations sentence and the
+        appendix caption all come from here, and each restates a figure printed
+        below it - nothing in the finding is a fact the record does not already
+        carry.
+        """
+        prepared_for, org_ref = self._addressee(organization, incident.org_id)
+        base_url = design.verification_base_url()
+        metrics_view = metrics.as_dict()
+        impact_view = impact.as_dict()
+
+        limitations: list[str] = []
+        if not topology.get("independent_confirmation"):
+            limitations.append(
+                "every observation was issued from "
+                f"{topology.get('observation_point_count', 1)} RELIASTRA observation "
+                "point(s), so no agreement between independent points exists"
+            )
+        if metrics_view["availability_pct"] is None:
+            limitations.append(
+                "no check inside the window reached the endpoint, so no availability "
+                "figure is stated and none is implied"
+            )
+        if metrics.blocked_checks:
+            limitations.append(
+                f"{metrics.blocked_checks} scheduled check(s) were refused by outbound "
+                "security policy and are excluded from every figure"
+            )
+        if total_in_window > len(documented_rows):
+            limitations.append(
+                f"{total_in_window - len(documented_rows)} check(s) in the window are "
+                "retained in the payload but not reprinted here"
+            )
+        limitations.append(
+            "nothing here was measured by the dependency provider, whose own telemetry "
+            "may describe the same interval differently"
+        )
+
+        return {
+            "document": {
+                "reference": design.report_reference(
+                    dependency.name, incident.started_at, str(incident.id)
+                ),
+                "class_line": (
+                    "Independently measured \u00b7 signed record"
+                    if signature
+                    else "Independently measured \u00b7 unsigned by this deployment"
+                ),
+                "prepared_for": prepared_for,
+                "org_ref": org_ref,
+                "issued_stamp": design.utc_stamp(generated_at),
+                "issued_date": design.utc_date(generated_at),
+                "expires_date": design.utc_date(expires_at),
+                "retention_days": DEFAULT_EVIDENCE_EXPIRY_DAYS,
+                "expired": False,
+                "window": design.window_phrase(
+                    metrics.window_start, metrics.window_end
+                ),
+                "record_state": (
+                    "Final \u00b7 incident resolved"
+                    if incident.resolved_at
+                    else "Provisional \u00b7 incident still open"
+                ),
+                "observation_caption": observation_caption,
+                "verification_url": design.verification_url(verification_id),
+                "qr_svg": render_qr_svg(design.verification_url(verification_id)),
+                "jwks_url": design.keys_api_url(),
+                "site_url": base_url,
+                "support_email": str(getattr(settings, "SUPPORT_EMAIL", "") or ""),
+                "chart_note": (
+                    f"{CHART_WIDTH}\u00d7{CHART_HEIGHT} unit drawing, scaled to page width"
+                ),
+                "renderer": (
+                    "unknown renderer \u00b7 provenance is recorded with the artifact only"
+                    if renderer is None
+                    else (
+                        f"{renderer.get('renderer')}"
+                        + (
+                            f" {renderer.get('renderer_version')}"
+                            if renderer.get("renderer_version")
+                            else ""
+                        )
+                        + f" \u00b7 {renderer.get('pagination')}"
+                    )
+                ),
+                "limitations": limitations,
+            },
+            "verdict": {
+                "headline": design.headline(
+                    incident={"severity": incident.severity, "status": incident.status},
+                    metrics=metrics_view,
+                    dependency_name=dependency.name,
+                ),
+                "sentences": design.verdict_sentences(
+                    dependency_name=dependency.name,
+                    endpoint_url=dependency.endpoint_url,
+                    metrics=metrics_view,
+                    impact=impact_view,
+                    attribution=attribution,
+                    detection=detection,
+                    topology=topology,
+                    incident={"severity": incident.severity, "status": incident.status},
+                ),
+            },
+            "figures": [
+                {"label": tile.label, "value": tile.value, "note": tile.note}
+                for tile in design.metric_tiles(metrics_view, impact_view, attribution)
+            ],
+            "correlations": correlations,
+            "observations": [
+                self._observation_payload(row) for row in documented_rows
+            ],
+        }
 
     # ── payloads ──────────────────────────────────────────────────────────
 
@@ -357,6 +727,12 @@ class EvidenceService:
         if not dependency:
             raise ResourceNotFoundException("Dependency not found")
 
+        # The addressee. The party reading this document is often somebody at
+        # the provider who has never seen Reliastra, and the only identification
+        # of the customer used to be an organization UUID - which tells the
+        # vendor nothing while exposing a primary key to anyone holding the PDF.
+        organization = await self._organization_for(session, incident.org_id)
+
         generated_at = datetime.now(timezone.utc)
         window_start = incident.started_at
         window_end = incident.resolved_at or generated_at
@@ -386,6 +762,7 @@ class EvidenceService:
         )
 
         correlations = await self.inc_repository.get_correlations(session, incident_id)
+        correlation_view = await self._correlation_view(session, correlations)
 
         from app.modules.attribution.repository import AttributionRepository
 
@@ -474,7 +851,14 @@ class EvidenceService:
         # would make every retry produce a new data_hash and mint a duplicate
         # artifact. Context is still published, next to the hash, labelled as
         # what it is.
-        data_hash = hashlib.sha256(canonical_json_bytes(evidence_data)).hexdigest()
+        payload_bytes = canonical_json_bytes(evidence_data)
+        data_hash = hashlib.sha256(payload_bytes).hexdigest()
+        # The signature covers the payload bytes, not the PDF: the payload is
+        # the facts, this document is an arrangement of them. With no key
+        # configured this is None, and the artifact prints "Unsigned" out loud
+        # rather than omitting the row - a missing section reads as an
+        # oversight, a stated absence reads as a fact about the deployment.
+        signature = signing.sign_payload(payload_bytes)
 
         context_metrics = {
             "rolling_24h_uptime_pct": rolling.get("uptime_percentage"),
@@ -557,36 +941,81 @@ class EvidenceService:
             observation_count=len(rows),
         )
 
-        try:
-            html = self._render_html(
-                {
-                    "incident": incident,
-                    "dependency": dependency,
-                    "correlations": correlations,
-                    "metrics": metrics,
-                    "impact": impact,
-                    "rolling": rolling,
-                    "detection": detection,
-                    "topology": topology,
-                    "chart_svg": chart_svg,
-                    # dict form: the same keys the JSON payload carries, so
-                    # what the document states and what the machine-readable
-                    # record states cannot drift apart.
-                    "chart_facts": chart_facts.as_dict(),
-                    "observations_truncated": truncated,
-                    "observations_available_in_window": total_in_window,
-                    "observation_count": len(rows),
-                    "attribution": attribution,
-                    "methodology_version": methodology_version,
-                    "ai_explanation": ai_explanation,
-                    "data_hash": data_hash,
-                    "verification_id": verification_id,
-                    "generated_at": generated_at.isoformat(),
-                    "schema_version": EVIDENCE_SCHEMA_VERSION,
-                    "target_uptime_pct": TARGET_UPTIME_PCT,
-                }
+        documented_rows, observation_caption = self._documented_observations(rows)
+        expires_at = generated_at + timedelta(days=DEFAULT_EVIDENCE_EXPIRY_DAYS)
+
+        def build_context(
+            renderer_info: dict[str, Any] | None,
+        ) -> tuple[dict[str, Any], str]:
+            """Assemble the template context, and the footer text for the page.
+
+            ``renderer_info`` is ``None`` on the first pass: which renderer
+            produced a PDF is knowable only after it was produced, and a file
+            cannot contain a fact about its own making - the same reason the
+            document checksum is published beside it rather than inside it. If
+            the fallback renderer is what actually ran, the document is rendered
+            again with that stated on the page. A degraded artifact should cost
+            one extra render and should say so where a reader will see it.
+            """
+            presentation = self._presentation_context(
+                incident=incident,
+                dependency=dependency,
+                organization=organization,
+                metrics=metrics,
+                impact=impact,
+                detection=detection,
+                topology=topology,
+                attribution=attribution,
+                methodology_version=methodology_version,
+                correlations=correlation_view,
+                documented_rows=documented_rows,
+                observation_caption=observation_caption,
+                total_in_window=total_in_window,
+                verification_id=verification_id,
+                generated_at=generated_at,
+                expires_at=expires_at,
+                signature=signature,
+                renderer=renderer_info,
             )
-            pdf_bytes = await self._html_to_pdf(html)
+            context = {
+                "incident": incident,
+                "dependency": dependency,
+                "metrics": metrics,
+                "impact": impact,
+                "rolling": rolling,
+                "detection": detection,
+                "topology": topology,
+                "chart_svg": chart_svg,
+                # dict form: the same keys the JSON payload carries, so what the
+                # document states and what the machine-readable record states
+                # cannot drift apart.
+                "chart_facts": chart_facts.as_dict(),
+                "observations_truncated": truncated,
+                "observations_available_in_window": total_in_window,
+                "observation_count": len(rows),
+                "attribution": attribution,
+                "methodology_version": methodology_version,
+                "ai_explanation": ai_explanation,
+                "data_hash": data_hash,
+                "signature": signature,
+                "verification_id": verification_id,
+                "generated_at": generated_at.isoformat(),
+                "schema_version": EVIDENCE_SCHEMA_VERSION,
+                "target_uptime_pct": TARGET_UPTIME_PCT,
+                **presentation,
+            }
+            return context, presentation["document"]["reference"]
+
+        try:
+            context, reference = build_context(None)
+            html = self._render_html(context)
+            pdf_bytes, renderer = await self._html_to_pdf(html, footer_note=reference)
+            if renderer.get("renderer") != RENDERER_CHROMIUM:
+                context, reference = build_context(renderer)
+                html = self._render_html(context)
+                pdf_bytes, renderer = await self._html_to_pdf(
+                    html, footer_note=reference
+                )
         except EvidenceNotEntitledError:
             raise
         except Exception as exc:
@@ -608,6 +1037,22 @@ class EvidenceService:
             "verification_id": verification_id,
             "report_checksum": report_checksum,
             "generated_at": generated_at.isoformat(),
+            # Authenticity of the pair. Kept out of ``evidence_data`` because
+            # that object is the hashed facts: these fields describe how the
+            # document was issued, not what was measured.
+            "authenticity": {
+                "signed": signature is not None,
+                "algorithm": (signature or {}).get("alg"),
+                "encoding": (signature or {}).get("encoding"),
+                "signing_key_id": (signature or {}).get("key_id"),
+                "signature": (signature or {}).get("value"),
+                "signature_covers": "canonical payload bytes (data_hash)",
+                "public_keys": design.keys_api_url(),
+                "verification_url": design.verification_url(verification_id),
+                "renderer": renderer.get("renderer"),
+                "renderer_version": renderer.get("renderer_version"),
+                "pagination": renderer.get("pagination"),
+            },
         }
 
         # ── persist, then verify, then record ─────────────────────────────
@@ -637,7 +1082,6 @@ class EvidenceService:
             )
             raise EvidenceGenerationError(f"Evidence upload failed: {exc}") from exc
 
-        expires_at = generated_at + timedelta(days=DEFAULT_EVIDENCE_EXPIRY_DAYS)
         report = await self.repository.create(
             session=session,
             org_id=incident.org_id,
@@ -646,6 +1090,8 @@ class EvidenceService:
             file_size_bytes=len(pdf_bytes),
             checksum=report_checksum,
             expires_at=expires_at,
+            renderer=renderer.get("renderer"),
+            renderer_version=renderer.get("renderer_version"),
         )
 
         # Link the artifact to the incident in the same transaction, so the
@@ -673,6 +1119,9 @@ class EvidenceService:
             report_file_path=report_path,
             report_checksum=report_checksum,
             json_evidence_path=json_path,
+            signature=(signature or {}).get("value"),
+            signature_alg=(signature or {}).get("alg"),
+            signing_key_id=(signature or {}).get("key_id"),
         )
 
         await AuditLogService.log_event(
@@ -696,6 +1145,10 @@ class EvidenceService:
                 "detection_rule": detection["rule"],
                 "observation_point_count": topology["observation_point_count"],
                 "observations_truncated": truncated,
+                "signed": signature is not None,
+                "signing_key_id": (signature or {}).get("key_id"),
+                "renderer": renderer.get("renderer"),
+                "renderer_version": renderer.get("renderer_version"),
             },
         )
 

@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { PlanMatrix } from '@/components/site/plan-matrix';
 import { CurrencyFootnote } from '@/components/site/billing-disclosure';
 import { PUBLIC_ROUTES } from '@/lib/routes';
-
+import { Eyebrow } from '@/components/site/primitives';
 
 
 /**
- * 11 · Pricing on the homepage.
+ * 12 · Pricing on the homepage. The index is the section's position in
+ * `HomeLanding`'s order, so it is stated once here rather than being re-derived
+ * by whoever notices that two sections are numbered 10.
  *
  * A summary, not a second pricing page: plan, price, the limits that decide
  * the choice, the amount actually charged, and one link to the full terms.
@@ -25,11 +27,7 @@ export function PricingSummary() {
       <div className="ob-container">
         <div className="flex flex-col gap-6 pb-9 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-5">
-            <p className="ob-label flex items-center gap-3">
-              <span className="text-[var(--ob-signal)]">10</span>
-              <span aria-hidden className="h-px w-6 bg-[var(--ob-line-2)]" />
-              Pricing
-            </p>
+            <Eyebrow index="12">Pricing</Eyebrow>
             <h2 id="pricing-title" className="ob-h2 max-w-[16ch]">
               Three plans. Enforced server-side.
             </h2>

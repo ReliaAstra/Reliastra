@@ -332,6 +332,42 @@ class Settings(BaseSettings):
                     "counting regardless of IP - the filter that survives a "
                     "residential IP changing or a VPN.",
     )
+    # ── Evidence artifacts ────────────────────────────────────────────────
+    SITE_URL: str = Field(
+        default="https://reliastra.com",
+        description="Public origin of the web app. Printed into evidence "
+                    "reports so a recipient can open the verification page "
+                    "from the document itself.",
+    )
+    EVIDENCE_VERIFICATION_BASE_URL: str = Field(
+        default="",
+        description="Optional override for the base URL printed in evidence "
+                    "reports (e.g. a staging domain or a white-label host). "
+                    "Empty falls back to SITE_URL.",
+    )
+    EVIDENCE_SIGNING_PRIVATE_KEY: str = Field(
+        default="",
+        description="Ed25519 private key used to sign the canonical evidence "
+                    "payload, so a report is authenticable by a third party "
+                    "instead of merely internally consistent. Accepts a "
+                    "PEM block or a base64/hex-encoded 32-byte seed. When "
+                    "unset, artifacts are generated UNSIGNED and say so on "
+                    "the document - the report never claims a signature that "
+                    "does not exist.",
+    )
+    EVIDENCE_SIGNING_PRIVATE_KEY_FILE: str = Field(
+        default="",
+        description="Path to a file holding the signing key, preferred by "
+                    "deployments that mount secrets. Ignored when "
+                    "EVIDENCE_SIGNING_PRIVATE_KEY is set.",
+    )
+    EVIDENCE_KEY_ID: str = Field(
+        default="",
+        description="Stable identifier for the signing key, published with the "
+                    "public key. Defaults to the first 16 hex characters of "
+                    "the SHA-256 of the public key when unset; set it "
+                    "explicitly before a key rotation so citations survive.",
+    )
 
     SMTP_USE_TLS: bool = Field(
         default=False,
