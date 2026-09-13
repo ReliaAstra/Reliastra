@@ -5,6 +5,7 @@ import { availabilityRecordAudit } from './research/availability-record-audit';
 import { probeIntervalPaper } from './research/probe-interval-from-bucketed-telemetry';
 import { aiApiTrustBoundary } from './research/ai-api-trust-boundary';
 import { statusPagePayloadAnatomy } from './research/status-page-payload-anatomy';
+import { awsIamPolicyEvaluationOrder } from './research/aws-iam-policy-evaluation-order';
 
 /** Keyed by slug, so the spread below cannot attach a body to the wrong paper. */
 const availabilityRecordAuditModule = { 'availability-record-audit': availabilityRecordAudit };
@@ -13,6 +14,7 @@ const probeIntervalModule = {
 };
 const aiApiTrustBoundaryModule = { 'ai-api-trust-boundary': aiApiTrustBoundary };
 const statusPageModule = { 'status-page-payload-anatomy': statusPagePayloadAnatomy };
+const awsIamModule = { 'aws-iam-policy-evaluation-order': awsIamPolicyEvaluationOrder };
 
 /**
  * Body copy for `/research/[slug]`.
@@ -953,4 +955,5 @@ done`}</PRE>
   ...probeIntervalModule,
   ...aiApiTrustBoundaryModule,
   ...statusPageModule,
+  ...awsIamModule,
 };

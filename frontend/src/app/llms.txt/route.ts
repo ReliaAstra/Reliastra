@@ -78,6 +78,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - Probe-interval estimation from bucketed telemetry: ${SITE_URL}/research/measurement-integrity/probe-interval-from-bucketed-telemetry
 - Cloud & AI infrastructure security (category): ${SITE_URL}/research/cloud-security
 - The trust boundary of an AI API dependency: ${SITE_URL}/research/cloud-security/ai-api-trust-boundary
+- AWS IAM policy evaluation logic (identity vs resource, in order): ${SITE_URL}/research/cloud-security/aws-iam-policy-evaluation-order
 - Research artifacts and datasets (reproducible): https://github.com/ReliaAstra/Reliastra/tree/main/research
 - About: ${SITE_URL}/about
 - Contact: ${SITE_URL}/contact

@@ -479,3 +479,671 @@ export function StatusPayloadFigure({ id = 'fig-status-payload' }: { id?: string
     </FigShell>
   );
 }
+
+/* ── Figure · the IAM evaluation pipeline ────────────────────────────────── */
+
+/**
+ * The seven stages of the documented single-account evaluation, each labelled
+ * with the algebraic role it plays. Three roles only: a stage that
+ * short-circuits on a match, a ceiling that can only subtract, and a grant.
+ */
+const IAM_STAGES: { n: string; name: string[]; role: string; tone: 'signal' | 'default' | 'void'; note: string }[] = [
+  {
+    n: '1',
+    name: ['Deny evaluation'],
+    role: 'SHORT-CIRCUIT',
+    tone: 'signal',
+    note: 'one matching explicit Deny in any applicable policy ends the request',
+  },
+  {
+    n: '2',
+    name: ['Organizations RCPs'],
+    role: 'CEILING',
+    tone: 'default',
+    note: 'attaches to resources; no applicable Allow is a final Deny',
+  },
+  {
+    n: '3',
+    name: ['Organizations SCPs'],
+    role: 'CEILING',
+    tone: 'default',
+    note: 'attaches to principals; no applicable Allow is a final Deny',
+  },
+  {
+    n: '4',
+    name: ['Resource-based', 'policies'],
+    role: 'GRANT',
+    tone: 'default',
+    note: 'same account: can allow outright, depending on the principal type',
+  },
+  {
+    n: '5',
+    name: ['Identity-based', 'policies'],
+    role: 'GRANT',
+    tone: 'default',
+    note: 'no applicable Allow is an implicit deny and a final Deny',
+  },
+  {
+    n: '6',
+    name: ['Permissions', 'boundary'],
+    role: 'CEILING',
+    tone: 'default',
+    note: 'caps what the identity-based policies may grant',
+  },
+  {
+    n: '7',
+    name: ['Session policies'],
+    role: 'CEILING',
+    tone: 'default',
+    note: 'applies to session principals only; absent means a default policy',
+  },
+];
+
+export function IamEvaluationPipelineFigure({ id = 'fig-iam-pipeline' }: { id?: string }) {
+  const rowH = 46;
+  const top = 78;
+  const stageX = 74;
+  const stageW = 226;
+  const tagX = 322;
+  const tagW = 138;
+  const noteX = 482;
+  const termY = top + IAM_STAGES.length * rowH + 14;
+
+  return (
+    <FigShell
+      id={id}
+      title="The seven stages of AWS single-account policy evaluation"
+      desc="A vertical pipeline of seven stages, in the order AWS documents them: deny evaluation, Organizations resource control policies, Organizations service control policies, resource-based policies, identity-based policies, permissions boundaries, session policies. Each stage carries one of three roles. Deny evaluation short-circuits: a single matching explicit Deny anywhere ends the request. Four stages are ceilings that can only subtract: RCPs, SCPs, permissions boundaries and session policies each return a final Deny when they apply and do not allow. Two stages grant: resource-based and identity-based policies. A dashed bypass lane on the left runs from the request straight to Allow and is labelled for the AWS account root user only, which is the single documented exception to implicit deny. Both terminals are drawn: Allow, and implicit deny."
+      viewBox="0 0 960 470"
+    >
+      {/* root-user bypass lane */}
+      <path
+        d={`M40 34 H22 V${termY + 16} H${stageX}`}
+        fill="none"
+        className={SIGNAL_STROKE}
+        strokeWidth={1}
+        strokeDasharray="4 4"
+      />
+      <text
+        x={16}
+        y={210}
+        className={`${SIGNAL} text-[9.5px]`}
+        textAnchor="middle"
+        transform="rotate(-90 16 210)"
+      >
+        ACCOUNT ROOT USER ONLY
+      </text>
+
+      <rect x={40} y={18} width={260} height={32} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <text x={54} y={38} className="fill-[var(--ob-text)] font-mono text-[11px]">
+        REQUEST + CONTEXT
+      </text>
+      <text x={312} y={38} className={`${MUTED} text-[10px]`}>
+        authenticated, then the applicable policy set is resolved
+      </text>
+
+      <line x1={52} y1={top - 8} x2={52} y2={termY - 6} className={STROKE_SOFT} strokeWidth={1} />
+
+      {IAM_STAGES.map((s, i) => {
+        const y = top + i * rowH;
+        return (
+          <g key={s.n}>
+            <circle cx={52} cy={y + 16} r={9} className={`${STROKE} fill-[var(--ob-void)]`} strokeWidth={1} />
+            <text x={52} y={y + 20} textAnchor="middle" className={`${LABEL} text-[10px]`}>
+              {s.n}
+            </text>
+            <rect
+              x={stageX}
+              y={y}
+              width={stageW}
+              height={32}
+              className={
+                s.tone === 'signal'
+                  ? `${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`
+                  : `${STROKE} fill-[var(--ob-raised)]`
+              }
+              strokeWidth={1}
+            />
+            {s.name.map((line, j) => (
+              <text
+                key={line}
+                x={stageX + 12}
+                y={y + (s.name.length === 1 ? 20 : 14 + j * 12)}
+                className="fill-[var(--ob-text)] font-mono text-[10.5px]"
+              >
+                {line}
+              </text>
+            ))}
+            <rect
+              x={tagX}
+              y={y + 6}
+              width={tagW}
+              height={20}
+              className={
+                s.role === 'SHORT-CIRCUIT'
+                  ? `${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`
+                  : s.role === 'GRANT'
+                    ? `stroke-[var(--ob-healthy)] fill-[var(--ob-healthy-wash)]`
+                    : `${STROKE_SOFT} fill-[var(--ob-void)]`
+              }
+              strokeWidth={1}
+            />
+            <text
+              x={tagX + tagW / 2}
+              y={y + 20}
+              textAnchor="middle"
+              className={
+                s.role === 'SHORT-CIRCUIT'
+                  ? `${SIGNAL} text-[9.5px]`
+                  : s.role === 'GRANT'
+                    ? 'fill-[var(--ob-healthy)] font-mono text-[9.5px]'
+                    : `${MUTED} text-[9.5px]`
+              }
+            >
+              {s.role}
+            </text>
+            <text x={noteX} y={y + 20} className={`${LABEL} text-[10.5px]`}>
+              {s.note}
+            </text>
+          </g>
+        );
+      })}
+
+      <line x1={52} y1={termY - 6} x2={52} y2={termY + 16} className={STROKE_SOFT} strokeWidth={1} />
+      <rect
+        x={stageX}
+        y={termY}
+        width={120}
+        height={32}
+        className={`${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`}
+        strokeWidth={1}
+      />
+      <text x={stageX + 60} y={termY + 20} textAnchor="middle" className={`${SIGNAL} text-[11px]`}>
+        ALLOW
+      </text>
+      <rect
+        x={stageX + 140}
+        y={termY}
+        width={190}
+        height={32}
+        className={`${STROKE_SOFT} fill-[var(--ob-void)]`}
+        strokeWidth={1}
+      />
+      <text x={stageX + 235} y={termY + 20} textAnchor="middle" className={`${MUTED} text-[11px]`}>
+        IMPLICIT DENY
+      </text>
+      <text x={stageX + 350} y={termY + 20} className={`${MUTED} text-[10px]`}>
+        the default, and the outcome of every ceiling that does not allow
+      </text>
+    </FigShell>
+  );
+}
+
+/* ── Figure · the algebra of the policy classes ──────────────────────────── */
+
+export function IamPolicyAlgebraFigure({ id = 'fig-iam-algebra' }: { id?: string }) {
+  return (
+    <FigShell
+      id={id}
+      title="Union inside one account, intersection across accounts, ceilings around both"
+      desc="Three panels. The first shows same-account evaluation as two overlapping rectangles, identity-based policies and resource-based policies, whose union is the grant: an Allow in either is sufficient. The second shows the ceilings as four nested rectangles, RCP outermost, then SCP, then permissions boundary, then session policy, wrapping the grant; each nested rectangle can only shrink the area inside it, never enlarge it. The third shows a cross-account request as two separate account bands divided by a dashed trust boundary: the trusted account holds the identity-based policy and its ceilings, the trusting account holds the resource-based policy and its ceilings, and the request is allowed only when both bands independently return Allow."
+      viewBox="0 0 960 340"
+    >
+      {/* panel 1 · union */}
+      <text x={20} y={30} className={`${SIGNAL} text-[10px]`}>
+        SAME ACCOUNT · UNION
+      </text>
+      <rect x={44} y={70} width={150} height={130} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <rect x={126} y={70} width={150} height={130} className={`${STROKE} fill-[var(--ob-signal-wash)]`} strokeWidth={1} />
+      <text x={70} y={92} className={`${LABEL} text-[10px]`}>
+        identity-based
+      </text>
+      <text x={196} y={92} className={`${SIGNAL} text-[10px]`}>
+        resource-based
+      </text>
+      <text x={167} y={142} textAnchor="middle" className="fill-[var(--ob-text)] font-mono text-[10.5px]">
+        I ∪ R
+      </text>
+      <text x={20} y={228} className={`${MUTED} text-[10px]`}>
+        an Allow in either is sufficient;
+      </text>
+      <text x={20} y={244} className={`${MUTED} text-[10px]`}>
+        one explicit Deny anywhere is not
+      </text>
+
+      {/* panel 2 · ceilings */}
+      <text x={336} y={30} className={`${SIGNAL} text-[10px]`}>
+        CEILINGS · INTERSECTION
+      </text>
+      {[
+        { x: 336, y: 44, w: 268, h: 200, label: 'RCP' },
+        { x: 356, y: 66, w: 228, h: 156, label: 'SCP' },
+        { x: 376, y: 88, w: 188, h: 112, label: 'permissions boundary' },
+        { x: 396, y: 110, w: 148, h: 68, label: 'session policy' },
+      ].map((b) => (
+        <g key={b.label}>
+          <rect
+            x={b.x}
+            y={b.y}
+            width={b.w}
+            height={b.h}
+            className={`${STROKE_SOFT} fill-none`}
+            strokeWidth={1}
+          />
+          <text x={b.x + 8} y={b.y + 15} className={`${MUTED} text-[9.5px]`}>
+            {b.label}
+          </text>
+        </g>
+      ))}
+      <rect x={436} y={140} width={68} height={26} className={`${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`} strokeWidth={1} />
+      <text x={470} y={157} textAnchor="middle" className={`${SIGNAL} text-[10px]`}>
+        grant
+      </text>
+      <text x={336} y={268} className={`${MUTED} text-[10px]`}>
+        each ring can only subtract from what is inside it
+      </text>
+
+      {/* panel 3 · cross account */}
+      <text x={650} y={30} className={`${SIGNAL} text-[10px]`}>
+        CROSS ACCOUNT · INTERSECTION OF TWO VERDICTS
+      </text>
+      <rect x={650} y={44} width={130} height={200} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <rect x={806} y={44} width={130} height={200} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <line x1={793} y1={36} x2={793} y2={252} className={SIGNAL_STROKE} strokeWidth={1} strokeDasharray="4 4" />
+      <text x={715} y={62} textAnchor="middle" className={`${LABEL} text-[10px]`}>
+        ACCOUNT A
+      </text>
+      <text x={715} y={78} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        trusted
+      </text>
+      <text x={871} y={62} textAnchor="middle" className={`${LABEL} text-[10px]`}>
+        ACCOUNT B
+      </text>
+      <text x={871} y={78} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        trusting
+      </text>
+      <rect x={666} y={94} width={98} height={40} className={`${STROKE_SOFT} fill-[var(--ob-void)]`} strokeWidth={1} />
+      <text x={715} y={112} textAnchor="middle" className={`${LABEL} text-[9.5px]`}>
+        identity
+      </text>
+      <text x={715} y={126} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        + ceilings
+      </text>
+      <rect x={822} y={94} width={98} height={40} className={`${STROKE_SOFT} fill-[var(--ob-void)]`} strokeWidth={1} />
+      <text x={871} y={112} textAnchor="middle" className={`${LABEL} text-[9.5px]`}>
+        resource
+      </text>
+      <text x={871} y={126} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        + ceilings
+      </text>
+      <rect x={666} y={160} width={98} height={30} className={`${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`} strokeWidth={1} />
+      <text x={715} y={180} textAnchor="middle" className={`${SIGNAL} text-[9.5px]`}>
+        verdict 1
+      </text>
+      <rect x={822} y={160} width={98} height={30} className={`${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`} strokeWidth={1} />
+      <text x={871} y={180} textAnchor="middle" className={`${SIGNAL} text-[9.5px]`}>
+        verdict 2
+      </text>
+      <text x={793} y={216} textAnchor="middle" className="fill-[var(--ob-text)] font-mono text-[10.5px]">
+        verdict 1 ∧ verdict 2
+      </text>
+      <text x={650} y={268} className={`${MUTED} text-[10px]`}>
+        allowed only if both evaluations independently return Allow
+      </text>
+      <text x={793} y={286} textAnchor="middle" className={`${SIGNAL} text-[9.5px]`}>
+        TRUST BOUNDARY
+      </text>
+    </FigShell>
+  );
+}
+
+/* ── Figure · the same-account tightening fallacy ────────────────────────── */
+
+export function IamTighteningFallacyFigure({ id = 'fig-iam-tightening' }: { id?: string }) {
+  const MECHANISMS = ['permissions boundary', 'service control policy', 'resource control policy', 'explicit Deny statement'];
+  return (
+    <FigShell
+      id={id}
+      title="Why a restrictive resource-based policy does not tighten a broad identity-based policy"
+      desc="Two panels and one column. The left panel is the designer model: a broad identity-based policy allowing all S3 actions, plus a restrictive bucket policy, drawn as if the two intersected, producing an arrow to a narrowed effective permission set. The centre panel is the documented outcome: the same two policies combined by union, so the broad Allow survives and the effective permission set is unchanged. The right column lists the four mechanisms that do reduce effective permissions inside one account: a permissions boundary, a service control policy, a resource control policy, or an explicit Deny statement."
+      viewBox="0 0 960 300"
+    >
+      <text x={20} y={28} className={`${MUTED} text-[10px]`}>
+        DESIGNER MODEL
+      </text>
+      <rect x={20} y={40} width={270} height={196} className={`${STROKE_SOFT} fill-[var(--ob-void)]`} strokeWidth={1} />
+      <rect x={44} y={66} width={104} height={44} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <text x={96} y={86} textAnchor="middle" className={`${LABEL} text-[9.5px]`}>
+        identity
+      </text>
+      <text x={96} y={100} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        s3:*
+      </text>
+      <rect x={112} y={92} width={104} height={44} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <text x={164} y={112} textAnchor="middle" className={`${LABEL} text-[9.5px]`}>
+        bucket policy
+      </text>
+      <text x={164} y={126} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        read only
+      </text>
+      <text x={155} y={170} textAnchor="middle" className="fill-[var(--ob-text)] font-mono text-[10.5px]">
+        I ∩ R
+      </text>
+      <Arrow x1={155} x2={225} y={196} />
+      <text x={232} y={200} className={`${MUTED} text-[9.5px]`}>
+        narrowed
+      </text>
+
+      <text x={330} y={28} className={`${SIGNAL} text-[10px]`}>
+        DOCUMENTED OUTCOME
+      </text>
+      <rect x={330} y={40} width={290} height={196} className={`${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`} strokeWidth={1} />
+      <rect x={354} y={66} width={104} height={44} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <text x={406} y={86} textAnchor="middle" className={`${LABEL} text-[9.5px]`}>
+        identity
+      </text>
+      <text x={406} y={100} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        s3:*
+      </text>
+      <rect x={422} y={92} width={104} height={44} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+      <text x={474} y={112} textAnchor="middle" className={`${LABEL} text-[9.5px]`}>
+        bucket policy
+      </text>
+      <text x={474} y={126} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        read only
+      </text>
+      <text x={465} y={170} textAnchor="middle" className="fill-[var(--ob-text)] font-mono text-[10.5px]">
+        I ∪ R
+      </text>
+      <Arrow x1={465} x2={535} y={196} />
+      <text x={542} y={200} className={`${SIGNAL} text-[9.5px]`}>
+        s3:* still effective
+      </text>
+
+      <text x={664} y={28} className={`${LABEL} text-[10px]`}>
+        WHAT ACTUALLY REDUCES IT
+      </text>
+      {MECHANISMS.map((m, i) => {
+        const y = 44 + i * 48;
+        return (
+          <g key={m}>
+            <rect x={664} y={y} width={272} height={36} className={`${STROKE} fill-[var(--ob-raised)]`} strokeWidth={1} />
+            <text x={678} y={y + 22} className={`${LABEL} text-[10.5px]`}>
+              {m}
+            </text>
+            <text x={922} y={y + 22} textAnchor="end" className={`${MUTED} text-[9.5px]`}>
+              {i === 3 ? 'overrides' : 'caps'}
+            </text>
+          </g>
+        );
+      })}
+      <text x={20} y={270} className={`${MUTED} text-[10px]`}>
+        inside one account a resource-based policy adds permission, it never removes it; only a ceiling or an explicit Deny removes it
+      </text>
+    </FigShell>
+  );
+}
+
+/* ── Figure · the verification gap ───────────────────────────────────────── */
+
+/** One cell of a capability matrix. Tone decides the fill; label is printed. */
+function MatrixCell({
+  x,
+  y,
+  w,
+  h,
+  tone,
+  label,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  tone: 'yes' | 'partial' | 'no';
+  label: string;
+}) {
+  const fill =
+    tone === 'yes'
+      ? 'fill-[var(--ob-healthy-wash)]'
+      : tone === 'partial'
+        ? 'fill-[var(--ob-signal-wash)]'
+        : 'fill-[var(--ob-void)]';
+  const stroke =
+    tone === 'yes' ? 'stroke-[var(--ob-healthy)]' : tone === 'partial' ? SIGNAL_STROKE : STROKE_SOFT;
+  const text =
+    tone === 'yes'
+      ? 'fill-[var(--ob-healthy)] font-mono'
+      : tone === 'partial'
+        ? `${SIGNAL}`
+        : `${MUTED}`;
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} className={`${stroke} ${fill}`} strokeWidth={1} />
+      <text x={x + w / 2} y={y + h / 2 + 4} textAnchor="middle" className={`${text} text-[9.5px]`}>
+        {label}
+      </text>
+    </g>
+  );
+}
+
+/**
+ * Capability of each verification route, per policy class, as documented on the
+ * access dates in the paper's references. 'partial' means the route evaluates
+ * the class only under conditions the paper states in the same row.
+ */
+const VERIFICATION_MATRIX: { cls: string; cells: { tone: 'yes' | 'partial' | 'no'; label: string }[] }[] = [
+  {
+    cls: 'identity-based',
+    cells: [
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'partial', label: 'AFTER THE FACT' },
+    ],
+  },
+  {
+    cls: 'resource-based',
+    cells: [
+      { tone: 'partial', label: 'NOT FOR ROLES' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'partial', label: 'AFTER THE FACT' },
+    ],
+  },
+  {
+    cls: 'permissions boundary',
+    cells: [
+      { tone: 'partial', label: 'ONE AT A TIME' },
+      { tone: 'partial', label: 'IDENTITY POLICY' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'no', label: 'NOT NAMED' },
+    ],
+  },
+  {
+    cls: 'session policy',
+    cells: [
+      { tone: 'no', label: 'NOT ACCEPTED' },
+      { tone: 'no', label: 'NOT AN INPUT' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'no', label: 'NOT NAMED' },
+    ],
+  },
+  {
+    cls: 'SCP',
+    cells: [
+      { tone: 'partial', label: 'WITH HIERARCHY' },
+      { tone: 'partial', label: 'POLICY TYPE' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'partial', label: 'SOMETIMES NAMED' },
+    ],
+  },
+  {
+    cls: 'RCP',
+    cells: [
+      { tone: 'no', label: 'NOT SUPPORTED' },
+      { tone: 'no', label: 'NOT AN INPUT' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'no', label: 'NOT NAMED' },
+    ],
+  },
+  {
+    cls: 'role trust policy',
+    cells: [
+      { tone: 'no', label: 'IGNORED FOR STS' },
+      { tone: 'yes', label: 'VALIDATED' },
+      { tone: 'yes', label: 'EVALUATED' },
+      { tone: 'no', label: 'NOT NAMED' },
+    ],
+  },
+];
+
+export function IamVerificationGapFigure({ id = 'fig-iam-verification-gap' }: { id?: string }) {
+  const TOOLS = ['IAM Policy Simulator', 'Access Analyzer check', 'live API call', 'decoded auth message'];
+  const labelW = 196;
+  const cellW = 176;
+  const cellH = 32;
+  const top = 66;
+  const gap = 6;
+
+  return (
+    <FigShell
+      id={id}
+      title="What each verification route can evaluate, by policy class"
+      desc="A capability matrix. Rows are the seven policy classes that participate in an authorisation decision: identity-based, resource-based, permissions boundary, session policy, service control policy, resource control policy and IAM role trust policy. Columns are the four routes an engineer can use to check a decision before or after it happens: the IAM Policy Simulator, an IAM Access Analyzer custom policy check, a live API call against the control plane, and the decoded authorization message returned after a denial. Cells are marked evaluated, partial with the condition stated, or not supported. The pattern the matrix shows is that the two cheap pre-deployment routes each leave at least one policy class unevaluated, the live API call evaluates every class but only for the request actually issued, and the decoded message distinguishes an explicit deny from an absent allow without naming the policy class that decided."
+      viewBox="0 0 960 380"
+    >
+      {TOOLS.map((t, i) => (
+        <text
+          key={t}
+          x={labelW + 16 + i * (cellW + gap) + cellW / 2}
+          y={44}
+          textAnchor="middle"
+          className={`${LABEL} text-[10px]`}
+        >
+          {t}
+        </text>
+      ))}
+      <line
+        x1={12}
+        y1={54}
+        x2={labelW + 16 + TOOLS.length * (cellW + gap)}
+        y2={54}
+        className={STROKE_SOFT}
+        strokeWidth={1}
+      />
+      {VERIFICATION_MATRIX.map((row, r) => {
+        const y = top + r * (cellH + gap);
+        return (
+          <g key={row.cls}>
+            <text x={12} y={y + 20} className="fill-[var(--ob-text)] font-mono text-[10.5px]">
+              {row.cls}
+            </text>
+            {row.cells.map((c, i) => (
+              <MatrixCell
+                key={c.label + i}
+                x={labelW + 16 + i * (cellW + gap)}
+                y={y}
+                w={cellW}
+                h={cellH}
+                tone={c.tone}
+                label={c.label}
+              />
+            ))}
+          </g>
+        );
+      })}
+      <text x={12} y={top + VERIFICATION_MATRIX.length * (cellH + gap) + 26} className={`${MUTED} text-[10px]`}>
+        evaluated = the route decides the class; partial = decides it only under the stated condition; not supported = the route does not accept it
+      </text>
+      <text x={12} y={top + VERIFICATION_MATRIX.length * (cellH + gap) + 44} className={`${SIGNAL} text-[10px]`}>
+        no single pre-deployment route covers all seven classes
+      </text>
+    </FigShell>
+  );
+}
+
+/* ── Figure · the attribution path ───────────────────────────────────────── */
+
+const ATTRIBUTION_STEPS: { source: string; lines: string[]; tone: 'yes' | 'partial' }[] = [
+  {
+    source: 'error message text',
+    lines: ['sometimes names the', 'deciding layer; wording', 'is service specific'],
+    tone: 'partial',
+  },
+  {
+    source: 'sts:DecodeAuthorization',
+    lines: ['explicit deny vs absent', 'allow, plus principal,', 'action, resource, context'],
+    tone: 'partial',
+  },
+  {
+    source: 'CloudTrail userIdentity',
+    lines: ['IAMUser / AssumedRole /', 'FederatedUser / Root -', 'selects the branch'],
+    tone: 'yes',
+  },
+  {
+    source: 'account policy inventory',
+    lines: ['the statement that', 'matched, once the', 'branch is known'],
+    tone: 'yes',
+  },
+];
+
+export function IamAttributionPathFigure({ id = 'fig-iam-attribution' }: { id?: string }) {
+  const w = 214;
+  const gap = 22;
+  const y = 96;
+  const h = 92;
+
+  return (
+    <FigShell
+      id={id}
+      title="From an observed AccessDenied to the policy class that decided it"
+      desc="A left-to-right chain of four evidence sources used to attribute an authorisation failure. The error message text sometimes names the deciding layer, and its wording is service specific, so it is partial evidence. The decoded authorization message states whether the denial was an explicit deny or an absent allow, together with the principal, action, resource and condition values, but it does not name the policy class that decided. The CloudTrail userIdentity type is the discriminator: whether the principal was an IAM user, an assumed role session, a federated user session or the account root user determines which branch of the resource-based policy rule applied, and therefore whether a permissions boundary or session policy could have capped the request. Only once the branch is known does the account policy inventory identify the statement that matched. The chain ends at the deciding policy class."
+      viewBox="0 0 960 250"
+    >
+      <rect x={12} y={y} width={120} height={h} className={`${STROKE_SOFT} fill-[var(--ob-void)]`} strokeWidth={1} />
+      <text x={72} y={y + 40} textAnchor="middle" className="fill-[var(--ob-text)] font-mono text-[10.5px]">
+        AccessDenied
+      </text>
+      <text x={72} y={y + 58} textAnchor="middle" className={`${MUTED} text-[9.5px]`}>
+        observed failure
+      </text>
+
+      {ATTRIBUTION_STEPS.map((s, i) => {
+        const x = 152 + i * (w + gap);
+        return (
+          <g key={s.source}>
+            {i === 0 && <Arrow x1={132} x2={x} y={y + h / 2} />}
+            {i > 0 && <Arrow x1={x - gap} x2={x} y={y + h / 2} />}
+            <rect
+              x={x}
+              y={y}
+              width={w}
+              height={h}
+              className={
+                s.tone === 'yes'
+                  ? `${STROKE} fill-[var(--ob-raised)]`
+                  : `${SIGNAL_STROKE} fill-[var(--ob-signal-wash)]`
+              }
+              strokeWidth={1}
+            />
+            <text x={x + 12} y={y + 22} className="fill-[var(--ob-text)] font-mono text-[10px]">
+              {s.source}
+            </text>
+            <text x={x + 12} y={y + 40} className={`${MUTED} text-[9px]`}>
+              {s.tone === 'yes' ? 'DISCRIMINATES' : 'PARTIAL'}
+            </text>
+            {s.lines.map((line, j) => (
+              <text key={line} x={x + 12} y={y + 58 + j * 12} className={`${LABEL} text-[9.5px]`}>
+                {line}
+              </text>
+            ))}
+          </g>
+        );
+      })}
+
+      <text x={12} y={228} className={`${MUTED} text-[10px]`}>
+        the principal type recorded in CloudTrail is the input that decides which branch of the resource-based rule the request took
+      </text>
+    </FigShell>
+  );
+}
