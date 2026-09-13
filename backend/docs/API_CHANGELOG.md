@@ -420,3 +420,45 @@ machine-readable spec is unchanged:
 | `GET /docs` (Swagger UI) | `GET /api-docs` |
 | `GET /redoc` (ReDoc) | `GET /api-redoc` |
 | `GET /openapi.json` | `GET /openapi.json` (unchanged) |
+
+## Traffic analytics: internal traffic is no longer counted
+
+`POST /v1/public/analytics/visit` still returns `204` and still accepts the
+same `path` query parameter, but it now refuses to record visits that are not
+acquisition traffic. Nothing a client sends can opt *in* to being counted.
+
+Dropped before anything is written, in precedence order:
+
+| Reason | Rule | Configuration |
+| --- | --- | --- |
+| `excluded-network` | Client IP matches an IP/CIDR in the exclusion list | `ANALYTICS_EXCLUDE_NETWORKS` |
+| `opt-out` | `reliastra_analytics_optout=1` cookie, or `X-Reliastra-Analytics-Opt-Out: 1` | `ANALYTICS_OPT_OUT_COOKIE` |
+| `internal-path` | Reported `path` starts with an internal prefix (`/admin`) | `ANALYTICS_EXCLUDE_PATH_PREFIXES` |
+| `internal-ip` | Client address is loopback / private / link-local / CGNAT, and no `X-Forwarded-For` was present | `ANALYTICS_EXCLUDE_INTERNAL_IPS` |
+
+The response carries `X-Reliastra-Analytics: counted` or
+`excluded:<reason>` so an operator can verify the filter in devtools. Drops are
+counted separately (`an:pv:excluded:*`) and never in `an:pv:*`.
+
+`GET /v1/admin/analytics/overview` adds one object and one series field:
+
+```json
+{
+  "exclusions": {
+    "pageviews_excluded_today": 12,
+    "pageviews_excluded_total": 341,
+    "reasons": { "internal-path": 300, "opt-out": 41 },
+    "opt_out_cookie": "reliastra_analytics_optout",
+    "excluded_networks": ["203.0.113.24"],
+    "excluded_networks_invalid": [],
+    "excluded_path_prefixes": ["/admin"],
+    "internal_ip_filter": true
+  },
+  "series": [{ "date": "2026-09-13", "pageviews": 40, "pageviews_excluded": 3 }]
+}
+```
+
+Both are additive: an older frontend ignores them. Historic counters are *not*
+rewritten - pageviews recorded before this change include the team's own
+traffic, and the `exclusions` block is what tells you from which day the
+numbers become comparable.

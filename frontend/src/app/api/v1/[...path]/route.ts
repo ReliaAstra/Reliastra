@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { proxyToBackend } from '@/lib/backend-proxy';
+import { decideVisitRequest, visitDroppedResponse } from '@/lib/analytics-gate';
 
 async function handle(
   req: NextRequest,
@@ -16,6 +17,15 @@ async function handle(
       { error: { code: 'FORBIDDEN', message: 'Admin API is not available on this surface.' } },
       { status: 403 }
     );
+  }
+
+  // The page beacon is the one call here that must not be forwarded blindly:
+  // it is the sole source of the admin "Pageviews" counter, and the team's own
+  // browsing has to stay out of it. See lib/analytics-gate.ts for why this
+  // decision lives at the edge instead of in the browser or in the backend.
+  const verdict = decideVisitRequest(req, joined);
+  if (verdict.action === 'drop') {
+    return visitDroppedResponse(verdict.reason);
   }
 
   const noBody = req.method === 'GET' || req.method === 'HEAD';
