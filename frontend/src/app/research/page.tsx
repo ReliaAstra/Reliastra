@@ -109,6 +109,14 @@ export default function ResearchIndexPage() {
       };
     });
 
+  // `papers` counts entries that carry a corpus record - a research question,
+  // methodology and artifacts. `entries` is larger: it also lists briefs and
+  // agendas, which are published work but not papers. Counting every entry as a
+  // paper is the kind of inflation this page exists to avoid, and it is the kind
+  // of inconsistency a technical reader notices in four seconds.
+  const papers = RESEARCH_PAPERS.length;
+  const plural = (count: number, singular: string) =>
+    `${count} ${count === 1 ? singular : `${singular}s`}`;
   const measured = RESEARCH_PAPERS.filter((p) => p.evidenceBasis === 'measured').length;
   const reproducible = RESEARCH_PAPERS.filter((p) =>
     p.artifacts.some((a) => a.kind === 'script' || a.kind === 'dataset')
@@ -186,7 +194,10 @@ export default function ResearchIndexPage() {
           <dl className="mt-12 grid max-w-4xl grid-cols-2 gap-x-10 gap-y-6 border-t border-[var(--ob-line)] pt-7 md:grid-cols-4">
             <div>
               <dt className="ob-label mb-2">Papers</dt>
-              <dd className="ob-mono text-[var(--ob-text-2)]">{entries.length}</dd>
+              <dd className="ob-mono text-[var(--ob-text-2)]">
+                {papers}
+                <span className="text-[var(--ob-text-4)]"> / {entries.length} entries</span>
+              </dd>
             </div>
             <div>
               <dt className="ob-label mb-2">Built on measurement</dt>
@@ -219,8 +230,8 @@ export default function ResearchIndexPage() {
                 >
                   <div className="flex flex-col gap-3">
                     <p className="ob-label text-[var(--ob-signal)]">
-                      Live observatory hub · {researchHubArticles(hub.slug).length} papers · measured
-                      records
+                      Live observatory hub · {plural(researchHubArticles(hub.slug).length, 'paper')}{' '}
+                      · measured records
                     </p>
                     <h3 className="ob-h2 max-w-[26ch] transition-colors group-hover:text-[var(--ob-signal)]">
                       {hub.title}
@@ -243,7 +254,7 @@ export default function ResearchIndexPage() {
                 >
                   <div className="flex flex-col gap-3">
                     <p className="ob-label text-[var(--ob-signal)]">
-                      Category · {researchCategoryArticles(cat.slug).length} papers
+                      Category · {plural(researchCategoryArticles(cat.slug).length, 'paper')}
                     </p>
                     <h3 className="ob-h2 max-w-[26ch] transition-colors group-hover:text-[var(--ob-signal)]">
                       {cat.title}
@@ -253,7 +264,7 @@ export default function ResearchIndexPage() {
                     </p>
                   </div>
                   <p className="ob-label self-end lg:text-right">
-                    {researchCategoryArticles(cat.slug).length} papers →
+                    {plural(researchCategoryArticles(cat.slug).length, 'paper')} →
                   </p>
                 </Link>
               </li>
@@ -266,8 +277,14 @@ export default function ResearchIndexPage() {
       <section aria-labelledby="corpus-heading" className="bg-[var(--ob-base)] pb-16 pt-12">
         <div className="mx-auto w-full max-w-[1200px] px-[var(--ob-gutter)]">
           <h2 id="corpus-heading" className="ob-label mb-2">
-            All papers
+            All entries
           </h2>
+          <p className="ob-small mb-6 max-w-[70ch] text-[var(--ob-text-4)]">
+            {plural(entries.length, 'entry')}: {plural(papers, 'paper')} with a published corpus
+            record (research question, methodology, artifacts and the limits of the claim), plus
+            the briefs, agendas and notes that surround them. The distinction is stated rather
+            than implied because the difference matters to a reader who wants to check the work.
+          </p>
           <p className="max-w-[68ch] text-[14px] leading-[1.6] text-[var(--ob-text-4)]">
             Newest first. Every entry states its research question, its evidence basis and its
             reading time. Filtering narrows this list; it does not create a new page.
