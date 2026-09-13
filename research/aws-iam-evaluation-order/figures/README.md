@@ -21,11 +21,11 @@ Checksums at publication, recorded on the corpus record so a reader can tell
 whether an export has been regenerated since:
 
 ```
-405a08ce08cafb6b6257f57671ee74fd6241b8fe71df7a2b8f9592bb4a548b34  fig-1-evaluation-pipeline.svg
-8caf4b29d671b9ef8c749e645e63663a7cac5de9f1bbc4bda3e831faff574e4b  fig-2-policy-algebra.svg
-576c8166612be83a5fe65c734e851e5d1f03dd1bbcacb677593c9c332dd37892  fig-3-tightening-fallacy.svg
-b1239f8b51ebda40c9dde0378f3a729af158a588ecc4a778bb518df243287457  fig-4-verification-gap.svg
-c2a746ac57f8d0b14573ffc135936848ccddaa732ecb17594b1c5f0963a2a772  fig-5-attribution-path.svg
+e507e42f24b150b30ff404530744d7ed60e0c80334395488c9429d170f2b4b92  fig-1-evaluation-pipeline.svg
+7262bfc25cccedf44e69da33e717942b385067a20f2d3e327deffcb9a581e39c  fig-2-policy-algebra.svg
+e965c792d5df10d79c479ab121771a11d9519ea29c3994cff539a44cc9ffc0b0  fig-3-tightening-fallacy.svg
+3c11581de38e1d90c23d7513bbf93a800c4c08e840d7eda8cffb51f6935f4428  fig-4-verification-gap.svg
+aba424c1846949ae410b564b3f53fefd484c70e61ffeb5b267f36dca537e7a2a  fig-5-attribution-path.svg
 ```
 
 ## Regenerating
@@ -55,22 +55,21 @@ from `frontend/src/app/globals.css`. Three properties are deliberate:
 
 ## Rasterisation
 
-`--png` produces a raster only when a real SVG rasteriser is present, in
-preference order `resvg`, `rsvg-convert`, then ImageMagick `convert`. On a host
-where ImageMagick is installed but its SVG delegate is not, `convert` fails with
-a delegate error; the script reports that as a missing delegate rather than as a
-conversion failure, and skips the PNG.
+`--png` writes syndication rasters to `figures/syndication/`, which is
+git-ignored: a raster is a copy for a platform, not an artifact of record.
+Rasterisers are tried in preference order - `resvg`, `rsvg-convert`,
+ImageMagick `convert` - and when none is present the script falls back to the
+repository's own `sharp` (librsvg compiled in), resolved from the frontend
+workspace, so `--png` works on any checkout with its dependencies installed.
+Text resolves through fontconfig: on a machine without the branded faces the
+generic `monospace` at the end of each figure's font list is what renders, so a
+syndication raster is faithful to the published figure's typography wherever it
+is produced.
 
-**No PNG is committed here.** The SVG is the artifact of record. A raster
-rendered with a fallback font instead of JetBrains Mono is a worse image than no
-image, and the paper does not need one: every figure carries its conclusion in
+The SVG remains the artifact of record. Every figure carries its conclusion in
 prose in the `<figcaption>`, which is what a platform that cannot host an SVG
-should publish alongside it.
-
-Install `librsvg2-bin` (Debian/Ubuntu) or `resvg` and re-run with `--png` when a
-raster is needed for syndication. The captions the exporter prints at the end of
-its run are the sentences that must accompany each image on the syndicating
-platform.
+should publish alongside it; the exporter prints those captions at the end of
+its run for exactly that purpose.
 
 ## Accessibility
 

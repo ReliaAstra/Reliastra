@@ -1016,7 +1016,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
           'Each stage labelled with its algebraic role: one short-circuit, four ceilings, two grants, plus the root-user bypass and both terminals.',
         path: 'research/aws-iam-evaluation-order/figures/fig-1-evaluation-pipeline.svg',
         format: 'image/svg+xml',
-        sha256: '405a08ce08cafb6b6257f57671ee74fd6241b8fe71df7a2b8f9592bb4a548b34',
+        sha256: 'e507e42f24b150b30ff404530744d7ed60e0c80334395488c9429d170f2b4b92',
       },
       {
         kind: 'diagram',
@@ -1025,7 +1025,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
           'Same-account union of the two granting classes; the four ceilings as nested rings; two account bands divided by a trust boundary, each producing its own verdict.',
         path: 'research/aws-iam-evaluation-order/figures/fig-2-policy-algebra.svg',
         format: 'image/svg+xml',
-        sha256: '8caf4b29d671b9ef8c749e645e63663a7cac5de9f1bbc4bda3e831faff574e4b',
+        sha256: '7262bfc25cccedf44e69da33e717942b385067a20f2d3e327deffcb9a581e39c',
       },
       {
         kind: 'diagram',
@@ -1034,7 +1034,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
           'The designer model against the documented outcome, and the four mechanisms that do reduce effective permissions inside one account.',
         path: 'research/aws-iam-evaluation-order/figures/fig-3-tightening-fallacy.svg',
         format: 'image/svg+xml',
-        sha256: '576c8166612be83a5fe65c734e851e5d1f03dd1bbcacb677593c9c332dd37892',
+        sha256: 'e965c792d5df10d79c479ab121771a11d9519ea29c3994cff539a44cc9ffc0b0',
       },
       {
         kind: 'diagram',
@@ -1043,7 +1043,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
           'Seven policy classes against four verification routes, each cell marked evaluated, conditional or unsupported.',
         path: 'research/aws-iam-evaluation-order/figures/fig-4-verification-gap.svg',
         format: 'image/svg+xml',
-        sha256: 'b1239f8b51ebda40c9dde0378f3a729af158a588ecc4a778bb518df243287457',
+        sha256: '3c11581de38e1d90c23d7513bbf93a800c4c08e840d7eda8cffb51f6935f4428',
       },
       {
         kind: 'diagram',
@@ -1052,7 +1052,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
           'From an observed AccessDenied to the deciding policy class, through the error message, the decoded authorization message, the CloudTrail principal type and the account policy inventory.',
         path: 'research/aws-iam-evaluation-order/figures/fig-5-attribution-path.svg',
         format: 'image/svg+xml',
-        sha256: 'c2a746ac57f8d0b14573ffc135936848ccddaa732ecb17594b1c5f0963a2a772',
+        sha256: 'aba424c1846949ae410b564b3f53fefd484c70e61ffeb5b267f36dca537e7a2a',
       },
     ],
     relatedEvidence: [

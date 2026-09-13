@@ -31,10 +31,11 @@
  * Requires Node 18+. No dependencies.
  */
 
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -81,8 +82,13 @@ const PALETTE = {
   '--ob-unknown': '#666B70',
 };
 
+// Single quotes, deliberately: this string is written into a double-quoted XML
+// attribute, so any double quote inside it would terminate the attribute and
+// corrupt every <text> element in the export. CSS accepts single-quoted family
+// names, and fontconfig resolves the generic `monospace` at the end of the list
+// on machines without the branded faces.
 const MONO =
-  '"JetBrains Mono", "SFMono-Regular", "SF Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace';
+  "'JetBrains Mono', 'SFMono-Regular', 'SF Mono', ui-monospace, Menlo, Consolas, 'Liberation Mono', monospace";
 
 /* ── Arguments ─────────────────────────────────────────────────────────── */
 
@@ -148,7 +154,20 @@ function rewriteClasses(svg) {
       .split(/\s+/)
       .filter(Boolean)
       .flatMap(tokenToAttrs)
-      .map(([k, v]) => `${k}="${v}"`)
+      .map(([k, v]) => {
+        // A double quote inside a double-quoted attribute silently truncates
+        // it: the export then carries an empty attribute plus the rest of the
+        // value as stray attribute names, and the figure renders in a fallback
+        // font. Fail loudly instead - this exact defect shipped once.
+        if (v.includes('"')) {
+          throw new Error(
+            `export-figures: attribute value for "${k}" contains a double quote:\n` +
+              `    ${v}\n` +
+              '  Rewrite the value with single quotes; an XML attribute cannot hold them.'
+          );
+        }
+        return `${k}="${v}"`;
+      })
       .join(' ')
   );
 }
@@ -203,7 +222,7 @@ function extractFigures(html) {
  * without it, so that case is reported as a missing delegate rather than as a
  * mysterious conversion error.
  */
-function rasterise(svgPath, pngPath) {
+async function rasterise(svgPath, pngPath) {
   const candidates = [
     ['resvg', ['--dpi', '192', svgPath, pngPath]],
     ['rsvg-convert', ['--dpi-x', '192', '--dpi-y', '192', '-o', pngPath, svgPath]],
@@ -215,19 +234,56 @@ function rasterise(svgPath, pngPath) {
     const res = spawnSync(bin, args, { encoding: 'utf8' });
     if (res.status === 0) return bin;
     if (bin === 'convert' && /delegate failed/.test(res.stderr || '')) {
-      console.warn(
-        '  ! ImageMagick is present but its SVG delegate is not - PNG skipped.\n' +
-        '    Install librsvg (rsvg-convert) or resvg, then re-run with --png.'
-      );
-      return null;
+      // ImageMagick without its SVG delegate is the common case on minimal
+      // images. Fall through to the repository's own sharp instead of
+      // reporting a failure the checkout can already work around.
+      break;
     }
   }
+  // The repository's own dependency set includes sharp (librsvg compiled in),
+  // which is how the site's social artwork is rasterised. Prefer a system
+  // rasteriser when one exists; fall back to sharp so that `--png` works on any
+  // checkout with its dependencies installed, which is the environment the
+  // repository's own scripts already document.
+  const viaSharp = await rasteriseWithSharp(svgPath, pngPath);
+  if (viaSharp) return 'sharp (repo dependency)';
   console.warn(
-    '  ! No SVG rasteriser found (resvg, rsvg-convert, convert) - PNG skipped.\n' +
+    '  ! No SVG rasteriser found (resvg, rsvg-convert, convert, sharp) - PNG skipped.\n' +
     '    The SVG is the artifact of record; the PNG is only needed for platforms\n' +
-    '    that will not host an SVG. Install one and re-run with --png.'
+    '    that will not host an SVG. Install one, or run with the repository\'s\n' +
+    '    dependencies installed, and re-run with --png.'
   );
   return null;
+}
+
+/**
+ * Rasterise with the repository's own sharp, resolved from the frontend
+ * workspace. Text resolves through fontconfig, so the generic `monospace` at
+ * the end of each figure's font-family list is what a machine without the
+ * branded faces renders - the same requirement the social artwork documents.
+ */
+async function rasteriseWithSharp(svgPath, pngPath) {
+  let sharp;
+  try {
+    const req = createRequire(new URL('../../../frontend/package.json', import.meta.url));
+    sharp = req('sharp');
+  } catch {
+    return false; // no frontend dependency tree here
+  }
+  const svg = await readFile(svgPath, 'utf8');
+  const dim = svg.match(/<svg[^>]*width="(\d+)" height="(\d+)"/);
+  if (!dim) return false;
+  try {
+    await mkdir(new URL('.', pathToFileURL(pngPath)).pathname, { recursive: true });
+    await sharp(Buffer.from(svg), { density: 192 })
+      .resize(Number(dim[1]), Number(dim[2]), { kernel: 'lanczos3' })
+      .png()
+      .toFile(pngPath);
+    return true;
+  } catch (err) {
+    if (process.env.EXPORT_FIGURES_DEBUG) console.error('  [sharp]', err.message.split('\n')[0]);
+    return false;
+  }
 }
 
 /* ── Main ──────────────────────────────────────────────────────────────── */
@@ -266,8 +322,8 @@ for (const [i, fig] of figures.entries()) {
   console.log(`  ✓ ${FIGURES[i]}.svg  ${width}×${height}`);
 
   if (WANT_PNG) {
-    const png = base.replace(/\.svg$/, '.png');
-    const bin = rasterise(base, png);
+    const png = base.replace(/\.svg$/, '.png').replace(/\/([^/]+\.png)$/, '/syndication/$1');
+    const bin = await rasterise(base, png);
     if (bin) console.log(`  ✓ ${FIGURES[i]}.png  (via ${bin})`);
   }
 }
