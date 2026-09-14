@@ -49,18 +49,21 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
   {
     id: 'adeshina-emmanuel',
     name: 'Adeshina Emmanuel',
-    role: 'Cloud Security Engineer',
+    role: 'AI Infrastructure Security Engineer | Cloud, Kubernetes & AI Systems Security',
     bio:
-      'Cloud security engineer working on identity and access control in production cloud ' +
-      'environments. Writes the Cloud Identity Security Engineering research series and builds ' +
-      'RELIASTRA, an infrastructure trust platform that independently verifies third-party ' +
-      'availability and produces cryptographic incident evidence.',
+      'AI infrastructure security engineer working on identity, access control and system ' +
+      'hardening across cloud, Kubernetes and AI production environments. Writes the Cloud ' +
+      'Identity Security Engineering research series and builds RELIASTRA, an infrastructure ' +
+      'trust platform that independently verifies third-party availability and produces ' +
+      'cryptographic incident evidence.',
     url: 'https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order',
     sameAs: [
-      'https://x.com/ReliastraTruth',
       'https://www.linkedin.com/in/emmanueladeshina01',
+      'https://x.com/secengineerx01',
+      'https://eadeshina.hashnode.dev/',
+      'https://github.com/EmmanuelAdeshina',
     ],
-    domains: ['Cloud security', 'Zero trust', 'Dependency security'],
+    domains: ['AI infrastructure security', 'Cloud security', 'Kubernetes security', 'Zero trust', 'Dependency security'],
   },
 ];
 

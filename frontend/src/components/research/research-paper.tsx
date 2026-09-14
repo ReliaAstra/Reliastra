@@ -646,6 +646,32 @@ export function ResearchPaperTemplate({
                   {author.domains.join(' · ')}
                 </p>
               )}
+              {author.sameAs && author.sameAs.length > 0 && (
+                <div className="flex flex-wrap gap-3 pt-2">
+                  {author.sameAs.map((url) => {
+                    const label = url.includes('linkedin.com')
+                      ? 'LinkedIn'
+                      : url.includes('x.com') || url.includes('twitter.com')
+                        ? 'X (Twitter)'
+                        : url.includes('hashnode.dev')
+                          ? 'Hashnode'
+                          : url.includes('github.com')
+                            ? 'GitHub'
+                            : new URL(url).hostname;
+                    return (
+                      <a
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ob-mono text-[12.5px] text-[var(--ob-text-4)] underline decoration-[var(--ob-line-3)] underline-offset-4 transition-colors hover:text-[var(--ob-signal)] hover:decoration-[var(--ob-signal)]"
+                      >
+                        {label}
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-2">
