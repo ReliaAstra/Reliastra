@@ -19,7 +19,6 @@ class DependencyRepository:
         return result.scalar_one_or_none()
 
     @staticmethod
-    @staticmethod
     async def get_names_by_ids(
         session: AsyncSession, ids: set[uuid.UUID]
     ) -> dict[uuid.UUID, dict[str, Any]]:
@@ -40,6 +39,7 @@ class DependencyRepository:
             for row in result.all()
         }
 
+    @staticmethod
     async def list_for_org(
         session: AsyncSession,
         org_id: uuid.UUID,

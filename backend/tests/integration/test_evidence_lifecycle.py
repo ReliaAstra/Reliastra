@@ -21,6 +21,7 @@ import pytest
 from app.modules.checks.models import CheckResult
 from app.modules.evidence.repository import EvidenceRepository, EvidenceSnapshotRepository
 from app.modules.evidence.service import (
+    RENDERER_CHROMIUM,
     EvidenceGenerationError,
     EvidenceNotEntitledError,
     evidence_service,
@@ -240,7 +241,15 @@ async def test_a_failed_generation_is_recorded_and_a_retry_succeeds(
     # Restore rendering without touching the storage patches, which belong to
     # the ``evidence_storage`` fixture and must stay in place.
     boom.side_effect = None
-    boom.return_value = b"%PDF-1.4 restored"
+    # The renderer contract is (bytes, provenance). Returning bare bytes was
+    # written when a PDF was all this returned; a real render also reports which
+    # renderer produced it, and the fake has to look like the real thing or the
+    # test is exercising an impossible shape. Chromium is reported so this stays
+    # a single-render path rather than accidentally testing the fallback re-render.
+    boom.return_value = (
+        b"%PDF-1.4 restored",
+        {"renderer": RENDERER_CHROMIUM, "renderer_version": None},
+    )
     report = await evidence_service.generate_for_incident(db_session, incident.id)
     await db_session.commit()
     await db_session.refresh(incident)
