@@ -1073,7 +1073,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
         description: 'Independently measured records for the vendors RELIASTRA makes public.',
       },
     ],
-    author: 'adesina-emmanuel',
+    author: 'adeshina-emmanuel',
     publishedAt: '2026-09-13',
   },
 

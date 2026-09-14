@@ -47,8 +47,8 @@ export type ResearchAuthor = {
  */
 export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
   {
-    id: 'adesina-emmanuel',
-    name: 'Adesina Emmanuel',
+    id: 'adeshina-emmanuel',
+    name: 'Adeshina Emmanuel',
     role: 'AI Infrastructure Security Engineer | Cloud, Kubernetes & AI Systems Security',
     bio:
       'AI infrastructure security engineer working on identity, access control and system ' +
