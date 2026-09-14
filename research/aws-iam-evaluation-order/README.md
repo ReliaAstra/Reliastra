@@ -1,4 +1,4 @@
-# AWS IAM policy evaluation order — paper artifact
+# AWS IAM policy evaluation order - paper artifact
 
 Artifact directory for
 [AWS IAM policy evaluation logic: identity vs resource](https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order),
@@ -57,13 +57,13 @@ There is no runtime environment. The work was performed against published
 documentation on 13 September 2026. The frontend figures are React components
 rendered to SVG on the server:
 
-- `frontend/src/components/research/figures.tsx` — `IamEvaluationPipelineFigure`,
+- `frontend/src/components/research/figures.tsx` - `IamEvaluationPipelineFigure`,
   `IamPolicyAlgebraFigure`, `IamTighteningFallacyFigure`,
   `IamVerificationGapFigure`, `IamAttributionPathFigure`
-- `frontend/src/content/research/aws-iam-policy-evaluation-order.tsx` — the body
-- `frontend/src/lib/research/corpus.ts` — the structured record the publication
+- `frontend/src/content/research/aws-iam-policy-evaluation-order.tsx` - the body
+- `frontend/src/lib/research/corpus.ts` - the structured record the publication
   gate validates
-- `frontend/src/lib/routes.ts` — the route record that makes the URL exist
+- `frontend/src/lib/routes.ts` - the route record that makes the URL exist
 
 ## Results
 
@@ -76,7 +76,7 @@ corpus record. In summary:
   resource-based policy cannot tighten a permissive identity-based policy.
 - Whether a resource-based Allow survives an implicit deny in a permissions
   boundary or a session policy is a function of the principal form the policy
-  names — the distinction between a role ARN and a role session ARN decides it.
+  names - the distinction between a role ARN and a role session ARN decides it.
 - The documented RCP-before-SCP order cannot change any verdict; the two
   commute.
 - A cross-account request is two independent evaluations, and the union rule
@@ -132,7 +132,7 @@ npx vitest run src/lib/research/__tests__/corpus.test.ts src/seo/__tests__/seo.t
 
 ## License
 
-MIT for the material RELIASTRA authored — see [`LICENSE`](./LICENSE). Quoted
+MIT for the material RELIASTRA authored - see [`LICENSE`](./LICENSE). Quoted
 AWS documentation remains with Amazon Web Services; the cited academic papers
 remain with IEEE and Springer.
 

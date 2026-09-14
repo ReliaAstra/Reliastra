@@ -5,7 +5,7 @@ import { handlePartnerReferralRequest } from '@/lib/partner-referral-http';
  * Canonical partner referral URL: `https://reliastra.com/r/{code}`.
  *
  * Production Caddy sends `/r/*` to Next.js (the public site). This route is
- * the resolver that was missing — without it, every partner link rendered
+ * the resolver that was missing - without it, every partner link rendered
  * the generic HTTP 404 "Signal lost" page.
  */
 export const dynamic = 'force-dynamic';

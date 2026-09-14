@@ -188,7 +188,7 @@ ChatGPT Atlas`}</PRE>
             ['Aggregate indicator', 'A point-in-time declaration by the provider about the whole page', 'A duration, a start time, or a per-service state'],
             ['Component statuses', 'Per-service declared state at read time', 'Anything about the interval since the last change'],
             ['updated_at', 'A lower bound on how long the current declared state has held, if the semantics hold', 'Proof that no undeclared degradation occurred'],
-            ['(absent) history', '—', 'Any timeline. It is not in this payload.'],
+            ['(absent) history', '-', 'Any timeline. It is not in this payload.'],
           ]}
         />
       </DataPanel>

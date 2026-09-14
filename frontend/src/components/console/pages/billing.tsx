@@ -327,7 +327,7 @@ function HistoryRow({ tx }: { tx: BillingTransactionItem }) {
         {tx.invoice_number ? <span className="mt-1 block text-[11px] text-[var(--obc-text-4)]">{tx.invoice_number}</span> : null}
         {error ? <span className="mt-1 block text-[11px]">{error}</span> : null}
       </td>
-      <td className="obc-mono whitespace-nowrap px-4 py-4">{tx.product_price_display ?? '—'}</td>
+      <td className="obc-mono whitespace-nowrap px-4 py-4">{tx.product_price_display ?? '-'}</td>
       <td className="obc-mono whitespace-nowrap px-4 py-4">{tx.charged_amount_display}</td>
       <td className="px-4 py-4 capitalize">{tx.status === 'success' ? 'Paid' : tx.status}</td>
       <td className="px-4 py-4">

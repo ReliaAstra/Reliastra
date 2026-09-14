@@ -1,7 +1,7 @@
-# Phase 4 — Agency portfolio, onboarding, authenticated information architecture
+# Phase 4 - Agency portfolio, onboarding, authenticated information architecture
 
 The final visual refoundation. Two surfaces were deliberately left on the old
-visual language by Phase 2 — the agency portfolio (`/clients*`) and onboarding —
+visual language by Phase 2 - the agency portfolio (`/clients*`) and onboarding -
 and this phase recomposes both, then fixes the information architecture around
 them.
 
@@ -33,7 +33,7 @@ comment set out is what this phase builds, so the router is mounted again
 `get_current_org`; both writes carry `require_admin`; the public portal share
 link remains HMAC-verified and rate-limited. `tests/integration/test_refurbishment_api.py`
 previously asserted 404 for those two endpoints and documented that they become
-201s when the line is uncommented — it now asserts the 201s, the list read, the
+201s when the line is uncommented - it now asserts the 201s, the list read, the
 tenancy 404 for a foreign client, and the portfolio rollup.
 
 ---
@@ -46,18 +46,18 @@ tenancy 404 for a foreign client, and the portfolio rollup.
 | `/dependencies`, `/dependencies/[id]` | Monitors | `dependencies/*` | Phase 2 | unchanged |
 | `/incidents`, `/incidents/[id]` | Confirmed failures | `incidents/*` | Phase 2 | unchanged |
 | `/evidence`, `/evidence/[id]` | Incident-side evidence | `evidence/*` | Phase 2 | unchanged |
-| **`/reports`** | **Artifact-side evidence** | `GET /v1/evidence`, `GET /v1/evidence/{id}` (signed URL), `POST /v1/evidence/{id}/regenerate` | **missing — capability had no route** | **new, real** |
+| **`/reports`** | **Artifact-side evidence** | `GET /v1/evidence`, `GET /v1/evidence/{id}` (signed URL), `POST /v1/evidence/{id}/regenerate` | **missing - capability had no route** | **new, real** |
 | `/clients` | Agency portfolio | `GET /v1/agency/portfolio`, `GET /v1/clients` | old visual language, dead API | rebuilt |
 | `/clients/[id]` | Client environment | clients + applications + dependencies + incidents + evidence | old visual language, dead API | rebuilt |
 | `/clients/onboarding` | Agency setup | `POST /v1/clients`, `POST /v1/clients/{id}/applications`, `PATCH /v1/dependencies/{id}` | old visual language | rebuilt as a sequence |
 | `/onboarding` | First-run setup | `POST /v1/dependencies`, `GET /v1/dependencies/{id}/results`, `POST /v1/notifications/configs` | old visual language, 8 steps | rebuilt as a 4-stage sequence |
-| `/settings`, `/settings/billing`, `/support` | Account | — | Phase 2 | unchanged |
+| `/settings`, `/settings/billing`, `/support` | Account | - | Phase 2 | unchanged |
 
 ### Orphans found and removed
 
 | File | State |
 | --- | --- |
-| `components/dashboard/shell/client-selector.tsx` | Imported by nothing. A client switcher existed but was never mounted — replaced by the topbar scope control. |
+| `components/dashboard/shell/client-selector.tsx` | Imported by nothing. A client switcher existed but was never mounted - replaced by the topbar scope control. |
 | `components/dashboard/shell/onboarding.tsx` | Imported by nothing. A checklist modal from the pre-Phase-2 dashboard. |
 | `components/onboarding/NextBestAction.tsx` | Imported by nothing (it imported the orphan above). |
 | `components/onboarding/*` (8 step components + shell) | Superseded by the configuration sequence. |
@@ -77,14 +77,14 @@ tenancy 404 for a foreign client, and the portfolio rollup.
 ### One real bug fixed in passing
 
 `DataTable` documented that "the first cell contains a real link" but rendered
-none — rows navigated via `onClick` only, so no table row in the console was
+none - rows navigated via `onClick` only, so no table row in the console was
 keyboard-reachable. The first cell is now a real anchor. That surfaced a second
 defect: a link inside a cell of a linked row is invalid nested-anchor HTML,
 which React refused to hydrate on `/reports`; that cell is now plain text.
 
 ---
 
-## 3 · Agency portfolio — multi-client infrastructure operations
+## 3 · Agency portfolio - multi-client infrastructure operations
 
 `/clients` is composed as an operations console, not a CRM:
 
@@ -97,10 +97,10 @@ which React refused to hydrate on `/reports`; that cell is now plain text.
 - **Active incidents across clients**, attributed by walking
   `incident → dependency → application → client`. Anything that does not
   resolve is shown as an unassigned monitor rather than attributed to a guess.
-- **Recent evidence by client** — which client has a record you can act on.
-- **Unassigned monitors** — the monitors that roll up to nobody, with a route
+- **Recent evidence by client** - which client has a record you can act on.
+- **Unassigned monitors** - the monitors that roll up to nobody, with a route
   to fix that.
-- **Client portal** — the real signed `/portal/{share_token}` link, offered at
+- **Client portal** - the real signed `/portal/{share_token}` link, offered at
   agency level only, because the token covers the whole portfolio.
 
 `/clients/[id]` is a scoped environment: header with state and last observation,
@@ -127,12 +127,12 @@ Agency mode is a **capability, not a paywall** (confirmed with the owner). With
 `has_agency_mode` false there is no navigation entry at all, and a direct
 navigation renders a factual page: what the capability is, that it is a flag on
 the organization rather than a plan feature, and a contact route. No price, no
-plan name, no upsell — nothing in the billing system sells agency mode, so the
+plan name, no upsell - nothing in the billing system sells agency mode, so the
 UI does not pretend otherwise.
 
 ---
 
-## 4 · Onboarding — infrastructure configuration sequence
+## 4 · Onboarding - infrastructure configuration sequence
 
 Four stages and an activation surface, replacing eight steps of cards:
 
@@ -202,7 +202,7 @@ and Escape closing the dialog.
 
 **Not runnable in this environment:** `e2e/console-redesign.spec.ts` (12 tests)
 and the checkout specs create accounts against the real FastAPI backend, which
-cannot run here (no Python dependencies installed) — they fail at
+cannot run here (no Python dependencies installed) - they fail at
 `signup -> 404` before reaching an assertion. The backend test suite could not
 be executed for the same reason; the agency integration test was updated to the
 post-enable expectations it documents.

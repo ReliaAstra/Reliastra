@@ -72,7 +72,7 @@ async def resolve_referral(
         )
 
     # Count the click (a counter, not an analytics platform). A failed
-    # increment must never 500 a real visitor — attribution still happens
+    # increment must never 500 a real visitor - attribution still happens
     # at signup via ``ref_code``.
     try:
         await PartnerProfileRepository.update(

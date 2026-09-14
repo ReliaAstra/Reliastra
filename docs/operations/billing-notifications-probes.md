@@ -68,7 +68,7 @@ legacy mirrored sessions may require signing in again. Partner membership is
 validated server-side before rendering the dashboard; visiting marketing or
 signing in no longer automatically enrolls a customer in the partner program.
 
-### Verification record — 8 September 2026
+### Verification record - 8 September 2026
 
 - Production-build Chromium suite: seven scenarios passed with real auth, APIs,
   Postgres, Redis, Celery/Beat, outbound HTTPS and a local SMTP mailbox.

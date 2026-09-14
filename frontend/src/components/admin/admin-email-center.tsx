@@ -270,7 +270,7 @@ function SenderCombobox({
           <CommandList>
             <CommandEmpty>No senders match this search.</CommandEmpty>
             {verified.length > 0 && (
-              <CommandGroup heading="Verified — ready to send">
+              <CommandGroup heading="Verified - ready to send">
                 {verified.map((sender) => (
                   <CommandItem
                     key={sender.id}
@@ -706,7 +706,7 @@ export function EmailCenterPage() {
                     Template variables
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    Values are substituted safely at send time — variables can never inject code.
+                    Values are substituted safely at send time - variables can never inject code.
                   </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     {variableNames.map((name) => (
@@ -777,7 +777,7 @@ export function EmailCenterPage() {
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Preview</h2>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                    Rendered from sanitized HTML — scripts never execute here.
+                    Rendered from sanitized HTML - scripts never execute here.
                   </p>
                 </div>
                 <TabsList className="h-8">
@@ -869,7 +869,7 @@ export function EmailCenterPage() {
                       <span className="font-medium text-slate-600 dark:text-slate-300">
                         {selectedSender.name}
                       </span>{' '}
-                      — {selectedSender.status_detail}
+                      - {selectedSender.status_detail}
                     </span>
                   </p>
                 )}
@@ -948,7 +948,7 @@ export function EmailCenterPage() {
                 Delivery notes
               </h3>
               <ul className="mt-2.5 space-y-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                <li>· Resend verifies domains, not mailboxes — every alias above shares the {status?.sending_domain ?? 'sending domain'} verification.</li>
+                <li>· Resend verifies domains, not mailboxes - every alias above shares the {status?.sending_domain ?? 'sending domain'} verification.</li>
                 <li>· Test sends are labeled <span className="font-mono text-[11px]">[Test]</span> and logged separately.</li>
                 <li>· Duplicate clicks are safe: each send carries an idempotency key.</li>
               </ul>
@@ -1293,7 +1293,7 @@ function SendConfirmDialog({
                   <div className="flex gap-2">
                     <dt className="w-16 shrink-0 font-semibold text-slate-500">From:</dt>
                     <dd className="min-w-0 break-all text-slate-800 dark:text-slate-100">
-                      {sender ? `${sender.name} <${sender.email}>` : '—'}
+                      {sender ? `${sender.name} <${sender.email}>` : '-'}
                     </dd>
                   </div>
                   <div className="flex gap-2">
@@ -1509,7 +1509,7 @@ function AddSenderDialog({
           </div>
           <p className="rounded-lg bg-slate-50 p-2.5 text-[11px] leading-5 text-slate-500 dark:bg-white/5 dark:text-slate-400">
             The backend verifies this identity against Resend before listing it. Unverified
-            identities are rejected with an explanation — never silently accepted.
+            identities are rejected with an explanation - never silently accepted.
           </p>
         </div>
         <DialogFooter>

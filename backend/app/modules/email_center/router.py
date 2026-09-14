@@ -248,7 +248,7 @@ async def send_test_email(
         text=(
             "This is a test message from the Reliastra Email Center.\n\n"
             "If you received this, the sender identity and Resend delivery "
-            "path are working correctly.\n\n— Reliastra Operations"
+            "path are working correctly.\n\n- Reliastra Operations"
         ),
         html=(
             '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,'
@@ -257,7 +257,7 @@ async def send_test_email(
             "<p>This is a test message from the Reliastra Email Center.</p>"
             "<p>If you received this, the sender identity and Resend delivery path "
             "are working correctly.</p>"
-            "<p>&mdash; Reliastra Operations</p></div>"
+            "<p>- Reliastra Operations</p></div>"
         ),
     )
     record, message = await email_service.send(

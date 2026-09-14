@@ -1,4 +1,4 @@
-# RELIASTRA — Public surface audit & route inventory
+# RELIASTRA - Public surface audit & route inventory
 
 Audit performed against the running application (`next dev`, Next.js 16, Turbopack) on
 branch `arena/01a078db-reliastra`. Every route below was requested over HTTP and its
@@ -13,7 +13,7 @@ dashboard are explicitly **out of scope** and were not restyled.
 
 ## 1. Route map
 
-Legend — **Auth**: `public` / `token` (unguessable share link) / `session` (customer) /
+Legend - **Auth**: `public` / `token` (unguessable share link) / `session` (customer) /
 `admin`. **Redesign**: `yes` = restyled in this phase, `no` = deliberately untouched.
 
 ### 1.1 Marketing & product
@@ -23,9 +23,9 @@ Legend — **Auth**: `public` / `token` (unguessable share link) / `session` (cu
 | `/` | Homepage. SSR landing; swaps to partner dashboard shell after client-side session proof (`HomeClient`). | 200 | public | **Primary** | yes |
 | `/product` | Platform overview pillar. | 200 | public | high | yes (shell) |
 | `/external-dependency-intelligence` | Category pillar page. | 200 | public | **high** (category term) | yes (shell) |
-| `/dependency-monitoring` | Capability page — multi-region checks. | 200 | public | high | yes (shell) |
-| `/sla-evidence` | Capability page — evidence artifacts. | 200 | public | high | yes (shell) |
-| `/incident-evidence` | Capability page — attribution. | 200 | public | high | yes (shell) |
+| `/dependency-monitoring` | Capability page - multi-region checks. | 200 | public | high | yes (shell) |
+| `/sla-evidence` | Capability page - evidence artifacts. | 200 | public | high | yes (shell) |
+| `/incident-evidence` | Capability page - attribution. | 200 | public | high | yes (shell) |
 | `/pricing` | Plans, limits, billing currency. | 200 | public | high | yes (rewritten) |
 | `/about` | Company / why RELIASTRA exists. | 200 | public | medium | yes (shell) |
 | `/contact` | Support, sales, security contacts. | 200 | public | medium | yes (shell) |
@@ -64,7 +64,7 @@ actually carries (`Research`, `Methodology`) plus the real per-article `tags`.
 | `/track/[vendor]` | Per-vendor intelligence page: current state, 7d/30d availability, latency, regions, incident timeline, methodology. | 200 (404 for unknown vendor) | public | **high** | yes |
 
 Real backend data via `src/lib/track-api.ts`. When the API is unreachable the pages
-render an explicit "measurement network unreachable" state — never fabricated numbers.
+render an explicit "measurement network unreachable" state - never fabricated numbers.
 
 ### 1.4 Partner network
 
@@ -85,7 +85,7 @@ render an explicit "measurement network unreachable" state — never fabricated 
 | `/partner/privacy` `/partner/terms` | Program-specific legal (referral cookies, attribution windows, commission tracking). | 200 | public | low | yes (chrome) |
 
 Partner *dashboard* pages (`dashboard`, `referrals`, `earnings`, `payouts`,
-`notifications`, `settings`) intentionally have **no file routes** — they are
+`notifications`, `settings`) intentionally have **no file routes** - they are
 state-routed inside the authenticated `/` shell. Left untouched.
 
 ### 1.5 Authentication
@@ -96,7 +96,7 @@ state-routed inside the authenticated `/` shell. Left untouched.
 | `/signup` | Customer registration + organization creation. `POST /api/v1/auth/register`. | 200 | public | noindex | yes |
 | `/verify-email` | 6-digit OTP entry + resend. | 200 | public | noindex | yes |
 | `/reset-password` | Token-based password reset. | 200 | public | noindex | yes |
-| Forgot password | **No dedicated route.** Triggered from `/login` via `POST /api/v1/auth/forgot-password` with an anti-enumeration response. | — | public | — | yes (in place) |
+| Forgot password | **No dedicated route.** Triggered from `/login` via `POST /api/v1/auth/forgot-password` with an anti-enumeration response. | - | public | - | yes (in place) |
 | `/admin/login` | Operator control plane. Separate security domain. | 200 | public form, admin session | noindex | **no** |
 
 Behaviour that must not change and was preserved verbatim:
@@ -108,14 +108,14 @@ Behaviour that must not change and was preserved verbatim:
 - identical forgot-password copy regardless of whether the address exists;
 - partner sign-in's idempotent auto-`apply()` when `/api/partners/me` 404s.
 
-### 1.6 Token-scoped shares, checkout, console, admin — untouched
+### 1.6 Token-scoped shares, checkout, console, admin - untouched
 
 | Route | Purpose | Auth | Redesign |
 |---|---|---|---|
 | `/portal/[token]` | Client-facing shared portal. `noindex` + `no-store`. | token | no |
 | `/reports/[token]` | Shared evidence report. `noindex` + `no-store`. | token | no |
 | `/checkout` | Paystack checkout. `noindex` + `no-store`. | session | no |
-| `(console)/*` — `/dashboard` `/dependencies` `/incidents` `/clients` `/evidence` `/onboarding` `/settings` `/settings/billing` `/support` | Authenticated customer console. | session | **no — separate phase** |
+| `(console)/*` - `/dashboard` `/dependencies` `/incidents` `/clients` `/evidence` `/onboarding` `/settings` `/settings/billing` `/support` | Authenticated customer console. | session | **no - separate phase** |
 | `/admin/*` | Operator control plane, proxy-gated in `src/proxy.ts`. | admin | no |
 
 ### 1.7 Machine surfaces
@@ -154,8 +154,8 @@ Behaviour that must not change and was preserved verbatim:
 5. **Pricing displayed USD prominently with the actual charge currency in a sub-note.**
    The backend resolves the real charge currency (`usePaymentCurrency` →
    `/api/v1/billing/payment-currency`). The redesign keeps the existing
-   `PaymentCurrencyNotice` / `PlanPaymentSummary` / `FxReferencePanel` components —
-   they are the only sanctioned wording — and gives them a first-class position
+   `PaymentCurrencyNotice` / `PlanPaymentSummary` / `FxReferencePanel` components -
+   they are the only sanctioned wording - and gives them a first-class position
    instead of a footnote.
 6. **Feature lists were hand-written per surface.** They are now rendered from
    `lib/dashboard/plans.ts`, which mirrors backend `app.core.permissions`. No
@@ -165,11 +165,11 @@ Behaviour that must not change and was preserved verbatim:
    public site now has one: the `.ob` Obsidian scope.
 8. **Theme toggle on marketing pages** produced a light "generic SaaS" rendering of
    the brand. The public site is now a single deliberate dark identity; the toggle
-   remains where it belongs — the authenticated product.
+   remains where it belongs - the authenticated product.
 9. **No fake anything.** Audited for and confirmed absent: fabricated customer logos,
    invented testimonials, invented uptime figures, invented certifications. The only
    numbers rendered are (a) plan limits from `plans.ts` and (b) live Track API values.
-   `SOC 2-aligned controls` copy on the old sign-in aside was removed — "aligned" is
+   `SOC 2-aligned controls` copy on the old sign-in aside was removed - "aligned" is
    an unverifiable claim on a marketing surface.
 
 ---
@@ -208,18 +208,18 @@ GET /nonexistent-xyz                     404
 
 A link-integrity test (`src/components/site/__tests__/navigation-links.test.tsx`)
 asserts that every href emitted by the global header and footer resolves to a route
-that exists in `lib/routes` — so the footer cannot regress into placeholder links.
+that exists in `lib/routes` - so the footer cannot regress into placeholder links.
 
 ---
 ---
 
-# Part II — Redesign delivery report
+# Part II - Redesign delivery report
 
 Phase 1 (public marketing surface + authentication) is implemented. The
 authenticated customer dashboard and the authenticated partner dashboard were
 deliberately left alone and are Phase 2.
 
-## 4. Route inventory — what happened to each route
+## 4. Route inventory - what happened to each route
 
 Legend: **RB** rebuilt on the Obsidian system · **RS** restyled in place ·
 **UN** intentionally unchanged (out of scope).
@@ -251,7 +251,7 @@ Legend: **RB** rebuilt on the Obsidian system · **RS** restyled in place ·
 
 | Route | Action | Notes |
 | --- | --- | --- |
-| `/track` | RB | Fabricated green health dot removed — the list endpoint returns no health field. |
+| `/track` | RB | Fabricated green health dot removed - the list endpoint returns no health field. |
 | `/track/[vendor]` | RB | Availability figures always carry their window; `no data` where there is none. |
 
 ### 4.4 Partner network (public)
@@ -297,7 +297,7 @@ depends on the legacy `--rs-*` tokens.
 
 - **Ground:** `--ob-void #08090A`, `--ob-base #0D0F10`, `--ob-raised #111416`, `--ob-elevated #181B1D`.
 - **Text:** `--ob-text #F2F2EE`, `--ob-text-2 #D6D8D5`, `--ob-text-3 #94999D`, `--ob-text-4 #666B70`.
-- **Hairlines:** `--ob-line/-2/-3` — depth comes from rules, never shadows.
+- **Hairlines:** `--ob-line/-2/-3` - depth comes from rules, never shadows.
 - **One accent:** `--ob-signal #D9A441` (+ `-dim`, `-wash`).
 - **State only:** `--ob-healthy #57A773`, `--ob-degraded`, `--ob-critical #C8544C`, `--ob-unknown`.
 - **Type scale:** `ob-display`, `ob-h1…h4`, `ob-lede`, `ob-body`, `ob-small`, `ob-label` (small uppercase technical labels), `ob-mono` (data only), `ob-figure`, `ob-link`.
@@ -305,7 +305,7 @@ depends on the legacy `--rs-*` tokens.
 - **Controls:** `ob-btn` + `-signal`/`-ghost`/`-sm`/`-block`; `ob-field-label`, `ob-input`, `ob-help`; `ob-alert` + `-error`/`-ok`/`-note`.
 - **Surfaces:** `ob-panel`, `ob-inset`, `ob-prose`, `ob-photo`, `ob-scrim-*`, `ob-ticks`.
 - **State display:** `ob-dot`, `ob-state`, `ob-live`.
-- **Motion:** `ob-rise-1…4`, `ob-drift` — all collapsed by the `prefers-reduced-motion` block.
+- **Motion:** `ob-rise-1…4`, `ob-drift` - all collapsed by the `prefers-reduced-motion` block.
 - **Radius 2–3px. No gradients anywhere.** `--rs-brand-gradient` was flattened to a solid colour and `.text-gradient-brand` now emits a flat `color`.
 - A **shadcn token bridge** scoped to `.ob` remaps `--background`/`--foreground`/`--border`/`--muted`… onto Obsidian, so shadcn-based subtrees (partner network) stop rendering as light islands.
 
@@ -315,11 +315,11 @@ depends on the legacy `--rs-*` tokens.
 | --- | --- |
 | `site/wordmark.tsx` | `Wordmark` (typographic lockup + amber signal square) and `SignalMark` (favicon-scale instrument face). |
 | `site/primitives.tsx` | `Container`, `Section`, `Eyebrow`, `SectionHeader`, `CTA`, `ArrowLink`, `Rule`, `StateIndicator`, `Metric`, `DataRow`, `Breadcrumb`, `RecordLink`, `CTABand`, `toSystemState`. |
-| `site/nav-config.ts` | `PRODUCT_PANEL`, `PRIMARY_NAV`, `HEADER_ACTIONS`, `FOOTER_GROUPS`, `SOCIAL_LINKS` — zero literal internal paths; every href comes from `lib/routes`. |
+| `site/nav-config.ts` | `PRODUCT_PANEL`, `PRIMARY_NAV`, `HEADER_ACTIONS`, `FOOTER_GROUPS`, `SOCIAL_LINKS` - zero literal internal paths; every href comes from `lib/routes`. |
 | `site/site-header.tsx` | Desktop product panel + full-screen mobile index (`#ob-mobile-menu`, `aria-expanded`, scroll lock). |
 | `site/site-footer.tsx` | Grouped global footer. |
 | `site/site-shell.tsx` | Skip link → `#main`, `overHero` transparent-header mode, header + footer for every public page. |
-| `site/auth/auth-shell.tsx` | `AuthShell` + `Field`, `AuthAlert`, `AuthSubmit` — the shared auth primitives, now used by customer *and* partner auth. |
+| `site/auth/auth-shell.tsx` | `AuthShell` + `Field`, `AuthAlert`, `AuthSubmit` - the shared auth primitives, now used by customer *and* partner auth. |
 | `site/home/*` | `hero`, `sections`, `research-teaser`, `live-intelligence`, `pricing-summary`, `home-landing`. |
 | `site/plan-data.ts` / `plan-matrix.tsx` | Server-safe plan constants split from the client matrix. |
 | `site/billing-disclosure.tsx` | NGN charge / USD list-price disclosure. |
@@ -327,26 +327,26 @@ depends on the legacy `--rs-*` tokens.
 | `partner/public/navigation.ts` | `navigatePartner`, relocated out of the deleted `components/landing/`. |
 
 **Deleted:** the entire `src/components/landing/` tree (11 section files, 6
-shared files, hooks, tests, `page-landing.tsx`, `theme.ts`) — 4,933 deletions
+shared files, hooks, tests, `page-landing.tsx`, `theme.ts`) - 4,933 deletions
 across the branch.
 
 ## 7. Broken links & correctness fixes
 
-1. All 17 `MarketingPage` consumers rendered a bare `<main>` — **no header, no footer, no skip link, no nav**. Fixed via `SiteShell`.
+1. All 17 `MarketingPage` consumers rendered a bare `<main>` - **no header, no footer, no skip link, no nav**. Fixed via `SiteShell`.
 2. `/reset-password` without a token sent *customers* to `/partner/forgot-password`. Now `AUTH_ROUTES.login`.
 3. Partner auth and support pages suppressed the footer, leaving the pages where terms and privacy matter most with no legal links. `isFooterHidden` removed.
 4. `/track` rendered a green health dot the list endpoint never returns.
 5. The sign-in aside claimed "SOC 2-aligned controls" with no attestation behind it.
-6. `public/logo.svg` — the favicon and the schema.org organisation logo — was a **leftover third-party mark** (a white "Z" glyph) with an infinite CSS `breathe` animation. Replaced with the RELIASTRA signal mark, static.
+6. `public/logo.svg` - the favicon and the schema.org organisation logo - was a **leftover third-party mark** (a white "Z" glyph) with an infinite CSS `breathe` animation. Replaced with the RELIASTRA signal mark, static.
 7. `LANDING_SECTIONS` re-canonicalised to the 10 anchors that actually exist, so header anchors, the unit test and the Playwright spec all derive from one list.
 8. Every footer/header href is now generated from `lib/routes`; `navigation-links.test.tsx` fails the build if one stops resolving.
 
 ## 8. SEO improvements
 
-- Every public route has a title, a meta description ≥ 40 characters, and a canonical URL — asserted by the audit script.
+- Every public route has a title, a meta description ≥ 40 characters, and a canonical URL - asserted by the audit script.
 - Auth routes (`/login`, `/signup`, `/verify-email`, `/reset-password`) keep `robots: {index:false, follow:true, noarchive:true}`; every other public route is indexable. Both directions are asserted.
-- Exactly one `<h1>` per page and no skipped heading levels — asserted on all 49 crawled routes.
-- Semantic answer copy for LLM retrieval: what RELIASTRA is, what External Dependency Intelligence is, the problem, the audience, what is monitored, what reliability evidence is, how it is generated, how attribution works, what Research is, what the public dependency pages are — written as prose, not as image text.
+- Exactly one `<h1>` per page and no skipped heading levels - asserted on all 49 crawled routes.
+- Semantic answer copy for LLM retrieval: what RELIASTRA is, what External Dependency Intelligence is, the problem, the audience, what is monitored, what reliability evidence is, how it is generated, how attribution works, what Research is, what the public dependency pages are - written as prose, not as image text.
 - `/glossary` gives each term a canonical definition page; `FaqBlock` and breadcrumbs emit matching JSON-LD.
 - Research articles carry article JSON-LD and a real breadcrumb trail.
 
@@ -354,7 +354,7 @@ across the branch.
 
 - Skip link is the **first tab stop** on every public page and on the auth shell, targeting `#main` / `#auth-form`.
 - Visible focus is enforced globally; verified over the first 8 tab stops in the Playwright gate.
-- Real `<label for>` on every auth input — no placeholder-as-label anywhere. `aria-describedby` wires hint and error text; `aria-invalid` marks the field.
+- Real `<label for>` on every auth input - no placeholder-as-label anywhere. `aria-describedby` wires hint and error text; `aria-invalid` marks the field.
 - `role="alert"` for failures, `role="status"` for confirmations, `aria-busy` on submitting buttons.
 - Mobile nav: labelled toggle, `aria-expanded`, scroll lock, `hidden` when closed so it leaves the tab order and the accessibility tree.
 - Status is always a **dot plus a word**, never colour alone.
@@ -365,11 +365,11 @@ across the branch.
 ## 10. Performance improvements
 
 - Four cinematic JPEGs total, all AVIF/WebP-negotiated through `next/image`: hero 177 KB, patch panel 247 KB, NOC 139 KB, edge night 159 KB. The auth aside is `hidden lg:block`, so phones never request it.
-- Static sections ship no client JS — the homepage story renders with JavaScript disabled (asserted).
+- Static sections ship no client JS - the homepage story renders with JavaScript disabled (asserted).
 - No animation library on the public marketing surface; motion is CSS keyframes.
 - Hero is height-capped (`h-[100svh] max-h-[880px] min-h-[620px]`) so it cannot push content off a laptop.
 - No layout shift: every image is `fill` inside a sized container or has explicit dimensions.
-- System grotesk stack — no webfont round-trip, no `next/font/google` fetch at build time.
+- System grotesk stack - no webfont round-trip, no `next/font/google` fetch at build time.
 - `next.config.ts` image qualities pinned to `[70, 75, 82]`; caching headers untouched.
 
 ## 11. Testing
@@ -397,7 +397,7 @@ non-zero on error severity, so CI can gate on it.
 Audit progression: run #1 = 12 errors / 19 warnings → #2 = 1 / 8 → #3 = 0 / 1
 → #4, #5, #6 = **0 / 0**.
 
-### Playwright — written, not executed
+### Playwright - written, not executed
 
 `npx playwright test --list` → **111 tests across 5 files**, all specs parse.
 
@@ -417,12 +417,12 @@ is the first thing to do on a machine with network access.
 
 1. **Playwright is unexecuted.** Highest-priority follow-up. Expect small selector drift on first run.
 2. **No visual regression baseline.** Layout was verified structurally (static overflow sweep of every `minmax()`/`min-w-[…]`, clamp floors checked at 375px) and through rendered HTML, not through screenshots. A human should look at 375 / 768 / 1440 before launch.
-3. **Partner marketing pages are converted, not recomposed.** `/partner/home`, `/earn`, `/how-it-works`, `/commission`, `/faq`, `/tiers`, `/premium`, `/resources` now use Obsidian tokens and read correctly, but their information architecture is still the previous card-heavy composition. They deserve the same recomposition the main site got — a second pass, not a blocker.
+3. **Partner marketing pages are converted, not recomposed.** `/partner/home`, `/earn`, `/how-it-works`, `/commission`, `/faq`, `/tiers`, `/premium`, `/resources` now use Obsidian tokens and read correctly, but their information architecture is still the previous card-heavy composition. They deserve the same recomposition the main site got - a second pass, not a blocker.
 4. **`components/auth/brand-mark.tsx` and `partner/shared/theme-toggle.tsx` still exist** for `/admin/login`, `/checkout` and the authenticated shells. They should die with Phase 2.
 5. **`next-themes` still wraps the app** with `defaultTheme="light"`. The public surface is now theme-independent, but the provider remains for the dashboards. Removing it is a Phase 2 decision.
-6. **`/support` lives in `(console)`** yet appears in `PUBLIC_ROUTES`. It is intentionally absent from the public footer — public visitors are sent to `/contact`. Worth reconciling.
+6. **`/support` lives in `(console)`** yet appears in `PUBLIC_ROUTES`. It is intentionally absent from the public footer - public visitors are sent to `/contact`. Worth reconciling.
 7. **No `/cookies` route exists.** Not invented. If the privacy notice needs one, it needs writing.
-8. Local QA renders the honest "measurement network unreachable" state on `/track` because `api.reliastra.com` is unreachable from this sandbox. That is the designed failure path, not a defect — but it means the populated state of `/track` and `/track/[vendor]` has not been seen.
+8. Local QA renders the honest "measurement network unreachable" state on `/track` because `api.reliastra.com` is unreachable from this sandbox. That is the designed failure path, not a defect - but it means the populated state of `/track` and `/track/[vendor]` has not been seen.
 
 ## 13. Backend dependencies required
 
@@ -433,7 +433,7 @@ None of the redesign requires a backend change. Every contract was preserved:
 - `lib/track-api.ts` (`revalidate = 60`) and the pricing/entitlement payloads are consumed exactly as before.
 
 Two things would improve the public surface **if** the backend can supply them
-honestly — neither is required, and neither should be faked in the meantime:
+honestly - neither is required, and neither should be faked in the meantime:
 
 1. **A health field on the tracked-vendor list endpoint.** `/track` currently lists vendors without a verdict because the list response carries none; the fabricated dot was removed rather than guessed. A quorum verdict per vendor would let the index show state.
 2. **A public incident count or last-observation timestamp per vendor** on the same endpoint, so the index can show recency without an N+1 fetch.

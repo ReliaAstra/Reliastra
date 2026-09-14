@@ -106,7 +106,7 @@ export async function proxyToBackend(
           applyReferralToRegisterPayload(parsed, req.headers.get('cookie'))
         );
       } catch {
-        /* leave the body unchanged — registration must still succeed */
+        /* leave the body unchanged - registration must still succeed */
       }
     }
     fetchOptions.body = bodyText;

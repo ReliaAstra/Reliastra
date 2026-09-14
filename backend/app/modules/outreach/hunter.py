@@ -204,7 +204,7 @@ def extract_agency_name(html: str) -> str | None:
     if title:
         name = re.sub(r"\s+", " ", title.group(1)).strip()
         # "ALT Agency | Web Design Birmingham" -> "ALT Agency"
-        name = re.split(r"\s*[|\-–—]\s*", name)[0].strip()
+        name = re.split(r"\s*[|\-–]\s*", name)[0].strip()
         return name[:255] or None
     return None
 
@@ -236,13 +236,13 @@ def build_draft(agency_name: str | None, tiers: str | None, signals: list[str]) 
     signal = signals[0] if signals else "ongoing support"
     body = (
         f"Hi {name} team,\n\n"
-        f"Saw you sell {signal} on monthly plans — so when a client site breaks "
+        f"Saw you sell {signal} on monthly plans - so when a client site breaks "
         "because Stripe/Cloudflare/hosting blips, your team gets the blame first.\n\n"
         "Reliastra watches client sites' third-party dependencies and produces "
-        "timestamped evidence showing whether an outage was the vendor or your code — "
+        "timestamped evidence showing whether an outage was the vendor or your code - "
         "built for small agencies defending retainers, not enterprise NOCs.\n\n"
         "Worth a 15-min look? I can run a free check against one client site.\n\n"
-        "— Reliastra\n"
+        "- Reliastra\n"
         "P.S. Happy to start with a single site; no platform change needed."
     )
     angle = f"care-plan '{signal}'" + (f" tiers {tiers}" if tiers else "")

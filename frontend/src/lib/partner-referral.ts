@@ -10,7 +10,7 @@
  *   - `ra_ref`      HttpOnly, set only by the `/r/{code}` resolver. Source of
  *                   truth at signup: the register proxy replays it as `ref_code`.
  *   - `ra_ref_pub`  Readable by the page so signup/landing can show “referred
- *                   by”. Not a secret — the code was in the URL.
+ *                   by”. Not a secret - the code was in the URL.
  *
  * Failure isolation: every helper here is total. A malformed code, a missing
  * cookie or a private-mode storage failure returns null and never throws.

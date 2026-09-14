@@ -19,7 +19,7 @@ Published 13 September 2026 at
 
 No new route file was needed. `frontend/src/app/research/cloud-security/[slug]/page.tsx`
 derives `generateStaticParams` from `RESEARCH_ARTICLES`, so declaring the record
-in `lib/routes.ts` is what makes the URL exist — the same mechanism that keeps
+in `lib/routes.ts` is what makes the URL exist - the same mechanism that keeps
 the sitemap, the research index and the category page from diverging.
 
 The `cloud-security` category goes from one paper to two. `PUBLIC_PAGES` in
@@ -71,8 +71,8 @@ outside AWS documentation: the May 2026 aws-cli issue reporting that the
 simulator discards a trust policy for `sts:Assume*` actions, and the August 2026
 write-up of the simulator's July 2026 migration into the IAM console. The paper
 says so at the point of use, and `research/aws-iam-evaluation-order/sources.md`
-records how every source was reached — fetched, link-verified, search-resolved
-or reported — because a bibliography that hides its own provenance is not a
+records how every source was reached - fetched, link-verified, search-resolved
+or reported - because a bibliography that hides its own provenance is not a
 bibliography. The AWS announcement URL behind the migration claim was not
 reached directly and is marked as such.
 
@@ -112,7 +112,7 @@ propagates.
 ## 5 · SEO / AI-search surface
 
 1. **Query-matched title.** `AWS IAM policy evaluation logic: identity vs
-   resource` — 53 characters, so the templated `<title>` still fits a SERP.
+   resource` - 53 characters, so the templated `<title>` still fits a SERP.
    The H1 and the metadata title are the same string, which is how the rest of
    the corpus behaves.
 2. **Answer-first sections.** Four `<h2>`s are phrased as the questions a reader
@@ -124,7 +124,7 @@ propagates.
 4. **`TechArticle` JSON-LD is materially richer** than the corpus average: 15
    named entities feed `about`, 25 references feed `citation`, and the six
    exported artifacts carry `path`, `format` and `sha256`. No forbidden property
-   is emitted — the corpus test asserts the absence of `award`,
+   is emitted - the corpus test asserts the absence of `award`,
    `aggregateRating`, `isPeerReviewed`, `citationCount`, `review`,
    `reviewCount` and `ratingValue`.
 5. **`/llms.txt`** gains one line. **`/llms-full.txt`** prints the paper's

@@ -356,7 +356,7 @@ async def qa(q: str = Query(min_length=2, max_length=500), db: AsyncSession = De
         top = sorted(kills, key=lambda r: int(r[1]), reverse=True)[:8]
         summary = "; ".join(f"{k or 'unknown'}: {int(n)}" for k, n in top) or "no kills yet"
         return OutreachQaOut(
-            answer=f"{total} leads killed. Top reasons — {summary}.",
+            answer=f"{total} leads killed. Top reasons - {summary}.",
             rows=[{"kill_reason": k, "count": int(n)} for k, n in top],
         )
     if "sent" in text or "volume" in text or "today" in text:

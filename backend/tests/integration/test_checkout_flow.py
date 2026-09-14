@@ -331,7 +331,7 @@ async def test_without_a_public_key_the_hosted_page_is_still_payable(
 
     The popup needs the publishable key. Without it the response still carries
     the transaction's authorization URL, so the checkout completes on Paystack's
-    hosted page and returns to the same RELIASTRA verification \u2014 the payment
+    hosted page and returns to the same RELIASTRA verification - the payment
     must never depend on a browser feature we could not enable.
     """
     from app.config import settings

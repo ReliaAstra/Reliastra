@@ -1,4 +1,4 @@
-# RELIASTRA — Authenticated console audit & redesign report
+# RELIASTRA - Authenticated console audit & redesign report
 
 Phase 2. Companion to `route-inventory.md` (Phase 1, public site + auth).
 
@@ -9,11 +9,11 @@ internal or external · what evidence supports that · what to do next.
 
 Design language: the public site is *cinematic infrastructure*; the console is
 *operational infrastructure*. Same typography, palette, spacing and brand
-language — different density, different posture.
+language - different density, different posture.
 
 ---
 
-## 1. Route inventory — authenticated surface
+## 1. Route inventory - authenticated surface
 
 | Route | Component (after) | State |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ MONITORING   Dependencies · Incidents
 EVIDENCE     Evidence records
 CLIENTS      Agency portfolio        (only when has_agency_mode)
 ACCOUNT      Settings · Billing · Support
-PRO PLAN — Manage
+PRO PLAN - Manage
 ```
 
 Every entry is a route that exists. The spec's `EVIDENCE → Reports` and
@@ -76,7 +76,7 @@ public research ecosystem without a backend behind it. Both are recorded here
 rather than faked in the nav.
 
 Global status is exposed as typography plus indicators in the rail and repeats
-in a compact strip on mobile — never as a KPI card.
+in a compact strip on mobile - never as a KPI card.
 
 ### Overview composition
 
@@ -87,7 +87,7 @@ health** (sorted by state, critical rows tinted, incident codes cross-linked) �
 
 ---
 
-## 3. Design system — the `.obc` layer
+## 3. Design system - the `.obc` layer
 
 `globals.css` §1981+ adds a console layer on top of the Phase 1 Obsidian
 tokens: `--obc-*` (row 40px, gutters 20/28px, rail 232px, bar 52px), type
@@ -161,7 +161,7 @@ These were found by rendering the app, not by reading it.
   more than twelve hours (a 24-hour plot previously printed the same `18:10 UTC`
   at both ends).
 * Availability always carries its window ("Availability 24h").
-* Missing values print `no data`, `no observation`, `not recorded` — never a
+* Missing values print `no data`, `no observation`, `not recorded` - never a
   zero, never a dash that could be read as a measurement.
 * Incident record: header (code, dependency, state, detected, last update,
   duration) → **Attribution** (your service ↔ external dependency, correlation
@@ -194,11 +194,11 @@ These were found by rendering the app, not by reading it.
 
 Executed in this workspace:
 
-* `npx tsc --noEmit` — clean.
-* `npx next build` — full production build succeeds.
-* `npx eslint src` — 0 errors (5 pre-existing warnings, none in new code).
-* `npx vitest run` — 42/42.
-* `npx playwright test --list` — 111 tests / 5 files (Playwright browsers
+* `npx tsc --noEmit` - clean.
+* `npx next build` - full production build succeeds.
+* `npx eslint src` - 0 errors (5 pre-existing warnings, none in new code).
+* `npx vitest run` - 42/42.
+* `npx playwright test --list` - 111 tests / 5 files (Playwright browsers
   cannot be downloaded in this sandbox; specs list but do not run here).
 
 Rendered QA (real Chromium, `scripts/qa-shot.mjs`, fixture backend
@@ -250,6 +250,6 @@ app root sets no theme class).
   phase.
 * **Onboarding flow** (`/onboarding`) unchanged.
 * **In-app research** and an authenticated **reports** destination were not
-  added — see §2.
+  added - see §2.
 * **API keys**: `GET /v1/api-keys` exists in the API client but has no UI on any
   surface, before or after. Adding one is a product decision, not a redesign.

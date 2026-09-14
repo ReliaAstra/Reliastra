@@ -8,7 +8,7 @@ advertise two different contracts.
 Nothing here invents a money-back window. RELIASTRA's Terms of Service define
 cancellation (cancel anytime; access continues to the end of the paid period)
 and do not define a fixed refund period. Refunds of collected payments are
-handled as billing operations through Paystack when issued — they are not
+handled as billing operations through Paystack when issued - they are not
 automatic, and they are not a substitute for cancellation.
 
 A defined refund-period (for example a 14- or 30-day money-back guarantee) is

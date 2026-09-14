@@ -70,7 +70,7 @@ CORRELATION_METHOD_LABELS = {
 
 #: ``-`` is the typographic absence marker in this document. A blank cell in a
 #: report of record looks like a lost value; a dash looks like a stated one.
-ABSENT = "—"
+ABSENT = "-"
 
 
 def share_percent(value: Any, digits: int = 1) -> str:

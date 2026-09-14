@@ -78,7 +78,7 @@ const INCIDENT = {
   startedAt: '14 Nov 2025, 09:12:41 UTC',
   resolvedAt: '14 Nov 2025, 09:48:06 UTC',
   measurementWindow: '14 Nov 2025, 09:12:41 UTC – 09:48:06 UTC · 2125 s',
-  topology: 'Single observation point — 1 observation point recorded in this window (us-east)',
+  topology: 'Single observation point - 1 observation point recorded in this window (us-east)',
 } as const;
 
 const WINDOW = {

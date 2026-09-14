@@ -441,7 +441,7 @@
                     {%- if incident.resolved_at -%}
                         {{ incident.resolved_at | utc }}
                     {%- else -%}
-                        <span class="void">open at time of issue &mdash; this window is still moving</span>
+                        <span class="void">open at time of issue - this window is still moving</span>
                     {%- endif -%}
                 </td>
             </tr>
@@ -453,7 +453,7 @@
                 <td class="k">Observation Topology</td>
                 <td class="v">
                     {{ topology.topology_label }}
-                    &mdash; {{ topology.observation_point_count }} observation
+                    - {{ topology.observation_point_count }} observation
                     point{{ '' if topology.observation_point_count == 1 else 's' }}
                     recorded in this window
                     {%- if metrics.observation_points %}
@@ -486,7 +486,7 @@
                     {%- if detection.confirmed is none -%}
                         <span class="void">not recorded</span>
                     {%- elif detection.confirmed -%}
-                        confirmed &mdash; {{ detection.rule_label | lower }}
+                        confirmed - {{ detection.rule_label | lower }}
                     {%- else -%}
                         not confirmed
                     {%- endif -%}
@@ -542,7 +542,7 @@
             <tr>
                 <td class="k">Blocked Checks (Excluded)</td>
                 <td class="v">{{ metrics.blocked_checks | int }}
-                    <span class="void">&mdash; probe refused by RELIASTRA's outbound security policy;
+                    <span class="void">- probe refused by RELIASTRA's outbound security policy;
                     excluded from every figure above and not counted as downtime at the target,
                     because it was never issued</span></td>
             </tr>
@@ -550,7 +550,7 @@
                 <td class="k">Measured Availability</td>
                 <td class="v num">
                     {%- if metrics.availability_pct is none -%}
-                        <span class="void">not calculable &mdash; no measured checks</span>
+                        <span class="void">not calculable - no measured checks</span>
                     {%- else -%}
                         {{ metrics.availability_pct | percent }}
                         <span class="void">over {{ metrics.measured_checks | int }} measured checks</span>
@@ -623,7 +623,7 @@
                 <td class="k">SLA Degradation Impact</td>
                 <td class="v num">
                     {%- if impact.impact_pct is none -%}
-                        <span class="void">not calculable &mdash; not assumed to be 0%</span>
+                        <span class="void">not calculable - not assumed to be 0%</span>
                     {%- else -%}
                         {{ impact.impact_pct | percent }}
                         <span class="void">(target &minus; measured, floored at zero)</span>
@@ -831,7 +831,7 @@
                         {%- endif -%}
                     </td>
                     <td class="right mono">{{ row.latency_ms | ms }}</td>
-                    <td class="right mono">{{ row.status_code if row.status_code is not none else '&mdash;' }}</td>
+                    <td class="right mono">{{ row.status_code if row.status_code is not none else '-' }}</td>
                     <td>{{ row.error_message or '' }}</td>
                 </tr>
                 {% endfor %}
@@ -877,7 +877,7 @@
                 <td class="k">Evidence Data Hash (SHA-256)</td>
                 <td colspan="2"><span class="mono">{{ data_hash }}</span>
                     <div class="note" style="margin-top:3px">SHA-256 of the canonical machine-readable
-                    payload for this incident &mdash; the facts, independent of this arrangement of
+                    payload for this incident - the facts, independent of this arrangement of
                     them, and independent of the renderer that produced these pages.</div>
                 </td>
             </tr>
@@ -892,7 +892,7 @@
                 <td class="k">Signature</td>
                 <td colspan="2">
                     {%- if signature -%}
-                        <span class="signed">Signed &mdash; {{ signature.alg }}, key
+                        <span class="signed">Signed - {{ signature.alg }}, key
                         {{ signature.key_id }}</span>
                         <div class="mono" style="margin-top:3px">{{ signature.value }}</div>
                         <div class="note" style="margin-top:4px">The signature covers the canonical
@@ -901,7 +901,7 @@
                         verify its own record is not part of the proof.</div>
                     {%- else -%}
                         <span class="unsigned">Unsigned</span>
-                        &mdash; this deployment has no signing key configured, so the hashes above
+                        - this deployment has no signing key configured, so the hashes above
                         attest internal consistency only. They do not authenticate the issuer.
                     {%- endif -%}
                 </td>
@@ -917,7 +917,7 @@
                 <td colspan="2">Issued {{ document.issued_date }} &middot; artifacts retained until
                     <strong>{{ document.expires_date }}</strong> ({{ document.retention_days }} days)
                     {%- if document.expired -%}
-                        &mdash; <strong>expired</strong>; the record's hashes remain, the stored files
+                        - <strong>expired</strong>; the record's hashes remain, the stored files
                         may not.
                     {%- else -%}
                         . After retention the files are deleted and only the hashes recorded at the

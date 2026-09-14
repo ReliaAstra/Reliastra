@@ -10,7 +10,7 @@ export const metadata = {
 
 /**
  * Shown when `/r/{code}` cannot be attributed: unknown, inactive, or
- * malformed. Deliberately NOT the generic 404 — a mistyped partner link
+ * malformed. Deliberately NOT the generic 404 - a mistyped partner link
  * must not look like the rest of the site is missing.
  */
 export default function ReferralUnavailablePage() {
