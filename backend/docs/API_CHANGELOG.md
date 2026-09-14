@@ -185,7 +185,7 @@ surface reads:
   "checkout_ready": true,
   "plan_payment_amounts": { "pro": { "monthly": "\u20a660,000.00 (NGN)", "annual": "\u20a6600,000.00 (NGN)" } },
   "payment_provider": "Paystack",
-  "payment_provider_display": "Paystack \u2014 secure hosted checkout",
+  "payment_provider_display": "Paystack - secure hosted checkout",
   "fx_reference": {
     "available": true,
     "source_currency": "USD",
@@ -196,7 +196,7 @@ surface reads:
     "provider": "ExchangeRate-API",
     "provider_url": "https://www.exchangerate-api.com",
     "source_url": "https://open.er-api.com/v6/latest/USD",
-    "label": "Exchange rate reference (estimate \u2014 not the price you pay)",
+    "label": "Exchange rate reference (estimate - not the price you pay)",
     "disclaimer": "Exchange rate shown is a market reference estimate only. \u2026"
   }
 }
@@ -250,7 +250,7 @@ is the only authoritative source for what a payment will cost:
   "payment_amount_display": "\u20a660,000.00 (NGN)",
   "payment_currency_name": "Nigerian Naira (NGN)",
   "payment_provider": "Paystack",
-  "payment_provider_display": "Paystack \u2014 secure hosted checkout",
+  "payment_provider_display": "Paystack - secure hosted checkout",
   "period_word": "month",
   "currency_notice": "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
   "fx_reference": { "available": true, "rate": 1650.0, "\u2026": "\u2026" },

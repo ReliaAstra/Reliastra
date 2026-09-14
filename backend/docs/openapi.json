@@ -5541,7 +5541,7 @@
           "Partners"
         ],
         "summary": "Update my partner profile",
-        "description": "Update editable profile fields.\n\nTier, status, rates and risk are not editable here \u2014 they are outcomes,\nnot inputs.",
+        "description": "Update editable profile fields.\n\nTier, status, rates and risk are not editable here - they are outcomes,\nnot inputs.",
         "operationId": "update_my_partner_profile_v1_partners_me_patch",
         "requestBody": {
           "content": {
@@ -5588,7 +5588,7 @@
           "Partners"
         ],
         "summary": "Get my tier capabilities and next-tier requirements",
-        "description": "What the current tier unlocks, plus the requirements for the next\ntier. Tiers grant capabilities only \u2014 commission rates are per\nearning method and identical at every tier.",
+        "description": "What the current tier unlocks, plus the requirements for the next\ntier. Tiers grant capabilities only - commission rates are per\nearning method and identical at every tier.",
         "operationId": "get_my_capabilities_v1_partners_me_capabilities_get",
         "responses": {
           "200": {
@@ -6096,7 +6096,7 @@
           "Partners"
         ],
         "summary": "Create a referral link",
-        "description": "Create a trackable link.\n\nThe shareable URL is always built by ``ReferralLinkService`` from\nconfiguration \u2014 clients must use the returned ``url`` rather than\nassembling one.",
+        "description": "Create a trackable link.\n\nThe shareable URL is always built by ``ReferralLinkService`` from\nconfiguration - clients must use the returned ``url`` rather than\nassembling one.",
         "operationId": "create_referral_link_v1_partners_me_links_post",
         "security": [
           {
@@ -6593,7 +6593,7 @@
           "Partners"
         ],
         "summary": "List my payout accounts (masked)",
-        "description": "Payout accounts for the authenticated partner. Only a masked label\nand the last four characters are returned \u2014 the stored details are\nencrypted and never exposed.",
+        "description": "Payout accounts for the authenticated partner. Only a masked label\nand the last four characters are returned - the stored details are\nencrypted and never exposed.",
         "operationId": "list_payout_accounts_v1_partners_me_payout_accounts_get",
         "responses": {
           "200": {
@@ -7192,10 +7192,10 @@
     "/v1/public/referral/{partner_code}": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Resolve a partner referral link",
-        "description": "Resolve ``/r/{partner_code}`` and record the click.\n\nReturns the destination and an anonymous ``visitor_id`` that the caller\nshould persist (first-party cookie or local storage) and replay at\nsignup as ``partner_visitor_id`` \u2014 that is what links the eventual\naccount back to this touch.\n\nA click is analytics only. It never creates an entitlement to\ncommission on its own.",
+        "description": "Resolve ``/r/{partner_code}`` and record the click.\n\nReturns the destination and an anonymous ``visitor_id`` that the caller\nshould persist (first-party cookie or local storage) and replay at\nsignup as ``partner_visitor_id`` - that is what links the eventual\naccount back to this touch.\n\nA click is analytics only. It never creates an entitlement to\ncommission on its own.",
         "operationId": "resolve_referral_v1_public_referral__partner_code__get",
         "parameters": [
           {
@@ -7292,7 +7292,7 @@
     "/v1/public/referral/{partner_code}/validate": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Check whether a partner code is valid",
         "description": "Validate a partner code without recording a click.\n\nIntended for signup forms that let a user type a code by hand. Always\nreturns 200: an invalid code is a normal outcome, not an error, and the\nresponse deliberately reveals nothing beyond the public display name.",
@@ -7351,7 +7351,7 @@
     "/v1/public/partners": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Browse the public partner directory",
         "description": "List partners who have opted into public listing.\n\nOnly active, explicitly opted-in partners appear, and only their\nmarketing profile is returned.",
@@ -7491,10 +7491,10 @@
     "/v1/public/partners/{partner_slug}": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Get a public partner profile",
-        "description": "Public marketing profile for one partner.\n\nUnlisted, suspended and terminated partners return 404 \u2014 being listed is\nopt-in, and its absence should not be observable.",
+        "description": "Public marketing profile for one partner.\n\nUnlisted, suspended and terminated partners return 404 - being listed is\nopt-in, and its absence should not be observable.",
         "operationId": "get_public_partner_v1_public_partners__partner_slug__get",
         "parameters": [
           {
@@ -7537,7 +7537,7 @@
     "/v1/public/partner-program": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Partner program terms and economics",
         "description": "Backend-managed program description.\n\nTiers, earning methods, rates, attribution window, holding period and\npayout minimum all come from configuration and the content table, so\nthat no client has to hardcode the commission structure or the\nmarketing copy.",
@@ -7582,7 +7582,7 @@
     "/v1/public/partner-program/content": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Partner program content blocks",
         "description": "Published, backend-managed copy blocks (FAQ, terms, benefits).",
@@ -7648,7 +7648,7 @@
     "/v1/admin/partners/applications": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List partner applications",
         "description": "All partner applications across the platform, optionally filtered\nby status. Includes the applicant identity and reviewer notes.",
@@ -7726,7 +7726,7 @@
     "/v1/admin/partners/applications/{application_id}/review": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Approve or reject a partner application",
         "description": "Review an application.\n\nApproval provisions the partner account, allocates a partner code and\nslug, creates the default referral link and records the initial tier.",
@@ -7788,7 +7788,7 @@
     "/v1/admin/partners": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List partners",
         "description": "All partners, with risk and lifecycle fields that are never shown\nto partners themselves. Supports filtering by status, tier, type,\ncountry and risk band.",
@@ -7949,7 +7949,7 @@
     "/v1/admin/partners/{partner_id}": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Get a partner",
         "description": "Full admin view of one partner, including risk score, hold state\nand any negotiated rates.",
@@ -7998,7 +7998,7 @@
     "/v1/admin/partners/{partner_id}/status": {
       "patch": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Suspend, terminate or reactivate a partner",
         "description": "Change a partner's standing.\n\nSuspension and termination freeze commissions but never delete ledger\nhistory; reactivation releases the freeze.",
@@ -8057,7 +8057,7 @@
     "/v1/admin/partners/{partner_id}/tier": {
       "patch": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Manually set a partner's tier",
         "description": "Set a tier directly, bypassing the earned-tier calculation. Used\nfor certification and negotiated standing. The change and its\nreason are written to the tier history.",
@@ -8116,10 +8116,10 @@
     "/v1/admin/partners/{partner_id}/rates": {
       "patch": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Set negotiated commission rates for a partner",
-        "description": "Set per-method rates for a partner.\n\nRates are clamped to the platform ceiling and apply only to\nrelationships created afterwards \u2014 existing relationships keep the rate\nsnapshotted at their creation.",
+        "description": "Set per-method rates for a partner.\n\nRates are clamped to the platform ceiling and apply only to\nrelationships created afterwards - existing relationships keep the rate\nsnapshotted at their creation.",
         "operationId": "update_partner_rates_v1_admin_partners__partner_id__rates_patch",
         "security": [
           {
@@ -8175,7 +8175,7 @@
     "/v1/admin/partners/{partner_id}/evaluate-tier": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Re-evaluate a partner's earned tier",
         "description": "Recompute the earned tier from ledger metrics. Promotion only.",
@@ -8232,7 +8232,7 @@
     "/v1/admin/partners/commissions/all": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List commission ledger entries across all partners",
         "description": "The commission ledger across all partners. Entries are immutable;\namounts are signed integer minor units.",
@@ -8344,7 +8344,7 @@
     "/v1/admin/partners/commissions/{commission_id}/reverse": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Reverse a commission",
         "description": "Claw back a commission.\n\nWrites a new negative ledger entry referencing the original; the\noriginal row is never modified or deleted.",
@@ -8396,7 +8396,7 @@
     "/v1/admin/partners/commissions/adjust": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Create a manual commission adjustment",
         "description": "Post a signed correction to a partner's ledger.\n\nAdjustments are immediately payable and always carry a stored reason.",
@@ -8443,10 +8443,10 @@
     "/v1/admin/partners/{partner_id}/hold-commissions": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Hold all unpaid commissions for a partner",
-        "description": "Freeze every not-yet-paid commission for a partner.\n\nHolding keeps the money in the ledger and fully recoverable \u2014 it is\nthe safe response to an open question about a partner's activity.",
+        "description": "Freeze every not-yet-paid commission for a partner.\n\nHolding keeps the money in the ledger and fully recoverable - it is\nthe safe response to an open question about a partner's activity.",
         "operationId": "hold_commissions_v1_admin_partners__partner_id__hold_commissions_post",
         "security": [
           {
@@ -8514,7 +8514,7 @@
     "/v1/admin/partners/{partner_id}/release-commissions": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Release held commissions for a partner",
         "description": "Lift a hold. Entries whose holding period has already elapsed\nbecome payable immediately; the rest return to pending and finish\ntheir hold normally.",
@@ -8585,7 +8585,7 @@
     "/v1/admin/partners/settlements/all": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List monthly settlements",
         "description": "Monthly settlements across all partners, optionally filtered by\nperiod or status.",
@@ -8680,7 +8680,7 @@
     "/v1/admin/partners/payouts/all": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List payouts",
         "description": "All payouts, with provider references and approver identity.",
@@ -8775,7 +8775,7 @@
     "/v1/admin/partners/payouts/{payout_id}/action": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Approve, process, complete, fail or cancel a payout",
         "description": "Advance a payout through its lifecycle.\n\n``process`` submits the transfer to the provider using our own payout\nreference, so a retry cannot create a second transfer. Failing or\ncancelling returns the commissions to the partner's payable balance via\na compensating ledger entry.",
@@ -8837,10 +8837,10 @@
     "/v1/admin/partners/leads/all": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List lead introductions",
-        "description": "Leads with full contact details \u2014 the sales team needs to act on them.",
+        "description": "Leads with full contact details - the sales team needs to act on them.",
         "operationId": "list_leads_v1_admin_partners_leads_all_get",
         "security": [
           {
@@ -8932,7 +8932,7 @@
     "/v1/admin/partners/leads/{lead_id}/status": {
       "patch": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Advance a lead through the pipeline",
         "description": "Move a lead.\n\nConverting requires the customer organisation and creates the Year-1\n``introduce`` earning relationship.",
@@ -8994,7 +8994,7 @@
     "/v1/admin/partners/claims/all": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List deployment claims",
         "description": "All deployment and creation claims, with their evidence attached,\nready for review.",
@@ -9089,7 +9089,7 @@
     "/v1/admin/partners/claims/{claim_id}/review": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Approve or reject a deployment claim",
         "description": "Review a claim.\n\nApproval creates the earning relationship at the deploy/create rate\n(optionally overridden), snapshotted at that moment.",
@@ -9148,7 +9148,7 @@
     "/v1/admin/partners/fraud/flags": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List fraud flags",
         "description": "Open and historical fraud flags. Each flag carries the signal that\nraised it, the score at the time and the supporting metrics.",
@@ -9259,7 +9259,7 @@
     "/v1/admin/partners/fraud/flags/{flag_id}/resolve": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Resolve a fraud flag",
         "description": "Close a flag and execute the chosen resolution.\n\nThe resolution is carried out, not just recorded, so the flag's stated\noutcome always matches what happened to the money and the account.",
@@ -9321,7 +9321,7 @@
     "/v1/admin/partners/{partner_id}/risk": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Risk assessment history for a partner",
         "description": "Risk assessment history for one partner, newest first, including\nthe metrics each score was derived from.",
@@ -9386,7 +9386,7 @@
     "/v1/admin/partners/{partner_id}/risk/evaluate": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Run a risk assessment for a partner",
         "description": "Run a risk assessment immediately rather than waiting for the\nscheduled sweep. A high score holds commissions and opens flags; it\nnever suspends the partner on its own.",
@@ -9435,7 +9435,7 @@
     "/v1/admin/partners/content/all": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List partner program content blocks",
         "description": "All backend-managed program content blocks for a locale.",
@@ -9489,7 +9489,7 @@
     "/v1/admin/partners/content/{key}": {
       "put": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Create or update a partner program content block",
         "description": "Manage program copy from the backend.\n\nMarketing text lives here rather than in a client so it can be changed\nwithout a deploy.",
@@ -9547,10 +9547,10 @@
     "/v1/admin/geo/countries": {
       "get": {
         "tags": [
-          "Admin \u2014 Geo"
+          "Admin - Geo"
         ],
         "summary": "Country analytics",
-        "description": "Aggregated per-country traffic, conversions, revenue and commission.\n\nServed from the pre-aggregated ``partner_geo_daily`` table written by\nthe ``geo_aggregation`` job \u2014 country-level only, never city or\ncoordinates.",
+        "description": "Aggregated per-country traffic, conversions, revenue and commission.\n\nServed from the pre-aggregated ``partner_geo_daily`` table written by\nthe ``geo_aggregation`` job - country-level only, never city or\ncoordinates.",
         "operationId": "get_country_analytics_v1_admin_geo_countries_get",
         "security": [
           {
@@ -9639,7 +9639,7 @@
     "/v1/admin/geo/coverage": {
       "get": {
         "tags": [
-          "Admin \u2014 Geo"
+          "Admin - Geo"
         ],
         "summary": "GeoIP database and cache status",
         "description": "Operational status of the local MaxMind database and lookup cache.\n\nUse ``database_age_days`` to monitor whether the GeoLite2 file is being\nrefreshed.",
@@ -9689,7 +9689,7 @@
           "Health"
         ],
         "summary": "Liveness Check",
-        "description": "FIX 13: cheap liveness probe \u2014 no DB/Redis access.",
+        "description": "FIX 13: cheap liveness probe - no DB/Redis access.",
         "operationId": "liveness_check_health_live_get",
         "responses": {
           "200": {
@@ -9713,7 +9713,7 @@
           "Health"
         ],
         "summary": "Readiness Check",
-        "description": "FIX 13: readiness probe \u2014 DB + Redis, cached for 5s.",
+        "description": "FIX 13: readiness probe - DB + Redis, cached for 5s.",
         "operationId": "readiness_check_health_ready_get",
         "responses": {
           "200": {
@@ -12699,7 +12699,7 @@
           "resell"
         ],
         "title": "EarningMethod",
-        "description": "How a partner earned the right to a commission.\n\nThe method \u2014 not the tier \u2014 determines the rate:\n\n``REFER``      20%  recurring, partner sends a customer\n``DEPLOY``     30%  recurring, partner implements/operates for the customer\n``CREATE``     25%  recurring, partner produced the content/integration\n``INTRODUCE``  15%  Year-1 only, one relationship introduction\n``RESELL``      0%  reseller keeps the wholesale margin instead"
+        "description": "How a partner earned the right to a commission.\n\nThe method - not the tier - determines the rate:\n\n``REFER``      20%  recurring, partner sends a customer\n``DEPLOY``     30%  recurring, partner implements/operates for the customer\n``CREATE``     25%  recurring, partner produced the content/integration\n``INTRODUCE``  15%  Year-1 only, one relationship introduction\n``RESELL``      0%  reseller keeps the wholesale margin instead"
       },
       "EvidenceGateRequest": {
         "properties": {

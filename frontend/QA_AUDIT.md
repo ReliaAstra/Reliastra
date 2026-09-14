@@ -40,7 +40,7 @@ was judged from source alone.
 
 Repository-wide: 154 em dashes in 48 files, plus SVG social titles, e2e specs
 and scripts, reduced to 0. Sentences were rewritten, not re-punctuated;
-empty-cell placeholders (`—`) became a literal word (`none`, `no data`,
+empty-cell placeholders (`-`) became a literal word (`none`, `no data`,
 `unknown`, `0`).
 
 ## Content audit: claims

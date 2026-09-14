@@ -469,7 +469,7 @@
           "Supabase Auth"
         ],
         "summary": "Supabase Login",
-        "description": "Exchange Supabase credentials for Reliastra tokens.\n\nThis is NOT a Supabase Auth endpoint \u2014 it uses the standard Reliastra\nlogin flow.  For true Supabase JWT login, simply present the Supabase\naccess token in the ``Authorization`` header on any protected endpoint.",
+        "description": "Exchange Supabase credentials for Reliastra tokens.\n\nThis is NOT a Supabase Auth endpoint - it uses the standard Reliastra\nlogin flow.  For true Supabase JWT login, simply present the Supabase\naccess token in the ``Authorization`` header on any protected endpoint.",
         "operationId": "supabase_login_v1_auth_supabase_login_post",
         "requestBody": {
           "content": {
@@ -4925,7 +4925,7 @@
           "Partners"
         ],
         "summary": "Activate the referral program",
-        "description": "Opt into the referral program and get a referral link.\n\nIdempotent \u2014 an existing partner receives their current profile.",
+        "description": "Opt into the referral program and get a referral link.\n\nIdempotent - an existing partner receives their current profile.",
         "operationId": "apply_v1_partners_apply_post",
         "requestBody": {
           "content": {
@@ -5204,10 +5204,10 @@
     "/v1/public/referral/{referral_code}": {
       "get": {
         "tags": [
-          "Partners \u2014 Public"
+          "Partners - Public"
         ],
         "summary": "Resolve a partner referral link",
-        "description": "Validate a referral code and return signup attribution metadata.\n\nThe destination is always a relative path \u2014 a crafted ``to`` cannot be\nturned into an open redirect.",
+        "description": "Validate a referral code and return signup attribution metadata.\n\nThe destination is always a relative path - a crafted ``to`` cannot be\nturned into an open redirect.",
         "operationId": "resolve_referral_v1_public_referral__referral_code__get",
         "parameters": [
           {
@@ -5265,7 +5265,7 @@
     "/v1/admin/partners": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List partners",
         "operationId": "list_partners_v1_admin_partners_get",
@@ -5358,7 +5358,7 @@
     "/v1/admin/partners/stats": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Partner program stats",
         "operationId": "get_stats_v1_admin_partners_stats_get",
@@ -5384,7 +5384,7 @@
     "/v1/admin/partners/commissions": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List commissions (admin)",
         "operationId": "list_commissions_v1_admin_partners_commissions_get",
@@ -5494,7 +5494,7 @@
     "/v1/admin/partners/commissions/{commission_id}/reverse": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Reverse a commission",
         "operationId": "reverse_commission_v1_admin_partners_commissions__commission_id__reverse_post",
@@ -5554,7 +5554,7 @@
     "/v1/admin/partners/payouts": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "List payouts",
         "operationId": "list_payouts_v1_admin_partners_payouts_get",
@@ -5662,7 +5662,7 @@
       },
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Create a payout from a partner's payable balance",
         "operationId": "create_payout_v1_admin_partners_payouts_post",
@@ -5710,7 +5710,7 @@
     "/v1/admin/partners/payouts/{payout_id}/process": {
       "post": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Process a payout (mark paid/failed)",
         "operationId": "process_payout_v1_admin_partners_payouts__payout_id__process_post",
@@ -5770,7 +5770,7 @@
     "/v1/admin/partners/{partner_id}": {
       "get": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Partner detail (admin)",
         "operationId": "get_partner_detail_v1_admin_partners__partner_id__get",
@@ -5818,7 +5818,7 @@
       },
       "patch": {
         "tags": [
-          "Admin \u2014 Partners"
+          "Admin - Partners"
         ],
         "summary": "Update partner status",
         "operationId": "update_partner_status_v1_admin_partners__partner_id__patch",
@@ -5901,7 +5901,7 @@
           "Health"
         ],
         "summary": "Liveness Check",
-        "description": "FIX 13: cheap liveness probe \u2014 no DB/Redis access.",
+        "description": "FIX 13: cheap liveness probe - no DB/Redis access.",
         "operationId": "liveness_check_health_live_get",
         "responses": {
           "200": {
@@ -5925,7 +5925,7 @@
           "Health"
         ],
         "summary": "Readiness Check",
-        "description": "FIX 13: readiness probe \u2014 DB + Redis, cached for 5s.",
+        "description": "FIX 13: readiness probe - DB + Redis, cached for 5s.",
         "operationId": "readiness_check_health_ready_get",
         "responses": {
           "200": {

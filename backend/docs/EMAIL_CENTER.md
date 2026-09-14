@@ -71,7 +71,7 @@ The Next.js admin proxy exposes these at `/api/admin/email-center/*`. (Note:
 Migration `0033_email_center`: `email_center_senders`,
 `email_center_messages`, `email_center_templates`. System sender seeds
 (finance/support/hello/partners/security/noreply/alerts/billing) and five
-built-in templates (incl. "Kora — USD International Payments Request") are
+built-in templates (incl. "Kora - USD International Payments Request") are
 inserted lazily by the service on first list - all editable/deletable from
 the UI.
 

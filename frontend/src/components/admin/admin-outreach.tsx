@@ -205,7 +205,7 @@ function DraftInspector({ draft, onClose, onChanged }: {
       await queryClient.invalidateQueries({ queryKey: ['admin', 'outreach'] });
       onChanged();
     },
-    onError: (error: Error) => toast.error(error.message || 'Send blocked — see queue for reason.'),
+    onError: (error: Error) => toast.error(error.message || 'Send blocked - see queue for reason.'),
   });
 
   return (
@@ -213,7 +213,7 @@ function DraftInspector({ draft, onClose, onChanged }: {
       <SheetContent className="w-full sm:max-w-xl">
         <SheetHeader>
           <SheetTitle>{draft?.agency_name || draft?.domain}</SheetTitle>
-          <SheetDescription>{draft?.domain} · {draft?.contact_email || 'no public email — send disabled'}</SheetDescription>
+          <SheetDescription>{draft?.domain} · {draft?.contact_email || 'no public email - send disabled'}</SheetDescription>
         </SheetHeader>
         <div className="mt-4 space-y-3 px-4 sm:px-6">
           <Input value={activeSubject} onChange={(e) => setSubject(e.target.value)} aria-label="Subject" />

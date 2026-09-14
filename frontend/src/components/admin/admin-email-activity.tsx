@@ -63,7 +63,7 @@ function statusTone(status: EmailCenterMessageStatus): string {
 
 function recipientSummary(item: EmailCenterMessageItem): string {
   const to = item.recipients.to ?? [];
-  if (!to.length) return '—';
+  if (!to.length) return '-';
   const extra = to.length - 1 + (item.recipients.cc?.length ?? 0) + (item.recipients.bcc?.length ?? 0);
   return extra > 0 ? `${to[0]} +${extra}` : to[0];
 }
@@ -94,7 +94,7 @@ export function EmailActivitySection() {
     <AdminCard>
       <SectionHeading
         title="Email Activity"
-        subtitle="Every send attempt — successes and failures — with its provider receipt."
+        subtitle="Every send attempt - successes and failures - with its provider receipt."
         action={
           <form
             className="flex items-center gap-2"
@@ -201,7 +201,7 @@ export function EmailActivitySection() {
                       {formatRelativeTime(item.created_at)}
                     </td>
                     <td className="max-w-32 truncate px-3 py-3 pr-5 font-mono text-[11px] text-slate-400 sm:pr-6">
-                      {item.provider_message_id ?? '—'}
+                      {item.provider_message_id ?? '-'}
                     </td>
                   </tr>
                 ))}
@@ -314,16 +314,16 @@ function MessageDetailBody({
         <Row label="From">
           {record.sender_name ? `${record.sender_name} <${record.sender}>` : record.sender}
         </Row>
-        <Row label="To">{record.recipients.to.join(', ') || '—'}</Row>
+        <Row label="To">{record.recipients.to.join(', ') || '-'}</Row>
         {record.recipients.cc.length > 0 && <Row label="CC">{record.recipients.cc.join(', ')}</Row>}
         {record.recipients.bcc.length > 0 && (
           <Row label="BCC">{record.recipients.bcc.join(', ')}</Row>
         )}
         <Row label="Subject">{record.subject}</Row>
-        <Row label="Sent by">{record.admin_email ?? '—'}</Row>
+        <Row label="Sent by">{record.admin_email ?? '-'}</Row>
         <Row label="Timestamp">{formatAdminDate(record.created_at, true)}</Row>
         <Row label="Provider ID" mono>
-          {record.provider_message_id ?? '—'}
+          {record.provider_message_id ?? '-'}
         </Row>
         {record.failure_reason && (
           <Row label="Error">

@@ -33,7 +33,7 @@ for the matrix, the bibliography and the limitations.
    ```
 
    This writes `research/aws-iam-evaluation-order/figures/syndication/*.png`
-   (git-ignored by design — rasters are copies for a platform, not artifacts of
+   (git-ignored by design - rasters are copies for a platform, not artifacts of
    record). The three the post references are
    `fig-1-evaluation-pipeline.png`, `fig-3-tightening-fallacy.png` and
    `fig-4-verification-gap.png`.
@@ -48,7 +48,7 @@ for the matrix, the bibliography and the limitations.
    image's alt text and the italic caption sentence beneath it: on a platform
    that strips figure markup, that sentence is what carries the finding.
 6. Cover image: `frontend/public/social/research/aws-iam-policy-evaluation-order-og.png`
-   — the same card the paper serves as its `og:image`, so a share of either URL
+   - the same card the paper serves as its `og:image`, so a share of either URL
    looks identical.
 7. In the post's SEO / canonical settings, set the canonical URL
    (`originalArticleURL`) to

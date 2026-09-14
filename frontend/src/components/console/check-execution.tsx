@@ -23,11 +23,11 @@ export function CheckExecution({ id }: { id: string }) {
       </div>
       {d && <dl className="mt-4 grid gap-x-8 md:grid-cols-2">
         <Row label="Observed at">{d.last_result ? formatUtc(d.last_result.executed_at, 'dd MMM HH:mm:ss') : 'No observations'}</Row>
-        <Row label="Latency">{d.last_result ? `${Math.round(d.last_result.latency_ms)} ms` : '—'}</Row>
-        <Row label="HTTP status">{d.last_result?.status_code ?? '—'}</Row>
-        <Row label="Next scheduled">{d.is_active && d.next_check_at ? formatUtc(d.next_check_at, 'dd MMM HH:mm:ss') : '—'}</Row>
-        <Row label="Last successful">{d.last_success_at ? formatUtc(d.last_success_at, 'dd MMM HH:mm:ss') : '—'}</Row>
-        <Row label="Last failed">{d.last_failure_at ? formatUtc(d.last_failure_at, 'dd MMM HH:mm:ss') : '—'}</Row>
+        <Row label="Latency">{d.last_result ? `${Math.round(d.last_result.latency_ms)} ms` : '-'}</Row>
+        <Row label="HTTP status">{d.last_result?.status_code ?? '-'}</Row>
+        <Row label="Next scheduled">{d.is_active && d.next_check_at ? formatUtc(d.next_check_at, 'dd MMM HH:mm:ss') : '-'}</Row>
+        <Row label="Last successful">{d.last_success_at ? formatUtc(d.last_success_at, 'dd MMM HH:mm:ss') : '-'}</Row>
+        <Row label="Last failed">{d.last_failure_at ? formatUtc(d.last_failure_at, 'dd MMM HH:mm:ss') : '-'}</Row>
       </dl>}
       {d?.is_active && (d.is_infrastructure_problem || d.is_target_problem) && <p className="mt-3 text-[12px] text-[var(--obc-text-3)]">{d.detail}</p>}
       {run.error && <p role="alert" className="mt-3 text-[12px] text-[var(--obc-crit)]">{run.error.message}</p>}

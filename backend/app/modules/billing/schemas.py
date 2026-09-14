@@ -203,7 +203,7 @@ class CheckoutQuoteResponse(BaseModel):
     payment_amount_display: str | None = None
     payment_currency_name: str
     payment_provider: str = "Paystack"
-    payment_provider_display: str = "Paystack \u2014 secure hosted checkout"
+    payment_provider_display: str = "Paystack - secure hosted checkout"
     period_word: str = "month"
     # Canonical currency disclosure + the display-only FX reference.
     currency_notice: str | None = None

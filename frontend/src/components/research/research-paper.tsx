@@ -285,7 +285,7 @@ export function ResearchPaperTemplate({
                     {paper.entities.map((e) => (
                       <li key={`${e.role}:${e.name}`}>
                         <span className="ob-mono text-[var(--ob-text-4)]">{e.role}:</span> {e.name}
-                        {e.note ? ` — ${e.note}` : ''}
+                        {e.note ? ` - ${e.note}` : ''}
                       </li>
                     ))}
                   </ul>
@@ -309,7 +309,7 @@ export function ResearchPaperTemplate({
                 )}
                 {paper.dataset && (
                   <RecordRow term="Dataset">
-                    {paper.dataset.name} — <span className="ob-mono">{paper.dataset.path}</span> (
+                    {paper.dataset.name} - <span className="ob-mono">{paper.dataset.path}</span> (
                     {paper.dataset.format}, {paper.dataset.license})
                   </RecordRow>
                 )}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# update.sh — manual production update over Tailscale SSH.
+# update.sh - manual production update over Tailscale SSH.
 #
 # Usage (laptop, Tailscale on):
 #   ssh reliastra@100.93.175.33

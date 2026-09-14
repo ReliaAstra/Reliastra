@@ -11,7 +11,7 @@ actually shows.
 
 | # | Component | Export | Size | What it establishes |
 |---|---|---|---|---|
-| 1 | `IamEvaluationPipelineFigure` | [`fig-1-evaluation-pipeline.svg`](./fig-1-evaluation-pipeline.svg) | 960×470 | The seven stages in documented order, each labelled with its algebraic role — one short-circuit, four ceilings, two grants — plus the root-user bypass and both terminals |
+| 1 | `IamEvaluationPipelineFigure` | [`fig-1-evaluation-pipeline.svg`](./fig-1-evaluation-pipeline.svg) | 960×470 | The seven stages in documented order, each labelled with its algebraic role - one short-circuit, four ceilings, two grants - plus the root-user bypass and both terminals |
 | 2 | `IamPolicyAlgebraFigure` | [`fig-2-policy-algebra.svg`](./fig-2-policy-algebra.svg) | 960×340 | Three relations: same-account union of the granting classes, the ceilings as nested rings, and the cross-account conjunction of two independent verdicts |
 | 3 | `IamTighteningFallacyFigure` | [`fig-3-tightening-fallacy.svg`](./fig-3-tightening-fallacy.svg) | 960×300 | The designer model against the documented outcome, and the four mechanisms that do reduce effective permissions inside one account |
 | 4 | `IamVerificationGapFigure` | [`fig-4-verification-gap.svg`](./fig-4-verification-gap.svg) | 960×380 | Seven policy classes against four verification routes, each cell evaluated / conditional / unsupported |

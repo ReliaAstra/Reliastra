@@ -1,11 +1,11 @@
-# Phase 3 — Public Infrastructure Observatory
+# Phase 3 - Public Infrastructure Observatory
 
 Complete rebuild of the public tracking surface: `/track` and `/track/[vendor]`.
 
 Phase 1 (`docs/redesign/route-inventory.md`) rebuilt the marketing site as
 *cinematic infrastructure*. Phase 2 (`docs/redesign/console-inventory.md`) rebuilt
 the authenticated product as an *operational evidence console*. This phase adds the
-third and last design language: the **public infrastructure observatory** — a public,
+third and last design language: the **public infrastructure observatory** - a public,
 independently observed record of an external dependency's behaviour.
 
 It is not a status page. A status page is a vendor talking about itself. This is
@@ -22,9 +22,9 @@ shell with marketing components. The audit found:
 | Finding | Consequence |
 | --- | --- |
 | Three fetches total (`developer`, `timeline`, `incidents/public`) | The `metrics`, `vendors/{name}` and `incidents` endpoints were unused, so windows, endpoint configuration and non-published incidents never appeared |
-| `fetchVendorPublicIncidents` read `.incidents` off the response | The endpoint returns a **bare array** — the incident and evidence sections rendered empty on every vendor, silently |
+| `fetchVendorPublicIncidents` read `.incidents` off the response | The endpoint returns a **bare array** - the incident and evidence sections rendered empty on every vendor, silently |
 | Evidence links pointed at `/portal/{download_token}` | `/portal/[token]` is the **agency SLA portfolio**, not an evidence download, and the production API always returns `download_token: null` |
-| No chart | The central fact of the page — behaviour over time — was not shown at all |
+| No chart | The central fact of the page - behaviour over time - was not shown at all |
 | No regional intelligence | Region was printed as a string; the observation topology was invisible |
 | Availability printed straight from the API | `get_endpoint_stats` returns `uptime_percentage = 100.0` for a window with **zero observations**; the page would have advertised "100%" for a dependency nobody had measured |
 | Huge empty bands, marketing rhythm | Read as a landing page about monitoring, not as a measurement record |
@@ -75,8 +75,8 @@ what makes 3,000+ words of measurement navigable.
 
 | | Section | What it answers |
 | --- | --- | --- |
-| — | **Masthead** | What is observed (name at up to 11.5rem), what state it is in, when it was last observed (to the second, UTC), the last hour of observations, and the identity strip: category, endpoint host, regions, "measured by RELIASTRA probes" |
-| — | **Summary** | Two crawlable paragraphs composed entirely from the record: what it is, from where, how often, 24h and 30d availability, incident count |
+| - | **Masthead** | What is observed (name at up to 11.5rem), what state it is in, when it was last observed (to the second, UTC), the last hour of observations, and the identity strip: category, endpoint host, regions, "measured by RELIASTRA probes" |
+| - | **Summary** | Two crawlable paragraphs composed entirely from the record: what it is, from where, how often, 24h and 30d availability, incident count |
 | 01 | Current observation | One row per region: latency, status code, result, observed-at. Individual measurements, not averages |
 | 02 | Observed state and availability | The state word, how it was derived, and every window the API aggregates with its observation count |
 | 03 | Historical telemetry | The chart: latency trace, availability strip, incident bands, p95 threshold, hover + keyboard inspection, range and region switchers |
@@ -87,11 +87,11 @@ what makes 3,000+ words of measurement navigable.
 | 08 | Observation vs official vendor status | The distinction, stated where it matters |
 | 09 | Dependency information | Observed endpoint, protocol, host, path, regions, state, record identifier, record opened |
 | 10 | Related records | Other dependencies under observation, research, docs, glossary |
-| — | Conversion | "Create an independent record" — contextual, no hype |
+| - | Conversion | "Create an independent record" - contextual, no hype |
 
 `/track` is the same language at index scale: an aggregate strip (dependencies,
 categories, regions in use, most recent observation), the catalog with a **resolved
-state per dependency** (from `/vendors/{name}`, capped at 24 entries — beyond that a row
+state per dependency** (from `/vendors/{name}`, capped at 24 entries - beyond that a row
 is listed without a state rather than with a guessed one), a "how to read this index"
 specification, and the conversion band.
 
@@ -105,8 +105,8 @@ blinking neon dot.
 - The observation timestamp is **server-rendered**. Nothing important waits for JS.
 - After mount, a 1s tick advances a `T+MM:SS` counter and a 1px cadence hairline that
   fills against the interval at which observations have actually been arriving.
-- When the counter passes that interval, the component calls `router.refresh()` — only
-  while the tab is visible, at most once every 30s — so a new observation appears
+- When the counter passes that interval, the component calls `router.refresh()` - only
+  while the tab is visible, at most once every 30s - so a new observation appears
   without a reload. That is the entire motion budget of the page.
 - The last-hour pulse strip in the masthead is 60 real buckets, static SVG.
 
@@ -121,7 +121,7 @@ blinking neon dot.
   latency that was never observed.
 - Axes carry units (`ms`) and real UTC times; the p95 from `/metrics` is drawn as a
   labelled dashed threshold; incident windows are shaded with their published title.
-- The inspected value prints in a **fixed readout row above the plot** — no floating
+- The inspected value prints in a **fixed readout row above the plot** - no floating
   tooltip, no layout shift, and the row is populated (latest bucket) before you hover.
 - Two viewBoxes rather than one stretched one: uniform scaling would put 3px type on a
   375px phone.
@@ -148,14 +148,14 @@ The rules are enforced in `lib/observatory/format.ts` and covered by 23 unit tes
 | endpoint unreachable | `unreachable` (distinct from empty) |
 
 State derivation never defaults to healthy: the most recent failed observation wins,
-then the rolled-up `recent_status`, then `unknown` — an absence of observations is not
+then the rolled-up `recent_status`, then `unknown` - an absence of observations is not
 health. A fixture dependency (`newrelic`) that has never been observed exists purely to
 keep this path honest; the e2e suite asserts that page contains "insufficient data" and
 contains no availability figure at all.
 
 Three failure states are visually distinct: **no data** (nothing observed yet),
 **telemetry unavailable** (that endpoint failed, rest of the record intact),
-**observation unavailable** (the record itself could not be read — no figures, no chart
+**observation unavailable** (the record itself could not be read - no figures, no chart
 frame, a retry). A vendor that does not exist gets its own 404 page that says RELIASTRA
 publishes no record for it.
 
@@ -184,11 +184,11 @@ own copy. No account is required to reach any of it.
   `WebPage` + `BreadcrumbList` structured data on the record, `CollectionPage` on the
   index. Unknown vendors are `noindex`.
 - Server-rendered end to end; the only client components are the elapsed-time readout,
-  the chart cursor and the evidence form — all hydrating around content already in the
+  the chart cursor and the evidence form - all hydrating around content already in the
   HTML. No content sits behind a spinner.
 
 **Known platform limitation:** this Next version streams every dynamic route, so
-`notFound()` cannot rewrite the status line after the shell has flushed — `/track/{unknown}`
+`notFound()` cannot rewrite the status line after the shell has flushed - `/track/{unknown}`
 answers 200 with the 404 page and `noindex`. `/portal/[token]` and `/reports/[token]`
 already behave the same way. The e2e suite asserts the page content and the noindex,
 and accepts either status.
@@ -216,7 +216,7 @@ no failed same-origin requests, keyboard operation of the chart, and the SEO hea
 
 Two pre-existing defects were fixed on the way, because the suite could not otherwise
 be green: `/pricing` scrolled horizontally at 375/390 (a wide table's `min-width` leaks
-into the root scroll area in Chromium — fixed with `.ob-scroll-x { contain: paint }`),
+into the root scroll area in Chromium - fixed with `.ob-scroll-x { contain: paint }`),
 and the partner navigation overflowed at 1024 (its desktop lockup needs 1157px, so it
 now switches at `xl`). Three auth specs were colliding with Next's own
 `#__next-route-announcer__`, which is also `role="alert"`; they now target the
@@ -252,7 +252,7 @@ frontend/scripts/qa-crop.mjs         element-level screenshot harness
 `scripts/qa-backend.mjs` (never-observed vendor, evidence gate fixtures).
 
 **Touched outside scope**: `src/app/pricing/page.tsx`,
-`src/components/partner/public/partner-nav.tsx`, `e2e/public-redesign.spec.ts` — see §9.
+`src/components/partner/public/partner-nav.tsx`, `e2e/public-redesign.spec.ts` - see §9.
 
 ---
 

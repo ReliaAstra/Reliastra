@@ -307,7 +307,7 @@ function TemplateEditorDialog({
           </DialogTitle>
           <DialogDescription>
             Use <span className="font-mono text-xs">{`{{variable_name}}`}</span> placeholders for
-            values filled in at send time. Placeholders are substituted as plain text — they can
+            values filled in at send time. Placeholders are substituted as plain text - they can
             never execute code.
           </DialogDescription>
         </DialogHeader>

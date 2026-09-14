@@ -188,7 +188,7 @@ async def send_draft(
     if suppressed:
         raise ValueError(f"suppressed:{suppressed}")
 
-    # One send per domain per 30 days — no re-contact, ever.
+    # One send per domain per 30 days - no re-contact, ever.
     cutoff = _utcnow() - timedelta(days=RESEND_LOOKBACK_DAYS)
     recent = (
         await session.execute(
@@ -219,7 +219,7 @@ async def send_draft(
     if info is None or not info.verified:
         raise ValueError("sender-domain-not-verified")
 
-    text = draft.body_text + "\n\n—\nNo longer want these? Reply STOP and you will never hear from us again."
+    text = draft.body_text + "\n\n-\nNo longer want these? Reply STOP and you will never hear from us again."
     result = await resend_client.send_email(
         sender=from_email,
         to=[lead.contact_email],

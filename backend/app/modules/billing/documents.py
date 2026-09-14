@@ -1,14 +1,14 @@
 """Invoice and receipt HTML generated from persisted billing transactions.
 
-Documents are built from ``billing_transactions`` — the provider-reported
-charge recorded at payment time — never from today's price list. A later
+Documents are built from ``billing_transactions`` - the provider-reported
+charge recorded at payment time - never from today's price list. A later
 repricing cannot rewrite an invoice.
 
 Invoices and receipts are distinct:
 
-* Invoice — the bill for a subscription period (seller, buyer, line item,
+* Invoice - the bill for a subscription period (seller, buyer, line item,
   amounts, status).
-* Receipt — proof that a payment was collected (reference, paid-at, method,
+* Receipt - proof that a payment was collected (reference, paid-at, method,
   charged amount).
 
 Both are HTML so they can be viewed in the browser and downloaded without a
@@ -50,7 +50,7 @@ def receipt_number(tx: BillingTransaction) -> str:
 
 def _day(value: datetime | None) -> str:
     if not isinstance(value, datetime):
-        return "—"
+        return "-"
     return value.strftime("%d %b %Y")
 
 
@@ -187,7 +187,7 @@ def render_invoice(
     plan = get_plan_display_name(tx.plan)
     interval = (tx.billing_interval or "monthly").capitalize()
     charged = format_money(tx.charged_amount_minor, tx.charged_currency)
-    product = format_money(tx.product_amount_minor, tx.product_currency) or "—"
+    product = format_money(tx.product_amount_minor, tx.product_currency) or "-"
     status = _status_label(tx.status)
     period = ""
     if tx.period_start or tx.period_end:
@@ -242,7 +242,7 @@ def render_receipt(
     plan = get_plan_display_name(tx.plan)
     interval = (tx.billing_interval or "monthly").capitalize()
     charged = format_money(tx.charged_amount_minor, tx.charged_currency)
-    product = format_money(tx.product_amount_minor, tx.product_currency) or "—"
+    product = format_money(tx.product_amount_minor, tx.product_currency) or "-"
     status = _status_label(tx.status)
     method = ""
     meta = tx.provider_metadata if isinstance(tx.provider_metadata, dict) else {}

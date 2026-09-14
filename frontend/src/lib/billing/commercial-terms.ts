@@ -1,7 +1,7 @@
 /**
  * Customer-facing commercial copy used when the API payload is not yet loaded.
  * Live pages prefer the backend `/v1/billing/terms` payload. Do not invent a
- * money-back window here — RELIASTRA does not advertise one.
+ * money-back window here - RELIASTRA does not advertise one.
  */
 
 export const REFUND_POLICY_PATH = '/refund-policy';

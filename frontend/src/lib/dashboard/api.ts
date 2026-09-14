@@ -592,7 +592,7 @@ export const api = {
   /**
    * Open or download a persisted invoice/receipt. Auth headers ride on the
    * same session as every other billing call. The document is HTML generated
-   * from the stored transaction — never from today's price list.
+   * from the stored transaction - never from today's price list.
    */
   openBillingDocument: async (
     transactionId: string,

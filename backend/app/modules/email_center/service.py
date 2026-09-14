@@ -784,7 +784,7 @@ _KORA_HTML = """<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe 
 
 _SEED_TEMPLATES: tuple[dict, ...] = (
     {
-        "name": "Kora — USD International Payments Request",
+        "name": "Kora - USD International Payments Request",
         "description": "Outreach to Kora support requesting USD virtual account and international payment collection.",
         "subject": "Request for USD Virtual Account and International Payment Collection",
         "text_body": _KORA_TEXT,
@@ -798,7 +798,7 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
             "Hello {{customer_name}},\n\nWelcome to Reliastra. Your workspace for "
             "{{company_name}} is ready, and you can connect your first dependency "
             "from the dashboard.\n\nIf you need anything, reply to this email and "
-            "our team will help.\n\n— The Reliastra Team"
+            "our team will help.\n\n- The Reliastra Team"
         ),
         "html_body": (
             '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
@@ -807,18 +807,18 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
             "<p>Welcome to <strong>Reliastra</strong>. Your workspace for {{company_name}} is ready, "
             "and you can connect your first dependency from the dashboard.</p>"
             "<p>If you need anything, reply to this email and our team will help.</p>"
-            "<p>&mdash; The Reliastra Team</p></div>"
+            "<p>- The Reliastra Team</p></div>"
         ),
     },
     {
         "name": "Billing Notification",
         "description": "Notify a customer about an invoice or billing event.",
-        "subject": "Billing update for {{company_name}} — {{invoice_id}}",
+        "subject": "Billing update for {{company_name}} - {{invoice_id}}",
         "text_body": (
             "Hello {{customer_name}},\n\nThis is a billing notification regarding "
             "invoice {{invoice_id}} for {{company_name}}.\n\nAmount due: {{amount_due}}\n"
             "Due date: {{due_date}}\n\nYou can review and pay from your Reliastra "
-            "billing page. Reply to this email with any questions.\n\n— Reliastra Billing"
+            "billing page. Reply to this email with any questions.\n\n- Reliastra Billing"
         ),
         "html_body": (
             '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
@@ -830,7 +830,7 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
             "<strong>Due date:</strong> {{due_date}}</p>"
             "<p>You can review and pay from your Reliastra billing page. "
             "Reply to this email with any questions.</p>"
-            "<p>&mdash; Reliastra Billing</p></div>"
+            "<p>- Reliastra Billing</p></div>"
         ),
     },
     {
@@ -839,7 +839,7 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
         "subject": "[Reliastra] {{alert_title}}",
         "text_body": (
             "Reliastra system alert\n\n{{alert_title}}\n\n{{alert_details}}\n\n"
-            "Detected at: {{detected_at}}\n\n— Reliastra Operations"
+            "Detected at: {{detected_at}}\n\n- Reliastra Operations"
         ),
         "html_body": (
             '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
@@ -848,7 +848,7 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
             "<p><strong>{{alert_title}}</strong></p>"
             "<p>{{alert_details}}</p>"
             "<p>Detected at: {{detected_at}}</p>"
-            "<p>&mdash; Reliastra Operations</p></div>"
+            "<p>- Reliastra Operations</p></div>"
         ),
     },
     {
@@ -860,7 +860,7 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
             "with Reliastra. Our partners earn recurring revenue by bringing "
             "reliability intelligence to their customers.\n\nYou can start here: "
             "https://reliastra.com/partners\n\nHappy to walk you through the program "
-            "on a short call.\n\n— {{admin_name}}\nReliastra Partnerships"
+            "on a short call.\n\n- {{admin_name}}\nReliastra Partnerships"
         ),
         "html_body": (
             '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
@@ -872,7 +872,7 @@ _SEED_TEMPLATES: tuple[dict, ...] = (
             '<p>You can start here: <a href="https://reliastra.com/partners">'
             "https://reliastra.com/partners</a></p>"
             "<p>Happy to walk you through the program on a short call.</p>"
-            "<p>&mdash; {{admin_name}}<br>Reliastra Partnerships</p></div>"
+            "<p>- {{admin_name}}<br>Reliastra Partnerships</p></div>"
         ),
     },
 )
