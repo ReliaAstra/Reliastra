@@ -96,7 +96,7 @@ can add cases without renumbering rows that may already be cited elsewhere.
 ## 4 · Authorship
 
 `RESEARCH_AUTHORS` was deliberately empty; this change set adds the first
-declared author, **Adeshina Emmanuel** (`adeshina-emmanuel`), and sets `author`
+declared author, **Adesina Emmanuel** (`adesina-emmanuel`), and sets `author`
 on this paper only. The byline, the `Person` JSON-LD node, the author block and
 the citation string all follow from that one record.
 

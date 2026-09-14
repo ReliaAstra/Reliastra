@@ -27,7 +27,7 @@ export const PAPER_OG_IMAGES: Record<string, { path: string; alt: string }> = {
       'RELIASTRA Research card for "AWS IAM policy evaluation logic: identity vs resource". ' +
       'The seven stages of the documented single-account procedure, each labelled with its ' +
       'algebraic role - one short-circuit, four ceilings, two grants - with the byline ' +
-      'Adeshina Emmanuel, AI Infrastructure Security Engineer.',
+      'Adesina Emmanuel, AI Infrastructure Security Engineer.',
   },
 };
 
