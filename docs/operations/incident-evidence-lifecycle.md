@@ -102,16 +102,44 @@ incident, not a success with a broken download link.
 raises if it is gone: "the artifact is missing, regenerate it" is a better
 answer than a link that 404s.
 
-### Two hashes, two meanings
+### Two hashes, one signature, and what each of them proves
 
-| Field | Covers |
-| --- | --- |
-| `data_hash` | the canonical evidence payload - the facts |
-| `report_checksum` | the rendered PDF bytes - the document |
+| Field | Covers | What it proves |
+| --- | --- | --- |
+| `data_hash` | the canonical evidence payload - the facts | the payload is internally consistent |
+| `report_checksum` | the rendered PDF bytes - the document | this file is the one that was issued |
+| `signature` | `data_hash`'s bytes, Ed25519 | a RELIASTRA key produced that payload |
 
-The PDF cannot contain its own checksum, so the document points at the JSON
-sidecar and the public verification endpoint for it. Both values are stored on
-the snapshot row and returned by `/v1/verify/{verification_id}`.
+A hash proves nothing about authorship: anyone can hash their own fabricated
+facts and the footer will agree with them. So the payload bytes are signed
+(`app/modules/evidence/signing.py`) and the public half is published at
+`GET /v1/verify/keys` - independently of the document it signs, which is the
+only arrangement under which a third party can check anything.
+
+`EVIDENCE_SIGNING_PRIVATE_KEY` is optional, and an unsigned deployment is a
+supported state rather than a broken one: `sign_payload` returns `None`, the
+document prints **Unsigned** in section 11, and the verification record returns
+`"signed": false`. The artifact may never claim a signature it does not carry,
+which is why the absence is printed instead of the row being omitted.
+
+```bash
+# base64url of a 32-byte seed; or put a PEM key at EVIDENCE_SIGNING_PRIVATE_KEY_FILE
+python -c "from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey as K; \
+import base64; print(base64.urlsafe_b64encode(K.generate().private_bytes_raw()).decode())"
+```
+
+Set `EVIDENCE_KEY_ID` *before* a rotation, not after: it is the identifier quoted
+in documents already in circulation, and deriving it from the key means a
+rotation silently mints a new one.
+
+The PDF cannot contain its own checksum, nor a statement about which renderer
+produced it that is knowable only afterwards. So both live beside the document -
+in the JSON sidecar, on the report row (`renderer`, `renderer_version`) and at
+`/v1/verify/{verification_id}` - and section 11 says where to find them. When the
+fallback renderer is what actually ran, the document is rendered a second time so
+that fact is printed on the page: a degraded artifact should be visible in the
+artifact. The image build also fails if Chromium cannot launch, so the fallback
+is now a deliberate choice rather than a silent accident.
 
 ### Recovery from a lost publish
 
@@ -143,6 +171,40 @@ an empty axis.
 The rolling 24-hour figure is still computed and still shown, labelled as
 context, in its own section, with a note that it covers a different window.
 
+### How it is worded
+
+Presentation is a separate concern from measurement, and it is now a separate
+module: `app/modules/evidence/design.py` owns every label, every precision and
+every derived sentence in the document.
+
+- **No raw storage tokens.** `vendor_failure` prints as "Vendor failure",
+  `dep_01J8…` prints as the dependency's name (resolved in one batched query),
+  and an unmapped token is title-cased rather than printed verbatim or invented.
+  The one exception is the `Rule Identifier` row, where the raw rule key is a
+  citation the reader can grep in our source.
+- **No float artefacts.** `0.73 * 100` is `73.00000000000001`. Every numeric
+  goes through one formatter with an explicit precision; availability keeps four
+  decimals because that is what was measured, and an unavailable figure renders
+  as an em dash, never as `0` and never as blank.
+- **A finding before the data.** Section 0 is a derived block - four figures and
+  up to five sentences - and every statement in it restates a number printed
+  below it. It contains no recommendation, no liability language, and no fact the
+  record does not carry.
+- **Addressable.** A report reference a human can say aloud
+  (`RA-20260911-OPENAIAPI-188B0`, deterministic from the incident), an addressee,
+  a retention end date, and the verification URL as both text and QR. Before
+  this, the artifact printed a verification id and no address: the one claim
+  anyone could check was not checkable without reading our API docs.
+- **`StrictUndefined`.** A typo in the template fails the generation attempt
+  instead of printing an empty cell in a document meant to be quoted in a
+  dispute.
+
+The appendix (section 10) reproduces up to 60 checks - first 40 and last 20 when
+the window is longer, because the first failure and the recovery are the rows a
+reader looks for - and states what was withheld. The truncation notice and the
+appendix are generated together, so the document cannot promise rows it does not
+show.
+
 ## Tests
 
 | Concern | Test |
@@ -155,3 +217,7 @@ context, in its own section, with a note that it covers a different window.
 | full lifecycle against Postgres | `backend/tests/integration/test_evidence_lifecycle.py` |
 | no fabricated claims in the artifact | `frontend/src/lib/__tests__/product-contract.test.ts` |
 | console evidence states | `frontend/src/lib/__tests__/evidence-state.test.ts` |
+| labels, precision, references, derived findings | `backend/tests/unit/test_evidence_design.py` |
+| sign / verify / unsigned degradation / key id | `backend/tests/unit/test_evidence_signing.py` |
+| the rendered document, including its limits | `backend/tests/unit/test_evidence_document.py` |
+| the public verification record | `backend/tests/unit/test_verification_public_record.py` |

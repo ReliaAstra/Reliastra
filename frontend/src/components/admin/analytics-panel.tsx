@@ -1,13 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   ArrowRight,
   CreditCard,
+  EyeOff,
   Globe2,
   Mail,
+  ShieldCheck,
   ShoppingCart,
   UserPlus,
 } from 'lucide-react';
@@ -22,7 +24,13 @@ import {
 } from 'recharts';
 import { useTheme } from 'next-themes';
 import { adminApi } from '@/lib/admin-api';
-import type { AbandonedCheckoutLead, AnalyticsSeriesPoint, CountrySlice } from '@/types/admin';
+import { isAnalyticsOptedOut, setAnalyticsOptOut } from '@/lib/analytics-scope';
+import type {
+  AbandonedCheckoutLead,
+  AnalyticsExclusions,
+  AnalyticsSeriesPoint,
+  CountrySlice,
+} from '@/types/admin';
 import {
   AdminCard,
   SectionFailure,
@@ -317,6 +325,134 @@ function AbandonedTable({ leads }: { leads: AbandonedCheckoutLead[] }) {
   );
 }
 
+// ── Self-exclusion ──────────────────────────────────────────────────────────
+
+const EXCLUSION_REASON_LABELS: Record<string, string> = {
+  'excluded-network': 'Configured IP / CIDR',
+  'opt-out': 'Opted-out browser',
+  'internal-path': 'Internal surface',
+  'internal-ip': 'Local or private address',
+};
+
+/**
+ * The honesty panel for the pageview counter.
+ *
+ * "Your own visits are not in these numbers" is a claim an operator can only
+ * verify if the counter that dropped them is visible next to the counter that
+ * kept them. This block renders the drops, the effective filters, and the
+ * browser-level toggle - the three things needed to trust the KPIs above it.
+ */
+function SelfExclusionCard({ exclusions }: { exclusions?: AnalyticsExclusions }) {
+  const [optedOut, setOptedOut] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setOptedOut(isAnalyticsOptedOut());
+  }, []);
+
+  const toggle = () => {
+    const next = !(optedOut ?? false);
+    setAnalyticsOptOut(next);
+    setOptedOut(next);
+  };
+
+  const reasons = exclusions
+    ? Object.entries(exclusions.reasons ?? {}).sort((a, b) => b[1] - a[1])
+    : [];
+
+  return (
+    <div className="rounded-xl border border-slate-200/70 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-white/[0.02] sm:p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-white">
+            <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
+            Internal traffic excluded from these numbers
+          </p>
+          <p className="mt-1 max-w-[70ch] text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+            Signed-in admin sessions and internal surfaces never reach the counter. For anything
+            else - your laptop at home, an office egress IP, a staging box - set
+            <code className="mx-1 rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px] text-slate-700 dark:bg-white/10 dark:text-slate-200">
+              ANALYTICS_EXCLUDE_NETWORKS
+            </code>
+            on the API, or exclude this browser below.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+            optedOut
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-200'
+          )}
+        >
+          <EyeOff size={13} />
+          {optedOut === null
+            ? 'Checking this browser…'
+            : optedOut
+              ? 'This browser is excluded'
+              : 'Exclude this browser'}
+        </button>
+      </div>
+
+      {exclusions ? (
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-slate-200/70 pt-4 text-xs dark:border-white/10 sm:grid-cols-4">
+          <div>
+            <dt className="uppercase tracking-wide text-slate-400">Pageviews dropped today</dt>
+            <dd className="mt-0.5 font-mono text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">
+              {exclusions.pageviews_excluded_today.toLocaleString()}
+            </dd>
+          </div>
+          <div>
+            <dt className="uppercase tracking-wide text-slate-400">Dropped, all time</dt>
+            <dd className="mt-0.5 font-mono text-sm font-bold tabular-nums text-slate-800 dark:text-slate-100">
+              {exclusions.pageviews_excluded_total.toLocaleString()}
+            </dd>
+          </div>
+          <div>
+            <dt className="uppercase tracking-wide text-slate-400">Excluded networks</dt>
+            <dd className="mt-0.5 truncate font-mono text-sm text-slate-800 dark:text-slate-100">
+              {exclusions.excluded_networks.length
+                ? exclusions.excluded_networks.join(', ')
+                : 'none set'}
+            </dd>
+          </div>
+          <div>
+            <dt className="uppercase tracking-wide text-slate-400">Local-address filter</dt>
+            <dd className="mt-0.5 font-mono text-sm text-slate-800 dark:text-slate-100">
+              {exclusions.internal_ip_filter ? 'on' : 'off'}
+            </dd>
+          </div>
+        </dl>
+      ) : (
+        <p className="mt-3 text-xs text-slate-500">
+          The API did not report its exclusion state, so these pageviews should be read as raw
+          counts. Deploy a backend that returns them to verify the filter is live.
+        </p>
+      )}
+
+      {exclusions?.excluded_networks_invalid.length ? (
+        <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+          Ignored as invalid: {exclusions.excluded_networks_invalid.join(', ')}
+        </p>
+      ) : null}
+
+      {reasons.length ? (
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+          {reasons.map(([reason, count]) => (
+            <li key={reason} className="font-mono">
+              {EXCLUSION_REASON_LABELS[reason] ?? reason}
+              <span className="ml-1.5 font-sans text-slate-400">
+                {count.toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 // ── Panel root ───────────────────────────────────────────────────────────────
 
 export function AdminAnalyticsPanel() {
@@ -377,6 +513,9 @@ export function AdminAnalyticsPanel() {
               );
             })}
           </div>
+
+          {/* Self-exclusion: why these numbers are not the team's own traffic */}
+          <SelfExclusionCard exclusions={query.data.exclusions} />
 
           {/* Chart + funnel */}
           <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">

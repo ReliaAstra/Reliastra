@@ -292,6 +292,83 @@ class Settings(BaseSettings):
                     "when present, and a free ipapi.co fallback is used "
                     "without a token (rate-limited). Results cached 7 days.",
     )
+    # ── Visitor analytics: internal-traffic exclusions ─────────────────────
+    # The admin traffic panel measures *acquisition*. Anything that is not an
+    # acquiring visitor - the founder's own machine, staff browsers, staging
+    # boxes, local development, health checks - has to be dropped at the point
+    # of recording, or every number downstream (pageviews, UV, country mix,
+    # signup conversion) is inflated by the people building the product.
+    ANALYTICS_EXCLUDE_NETWORKS: str = Field(
+        default="",
+        description="Comma-separated IPs or CIDRs whose visits are never "
+                    "counted in traffic analytics (pageviews, unique "
+                    "visitors, country attribution) - "
+                    "\"203.0.113.24, 198.51.100.0/28\". Matched against the "
+                    "resolved client IP (X-Forwarded-For aware). Invalid "
+                    "entries are skipped with a log line, never fatal.",
+    )
+    ANALYTICS_EXCLUDE_INTERNAL_IPS: bool = Field(
+        default=True,
+        description="Drop visits whose client IP is loopback, private "
+                    "(RFC1918), link-local or CGNAT, so local development "
+                    "and in-cluster checks never reach an:pv:* counters. "
+                    "Applied only when the request arrived without an "
+                    "X-Forwarded-For header: behind a load balancer the "
+                    "socket peer is the proxy, and treating that as an "
+                    "internal visitor would silently zero production "
+                    "analytics.",
+    )
+    ANALYTICS_EXCLUDE_PATH_PREFIXES: str = Field(
+        default="/admin",
+        description="Comma-separated path prefixes that never count as a "
+                    "pageview even when a beacon reports them. Internal "
+                    "surfaces are product usage, not acquisition traffic.",
+    )
+    ANALYTICS_OPT_OUT_COOKIE: str = Field(
+        default="reliastra_analytics_optout",
+        description="First-party cookie the frontend sets when an operator "
+                    "chooses 'Exclude this browser'. Values 1/true/yes/on "
+                    "opt that browser out of pageview + unique-visitor "
+                    "counting regardless of IP - the filter that survives a "
+                    "residential IP changing or a VPN.",
+    )
+    # ── Evidence artifacts ────────────────────────────────────────────────
+    SITE_URL: str = Field(
+        default="https://reliastra.com",
+        description="Public origin of the web app. Printed into evidence "
+                    "reports so a recipient can open the verification page "
+                    "from the document itself.",
+    )
+    EVIDENCE_VERIFICATION_BASE_URL: str = Field(
+        default="",
+        description="Optional override for the base URL printed in evidence "
+                    "reports (e.g. a staging domain or a white-label host). "
+                    "Empty falls back to SITE_URL.",
+    )
+    EVIDENCE_SIGNING_PRIVATE_KEY: str = Field(
+        default="",
+        description="Ed25519 private key used to sign the canonical evidence "
+                    "payload, so a report is authenticable by a third party "
+                    "instead of merely internally consistent. Accepts a "
+                    "PEM block or a base64/hex-encoded 32-byte seed. When "
+                    "unset, artifacts are generated UNSIGNED and say so on "
+                    "the document - the report never claims a signature that "
+                    "does not exist.",
+    )
+    EVIDENCE_SIGNING_PRIVATE_KEY_FILE: str = Field(
+        default="",
+        description="Path to a file holding the signing key, preferred by "
+                    "deployments that mount secrets. Ignored when "
+                    "EVIDENCE_SIGNING_PRIVATE_KEY is set.",
+    )
+    EVIDENCE_KEY_ID: str = Field(
+        default="",
+        description="Stable identifier for the signing key, published with the "
+                    "public key. Defaults to the first 16 hex characters of "
+                    "the SHA-256 of the public key when unset; set it "
+                    "explicitly before a key rotation so citations survive.",
+    )
+
     SMTP_USE_TLS: bool = Field(
         default=False,
         description="Whether to negotiate SMTP TLS when supported",

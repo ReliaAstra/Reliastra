@@ -5,6 +5,8 @@ import Script from 'next/script';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 
+import { isAnalyticsOptedOut } from '@/lib/analytics-scope';
+
 type PreferredSourceButtonProps = {
   lang?: string;
   className?: string;
@@ -103,6 +105,9 @@ export function PreferredSourceSection({ variant = 'generic', lang, className }:
         entries.forEach((e) => {
           if (e.isIntersecting && !fired) {
             fired = true;
+            // Same exclusion as the page beacon: an operator watching their own
+            // CTA is not a signal about the CTA.
+            if (isAnalyticsOptedOut()) return;
             try {
               // Reuse existing beacon endpoint with distinct path for measurement
               const blob = new Blob([], { type: 'application/json' });

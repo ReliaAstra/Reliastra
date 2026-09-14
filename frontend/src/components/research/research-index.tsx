@@ -125,8 +125,8 @@ export function ResearchIndex({ entries }: { entries: ResearchIndexEntry[] }) {
             <h2 className="ob-label">Browse the corpus</h2>
             <p className="font-mono text-[11px] text-[var(--ob-text-4)]">
               {activeCount === 0
-                ? `${entries.length} papers`
-                : `${visible.length} of ${entries.length} papers`}
+                ? `${entries.length} published entries`
+                : `${visible.length} of ${entries.length} entries`}
               {activeCount > 0 && (
                 <button
                   type="button"

@@ -208,7 +208,16 @@ async def test_observation_attribution_snapshot_and_verification(
     mocker.patch.object(
         evidence_service,
         "_html_to_pdf",
-        new=AsyncMock(return_value=b"immutable-pdf"),
+        new=AsyncMock(
+            return_value=(
+                b"immutable-pdf",
+                {
+                    "renderer": "chromium (playwright)",
+                    "renderer_version": "test",
+                    "pagination": "running footer with page numbers",
+                },
+            )
+        ),
     )
     # Storage is the in-memory bucket from the ``evidence_storage`` fixture.
     # It reports back the bytes it was given, which is what lets the service

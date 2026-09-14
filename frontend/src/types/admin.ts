@@ -735,6 +735,12 @@ export interface AnalyticsSeriesPoint {
   date: string;
   visitors: number;
   pageviews: number;
+  /**
+   * Page views the beacon reported but the counter refused to add: own
+   * traffic, internal surfaces, opted-out browsers. Kept beside the counted
+   * number so "we are not inflating this" is checkable rather than claimed.
+   */
+  pageviews_excluded: number;
   signups: number;
   checkouts_started: number;
   checkouts_converted: number;
@@ -778,6 +784,23 @@ export interface AdminAnalyticsOverview {
   };
   countries_top: CountrySlice[];
   series: AnalyticsSeriesPoint[];
+  /**
+   * Effective internal-traffic filters plus the counters proving they run.
+   * Optional because an API older than the filter returns no such block; the
+   * panel then says the counter is raw instead of guessing.
+   */
+  exclusions?: AnalyticsExclusions;
+}
+
+export interface AnalyticsExclusions {
+  pageviews_excluded_today: number;
+  pageviews_excluded_total: number;
+  reasons: Record<string, number>;
+  opt_out_cookie: string;
+  excluded_networks: string[];
+  excluded_networks_invalid: string[];
+  excluded_path_prefixes: string[];
+  internal_ip_filter: boolean;
 }
 
 /* ── Email Center ─────────────────────────────────────────────────────── */

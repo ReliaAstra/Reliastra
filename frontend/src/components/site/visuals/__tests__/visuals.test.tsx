@@ -15,6 +15,7 @@ import {
   DETECTION_FAILURE_CHECKS,
   OBSERVATION_POINT_COUNT,
   OBSERVATION_POINT_LABEL,
+  EVIDENCE_EXPIRY_DAYS,
   EVIDENCE_REPORT_FIELDS,
   QUORUM_MIN_REGIONS,
   QUORUM_WINDOW_SECONDS,
@@ -42,32 +43,54 @@ const html = {
   chart: renderToStaticMarkup(<LatencyChart />),
 };
 
+/**
+ * The sections the landing panel reproduces. The rule this encodes is stricter
+ * than the previous one: the panel must show *every* field of the sections it
+ * shows, and must not claim a section it does not render. Skipping fields by
+ * name (the old approach) let a field be dropped from the panel silently, which
+ * is how a mock stops being a preview and starts being a fiction.
+ */
+const ARTIFACT_SECTIONS_SHOWN = [
+  'Incident Record',
+  'Incident Window Measurements',
+  'SLA Impact Calculation',
+  'Deterministic Attribution',
+] as const;
+
 describe('evidence artifact', () => {
-  it('renders the real report section headings', () => {
-    for (const section of [
-      'Incident Metadata',
-      'SLA Impact Calculation',
-      'Deterministic Attribution',
-    ]) {
+  it('renders section headings that exist in the generated report', () => {
+    for (const section of ARTIFACT_SECTIONS_SHOWN) {
       expect(html.artifact).toContain(section);
     }
   });
 
-  it('renders the real field labels, not invented ones', () => {
-    for (const fields of Object.values(EVIDENCE_REPORT_FIELDS)) {
+  it('renders every field of the sections it shows', () => {
+    for (const [section, fields] of Object.entries(EVIDENCE_REPORT_FIELDS)) {
+      if (!(ARTIFACT_SECTIONS_SHOWN as readonly string[]).includes(section)) continue;
       for (const field of fields) {
-        // The correlated-failures table is a table in the artifact and is not
-        // reproduced in this summary panel.
-        if (
-          field === 'Correlated Dependency ID' ||
-          field === 'Correlation Method' ||
-          field === 'Time Window'
-        ) {
-          continue;
-        }
         expect(html.artifact).toContain(field);
       }
     }
+  });
+
+  it('shows the document as an addressed record, not a log export', () => {
+    // The four things that make the artifact a report rather than a dump: an
+    // addressee, a citable reference, the finding before the tables, and an
+    // address anyone can check. Formatting is part of the claim: enum tokens
+    // appear as labels.
+    expect(html.artifact).toContain('Prepared for Northwind Commerce Ltd');
+    expect(html.artifact).toMatch(/RA-\d{8}-[A-Z]+-[0-9A-F]{5}/);
+    expect(html.artifact).toContain('What the record shows');
+    expect(html.artifact).toContain('Measured availability');
+    expect(html.artifact).toContain('https://reliastra.com/reports/');
+    expect(html.artifact).toContain('Signed · Ed25519');
+    expect(html.artifact).toContain('Vendor failure');
+    expect(html.artifact).not.toContain('vendor_failure');
+    expect(html.artifact).not.toContain('MAJOR');
+  });
+
+  it('prints the retention limit instead of implying permanence', () => {
+    expect(html.artifact).toContain(`Retained for ${EVIDENCE_EXPIRY_DAYS} days`);
   });
 
   it('emits no headings, so it cannot break a host page outline', () => {
@@ -93,9 +116,14 @@ describe('evidence artifact', () => {
     const downtimeSeconds = Math.round((windowSeconds * impactPct) / 100);
     expect(downtimeSeconds).toBe(354);
 
+    expect(availability.toFixed(4)).toBe('83.3333');
+    expect(downtimeSeconds).toBe(354);
+    // The panel prints the figures the way the document prints them: the
+    // percentage to four decimals, the downtime as a duration in words with the
+    // seconds beside it.
     expect(html.artifact).toContain('83.3333%');
     expect(html.artifact).toContain('16.6667%');
-    expect(html.artifact).toContain('354s of 2125s');
+    expect(html.artifact).toContain('5 min 54 s (354.17 s');
     // No rolling 24-hour figure is presented as the incident measurement.
     expect(html.artifact).not.toContain('Measured 24h Uptime');
   });

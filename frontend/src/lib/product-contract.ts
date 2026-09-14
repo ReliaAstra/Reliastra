@@ -186,14 +186,47 @@ export const CORRELATION_WINDOW_SECONDS = 300;
  * claims to show the report must show these, not invented ones.
  */
 export const EVIDENCE_REPORT_SECTIONS = [
-  'Incident Metadata',
+  'Incident Record',
   'Detection Record',
   'Incident Window Measurements',
   'SLA Impact Calculation',
   'Observed Latency And Failures',
   'Rolling 24-Hour Health (Context)',
-  'Correlated Vendor Failures',
+  'Correlated Dependency Events',
   'Deterministic Attribution',
+  'Documented Observations',
+  'Authenticity, Retention and Verification',
+] as const;
+
+/**
+ * The finding block that opens the artifact: the four figures a reader is
+ * looking for, stated before the sections that substantiate them. A visual that
+ * shows the document without them is showing an export, not a report.
+ */
+export const EVIDENCE_FIGURES = [
+  'Incident window',
+  'Measured availability',
+  'Measured downtime',
+  'Attribution',
+] as const;
+
+/**
+ * Where a recipient of the document is sent. The artifact prints
+ * `<SITE_URL>/reports/<verification id>` as a link and a QR; the page lives at
+ * this route. Kept here because a printed URL cannot be fixed after the fact -
+ * a rename that does not move this constant breaks every document already in a
+ * customer's hands.
+ */
+export const EVIDENCE_REPORT_PATH = '/reports';
+
+/** Rows of the appendix table reproduced inside the PDF. */
+export const EVIDENCE_OBSERVATION_COLUMNS = [
+  'Executed At (UTC)',
+  'Observation Point',
+  'Result',
+  'Latency',
+  'Status',
+  'Detail',
 ] as const;
 
 /**
@@ -201,9 +234,10 @@ export const EVIDENCE_REPORT_SECTIONS = [
  * cannot silently merge or rename fields.
  */
 export const EVIDENCE_REPORT_FIELDS = {
-  'Incident Metadata': [
+  'Incident Record': [
+    'Report Reference',
     'Incident ID',
-    'Organization ID',
+    'Organization',
     'Monitored Dependency',
     'Severity / Status',
     'Started At (UTC)',
@@ -230,16 +264,31 @@ export const EVIDENCE_REPORT_FIELDS = {
     'Allowance Exceeded',
     'Calculation Basis',
   ],
-  'Correlated Vendor Failures': [
-    'Correlated Dependency ID',
+  'Correlated Dependency Events': [
+    // The name, not the id. A reader who cannot name the second dependency
+    // cannot use the correlation, and an opaque `dep_01J8…` in a document of
+    // record reads like a log export.
+    'Correlated Dependency',
     'Correlation Method',
     'Time Window',
-    'Confidence Score',
+    'Confidence',
   ],
   'Deterministic Attribution': [
     'Classification',
     'Confidence Score',
     'Methodology',
+  ],
+  'Rolling 24-Hour Health (Context)': [
+    'Rolling 24h Availability',
+    'Rolling 24h Average Latency',
+    'Rolling 24h Checks',
+  ],
+  'Documented Observations': [...EVIDENCE_OBSERVATION_COLUMNS],
+  'Authenticity, Retention and Verification': [
+    'Verify this record',
+    'Signature',
+    'Retention',
+    'Rendered By',
   ],
 } as const;
 
@@ -264,7 +313,12 @@ export const EVIDENCE_FORBIDDEN_CLAIMS = [
   'independent regional',
 ] as const;
 
-/** Footer fields of the artifact. */
+/**
+ * The authenticity block. `Document Checksum` is listed because the artifact
+ * must state where the checksum lives: a PDF cannot contain the checksum of
+ * itself, and the previous template printed the label with a value that could
+ * not have been there.
+ */
 export const EVIDENCE_FOOTER_FIELDS = [
   'Evidence Data Hash (SHA-256)',
   'Document Checksum',

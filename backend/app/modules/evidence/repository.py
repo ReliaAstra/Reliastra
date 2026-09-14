@@ -18,6 +18,8 @@ class EvidenceRepository:
         file_size_bytes: int,
         checksum: str,
         expires_at: datetime | None = None,
+        renderer: str | None = None,
+        renderer_version: str | None = None,
     ) -> EvidenceReport:
         report = EvidenceReport(
             org_id=org_id,
@@ -27,6 +29,8 @@ class EvidenceRepository:
             checksum=checksum,
             generated_at=datetime.now(timezone.utc),
             expires_at=expires_at,
+            renderer=renderer,
+            renderer_version=renderer_version,
         )
         session.add(report)
         await session.flush()

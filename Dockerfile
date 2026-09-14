@@ -108,8 +108,23 @@ ENV NODE_ENV=production \
     # API; override RELIASTRA_API_URL for split deployments.
     RELIASTRA_API_URL=http://127.0.0.1:8000
 
-# Playwright Chromium for evidence-generation tasks (best effort)
-RUN playwright install --with-deps chromium 2>/dev/null || true
+# Playwright Chromium renders the evidence PDFs. NOT best effort, and the fonts
+# are installed explicitly rather than inherited from --with-deps: the document
+# lays out tabular figures, and a container that resolves Arial to something with
+# different metrics paginates differently from one that does not. A build that
+# cannot produce the artifact renderer now fails here instead of shipping an
+# image that silently degrades every report to xhtml2pdf.
+RUN playwright install --with-deps chromium \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends fonts-liberation fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+# The browser that renders evidence must launch, or the image is not shippable:
+# a missing shared library fails silently at generation time, in a worker, hours
+# after deploy. This fails loudly at build time, and records the version in the
+# build log so a deployment can be matched to the renderer its artifacts name.
+RUN python -c "from playwright.sync_api import sync_playwright; \
+p = sync_playwright().start(); b = p.chromium.launch(headless=True); \
+print('evidence renderer:', b.version); b.close(); p.stop()"
 
 RUN mkdir -p /app/templates /app/web/.next /var/log/supervisor /var/log/redis && \
     chown -R reliastra:reliastra /app && \

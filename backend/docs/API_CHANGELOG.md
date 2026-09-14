@@ -420,3 +420,148 @@ machine-readable spec is unchanged:
 | `GET /docs` (Swagger UI) | `GET /api-docs` |
 | `GET /redoc` (ReDoc) | `GET /api-redoc` |
 | `GET /openapi.json` | `GET /openapi.json` (unchanged) |
+
+## Traffic analytics: internal traffic is no longer counted
+
+`POST /v1/public/analytics/visit` still returns `204` and still accepts the
+same `path` query parameter, but it now refuses to record visits that are not
+acquisition traffic. Nothing a client sends can opt *in* to being counted.
+
+Dropped before anything is written, in precedence order:
+
+| Reason | Rule | Configuration |
+| --- | --- | --- |
+| `excluded-network` | Client IP matches an IP/CIDR in the exclusion list | `ANALYTICS_EXCLUDE_NETWORKS` |
+| `opt-out` | `reliastra_analytics_optout=1` cookie, or `X-Reliastra-Analytics-Opt-Out: 1` | `ANALYTICS_OPT_OUT_COOKIE` |
+| `internal-path` | Reported `path` starts with an internal prefix (`/admin`) | `ANALYTICS_EXCLUDE_PATH_PREFIXES` |
+| `internal-ip` | Client address is loopback / private / link-local / CGNAT, and no `X-Forwarded-For` was present | `ANALYTICS_EXCLUDE_INTERNAL_IPS` |
+
+The response carries `X-Reliastra-Analytics: counted` or
+`excluded:<reason>` so an operator can verify the filter in devtools. Drops are
+counted separately (`an:pv:excluded:*`) and never in `an:pv:*`.
+
+`GET /v1/admin/analytics/overview` adds one object and one series field:
+
+```json
+{
+  "exclusions": {
+    "pageviews_excluded_today": 12,
+    "pageviews_excluded_total": 341,
+    "reasons": { "internal-path": 300, "opt-out": 41 },
+    "opt_out_cookie": "reliastra_analytics_optout",
+    "excluded_networks": ["203.0.113.24"],
+    "excluded_networks_invalid": [],
+    "excluded_path_prefixes": ["/admin"],
+    "internal_ip_filter": true
+  },
+  "series": [{ "date": "2026-09-13", "pageviews": 40, "pageviews_excluded": 3 }]
+}
+```
+
+Both are additive: an older frontend ignores them. Historic counters are *not*
+rewritten - pageviews recorded before this change include the team's own
+traffic, and the `exclusions` block is what tells you from which day the
+numbers become comparable.
+
+## Evidence artifacts: signature, provenance, and an address to check them at (2026-09)
+
+Additive. No field was removed and no status code changed, so an existing client
+keeps working; everything below is new surface, plus a change to what a rendered
+report contains.
+
+### `GET /v1/verify/{verification_id}` - extended
+
+The public verification record now answers the three questions a recipient of a
+printed report actually has: is this genuine, is it still retained, and how do I
+check it without trusting you.
+
+```json
+{
+  "found": true,
+  "incident_id": "…", "dependency_id": "…", "org_id": "…",
+  "time_window": { "start": "…", "end": "…" },
+  "data_hash": "…", "report_checksum": "…",
+  "methodology_version": "v1.0", "created_at": "…",
+  "authenticity": {
+    "signed": true,
+    "algorithm": "Ed25519",
+    "encoding": "base64url",
+    "signing_key_id": "9f2c41ba77de3311",
+    "signature": "…",
+    "signature_covers": "canonical payload bytes (the value hashed into data_hash)",
+    "public_keys": "https://reliastra.com/api/v1/verify/keys"
+  },
+  "rendering": {
+    "renderer": "chromium (playwright)", "renderer_version": "141.0.7390.31",
+    "file_size_bytes": 41233, "note": null
+  },
+  "retention": {
+    "expires_at": "…", "expired": false,
+    "artifact_available": true, "retention_days": 365
+  },
+  "verification": {
+    "payload": "issued beside this document as the .json artifact",
+    "procedure": ["canonicalise the payload …", "sha256 those bytes …"]
+  },
+  "report_url": "https://reliastra.com/reports/<id>",
+  "record_url": "https://reliastra.com/api/v1/verify/<id>"
+}
+```
+
+Contract notes a client can rely on:
+
+- `"signed": false` is a normal answer, not an error. It means the issuing
+  deployment has no signing key; the hashes are still published and still
+  comparable.
+- `retention.artifact_available: false` means the snapshot row exists and the
+  stored file could not be resolved. It is not the same as `found: false`.
+- The **payload is never returned here**. This endpoint proves what the payload
+  must hash to; the payload itself is issued to the parties named in the
+  document. `org_id`, `incident_id` and `dependency_id` are identifiers only -
+  no endpoint URLs, no observations, no error strings cross this boundary.
+- Unknown token: `404 {"found": false, "error": "Evidence not found"}`.
+  Storage unreadable: `503 {"found": false, "service_degraded": true}`. A
+  "could not check" is never dressed up as a "does not exist".
+- Both explicit responses carry `Cache-Control: no-store`, because expiry and
+  revocation change the correct answer for the same URL.
+
+### `GET /v1/verify/keys` - new, public, unauthenticated
+
+```json
+{
+  "algorithm": "Ed25519",
+  "signature_encoding": "base64url",
+  "configured": true,
+  "keys": [{ "kty": "OKP", "crv": "Ed25519", "x": "…", "kid": "…", "alg": "Ed25519", "use": "sig" }],
+  "note": "Ed25519 signatures cover the canonical evidence payload bytes (the value hashed into data_hash), not the rendered PDF."
+}
+```
+
+The JWK set is deliberately served by an endpoint separate from the verification
+record: a public key published *inside* the thing it signs proves only
+self-consistency. When no key is configured the response is
+`{"configured": false, "keys": []}`, not a 404, so a verifier can distinguish
+"this deployment does not sign" from "I could not find the key".
+
+### `GET /v1/evidence/{id}` and the evidence list - two new fields
+
+`renderer` and `renderer_version` (`null` on artifacts issued before
+migration `0037_evidence_provenance`, and on any row whose render predated
+provenance recording).
+
+### Settings an operator sets
+
+| Setting | Effect |
+| --- | --- |
+| `SITE_URL` | Origin printed into reports as the verification page and API record address. Defaults to `https://reliastra.com`. |
+| `EVIDENCE_VERIFICATION_BASE_URL` | Override for staging / white-label documents. Empty falls back to `SITE_URL`. |
+| `EVIDENCE_SIGNING_PRIVATE_KEY` | Ed25519 key (base64url / base64 / hex seed, or PEM). Unset means artifacts are issued **unsigned and say so**. |
+| `EVIDENCE_SIGNING_PRIVATE_KEY_FILE` | Preferred in production: a mounted path, so the key never lands in an env dump. |
+| `EVIDENCE_KEY_ID` | Stable published identifier for the key. Set it before a rotation, not after. |
+
+The generated report itself changed shape: a finding block and four figures
+before the tables, human labels instead of raw enum tokens, the appendix of
+documented observations, the verification URL as text and QR, the signature
+block, and stated retention. Its field labels are pinned by
+`frontend/src/lib/__tests__/product-contract.test.ts`, so a visual that claims to
+show the report has to show the real one.

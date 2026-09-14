@@ -7,6 +7,10 @@ Keys:
   an:uv:{day}          HyperLogLog of unique visitor hashes per UTC day
   an:uv:total          HyperLogLog, all-time unique visitors
   an:pv:{day} / total  page-view counters
+  an:pv:excluded:{day} / :total / :reasons
+                       page-views deliberately NOT counted (own traffic,
+                       internal surfaces, opted-out browsers) - the audit
+                       trail for the filters in ``exclusions.py``
   an:country:{day}     HASH country -> views (daily)
   an:country:total     HASH country -> views (all-time)
   an:co:start:{org}    HASH checkout lead: email, plan, amount_minor,
@@ -30,6 +34,7 @@ from app.infrastructure.redis_client import (
     get_redis,
     safe_redis_get,
 )
+from app.modules.analytics.exclusions import exclusion_state
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +83,31 @@ class AnalyticsService:
             await pipe.execute()
         except Exception:
             logger.debug("analytics: visit pipeline failed", exc_info=True)
+
+    async def record_excluded(self, reason: str) -> None:
+        """Count a dropped visit, so the filter is auditable instead of assumed.
+
+        Operators need to see that their own traffic is being excluded, and a
+        filter that silently drops everything is indistinguishable from a
+        filter that drops nothing. Only the reason label is stored.
+        """
+        try:
+            from app.infrastructure.redis_client import get_redis as _g
+
+            redis = _g()
+        except Exception:
+            return
+
+        day = _today()
+        try:
+            pipe = redis.pipeline(transaction=False)
+            pipe.incr(f"an:pv:excluded:{day}")
+            pipe.incr("an:pv:excluded:total")
+            pipe.hincrby("an:pv:excluded:reasons", reason, 1)
+            pipe.expire(f"an:pv:excluded:{day}", _DAY_TTL_SECONDS)
+            await pipe.execute()
+        except Exception:
+            logger.debug("analytics: exclusion counter failed", exc_info=True)
 
     async def record_checkout_started(
         self,
@@ -167,6 +197,7 @@ class AnalyticsService:
                 )
                 uv = await self._pfcount(redis, f"an:uv:{day_key}")
                 pv_raw = await safe_redis_get(f"an:pv:{day_key}")
+                ex_raw = await safe_redis_get(f"an:pv:excluded:{day_key}")
                 co_raw = await safe_redis_get(f"an:co:started:{day_key}")
                 cv_raw = await safe_redis_get(f"an:co:converted:{day_key}")
                 su_raw = None  # filled from DB below
@@ -175,6 +206,7 @@ class AnalyticsService:
                         "date": date_iso,
                         "visitors": uv,
                         "pageviews": int(pv_raw or 0),
+                        "pageviews_excluded": int(ex_raw or 0),
                         "checkouts_started": int(co_raw or 0),
                         "checkouts_converted": int(cv_raw or 0),
                         "signups": su_raw,
@@ -247,6 +279,20 @@ class AnalyticsService:
             reverse=True,
         )[:10]
 
+        # Internal-traffic exclusions: the counter that proves the filters in
+        # ``exclusions.py`` are live, plus the effective configuration. Read by
+        # the admin panel next to the pageview card, because "your visits are
+        # not in here" is only worth anything if the operator can verify it.
+        excluded_today = int(await safe_redis_get(f"an:pv:excluded:{_today()}") or 0)
+        excluded_total = int(await safe_redis_get("an:pv:excluded:total") or 0)
+        excluded_reasons: dict[str, int] = {}
+        if redis is not None:
+            try:
+                raw_reasons = await redis.hgetall("an:pv:excluded:reasons")
+                excluded_reasons = {k: int(v) for k, v in (raw_reasons or {}).items()}
+            except Exception:
+                excluded_reasons = {}
+
         return {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "window_days": days,
@@ -254,6 +300,12 @@ class AnalyticsService:
                 "unique_total": uv_total,
                 "unique_today": today_uv,
                 "pageviews_total": pv_total,
+            },
+            "exclusions": {
+                "pageviews_excluded_today": excluded_today,
+                "pageviews_excluded_total": excluded_total,
+                "reasons": excluded_reasons,
+                **exclusion_state(),
             },
             "signups": {
                 "total": signup_total,

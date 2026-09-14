@@ -43,7 +43,18 @@ WORKDIR /app
 COPY . .
 
 # Install Playwright Chromium for evidence generation tasks
-RUN playwright install --with-deps chromium 2>/dev/null || true
+# Playwright Chromium renders the evidence PDFs. NOT best effort: an evidence
+# artifact is laid out by Chromium, and a silent fallback to xhtml2pdf would ship
+# documents whose pagination differs from the design without anything recording
+# which renderer produced them. Fonts are installed explicitly for the same
+# reason - tabular figures only line up if the resolved family has them.
+RUN playwright install --with-deps chromium \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends fonts-liberation fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+RUN python -c "from playwright.sync_api import sync_playwright; \
+p = sync_playwright().start(); b = p.chromium.launch(headless=True); \
+print('evidence renderer:', b.version); b.close(); p.stop()"
 
 RUN mkdir -p /app/templates /var/log/supervisor /var/log/redis
 
