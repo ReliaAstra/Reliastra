@@ -61,7 +61,7 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
       'https://www.linkedin.com/in/emmanueladeshina01',
       'https://x.com/secengineerx01',
       'https://eadeshina.hashnode.dev/',
-      'https://github.com/EmmanuelAdeshina',
+      'https://github.com/EmmanuelAdesina',
     ],
     domains: ['AI infrastructure security', 'Cloud security', 'Kubernetes security', 'Zero trust', 'Dependency security'],
   },
