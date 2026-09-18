@@ -257,8 +257,9 @@ async def test_admin_authorization_server_side_enforcement(async_client, db_sess
 @pytest.mark.asyncio
 async def test_partner_authorization_self_service(async_client, db_session):
     """
-    Test Phase 10: Partner Authorization.
-    A standard user is NOT a partner until they opt-in and agree to terms.
+    Stage-1 B2B removal: the partner portal API is unmounted. A standard user
+    cannot opt in, cannot reach a dashboard - the whole surface is 404, not
+    merely forbidden, so no client can mistake it for an available capability.
     """
     user = await UserRepository.create(
         db_session,
@@ -276,22 +277,15 @@ async def test_partner_authorization_self_service(async_client, db_session):
     token = auth_service._generate_token_pair(user.id).access_token
     headers = {"Authorization": f"Bearer {token}"}
 
-    # 1. Access dashboard before registering -> 404 (or inactive)
-    res = await async_client.get("/v1/partners/dashboard", headers=headers)
-    assert res.status_code == 404
+    dash_res = await async_client.get("/v1/partners/dashboard", headers=headers)
+    assert dash_res.status_code == 404
 
-    # 2. Register as a partner (idempotent opt-in)
     apply_res = await async_client.post(
         "/v1/partners/apply",
         headers=headers,
         json={"agree_terms": True},
     )
-    assert apply_res.status_code == 201
-
-    # 3. Access dashboard after registering -> ALLOWED
-    dash_res = await async_client.get("/v1/partners/dashboard", headers=headers)
-    assert dash_res.status_code == 200
-    assert dash_res.json()["clicks"] == 0
+    assert apply_res.status_code == 404
 
 
 @pytest.mark.asyncio

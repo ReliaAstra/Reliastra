@@ -4,8 +4,6 @@ import {
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
   RESEARCH_HUBS,
-  partnerRouteUrl,
-  partnerUrl,
   researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
@@ -45,11 +43,6 @@ export const PRODUCT_PANEL: NavGroup[] = [
   {
     label: 'Platform',
     links: [
-      {
-        label: 'For Agencies',
-        href: PUBLIC_ROUTES.agencies,
-        description: 'Client infrastructure. Evidence you can hand over.',
-      },
       {
         label: 'Overview',
         href: PUBLIC_ROUTES.product,
@@ -101,9 +94,9 @@ export const PRODUCT_PANEL: NavGroup[] = [
 
 export const PRIMARY_NAV: NavLink[] = [
   { label: 'Product', href: PUBLIC_ROUTES.product },
+  { label: 'Docs', href: PUBLIC_ROUTES.docs },
   { label: 'Research', href: PUBLIC_ROUTES.research },
   { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
-  { label: 'Partners', href: PUBLIC_ROUTES.partner },
 ];
 
 export const HEADER_ACTIONS = {
@@ -134,7 +127,6 @@ export const FOOTER_GROUPS: NavGroup[] = [
   {
     label: 'Platform',
     links: [
-      { label: 'For Agencies', href: PUBLIC_ROUTES.agencies },
       { label: 'Overview', href: PUBLIC_ROUTES.product },
       { label: 'Dependency monitoring', href: PUBLIC_ROUTES.dependencyMonitoring },
       { label: 'Incident attribution', href: PUBLIC_ROUTES.incidentEvidence },
@@ -173,19 +165,10 @@ export const FOOTER_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Partners',
+    label: 'Project',
     links: [
-      { label: 'Partner program', href: PUBLIC_ROUTES.partner },
-      { label: 'How it works', href: partnerUrl('how-it-works') },
-      { label: 'Commission', href: partnerUrl('commission') },
-      { label: 'Partner sign in', href: partnerUrl('login') },
-      { label: 'Apply as a partner', href: partnerUrl('signup') },
-    ],
-  },
-  {
-    label: 'Company',
-    links: [
-      { label: 'About', href: PUBLIC_ROUTES.about },
+      { label: 'About & maintainer', href: PUBLIC_ROUTES.about },
+      { label: 'Technical creators', href: PUBLIC_ROUTES.creators },
       { label: 'Contact', href: PUBLIC_ROUTES.contact },
       { label: 'Security', href: PUBLIC_ROUTES.security },
       { label: 'Platform status', href: PUBLIC_ROUTES.status },
@@ -198,8 +181,6 @@ export const FOOTER_GROUPS: NavGroup[] = [
       { label: 'Privacy & cookies', href: PUBLIC_ROUTES.privacy },
       { label: 'Terms of service', href: PUBLIC_ROUTES.terms },
       { label: 'Refund policy', href: PUBLIC_ROUTES.refundPolicy },
-      { label: 'Partner program privacy', href: partnerRouteUrl('privacy') },
-      { label: 'Partner program terms', href: partnerRouteUrl('terms') },
     ],
   },
 ];

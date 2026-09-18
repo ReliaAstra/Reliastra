@@ -61,9 +61,12 @@ LEGACY_PLAN_MAP: dict[str, str] = {
 }
 
 # Display names (customer-facing).
+# The product has ONE paid plan: Developer. "free" is the quiet post-trial
+# grace state (never marketed), "enterprise" is a legacy internal value that
+# no longer appears on any customer-facing surface.
 PLAN_DISPLAY_NAMES: dict[str, str] = {
     Plan.FREE.value: "Free",
-    Plan.PRO.value: "Pro",
+    Plan.PRO.value: "Developer",
     Plan.ENTERPRISE.value: "Enterprise",
 }
 
@@ -71,53 +74,62 @@ PLAN_DISPLAY_NAMES: dict[str, str] = {
 # All values below are the authoritative pricing contract. The frontend and
 # the pricing endpoint derive everything from here. Do not duplicate these
 # numbers elsewhere.
+#
+# Commercial model (developer-first): ONE paid product.
+#   Developer - $9/month, billed monthly. No annual billing. No seats. No
+#   enterprise tier on any customer-facing surface.
+# "free" is not a marketed tier: it is the state an account falls back to
+# after its trial ends without payment. "enterprise" survives only as a
+# legacy internal value for normalization; it must never be advertised.
 
 # Monthly prices in USD (used for Paystack amount calculation in minor units).
-# Enterprise is custom pricing => represented as None so the UI never invents
-# a number.
 PLAN_PRICES_USD: dict[str, int] = {
     Plan.FREE.value: 0,
-    Plan.PRO.value: 39,
-    Plan.ENTERPRISE.value: 0,  # custom - not a real list price
+    Plan.PRO.value: 9,
+    Plan.ENTERPRISE.value: 0,  # legacy - not offered, never a list price
 }
 
-# Annual prices in USD. Enterprise is custom => None.
+# Annual prices in USD. The product has no annual billing: every entry is
+# None and checkout rejects the annual interval.
 PLAN_ANNUAL_PRICES_USD: dict[str, int | None] = {
     Plan.FREE.value: 0,
-    Plan.PRO.value: 390,
-    Plan.ENTERPRISE.value: None,  # custom pricing
+    Plan.PRO.value: None,
+    Plan.ENTERPRISE.value: None,
 }
 
 # Billing availability: which plans can complete self-serve checkout.
 PLAN_BILLING_AVAILABILITY: dict[str, str] = {
-    Plan.FREE.value: "self_serve",
+    Plan.FREE.value: "self_serve",  # nothing to charge; kept for guard symmetry
     Plan.PRO.value: "self_serve",
-    Plan.ENTERPRISE.value: "contact_sales",
+    Plan.ENTERPRISE.value: "contact_sales",  # legacy - not purchasable
 }
 
-# Vendor (dependency) monitoring limits per plan. Enterprise is custom => None.
+# The plans the public pricing endpoint advertises. Exactly one.
+PUBLIC_PLAN_CATALOG: tuple[str, ...] = (Plan.PRO.value,)
+
+# Vendor (dependency) monitoring limits per plan.
 PLAN_DEPENDENCY_LIMITS: dict[str, int | None] = {
     Plan.FREE.value: 3,
-    Plan.PRO.value: 50,
+    Plan.PRO.value: 25,
     Plan.ENTERPRISE.value: None,
 }
 
 # Team member (organization membership / seat) limits per plan.
-# Enterprise is unlimited/custom => None.
+# The product is for one engineer: one seat on every plan.
 PLAN_TEAM_LIMITS: dict[str, int | None] = {
     Plan.FREE.value: 1,
-    Plan.PRO.value: 10,
+    Plan.PRO.value: 1,
     Plan.ENTERPRISE.value: None,
 }
 
-# Minimum check intervals in seconds per plan. Enterprise custom => None.
+# Minimum check intervals in seconds per plan.
 PLAN_CHECK_INTERVALS: dict[str, int | None] = {
     Plan.FREE.value: 60,   # 1-minute
-    Plan.PRO.value: 15,    # 15-second
+    Plan.PRO.value: 30,    # 30-second
     Plan.ENTERPRISE.value: None,
 }
 
-# Data retention in days per plan. Enterprise custom => None.
+# Data retention in days per plan.
 PLAN_RETENTION_DAYS: dict[str, int | None] = {
     Plan.FREE.value: 1,             # 24-hour retention
     Plan.PRO.value: 90,
@@ -125,6 +137,11 @@ PLAN_RETENTION_DAYS: dict[str, int | None] = {
 }
 
 # Plan feature flags - used by the public pricing endpoint and frontend.
+# One plan, everything included. The agency/client feature keys
+# (client_groups_isolation, client_facing_reports, agency_branding) and the
+# white-label key (custom_branded_evidence) are gone with the B2B product;
+# plan_allows_feature() answers False for unknown keys, which is the safe
+# direction for any gate that still references them.
 PLAN_FEATURES: dict[str, dict] = {
     Plan.FREE.value: {
         "custom_endpoint_urls": True,
@@ -135,10 +152,6 @@ PLAN_FEATURES: dict[str, dict] = {
         "attribution": False,
         "evidence_generation": False,
         "historical_analysis": False,
-        "custom_branded_evidence": False,
-        "client_groups_isolation": False,
-        "client_facing_reports": False,
-        "agency_branding": False,
     },
     Plan.PRO.value: {
         "custom_endpoint_urls": True,
@@ -149,10 +162,6 @@ PLAN_FEATURES: dict[str, dict] = {
         "attribution": "deterministic",
         "evidence_generation": True,
         "historical_analysis": True,
-        "custom_branded_evidence": False,
-        "client_groups_isolation": True,
-        "client_facing_reports": True,
-        "agency_branding": False,
     },
     Plan.ENTERPRISE.value: {
         "custom_endpoint_urls": True,
@@ -163,38 +172,31 @@ PLAN_FEATURES: dict[str, dict] = {
         "attribution": "deterministic",
         "evidence_generation": True,
         "historical_analysis": True,
-        "custom_branded_evidence": True,
-        "client_groups_isolation": True,
-        "client_facing_reports": True,
-        "agency_branding": True,
     },
 }
 
-# Display tags for the pricing page.
+# Display tags for the pricing page. One plan: no "most popular", no
+# "contact sales" ladder.
 PLAN_TAGS: dict[str, str | None] = {
     Plan.FREE.value: None,
-    Plan.PRO.value: "most_popular",
-    Plan.ENTERPRISE.value: "contact_sales",
+    Plan.PRO.value: None,
+    Plan.ENTERPRISE.value: None,
 }
 
 # Display descriptions for the pricing page.
 PLAN_DESCRIPTIONS: dict[str, str] = {
-    Plan.FREE.value: "For trying RELIASTRA.",
-    Plan.PRO.value: "For growing SaaS teams and agencies.",
-    Plan.ENTERPRISE.value: "For organizations requiring advanced controls, scale and custom requirements.",
+    Plan.FREE.value: "What remains after a trial ends without a subscription.",
+    Plan.PRO.value: "One plan. Everything RELIASTRA observes, records and proves.",
+    Plan.ENTERPRISE.value: "Legacy - no longer offered.",
 }
 
 # Self-serve checkout amounts, in minor units of PAYSTACK_CURRENCY (USD cents).
-# ENTERPRISE is deliberately absent: it must route to Contact Sales. FREE is
-# not self-serve (nothing to pay).
 PLAN_AMOUNTS: dict[str, int] = {
-    Plan.PRO.value: 3900,  # $39/mo
+    Plan.PRO.value: 900,  # $9/mo
 }
 
-# Annual self-serve checkout amounts, in minor units of PAYSTACK_CURRENCY.
-PLAN_ANNUAL_AMOUNTS: dict[str, int] = {
-    Plan.PRO.value: 39000,  # $390/year
-}
+# Annual self-serve checkout amounts. The product has no annual billing.
+PLAN_ANNUAL_AMOUNTS: dict[str, int] = {}
 
 
 # ── 14-Day Full-Access Trial ──────────────────────────────────────────────

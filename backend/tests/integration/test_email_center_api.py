@@ -8,7 +8,18 @@ Resend is stubbed at ``app.modules.email_center.resend_client`` - these
 tests never touch the network.
 """
 
+
 from __future__ import annotations
+
+import pytest
+
+# Stage-1 B2B removal (two-stage): this surface is unmounted from the API
+# in app/main.py while its code is preserved for the stage-2 deletion
+# review. These tests describe dormant behavior and are skipped until
+# stage 2 either deletes the module (with these tests) or restores it.
+pytestmark = pytest.mark.skip(
+    reason="surface unmounted in stage-1 B2B removal (see app/main.py)"
+)
 
 import base64
 from typing import Any

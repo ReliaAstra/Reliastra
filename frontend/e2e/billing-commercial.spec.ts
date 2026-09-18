@@ -17,16 +17,18 @@ test.describe('commercial billing experience', () => {
     await resetPaystackMock(request);
   });
 
-  test('pricing, refund policy and checkout all state $39 with no money-back window', async ({
+  test('pricing, refund policy and checkout all state $9 with no money-back window', async ({
     page,
     request,
   }) => {
     const pricing = await request.get('/api/v1/pricing');
     expect(pricing.ok()).toBeTruthy();
     const body = await pricing.json();
-    const pro = body.plans.find((p: { plan: string }) => p.plan === 'pro');
-    expect(pro.price_usd).toBe(39);
-    expect(pro.price_annual_usd).toBe(390);
+    // One paid product: the catalog is exactly Developer, monthly only.
+    expect(body.plans.map((p: { plan: string }) => p.plan)).toEqual(['pro']);
+    const pro = body.plans[0];
+    expect(pro.price_usd).toBe(9);
+    expect(pro.price_annual_usd).toBeNull();
     expect(pro.transparency.monthly.product_price).toBe(CONTRACT.productAmountDisplay);
     expect(body.refund_policy_path).toBe('/refund-policy');
     expect(body.refund_summary).toMatch(/does not advertise a fixed money-back window/i);
@@ -34,16 +36,16 @@ test.describe('commercial billing experience', () => {
     const terms = await request.get('/api/v1/billing/terms');
     expect(terms.ok()).toBeTruthy();
     const policy = await terms.json();
-    expect(policy.pro_price_usd).toBe(39);
+    expect(policy.pro_price_usd).toBe(9);
     expect(policy.refund_period_days).toBeNull();
     expect(policy.trial_length_days).toBe(14);
     expect(policy.trial_requires_payment).toBe(false);
 
     await page.goto('/pricing', { waitUntil: 'domcontentloaded' });
-    const proCard = page.locator('[data-testid="pricing-card-pro"]');
+    const proCard = page.locator('[data-testid="pricing-limits-pro"]');
     await expect(proCard).toBeVisible({ timeout: 30_000 });
-    expectTextContains(await flatText(proCard), 'Product price $39.00 (USD)');
-    expect(await flatText(page.locator('main'))).toMatch(/\$39/);
+    expectTextContains(await flatText(proCard), 'Product price $9.00 (USD)');
+    expect(await flatText(page.locator('main'))).toMatch(/\$9/);
     expect(await flatText(page.locator('main'))).not.toMatch(/\$19\.00/);
 
     await page.goto('/refund-policy', { waitUntil: 'domcontentloaded' });
@@ -136,7 +138,7 @@ test.describe('commercial billing experience', () => {
     expect(invoice.ok()).toBeTruthy();
     expect(invoice.headers()['content-type'] ?? '').toMatch(/html/);
     const invoiceHtml = await invoice.text();
-    expect(invoiceHtml).toContain('$39.00 (USD)');
+    expect(invoiceHtml).toContain('$9.00 (USD)');
     expect(invoiceHtml).toContain(init!.reference);
 
     const receipt = await request.get(

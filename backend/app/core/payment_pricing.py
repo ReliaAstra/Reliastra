@@ -316,7 +316,11 @@ def checkout_ready(*, rate: float | None = None) -> bool:
     if rate is None or rate <= 0:
         return False
     for plan in self_serve_plans():
-        for interval in (MONTHLY, ANNUAL):
+        # Only require the intervals this plan actually sells: the catalog is
+        # monthly-only, so an unconfigured annual interval must not flip the
+        # whole pricing page to "checkout unavailable".
+        intervals = (MONTHLY, ANNUAL) if PLAN_ANNUAL_AMOUNTS.get(plan) else (MONTHLY,)
+        for interval in intervals:
             if resolve_payment_price(plan, interval, rate=rate).payment_amount is None:
                 return False
     return True

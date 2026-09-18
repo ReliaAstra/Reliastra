@@ -8,11 +8,9 @@ import { fetchTrackedVendors, fetchVendorPublicIncidents } from '@/lib/track-api
  *
  * Excludes (deliberately): authenticated console routes, /admin/*, auth
  * pages (/login, /signup, /verify-email, /reset-password), token-scoped
- * shares (/portal/*, /reports/*), /checkout, /api/*, partner auth/support
- * slugs (/partner/login, /partner/signup, …), legacy `/?page=*` query URLs
- * (permanently redirected to `/partner/*` by the proxy), and the former
- * `/partner/tiers` + `/partner/premium` pages (now permanent redirects) -
- * none of which must create index bloat.
+ * shares (/reports/*), /checkout, /api/*, and the removed B2B surfaces
+ * (agencies, partner portal, client portals) - none of which must create
+ * index bloat.
  *
  * Includes: all canonical marketing/docs/glossary/research pages, the
  * research hub and its nested articles, live public vendor pages enumerated

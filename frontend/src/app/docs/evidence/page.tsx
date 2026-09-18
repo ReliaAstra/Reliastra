@@ -46,7 +46,7 @@ export default function EvidenceDocsPage() {
             Reports compile from retained telemetry - the observations inside
             the incident window, the detection rule that fired, and correlated
             customer impact - so generate before retention prunes the window
-            (24h Free, 90 days Pro).
+            (24 hours on reduced limits, 90 days on Developer).
           </p>
           <h2>What a report contains</h2>
           <ul>

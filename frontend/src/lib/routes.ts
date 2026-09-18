@@ -16,14 +16,13 @@
 export const PUBLIC_ROUTES = {
   home: '/',
   product: '/product',
-  agencies: '/agencies',
+  creators: '/creators',
   externalDependencyIntelligence: '/external-dependency-intelligence',
   dependencyMonitoring: '/dependency-monitoring',
   slaEvidence: '/sla-evidence',
   incidentEvidence: '/incident-evidence',
   track: '/track',
   pricing: '/pricing',
-  partner: '/partner',
   security: '/security',
   docs: '/docs',
   docsQuickstart: '/docs/quickstart',
@@ -62,15 +61,6 @@ export const CONSOLE_ROUTES = {
   dashboard: '/dashboard',
   dependencies: '/dependencies',
   incidents: '/incidents',
-  /**
-   * The authenticated agency operations overview. The public marketing page
-   * owns `/agencies`, so the console destination lives at `/agency`; the
-   * sidebar label is "Agencies" either way. `/organization` (PR #40) is
-   * permanently redirected here.
-   */
-  agency: '/agency',
-  clients: '/clients',
-  clientOnboarding: '/clients/onboarding',
   evidence: '/evidence',
   onboarding: '/onboarding',
   settings: '/settings',
@@ -97,7 +87,6 @@ export const ADMIN_ROUTES = {
 // ── Token-scoped public shares ──────────────────────────────────────────────
 
 export const SHARE_ROUTES = {
-  portal: (token: string) => `/portal/${token}`,
   report: (token: string) => `/reports/${token}`,
   trackVendor: (vendor: string) => `/track/${vendor}`,
   /**
@@ -109,11 +98,11 @@ export const SHARE_ROUTES = {
   trackIncident: (vendor: string, incidentId: string) =>
     `/track/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,
   /**
-   * Canonical partner referral URL. Partners share this; `/r/{code}` records
-   * the click, sets the attribution cookie, and redirects into the public
-   * signup/landing flow. Do not confuse with the PLG `/ref/{code}` programme.
+   * Canonical creator referral URL. Technical creators share this;
+   * `/r/{code}` records the click, sets the attribution cookie, and
+   * redirects into the public signup/landing flow.
    */
-  partnerReferral: (code: string) => `/r/${code}`,
+  creatorReferral: (code: string) => `/r/${code}`,
   referralUnavailable: '/referral-unavailable',
 } as const;
 
@@ -370,93 +359,20 @@ export function isResearchSlug(slug: string): slug is ResearchSlug {
   return RESEARCH_ARTICLES.some((a) => a.slug === slug);
 }
 
-// ── Partner network ─────────────────────────────────────────────────────────
-
-// ── Partner dashboard (URL-driven; membership proven by PartnerSession) ─────
-
-export const PARTNER_DASHBOARD_PAGES = [
-  'dashboard',
-  'referrals',
-  'earnings',
-  'payouts',
-  'notifications',
-  'settings',
-] as const;
+// ── Technical Creator Program ───────────────────────────────────────────────
 
 /**
- * Partner pages live at straightforward file routes under `/partner`.
- * `/partner` is the program home; every other public partner page is
- * `/partner/<slug>`. The legacy `/?page=<slug>` shape from the old
- * state-routed SPA is permanently redirected to these URLs by the proxy
- * (see `src/proxy.ts`), so shared/bookmarked query URLs keep working.
+ * The lightweight creator surface. There is no partner portal, no commission
+ * engine and no partner signup: creators are worked with directly, and
+ * referral attribution runs through the same `/r/{code}` links as before
+ * (see SHARE_ROUTES.creatorReferral).
  */
-export const PARTNER_PUBLIC_PAGES = [
-  'home',
-  'login',
-  'signup',
-  'forgot-password',
-  'earn',
-  'how-it-works',
-  'commission',
-  'faq',
-  'resources',
-  'support',
-] as const;
-
-export type PartnerPublicPage = (typeof PARTNER_PUBLIC_PAGES)[number];
-
-/**
- * Every slug that resolves under `/partner/*`, including the program legal
- * pages (kept separate from the customer `/privacy` and `/terms` because
- * they cover referral cookies, attribution windows and commission tracking).
- */
-export const PARTNER_ROUTE_SLUGS = [
-  ...PARTNER_PUBLIC_PAGES,
-  'privacy',
-  'terms',
-] as const;
-
-export type PartnerRouteSlug = (typeof PARTNER_ROUTE_SLUGS)[number];
-
-/** True for any slug that has a real `/partner/*` route. */
-export function isPartnerRouteSlug(slug: string): slug is PartnerRouteSlug {
-  return (PARTNER_ROUTE_SLUGS as readonly string[]).includes(slug);
-}
-
-/**
- * Partner slugs that are genuine marketing content and belong in the
- * sitemap. Auth/support/legal slugs are routable but never indexed.
- */
-export const PARTNER_INDEXABLE_SLUGS = [
-  'home',
-  'earn',
-  'how-it-works',
-  'commission',
-  'faq',
-  'resources',
-] as const;
-
-/**
- * A refresh-safe, shareable URL for a partner page.
- *
- * Partner *signup* must use this, not `AUTH_ROUTES.signup`: `/signup` is the
- * customer registration form and never creates a partner profile, so pointing
- * a "join as partner" link there silently enrols the visitor as a customer.
- */
-export function partnerUrl(page: PartnerPublicPage): string {
-  return page === 'home' ? '/partner' : `/partner/${page}`;
-}
-
-/** Canonical URL for any partner route slug (`privacy`/`terms` included). */
-export function partnerRouteUrl(slug: PartnerRouteSlug): string {
-  return slug === 'home' ? '/partner' : `/partner/${slug}`;
-}
+export const CREATORS_ROUTE = '/creators' as const;
 
 // ── External ────────────────────────────────────────────────────────────────
 
 export const EXTERNAL_LINKS = {
   github: 'https://github.com/ReliaAstra',
-  salesEmail: 'mailto:sales@reliastra.com?subject=Enterprise%20plan',
   billingEmail: 'mailto:billing@reliastra.com?subject=Pro%20plan%20pricing',
 } as const;
 
@@ -486,9 +402,9 @@ export const LANDING_SECTIONS = [
   'how-it-works',
   'research',
   'public-intelligence',
-  'partners',
   'pricing',
   'reference',
+  'maintainer',
 ] as const;
 
 export type LandingSectionId = (typeof LANDING_SECTIONS)[number];

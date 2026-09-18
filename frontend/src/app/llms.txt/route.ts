@@ -24,8 +24,8 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 ## Who it serves
 
-- SaaS teams that depend on payment, auth, messaging, AI, or cloud APIs
-- Agencies operating customer infrastructure and needing client-facing SLA proof
+- Individual developers, SREs and platform engineers who own services that
+  depend on payment, auth, messaging, AI, or cloud APIs
 - Reliability / platform engineers who own incident response and postmortems
 - Anyone who has ever argued with a vendor about whose system failed
 
@@ -36,7 +36,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - Incident attribution with confidence levels (correlation, not claimed causation)
 - SLA evidence reports (timestamped, checksummed, verifiable without disclosing secrets)
 - Public vendor tracking for vendors made public (${SITE_URL}/track)
-- Client isolation and white-label reporting (Enterprise)
+- One plan: Developer, $9/month (no plan ladder, no seats, no annual billing)
 
 ## Core terminology
 
@@ -51,7 +51,6 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 - Home: ${SITE_URL}/
 - Product: ${SITE_URL}/product
-- For agencies and MSPs: ${SITE_URL}/agencies
 - External Dependency Intelligence: ${SITE_URL}/external-dependency-intelligence
 - Dependency monitoring: ${SITE_URL}/dependency-monitoring
 - SLA evidence: ${SITE_URL}/sla-evidence
@@ -83,9 +82,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - About: ${SITE_URL}/about
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status
-- Partner Network: ${SITE_URL}/partner
-- How partner referrals work: ${SITE_URL}/partner/how-it-works
-- Partner commissions: ${SITE_URL}/partner/commission
+- Technical creators: ${SITE_URL}/creators
 - Privacy: ${SITE_URL}/privacy
 - Terms: ${SITE_URL}/terms
 
@@ -97,8 +94,8 @@ request is never an incident - a fixed number of consecutive failed checks is
 required, and recovery needs consecutive successes. Targets are resolved and
 validated against an SSRF policy (private/loopback/link-local/metadata
 addresses rejected and recorded as policy blocks, never as vendor outages).
-Missed probes are never backfilled. Retention follows the plan (24h Free,
-90 days Pro).
+Missed probes are never backfilled. Retention follows the plan (24 hours on
+reduced limits, 90 days on Developer).
 
 ## What the public observatory actually probes (scope, stated plainly)
 
@@ -134,7 +131,6 @@ Missed probes are never backfilled. Retention follows the plan (24h Free,
 ## Contact
 
 - Support: support@reliastra.com
-- Sales (Enterprise): sales@reliastra.com
 - GitHub: https://github.com/ReliaAstra
 `;
 

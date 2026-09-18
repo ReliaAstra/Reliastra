@@ -32,7 +32,7 @@ export default function QuickstartPage() {
             name: 'RELIASTRA quickstart: first dependency check',
             description: 'From organization to first observation in minutes.',
             step: [
-              { '@type': 'HowToStep', name: 'Create an organization', text: 'Sign up; a 14-day Pro trial starts automatically, no card required.' },
+              { '@type': 'HowToStep', name: 'Create an organization', text: 'Sign up; a 14-day trial of full Developer capabilities starts automatically, no card required.' },
               { '@type': 'HowToStep', name: 'Add a dependency', text: 'Paste an endpoint URL you are authorized to monitor and pick an interval.' },
               { '@type': 'HowToStep', name: 'Read observations', text: 'Checks start on the next tick; latency, status and outcome appear per check.' },
               { '@type': 'HowToStep', name: 'Report an incident to correlate', text: 'Log your own incident window to compare against vendor observations.' },
@@ -55,15 +55,16 @@ export default function QuickstartPage() {
         <Prose>
           <h2>1. Create an organization</h2>
           <p>
-            <a href="/signup">Sign up</a>. A 14-day Pro trial starts automatically -
+            <a href="/signup">Sign up</a>. A 14-day trial starts automatically -
             every feature, every region, no card. Verify your email when prompted;
             unverified addresses cannot hold a session.
           </p>
           <h2>2. Add a dependency</h2>
           <p>
             Paste an endpoint URL you are authorized to test, choose the HTTP method
-            and expected response, pick regions and a check interval (Free: 1 minute;
-            Pro: down to 15 seconds). Only monitor systems you own or operate - see{' '}
+            and expected response, pick regions and a check interval (1 minute on
+            reduced limits; down to 30 seconds on Developer). Only monitor systems
+            you own or operate - see{' '}
             <a href="/terms">acceptable use</a>.
           </p>
           <h2>3. Read your first observations</h2>

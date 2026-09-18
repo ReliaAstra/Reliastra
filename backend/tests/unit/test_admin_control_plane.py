@@ -83,14 +83,17 @@ def test_support_communications_operations_registered():
     assert "GET" in paths["/v1/admin/audit-log"]
 
 
-def test_partners_surface_unchanged():
+def test_partners_admin_surface_is_unmounted():
+    """Stage-1 B2B removal: the partner administration API is gone, not
+    merely hidden - commissions and payouts are not product surfaces."""
     paths = _admin_paths()
-    assert "GET" in paths["/v1/admin/partners"]
-    assert "GET" in paths["/v1/admin/partners/stats"]
-    assert "GET" in paths["/v1/admin/partners/commissions"]
-    assert "POST" in paths["/v1/admin/partners/payouts"]
-    assert "POST" in paths["/v1/admin/partners/commissions/{commission_id}/reverse"]
-    assert "POST" in paths["/v1/admin/partners/payouts/{payout_id}/process"]
+    for path in (
+        "/v1/admin/partners",
+        "/v1/admin/partners/stats",
+        "/v1/admin/partners/commissions",
+        "/v1/admin/partners/payouts",
+    ):
+        assert path not in paths, f"{path} is exposed again"
 
 
 def test_legacy_endpoints_marked_deprecated():
@@ -110,8 +113,6 @@ def test_legacy_endpoints_marked_deprecated():
         "/v1/admin/users/override-plan",
         "/v1/admin/operations/health",
         "/v1/admin/operations/error-logs",
-        "/v1/admin/growth/top-vendors",
-        "/v1/admin/growth/referral-stats",
     ]
     for path in deprecated_paths:
         methods = schema["paths"][path]

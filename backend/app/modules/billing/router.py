@@ -128,8 +128,17 @@ class PricingPlansResponse(BaseModel):
 
 @router.get("/pricing", response_model=PricingPlansResponse)
 async def get_pricing_plans() -> PricingPlansResponse:
-    """Public endpoint returning exactly the three customer-facing plans."""
-    from app.core.permissions import CANONICAL_PLANS, TRIAL_DAYS, get_plan_annual_price_usd
+    """Public endpoint returning exactly the customer-facing catalog.
+
+    The commercial model is one paid product (Developer, monthly only), so
+    the catalog is exactly ``PUBLIC_PLAN_CATALOG``. Legacy internal plans are
+    never advertised.
+    """
+    from app.core.permissions import (
+        PUBLIC_PLAN_CATALOG,
+        TRIAL_DAYS,
+        get_plan_annual_price_usd,
+    )
     from app.core.payment_pricing import transparency_lines
     from app.core.commercial_terms import (
         REFUND_POLICY_PATH,
@@ -141,7 +150,7 @@ async def get_pricing_plans() -> PricingPlansResponse:
 
     currency = PaymentCurrencyResponse(**await currency_payload())
     plans = []
-    for plan_id in sorted(CANONICAL_PLANS):
+    for plan_id in PUBLIC_PLAN_CATALOG:
         p = plan_id
         is_enterprise = is_enterprise_plan(p)
         monthly = await resolve_payment_price_async(p, "monthly")

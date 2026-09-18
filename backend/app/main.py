@@ -26,7 +26,7 @@ from app.infrastructure.redis_client import (
     safe_redis_claim,
     safe_redis_setex,
 )
-from app.modules.agencies.router import router as agencies_router
+from app.modules.agencies.router import router as agencies_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
 from app.modules.api_keys.router import router as api_keys_router
 from app.modules.auth.router import router as auth_router
 from app.modules.billing.router import router as billing_router
@@ -43,24 +43,30 @@ from app.modules.vendors.router import router as vendors_router
 from app.modules.timeline_share.router import router as timeline_share_router
 from app.modules.verification.router import router as verification_router
 from app.modules.referrals.router import referrals_router
-from app.modules.partners.router import partners_router
+from app.modules.partners.router import partners_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
 from app.modules.partners.public_router import public_partners_router
-from app.modules.partners.admin_router import admin_partners_router
+from app.modules.partners.admin_router import admin_partners_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
 from app.modules.webhooks.router import webhooks_router as webhooks_router
-from app.modules.badges.router import router as badges_router
-from app.modules.vendor_submissions.router import submission_router, submission_admin_router
-from app.modules.growth.router import growth_router
+from app.modules.badges.router import router as badges_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
+from app.modules.vendor_submissions.router import (  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
+    submission_router,
+    submission_admin_router,
+)
+from app.modules.growth.router import growth_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
 from app.modules.feed.router import feed_router
-from app.modules.status_pages.router import status_router, status_page_router
+from app.modules.status_pages.router import (  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
+    status_router,
+    status_page_router,
+)
 from app.modules.admin.router import admin_router, public_announcements_router
 from app.modules.admin.auth_router import admin_auth_router
 from app.modules.admin.public_support_router import public_support_router
 from app.modules.admin.seed import ensure_admin_service_account
-from app.modules.analytics.router import public_analytics_router
+from app.modules.analytics.router import public_analytics_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
 from app.modules.email_events.router import router as email_webhook_router
-from app.modules.email_events.admin_router import router as email_admin_router
-from app.modules.email_center.router import router as email_center_router
-from app.modules.outreach.router import router as outreach_admin_router
+from app.modules.email_events.admin_router import router as email_admin_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
+from app.modules.email_center.router import router as email_center_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
+from app.modules.outreach.router import router as outreach_admin_router  # noqa: F401 - # stage-1 unmount: code preserved, router not exposed (see include_router block below)
 
 logger = logging.getLogger(__name__)
 
@@ -373,39 +379,44 @@ def create_app() -> FastAPI:
     app.include_router(dashboard_router)
     app.include_router(billing_router)
     app.include_router(api_keys_router)
-    # Agency mode. Mounted as of the multi-client operations console: the
-    # condition the previous comment set out (a real client hierarchy UX and
-    # a dashboard-first onboarding) is now met, so the module that was always
-    # preserved in app/modules/agencies/ is exposed again.
-    #
-    # Authorization: every route is org-scoped through get_current_org,
-    # both writes carry require_admin, and the service enforces the
-    # client-groups / client-reports entitlements (Pro and above, including
-    # the 14-day trial). Visibility of the surface is a separate concern,
-    # gated client-side on the same entitlement.
-    app.include_router(agencies_router)
     app.include_router(verification_router)
+    # Referral attribution for the Technical Creator Program. Only the
+    # code -> signup linkage is exposed; leaderboard gamification and
+    # self-serve reward claiming are not part of the product.
     app.include_router(referrals_router)
     app.include_router(webhooks_router)
-    app.include_router(badges_router)
-    app.include_router(submission_router)
-    app.include_router(submission_admin_router)
-    app.include_router(growth_router)
     app.include_router(feed_router)
-    app.include_router(status_router)
-    app.include_router(status_page_router)
     app.include_router(admin_auth_router)
     app.include_router(admin_router)
     app.include_router(public_announcements_router)
     app.include_router(public_support_router)
-    app.include_router(partners_router)
+    # Creator-link resolution for /r/{code}: validate code, count the click,
+    # return a safe destination. This is the one partner-surface endpoint the
+    # lightweight creator program still needs.
     app.include_router(public_partners_router)
-    app.include_router(admin_partners_router)
-    app.include_router(public_analytics_router)
     app.include_router(email_webhook_router)
-    app.include_router(email_admin_router)
-    app.include_router(email_center_router)
-    app.include_router(outreach_admin_router)
+
+    # ── B2B surfaces unmounted (stage 1 of a two-stage removal) ─────────────
+    # The developer-first product has no agencies, partner portal, growth
+    # funnel, badge marketing, campaign tooling or client-facing status
+    # pages. Module code and database tables are preserved deliberately;
+    # deletion is a separate, reviewed change once the product has settled.
+    # To restore any surface, re-mount its router and restore the frontend
+    # routes recorded in docs/redesign/.
+    #
+    #   app.include_router(agencies_router)          # agencies/clients/portals
+    #   app.include_router(partners_router)          # partner portal API
+    #   app.include_router(admin_partners_router)    # partner administration
+    #   app.include_router(badges_router)            # vendor trust badges
+    #   app.include_router(submission_router)        # vendor lead submissions
+    #   app.include_router(submission_admin_router)  # submission review
+    #   app.include_router(growth_router)            # PLG growth surfaces
+    #   app.include_router(status_router)            # org status pages
+    #   app.include_router(status_page_router)       # org status pages
+    #   app.include_router(public_analytics_router)  # public marketing metrics
+    #   app.include_router(email_admin_router)       # email campaign admin
+    #   app.include_router(email_center_router)      # email campaigns
+    #   app.include_router(outreach_admin_router)    # outreach sequences
 
     async def _run_health_checks() -> tuple[dict[str, Any], int]:
         checks: dict[str, Any] = {}

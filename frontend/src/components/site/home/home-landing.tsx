@@ -1,14 +1,13 @@
 import { SiteShell } from '@/components/site/site-shell';
 import { HomeHero } from './hero';
 import {
-  AgenciesSection,
   EvidenceArtifactSection,
   EvidenceLayerSection,
   FinalCTASection,
   HowItWorksSection,
   IncidentStorySection,
+  MaintainerSection,
   ObservationSection,
-  PartnerSection,
   ProblemSection,
   ReferenceSection,
 } from './sections';
@@ -32,11 +31,9 @@ import { PricingSummary } from './pricing-summary';
  *   07 method        observe, correlate, document, prove
  *   08 research      the method, published
  *   09 public data   live independent vendor observation
- *   10 agencies      multi-client accountability
- *   11 partners      the distribution model
- *   12 pricing       what it costs
+ *   10 pricing       what it costs
  *      reference     definitions
- *   13 CTA           start
+ *   11 CTA           start
  *
  * Entirely server-rendered. The only client JavaScript on this page is the
  * header (mobile menu + scroll state); the product visuals are static markup
@@ -54,10 +51,9 @@ export function HomeLanding() {
       <HowItWorksSection />
       <ResearchTeaser />
       <LiveIntelligenceSection />
-      <AgenciesSection />
-      <PartnerSection />
       <PricingSummary />
       <ReferenceSection />
+      <MaintainerSection />
       <FinalCTASection />
     </SiteShell>
   );

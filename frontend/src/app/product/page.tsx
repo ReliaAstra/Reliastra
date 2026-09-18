@@ -60,10 +60,9 @@ export default function ProductPage() {
         <Prose>
           <h2>Who this is for</h2>
           <p>
-            SaaS teams whose product breaks when a payment, auth, messaging, AI or cloud API
-            degrades - and agencies that operate customer infrastructure and need to show
-            clients exactly which dependency failed. If your incident reviews ever end with
-            “we think it was the vendor,” this is the record that replaces “we think.”
+            Engineers whose product breaks when a payment, auth, messaging, AI or cloud API
+            degrades. If your incident reviews ever end with “we think it was the
+            vendor,” this is the record that replaces “we think.”
           </p>
           <h2>What problem it solves</h2>
           <p>

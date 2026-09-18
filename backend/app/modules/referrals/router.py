@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import ValidationException
 from app.core.security import decode_token
 from app.db.session import get_db
 from app.dependencies import get_current_user, require_jwt_auth
@@ -68,41 +69,47 @@ async def get_my_referral(
     return await service.get_referral_info(db, current_user.id)
 
 
-@referrals_router.post("/claim-reward", response_model=ClaimRewardResponse)
+@referrals_router.post("/claim-reward", response_model=ClaimRewardResponse, include_in_schema=False)
 async def claim_reward(
     request: ClaimRewardRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     service: ReferralService = Depends(get_referral_service),
 ) -> ClaimRewardResponse:
-    """Claim a pending referral reward."""
-    return await service.claim_reward(db, current_user.id, request.reward_id)
+    """Claim a pending referral reward.
 
-
-@referrals_router.get("/leaderboard", response_model=LeaderboardResponse)
-async def get_leaderboard(
-    period: str = Query(default="all_time", pattern="^(all_time|weekly|monthly)$"),
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user_id: uuid.UUID | None = Depends(_optional_current_user),
-    service: ReferralService = Depends(get_referral_service),
-) -> LeaderboardResponse:
-    """Get the public referral leaderboard.
-
-    Authentication is optional. When authenticated, the current user's
-    entry will be flagged with ``is_self=True`` and show their referral code.
+    Stage-1 unmount: the creator program settles rewards manually, so this
+    endpoint is disabled (registered but hidden and rejected). Code preserved
+    for the stage-2 deletion review.
     """
-    entries, total = await service.get_leaderboard(
-        db,
-        period=period,
-        page=page,
-        page_size=page_size,
-        current_user_id=current_user_id,
+    raise ValidationException(
+        "Referral rewards are settled manually by RELIASTRA. "
+        "Email support@reliastra.com."
     )
-    return LeaderboardResponse(
-        entries=entries,
-        total=total,
-        page=page,
-        page_size=page_size,
-    )
+
+
+# Stage-1 unmount: the public referral leaderboard is PLG gamification, not
+# part of the developer-first product. Handler preserved for the stage-2
+# deletion review.
+# @referrals_router.get("/leaderboard", response_model=LeaderboardResponse)
+# async def get_leaderboard(
+#     period: str = Query(default="all_time", pattern="^(all_time|weekly|monthly)$"),
+#     page: int = Query(default=1, ge=1),
+#     page_size: int = Query(default=20, ge=1, le=100),
+#     db: AsyncSession = Depends(get_db),
+#     current_user_id: uuid.UUID | None = Depends(_optional_current_user),
+#     service: ReferralService = Depends(get_referral_service),
+# ) -> LeaderboardResponse:
+#     entries, total = await service.get_leaderboard(
+#         db,
+#         period=period,
+#         page=page,
+#         page_size=page_size,
+#         current_user_id=current_user_id,
+#     )
+#     return LeaderboardResponse(
+#         entries=entries,
+#         total=total,
+#         page=page,
+#         page_size=page_size,
+#     )

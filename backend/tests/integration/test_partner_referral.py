@@ -5,6 +5,17 @@ binding, subscription commission, recurring billing, cancellation, refund,
 idempotency, self-referral rejection, authorization, and payout.
 """
 
+import pytest
+
+# Stage-1 B2B removal (two-stage): this surface is unmounted from the API
+# in app/main.py while its code is preserved for the stage-2 deletion
+# review. These tests describe dormant behavior and are skipped until
+# stage 2 either deletes the module (with these tests) or restores it.
+pytestmark = pytest.mark.skip(
+    reason="surface unmounted in stage-1 B2B removal (see app/main.py)"
+)
+
+
 import uuid
 from datetime import datetime, timezone
 

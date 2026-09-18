@@ -70,8 +70,8 @@ async def test_get_plan_details():
 
     assert res.plan == Plan.PRO.value
     assert res.subscription_status == "active"
-    assert res.min_check_interval_seconds == 15
-    assert res.max_dependencies == 50
+    assert res.min_check_interval_seconds == 30
+    assert res.max_dependencies == 25
     assert res.data_retention_days == 90
 
 
@@ -125,10 +125,10 @@ async def test_initialize_payment(monkeypatch):
     )
     assert response.reference == "ref_test"
     assert response.currency == "NGN"
-    assert response.amount_minor == 5_155_800
+    assert response.amount_minor == 1_189_800
     client.initialize_transaction.assert_awaited_once()
     sent = client.initialize_transaction.await_args.kwargs
-    assert sent["amount"] == 5_155_800
+    assert sent["amount"] == 1_189_800
     assert sent["currency"] == "NGN"
 
 
@@ -181,7 +181,7 @@ async def test_initialize_payment_refusal_states_the_calculated_price(monkeypatc
             org_id,
             InitializePaymentRequest(plan="pro", email="owner@example.com", terms_accepted=True),
         )
-    assert "$39.00 (USD)" in str(exc_info.value)
+    assert "$9.00 (USD)" in str(exc_info.value)
     assert "being finalized" not in str(exc_info.value).lower()
     assert "pending" not in str(exc_info.value).lower()
 

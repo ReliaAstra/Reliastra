@@ -149,7 +149,7 @@ export function SettingsPage() {
               label: 'Slack',
               note: slackEntitled
                 ? 'Included on your plan.'
-                : 'Available on Pro and above.',
+                : 'Included in the Developer plan.',
               entitled: slackEntitled,
             },
           ].map((ch) => {

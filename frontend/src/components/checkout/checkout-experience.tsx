@@ -32,7 +32,7 @@ import { PaymentMethodPanel } from './payment-method-panel';
 /**
  * RELIASTRA's checkout.
  *
- * This is the whole product surface between "I want Pro" and "my plan is
+ * This is the whole product surface between "I want Developer" and "my plan is
  * active", and it is deliberately not a payment form. What the page owns:
  *
  *   - the plan, the interval and the product price, read from a backend quote;
@@ -77,12 +77,12 @@ export type CheckoutPhase =
   | 'failed'
   | 'unavailable';
 
-export type CheckoutInterval = 'monthly' | 'annual';
+/** The product sells one plan on one interval. */
+export type CheckoutInterval = 'monthly';
 
-/** Normalize `/checkout?plan=` so `standard` (and other legacy aliases) land on Pro. */
+/** Normalize `/checkout?plan=` so legacy aliases land on Developer. */
 function checkoutPlanFromQuery(raw: string | null): string {
   const value = (raw || 'pro').trim().toLowerCase();
-  if (value === 'enterprise') return 'enterprise';
   if (['pro', 'standard', 'starter', 'professional'].includes(value)) return 'pro';
   return 'pro';
 }
@@ -122,11 +122,9 @@ export function CheckoutExperience() {
   const queryClient = useQueryClient();
 
   const checkoutPlan = checkoutPlanFromQuery(searchParams.get('plan'));
-  const initialInterval: CheckoutInterval =
-    searchParams.get('interval') === 'annual' ? 'annual' : 'monthly';
 
   const [phase, setPhase] = useState<CheckoutPhase>('restoring');
-  const [interval, setIntervalState] = useState<CheckoutInterval>(initialInterval);
+  const [interval] = useState<CheckoutInterval>('monthly');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
   const [session, setSession] = useState<InitializePaymentResult | null>(null);
@@ -436,13 +434,6 @@ export function CheckoutExperience() {
         <OrderSummary
           quote={quote}
           interval={interval}
-          onIntervalChange={(next) => {
-            if (next === interval) return;
-            // P3 fix: lock interval while a payment is in flight so the
-            // price under the finger cannot change mid-prepare.
-            if (phase !== 'review') return;
-            setIntervalState(next);
-          }}
           onRefresh={() => void loadQuote(interval)}
         />
       </div>

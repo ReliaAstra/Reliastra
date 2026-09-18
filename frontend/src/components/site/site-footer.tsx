@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Wordmark } from './wordmark';
 import { FOOTER_GROUPS, SOCIAL_LINKS } from './nav-config';
-import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 /**
  * Global footer.
@@ -91,40 +91,22 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        {/* Account entry points, stated explicitly. A visitor should never
-            have to guess whether they are creating a customer account or a
-            partner account. */}
-        <div className="mt-16 grid gap-px border-t border-[var(--ob-line)] pt-10 sm:grid-cols-2">
-          <div className="flex flex-col gap-2 sm:pr-10">
-            <p className="ob-label">Customer</p>
-            <p className="text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
-              Monitor your own dependencies and generate evidence for your
-              organization.
-            </p>
-            <p className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
-              <Link className="ob-link" href={AUTH_ROUTES.signup}>
-                Create an organization
-              </Link>
-              <Link className="ob-link" href={AUTH_ROUTES.login}>
-                Customer sign in
-              </Link>
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 border-t border-[var(--ob-line)] pt-8 sm:border-l sm:border-t-0 sm:pl-10 sm:pt-0">
-            <p className="ob-label">Partner</p>
-            <p className="text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
-              Consultancies, agencies and MSPs bringing RELIASTRA to the
-              organizations they operate for.
-            </p>
-            <p className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
-              <Link className="ob-link" href={partnerUrl('signup')}>
-                Apply to the partner program
-              </Link>
-              <Link className="ob-link" href={partnerUrl('login')}>
-                Partner sign in
-              </Link>
-            </p>
-          </div>
+        {/* Account entry point, stated explicitly. There is one kind of
+            account; a visitor should never have to guess. */}
+        <div className="mt-16 border-t border-[var(--ob-line)] pt-10">
+          <p className="ob-label">Start</p>
+          <p className="mt-2 max-w-[52ch] text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
+            Monitor the external dependencies your software actually depends
+            on, and keep evidence of what happens to them.
+          </p>
+          <p className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+            <Link className="ob-link" href={AUTH_ROUTES.signup}>
+              Create an account
+            </Link>
+            <Link className="ob-link" href={AUTH_ROUTES.login}>
+              Sign in
+            </Link>
+          </p>
         </div>
 
         <div className="mt-12 flex flex-col gap-5 border-t border-[var(--ob-line)] pt-8 md:flex-row md:items-center md:justify-between">

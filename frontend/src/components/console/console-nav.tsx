@@ -14,25 +14,16 @@ import { cn } from '@/lib/utils';
 /**
  * Console navigation.
  *
- * Grouped by what the user is doing, not by database table: MONITORING is the
- * live surface, EVIDENCE is the record, AGENCIES is the multi-client
- * workspace. The destination list comes from `consoleNavGroups` (the one
- * model the mobile sheet, command palette and recent destinations also read),
- * so every surface shows the same entries. Every href is a route that exists
- * - there is no invented section.
+ * Grouped by what the user is doing, not by database table: MONITORING is
+ * the live surface, EVIDENCE is the record, ACCOUNT is configuration. The
+ * destination list comes from `consoleNavGroups` (the one model the mobile
+ * sheet, command palette and recent destinations also read), so every
+ * surface shows the same entries. Every href is a route that exists - there
+ * is no invented section, and the removed B2B destinations are never
+ * advertised.
  *
- * `Agencies` is a destination for every authenticated organization: the
- * agency overview is always present, and an organization without the
- * capability lands on the gated experience rather than a missing page. The
- * client-management entries appear only when the entitlement
- * (`hasAgencyWorkspace`) is satisfied.
+ * One entry is worth explaining:
  *
- * Two entries are worth explaining:
- *
- * -  `Reports` is a real route over `GET /v1/evidence`: the artifact side of
- *    evidence (files, checksums, signed downloads) as distinct from the
- *    incident side. It was left out of the previous pass because nothing
- *    backed it; it is here now because something does.
  * -  `Research` links the public research index and is marked as leaving the
  *    console, because there is no authenticated research capability in the
  *    backend and inventing an in-app one would be a hollow page.
@@ -48,7 +39,7 @@ const PRIMARY = [
 function useIsActive() {
   const pathname = usePathname();
   // Exact match, or any route nested under the destination (e.g. the
-  // Client environments entry stays lit on a specific client's page).
+  // Evidence entry stays lit on a specific record's page).
   return (href: string) => pathname === href || pathname.startsWith(href + '/');
 }
 

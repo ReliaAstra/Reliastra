@@ -1,8 +1,11 @@
+import uuid
+
 import pytest
+from sqlalchemy import text
 
 
 @pytest.mark.asyncio
-async def test_orgs_endpoints(async_client, auth_data):
+async def test_orgs_endpoints(async_client, auth_data, db_session):
     headers = auth_data["headers"]
     org_id = auth_data["org_id"]
 
@@ -46,13 +49,32 @@ async def test_orgs_endpoints(async_client, auth_data):
         },
     )
 
+    # The product is single-seat: the API must refuse to add a second member.
     invite_res = await async_client.post(
         "/v1/orgs/members",
         headers=headers,
         json={"email": "invitee@reliastra.com", "role": "member"},
     )
-    assert invite_res.status_code == 201, invite_res.text
-    member_data = invite_res.json()
+    assert invite_res.status_code == 409, invite_res.text
+    assert "Team limit reached" in invite_res.text
+
+    # Member-management endpoints stay exercised: seed the member row
+    # directly, bypassing the seat limit the API enforces.
+    import uuid as _uuid
+
+    from app.modules.organizations.models import OrganizationMember
+
+    invitee = (
+        await db_session.execute(
+            text("SELECT id FROM users WHERE email = 'invitee@reliastra.com'")
+        )
+    ).scalar_one()
+    member = OrganizationMember(
+        id=_uuid.uuid4(), org_id=uuid.UUID(org_id), user_id=invitee, role="member"
+    )
+    db_session.add(member)
+    await db_session.commit()
+    member_data = {"id": str(member.id)}
 
     # GET /v1/orgs/{org_id}/members
     members_res = await async_client.get(
@@ -87,10 +109,13 @@ async def test_orgs_endpoints(async_client, auth_data):
     remaining_ids = {m["id"] for m in after_del.json()["items"]}
     assert member_data["id"] not in remaining_ids
 
-    # Re-invite restores the soft-deleted membership
+    # Single-seat product: after removal the owner fills the only seat, so a
+    # re-invite is refused by the team-limit guard even though a soft-deleted
+    # membership could be restored.
     reinvite = await async_client.post(
         "/v1/orgs/members",
         headers=headers,
         json={"email": "invitee@reliastra.com", "role": "member"},
     )
-    assert reinvite.status_code == 201, reinvite.text
+    assert reinvite.status_code == 409, reinvite.text
+    assert "Team limit reached" in reinvite.text

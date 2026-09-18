@@ -46,7 +46,6 @@ export const SITE_ORG = {
   url: SITE_URL,
   logo: `${SITE_URL}/logo.svg`,
   email: 'support@reliastra.com',
-  salesEmail: 'sales@reliastra.com',
   github: 'https://github.com/ReliaAstra',
 } as const;
 
@@ -207,23 +206,13 @@ export function articleJsonLd(input: {
 export const PUBLIC_PAGES = [
   { path: '/', changeFrequency: 'daily' as const, priority: 1.0 },
   { path: '/product', changeFrequency: 'weekly' as const, priority: 0.9 },
-  { path: '/agencies', changeFrequency: 'weekly' as const, priority: 0.85 },
+  { path: '/creators', changeFrequency: 'monthly' as const, priority: 0.5 },
   { path: '/external-dependency-intelligence', changeFrequency: 'weekly' as const, priority: 0.9 },
   { path: '/dependency-monitoring', changeFrequency: 'weekly' as const, priority: 0.9 },
   { path: '/sla-evidence', changeFrequency: 'weekly' as const, priority: 0.9 },
   { path: '/incident-evidence', changeFrequency: 'weekly' as const, priority: 0.9 },
   { path: '/track', changeFrequency: 'hourly' as const, priority: 0.9 },
   { path: '/pricing', changeFrequency: 'weekly' as const, priority: 0.8 },
-  { path: '/partner', changeFrequency: 'weekly' as const, priority: 0.7 },
-  { path: '/partner/earn', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/partner/how-it-works', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/partner/commission', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/partner/faq', changeFrequency: 'monthly' as const, priority: 0.6 },
-  // /partner/tiers and /partner/premium are NOT listed: both permanently
-  // redirect to /partner/commission (see next.config), and a sitemap must
-  // contain canonical URLs only - a redirect entry asks crawlers to index a
-  // bounce.
-  { path: '/partner/resources', changeFrequency: 'monthly' as const, priority: 0.6 },
   { path: '/security', changeFrequency: 'monthly' as const, priority: 0.7 },
   { path: '/docs', changeFrequency: 'weekly' as const, priority: 0.8 },
   { path: '/docs/quickstart', changeFrequency: 'monthly' as const, priority: 0.7 },

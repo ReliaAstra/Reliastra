@@ -95,7 +95,7 @@ export function BillingPage() {
     }
   };
 
-  const upgradeLabel = current.id === 'free' ? 'Subscribe to Pro' : 'Change plan';
+  const upgradeLabel = current.id === 'free' ? 'Subscribe to Developer' : 'Manage subscription';
 
   return <>
     <PageHead
@@ -165,7 +165,7 @@ export function BillingPage() {
       </div>
       {evaluation && (
         <p className="mt-3 max-w-[72ch] text-[13px] leading-relaxed text-[var(--obc-text-3)]" data-testid="billing-trial">
-          {trialSummary} After the trial, Pro is billed in NGN at the current exchange rate. Subscribing starts billing immediately.
+          {trialSummary} After the trial, Developer is $9 USD per month (billed through Paystack at the current exchange rate). Subscribing starts billing immediately.
         </p>
       )}
     </Section>

@@ -27,14 +27,14 @@ export function PricingSummary() {
       <div className="ob-container">
         <div className="flex flex-col gap-6 pb-9 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-5">
-            <Eyebrow index="12">Pricing</Eyebrow>
+            <Eyebrow index="10">Pricing</Eyebrow>
             <h2 id="pricing-title" className="ob-h2 max-w-[16ch]">
-              Three plans. Enforced server-side.
+              One plan. $9 a month.
             </h2>
           </div>
           <p className="ob-body max-w-[44ch]">
-            14-day Pro trial on every new organization. No payment method
-            required.
+            14-day trial on every new account. No payment method required, no
+            plan ladder to negotiate.
           </p>
         </div>
 

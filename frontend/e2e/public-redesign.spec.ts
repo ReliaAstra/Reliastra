@@ -33,7 +33,7 @@ const ARCHETYPES = [
   { name: 'research article', path: '/research/the-dependency-gap' },
   { name: 'dependency index', path: '/track' },
   { name: 'legal', path: '/terms' },
-  { name: 'partner landing', path: '/partner' },
+  { name: 'creators', path: '/creators' },
   { name: 'customer sign in', path: '/login' },
   { name: 'customer sign up', path: '/signup' },
   { name: 'email verification', path: '/verify-email' },
@@ -268,21 +268,15 @@ test.describe('authentication surfaces', () => {
     }
   });
 
-  test('customer and partner sign-in cross-link without mixing the flows', async ({
-    page,
-  }) => {
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
-    await settle(page);
-    await expect(
-      page.getByRole('link', { name: /partner sign-in/i })
-    ).toHaveAttribute('href', '/partner/login');
-
-    await page.goto('/signup', { waitUntil: 'domcontentloaded' });
-    await settle(page);
-    // "Apply to the partner network" must never point at customer signup.
-    await expect(
-      page.getByRole('link', { name: /partner network/i })
-    ).toHaveAttribute('href', '/partner/signup');
+  test('no auth page links into the removed partner portal', async ({ page }) => {
+    for (const path of ['/login', '/signup']) {
+      await page.goto(path, { waitUntil: 'domcontentloaded' });
+      await settle(page);
+      expect(
+        await page.locator('a[href^="/partner"]').count(),
+        `${path} links into the removed partner portal`
+      ).toBe(0);
+    }
   });
 });
 

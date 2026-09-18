@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 /* ═══════════════════════════════════════════════════════════════════════════
    INFRASTRUCTURE CONFIGURATION SEQUENCE
 
-   The shell shared by the customer observation setup and the agency client
-   setup. It is deliberately not the console shell: during configuration there
+   The shell for the customer observation setup. It is deliberately not the
+   console shell: during configuration there
    is exactly one thing to do, and a navigation rail full of empty surfaces is
    both a distraction and a lie (there is nothing in them yet).
 

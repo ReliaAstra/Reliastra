@@ -5,7 +5,7 @@ import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
 export const metadata = buildMetadata({
   title: 'Contact - Talk to RELIASTRA',
   description:
-    'Contact RELIASTRA: support, sales and security. Support at support@reliastra.com, Enterprise sales at sales@reliastra.com.',
+    'Contact RELIASTRA: support, billing and security. A human reads every message - there is no sales team.',
   path: '/contact',
 });
 
@@ -37,11 +37,11 @@ export default function ContactPage() {
       <MarketingPage
         eyebrow="Company"
         title="Talk to RELIASTRA"
-        lede="Support, sales and security. Answered by the team that operates the measurement network."
+        lede="Support, billing and security. Answered by the person who operates the measurement network."
         breadcrumbs={crumbs}
         related={[
           { label: 'Documentation', href: '/docs', description: 'Answers before you ask.' },
-          { label: 'Pricing', href: '/pricing', description: 'Enterprise scoping starts here.' },
+          { label: 'Pricing', href: '/pricing', description: 'One plan, $9 a month.' },
           { label: 'Status', href: '/status', description: 'Check platform health first.' },
           { label: 'About', href: '/about', description: 'Why we exist.' },
         ]}
@@ -53,15 +53,16 @@ export default function ContactPage() {
             monitoring, evidence and billing questions. Include your organization name
             and, for incident questions, the dependency and window (UTC).
           </p>
-          <h2>Sales (Enterprise)</h2>
-          <p>
-            <a href="mailto:sales@reliastra.com?subject=Enterprise%20plan">sales@reliastra.com</a> -
-            custom scale, client isolation, white-label reporting and custom retention.
-          </p>
           <h2>Billing</h2>
           <p>
-            <a href="mailto:billing@reliastra.com?subject=Pro%20plan%20pricing">billing@reliastra.com</a> -
-            subscriptions, invoices and Pro plan pricing.
+            <a href="mailto:billing@reliastra.com?subject=Developer%20plan">billing@reliastra.com</a> -
+            subscriptions, invoices, refunds and the Developer plan.
+          </p>
+          <h2>Creators</h2>
+          <p>
+            Technical creators and publishers:{' '}
+            <a href="/creators">how the creator program works</a> - or just
+            email support with a link to your work.
           </p>
           <h2>Before writing in</h2>
           <p>
