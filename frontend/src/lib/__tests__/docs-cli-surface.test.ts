@@ -45,6 +45,15 @@ const DEVELOPER_PAGE = readFileSync(
   ),
   'utf8'
 );
+/** The agent-facing files quote commands verbatim, so they are policed too. */
+const LLMS_TXT = readFileSync(
+  join(REPO_ROOT, 'frontend', 'src', 'app', 'llms.txt', 'route.ts'),
+  'utf8'
+);
+const LLMS_FULL = readFileSync(
+  join(REPO_ROOT, 'frontend', 'src', 'app', 'llms-full.txt', 'route.ts'),
+  'utf8'
+);
 const CLI_PACKAGE = JSON.parse(
   readFileSync(join(REPO_ROOT, 'cli', 'package.json'), 'utf8')
 ) as { name: string; bin: Record<string, string> };
@@ -149,6 +158,11 @@ function fragmentsFromDocs(): Fragment[] {
   // The console's developer surface prints the same commands to a different
   // audience, and it drifts the same way. It is scanned as documentation.
   out.push({ where: 'console/pages/developer.tsx', text: DEVELOPER_PAGE });
+  // `reliastra <command>` is how a retrieval model is told to reach the API.
+  // The same drift applies, and the reader here cannot ask a human what it
+  // meant - it will simply retry the failing invocation.
+  out.push({ where: 'app/llms.txt', text: LLMS_TXT });
+  out.push({ where: 'app/llms-full.txt', text: LLMS_FULL });
   return out;
 }
 
@@ -227,15 +241,14 @@ describe('documentation against the CLI surface', () => {
   });
 
   it('spells the command correctly', () => {
-    // `reliaastra` shipped in the CLI's own help text and several guide lines:
-    // one `a` too many in the command name. The GitHub organisation really is
-    // `ReliAstra`, so the clone URL is removed by plain string surgery before
-    // the check - it is the one place that letter pattern is correct.
+    // `reliaastra` - one `a` too many - shipped in the CLI's own help text and
+    // several guide lines. The GitHub organisation really does contain that
+    // sequence (`ReliaAstra`, two `a`s: the correct `github.com/ReliAstra`
+    // returns 404), so the organisation name is removed by plain string
+    // surgery first. Everything else is checked, URL or prose.
     for (const { where, text } of FRAGMENTS) {
-      const withoutRepoUrl = text
-        .split('https://github.com/ReliaAstra/Reliastra')
-        .join('<repo>');
-      expect(withoutRepoUrl, where).not.toMatch(/reliaastra/i);
+      const withoutOrgName = text.split('ReliaAstra').join('<org>');
+      expect(withoutOrgName, where).not.toMatch(/reliaastra/i);
     }
   });
 
