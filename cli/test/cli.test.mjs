@@ -70,7 +70,48 @@ const routes = {
     200,
     [{ id: 'rep-1', incident_id: 'inc-1', generated_at: '2026-09-18T10:10:00Z', expires_at: '2027-09-18T10:10:00Z', file_size_bytes: PDF_BYTES.length, checksum: REPORT_CHECKSUM }],
   ],
-  'GET /v1/evidence/rep-1': () => [200, { id: 'rep-1', incident_id: 'inc-1', generated_at: '2026-09-18T10:10:00Z', file_size_bytes: PDF_BYTES.length, checksum: REPORT_CHECKSUM }],
+  'GET /v1/evidence/rep-1': () => [
+    200,
+    {
+      id: 'rep-1',
+      incident_id: 'inc-1',
+      generated_at: '2026-09-18T10:10:00Z',
+      expires_at: '2027-09-18T10:10:00Z',
+      file_size_bytes: PDF_BYTES.length,
+      checksum: REPORT_CHECKSUM,
+      // The fields the download response carries after the API change: the
+      // path from an artifact back to its own verification record.
+      verification_id: 'good-id',
+      verification_url: 'https://reliastra.com/reports/good-id',
+      data_hash: 'aaaa1111',
+      methodology_version: 'v1.0',
+      signed: false,
+      signature_alg: null,
+      download_url: 'https://storage.example/rep-1.pdf?token=…',
+    },
+  ],
+  'GET /health': () => [200, { status: 'ok' }],
+  'GET /v1/dependencies/dep-1234abcd': () => [
+    200,
+    {
+      id: 'dep-1234abcd',
+      name: 'Stripe API',
+      endpoint_url: 'https://api.stripe.com/v1/charges',
+      method: 'GET',
+      expected_status_codes: [200, 204],
+      check_interval_seconds: 300,
+      timeout_seconds: 10,
+      next_check_at: '2026-09-18T10:05:00Z',
+      is_active: true,
+      regions: ['us-east'],
+      last_check_at: '2026-09-18T10:00:00Z',
+    },
+  ],
+  'GET /v1/dependencies/dep-1234abcd/results': () => [
+    200,
+    { items: [{ id: 'c1', dependency_id: 'dep-1234abcd', region: 'us-east', executed_at: '2026-09-18T10:00:00Z', latency_ms: 212.4, status_code: 200, is_up: true }] },
+  ],
+  'DELETE /v1/api-keys/k1': () => [204, null],
   'GET /v1/verify/good-id': () => [
     200,
     {
@@ -86,8 +127,8 @@ const routes = {
   ],
   'GET /v1/verify/missing-id': () => [404, { found: false, error: 'Evidence not found' }],
   'GET /v1/verify/degraded-id': () => [503, { found: false, service_degraded: true }],
-  'GET /v1/api-keys': () => [200, [{ id: 'k1', name: 'ci', prefix: 'rs_live_ab', scopes: ['read:checks'], created_at: '2026-09-01T00:00:00Z' }]],
-  'POST /v1/api-keys': (body) => [201, { id: 'k2', name: body.name, prefix: 'rs_live_cd', scopes: ['read:checks', 'write:dependencies'], full_key: 'rs_live_cd_secret', created_at: '2026-09-18T00:00:00Z' }],
+  'GET /v1/api-keys': () => [200, [{ id: 'k1', name: 'ci', prefix: 'rel_ab12', scopes: ['read:checks'], created_at: '2026-09-01T00:00:00Z' }]],
+  'POST /v1/api-keys': (body) => [201, { id: 'k2', name: body.name, prefix: 'rel_cd34', scopes: ['read:checks', 'write:dependencies'], full_key: 'rel_cd34_secret', created_at: '2026-09-18T00:00:00Z' }],
   'GET /v1/vendors': () => [200, { items: [{ vendor_name: 'openai', display_name: 'OpenAI', category: 'ai', recent_status: 'operational', latency_ms: 143.2, last_check_at: '2026-09-18T10:00:00Z' }] }],
   'GET /v1/vendors/openai': () => [200, { vendor_name: 'openai', display_name: 'OpenAI', category: 'ai', recent_status: 'operational', endpoints: [{ endpoint_url: 'https://api.openai.com/v1/models', health_status: 'up', last_check_at: '2026-09-18T10:00:00Z' }] }],
   'GET /v1/evidence/rep-1/download': () => [200, PDF_BYTES, 'application/pdf'],
@@ -107,6 +148,13 @@ function startServer() {
         const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : undefined;
         const key = `${req.method} ${req.url.split('?')[0]}`;
         const handler = routes[key];
+        // A credential that authenticates but lacks the scope, exactly as the
+        // API answers it (403 + the scope that was missing).
+        if ((req.headers.authorization ?? '').includes('denied-token')) {
+          res.writeHead(403, { 'content-type': 'application/json' });
+          res.end(JSON.stringify({ detail: 'API key lacks required scope: read:dependencies' }));
+          return;
+        }
         // Authenticated routes reject a missing bearer token, exactly as the
         // API does; otherwise "no credential stored" would look like success.
         const isPublic =
@@ -114,7 +162,7 @@ function startServer() {
           key.startsWith('GET /v1/vendors') ||
           key === 'POST /v1/auth/login' ||
           key === 'POST /v1/auth/refresh';
-        if (handler && !isPublic && !(req.headers.authorization ?? '').startsWith('Bearer ')) {
+        if (handler && !isPublic && !key.startsWith('GET /v1/verify/') && !(req.headers.authorization ?? '').startsWith('Bearer ')) {
           res.writeHead(401, { 'content-type': 'application/json' });
           res.end(JSON.stringify({ detail: 'Not authenticated' }));
           return;
@@ -147,7 +195,7 @@ function startServer() {
 }
 
 /** Run the CLI, capturing output through the injectable sinks. */
-async function run(argv) {
+async function run(argv, env = process.env) {
   const out = [];
   const err = [];
   const sink = (bucket) => ({
@@ -158,7 +206,7 @@ async function run(argv) {
   });
   setOutput({ stdout: sink(out), stderr: sink(err) });
   try {
-    const code = await main(argv);
+    const code = await main(argv, env);
     return { code, out: out.join(''), err: err.join('') };
   } finally {
     resetOutput();
@@ -225,6 +273,31 @@ describe('session', () => {
     assert.match(me.out, /from config/);
   });
 
+  it('stores an API key with --token, after checking it works', async () => {
+    const result = await run([
+      'login', '--token', 'rel_0123456789abcdef0123456789abcdef01234567', '--api-url', baseUrl,
+    ]);
+    assert.equal(result.code, EXIT.ok);
+    const stored = JSON.parse(readFileSync(process.env.RELIASTRA_CONFIG, 'utf8'));
+    assert.equal(stored.api_key, 'rel_0123456789abcdef0123456789abcdef01234567');
+    assert.equal(stored.access_token, undefined);
+
+    const me = await run(['whoami', '--api-url', baseUrl]);
+    assert.equal(me.code, EXIT.ok);
+    assert.match(me.out, /API key/);
+
+    // The session login below restores the session credential for later tests.
+    await run(['login', '--email', 'engineer@example.com', '--api-url', baseUrl]);
+  });
+
+  it('refuses a key that cannot read dependencies, rather than storing it', async () => {
+    const before = readFileSync(process.env.RELIASTRA_CONFIG, 'utf8');
+    const result = await run(['login', '--token', 'denied-token', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.denied);
+    assert.match(result.err, /cannot read dependencies/);
+    assert.equal(readFileSync(process.env.RELIASTRA_CONFIG, 'utf8'), before);
+  });
+
   it('reports a bad password as an auth failure, not a crash', async () => {
     const bad = await run(['login', '--email', 'nobody@example.com', '--api-url', baseUrl]);
     assert.equal(bad.code, EXIT.auth);
@@ -236,7 +309,8 @@ describe('session', () => {
     const result = await run(['deps', 'list', '--api-url', baseUrl]);
     process.env.RELIASTRA_CONFIG = join(configDir, 'config.json');
     assert.equal(result.code, EXIT.auth);
-    assert.match(result.err, /run `reliastra login`/);
+    assert.match(result.err, /Run `reliastra login`/);
+    assert.match(result.err, /RELIASTRA_TOKEN/);
   });
 });
 
@@ -268,7 +342,7 @@ describe('reading product state', () => {
     assert.match(result.out, /correlated dependencies/);
     assert.match(result.out, /dep-9999/);
     assert.doesNotMatch(result.out, /quorum/i);
-    assert.match(result.out, /inside the\s+evidence artifact/);
+    assert.match(result.out, /reliastra evidence show rep-1/);
   });
 
   it('summarises a bad request body the API rejected', async () => {
@@ -354,6 +428,204 @@ describe('usage', () => {
   it('exits 1 for a missing argument rather than guessing one', async () => {
     const result = await run(['evidence', 'show']);
     assert.equal(result.code, EXIT.usage);
-    assert.match(result.out, /usage: reliaastra evidence show/);
+    assert.match(result.out, /usage: reliastra evidence show/);
+  });
+});
+
+/* ── Help, everywhere ───────────────────────────────────────────────────── */
+
+describe('help', () => {
+  it('answers --help for a command without running it', async () => {
+    const result = await run(['evidence', '--help']);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /reliastra evidence <list|show|get>/);
+    assert.match(result.out, /verification URL/);
+  });
+
+  it('answers --help for a subcommand, so a flag never has to be guessed', async () => {
+    const result = await run(['evidence', 'get', '--help']);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /--out <path>/);
+    assert.match(result.out, /hashed here, not echoed|computed from the file on disk/);
+  });
+
+  it('documents exit codes in the top-level help', async () => {
+    const result = await run(['--help']);
+    assert.match(result.out, /verification claim did not hold/);
+    assert.match(result.out, /could not be reached/);
+  });
+
+  it('rejects an unknown subcommand and offers the one that exists', async () => {
+    const result = await run(['evidence', 'frobnicate']);
+    assert.equal(result.code, EXIT.usage);
+    assert.match(result.err, /unknown subcommand: evidence frobnicate/);
+    assert.match(result.err, /reliastra evidence --help/);
+  });
+
+  it('rejects an unknown flag rather than ignoring it', async () => {
+    const result = await run(['deps', 'list', '--interva', '60', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.usage);
+    assert.match(result.err, /unknown flag/);
+    assert.match(result.err, /did you mean `--interval`/);
+  });
+
+  it('prints a version string', async () => {
+    const result = await run(['--version']);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out.trim(), /^\d+\.\d+\.\d+/);
+  });
+});
+
+/* ── Doctor ─────────────────────────────────────────────────────────────── */
+
+describe('doctor', () => {
+  it('passes every essential check with a stored session', async () => {
+    await run(['login', '--email', 'engineer@example.com', '--api-url', baseUrl]);
+    const result = await run(['doctor', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /api reachable/);
+    assert.match(result.out, /authenticated/);
+  });
+
+  it('names authentication as the failure rather than blaming the network', async () => {
+    const result = await run(['doctor', '--api-url', baseUrl], {
+      ...process.env,
+      RELIASTRA_TOKEN: 'denied-token',
+    });
+    assert.equal(result.code, EXIT.denied);
+    assert.match(result.err, /authenticated/);
+    assert.match(result.err, /reliastra keys create/);
+  });
+
+  it('reports an unreachable API as a network failure with its own exit code', async () => {
+    const result = await run(['doctor', '--api-url', 'http://127.0.0.1:9']);
+    assert.equal(result.code, EXIT.network);
+    assert.match(result.err, /api reachable/);
+  });
+
+  it('never prints the credential value', async () => {
+    const secret = 'rel_0123456789abcdef0123456789abcdef01234567';
+    await run(['login', '--email', 'engineer@example.com', '--api-url', baseUrl]);
+    const result = await run(['doctor', '--json', '--api-url', baseUrl], {
+      ...process.env,
+      RELIASTRA_TOKEN: secret,
+    });
+    assert.equal(result.code, EXIT.ok);
+    assert.doesNotMatch(result.out, new RegExp(secret));
+    assert.match(result.out, /"credential_source": "environment"/);
+  });
+});
+
+/* ── Terminal to web ────────────────────────────────────────────────────── */
+
+describe('web links', () => {
+  const site = 'https://console.test';
+
+  it('builds the public verification URL for any identifier it prints', async () => {
+    const result = await run(['open', 'verify', '8Kd2xQ7mB4pL', '--site-url', site]);
+    assert.equal(result.code, EXIT.ok);
+    assert.equal(result.out.trim(), `${site}/reports/8Kd2xQ7mB4pL`);
+  });
+
+  it('builds console URLs for incidents, evidence and dependencies', async () => {
+    const incident = await run(['open', 'incident', 'inc-1', '--site-url', site]);
+    assert.equal(incident.out.trim(), `${site}/incidents/inc-1`);
+    const evidence = await run(['open', 'evidence', 'rep-1', '--site-url', site]);
+    assert.equal(evidence.out.trim(), `${site}/evidence/rep-1`);
+    const dependency = await run(['open', 'dependency', 'dep-1', '--site-url', site]);
+    assert.equal(dependency.out.trim(), `${site}/dependencies/dep-1`);
+  });
+
+  it('needs an id for a resource, and says which kinds exist', async () => {
+    const result = await run(['open', 'incident', '--site-url', site]);
+    assert.equal(result.code, EXIT.usage);
+    assert.match(result.err, /incident needs an id/);
+  });
+
+  it('prints the console URL from the evidence detail, not only from `open`', async () => {
+    const result = await run(['evidence', 'show', 'rep-1', '--site-url', site, '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /https:\/\/reliastra\.com\/reports\/good-id/);
+    assert.match(result.out, new RegExp(`${site}/evidence/rep-1`));
+  });
+});
+
+/* ── Destructive commands ───────────────────────────────────────────────── */
+
+describe('destructive commands', () => {
+  it('refuses to remove a dependency without a confirmation or --yes', async () => {
+    const result = await run(['deps', 'rm', 'dep-1234abcd', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.usage);
+    assert.match(result.err, /no terminal is attached/);
+    assert.match(result.err, /--yes/);
+  });
+
+  it('removes it with --yes, which is what a script passes', async () => {
+    const result = await run(['deps', 'rm', 'dep-1234abcd', '--yes', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /removed dep-1234abcd/);
+  });
+
+  it('revokes an API key by id', async () => {
+    const result = await run(['keys', 'rm', 'k1', '--yes', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /revoked k1/);
+  });
+});
+
+/* ── One dependency, end to end ─────────────────────────────────────────── */
+
+describe('dependency record', () => {
+  it('shows configuration, observations and incidents together', async () => {
+    const result = await run(['deps', 'show', 'dep-1234abcd', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /Stripe API/);
+    assert.match(result.out, /last 1 observations/);
+    assert.match(result.out, /incidents for this dependency/);
+    assert.match(result.out, /console  https:\/\/reliastra\.com\/dependencies\/dep-1234abcd/);
+  });
+
+  it('filters observations by dependency through the dependency\'s own endpoint', async () => {
+    const result = await run([
+      'checks', 'recent', '--dependency', 'dep-1234abcd', '--api-url', baseUrl,
+    ]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /for dependency dep-1234abcd/);
+  });
+
+  it('follows an incident to its evidence record with --evidence', async () => {
+    const result = await run(['incidents', 'show', 'inc-1', '--evidence', '--api-url', baseUrl]);
+    assert.equal(result.code, EXIT.ok);
+    assert.match(result.out, /evidence record/);
+    assert.match(result.out, /https:\/\/reliastra\.com\/reports\/good-id/);
+  });
+});
+
+/* ── Failure taxonomy ───────────────────────────────────────────────────── */
+
+describe('failure taxonomy', () => {
+  it('distinguishes "not permitted" from "not authenticated"', async () => {
+    const result = await run(['deps', 'list', '--api-url', baseUrl], {
+      ...process.env,
+      RELIASTRA_TOKEN: 'denied-token',
+    });
+    assert.equal(result.code, EXIT.denied);
+    assert.match(result.err, /not permitted/);
+    assert.match(result.err, /scope/);
+  });
+
+  it('gives an unreachable API its own exit code, not an auth one', async () => {
+    const result = await run(['deps', 'list', '--api-url', 'http://127.0.0.1:9']);
+    assert.equal(result.code, EXIT.network);
+    assert.match(result.err, /could not be reached/);
+    assert.doesNotMatch(result.err, /authentication/);
+  });
+
+  it('never prints a stack trace', async () => {
+    const result = await run(['deps', 'list', '--api-url', baseUrl], {
+      ...process.env,
+      RELIASTRA_TOKEN: 'denied-token',
+    });
+    assert.doesNotMatch(result.err, /\n\s+at /);
   });
 });

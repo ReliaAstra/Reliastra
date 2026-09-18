@@ -1358,6 +1358,25 @@ class EvidenceService:
         data["download_url"] = storage_client.get_presigned_url(
             report.file_path, expires_seconds=3600
         )
+
+        # Attach the path from this artifact back to its own verification
+        # record. Without it the CLI (and the console) can retrieve a document
+        # but cannot answer the question the document exists to answer - "is
+        # this what RELIASTRA issued?" - without the operator finding the
+        # verification id inside the PDF and typing it.
+        snapshot = await self.snapshot_repository.get_by_report_checksum(
+            session, report.checksum
+        )
+        if snapshot is not None:
+            data["verification_id"] = snapshot.verification_id
+            data["verification_url"] = design.verification_url(
+                snapshot.verification_id
+            )
+            data["data_hash"] = snapshot.data_hash
+            data["methodology_version"] = snapshot.methodology_version
+            data["signed"] = snapshot.signature is not None
+            data["signature_alg"] = snapshot.signature_alg
+
         return EvidenceReportDownloadResponse.model_validate(data)
 
     async def regenerate_report(

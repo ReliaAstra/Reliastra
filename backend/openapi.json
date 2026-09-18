@@ -1456,6 +1456,23 @@
               ],
               "title": "Severity"
             }
+          },
+          {
+            "name": "dependency_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dependency Id"
+            }
           }
         ],
         "responses": {
@@ -3603,6 +3620,30 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/verify/keys": {
+      "get": {
+        "tags": [
+          "Verification"
+        ],
+        "summary": "Verification Keys",
+        "description": "The public signing keys, in JWK form, so a signature can be checked without trusting this endpoint. Returns `configured: false` and an empty key list when the deployment issues unsigned artifacts.",
+        "operationId": "verification_keys_v1_verify_keys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Verification Keys V1 Verify Keys Get"
                 }
               }
             }
@@ -7750,6 +7791,66 @@
           "download_url": {
             "type": "string",
             "title": "Download Url"
+          },
+          "verification_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Id"
+          },
+          "verification_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Url"
+          },
+          "data_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Hash"
+          },
+          "methodology_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology Version"
+          },
+          "signed": {
+            "type": "boolean",
+            "title": "Signed",
+            "default": false
+          },
+          "signature_alg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signature Alg"
           }
         },
         "type": "object",
@@ -11707,6 +11808,33 @@
       },
       "VendorResponse": {
         "properties": {
+          "recent_status": {
+            "type": "string",
+            "title": "Recent Status",
+            "default": "unknown"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "status_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Code"
+          },
           "id": {
             "type": "string",
             "format": "uuid",

@@ -20,6 +20,17 @@ import { dirname, join } from 'node:path';
 
 export const DEFAULT_API_URL = 'https://api.reliastra.com';
 
+/**
+ * The web application's origin.
+ *
+ * Commands that identify a resource print the page where a person can read it,
+ * because the CLI and the web console are two views of the same record rather
+ * than two products. The default is the production site; a self-hosted
+ * deployment or a local development server overrides it with
+ * `--site-url`, `RELIASTRA_SITE_URL` or `site_url` in the config file.
+ */
+export const DEFAULT_SITE_URL = 'https://reliastra.com';
+
 /** XDG-style config location, so a container can redirect it in one variable. */
 export function configPath(env = process.env) {
   if (env.RELIASTRA_CONFIG) return env.RELIASTRA_CONFIG;
@@ -74,15 +85,64 @@ export function resolveSession(flags = {}, env = process.env) {
     file.api_url ||
     DEFAULT_API_URL
   ).replace(/\/+$/, '');
+  const siteUrl = (
+    flags.siteUrl ||
+    env.RELIASTRA_SITE_URL ||
+    file.site_url ||
+    DEFAULT_SITE_URL
+  ).replace(/\/+$/, '');
 
   if (flags.token) {
-    return { apiUrl, token: flags.token, source: 'flag', config: file };
+    return { apiUrl, siteUrl, token: flags.token, source: 'flag', config: file };
   }
   if (env.RELIASTRA_TOKEN) {
-    return { apiUrl, token: env.RELIASTRA_TOKEN, source: 'environment', config: file };
+    return {
+      apiUrl,
+      siteUrl,
+      token: env.RELIASTRA_TOKEN,
+      source: 'environment',
+      config: file,
+    };
+  }
+  if (file.api_key) {
+    // A stored API key is its own field, not an `access_token`: the two are
+    // refreshed differently, and a key written over a session (or the reverse)
+    // would silently change which credential a later command sends.
+    return {
+      apiUrl,
+      siteUrl,
+      token: file.api_key,
+      source: 'config (api key)',
+      config: file,
+    };
   }
   if (file.access_token) {
-    return { apiUrl, token: file.access_token, source: 'config', config: file };
+    return { apiUrl, siteUrl, token: file.access_token, source: 'config', config: file };
   }
-  return { apiUrl, token: null, source: 'none', config: file };
+  return { apiUrl, siteUrl, token: null, source: 'none', config: file };
+}
+
+/**
+ * Web URLs for the resources the CLI can identify.
+ *
+ * One place, so `--web`, `reliastra open` and the hints printed after a command
+ * cannot drift apart. Every path here is a route that exists in the web
+ * application (see `frontend/src/lib/routes.ts`).
+ */
+export function webUrls(siteUrl) {
+  const base = siteUrl.replace(/\/+$/, '');
+  return {
+    dashboard: `${base}/dashboard`,
+    dependency: (id) => `${base}/dependencies/${encodeURIComponent(id)}`,
+    incident: (id) => `${base}/incidents/${encodeURIComponent(id)}`,
+    evidence: (id) => `${base}/evidence/${encodeURIComponent(id)}`,
+    verification: (id) => `${base}/reports/${encodeURIComponent(id)}`,
+    observatory: () => `${base}/observatory`,
+    vendor: (name) => `${base}/observatory/${encodeURIComponent(name)}`,
+    docs: (slug = '') => `${base}/docs${slug ? `/${slug}` : ''}`,
+    quickstart: `${base}/docs/quickstart`,
+    methodology: `${base}/docs/methodology`,
+    product: `${base}/product`,
+    evidenceProduct: `${base}/product/evidence`,
+  };
 }

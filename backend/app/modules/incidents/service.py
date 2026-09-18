@@ -421,9 +421,15 @@ class IncidentService:
         limit: int = 50,
         status: str | None = None,
         severity: str | None = None,
+        dependency_id: uuid.UUID | None = None,
     ) -> list[IncidentResponse]:
         incidents = await self.repository.list_for_org(
-            session, org_id, limit=limit, status_filter=status, severity_filter=severity
+            session,
+            org_id,
+            limit=limit,
+            status_filter=status,
+            severity_filter=severity,
+            dependency_filter=dependency_id,
         )
         return [IncidentResponse.model_validate(inc) for inc in incidents]
 

@@ -701,7 +701,7 @@ reliastra evidence get 4b2e… --out incident-2026-09-18.pdf`,
 reliastra keys create ci-bot --scopes read:checks,write:dependencies,read:incidents,read:evidence
 
 # Use it
-export RELIASTRA_TOKEN=rs_live_…
+export RELIASTRA_TOKEN=rel_…
 curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RELIASTRA_TOKEN"`,
           },
           {
@@ -849,7 +849,7 @@ reliastra --help`,
           {
             kind: 'code',
             lang: 'bash',
-            code: `RELIASTRA_TOKEN=rs_live_… reliaastra deps list --json`,
+            code: `RELIASTRA_TOKEN=rel_… reliastra deps list --json`,
           },
         ],
       },

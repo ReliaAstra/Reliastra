@@ -15,6 +15,19 @@
 
 import { writeConfig } from './config.mjs';
 
+/**
+ * Whether a credential is a programmatic API key rather than a session token.
+ *
+ * The distinction matters because the two are authorised differently: the API
+ * deliberately denies identity and account surfaces to keys ("deny by default
+ * for anything not mapped to a scope"), so a caller that treats a key like a
+ * session reports the API's correct refusal as an authentication failure. Keys
+ * are issued as `rel_` plus 40 hex characters; nothing else uses that prefix.
+ */
+export function isApiKey(token) {
+  return typeof token === 'string' && /^rel_[0-9a-f]{8,}$/i.test(token);
+}
+
 export class ApiError extends Error {
   constructor(message, { status = 0, code = 'api_error', body = null, requestId = null } = {}) {
     super(message);

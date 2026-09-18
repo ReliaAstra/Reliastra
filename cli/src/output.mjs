@@ -98,6 +98,17 @@ export function heading(text) {
   write(`\n${text}`);
 }
 
+/**
+ * A "where to go next" line, printed after a successful command.
+ *
+ * Suppressed by `--quiet` and by `--json`: a machine-readable document with a
+ * trailing prose line is not JSON, and a quiet run asked for data only.
+ */
+export function hint(text, flags = {}) {
+  if (!text || flags.quiet || flags.json) return;
+  write(`\n${text}`);
+}
+
 export const SYMBOL = {
   ok: '✓',
   fail: '✕',
