@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { TrackVendorListItem } from '@/lib/track-api';
 
-/** SSR supplies first paint; visible-page polling prevents frozen "just now" labels. */
+/**
+ * The index rows on the homepage: primarily typographic, one hairline
+ * between records, never a card. SSR supplies first paint; visible-page
+ * polling prevents frozen "just now" labels.
+ */
 export function PublicObservations({ initial }: { initial: TrackVendorListItem[] }) {
   const [vendors, setVendors] = useState(initial);
   const [now, setNow] = useState<number | null>(null);
@@ -29,16 +33,37 @@ export function PublicObservations({ initial }: { initial: TrackVendorListItem[]
     return () => { clearInterval(timer); controller?.abort(); document.removeEventListener('visibilitychange', refresh); };
   }, []);
   return <>
-    {error && <p role="status" className="ob-small mt-4">Updates unavailable · showing last retrieved observations</p>}
-    <ul className="mt-4 grid gap-x-12 sm:grid-cols-2 xl:grid-cols-3">
+    {error && <p role="status" className="ob-small mb-4">Updates unavailable · showing last retrieved observations</p>}
+    <ul className="border-b border-[var(--ob-line)]">
       {vendors.map(v => {
         const age = now && v.last_check_at ? Math.max(0, now - Date.parse(v.last_check_at)) : null;
         const stale = age != null && age > 900_000;
         const status = stale ? 'No recent data' : ({ operational: 'Operational', down: 'Check failed', degraded: 'Degraded', stale: 'No recent data' }[v.recent_status ?? ''] ?? 'No observations');
-        return <li key={v.id}><Link href={`/observatory/${v.vendor_name}`} className="group flex items-baseline justify-between gap-4 border-b border-[var(--ob-line)] py-5 hover:border-[var(--ob-line-3)]">
-          <span className="min-w-0"><span className="block truncate text-[15px] font-medium text-[var(--ob-text)]">{v.display_name}</span><span className="ob-label mt-2 block">{v.category}</span></span>
-          <span className="shrink-0 text-right"><span className="ob-label block">{status}</span><span className="ob-small mt-1 block">{v.latency_ms != null ? `${Math.round(v.latency_ms)} ms` : '-'}</span><time dateTime={v.last_check_at ?? undefined} className="ob-small mt-1 block">{v.last_check_at ? age == null ? 'Observed' : age < 60_000 ? 'Just now' : `${Math.floor(age / 60_000)}m ago` : 'Waiting for first check'}</time></span>
-        </Link></li>;
+        const state = stale ? 'unknown' : ({ operational: 'healthy', down: 'critical', degraded: 'degraded', stale: 'unknown' }[v.recent_status ?? ''] ?? 'unknown');
+        return <li key={v.id} className="border-t border-[var(--ob-line)]">
+          <Link href={`/observatory/${v.vendor_name}`} className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto]">
+            <span className="min-w-0">
+              <span className="block truncate text-[clamp(1.25rem,2.6vw,1.875rem)] font-semibold uppercase leading-[1.05] tracking-[-0.015em] text-[var(--ob-text)]">
+                {v.display_name}
+              </span>
+              <span className="ob-label mt-2 block">{v.category}</span>
+            </span>
+            <span className="hidden md:block">
+              <span className="ob-label block">Last check</span>
+              <time dateTime={v.last_check_at ?? undefined} className="ob-mono mt-2 block text-[12.5px] text-[var(--ob-text-3)]">
+                {v.last_check_at ? age == null ? 'Observed' : age < 60_000 ? 'Just now' : `${Math.floor(age / 60_000)}m ago` : 'Waiting'}
+              </time>
+            </span>
+            <span className="hidden text-right md:block">
+              <span className="ob-label block">Latency</span>
+              <span className="ob-mono mt-2 block text-[12.5px] text-[var(--ob-text-3)]">{v.latency_ms != null ? `${Math.round(v.latency_ms)} ms` : '-'}</span>
+            </span>
+            <span className="ob-state shrink-0 justify-self-end self-center" data-state={state}>
+              <span className="ob-dot" data-state={state} />
+              {status}
+            </span>
+          </Link>
+        </li>;
       })}
     </ul>
   </>;

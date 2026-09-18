@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { JsonLd } from '@/components/seo/json-ld';
 import { SiteShell } from '@/components/site/site-shell';
 import {
-  ArrowLink,
   Breadcrumb,
   Container,
   Eyebrow,
@@ -94,38 +93,58 @@ export default function ProductPage() {
         ]}
       />
 
-      <header className="border-b border-[var(--ob-line)] bg-[var(--ob-base)]">
-        <Container className="py-14 md:py-20">
-          <Breadcrumb items={crumbs} className="mb-8" />
-          <Eyebrow>Product</Eyebrow>
-          <h1 className="ob-h1 mt-5 max-w-[20ch]">
-            Observe a dependency. Confirm the fault. Keep the record.
+      <header className="relative overflow-hidden border-b border-[var(--ob-line)] bg-black">
+        <div aria-hidden className="ob-scene-media">
+          <img
+            src="/media/scene-edge.webp"
+            srcSet="/media/scene-edge-sm.webp 1366w, /media/scene-edge.webp 1672w"
+            sizes="100vw"
+            alt=""
+            loading="eager"
+            decoding="async"
+            style={{ objectPosition: '72% 50%' }}
+          />
+          <div className="ob-scene-scrim" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.88),transparent_45%)]" />
+        </div>
+        <Container className="relative z-[1] flex min-h-[78vh] flex-col justify-end pb-16 pt-36 md:pb-20">
+          <Breadcrumb items={crumbs} className="mb-9" />
+          <Eyebrow>Platform</Eyebrow>
+          <h1 className="ob-display mt-6 max-w-[12ch]">
+            Observe. Correlate. Prove.
           </h1>
-          <p className="ob-lede mt-6 max-w-[64ch]">
+          <p className="ob-lede mt-7 max-w-[54ch]">
             RELIASTRA does four things, and each of them is a place where a
             weaker tool starts guessing. This page states what each step does,
             what it is allowed to conclude, and what it deliberately does not.
           </p>
-          <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3">
-            <ArrowLink href={DOCS_ROUTES.quickstart}>Add your first dependency</ArrowLink>
-            <ArrowLink href={PUBLIC_ROUTES.observatory}>See the public data</ArrowLink>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+              Start monitoring
+            </Link>
+            <Link href={DOCS_ROUTES.quickstart} className="ob-btn ob-btn-outline">
+              Add your first dependency
+            </Link>
           </div>
         </Container>
       </header>
 
-      {/* ── The pipeline ── */}
-      <Section tone="void" divider={false} tight aria-labelledby="pipeline-title">
+      {/* ── The pipeline, as the product viewport ── */}
+      <Section tone="void" divider={false} aria-labelledby="pipeline-title">
         <Container>
-          <h2 id="pipeline-title" className="sr-only">
-            How RELIASTRA works
-          </h2>
-          <ol className="grid gap-px md:grid-cols-2 xl:grid-cols-4">
+          <div className="flex flex-col gap-6 pb-12">
+            <Eyebrow index="01">The pipeline</Eyebrow>
+            <h2 id="pipeline-title" className="ob-scene-title max-w-[14ch]">
+              Four steps. No guessing.
+            </h2>
+          </div>
+          <ol className="grid gap-px border border-[var(--ob-line)] bg-[var(--ob-line)] md:grid-cols-2 xl:grid-cols-4">
             {steps.map((step) => (
               <li
                 key={step.n}
-                className="flex flex-col gap-4 border-t border-[var(--ob-line)] pt-7 xl:pr-8"
+                className="flex flex-col gap-4 bg-[var(--ob-base)] p-7"
               >
-                <span className="ob-label ob-label-signal">{step.n}</span>
+                <span className="ob-label ob-label-strong">{step.n}</span>
                 <h3 className="ob-h3">{step.title}</h3>
                 <p className="text-[14px] leading-[1.68] text-[var(--ob-text-3)]">
                   {step.body}
@@ -142,13 +161,13 @@ export default function ProductPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="01">Observation</Eyebrow>
+              <Eyebrow index="02">Observation</Eyebrow>
               <h2 id="obs-title" className="ob-h2 max-w-[18ch]">
                 What a probe records, and nothing more.
               </h2>
               <p className="ob-body">
-                Six fields, one row per probe. Everything downstream — the
-                confirmation, the availability arithmetic, the artifact — is
+                Six fields, one row per probe. Everything downstream - the
+                confirmation, the availability arithmetic, the artifact - is
                 derived from rows like this one, which is why they are retained
                 individually rather than aggregated on write.
               </p>
@@ -204,7 +223,7 @@ export default function ProductPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-20">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="02">Confirmation</Eyebrow>
+              <Eyebrow index="03">Confirmation</Eyebrow>
               <h2 id="confirm-title" className="ob-h2 max-w-[18ch]">
                 Persistence is the honest signal when there is one vantage
                 point.
@@ -269,7 +288,7 @@ export default function ProductPage() {
         <Container>
           <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="03">Attribution</Eyebrow>
+              <Eyebrow index="04">Attribution</Eyebrow>
               <h2 id="attr-title" className="ob-h2 max-w-[18ch]">
                 Arithmetic, printed with its weights.
               </h2>
@@ -317,7 +336,7 @@ export default function ProductPage() {
                 ['vendor_failure', `confidence ≥ ${ATTRIBUTION.vendorFailureAt}`],
                 ['multi_cause', `≥ ${ATTRIBUTION.multiCauseAt} and < ${ATTRIBUTION.vendorFailureAt}`],
                 ['infrastructure_issue', 'below the thresholds, with RELIASTRA’s own probes degraded'],
-                ['unknown', 'everything else — a result, not an error'],
+                ['unknown', 'everything else - a result, not an error'],
               ].map(([name, when]) => (
                 <div
                   key={name}
@@ -342,7 +361,7 @@ export default function ProductPage() {
         <Container>
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="04">Scope</Eyebrow>
+              <Eyebrow index="05">Scope</Eyebrow>
               <h2 id="limits-title" className="ob-h2 max-w-[16ch]">
                 What this product does not do.
               </h2>
@@ -377,7 +396,7 @@ export default function ProductPage() {
         <Container>
           <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="05">Integrate</Eyebrow>
+              <Eyebrow index="06">Integrate</Eyebrow>
               <h2 id="integrate-title" className="ob-h2 max-w-[18ch]">
                 Reach it from where the work already happens.
               </h2>
@@ -429,7 +448,7 @@ export default function ProductPage() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start observing
+                Start monitoring
               </Link>
               <Link href={PUBLIC_ROUTES.productEvidence} className="ob-btn ob-btn-outline">
                 Evidence records

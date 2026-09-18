@@ -73,7 +73,7 @@ export default function EvidenceProductPage() {
         <Container className="py-14 md:py-20">
           <Breadcrumb items={crumbs} className="mb-8" />
           <Eyebrow>Evidence</Eyebrow>
-          <h1 className="ob-h1 mt-5 max-w-[19ch]">
+          <h1 className="ob-display mt-6 max-w-[13ch]">
             The part of the incident that survives the conversation.
           </h1>
           <p className="ob-lede mt-6 max-w-[64ch]">
@@ -115,7 +115,7 @@ export default function EvidenceProductPage() {
             </div>
             <p className="ob-body max-w-[46ch]">
               A reader opens a document of record with one question. Answer it on
-              the first page, then show the working — a report that makes
+              the first page, then show the working - a report that makes
               somebody hunt for the number is a report that gets skimmed.
             </p>
           </div>
@@ -204,7 +204,7 @@ export default function EvidenceProductPage() {
               </p>
               <dl className="flex flex-col">
                 {[
-                  ['Evidence data hash', `SHA-256 over the canonical ${EVIDENCE.schemaVersion} payload — the incident's facts as data.`],
+                  ['Evidence data hash', `SHA-256 over the canonical ${EVIDENCE.schemaVersion} payload - the incident's facts as data.`],
                   ['Document checksum', 'SHA-256 over the rendered file. A PDF cannot contain the hash of itself, so this lives on the record.'],
                   ['Signature', 'Ed25519 over the payload bytes, when the deployment has a signing key. Public key at /v1/verify/keys.'],
                 ].map(([term, def]) => (
@@ -283,7 +283,7 @@ export default function EvidenceProductPage() {
                 {EVIDENCE_CANNOT.map((line) => (
                   <li key={line} className="flex gap-4 border-t border-[var(--ob-line)] pt-5">
                     <span aria-hidden className="ob-label pt-1">
-                      —
+                     -
                     </span>
                     <span className="max-w-[56ch] text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
                       {line}
@@ -305,7 +305,7 @@ export default function EvidenceProductPage() {
               </h2>
               <p className="ob-body max-w-[56ch]">
                 Start observing a dependency you already run, and the first
-                confirmed incident produces a real one — with your endpoint on it
+                confirmed incident produces a real one - with your endpoint on it
                 and nobody else’s.
               </p>
             </div>

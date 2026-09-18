@@ -1,85 +1,128 @@
 import Link from 'next/link';
-import { Container } from '@/components/site/primitives';
 import { ObservationLedger } from './observation-ledger';
-import { AUTH_ROUTES } from '@/lib/routes';
-import { DOCS_ROUTES } from '@/lib/routes';
-import { OBSERVATION_POINTS, SCOPE_NOTE } from '@/lib/methodology';
+import { AUTH_ROUTES, DOCS_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
+import {
+  DETECTION,
+  OBSERVATION_LABEL,
+  OBSERVATION_POINTS,
+  PROBE_INTERVAL_SECONDS,
+} from '@/lib/methodology';
 
 /**
- * The homepage hero.
+ * The homepage hero: a full-viewport mission scene.
  *
- * No photograph. The previous hero was a full-viewport data-hall image with
- * the proposition set over it, which is the visual grammar of a company
- * selling infrastructure rather than one that measures it. What an engineer
- * wants in the first screen is the product: a dependency, a run of probes, the
- * confirmation, and the record. That is what is here.
+ * Composition: one near-monochrome infrastructure frame behind everything,
+ * scrims that keep the type at full contrast, the proposition anchored
+ * bottom-left, and a hairline-ruled deck at the foot of the viewport that
+ * carries the product's own telemetry shape. Nothing on the deck invents a
+ * value: the observation-point label, the interval and the rule id are read
+ * from the methodology constants, and the illustrative record says it is
+ * illustrative.
  *
- * The composition is two columns on wide screens and stacked below, so on a
- * phone the visitor reads the problem first and the product immediately after,
- * with no horizontal scrolling and no clipped table.
+ * The scene image is generated for RELIASTRA (public/media). It is a
+ * backdrop, not a claim: no screenshot, no stock office, no one's logo.
  */
 export function HomeHero() {
   return (
-    <section
-      id="top"
-      aria-labelledby="hero-title"
-      className="relative overflow-hidden border-b border-[var(--ob-line)] bg-[var(--ob-void)]"
-    >
-      {/* A single structural grid: a hairline field, not a gradient. It reads
-          as the ruled paper of a measurement instrument and costs nothing. */}
-      <div aria-hidden className="ob-grid-field absolute inset-0" />
+    <section id="top" aria-labelledby="hero-title" className="ob-hero">
+      <div className="ob-hero-media">
+        <img
+          src="/media/scene-data-hall.webp"
+          srcSet="/media/scene-data-hall-sm.webp 1600w, /media/scene-data-hall.webp 1915w"
+          sizes="100vw"
+          alt=""
+          fetchPriority="high"
+          decoding="async"
+          className="ob-drift"
+        />
+        <div className="ob-hero-scrim-l" aria-hidden />
+        <div className="ob-hero-scrim-b" aria-hidden />
+      </div>
 
-      <Container className="relative pb-16 pt-28 md:pb-24 md:pt-36 lg:pb-28">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,1fr)] lg:items-start lg:gap-16 xl:gap-20">
-          <div className="max-w-[38rem]">
-            <p className="ob-label ob-rise ob-rise-1 flex items-center gap-3">
-              <span aria-hidden className="block h-px w-8 bg-[var(--ob-signal)]" />
-              External dependency observation
-            </p>
+      {/* Proposition, anchored low-left like a mission overlay. */}
+      <div className="ob-container relative z-[1] flex flex-1 flex-col pt-[96px] md:pt-[120px]">
+        <div className="flex flex-1 flex-col justify-end pb-10 md:pb-14">
+          <p className="ob-label ob-rise ob-rise-1 flex items-center gap-3">
+            <span aria-hidden className="block h-px w-8 bg-[var(--ob-line-3)]" />
+            External dependency intelligence
+          </p>
 
-            <h1 id="hero-title" className="ob-display ob-rise ob-rise-2 mt-7">
-              Your dependency failed.
-              <br />
-              What actually
-              <br />
-              happened?
-            </h1>
+          <h1
+            id="hero-title"
+            className="ob-display ob-rise ob-rise-2 mt-6 max-w-[12ch]"
+          >
+            Infrastructure you can prove.
+          </h1>
 
-            <p className="ob-rise ob-rise-3 mt-8 max-w-[46ch] text-[clamp(1rem,1.35vw,1.1875rem)] leading-[1.6] text-[var(--ob-text-2)]">
-              RELIASTRA probes the external services your software depends on —
-              from outside your network and outside the vendor’s — records every
-              observation, confirms a fault deterministically, and keeps a
-              record you can still verify a year later.
-            </p>
+          <p className="ob-rise ob-rise-3 mt-7 max-w-[46ch] text-[clamp(1rem,1.35vw,1.1875rem)] leading-[1.62] text-[var(--ob-text-2)]">
+            Your infrastructure does not stop at your network edge. RELIASTRA
+            independently observes the third-party services you depend on,
+            aligns their failures with your incidents, and produces evidence
+            you can hand over.
+          </p>
 
-            <div className="ob-rise ob-rise-4 mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start observing
-              </Link>
-              <Link href={DOCS_ROUTES.quickstart} className="ob-btn ob-btn-outline">
-                Read the quickstart
-              </Link>
-            </div>
-
-            <p className="ob-rise ob-rise-4 mt-7 max-w-[52ch] text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-              {OBSERVATION_POINTS === 1
-                ? 'One observation point today, '
-                : `${OBSERVATION_POINTS} observation points today, `}
-              and every surface says so — including the ones where it weakens the
-              claim.{' '}
-              <Link href={DOCS_ROUTES.methodology} className="ob-link">
-                Read the methodology
-              </Link>
-              .
-            </p>
+          <div className="ob-rise ob-rise-4 mt-9 flex flex-col gap-3 sm:flex-row">
+            <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+              Start monitoring
+            </Link>
+            <Link href={PUBLIC_ROUTES.product} className="ob-btn ob-btn-outline">
+              Explore the platform
+            </Link>
           </div>
 
-          <div className="ob-rise ob-rise-3 lg:pt-4">
-            <ObservationLedger />
-            <p className="ob-small mt-4 max-w-[54ch]">{SCOPE_NOTE}</p>
+          <p className="ob-rise ob-rise-4 mt-7 max-w-[52ch] text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+            {OBSERVATION_POINTS === 1
+              ? 'One observation point today, '
+              : `${OBSERVATION_POINTS} observation points today, `}
+            and every surface says so, including the ones where it weakens the
+            claim.{' '}
+            <Link href={DOCS_ROUTES.methodology} className="ob-link">
+              Read the methodology
+            </Link>
+            .
+          </p>
+        </div>
+      </div>
+
+      {/* The deck: product telemetry as the hero's instrument panel. */}
+      <div className="ob-hero-deck">
+        <div className="ob-container grid items-start gap-x-10 gap-y-6 py-6 lg:grid-cols-[minmax(0,572px)_minmax(0,1fr)] lg:items-center lg:py-0">
+          <ObservationLedger className="lg:my-5" />
+
+          <div className="hidden flex-col gap-5 lg:flex lg:py-5">
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
+              {[
+                ['Observation point', OBSERVATION_LABEL],
+                [
+                  'Probe interval',
+                  `every ${PROBE_INTERVAL_SECONDS}s`,
+                ],
+                [
+                  'Confirmation rule',
+                  `${DETECTION.ruleId} · ${DETECTION.failureChecks}`,
+                ],
+                ['Evidence', 'SHA-256 · retained 365 days'],
+              ].map(([term, value]) => (
+                <div key={term} className="flex flex-col gap-2">
+                  <dt className="ob-label">{term}</dt>
+                  <dd className="ob-mono text-[12px] leading-[1.5] text-[var(--ob-text-2)]">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <div className="flex items-end justify-between gap-6 border-t border-[var(--ob-line)] pt-4">
+              <p className="ob-label max-w-[34ch] leading-[1.7]">
+                Telemetry values marked illustrative are illustrative. The
+                fields are the real schema.
+              </p>
+              <span className="ob-scroll-cue">
+                <span className="ob-label">Scroll</span>
+              </span>
+            </div>
           </div>
         </div>
-      </Container>
+      </div>
     </section>
   );
 }

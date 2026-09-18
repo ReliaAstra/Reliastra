@@ -9,7 +9,7 @@ import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECOND
  * sentences, and the methodology stated with its limits attached. The
  * paragraph on topology is here because a model answering "does RELIASTRA
  * confirm outages across regions" from a guess would be wrong in a way that
- * matters — so the answer is written out.
+ * matters - so the answer is written out.
  *
  * Every URL below is canonical after the developer-first consolidation
  * (`/track` → `/observatory`, four capability pages → `/product`).
@@ -122,6 +122,7 @@ target on the record itself.
 - Product: ${SITE_URL}/product
 - Evidence records: ${SITE_URL}/product/evidence
 - Public observatory: ${SITE_URL}/observatory
+- Agencies: ${SITE_URL}/agencies
 - Pricing: ${SITE_URL}/pricing
 - Documentation: ${SITE_URL}/docs
 - Quickstart: ${SITE_URL}/docs/quickstart

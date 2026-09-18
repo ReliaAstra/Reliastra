@@ -68,13 +68,15 @@ const LANDING_SECTION_IDS = [
   'top',
   'problem',
   'observation',
-  'incident',
+  'correlation',
+  'attribution',
   'evidence',
-  'how-it-works',
+  'index',
   'research',
-  'public-intelligence',
+  'agencies',
   'pricing',
   'reference',
+  'maintainer',
 ];
 
 const PROTECTED_ROUTES = [

@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export const metadata = buildMetadata({
   title: 'Pricing - one plan, $9/month',
   description:
-    'RELIASTRA is $9/month. 25 dependencies, 30-second checks, 90-day retention, deterministic attribution, verifiable evidence and API access. 14-day trial, no payment method required. Every limit is enforced server-side.',
+    'RELIASTRA is $9/month. 25 dependencies, checks as fast as every 30 seconds, 90-day retention, deterministic attribution, verifiable evidence and API access. 14-day trial, no payment method required. Every limit is enforced server-side.',
   path: PUBLIC_ROUTES.pricing,
 });
 
@@ -75,14 +75,14 @@ export default function PricingPage() {
         ]}
       />
 
-      <header className="border-b border-[var(--ob-line)] bg-[var(--ob-base)]">
-        <Container className="py-14 md:py-20">
-          <Breadcrumb items={crumbs} className="mb-8" />
+      <header className="border-b border-[var(--ob-line)] bg-[var(--ob-void)]">
+        <Container className="py-24 md:py-32">
+          <Breadcrumb items={crumbs} className="mb-9" />
           <Eyebrow>Pricing</Eyebrow>
-          <h1 className="ob-h1 mt-5 max-w-[16ch]">
+          <h1 className="ob-display mt-6 max-w-[12ch]">
             One plan. $9 a month.
           </h1>
-          <p className="ob-lede mt-6">
+          <p className="ob-lede mt-7 max-w-[52ch]">
             Everything RELIASTRA does, for one engineer's price. 14-day trial,
             no payment method required, every limit enforced server-side.
           </p>
@@ -283,7 +283,7 @@ export default function PricingPage() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start observing
+                Start monitoring
               </Link>
               <Link
                 href={PUBLIC_ROUTES.productEvidence}

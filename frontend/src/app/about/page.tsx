@@ -111,7 +111,7 @@ export default function AboutPage() {
         <Container className="py-14 md:py-20">
           <Breadcrumb items={crumbs} className="mb-8" />
           <Eyebrow>Project</Eyebrow>
-          <h1 className="ob-h1 mt-5 max-w-[18ch]">
+          <h1 className="ob-display mt-6 max-w-[14ch]">
             A real engineer, and the work you can check.
           </h1>
           <p className="ob-lede mt-6 max-w-[62ch]">
@@ -152,8 +152,8 @@ export default function AboutPage() {
                 <p className="max-w-[68ch] text-[14.5px] leading-[1.75] text-[var(--ob-text-3)]">
                   Works on identity, access control and system hardening across
                   cloud, Kubernetes and AI production environments. Writes the
-                  Cloud Identity Security Engineering research series — the AWS
-                  IAM policy-evaluation work published here comes out of it — and
+                  Cloud Identity Security Engineering research series - the AWS
+                  IAM policy-evaluation work published here comes out of it - and
                   builds RELIASTRA: an infrastructure observation product that
                   independently verifies third-party availability and produces
                   cryptographic incident evidence.
@@ -206,13 +206,13 @@ export default function AboutPage() {
                       <a href="mailto:support@reliastra.com" className="ob-link">
                         support@reliastra.com
                       </a>{' '}
-                      <span className="text-[var(--ob-text-4)]">— product and support</span>
+                      <span className="text-[var(--ob-text-4)]">- product and support</span>
                     </li>
                     <li>
                       <a href="mailto:security@reliastra.com" className="ob-link">
                         security@reliastra.com
                       </a>{' '}
-                      <span className="text-[var(--ob-text-4)]">— vulnerability reports</span>
+                      <span className="text-[var(--ob-text-4)]">- vulnerability reports</span>
                     </li>
                   </ul>
                 </div>
@@ -283,7 +283,7 @@ export default function AboutPage() {
               </p>
               <p className="ob-body">
                 Most tools that claim to resolve this either monitor your own
-                edge — which cannot see the cause — or republish the vendor’s
+                edge - which cannot see the cause - or republish the vendor’s
                 own status feed with a different logo on it. What was missing was
                 an observer with no stake: something that measures the dependency
                 itself, from outside both networks, and keeps the measurement in
@@ -317,7 +317,7 @@ export default function AboutPage() {
                 ['No causation from correlation', 'An attribution score measures how closely two timelines line up with five weighted signals. It does not establish that a vendor caused an outage.'],
                 ['No vendor-wide conclusions from one path', 'One observation point measures one route. The product never presents that as the vendor’s state, and no regional quorum is claimed while only one point exists.'],
                 ['No availability without a denominator', 'Every availability figure is printed with the observation count behind it, and zero observations print as insufficient data rather than as 100%.'],
-                ['No number for an unmeasured value', 'An unmeasured field renders as a named sentinel — never as 0, never as a dash that could read as zero.'],
+                ['No number for an unmeasured value', 'An unmeasured field renders as a named sentinel - never as 0, never as a dash that could read as zero.'],
                 ['No reconstructed history', 'Missed probes are missing. Nothing is backfilled, and a record states when its own coverage was thin.'],
                 ['No invented users or logos', 'There is no customer wall, no testimonial and no counter on this site, because every one of those would be furniture rather than evidence.'],
               ].map(([title, body]) => (
@@ -374,7 +374,7 @@ export default function AboutPage() {
               <p className="ob-label">Being built toward</p>
               <ul className="flex flex-col gap-3 border-t border-[var(--ob-line)] pt-5">
                 {[
-                  'Genuinely independent observation points, so confirmation can be agreement rather than persistence — and the records say which rule applied.',
+                  'Genuinely independent observation points, so confirmation can be agreement rather than persistence - and the records say which rule applied.',
                   'Application-side signals (SDK, OpenTelemetry, webhook ingestion) so a dependency’s behaviour can be described from the caller’s side as well.',
                   'Cross-application correlation: the same dependency degrading for unrelated applications at the same time.',
                   'A dependency graph built from those observations, and attribution that improves with the number of vantage points instead of degrading with it.',
@@ -384,7 +384,7 @@ export default function AboutPage() {
                     className="flex gap-3 text-[13.5px] leading-[1.65] text-[var(--ob-text-3)]"
                   >
                     <span aria-hidden className="ob-label pt-1">
-                      —
+                     -
                     </span>
                     <span>{item}</span>
                   </li>
@@ -409,7 +409,7 @@ export default function AboutPage() {
                 The research is where the arguments go before the code does.
               </h2>
               <p className="ob-body max-w-[56ch]">
-                Methodology, measurement audits and cloud-security work — each
+                Methodology, measurement audits and cloud-security work - each
                 paper with its own limitations section, because a technical
                 document that cannot say what it does not establish is a
                 brochure.

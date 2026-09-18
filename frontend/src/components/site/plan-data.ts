@@ -1,6 +1,5 @@
 import {
   dependencyLabel,
-  intervalLabel,
   retentionLabel,
   type PlanMeta,
 } from '@/lib/dashboard/plans';
@@ -42,7 +41,10 @@ export const PLAN_CAPABILITIES: {
 export function planLimits(p: PlanMeta): [string, string][] {
   return [
     ['Dependencies', dependencyLabel(p.dependencies)],
-    ['Check interval', intervalLabel(p.minIntervalSeconds)],
+    // Probes run at the default 300-second cadence; the plan sets how often
+    // they CAN run. "30-second checks" on its own reads as the cadence, so
+    // the table states it as the floor it is.
+    ['Check interval', p.minIntervalSeconds == null ? 'Custom' : `as fast as every ${p.minIntervalSeconds} seconds`],
     ['Retention', retentionLabel(p.retentionDays)],
     // Not `seatLabel`: that helper is written for the console's billing view,
     // where a count of seats is a real quantity to manage. On the public page
@@ -53,9 +55,10 @@ export function planLimits(p: PlanMeta): [string, string][] {
   ];
 }
 
-/** Public wording for the account count. There is no seat to buy. */
+/** Public wording for the account count. There is no seat to buy, so the
+    table names that rather than printing a dash that could read as zero. */
 function teamLabel(count: number | null | undefined): string {
-  if (count == null) return '—';
+  if (count == null) return 'one account (no seats)';
   return count === 1 ? '1 account' : `${count} accounts`;
 }
 

@@ -1315,36 +1315,39 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Surfaces - obsidian */
-  --ob-void: #08090A;      /* page ground, hero letterboxing */
-  --ob-base: #0D0F10;      /* default section surface */
-  --ob-raised: #111416;    /* alternating band, table fill */
-  --ob-elevated: #181B1D;  /* input, hover, inset panel */
+  /* Surfaces - obsidian. Pure black ground; the site is built from steps of
+     near-black and hairlines, never from colour washes. */
+  --ob-void: #000000;      /* page ground, hero letterboxing */
+  --ob-base: #050505;      /* default section surface */
+  --ob-raised: #0A0A0A;    /* alternating band, table fill */
+  --ob-elevated: #101010;  /* input, hover, inset panel */
 
   /* Text */
-  --ob-text: #F2F2EE;      /* headlines, primary */
-  --ob-text-2: #D6D8D5;    /* body */
-  --ob-text-3: #94999D;    /* secondary, captions */
-  --ob-text-4: #666B70;    /* labels, disabled, metadata */
+  --ob-text: #F5F5F5;      /* headlines, primary */
+  --ob-text-2: #C9CACA;    /* body */
+  --ob-text-3: #A0A0A0;    /* secondary, captions */
+  --ob-text-4: #6B6B6B;    /* labels, disabled, metadata */
 
   /* Lines */
-  --ob-line: rgba(242, 242, 238, 0.09);
-  --ob-line-2: rgba(242, 242, 238, 0.16);
-  --ob-line-3: rgba(242, 242, 238, 0.28);
+  --ob-line: rgba(255, 255, 255, 0.09);
+  --ob-line-2: rgba(255, 255, 255, 0.14);
+  --ob-line-3: rgba(255, 255, 255, 0.28);
 
-  /* One operational accent: industrial amber. Signal, not decoration. */
-  --ob-signal: #D9A441;
-  --ob-signal-dim: #A87F32;
-  --ob-signal-wash: rgba(217, 164, 65, 0.10);
+  /* The interaction accent is light itself: an infrastructure product marks
+     attention with brightness and weight, not with a brand colour. */
+  --ob-signal: #F5F5F5;
+  --ob-signal-dim: #A0A0A0;
+  --ob-signal-wash: rgba(255, 255, 255, 0.06);
 
-  /* System state. These exist to report health, and for no other reason. */
-  --ob-healthy: #57A773;
-  --ob-healthy-wash: rgba(87, 167, 115, 0.12);
+  /* System state. These exist to report health, and for no other reason.
+     They appear inside telemetry and status contexts only. */
+  --ob-healthy: #5DAF7C;
+  --ob-healthy-wash: rgba(93, 175, 124, 0.12);
   --ob-degraded: #D9A441;
   --ob-degraded-wash: rgba(217, 164, 65, 0.12);
   --ob-critical: #C8544C;
   --ob-critical-wash: rgba(200, 84, 76, 0.12);
-  --ob-unknown: #666B70;
+  --ob-unknown: #6B6B6B;
 
   /* Type stacks. No webfont is fetched at build time - the site must render
      identically offline and in restricted networks. The stacks below resolve
@@ -1402,8 +1405,8 @@
 }
 
 .ob ::selection {
-  background: var(--ob-signal);
-  color: var(--ob-void);
+  background: rgba(255, 255, 255, 0.92);
+  color: #000;
 }
 
 /* ── shadcn/radix token bridge ─────────────────────────────────────────────
@@ -1440,7 +1443,7 @@
 /* Focus is never removed and never subtle: keyboard operators are the
    primary audience for an infrastructure product. */
 .ob :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--ob-signal);
+  outline: 2px solid rgba(255, 255, 255, 0.92);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -1455,6 +1458,10 @@
   padding: 10px 18px;
   font-size: 13px;
   font-weight: 600;
+}
+.ob-skip {
+  background: #F5F5F5;
+  color: #000;
 }
 .ob-skip:focus {
   left: 12px;
@@ -1485,29 +1492,43 @@
 }
 
 .ob-section {
-  padding-block: 88px;
+  padding-block: 96px;
 }
 @media (min-width: 768px) {
-  .ob-section { padding-block: 120px; }
+  .ob-section { padding-block: 140px; }
 }
 @media (min-width: 1280px) {
-  .ob-section { padding-block: 152px; }
+  .ob-section { padding-block: 172px; }
 }
 
 .ob-section-tight { padding-block: 64px; }
 @media (min-width: 768px) {
-  .ob-section-tight { padding-block: 88px; }
+  .ob-section-tight { padding-block: 96px; }
 }
 
 .ob-hairline { border-top: 1px solid var(--ob-line); }
 
 /* ── Typography ─────────────────────────────────────────────────────────── */
 
+/* The hero voice. Compressed, architectural, set in caps: the headline is
+   treated as a structure, not a sentence. */
 .ob-display {
-  font-size: clamp(2.75rem, 9.5vw, 8rem);
+  font-size: clamp(3.25rem, 7vw, 6.875rem);
   line-height: 0.94;
-  letter-spacing: -0.035em;
-  font-weight: 600;
+  letter-spacing: -0.032em;
+  font-weight: 650;
+  text-transform: uppercase;
+  color: var(--ob-text);
+  text-wrap: balance;
+}
+
+/* Scene headline: the second voice, still caps, sized for section scale. */
+.ob-scene-title {
+  font-size: clamp(2.375rem, 5vw, 4.5rem);
+  line-height: 0.97;
+  letter-spacing: -0.028em;
+  font-weight: 650;
+  text-transform: uppercase;
   color: var(--ob-text);
   text-wrap: balance;
 }
@@ -1574,19 +1595,20 @@
   color: var(--ob-text-4);
 }
 
-/* Small uppercase technical label. Used for section indices, field labels,
-   data captions - never for sentences. */
+/* Eyebrow / small uppercase technical label. Used for scene indices, field
+   labels, data captions - never for sentences. */
 .ob-label {
   font-family: var(--ob-font-mono);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ob-text-4);
   font-weight: 500;
 }
 
 .ob-label-signal { color: var(--ob-signal); }
+.ob-label-strong { color: var(--ob-text-2); }
 
 .ob-mono {
   font-family: var(--ob-font-mono);
@@ -1607,62 +1629,74 @@
 }
 
 .ob-link {
-  color: var(--ob-text-2);
+  color: var(--ob-text);
   text-decoration: none;
   border-bottom: 1px solid var(--ob-line-2);
   transition: color 150ms ease, border-color 150ms ease;
 }
 .ob-link:hover {
   color: var(--ob-text);
-  border-color: var(--ob-signal);
+  border-color: rgba(255, 255, 255, 0.85);
 }
 
-/* ── Buttons - three, and only three ────────────────────────────────────── */
+/* ── Buttons ──────────────────────────────────────────────────────────────
+   Ghost discipline: a transparent face, one hairline border, small caps.
+   Every variant inverts to a light face on hover. A filled button on a black
+   page is a billboard; a bordered one is an instruction. */
 
 .ob-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  height: 48px;
-  padding-inline: 26px;
-  border-radius: 2px;
-  font-size: 0.8125rem;
+  min-height: 44px;
+  padding-inline: 30px;
+  border-radius: 0;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease,
-    border-color 160ms ease;
+  transition: background-color 200ms ease, color 200ms ease,
+    border-color 200ms ease;
 }
 .ob-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.ob-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.ob-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
+/* Solid light face: the single highest-intent action on a page. */
 .ob-btn-primary {
   background: var(--ob-text);
   color: var(--ob-void);
+  border-color: var(--ob-text);
 }
-.ob-btn-primary:hover:not(:disabled) { background: #FFFFFF; }
+.ob-btn-primary:hover:not(:disabled) { background: #FFFFFF; border-color: #FFFFFF; }
 
+/* The default action treatment: transparent, hairline, inverts on hover. */
 .ob-btn-signal {
-  background: var(--ob-signal);
+  background: transparent;
+  color: var(--ob-text);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.ob-btn-signal:hover:not(:disabled) {
+  background: var(--ob-text);
+  border-color: var(--ob-text);
   color: var(--ob-void);
 }
-.ob-btn-signal:hover:not(:disabled) { background: #E8B457; }
 
+/* Quiet secondary: the weakest border that still reads as a button. */
 .ob-btn-outline {
   background: transparent;
   color: var(--ob-text);
-  border-color: var(--ob-line-3);
+  border-color: var(--ob-line-2);
 }
 .ob-btn-outline:hover:not(:disabled) {
   border-color: var(--ob-text);
-  background: rgba(242, 242, 238, 0.04);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.ob-btn-sm { height: 38px; padding-inline: 16px; font-size: 0.75rem; }
+.ob-btn-sm { min-height: 38px; padding-inline: 18px; font-size: 0.6875rem; }
 .ob-btn-block { width: 100%; }
 
 /* ── Forms ──────────────────────────────────────────────────────────────── */
@@ -1825,11 +1859,11 @@
 .ob-prose a {
   color: var(--ob-text);
   text-decoration: underline;
-  text-decoration-color: var(--ob-signal);
+  text-decoration-color: var(--ob-line-3);
   text-underline-offset: 4px;
   text-decoration-thickness: 1px;
 }
-.ob-prose a:hover { color: var(--ob-signal); }
+.ob-prose a:hover { color: #fff; text-decoration-color: var(--ob-text); }
 .ob-prose ul, .ob-prose ol { padding-left: 1.15em; max-width: 68ch; }
 .ob-prose li { margin-top: 0.5em; }
 .ob-prose ul > li { list-style: none; position: relative; }
@@ -1840,7 +1874,7 @@
   top: 0.75em;
   width: 5px;
   height: 1px;
-  background: var(--ob-signal);
+  background: var(--ob-text-4);
 }
 .ob-prose ol > li { list-style: decimal; }
 .ob-prose ol > li::marker {
@@ -1849,7 +1883,7 @@
   font-size: 0.85em;
 }
 .ob-prose blockquote {
-  border-left: 2px solid var(--ob-signal);
+  border-left: 2px solid var(--ob-line-3);
   padding-left: 1.25em;
   color: var(--ob-text);
   font-size: 1.1875rem;
@@ -1897,13 +1931,12 @@
   vertical-align: top;
 }
 
-/* ── Removed: photographic treatment ──────────────────────────────────────
-   `.ob-photo`, `.ob-scrim-bottom` and `.ob-scrim-left` existed to desaturate
-   and darken stock photographs of data centres. The public site no longer
-   carries a photograph of anybody else's hardware: every visual on it is
-   drawn from the product's own vocabulary, so the treatment and its scrims
-   went with the images. The `public/media` directory was deleted in the same
-   change.
+/* ── Photographic treatment ───────────────────────────────────────────────
+   Scenes in `public/media` are generated for RELIASTRA as near-monochrome
+   infrastructure studies (halls, patch panels, cable plant). They are
+   structural: a full-bleed ground for one headline, never collage. The
+   treatment desaturates whatever colour the render leaves behind so the
+   site stays black, light and line.
    ───────────────────────────────────────────────────────────────────────── */
 
 /* Engineering rule marks: a 1px measure tick, used to separate data rows. */
@@ -2684,18 +2717,89 @@
   .ob-rise { opacity: 1; transform: none; }
 }
 
-/* ── Homepage hero: measurement field ─────────────────────────────────────
-   A ruled grid, drawn with gradients rather than an image: no request, no
-   CLS, and it reads as the graph paper of an instrument instead of as an
-   ambient "tech" texture. Two rules, one unit apart, faded out radially so
-   the field does not fight the type. */
+/* ── Hero scene: full-bleed infrastructure photography ────────────────────
+   The image carries the scene; the scrims guarantee the type keeps its
+   contrast at every crop. The ground behind the image is pure black, not a
+   grey rectangle, so the scene reads through the entire viewport even at
+   extreme aspect ratios. */
 .ob-grid-field {
   background-image:
-    linear-gradient(to right, rgba(242, 242, 238, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(242, 242, 238, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 76px 76px;
   mask-image: radial-gradient(120% 90% at 78% 12%, #000 0%, transparent 72%);
   -webkit-mask-image: radial-gradient(120% 90% at 78% 12%, #000 0%, transparent 72%);
+}
+
+.ob-hero {
+  position: relative;
+  min-height: max(640px, 100svh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #000;
+}
+
+.ob-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.ob-hero-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 62% 50%;
+  filter: grayscale(0.35) brightness(0.82) contrast(1.05);
+}
+
+/* Left-to-right scrim carries the headline; bottom scrim carries the
+   telemetry deck and the scroll cue. Top scrim keeps the header legible. */
+.ob-hero-scrim-l {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      100deg,
+      rgba(0, 0, 0, 0.86) 0%,
+      rgba(0, 0, 0, 0.62) 34%,
+      rgba(0, 0, 0, 0.28) 58%,
+      rgba(0, 0, 0, 0.08) 100%
+    );
+}
+.ob-hero-scrim-b {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.35) 26%, transparent 52%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.55) 0%, transparent 22%);
+}
+
+/* Any full-bleed scene visual below the hero uses the same treatment,
+   weaker: it sits under text on one side only. */
+.ob-scene-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #000;
+}
+.ob-scene-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.3) brightness(0.7) contrast(1.05);
+}
+.ob-scene-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      100deg,
+      rgba(0, 0, 0, 0.92) 0%,
+      rgba(0, 0, 0, 0.72) 42%,
+      rgba(0, 0, 0, 0.2) 100%
+    );
 }
 
 /* ── Observation ledger ───────────────────────────────────────────────────
@@ -2704,8 +2808,8 @@
    actually stores. */
 .ob-ledger {
   border: 1px solid var(--ob-line-2);
-  background: linear-gradient(180deg, var(--ob-base) 0%, var(--ob-void) 100%);
-  border-radius: 3px;
+  background: var(--ob-base);
+  border-radius: 2px;
   overflow: hidden;
 }
 
@@ -2740,6 +2844,297 @@
    the block, never to the page. */
 .ob-ledger .ob-mono,
 .ob-scroll-x code { font-variant-numeric: tabular-nums; }
+
+/* ── Hero deck: the observation strip at the foot of the hero ─────────────
+   A single hairline-ruled board pinned to the bottom of the scene. The real
+   observation ledger sits on it; a viewport edge strip carries context with
+   no invented values. */
+.ob-hero-deck {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  border-top: 1px solid var(--ob-line-2);
+  background: rgba(0, 0, 0, 0.72);
+}
+
+/* Scroll cue: one descending hairline with a label. Static geometry, one
+   transform animation, gone under reduced motion. */
+.ob-scroll-cue {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--ob-text-4);
+}
+.ob-scroll-cue::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 30px;
+  background: linear-gradient(to bottom, var(--ob-text-3), transparent);
+  animation: ob-cue 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-origin: top;
+}
+@keyframes ob-cue {
+  0% { transform: scaleY(0); }
+  45% { transform: scaleY(1); transform-origin: top; }
+  55% { transform-origin: bottom; transform: scaleY(1); }
+  100% { transform-origin: bottom; transform: scaleY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ob-scroll-cue::after { animation: none; transform: none; opacity: 0.6; }
+}
+
+/* ── Manifesto: the large statement scene ─────────────────────────────────
+   Typography is the whole composition. One sentence, set at scene scale,
+   carried by whitespace. */
+.ob-manifesto {
+  font-size: clamp(2rem, 4.6vw, 4.25rem);
+  line-height: 1.04;
+  letter-spacing: -0.028em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ob-text);
+  text-wrap: balance;
+}
+.ob-manifesto em {
+  font-style: normal;
+  color: var(--ob-text-4);
+}
+
+/* ── Boundary topology: the dependency-chain diagram ──────────────────────
+   Thin rails, tiny labels, one explicit trust boundary. Colour reports
+   nothing here: the nodes are structure, not status. */
+.ob-chain {
+  display: flex;
+  flex-direction: column;
+}
+.ob-chain-node {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 16px;
+}
+.ob-chain-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 9px;
+}
+.ob-chain-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--ob-text-3);
+  box-shadow: 0 0 0 3px var(--ob-void);
+}
+.ob-chain-node[data-zone="inside"] .ob-chain-dot { background: var(--ob-text); }
+.ob-chain-node[data-zone="outside"] .ob-chain-dot { background: var(--ob-text-4); }
+.ob-chain-line {
+  flex: 1;
+  width: 1px;
+  min-height: 26px;
+  margin-block: 5px;
+  background: var(--ob-line-2);
+}
+.ob-chain-body { padding-bottom: 22px; min-width: 0; }
+.ob-chain-node:last-child .ob-chain-body { padding-bottom: 0; }
+.ob-chain-name {
+  font-family: var(--ob-font-mono);
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+  color: var(--ob-text);
+}
+.ob-chain-node[data-zone="outside"] .ob-chain-name { color: var(--ob-text-2); }
+.ob-chain-meta {
+  margin-top: 3px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-chain-gate {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 16px;
+  margin-block: 4px;
+}
+.ob-chain-gate-body {
+  border-top: 1px dashed var(--ob-line-3);
+  padding-block: 10px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+
+/* ── Attribution lane: incident investigation rendered as telemetry ─────── */
+.ob-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--ob-line);
+  border: 1px solid var(--ob-line);
+}
+@media (min-width: 1024px) {
+  .ob-flow { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+.ob-flow-step {
+  background: var(--ob-base);
+  padding: 20px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.ob-flow-k {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ob-flow-tag {
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+  white-space: nowrap;
+}
+.ob-flow-v {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  font-weight: 600;
+  color: var(--ob-text);
+}
+.ob-flow-v[data-tone="critical"] { color: var(--ob-critical); }
+.ob-flow-v[data-tone="degraded"] { color: var(--ob-degraded); }
+.ob-flow-sub {
+  font-family: var(--ob-font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.55;
+  color: var(--ob-text-4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Agency tree: one operator, many downstream environments ────────────── */
+.ob-tree {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--ob-line);
+  border: 1px solid var(--ob-line);
+}
+@media (min-width: 768px) {
+  .ob-tree { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.ob-tree-lane {
+  background: var(--ob-base);
+  padding: 22px 20px 24px;
+}
+.ob-tree-lane > .ob-label { display: block; margin-bottom: 16px; }
+.ob-tree-nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 1px solid var(--ob-line-2);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.ob-tree-nodes li {
+  position: relative;
+  padding-left: 14px;
+}
+.ob-tree-nodes li::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 0.72em;
+  width: 12px;
+  height: 1px;
+  background: var(--ob-line-2);
+}
+.ob-tree-name {
+  font-family: var(--ob-font-mono);
+  font-size: 0.8125rem;
+  color: var(--ob-text);
+}
+.ob-tree-deps {
+  margin-top: 2px;
+  font-family: var(--ob-font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+}
+.ob-tree-hub {
+  border-top: 1px solid var(--ob-line-2);
+  padding: 14px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--ob-raised);
+}
+
+/* ── Teaser rows: full-width typographic links ──────────────────────────── */
+.ob-teaser {
+  display: block;
+  border-top: 1px solid var(--ob-line);
+}
+.ob-teaser:last-child { border-bottom: 1px solid var(--ob-line); }
+.ob-teaser-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: clamp(26px, 3.4vw, 44px);
+  transition: padding 220ms ease;
+}
+.ob-teaser:hover .ob-teaser-row,
+.ob-teaser:focus-visible .ob-teaser-row {
+  padding-left: clamp(8px, 1.2vw, 20px);
+}
+.ob-teaser-title {
+  font-size: clamp(1.75rem, 4.2vw, 3.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ob-text-4);
+  transition: color 220ms ease;
+}
+.ob-teaser:hover .ob-teaser-title,
+.ob-teaser:focus-visible .ob-teaser-title { color: var(--ob-text); }
+.ob-teaser-meta {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* Band visuals drift 28px over the span the scene crosses the viewport:
+   scroll-driven, purely additive, and only where the engine supports it.
+   Under reduced-motion preference the band is static. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  @supports (animation-timeline: view()) {
+    .ob-band-visual {
+      animation: ob-band-drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+  }
+}
+@keyframes ob-band-drift {
+  from { transform: translateY(14px); }
+  to { transform: translateY(-14px); }
+}
 
 /* ── Print: research articles must survive being printed for a review ───── */
 @media print {
@@ -3018,9 +3413,10 @@
 
 .obs-name {
   font-size: clamp(3.25rem, 13.5vw, 11.5rem);
-  line-height: 0.84;
-  font-weight: 600;
-  letter-spacing: -0.05em;
+  line-height: 0.88;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
   color: var(--ob-text);
   overflow-wrap: anywhere;
 }

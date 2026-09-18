@@ -129,7 +129,7 @@ export function SiteHeader({
                       aria-current={isActive(item.href) ? 'page' : undefined}
                       onClick={() => setPanelOpen(false)}
                       className={cn(
-                        'inline-flex items-center gap-1.5 px-3.5 py-2 text-[13.5px] font-medium tracking-[0.01em] transition-colors',
+                        'inline-flex items-center gap-2 px-4 py-2 font-mono text-[12px] font-medium uppercase tracking-[0.1em] transition-colors',
                         isActive(item.href)
                           ? 'text-[var(--ob-text)]'
                           : 'text-[var(--ob-text-3)] hover:text-[var(--ob-text)]'
@@ -152,7 +152,7 @@ export function SiteHeader({
                     aria-current={isActive(item.href) ? 'page' : undefined}
                     onMouseEnter={scheduleClose}
                     className={cn(
-                      'px-3.5 py-2 text-[13.5px] font-medium tracking-[0.01em] transition-colors',
+                      'px-4 py-2 font-mono text-[12px] font-medium uppercase tracking-[0.1em] transition-colors',
                       isActive(item.href)
                         ? 'text-[var(--ob-text)]'
                         : 'text-[var(--ob-text-3)] hover:text-[var(--ob-text)]'
@@ -167,7 +167,7 @@ export function SiteHeader({
             <div className="hidden items-center gap-2 lg:flex">
               <Link
                 href={HEADER_ACTIONS.signIn.href}
-                className="px-3.5 py-2 text-[13.5px] font-medium text-[var(--ob-text-3)] transition-colors hover:text-[var(--ob-text)]"
+                className="px-4 py-2 font-mono text-[12px] font-medium uppercase tracking-[0.1em] text-[var(--ob-text-3)] transition-colors hover:text-[var(--ob-text)]"
               >
                 {HEADER_ACTIONS.signIn.label}
               </Link>
@@ -270,7 +270,7 @@ export function SiteHeader({
               <li key={item.label} className="border-t border-[var(--ob-line)]">
                 <Link
                   href={item.href}
-                  className="flex items-baseline justify-between py-5 text-[26px] font-semibold tracking-[-0.025em] text-[var(--ob-text)]"
+                  className="flex items-baseline justify-between py-5 text-[28px] font-semibold uppercase tracking-[-0.015em] text-[var(--ob-text)]"
                 >
                   {item.label}
                   <span aria-hidden className="ob-label">

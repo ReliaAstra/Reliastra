@@ -9,10 +9,10 @@
  * `lib/product-contract.ts`.
  *
  * Writing rules for anything added here:
- *   - A guide starts with the thing the reader is trying to do, not with
+ *  - A guide starts with the thing the reader is trying to do, not with
  *     orientation copy.
- *   - Numbers come from the contract, never from an author's recollection.
- *   - Limits and failure modes are stated next to the feature they limit.
+ *  - Numbers come from the contract, never from an author's recollection.
+ *  - Limits and failure modes are stated next to the feature they limit.
  */
 
 import { DETECTION, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
@@ -43,7 +43,7 @@ reliastra --version`,
           },
           {
             kind: 'p',
-            text: 'The CLI lives in that repository at `cli/` and installs from the checkout. It is not on the public npm registry, so an install by name does not resolve — `npm install -g ./Reliastra/cli` is the working form. Node 18.17 or newer, no dependencies.',
+            text: 'The CLI lives in that repository at `cli/` and installs from the checkout. It is not on the public npm registry, so an install by name does not resolve - `npm install -g ./Reliastra/cli` is the working form. Node 18.17 or newer, no dependencies.',
           },
         ],
       },
@@ -62,7 +62,7 @@ reliastra --version`,
             kind: 'note',
             tone: 'info',
             title: 'Authorization',
-            text: 'Only monitor endpoints you own or are permitted to probe. A dependency that requires a credential can carry it in a header — the value is encrypted at rest and never returned by any API response.',
+            text: 'Only monitor endpoints you own or are permitted to probe. A dependency that requires a credential can carry it in a header - the value is encrypted at rest and never returned by any API response.',
           },
         ],
       },
@@ -83,9 +83,9 @@ reliastra deps add "Payments API" https://api.example.com/health --interval 60`,
             lang: 'bash',
             caption: 'POST /v1/dependencies',
             code: `curl -sS https://api.reliastra.com/v1/dependencies \\
-  -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
-  -H 'Content-Type: application/json' \\
-  -d '{
+ -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
+ -H 'Content-Type: application/json' \\
+ -d '{
     "name": "Payments API",
     "endpoint_url": "https://api.example.com/health",
     "check_interval_seconds": 60,
@@ -117,7 +117,7 @@ reliastra deps add "Payments API" https://api.example.com/health --interval 60`,
         blocks: [
           {
             kind: 'p',
-            text: 'The scheduler picks the dependency up on the next tick and writes one row per probe. There is nothing to enable and no agent to install — the probe is issued by RELIASTRA, not by you.',
+            text: 'The scheduler picks the dependency up on the next tick and writes one row per probe. There is nothing to enable and no agent to install - the probe is issued by RELIASTRA, not by you.',
           },
           {
             kind: 'code',
@@ -142,7 +142,7 @@ EXECUTED (UTC)         RESULT   STATUS  LATENCY   DETAIL  DEP
         blocks: [
           {
             kind: 'p',
-            text: `When the detector opens an incident, the incident — not the individual probe — is the thing to read. Its window, severity and root-cause field are one record:`,
+            text: `When the detector opens an incident, the incident - not the individual probe - is the thing to read. Its window, severity and root-cause field are one record:`,
           },
           {
             kind: 'code',
@@ -255,7 +255,7 @@ open "$(reliastra open evidence <report-id>)"    # printing is the default, so t
             items: [
               { field: 'executed_at', type: 'timestamp', def: 'When the probe completed, in UTC.' },
               { field: 'status_code', type: 'integer | null', def: 'The HTTP status returned. Null when the request never produced a response.' },
-              { field: 'latency_ms', type: 'number', def: 'Time to first byte. Not a transaction time — the probe reads headers and stops.' },
+              { field: 'latency_ms', type: 'number', def: 'Time to first byte. Not a transaction time - the probe reads headers and stops.' },
               { field: 'is_up', type: 'boolean', def: 'The verdict the detector reads: status code in the expected set, no transport error.' },
               { field: 'error_message', type: 'string | null', def: 'Transport error text, when the failure was at the connection level.' },
             ],
@@ -274,7 +274,7 @@ open "$(reliastra open evidence <report-id>)"    # printing is the default, so t
         blocks: [
           {
             kind: 'p',
-            text: 'One failure is a data point; a run of them is a fault. The detector is a pure function of the stored observations — no clock reads, no randomness, no heuristics — so a decision can be replayed from the rows and reproduced exactly.',
+            text: 'One failure is a data point; a run of them is a fault. The detector is a pure function of the stored observations - no clock reads, no randomness, no heuristics - so a decision can be replayed from the rows and reproduced exactly.',
           },
           {
             kind: 'definitions',
@@ -326,7 +326,7 @@ open "$(reliastra open evidence <report-id>)"    # printing is the default, so t
           },
           {
             kind: 'p',
-            text: 'The record is verifiable by someone who does not have an account — that is the point of it. A public endpoint returns the hashes, the signature and the procedure to check them.',
+            text: 'The record is verifiable by someone who does not have an account - that is the point of it. A public endpoint returns the hashes, the signature and the procedure to check them.',
           },
         ],
       },
@@ -350,13 +350,13 @@ open "$(reliastra open evidence <report-id>)"    # printing is the default, so t
               { field: 'name', type: 'string, ≤150', def: 'Appears in incidents, evidence records and notifications. Name it the way your team refers to it.' },
               { field: 'endpoint_url', type: 'string', def: 'Must start with http:// or https://. Any path is valid.' },
               { field: 'method', type: 'GET | POST | PUT | PATCH | DELETE | HEAD', def: 'Default GET.' },
-              { field: 'headers', type: 'object | null', def: 'Sent with every probe. Authorization values are encrypted at rest and never returned by an API response — responses carry `has_headers` instead.' },
+              { field: 'headers', type: 'object | null', def: 'Sent with every probe. Authorization values are encrypted at rest and never returned by an API response - responses carry `has_headers` instead.' },
               { field: 'expected_status_codes', type: 'array<integer>', def: 'Default [200]. Any status outside this set counts as a failure. A 401 you did not expect is a failure, which is usually what you want.' },
               { field: 'timeout_seconds', type: '1–300', def: 'Default 10. The probe gives up and records the timeout as a failure.' },
               { field: 'check_interval_seconds', type: '1–86400', def: `Default ${PROBE_INTERVAL_SECONDS}. Shorter intervals detect faster and produce more rows; retention is by age, not by row count.` },
               { field: 'regions', type: 'array<string>, min 1', def: 'The scheduler label for the worker that runs the probe. One point is deployed today; this is not a geographic spread and the API does not offer a choice that changes the answer.' },
               { field: 'alert_threshold_ms', type: 'integer | null', def: 'Latency above this value is flagged on the dependency record. Null disables it. It does not open an incident on its own.' },
-              { field: 'is_active', type: 'boolean', def: 'Default true. Setting false stops probing and preserves history — use this instead of deleting when you are unsure.' },
+              { field: 'is_active', type: 'boolean', def: 'Default true. Setting false stops probing and preserves history - use this instead of deleting when you are unsure.' },
             ],
           },
         ],
@@ -419,14 +419,14 @@ open "$(reliastra open evidence <report-id>)"    # printing is the default, so t
             code: `# Pause probing without losing history
 reliastra deps list --json | jq -r '.[] | select(.name=="Payments API") | .id' \\
   | xargs -I{} curl -sS -X PATCH "https://api.reliastra.com/v1/dependencies/{}" \\
-      -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
-      -H 'Content-Type: application/json' -d '{"is_active": false}'`,
+     -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
+     -H 'Content-Type: application/json' -d '{"is_active": false}'`,
           },
           {
             kind: 'note',
             tone: 'note',
             title: 'Deleting is permanent',
-            text: 'Deleting a dependency removes its observations. Incidents and already-issued evidence records survive, because a record you have handed to a vendor cannot be recalled — but you lose the ability to show what it was measuring.',
+            text: 'Deleting a dependency removes its observations. Incidents and already-issued evidence records survive, because a record you have handed to a vendor cannot be recalled - but you lose the ability to show what it was measuring.',
           },
         ],
       },
@@ -469,14 +469,14 @@ reliastra deps list --json | jq -r '.[] | select(.name=="Payments API") | .id' \
             items: [
               { term: 'up', def: 'The status code was in `expected_status_codes` and no transport error occurred.' },
               { term: 'failed', def: 'Either the status was outside the expected set, or the request produced no response (DNS, TLS, connection, timeout).' },
-              { term: 'blocked', def: 'A failure inside the observation path itself — the probe could not be trusted. Blocked observations are excluded from availability arithmetic and counted separately.' },
+              { term: 'blocked', def: 'A failure inside the observation path itself - the probe could not be trusted. Blocked observations are excluded from availability arithmetic and counted separately.' },
             ],
           },
           {
             kind: 'note',
             tone: 'info',
             title: 'A failed probe is not a failed vendor',
-            text: 'An observation records what happened on this path, at this minute. It is the detector’s job — not the probe’s — to decide whether that amounts to an incident.',
+            text: 'An observation records what happened on this path, at this minute. It is the detector’s job - not the probe’s - to decide whether that amounts to an incident.',
           },
         ],
       },
@@ -501,7 +501,7 @@ reliastra deps list --json | jq -r '.[] | select(.name=="Payments API") | .id' \
         blocks: [
           {
             kind: 'p',
-            text: 'Latency is the wall-clock time from issuing the request to receiving the complete response, redirect hops included, measured from one observation point. It therefore contains DNS, TLS and the network path between RELIASTRA and the endpoint — none of which your users experience identically. Use it to detect change over time on the same dependency, not to rank one dependency against another.',
+            text: 'Latency is the wall-clock time from issuing the request to receiving the complete response, redirect hops included, measured from one observation point. It therefore contains DNS, TLS and the network path between RELIASTRA and the endpoint - none of which your users experience identically. Use it to detect change over time on the same dependency, not to rank one dependency against another.',
           },
           {
             kind: 'code',
@@ -589,8 +589,8 @@ else:
             code: `reliastra incidents correlate 9f1c8b0e-…
 # or, on the API:
 curl -sS -X POST "https://api.reliastra.com/v1/incidents/9f1c8b0e-…/correlate" \\
-  -H "Authorization: Bearer $RELIASTRA_TOKEN" -H 'Content-Type: application/json' \\
-  -d '{"correlated_dependency_id":"d4e5…","time_window_seconds":300,"correlation_method":"manual"}'`,
+ -H "Authorization: Bearer $RELIASTRA_TOKEN" -H 'Content-Type: application/json' \\
+ -d '{"correlated_dependency_id":"d4e5…","time_window_seconds":300,"correlation_method":"manual"}'`,
           },
           {
             kind: 'note',
@@ -605,7 +605,7 @@ curl -sS -X POST "https://api.reliastra.com/v1/incidents/9f1c8b0e-…/correlate"
         blocks: [
           {
             kind: 'p',
-            text: `Resolution means ${DETECTION.recoveryChecks} consecutive successful probes. It does not mean the vendor confirmed anything, that the underlying cause was fixed, or that the service is healthy — it means this path responded successfully twice in a row.`,
+            text: `Resolution means ${DETECTION.recoveryChecks} consecutive successful probes. It does not mean the vendor confirmed anything, that the underlying cause was fixed, or that the service is healthy - it means this path responded successfully twice in a row.`,
           },
         ],
       },
@@ -625,7 +625,7 @@ curl -sS -X POST "https://api.reliastra.com/v1/incidents/9f1c8b0e-…/correlate"
         blocks: [
           {
             kind: 'p',
-            text: 'An evidence record is generated for a resolved incident. Generation is asynchronous: `evidence_status` moves from `pending` to `ready`, or to `failed` with a reason in `evidence_error`. A record is written once and never silently regenerated — if you need it rebuilt, `POST /v1/evidence/{report_id}/regenerate` creates a new one and records that it was rebuilt.',
+            text: 'An evidence record is generated for a resolved incident. Generation is asynchronous: `evidence_status` moves from `pending` to `ready`, or to `failed` with a reason in `evidence_error`. A record is written once and never silently regenerated - if you need it rebuilt, `POST /v1/evidence/{report_id}/regenerate` creates a new one and records that it was rebuilt.',
           },
         ],
       },
@@ -637,16 +637,16 @@ curl -sS -X POST "https://api.reliastra.com/v1/incidents/9f1c8b0e-…/correlate"
             kind: 'list',
             ordered: true,
             items: [
-              '**Incident record** — the window, the dependency, severity, status, and the observation topology the measurements came from.',
-              '**Detection record** — the rule identifier, its reason string, and the run that satisfied it.',
-              '**Incident window measurements** — checks in window, successes, failures, blocked probes excluded, availability, longest failure run, latency, first and last observation.',
-              '**SLA impact calculation** — target uptime, measured availability, degradation impact, measured downtime, and the arithmetic basis for each.',
-              '**Observed latency and failures** — the chart, drawn from the rows in the appendix.',
-              '**Rolling 24-hour health** — context, labelled as context, never as the incident window.',
-              '**Correlated dependency events** — the other dependencies that failed nearby, by name.',
-              '**Deterministic attribution** — classification, confidence score, methodology version.',
-              '**Documented observations** — every observation in the window, individually, with timestamp, result, latency and status.',
-              '**Authenticity, retention and verification** — the payload hash, the document checksum, the verification URL, the signing status.',
+              '**Incident record** - the window, the dependency, severity, status, and the observation topology the measurements came from.',
+              '**Detection record** - the rule identifier, its reason string, and the run that satisfied it.',
+              '**Incident window measurements** - checks in window, successes, failures, blocked probes excluded, availability, longest failure run, latency, first and last observation.',
+              '**SLA impact calculation** - target uptime, measured availability, degradation impact, measured downtime, and the arithmetic basis for each.',
+              '**Observed latency and failures** - the chart, drawn from the rows in the appendix.',
+              '**Rolling 24-hour health** - context, labelled as context, never as the incident window.',
+              '**Correlated dependency events** - the other dependencies that failed nearby, by name.',
+              '**Deterministic attribution** - classification, confidence score, methodology version.',
+              '**Documented observations** - every observation in the window, individually, with timestamp, result, latency and status.',
+              '**Authenticity, retention and verification** - the payload hash, the document checksum, the verification URL, the signing status.',
             ],
           },
         ],
@@ -658,7 +658,7 @@ curl -sS -X POST "https://api.reliastra.com/v1/incidents/9f1c8b0e-…/correlate"
           {
             kind: 'definitions',
             items: [
-              { term: 'Evidence data hash', def: 'SHA-256 over the canonical payload — the incident’s facts as data, not as a rendered PDF.' },
+              { term: 'Evidence data hash', def: 'SHA-256 over the canonical payload - the incident’s facts as data, not as a rendered PDF.' },
               { term: 'Document checksum', def: 'SHA-256 over the rendered bytes. A PDF cannot contain the hash of itself, so the checksum lives on the record, not inside the document.' },
               { term: 'Signature', def: 'Ed25519 over the canonical payload bytes, when the deployment has a signing key configured. The public key is at `/v1/verify/keys`.' },
             ],
@@ -767,7 +767,7 @@ reliastra evidence get 4b2e… --out incident-2026-09-18.pdf`,
         blocks: [
           {
             kind: 'p',
-            text: '`reliastra verify` returns a status code rather than a sentence, so it can gate a pipeline without a wrapper. Exit 4 means the claim did not hold — including when the verification service could not be read, because "we could not check" must not be reported as a pass.',
+            text: '`reliastra verify` returns a status code rather than a sentence, so it can gate a pipeline without a wrapper. Exit 4 means the claim did not hold - including when the verification service could not be read, because "we could not check" must not be reported as a pass.',
           },
           {
             kind: 'code',
@@ -927,7 +927,7 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
           },
           {
             kind: 'p',
-            text: 'Pass `next_cursor` back as `cursor` to continue. Cursors are stable for a query shape, not across filters — change the filter and start again.',
+            text: 'Pass `next_cursor` back as `cursor` to continue. Cursors are stable for a query shape, not across filters - change the filter and start again.',
           },
         ],
       },
@@ -961,7 +961,7 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
         blocks: [
           {
             kind: 'p',
-            text: 'The FastAPI-generated OpenAPI document is served by the API itself and is the authoritative field list — these docs quote it rather than replacing it.',
+            text: 'The FastAPI-generated OpenAPI document is served by the API itself and is the authoritative field list - these docs quote it rather than replacing it.',
           },
           { kind: 'code', lang: 'bash', code: 'curl -sS https://api.reliastra.com/openapi.json | jq ".paths | keys"' },
         ],
@@ -990,7 +990,7 @@ reliastra --help`,
           },
           {
             kind: 'p',
-            text: 'Node 18.17 or newer, no dependencies, no build step. The package is `cli/` in the repository and is not published to the public npm registry yet, so `npx` has nothing to resolve; a pipeline runs the file directly after checkout — `node ./Reliastra/cli/bin/reliastra.mjs`. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
+            text: 'Node 18.17 or newer, no dependencies, no build step. The package is `cli/` in the repository and is not published to the public npm registry yet, so `npx` has nothing to resolve; a pipeline runs the file directly after checkout - `node ./Reliastra/cli/bin/reliastra.mjs`. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
           },
         ],
       },
@@ -1009,11 +1009,11 @@ reliastra login --token rel_…`,
           },
           {
             kind: 'p',
-            text: 'Credential precedence is `--token` → `RELIASTRA_TOKEN` → the config file, and `whoami` prints which one was used — the first question in any support thread. A password is never accepted as a flag: it comes from a prompt, or from `RELIASTRA_PASSWORD` in automation, so it cannot reach shell history or a process listing.',
+            text: 'Credential precedence is `--token` → `RELIASTRA_TOKEN` → the config file, and `whoami` prints which one was used - the first question in any support thread. A password is never accepted as a flag: it comes from a prompt, or from `RELIASTRA_PASSWORD` in automation, so it cannot reach shell history or a process listing.',
           },
           {
             kind: 'p',
-            text: 'A session token can read the account; an API key cannot, by design — identity and account surfaces are closed to keys. The CLI detects which credential it holds and reports the right thing rather than sending you to re-login for a problem re-login cannot fix.',
+            text: 'A session token can read the account; an API key cannot, by design - identity and account surfaces are closed to keys. The CLI detects which credential it holds and reports the right thing rather than sending you to re-login for a problem re-login cannot fix.',
           },
           {
             kind: 'code',
@@ -1074,7 +1074,7 @@ reliastra verify <verification-id> --file incident.pdf`,
           },
           {
             kind: 'p',
-            text: '`evidence get` writes the artifact and prints the SHA-256 of the bytes it wrote, computed locally — comparing that with the recorded checksum is the only way to know the transfer was faithful. `verify` is unauthenticated on purpose: it serves somebody who was handed a document and has no account.',
+            text: '`evidence get` writes the artifact and prints the SHA-256 of the bytes it wrote, computed locally - comparing that with the recorded checksum is the only way to know the transfer was faithful. `verify` is unauthenticated on purpose: it serves somebody who was handed a document and has no account.',
           },
           {
             kind: 'note',
@@ -1127,8 +1127,8 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
             lang: 'bash',
             caption: 'Verify in a pipeline',
             code: `reliastra verify "$VERIFICATION_ID" --file evidence.pdf
-# 0 — the file matches the record
-# 4 — a missing record, a changed file, or a service that could not be read`,
+# 0 - the file matches the record
+# 4 - a missing record, a changed file, or a service that could not be read`,
           },
         ],
       },
@@ -1171,9 +1171,9 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
             kind: 'code',
             lang: 'bash',
             code: `curl -sS -X POST https://api.reliastra.com/v1/webhooks \\
-  -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
-  -H 'Content-Type: application/json' \\
-  -d '{"url":"https://ops.example.com/hooks/reliastra","events":["incident.opened","incident.updated","incident.resolved","evidence.ready"]}'`,
+ -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
+ -H 'Content-Type: application/json' \\
+ -d '{"url":"https://ops.example.com/hooks/reliastra","events":["incident.opened","incident.updated","incident.resolved","evidence.ready"]}'`,
           },
         ],
       },
@@ -1193,12 +1193,12 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
           {
             kind: 'note',
             tone: 'warn',
-            text: 'The API accepts five further values — `vendor.degraded`, `vendor.down`, `vendor.recovered`, `sla.breach` and `check.failed` — because they are part of the event enum. Nothing emits them yet, so a subscription that names one stores successfully and never fires. They are listed here rather than omitted: a silent no-op is worse than a documented gap.',
+            text: 'The API accepts five further values - `vendor.degraded`, `vendor.down`, `vendor.recovered`, `sla.breach` and `check.failed` - because they are part of the event enum. Nothing emits them yet, so a subscription that names one stores successfully and never fires. They are listed here rather than omitted: a silent no-op is worse than a documented gap.',
           },
           {
             kind: 'code',
             lang: 'json',
-            caption: 'incident.opened — body',
+            caption: 'incident.opened - body',
             code: `{
   "event": "incident.opened",
   "timestamp": "2026-09-18T10:06:02.412+00:00",
@@ -1217,7 +1217,7 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
             columns: ['Header', 'Value'],
             rows: [
               ['`X-Reliastra-Event`', 'The event type, so a consumer can route without parsing the body'],
-              ['`X-Reliastra-Delivery`', 'A unique delivery id — deduplicate on this, not on the body'],
+              ['`X-Reliastra-Delivery`', 'A unique delivery id - deduplicate on this, not on the body'],
               ['`X-Reliastra-Signature`', '`sha256=<hmac>` over the raw body, when the subscription has a secret'],
             ],
           },
@@ -1367,7 +1367,7 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
             items: [
               { field: 'Endpoint URLs', def: 'Stored as configured. They appear in incident records and evidence artifacts for your account.' },
               { field: 'Secret header values', def: 'Encrypted at rest. Never returned by any API response; reads report `has_headers` only.' },
-              { field: 'Observations', def: 'Timestamp, status, latency, verdict. Not response bodies — the probe never reads them.' },
+              { field: 'Observations', def: 'Timestamp, status, latency, verdict. Not response bodies - the probe never reads them.' },
               { field: 'Evidence artifacts', def: 'Rendered documents, retained 365 days and reachable only by token.' },
             ],
           },

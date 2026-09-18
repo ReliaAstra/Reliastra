@@ -6,16 +6,11 @@ import { dependencyLabel, intervalLabel, retentionLabel } from '@/lib/dashboard/
 import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 /**
- * 10 · Pricing, on the homepage.
+ * 09 · Pricing, on the homepage.
  *
- * One plan, one number, four limits, and a link. The previous version rendered
- * the plan matrix — a capability table built for a plan ladder — which is the
- * wrong instrument for a product that has exactly one plan and no upgrade
- * path to compare against.
- *
- * The limits are read from the same plan metadata the console and the pricing
- * page use, so this section cannot advertise a number the backend does not
- * enforce.
+ * One plan, one number, the limits, and a link. Read from the same plan
+ * metadata the console and the pricing page use, so this section cannot
+ * advertise a number the backend does not enforce.
  */
 export function PricingSummary() {
   const plan = getPlan('pro');
@@ -28,24 +23,24 @@ export function PricingSummary() {
   return (
     <section
       id="pricing"
-      className="ob-section border-t border-[var(--ob-line)] bg-[var(--ob-base)]"
+      className="border-t border-[var(--ob-line)] bg-[var(--ob-base)]"
       aria-labelledby="pricing-title"
     >
-      <div className="ob-container">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
-          <div className="flex flex-col gap-6">
-            <Eyebrow index="08">Pricing</Eyebrow>
-            <h2 id="pricing-title" className="ob-h2 max-w-[16ch]">
-              One engineer. One plan. $9 a month.
+      <div className="ob-container py-24 md:py-32 lg:py-36">
+        <div className="grid gap-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-20">
+          <div className="flex flex-col gap-7">
+            <Eyebrow index="09">Pricing</Eyebrow>
+            <h2 id="pricing-title" className="ob-scene-title max-w-[14ch]">
+              One plan. $9 a month.
             </h2>
-            <p className="ob-body-lg max-w-[46ch]">
+            <p className="ob-lede max-w-[44ch]">
               Every capability the product has, on every account. No plan
               ladder, no seats, no annual negotiation, and no tier where the
               evidence gets better.
             </p>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start the trial
+                Start monitoring
               </Link>
               <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
                 Terms and currency

@@ -6,7 +6,7 @@ import { useState } from 'react';
  * The maintainer's portrait.
  *
  * It is his real GitHub avatar, served from GitHub's CDN at the address
- * published on his profile — not a generated likeness and not a stock face.
+ * published on his profile - not a generated likeness and not a stock face.
  * The alternative a designer reaches for here, an AI-generated portrait
  * presented as a specific engineer, is the same class of fabrication the
  * research agenda forbids, only harder to notice.

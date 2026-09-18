@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils';
  * not need one: the name is short, the letterforms are strong, and a
  * letterspaced grotesk reads as an institution rather than an app.
  *
- * The only graphic element is the signal square - one 4px amber mark that
- * ends the wordmark. It is the same amber used for a degraded system state
- * everywhere else on the site, which is the point: the brand mark and the
- * status language are the same vocabulary.
+ * The only graphic element is the signal square - one small light mark that
+ * ends the wordmark, the same square the status language uses for an
+ * observation point. On a black page a brand colour is decoration; a tick
+ * of light is a reading.
  */
 export function Wordmark({
   className,

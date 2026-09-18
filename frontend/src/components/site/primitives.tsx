@@ -44,6 +44,7 @@ export function Section({
   tone = 'void',
   divider = true,
   tight = false,
+  full = false,
   className,
   'aria-labelledby': labelledBy,
 }: {
@@ -53,6 +54,8 @@ export function Section({
   tone?: 'void' | 'base' | 'raised';
   divider?: boolean;
   tight?: boolean;
+  /** Edge-to-edge scene: the child owns its own container and padding. */
+  full?: boolean;
   className?: string;
   'aria-labelledby'?: string;
 }) {
@@ -61,7 +64,7 @@ export function Section({
       id={id}
       aria-labelledby={labelledBy}
       className={cn(
-        tight ? 'ob-section-tight' : 'ob-section',
+        !full && (tight ? 'ob-section-tight' : 'ob-section'),
         tone === 'void' && 'bg-[var(--ob-void)]',
         tone === 'base' && 'bg-[var(--ob-base)]',
         tone === 'raised' && 'bg-[var(--ob-raised)]',
@@ -145,6 +148,79 @@ export function SectionHeader({
   );
 }
 
+/* ── Scene composition ──────────────────────────────────────────────────── */
+
+/**
+ * Full-bleed scene media: one near-monochrome infrastructure frame used as
+ * the ground of a scene, with its scrims. The image is render-blocking only
+ * where priority is set; every other scene lazy-loads.
+ */
+export function MediaFrame({
+  src,
+  alt,
+  scrim = 'left',
+  className,
+  imgClassName,
+}: {
+  src: string;
+  alt: string;
+  scrim?: 'left' | 'bottom' | 'both' | 'none';
+  className?: string;
+  imgClassName?: string;
+}) {
+  return (
+    <div aria-hidden className={cn('ob-scene-media', className)}>
+      {/* Plain <img>: the frames are pre-sized WebP and this is a static
+          marketing asset, so the optimizer's trade does not pay for itself. */}
+      <img src={src} alt="" loading="lazy" decoding="async" className={imgClassName} />
+      {(scrim === 'left' || scrim === 'both') && <div className="ob-scene-scrim" />}
+      {scrim === 'bottom' && (
+        <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.9),transparent_55%)]" />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Scene head: index, eyebrow and the caps headline, with an optional short
+ * supporting paragraph set to the right on wide screens. The standard way to
+ * open a scene; interior pages keep using SectionHeader.
+ */
+export function SceneHead({
+  index,
+  eyebrow,
+  title,
+  id,
+  lede,
+  className,
+}: {
+  index: string;
+  eyebrow: string;
+  title: ReactNode;
+  id?: string;
+  lede?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-9 border-b border-[var(--ob-line)] pb-11 lg:flex-row lg:items-end lg:justify-between',
+        className
+      )}
+    >
+      <div className="flex flex-col gap-6">
+        <Eyebrow index={index}>{eyebrow}</Eyebrow>
+        <h2 id={id} className="ob-scene-title max-w-[16ch]">
+          {title}
+        </h2>
+      </div>
+      {lede && (
+        <p className="ob-lede max-w-[38ch] lg:pb-1 lg:text-right">{lede}</p>
+      )}
+    </div>
+  );
+}
+
 /* ── Buttons ────────────────────────────────────────────────────────────── */
 
 type ButtonTone = 'primary' | 'signal' | 'outline';
@@ -159,7 +235,7 @@ const toneClass: Record<ButtonTone, string> = {
 export function CTA({
   href,
   children,
-  tone = 'primary',
+  tone = 'outline',
   size = 'md',
   block = false,
   className,
