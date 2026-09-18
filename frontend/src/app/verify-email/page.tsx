@@ -12,7 +12,7 @@ import {
 import {
   VerifyOtpStep,
   type VerifiedSession,
-} from '@/components/partner/public/verify-otp-step';
+} from '@/components/site/auth/verify-otp-step';
 import { readApiError } from '@/lib/api-error';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';

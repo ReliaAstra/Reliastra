@@ -210,7 +210,6 @@ export function ObservationSetupSequence() {
                   ['saas', 'SaaS / software'],
                   ['fintech', 'Fintech'],
                   ['ecommerce', 'E-commerce'],
-                  ['agency', 'Agency'],
                   ['platform', 'Infrastructure / platform'],
                   ['other', 'Other'],
                 ]}

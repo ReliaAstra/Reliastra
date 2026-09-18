@@ -15,7 +15,6 @@ import {
   AUTH_ROUTES,
   CONSOLE_ROUTES,
   LANDING_SECTIONS,
-  PARTNER_PUBLIC_PAGES,
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
   RESEARCH_HUBS,
@@ -48,14 +47,15 @@ const STATIC_ROUTES = new Set<string>([
   ...RESEARCH_HUBS.map((h) => researchHubRoute(h.slug)),
 ]);
 
-const PARTNER_URLS = new Set([
+// The partner portal and agency surfaces are removed (stage-1 B2B removal):
+// no public navigation may point at them.
+const REMOVED_B2B_URLS = [
   '/partner',
-  ...PARTNER_PUBLIC_PAGES.filter((page) => page !== 'home').map(
-    (page) => `/partner/${page}`
-  ),
-  '/partner/privacy',
-  '/partner/terms',
-]);
+  '/agencies',
+  '/portal',
+  '/agency',
+  '/clients',
+];
 
 /**
  * Anchors that legitimately point at a section on the homepage, plus the two
@@ -134,7 +134,6 @@ describe('public navigation link integrity', () => {
       .filter(
         (href) =>
           !STATIC_ROUTES.has(href) &&
-          !PARTNER_URLS.has(href) &&
           !isDynamicVendorRoute(href)
       );
     expect(unresolved).toEqual([]);
@@ -160,17 +159,21 @@ describe('public navigation link integrity', () => {
     }
   });
 
-  it('sends partner signup to the partner form, not customer signup', () => {
-    // `/signup` is the customer registration form and never creates a partner
-    // profile. A "join as partner" link pointing there silently enrols the
-    // visitor as a customer instead.
-    const partnerJoin = linksOf(footerMarkup).filter((l) =>
-      /(join|apply).*(partner|network)/i.test(l.label)
+  it('never links to the removed B2B surfaces', () => {
+    // The partner portal, agencies page and client portals are unmounted.
+    // A navigation link to one of these is a regression.
+    for (const href of allHrefs) {
+      expect(REMOVED_B2B_URLS.some((u) => href === u || href.startsWith(u + '/'))).toBe(false);
+    }
+  });
+
+  it('links the technical creator program from the footer', () => {
+    const creatorLinks = linksOf(footerMarkup).filter((l) =>
+      /creator/i.test(l.label)
     );
-    expect(partnerJoin.length).toBeGreaterThan(0);
-    for (const l of partnerJoin) {
-      expect(l.href).toBe('/partner/signup');
-      expect(l.href).not.toBe(AUTH_ROUTES.signup);
+    expect(creatorLinks.length).toBeGreaterThan(0);
+    for (const l of creatorLinks) {
+      expect(l.href).toBe(PUBLIC_ROUTES.creators);
     }
   });
 
@@ -206,7 +209,6 @@ describe('public navigation link integrity', () => {
       if (isExternal(href) || href.startsWith('#')) continue;
       expect(
         STATIC_ROUTES.has(href) ||
-          PARTNER_URLS.has(href) ||
           isDynamicVendorRoute(href),
         `unresolved nav href: ${href}`
       ).toBe(true);
@@ -227,7 +229,7 @@ describe('public navigation link integrity', () => {
   it('exposes the branded-SERP concept destinations', () => {
     const hrefs = new Set(flattenNavConfig().map((l) => l.href));
     for (const href of [
-      PUBLIC_ROUTES.agencies,
+      PUBLIC_ROUTES.creators,
       PUBLIC_ROUTES.externalDependencyIntelligence,
       PUBLIC_ROUTES.dependencyMonitoring,
       PUBLIC_ROUTES.slaEvidence,

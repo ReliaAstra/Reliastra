@@ -19,7 +19,6 @@ import {
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils';
 import { hasEvidence } from '@/lib/dashboard/plans';
-import { hasAgencyWorkspace } from '@/lib/agency/access';
 import { useClients } from '@/lib/dashboard/queries';
 
 interface Item {
@@ -40,13 +39,9 @@ export function CommandPalette() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const setHelp = useAppStore((s) => s.setHelpOpen);
   const plan = useAppStore((s) => s.plan);
-  const org = useAppStore((s) => s.org);
   const router = useRouter();
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
-
-  const agencyEnabled = hasAgencyWorkspace(org, plan);
-  const { data: clients } = useClients(agencyEnabled);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -70,42 +65,11 @@ export function CommandPalette() {
   const items = useMemo<Item[]>(() => {
     const nav: Item[] = [
       { id: 'dash', group: 'Navigation', label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: 'G D' },
-      // The agency overview is a destination for every authenticated
-      // organization (the same rule as the sidebar): an organization without
-      // the capability opens the gated experience, never a missing page.
-      { id: 'agency', group: 'Navigation', label: 'Agency overview', href: '/agency', icon: Building2, shortcut: 'G A' },
       { id: 'deps', group: 'Navigation', label: 'Dependencies', href: '/dependencies', icon: Link2, shortcut: 'G P' },
       { id: 'inc', group: 'Navigation', label: 'Incidents', href: '/incidents', icon: TriangleAlert, shortcut: 'G I' },
       { id: 'evi', group: 'Navigation', label: 'Evidence', href: '/evidence', icon: FileText, shortcut: 'G E' },
       { id: 'set', group: 'Navigation', label: 'Settings', href: '/settings', icon: Settings, shortcut: 'G S' },
     ];
-
-    const agencyActions: Item[] = agencyEnabled
-      ? [
-          {
-            id: 'clients',
-            group: 'Agency Actions',
-            label: 'Client environments',
-            icon: Building2,
-            href: '/clients',
-          },
-          {
-            id: 'new-client',
-            group: 'Agency Actions',
-            label: 'Create Client Workspace',
-            icon: Plus,
-            href: '/clients/onboarding',
-          },
-        ]
-      : [];
-
-    const clientItems: Item[] = (clients ?? []).map((c) => ({
-      id: `client-${c.id}`,
-      group: 'Client Workspaces',
-      label: `Client: ${c.name}`,
-      href: `/clients/${c.id}`,
-      icon: Building2,
-    }));
 
     const actions: Item[] = [
       {
@@ -142,11 +106,11 @@ export function CommandPalette() {
       icon: Activity,
     }));
 
-    const all = [...nav, ...agencyActions, ...clientItems, ...actions, ...rec];
+    const all = [...nav, ...actions, ...rec];
     const query = q.trim().toLowerCase();
     if (!query) return all;
     return all.filter((i) => i.label.toLowerCase().includes(query));
-  }, [plan, recent, router, setAdd, setHelp, q, agencyEnabled, clients]);
+  }, [plan, recent, router, setAdd, setHelp, q]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Item[]>();

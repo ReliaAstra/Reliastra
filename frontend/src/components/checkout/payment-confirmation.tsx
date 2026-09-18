@@ -25,7 +25,7 @@ export function PaymentConfirmation({
   quote: CheckoutQuote | null;
 }) {
   const displayPlan =
-    verified?.display_plan ?? quote?.display_plan ?? 'Pro';
+    verified?.display_plan ?? quote?.display_plan ?? 'Developer';
   const charged = verified?.amount_display ?? quote?.payment_amount_display ?? null;
   const product = verified?.product_price_display ?? quote?.product_price_display ?? null;
   const currencyName = quote?.payment_currency_name ?? verified?.currency ?? null;

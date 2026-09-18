@@ -15,18 +15,15 @@ export const MAIL_SINK = process.env.E2E_MAILHOG_URL ?? 'http://127.0.0.1:8025';
  *   annual   $390.00 -> 39000 cents x 1650 = 64,350,000 kobo = ₦643,500.00
  */
 export const CONTRACT = {
-  productAmountDisplay: '$39.00 (USD)',
-  productAmountMinor: 3900,
+  productAmountDisplay: '$9.00 (USD)',
+  productAmountMinor: 900,
   productCurrency: 'USD',
-  actualChargeDisplay: '₦64,350.00 (NGN)',
-  paymentAmountMinor: 6_435_000, // kobo - 3900 cents x 1650 rate
+  actualChargeDisplay: '₦14,850.00 (NGN)',
+  paymentAmountMinor: 1_485_000, // kobo - 900 cents x 1650 rate
   paymentCurrency: 'NGN',
   provider: 'Paystack',
   notice:
     "RELIASTRA's plans are priced in USD. Our current Paystack payment flow processes payments in NGN. We are awaiting confirmation of additional payment options for international customers.",
-  annualProductDisplay: '$390.00 (USD)',
-  annualChargeDisplay: '₦643,500.00 (NGN)',
-  annualAmountMinor: 64_350_000,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));

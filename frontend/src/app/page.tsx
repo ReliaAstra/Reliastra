@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { HomeClient } from '@/components/home/home-client';
 import { HomeLanding } from '@/components/site/home/home-landing';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
@@ -30,7 +29,7 @@ const HOME_FAQS = [
   },
   {
     q: 'Who can see my monitoring data?',
-    a: 'Your organization. Monitoring data and evidence reports are never shared with the vendors being measured.',
+    a: 'Only your account. Monitoring data and evidence reports are never shared with the vendors being measured.',
   },
 ];
 
@@ -60,12 +59,11 @@ export const metadata: Metadata = {
 /**
  * Homepage - server-rendered for crawlers, interactive after hydration.
  *
- * The interactive partner/console shell lives in `HomeClient`, which
- * server-renders the full landing (brand, H1, proposition, links) as the
- * initial HTML - no crawler ever receives an empty shell that depends on
- * client-side auth resolution. A `<noscript>` duplicate is deliberately
- * omitted: the SSR landing already carries the content without JavaScript,
- * and a second copy would split the page across two H1s.
+ * The landing (
+ * brand, H1, proposition, links) is fully server-rendered as the initial
+ * HTML - no crawler ever receives an empty shell. A `<noscript>` duplicate
+ * is deliberately omitted: the SSR landing already carries the content
+ * without JavaScript, and a second copy would split the page across two H1s.
  */
 export default function Home() {
   return (
@@ -112,7 +110,7 @@ export default function Home() {
           </ul>
         </div>
       </noscript>
-      <HomeClient landing={<HomeLanding />} />
+      <HomeLanding />
     </>
   );
 }

@@ -48,11 +48,13 @@ describe('homepage section anchors', () => {
     expect(new Set(rendered).size).toBe(rendered.length);
   });
 
-  it('starts at the hero and ends at the definitions', async () => {
+  it('starts at the hero and closes with accountability', async () => {
     // Guards the narrative spine specifically: the page must open on the
-    // proposition and close on the reference block before the final CTA.
+    // proposition and close with the reference block, then the maintainer
+    // statement, before the final CTA.
     expect(LANDING_SECTIONS[0]).toBe('top');
-    expect(LANDING_SECTIONS[LANDING_SECTIONS.length - 1]).toBe('reference');
+    expect(LANDING_SECTIONS[LANDING_SECTIONS.length - 1]).toBe('maintainer');
+    expect(LANDING_SECTIONS[LANDING_SECTIONS.length - 2]).toBe('reference');
   });
 
   it('every declared anchor resolves to a rendered target', async () => {

@@ -7,6 +7,10 @@ import { CONTRACT, apiGet, flatText } from './helpers';
  * what the backend resolves, what the Paystack charge will be, and what the
  * DOM renders - and the FX reference (when configured) is proven to be a
  * labelled, sourced rate that IS the basis of the charge.
+ *
+ * The commercial model is one paid product: Developer, $9/month, monthly
+ * billing only. There is no interval toggle, no annual figures and no
+ * enterprise card to assert against.
  */
 
 type CurrencyInfo = {
@@ -39,66 +43,51 @@ function expectTextContains(text: string, ...needles: string[]) {
 }
 
 test.describe('pricing transparency (public)', () => {
-  test('Pro card shows the full transparency block, monthly and annual', async ({
+  test('Developer card shows the full transparency block, monthly only', async ({
     page,
     request,
   }) => {
     const currency = await apiGet<CurrencyInfo>(request, '/api/v1/billing/currency');
 
     // The backend itself is the contract: NGN prices are the USD product
-    // price converted at the live rate (₦64,350.00 = $39.00 x 1650), and the
+    // price converted at the live rate (₦14,850.00 = $9.00 x 1650), and the
     // USD product price is stated separately.
     expect(currency.product_currency).toBe(CONTRACT.productCurrency);
     expect(currency.payment_currency).toBe(CONTRACT.paymentCurrency);
     expect(currency.payment_provider).toBe(CONTRACT.provider);
     expect(currency.notice).toBe(CONTRACT.notice);
     expect(currency.plan_payment_amounts.pro.monthly).toBe(CONTRACT.actualChargeDisplay);
-    expect(currency.plan_payment_amounts.pro.annual).toBe(CONTRACT.annualChargeDisplay);
+    // No annual billing: the backend never resolves an annual figure.
+    expect(
+      currency.plan_payment_amounts.pro.annual === undefined ||
+        currency.plan_payment_amounts.pro.annual === ''
+    ).toBe(true);
 
     await page.goto('/#pricing', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => document.querySelector('#pricing')?.scrollIntoView());
 
-    // Every plan carries the mandated three-line disclosure. First anchor on
-    // the resolved backend figure (the card shows the calculated USD product
-    // price until the currency call resolves on a cold dev server).
-    const pro = page.locator('[data-testid="pricing-card-pro"]');
+    // The one plan carries the mandated three-line disclosure. First anchor
+    // on the resolved backend figure (the card shows the calculated USD
+    // product price until the currency call resolves on a cold dev server).
+    const pro = page.locator('[data-testid="pricing-limits-pro"]');
     await expect(pro).toBeVisible();
     await expect(
       page.locator('[data-testid="payment-charge-pro"]').first(),
     ).toHaveText(CONTRACT.actualChargeDisplay, { timeout: 30_000 });
     const proText = await flatText(pro);
-    expectTextContains(proText, 'Product price $39.00 (USD)');
-    expectTextContains(proText, 'Actual charge ₦64,350.00 (NGN) per month');
+    expectTextContains(proText, 'Product price $9.00 (USD)');
+    expectTextContains(proText, 'Actual charge ₦14,850.00 (NGN) per month');
     expectTextContains(proText, 'Payment provider Paystack');
 
-    // The notice is full-size and verbatim - not a footnote. (The container
-    // also holds the section heading + FX panel, so assert containment of
-    // the exact sentence rather than string equality of the whole block.)
+    // The notice is full-size and verbatim - not a footnote.
     const notice = page.locator('[data-testid="pricing-currency-notice"]').first();
     await expect(notice).toBeVisible();
     expectTextContains(await flatText(notice), CONTRACT.notice);
 
-    // Annual: both figures update together; nothing stays silently monthly.
-    await page.getByRole('button', { name: /^annual/i }).first().click();
-    await expect(page.locator('[data-testid="payment-charge-pro"]').first()).toHaveText(
-      CONTRACT.annualChargeDisplay,
-      { timeout: 15_000 },
-    );
-    const annualText = await flatText(pro);
-    expectTextContains(annualText, 'Product price $390.00 (USD)');
-    expectTextContains(annualText, 'Actual charge ₦643,500.00 (NGN) per year');
-
-    // Enterprise: contact-sales only, zero self-serve checkout figures.
-    const ent = page.locator('[data-testid="pricing-card-enterprise"]');
-    const entText = await flatText(ent);
-    expectTextContains(entText, 'Custom pricing');
-    expectTextContains(entText, 'Contact Sales');
-    expect(entText).not.toMatch(/₦/);
-    expect(entText).not.toMatch(/Actual charge/i);
-
-    // Back to monthly - the toggle round-trips without residue.
-    await page.getByRole('button', { name: /^monthly/i }).first().click();
-    expectTextContains(await flatText(pro), 'per month');
+    // The removed billing complexity must not reappear.
+    expect(await flatText(page.locator('main'))).not.toMatch(/annual/i);
+    expect(page.locator('[data-testid="pricing-card-enterprise"]')).toHaveCount(0);
+    expect(page.getByRole('button', { name: /^annual/i })).toHaveCount(0);
 
     // FX reference: shown only if the backend has one. When present it must
     // read as a labelled, sourced, timestamped rate - the rate the charge

@@ -6,7 +6,7 @@ import { DocsSideNav } from '@/components/site/docs-side-nav';
 export const metadata = buildMetadata({
   title: 'API docs - Programmatic access',
   description:
-    'RELIASTRA API overview: versioned /v1 endpoints for dependencies, incidents, evidence and public vendor data. Available on Pro and above.',
+    'RELIASTRA API overview: versioned /v1 endpoints for dependencies, incidents, evidence and public vendor data. Included in the Developer plan.',
   path: '/docs/api',
 });
 
@@ -29,7 +29,7 @@ export default function ApiDocsPage() {
       <MarketingPage
         eyebrow="Docs · API"
         title="API: programmatic access"
-        lede="Versioned /v1 endpoints for dependencies, incidents, evidence and public vendor data - for Pro organizations and above."
+        lede="Versioned /v1 endpoints for dependencies, incidents, evidence and public vendor data - included in the Developer plan."
         breadcrumbs={crumbs}
         sideNav={<DocsSideNav activeHref="/docs/api" />}
         related={[

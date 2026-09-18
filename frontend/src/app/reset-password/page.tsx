@@ -10,7 +10,7 @@ import {
   Field,
 } from '@/components/site/auth/auth-shell';
 import { readApiError } from '@/lib/api-error';
-import { AUTH_ROUTES, partnerUrl } from '@/lib/routes';
+import { AUTH_ROUTES } from '@/lib/routes';
 
 /**
  * Destination for the password-reset email
@@ -55,12 +55,6 @@ function ResetPasswordContent() {
             Enter your email on the sign-in page and choose “Forgot password”.
           </p>
         </div>
-        <p className="mt-6 text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          Resetting a partner account?{' '}
-          <Link href={partnerUrl('forgot-password')} className="ob-link">
-            Partner password reset
-          </Link>
-        </p>
       </AuthShell>
     );
   }

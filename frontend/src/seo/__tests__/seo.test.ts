@@ -13,13 +13,9 @@ import {
   websiteJsonLd,
 } from '@/lib/seo';
 import {
-  PARTNER_INDEXABLE_SLUGS,
-  PARTNER_ROUTE_SLUGS,
+  PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
   RESEARCH_HUBS,
-  isPartnerRouteSlug,
-  partnerRouteUrl,
-  partnerUrl,
   researchArticle,
   researchHubArticles,
   researchHubRoute,
@@ -134,27 +130,13 @@ describe('canonical URL architecture', () => {
     for (const hub of RESEARCH_HUBS) {
       expect(paths).toContain(researchHubRoute(hub.slug));
     }
-    // Redirecting legacy pages are NOT in the sitemap source (canonical-only).
-    expect(paths).not.toContain('/partner/tiers');
-    expect(paths).not.toContain('/partner/premium');
-  });
-
-  it('uses straightforward /partner URLs, never query-param links', () => {
-    expect(partnerUrl('home')).toBe('/partner');
-    expect(partnerUrl('signup')).toBe('/partner/signup');
-    expect(partnerRouteUrl('privacy')).toBe('/partner/privacy');
-    for (const slug of PARTNER_ROUTE_SLUGS) {
-      expect(isPartnerRouteSlug(slug)).toBe(true);
-      expect(partnerRouteUrl(slug as (typeof PARTNER_ROUTE_SLUGS)[number])).not.toContain('?');
+    // Removed B2B surfaces are NOT in the sitemap source: they are gone,
+    // not redirected - index bloat or soft-404 signals are both wrong.
+    for (const removed of ['/agencies', '/partner', '/partner/commission']) {
+      expect(paths).not.toContain(removed);
     }
-    expect(isPartnerRouteSlug('dashboard')).toBe(false);
-    expect(isPartnerRouteSlug('nope')).toBe(false);
-    // Every indexable partner slug has a sitemap entry.
-    const paths = PUBLIC_PAGES.map((p) => p.path);
-    for (const slug of PARTNER_INDEXABLE_SLUGS) {
-      const expected = slug === 'home' ? '/partner' : `/partner/${slug}`;
-      expect(paths).toContain(expected);
-    }
+    // The lightweight creator page is indexable.
+    expect(paths).toContain(PUBLIC_ROUTES.creators);
   });
 });
 
@@ -274,7 +256,7 @@ describe('machine-readable discovery', () => {
       expect(body).toContain('External Dependency Intelligence');
     }
     const body = await (await llms.GET()).text();
-    for (const path of ['/agencies', '/track', '/docs', '/pricing', '/security', '/research', '/partner']) {
+    for (const path of ['/creators', '/track', '/docs', '/pricing', '/security', '/research']) {
       expect(body).toContain(`https://reliastra.com${path}`);
     }
     // The AI infrastructure hub and its scope statement must be machine-readable.

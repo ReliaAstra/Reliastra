@@ -52,7 +52,7 @@ export default function MonitoringDocsPage() {
           <p>
             One scheduler dispatches one task per dependency per configured
             observation label per interval through a message broker to workers.
-            Free: 1-minute checks. Pro: down to 15 seconds. Each scheduled check
+            1-minute checks on reduced limits; down to 30 seconds on Developer. Each scheduled check
             resolves and connects on its own, and every stored result carries the
             label it ran under. RELIASTRA currently operates a single observation
             point, so those labels are scheduling slots on one worker rather than
@@ -83,7 +83,7 @@ export default function MonitoringDocsPage() {
           <h2>Retention</h2>
           <p>
             Check history retention follows the plan - 24 hours on Free, up to 90 days
-            on Pro, custom on Enterprise - pruned by scheduled jobs, never kept
+            on Developer - pruned by scheduled jobs, never kept
             indefinitely or backfilled when probes are missed.
           </p>
           <h2>Next</h2>

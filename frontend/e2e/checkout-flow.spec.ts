@@ -93,25 +93,19 @@ test.describe('checkout entry and return', () => {
     );
   });
 
-  test('the annual choice survives the hand-off', async ({ page, request }) => {
+  test('the annual interval is not offered', async ({ page, request }) => {
     const email = `e2e-entry-annual-${Date.now()}@reliastra.dev`;
     await createAccount(page, email, PASSWORD);
     await signIn(page, email, PASSWORD);
 
     await page.goto('/checkout?plan=pro&interval=annual', { waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    expect(page.url()).toContain('interval=annual');
+    // The URL keeps its shape, but the quote resolves to the only interval
+    // the product sells: monthly, at the monthly charge.
     await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
-      CONTRACT.annualChargeDisplay,
+      CONTRACT.actualChargeDisplay,
       { timeout: 60_000 },
     );
-    await continueToSecurePayment(page);
-    await expect(page.locator('#reliastra-mock-paystack-overlay')).toBeVisible({
-      timeout: 60_000,
-    });
-    const init = await lastPaystackInit(request);
-    expect(init!.amount).toBe(CONTRACT.annualAmountMinor);
-    expect(init!.metadata).toMatchObject({ billing_interval: 'annual' });
   });
 
   test('the landing page sends new customers to an account, not to a payment', async ({
@@ -222,8 +216,8 @@ test.describe('checkout entry and return', () => {
     const receiptText = decodeMailRaw(receipt!.raw);
     expectTextContains(
       receiptText,
-      'Product price: $39.00 (USD)',
-      'Actual charge: ₦64,350.00 (NGN)',
+      'Product price: $9.00 (USD)',
+      'Actual charge: ₦14,850.00 (NGN)',
       'Payment provider: Paystack',
     );
     // The reference belongs on the receipt: it is the only thing a customer can

@@ -12,7 +12,7 @@ import {
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
 import { readApiError, isEmailNotVerified } from '@/lib/api-error';
-import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,10 +144,7 @@ function CustomerLoginPageContent() {
       intro="Open your organization’s console."
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          Partner account?{' '}
-          <Link href={partnerUrl('login')} className="ob-link">
-            Partner sign in
-          </Link>
+          One account for the whole console.
         </p>
       }
     >

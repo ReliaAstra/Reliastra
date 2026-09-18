@@ -51,7 +51,7 @@ export function EvidenceGateModal() {
         onClick={(e) => e.stopPropagation()}
         role="document"
       >
-        <h2 className="text-lg font-semibold text-rs-text">Evidence reports are a Pro feature</h2>
+        <h2 className="text-lg font-semibold text-rs-text">Evidence reports are part of the Developer plan</h2>
         <p className="mt-2 text-sm leading-relaxed text-rs-text-secondary">
           Generate verifiable SLA evidence backed by deterministic checks.
         </p>
@@ -62,7 +62,7 @@ export function EvidenceGateModal() {
               openUpgrade('evidence');
             }}
           >
-            Subscribe to Pro
+            Subscribe to Developer
           </RsButton>
           <RsButton variant="ghost" onClick={() => setOpen(false)}>
             Maybe later

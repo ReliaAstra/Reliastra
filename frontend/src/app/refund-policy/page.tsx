@@ -65,7 +65,7 @@ export default function RefundPolicyPage() {
 
       <Prose className="mt-8">
         <p>
-          RELIASTRA Pro is billed through Paystack. The {TRIAL_DAYS}-day evaluation
+          RELIASTRA Developer is billed through Paystack. The {TRIAL_DAYS}-day evaluation
           does not require a payment method. This policy does not invent a refund
           window that the Terms of Service do not define.
         </p>

@@ -12,7 +12,7 @@ import {
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
 import { readApiError } from '@/lib/api-error';
-import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 import { getSignupAttribution } from '@/lib/attribution';
 import { getStoredReferralCode } from '@/lib/partner-referral';
 
@@ -116,16 +116,13 @@ export default function CustomerSignupPage() {
     <AuthShell
       eyebrow="Create your organization"
       title="Start monitoring"
-      intro="14-day Pro trial. No payment method required."
+      intro="14 days of full Developer capabilities. No payment method required."
       image="/media/fiber-patch-panel.jpg"
       imageAlt="Macro view of a fibre patch panel: densely stacked duplex connectors and coiled jumpers."
       aside={<SignupAside />}
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          Referring customers as a partner?{' '}
-          <Link href={partnerUrl('signup')} className="ob-link">
-            Apply to the partner program
-          </Link>
+          14-day trial. No payment method required.
         </p>
       }
     >

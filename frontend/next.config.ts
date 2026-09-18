@@ -33,17 +33,16 @@ const nextConfig: NextConfig = {
   // shared or bookmarked as `/dashboard/<section>` therefore 404. Redirect the
   // `/dashboard/*` shape onto the canonical routes instead of dead-ending.
   //
-  // NOTE: `/partner` and `/partner/*` are REAL file routes (the Partner
-  // Network home and public pages) - they must never be redirected. Legacy
-  // `/?page=<slug>` query URLs are permanently redirected to them by the
-  // proxy (src/proxy.ts), which is the only layer that can match on query.
+  // NOTE: the B2B surfaces (/agencies, /partner*, /portal, console
+  // /agency + /clients) were removed in the developer-first refurbishment
+  // (stage 1 of a two-stage removal). Their URLs resolve to the closest
+  // surviving destination below; the destinations own the explanation.
   async redirects() {
     const consoleSections = [
       "settings",
       "dependencies",
       "incidents",
       "evidence",
-      "clients",
     ];
     return [
       // Preserve previously shared URLs after moving to a static social image.
@@ -64,31 +63,51 @@ const nextConfig: NextConfig = {
         destination: "/track/:path*",
         permanent: true,
       },
-      // Plural guess for the Partner Network home.
+      // ── Removed B2B surfaces ──────────────────────────────────────────
+      // The partner portal is gone; the lightweight creator program lives
+      // at /creators. Old partner URLs land there.
       {
         source: "/partners",
-        destination: "/partner",
+        destination: "/creators",
         permanent: true,
       },
-      // The PR #40 organization route is the agency operations overview; it
-      // moved to /agency (the public marketing page owns /agencies).
-      // Bookmarks and shared URLs keep working.
+      {
+        source: "/partner",
+        destination: "/creators",
+        permanent: true,
+      },
+      {
+        source: "/partner/:path*",
+        destination: "/creators",
+        permanent: true,
+      },
+      // The agencies marketing page and the agency/client console surfaces
+      // are gone. Marketing lands on the product overview; console
+      // bookmarks land on the dashboard.
+      {
+        source: "/agencies",
+        destination: "/product",
+        permanent: true,
+      },
       {
         source: "/organization",
-        destination: "/agency",
-        permanent: true,
-      },
-      // The program has one flat commission rate and no tier model; the
-      // former tier/premium marketing pages resolve to the commission terms.
-      {
-        source: "/partner/tiers",
-        destination: "/partner/commission",
-        permanent: true,
+        destination: "/dashboard",
+        permanent: false,
       },
       {
-        source: "/partner/premium",
-        destination: "/partner/commission",
-        permanent: true,
+        source: "/agency",
+        destination: "/dashboard",
+        permanent: false,
+      },
+      {
+        source: "/clients",
+        destination: "/dashboard",
+        permanent: false,
+      },
+      {
+        source: "/clients/:path*",
+        destination: "/dashboard",
+        permanent: false,
       },
       ...consoleSections.flatMap((section) => [
         {
@@ -119,13 +138,6 @@ const nextConfig: NextConfig = {
       },
       // Token-scoped shares and per-customer checkout must never be indexed
       // even if a URL leaks: defense in depth behind the metadata noindex.
-      {
-        source: "/portal/:path*",
-        headers: [
-          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
-          { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
-        ],
-      },
       {
         source: "/reports/:path*",
         headers: [

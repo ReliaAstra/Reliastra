@@ -12,13 +12,13 @@ import { PlanMatrix } from '@/components/site/plan-matrix';
 import { PLAN_CAPABILITIES } from '@/components/site/plan-data';
 import { ALL_PLANS, getPlan } from '@/lib/dashboard/plans';
 import { breadcrumbJsonLd, buildMetadata, canonicalUrl } from '@/lib/seo';
-import { AUTH_ROUTES, EXTERNAL_LINKS, PUBLIC_ROUTES } from '@/lib/routes';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 
 export const metadata = buildMetadata({
-  title: 'Pricing - Free, Pro and Enterprise',
+  title: 'Pricing - one plan, $9/month',
   description:
-    'RELIASTRA pricing: Free (3 dependencies, 1-minute checks), Pro $39/month (50 dependencies, 15-second checks, attribution, evidence, client groups and client-facing reports), Enterprise (custom scale, white-label). Every plan limit is enforced server-side.',
+    'RELIASTRA is $9/month. 25 dependencies, 30-second checks, 90-day retention, deterministic attribution, verifiable evidence and API access. 14-day trial, no payment method required. Every limit is enforced server-side.',
   path: PUBLIC_ROUTES.pricing,
 });
 
@@ -80,11 +80,11 @@ export default function PricingPage() {
           <Breadcrumb items={crumbs} className="mb-8" />
           <Eyebrow>Pricing</Eyebrow>
           <h1 className="ob-h1 mt-5 max-w-[16ch]">
-            Three plans. Limits enforced server-side.
+            One plan. $9 a month.
           </h1>
           <p className="ob-lede mt-6">
-            14-day Pro trial on every new organization. No payment method
-            required.
+            Everything RELIASTRA does, for one engineer's price. 14-day trial,
+            no payment method required, every limit enforced server-side.
           </p>
         </Container>
       </header>
@@ -117,10 +117,11 @@ export default function PricingPage() {
           <div className="flex flex-col gap-5 pb-10">
             <Eyebrow>Capabilities</Eyebrow>
             <h2 id="capabilities-heading" className="ob-h2 max-w-[18ch]">
-              What each plan grants.
+              What the plan includes.
             </h2>
             <p className="ob-body">
-              Generated from the entitlements the API enforces.
+              Generated from the entitlements the API enforces - the same table
+              the backend gates every route with.
             </p>
           </div>
 
@@ -203,29 +204,19 @@ export default function PricingPage() {
               {[
                 [
                   'Trial',
-                  '14 days of Pro on every new organization. No payment method required.',
+                  '14 days of full Developer capabilities on every new account. No payment method required.',
                 ],
                 [
                   'After the trial',
-                  'Without an upgrade the organization continues on Free: 3 dependencies, 1-minute checks, 24-hour retention, email alerts.',
+                  'An account without a subscription keeps running on reduced limits: 3 dependencies, 1-minute checks, 24-hour retention, email alerts. Configuration and history are preserved.',
                 ],
                 [
                   'Renewal',
-                  'Paid plans renew for the selected interval until cancelled. Cancellation takes effect at the end of the paid period.',
+                  'Developer renews monthly until cancelled. Cancellation takes effect at the end of the paid period. There is no annual billing.',
                 ],
                 [
                   'Enforcement',
-                  'Dependency counts, check intervals, retention, seats and feature access are enforced by the API.',
-                ],
-                [
-                  'Enterprise',
-                  <>
-                    Priced against scope. Contact{' '}
-                    <a href={EXTERNAL_LINKS.salesEmail} className="ob-link">
-                      sales@reliastra.com
-                    </a>
-                    .
-                  </>,
+                  'Dependency counts, check intervals, retention and feature access are enforced by the API.',
                 ],
                 [
                   'Cancellation',

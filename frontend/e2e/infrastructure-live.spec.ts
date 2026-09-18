@@ -7,12 +7,12 @@ import { readFileSync } from 'node:fs';
 const file = process.env.E2E_ACCOUNTS_FILE;
 const accounts = file ? JSON.parse(readFileSync(file, 'utf8')) : null;
 test.skip(!accounts, 'Requires real, verified QA accounts');
-async function signIn(page: Page, role: 'partner' | 'customer' = 'customer', next?: string) {
-  await page.goto(role === 'partner' ? '/partner/login' : `/login${next ? `?next=${encodeURIComponent(next)}` : ''}`);
+async function signIn(page: Page, _role: 'customer' = 'customer', next?: string) {
+  await page.goto(`/login${next ? `?next=${encodeURIComponent(next)}` : ''}`);
   await page.getByLabel('Work email').fill(accounts[role].email);
   await page.getByLabel('Password', { exact: true }).fill(accounts[role].password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page).toHaveURL(role === 'partner' ? /\/partner\/dashboard$/ : new RegExp(`${next ?? '/dashboard'}$`));
+  await expect(page).toHaveURL(new RegExp(`${next ?? '/dashboard'}$`));
 }
 function audit(page: Page) {
   const errors: string[] = [];
@@ -25,31 +25,6 @@ async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 }
 
-test('partner authentication: URL, refresh, history, deep link and logout', async ({ page }) => {
-  const errors = audit(page);
-  await signIn(page, 'partner');
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true }).first()).toBeVisible();
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Referrals', exact: true }).first().click();
-  await expect(page).toHaveURL(/\/partner\/referrals$/);
-  await page.goBack();
-  await expect(page).toHaveURL(/\/partner\/dashboard$/);
-  await page.goForward();
-  await expect(page).toHaveURL(/\/partner\/referrals$/);
-  await page.goto('/partner/settings');
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true }).first()).toBeVisible();
-  await page.goto('/partner/dashboard');
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true }).first()).toBeVisible();
-  await noOverflow(page);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await noOverflow(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.getByRole('button', { name: 'Sign out', exact: true }).first().click();
-  await page.goto('/partner/dashboard');
-  await expect(page).toHaveURL(/\/partner\/login\?next=/);
-  expect(errors).toEqual([]);
-});
 
 test('customer billing and notifications use persisted state on desktop and mobile', async ({ page }) => {
   const errors = audit(page);
@@ -184,66 +159,8 @@ test('Slack connection and delivery when a real webhook is supplied', async ({ p
 });
 
 
-test('organization isolation and partner membership remain enforced', async ({ page, request }) => {
-  const login = async (role: 'customer' | 'other') => {
-    const response = await request.post('/api/v1/auth/login', { data: { email: accounts[role].email, password: accounts[role].password } });
-    expect(response.ok()).toBe(true);
-    return (await response.json()).access_token;
-  };
-  const token = await login('customer');
-  const other = await login('other');
-  const ownHeaders = { Authorization: `Bearer ${token}`, 'X-Organization-ID': accounts.customer.org };
-  const otherHeaders = { Authorization: `Bearer ${other}`, 'X-Organization-ID': accounts.other.org };
-  const created = await request.post('/api/v1/notifications/configs', { headers: ownHeaders, data: { channel_type: 'email', config: { email: accounts.customer.email } } });
-  expect(created.status()).toBe(201);
-  const channel = await created.json();
-  expect(channel.config).toBeUndefined();
-  for (const method of ['get', 'patch', 'delete'] as const) {
-    const response = await request[method](`/api/v1/notifications/configs/${channel.id}`, { headers: otherHeaders, ...(method === 'patch' ? { data: { is_active: false } } : {}) });
-    expect(response.status()).toBe(404);
-  }
-  const forgedOrg = await request.get('/api/v1/notifications/configs', { headers: { ...otherHeaders, 'X-Organization-ID': accounts.customer.org } });
-  expect([403, 404]).toContain(forgedOrg.status());
-  const unauthorizedCheck = await request.get(`/api/v1/checks/state/${accounts.customer.dependency}`, { headers: otherHeaders });
-  expect(unauthorizedCheck.status()).toBe(404);
-  const own = await request.get(`/api/v1/notifications/configs/${channel.id}`, { headers: ownHeaders });
-  expect((await own.json()).is_active).toBe(true);
-  await request.delete(`/api/v1/notifications/configs/${channel.id}`, { headers: ownHeaders });
-  await signIn(page, 'customer');
-  await page.goto('/partner/dashboard');
-  await expect(page).toHaveURL(/\/partner\/login/);
-  await page.getByLabel('Work email').fill(accounts.customer.email);
-  await page.getByLabel('Password', { exact: true }).fill(accounts.customer.password);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByText('No partner account. Register for the Partner Network to continue.')).toBeVisible();
-  const membership = await request.get('/api/partners/me', { headers: { Authorization: `Bearer ${token}` } });
-  expect(membership.status()).toBe(404);
-});
 
 
-test('customer and partner sessions coexist without changing identity', async ({ page }) => {
-  const errors = audit(page);
-  await signIn(page, 'customer');
-  await expect(page.getByRole('heading', { name: 'Dependency health', exact: true })).toBeVisible();
-  await signIn(page, 'partner');
-  const identities = await page.evaluate(async () => {
-    const customer = await fetch('/api/auth/me').then(r => r.json());
-    const partner = await fetch('/api/partners/session/me').then(r => r.json());
-    return { customer: customer.email, partner: partner.email };
-  });
-  expect(identities).toEqual({ customer: accounts.customer.email, partner: accounts.partner.email });
-  await page.getByRole('button', { name: 'Sign out', exact: true }).first().click();
-  await page.goto('/dashboard');
-  await expect(page.getByRole('heading', { name: 'Dependency health', exact: true })).toBeVisible();
-  const customerEmail = await page.evaluate(() => fetch('/api/auth/me').then(r => r.json()).then(r => r.email));
-  expect(customerEmail).toBe(accounts.customer.email);
-  await page.goto('/billing');
-  await expect(page).toHaveURL(/\/settings\/billing$/);
-  await expect(page.getByTestId('billing-plan')).toBeVisible();
-  await page.goto('/settings');
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  expect(errors).toEqual([]);
-});
 
 test('stopped workers show stale observations rather than a live healthy signal', async ({ page }) => {
   test.skip(!process.env.E2E_PIPELINE_STOPPED, 'Operator-controlled recovery check; stop worker and Beat first');
@@ -296,19 +213,3 @@ test('failed HTTP observation persists and recovers after endpoint correction', 
 });
 
 
-test('expired partner access token refreshes without losing the deep link', async ({ page }) => {
-  test.skip(!process.env.E2E_SHORT_ACCESS_TTL, 'Requires QA API started with ACCESS_TOKEN_EXPIRE_MINUTES=1');
-  test.setTimeout(100000);
-  await signIn(page, 'partner');
-  const expiry = await page.evaluate(() => JSON.parse(atob(localStorage.getItem('partner_access_token')!.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp * 1000);
-  expect(expiry - Date.now()).toBeLessThan(65000);
-  // Wait for the actual server-issued expiry; no edited or injected credentials.
-  const refresh = page.waitForResponse(r => r.url().endsWith('/api/v1/auth/refresh') && r.request().method() === 'POST', { timeout: 80000 });
-  await page.waitForTimeout(Math.max(0, expiry - Date.now()) + 1200);
-  await page.goto('/partner/settings');
-  expect((await refresh).status()).toBe(200);
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true }).first()).toBeVisible();
-  await expect(page).toHaveURL(/\/partner\/settings$/);
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Sign out', exact: true }).first()).toBeVisible();
-});

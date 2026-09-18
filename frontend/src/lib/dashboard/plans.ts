@@ -4,11 +4,14 @@ import type { PlanId } from './types';
  * Plan metadata - mirrors backend ``app.core.permissions`` exactly.
  *
  * The BACKEND is the single source of truth for enforcement (dependency
- * limits, check intervals, retention, team limits, feature flags). This
- * file exists only so the UI can render copy that always agrees with it.
- * Any disagreement between the two is a bug: fix both sides together.
+ * limits, check intervals, retention, feature flags). This file exists only
+ * so the UI can render copy that always agrees with it. Any disagreement
+ * between the two is a bug: fix both sides together.
  *
- * Canonical 3-tier architecture: FREE → PRO → ENTERPRISE.
+ * Commercial model: ONE paid product - Developer, $9/month, billed monthly.
+ * "free" is the quiet post-trial state (never marketed); "enterprise" is a
+ * legacy internal value that no public surface advertises. There is no
+ * annual billing and there are no seats.
  */
 export interface PlanMeta {
   id: PlanId;
@@ -43,7 +46,7 @@ export const PLANS: PlanMeta[] = [
   {
     id: 'free',
     name: 'Free',
-    tagline: 'For trying RELIASTRA',
+    tagline: 'What an account runs on after a trial ends without a subscription',
     priceMonthly: 0,
     priceAnnual: 0,
     dependencies: 3,
@@ -66,13 +69,13 @@ export const PLANS: PlanMeta[] = [
   },
   {
     id: 'pro',
-    name: 'Pro',
-    tagline: 'For growing SaaS teams and agencies',
-    priceMonthly: 39,
-    priceAnnual: 390,
-    dependencies: 50,
-    teamMembers: 10,
-    minIntervalSeconds: 15,
+    name: 'Developer',
+    tagline: 'One plan. Everything RELIASTRA observes, records and proves.',
+    priceMonthly: 9,
+    priceAnnual: null,
+    dependencies: 25,
+    teamMembers: 1,
+    minIntervalSeconds: 30,
     retentionDays: 90,
     alerts: 'Email + Slack',
     slackAlerts: true,
@@ -80,19 +83,18 @@ export const PLANS: PlanMeta[] = [
     attribution: true,
     evidence: true,
     historicalAnalysis: true,
-    clientGroups: true,
+    clientGroups: false,
     whiteLabel: false,
-    clientReports: true,
+    clientReports: false,
     customBrandedEvidence: false,
-    badge: 'Most Popular',
     billingAvailability: 'self_serve',
     isEnterprise: false,
     isCustomPricing: false,
   },
   {
     id: 'enterprise',
-    name: 'Enterprise',
-    tagline: 'For organizations requiring advanced controls, scale and custom requirements',
+    name: 'Legacy enterprise',
+    tagline: 'Legacy internal value - not offered, never advertised',
     priceMonthly: null,
     priceAnnual: null,
     dependencies: null,
@@ -117,8 +119,8 @@ export const PLANS: PlanMeta[] = [
 
 const ORDER: PlanId[] = ['free', 'pro', 'enterprise'];
 
-/** Canonical plan order used by marketing/dashboard renderers. */
-export const ALL_PLANS: PlanId[] = ['free', 'pro', 'enterprise'];
+/** The plans marketing surfaces render. The public catalog is one plan. */
+export const ALL_PLANS: PlanId[] = ['pro'];
 
 export function getPlan(id: string | undefined | null): PlanMeta {
   const found = PLANS.find((p) => p.id === (id || 'free').toLowerCase());
@@ -151,8 +153,7 @@ export function hasSlackAlerts(plan: string | undefined | null): boolean {
 }
 
 export function isPaid(plan: string | undefined | null): boolean {
-  const p = getPlan(plan);
-  return p.id === 'pro' || p.id === 'enterprise';
+  return getPlan(plan).id === 'pro';
 }
 
 export function isEnterprise(plan: string | undefined | null): boolean {

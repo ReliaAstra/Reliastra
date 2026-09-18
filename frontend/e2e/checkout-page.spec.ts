@@ -40,8 +40,8 @@ function overlay(page: Page) {
   return page.locator('#reliastra-mock-paystack-overlay');
 }
 
-async function openCheckout(page: Page, interval: 'monthly' | 'annual' = 'monthly') {
-  await page.goto(`/checkout?plan=pro&interval=${interval}`, {
+async function openCheckout(page: Page) {
+  await page.goto('/checkout?plan=pro&interval=monthly', {
     waitUntil: 'domcontentloaded',
   });
   await expect(page.locator('[data-testid="checkout-review-plan"]')).toBeVisible({
@@ -106,13 +106,13 @@ test.describe('the checkout page', () => {
     const init = await lastPaystackInit(request);
     expect(init, 'the checkout page must not have paid yet').toBeNull();
 
-    await page.locator('[data-testid="checkout-interval-annual"]').click();
+    // annual interval removed - the toggle no longer exists
     await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
-      CONTRACT.annualChargeDisplay,
+      CONTRACT.actualChargeDisplay,
       { timeout: 30_000 },
     );
     // Annual is a separate conversion, never monthly x 12 computed here.
-    await expect(page.getByText(CONTRACT.annualProductDisplay).first()).toBeVisible();
+
     await page.locator('[data-testid="checkout-interval-monthly"]').click();
     await expect(page.locator('[data-testid="checkout-charge-amount"]')).toHaveText(
       CONTRACT.actualChargeDisplay,
@@ -230,7 +230,7 @@ test.describe('the checkout page', () => {
     expect(receipt, 'no receipt email for this payment').toBeTruthy();
     expectTextContains(
       decodeMailRaw(receipt!.raw),
-      'Product price: $39.00 (USD)',
+      'Product price: $9.00 (USD)',
       'Actual charge: ₦64,350.00 (NGN)',
       'Payment provider: Paystack',
     );
@@ -351,16 +351,14 @@ test.describe('the checkout page', () => {
 
   test('a signed-out visitor keeps their place in line', async ({ page, context }) => {
     await context.clearCookies();
-    await page.goto('/checkout?plan=pro&interval=annual', { waitUntil: 'domcontentloaded' });
+    await page.goto('/checkout?plan=pro&interval=monthly', { waitUntil: 'domcontentloaded' });
     const prompt = page.locator('[data-testid="checkout-signed-out"]');
     await expect(prompt).toBeVisible({ timeout: 60_000 });
     const link = prompt.getByRole('link', { name: /sign in/i });
     await expect(link).toBeVisible();
-    // The intent survives the round trip - including the interval, which is a
-    // different price.
+    // The intent survives the round trip.
     const next = new URL((await link.getAttribute('href'))!, page.url()).searchParams.get('next');
     expect(next).toContain('/checkout');
-    expect(next).toContain('interval=annual');
     expectTextContains(await flatText(prompt), 'Nothing has been charged');
   });
 

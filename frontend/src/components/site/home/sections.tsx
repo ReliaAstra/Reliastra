@@ -7,7 +7,7 @@ import {
   Section,
   SectionHeader,
 } from '@/components/site/primitives';
-import { AUTH_ROUTES, PUBLIC_ROUTES, partnerUrl } from '@/lib/routes';
+import { AUTH_ROUTES, EXTERNAL_LINKS, PUBLIC_ROUTES } from '@/lib/routes';
 import { DependencyTopology } from '@/components/site/visuals/dependency-topology';
 import { IncidentTimeline } from '@/components/site/visuals/incident-timeline';
 import { EvidenceArtifact } from '@/components/site/visuals/evidence-artifact';
@@ -304,137 +304,52 @@ export function IncidentStorySection() {
   );
 }
 
-/* ── 10 · Agencies and MSPs ─────────────────────────────────────────────── */
 
-export function AgenciesSection() {
+/* ── 11 · Who builds this ───────────────────────────────────────────────── */
+
+/**
+ * The maintainer section. The homepage answers "who is building it" in four
+ * sentences and links out for the rest - it is a statement of accountability,
+ * not a biography.
+ */
+export function MaintainerSection() {
   return (
-    <section
-      className="relative overflow-hidden border-t border-[var(--ob-line)]"
-      aria-labelledby="agencies-title"
-    >
-      <div className="absolute inset-0">
-        <Image
-          src="/media/noc-operations.jpg"
-          alt="An unattended network operations room at night, desks dark and a wall of dimmed telemetry displays showing muted charts."
-          fill
-          sizes="100vw"
-          quality={70}
-          loading="lazy"
-          className="ob-photo object-cover object-center opacity-40"
-        />
-        <div className="absolute inset-0 bg-[var(--ob-void)]/70" aria-hidden />
-      </div>
-
-      <Container className="relative py-24 md:py-32">
-        <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
-          <div className="flex flex-col gap-6">
-            <Eyebrow index="10">Agencies · MSPs</Eyebrow>
-            <h2 id="agencies-title" className="ob-h2 max-w-[17ch]">
-              Held responsible for stacks you inherited.
-            </h2>
-            <p className="ob-body-lg">
-              When a client’s checkout fails, the call comes to you. An
-              independent record settles whose fault it was.
-            </p>
-          </div>
-
-          <dl className="flex flex-col">
-            {[
-              [
-                'Client isolation',
-                'Each client has its own dependencies, incidents and evidence.',
-              ],
-              [
-                'Attribution per client',
-                'Vendor degradation is attributed while the incident is open.',
-              ],
-              [
-                'Shareable records',
-                'Client-facing reports and portals, from the same record.',
-              ],
-            ].map(([term, desc]) => (
-              <div
-                key={term}
-                className="border-t border-[var(--ob-line)] py-5"
-              >
-                <dt className="text-[15px] font-semibold leading-snug text-[var(--ob-text)]">
-                  {term}
-                </dt>
-                <dd className="mt-1.5 max-w-[58ch] text-[14px] leading-[1.6] text-[var(--ob-text-3)]">
-                  {desc}
-                </dd>
-              </div>
-            ))}
-            <p className="ob-small mt-5 max-w-[58ch]">
-              Client groups and client reports are included in Pro.
-              White-label branding is an Enterprise capability. The{' '}
-              <Link href={PUBLIC_ROUTES.agencies} className="ob-link">
-                agency page
-              </Link>{' '}
-              shows the workflow, the console and what each plan grants.
-            </p>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href={PUBLIC_ROUTES.agencies}
-                className="ob-btn ob-btn-outline ob-btn-sm"
-              >
-                For agencies
-              </Link>
-              <Link
-                href={PUBLIC_ROUTES.pricing}
-                className="ob-btn ob-btn-outline ob-btn-sm"
-              >
-                Pricing
-              </Link>
-            </div>
-          </dl>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
-/* ── 11 · Partner program ───────────────────────────────────────────────── */
-
-export function PartnerSection() {
-  return (
-    <Section id="partners" tone="base" tight aria-labelledby="partners-title">
+    <Section id="maintainer" tone="base" tight aria-labelledby="maintainer-title">
       <Container>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-20">
-          <div className="flex flex-col gap-6">
-            <Eyebrow index="11">Partner program</Eyebrow>
-            <h2 id="partners-title" className="ob-h2 max-w-[16ch]">
-              Refer the organizations you advise.
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
+          <div className="flex flex-col gap-5">
+            <Eyebrow>Who builds this</Eyebrow>
+            <h2 id="maintainer-title" className="ob-h2 max-w-[14ch]">
+              An engineering project, not a company front.
             </h2>
-            <p className="ob-body">
-              Consultancies, agencies and technical publishers earn recurring
-              commission on referred accounts. Referrals are attributed through
-              a tracked link.
-            </p>
-            <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-              <Link href={PUBLIC_ROUTES.partner} className="ob-btn ob-btn-outline">
-                Partner program
-              </Link>
-              <Link href={partnerUrl('signup')} className="ob-btn ob-btn-outline">
-                Apply
-              </Link>
+            <div className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
+              <ArrowLink href={PUBLIC_ROUTES.about}>About the project</ArrowLink>
+              <a
+                href={EXTERNAL_LINKS.github}
+                className="ob-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub
+              </a>
             </div>
           </div>
 
-          <dl className="flex flex-col self-start">
-            {[
-              ['Commission', 'Published in full on the commission page.'],
-              ['Attribution', 'A tracked link ties each signup to the partner.'],
-              ['Accounts', 'A partner account is separate from a customer account.'],
-            ].map(([term, desc]) => (
-              <div key={term} className="border-t border-[var(--ob-line)] py-5">
-                <dt className="ob-label mb-2">{term}</dt>
-                <dd className="text-[14px] leading-[1.6] text-[var(--ob-text-2)]">
-                  {desc}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div className="flex flex-col gap-6">
+            <p className="ob-body-lg max-w-[62ch]">
+              RELIASTRA is built and maintained by one infrastructure engineer.
+              The detection methodology, the evidence format and the research
+              behind them are the same work, published where you can check it -
+              which is also why the product is $9 a month and the person who
+              built it answers the support inbox.
+            </p>
+            <p className="ob-body max-w-[62ch]">
+              The direction is larger than the product: a dependency
+              intelligence network built from independent observations across
+              real software systems. It is being earned one observation at a
+              time, not claimed in advance.
+            </p>
+          </div>
         </div>
       </Container>
     </Section>
@@ -458,7 +373,7 @@ export const HOME_DEFINITIONS: { q: string; a: string }[] = [
   },
   {
     q: 'How is an incident confirmed?',
-    a: 'At least two observation regions must fail inside the same 60-second window. A single failing region is recorded, not declared.',
+    a: 'A failure must persist: two consecutive checks from the same observation point must fail before an incident opens, so one dropped probe is recorded but not declared. If multiple independent observation points exist, confirmed agreement between them opens an incident instead.',
   },
   {
     q: 'What is in an evidence report?',

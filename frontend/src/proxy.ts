@@ -7,7 +7,6 @@ import {
   setAdminSessionCookiesProxy,
 } from '@/lib/admin-session-gate';
 import { verifyAdminToken } from '@/lib/admin-token-verify';
-import { isPartnerRouteSlug, partnerRouteUrl, PARTNER_DASHBOARD_PAGES } from '@/lib/routes';
 import { handlePartnerReferralRequest } from '@/lib/partner-referral-http';
 
 /**
@@ -115,15 +114,15 @@ export default async function proxy(req: NextRequest, _event?: unknown): Promise
   const isLoginPage = pathname === ADMIN_LOGIN_PATH || pathname.startsWith(`${ADMIN_LOGIN_PATH}/`);
   const secure = requestIsSecure(req);
 
-  // Legacy partner query URLs → canonical file routes. Only fires for known
-  // partner slugs; every other `/` request (landing, dashboard SPA, unknown
-  // params) passes through untouched. Non-`page` params (e.g. referral
-  // codes) are preserved on the destination.
+  // Legacy partner query URLs (`/?page=<slug>`) pointed at the removed
+  // partner portal. Send them to the lightweight creator page instead of
+  // letting them fall through to the landing shell, where they would be
+  // silently ignored.
   if (!isAdminPage && pathname === '/') {
     const requested = req.nextUrl.searchParams.get('page');
-    if (requested && (isPartnerRouteSlug(requested) || (PARTNER_DASHBOARD_PAGES as readonly string[]).includes(requested))) {
+    if (requested) {
       const url = req.nextUrl.clone();
-      url.pathname = isPartnerRouteSlug(requested) ? partnerRouteUrl(requested) : `/partner/${requested}`;
+      url.pathname = '/creators';
       url.searchParams.delete('page');
       url.search = url.searchParams.toString() ? `?${url.searchParams.toString()}` : '';
       return NextResponse.redirect(url, 308);

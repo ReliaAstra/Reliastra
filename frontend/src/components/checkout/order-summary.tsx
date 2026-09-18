@@ -29,16 +29,14 @@ import { cn } from '@/lib/utils';
 export function OrderSummary({
   quote,
   interval,
-  onIntervalChange,
   onRefresh,
 }: {
   quote: CheckoutQuote;
-  interval: 'monthly' | 'annual';
-  onIntervalChange: (next: 'monthly' | 'annual') => void;
+  interval: 'monthly';
   /** Re-quotes from the backend, re-running the live FX resolution. */
   onRefresh: () => void;
 }) {
-  const periodWord = quote.period_word ?? (interval === 'annual' ? 'year' : 'month');
+  const periodWord = quote.period_word ?? 'month';
 
   return (
     <div className="space-y-5">
@@ -64,7 +62,6 @@ export function OrderSummary({
             ) : null}
           </div>
 
-          <IntervalToggle interval={interval} onChange={onIntervalChange} />
         </div>
 
         {/* The two prices, side by side and equal in weight - because to the
@@ -231,60 +228,6 @@ function FieldValue({
   );
 }
 
-/**
- * Monthly / annual.
- *
- * A real radio group rather than two buttons: the choice changes what is
- * charged, so it is a form control with keyboard semantics, and its label says
- * what selecting it does ("billed yearly") instead of relying on colour.
- */
-function IntervalToggle({
-  interval,
-  onChange,
-}: {
-  interval: 'monthly' | 'annual';
-  onChange: (next: 'monthly' | 'annual') => void;
-}) {
-  const options: { id: 'monthly' | 'annual'; label: string; hint: string }[] = [
-    { id: 'monthly', label: 'Monthly', hint: 'billed every month' },
-    { id: 'annual', label: 'Annual', hint: 'billed once a year' },
-  ];
-
-  return (
-    <fieldset className="shrink-0">
-      <legend className="sr-only">Billing interval</legend>
-      <div
-        role="radiogroup"
-        aria-label="Billing interval"
-        className="inline-flex rounded-xl border border-rs-border-subtle bg-rs-base p-1"
-      >
-        {options.map((option) => {
-          const active = option.id === interval;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={option.hint}
-              onClick={() => onChange(option.id)}
-              className={cn(
-                'min-h-10 rounded-lg px-3.5 text-[13px] font-medium transition-colors sm:px-4',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-brand',
-                active
-                  ? 'bg-rs-elevated text-rs-text shadow-[0_1px_2px_rgba(11,18,32,0.06)]'
-                  : 'text-rs-text-tertiary hover:text-rs-text-secondary'
-              )}
-              data-testid={`checkout-interval-${option.id}`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}
 
 function PriceCard({
   label,

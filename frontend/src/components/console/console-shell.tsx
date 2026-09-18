@@ -31,7 +31,7 @@ import { AppErrorBoundary } from '../dashboard/shell/error-boundary';
  * console rail: during setup the rail points at surfaces that have no data in
  * them yet.
  */
-const SEQUENCE_ROUTES = ['/onboarding', '/clients/onboarding'];
+const SEQUENCE_ROUTES = ['/onboarding'];
 
 export function ConsoleShell({ children }: { children: ReactNode }) {
   const online = useAppStore((s) => s.online);
@@ -42,9 +42,6 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const labels: Record<string, string> = {
       '/dashboard': 'Overview',
-      '/agency': 'Agency overview',
-      '/organization': 'Agency overview',
-      '/clients': 'Client environments',
       '/dependencies': 'Dependencies',
       '/incidents': 'Incidents',
       '/evidence': 'Evidence',

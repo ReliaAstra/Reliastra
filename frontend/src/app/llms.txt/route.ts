@@ -51,7 +51,6 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 
 - Home: ${SITE_URL}/
 - Product: ${SITE_URL}/product
-- For agencies and MSPs: ${SITE_URL}/agencies
 - External Dependency Intelligence: ${SITE_URL}/external-dependency-intelligence
 - Dependency monitoring: ${SITE_URL}/dependency-monitoring
 - SLA evidence: ${SITE_URL}/sla-evidence
@@ -83,9 +82,7 @@ and the vendor's - so you can tell "we broke it" apart from "they broke it".
 - About: ${SITE_URL}/about
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status
-- Partner Network: ${SITE_URL}/partner
-- How partner referrals work: ${SITE_URL}/partner/how-it-works
-- Partner commissions: ${SITE_URL}/partner/commission
+- Technical creators: ${SITE_URL}/creators
 - Privacy: ${SITE_URL}/privacy
 - Terms: ${SITE_URL}/terms
 

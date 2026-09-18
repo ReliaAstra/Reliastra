@@ -5,7 +5,7 @@ import {
   seatLabel,
   type PlanMeta,
 } from '@/lib/dashboard/plans';
-import { AUTH_ROUTES, EXTERNAL_LINKS } from '@/lib/routes';
+import { AUTH_ROUTES } from '@/lib/routes';
 
 /**
  * Plan presentation data, kept OUT of the client component that renders it.
@@ -37,10 +37,6 @@ export const PLAN_CAPABILITIES: {
   { label: 'Deterministic attribution', get: (p) => p.attribution },
   { label: 'Evidence generation', get: (p) => p.evidence },
   { label: 'Historical analysis', get: (p) => p.historicalAnalysis },
-  { label: 'Custom-branded evidence', get: (p) => p.customBrandedEvidence },
-  { label: 'Client groups & isolation', get: (p) => p.clientGroups },
-  { label: 'Client-facing reports', get: (p) => p.clientReports },
-  { label: 'White-label branding', get: (p) => p.whiteLabel },
 ];
 
 /** The four limits that actually decide which plan someone picks. */
@@ -54,11 +50,8 @@ export function planLimits(p: PlanMeta): [string, string][] {
 }
 
 export function planCta(p: PlanMeta): { href: string; label: string } {
-  if (p.isEnterprise) {
-    return { href: EXTERNAL_LINKS.salesEmail, label: 'Contact sales' };
-  }
   return {
     href: AUTH_ROUTES.signup,
-    label: p.id === 'free' ? 'Start free' : 'Start Pro trial',
+    label: 'Start 14-day trial',
   };
 }

@@ -19,7 +19,7 @@ const GUIDES = [
   { label: 'Quickstart', href: '/docs/quickstart', description: 'First dependency check in minutes.' },
   { label: 'Monitoring', href: '/docs/monitoring', description: 'Endpoints, observation points, intervals, states.' },
   { label: 'Evidence', href: '/docs/evidence', description: 'Generate, share and verify fault reports.' },
-  { label: 'API', href: '/docs/api', description: 'Programmatic access on Pro and above.' },
+  { label: 'API', href: '/docs/api', description: 'Programmatic access - included in the plan.' },
 ];
 
 export default function DocsPage() {
