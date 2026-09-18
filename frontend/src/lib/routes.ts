@@ -435,6 +435,14 @@ export function docsRoute(slug: string): string {
 
 export const EXTERNAL_LINKS = {
   github: 'https://github.com/ReliaAstra',
+  /**
+   * The API origin. Not `reliastra.com/api`: the backend answers on its own
+   * hostname, and `lib/backend-proxy.ts` proxies the console to the same one.
+   * Machine-readable surfaces (llms.txt, llms-full.txt, the docs) state the
+   * endpoint a caller actually has to reach, so the origin lives here once
+   * instead of being spelled out per page.
+   */
+  api: 'https://api.reliastra.com',
   billingEmail: 'mailto:billing@reliastra.com?subject=Pro%20plan%20pricing',
 } as const;
 

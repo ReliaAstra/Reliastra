@@ -1,5 +1,5 @@
 import { SITE_URL } from '@/lib/seo';
-import { RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
+import { EXTERNAL_LINKS, RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
 import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
 
 /**
@@ -14,6 +14,10 @@ import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECOND
  * Every URL below is canonical after the developer-first consolidation
  * (`/track` → `/observatory`, four capability pages → `/product`).
  */
+/** The API origin, interpolated so the file never states a path a caller
+ * cannot reach. */
+const API = EXTERNAL_LINKS.api;
+
 const BODY = `# RELIASTRA
 
 > RELIASTRA observes the external services software depends on. It issues its
@@ -63,12 +67,12 @@ detection record, the observations in the window, the SLA arithmetic and its
 basis, the attribution result, and an appendix of every observation. Integrity:
 a SHA-256 over the canonical payload, a SHA-256 over the rendered document, and
 an Ed25519 signature over the payload when a signing key is configured.
-Retrieval is authenticated: GET ${SITE_URL}/api/v1/evidence/{report_id} returns the
+Retrieval is authenticated: GET ${API}/v1/evidence/{report_id} returns the
 record, a presigned URL for the document, the verification id, the public
 verification URL, the payload hash, the methodology version and the signing
-state; GET ${SITE_URL}/api/v1/evidence/{report_id}/artifact streams the document
+state; GET ${API}/v1/evidence/{report_id}/artifact streams the document
 itself, so a script never has to follow a URL into object storage.
-Verification is unauthenticated: GET ${SITE_URL}/api/v1/verify/{verification_id}
+Verification is unauthenticated: GET ${API}/v1/verify/{verification_id}
 returns the hashes, the signature and the public key reference. Records are
 retained 365 days. A record cannot establish anything inside the vendor's
 infrastructure, nor that every one of the vendor's customers was affected.
@@ -76,7 +80,8 @@ infrastructure, nor that every one of the vendor's customers was affected.
 ## Interfaces
 
 - REST API: scoped API keys, cursor pagination, OpenAPI document served by the
-  API itself at /openapi.json.
+  API itself at ${API}/openapi.json. The API origin is ${API} - a self-hosted
+  deployment answers at the same paths on its own origin.
 - CLI: the \`reliastra\` binary, shipped in the RELIASTRA repository under \`cli/\`
   (installed from a checkout with \`npm install -g ./Reliastra/cli\`; it is not on
   the public npm registry). Commands: login, logout, whoami, doctor, deps

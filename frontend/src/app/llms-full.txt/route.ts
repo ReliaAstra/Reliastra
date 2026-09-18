@@ -1,5 +1,6 @@
 import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
 import {
+  EXTERNAL_LINKS,
   RESEARCH_ARTICLES,
   RESEARCH_CATEGORIES,
   RESEARCH_HUBS,
@@ -129,8 +130,9 @@ Every data command takes \`--json\` and prints the API's own field names. Exit
 codes: 0 success, 1 usage, 2 API error, 3 auth, 4 verification claim failed,
 5 not permitted, 6 unreachable.
 
-REST API: \`${SITE_URL}/api/v1/\` mirrors the document served at
-\`/openapi.json\`. Endpoints a service needs: \`GET /v1/dependencies\`,
+REST API: \`${EXTERNAL_LINKS.api}/v1/\`. The API origin serves its own OpenAPI
+document at \`${EXTERNAL_LINKS.api}/openapi.json\`; a self-hosted deployment
+answers at the same paths on its own origin. Endpoints a service needs: \`GET /v1/dependencies\`,
 \`GET /v1/dependencies/{id}/results\`, \`GET /v1/checks/recent\`,
 \`GET /v1/incidents?dependency_id={id}\`, \`GET /v1/incidents/{id}\`,
 \`GET /v1/evidence\`, \`GET /v1/evidence/{id}\` (record plus a one-hour signed
