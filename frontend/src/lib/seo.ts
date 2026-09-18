@@ -1,44 +1,51 @@
 import type { Metadata } from 'next';
 
+import {
+  DOCS_ROUTES,
+  RESEARCH_ARTICLES,
+  RESEARCH_CATEGORIES,
+  RESEARCH_HUBS,
+  researchCategoryArticles,
+  researchCategoryRoute,
+  researchHubRoute,
+  researchRoute,
+} from '@/lib/routes';
+
 /**
- * Single source of truth for RELIASTRA's public search architecture.
+ * Single source of truth for the public search architecture.
  *
- * Search-intent map (keyword → intent → target page):
+ * Intent -> page, after the developer-first consolidation:
  *
- * - "external dependency monitoring" (know) ......... /external-dependency-intelligence
- * - "third-party dependency monitoring" (compare) .... /dependency-monitoring
- * - "API dependency monitoring" (solve) ............. /dependency-monitoring
- * - "vendor outage detection" (solve) ............... /track (+ /track/[vendor])
- * - "incident attribution / outage attribution" ..... /incident-evidence
- * - "outage evidence / SLA evidence / SLA claims" ... /sla-evidence
- * - "SLA monitoring / SLA credits" (commercial) ..... /sla-evidence
- * - "third-party outage proof" (urgent solve) ....... /incident-evidence
- * - "reliability verification / vendor reliability" . /external-dependency-intelligence
- * - "product overview / pricing / security" ......... /product, /pricing, /security
- * - "how it works / docs" (learn/build) ............ /docs/*
- * - "concept definitions" (learn) .................. /glossary/*
- * - "original incident analysis" (trust) ........... /research/*
- * - "live vendor status" (monitor) ................. /track, /track/[vendor]
+ * - "monitor a third-party API dependency" (solve) .... /product
+ * - "is <vendor> down" / "vendor outage" (observe) .... /observatory
+ * - "vendor outage evidence / SLA evidence" ........... /product/evidence
+ * - "who caused the outage / attribution" ............. /product/evidence
+ * - "how is that measured" (verify) ................... /docs/methodology
+ * - "install, configure, call it" (build) ............. /docs/*
+ * - "what does this term mean" (learn) ................ /glossary/*
+ * - "original measurement research" (trust) ........... /research/*
+ * - "who is behind this" .............................. /about
  *
- * Topic clusters:
- *   Category  → /external-dependency-intelligence (pillar)
- *   Problems  → /incident-evidence, /sla-evidence, /dependency-monitoring
- *   Capability→ /product, /docs/*
- *   Proof     → /track/[vendor], /research/*, /status
- *   Company   → /about, /contact, /security, /pricing
- *   Concepts  → /glossary/*
+ * Four overlapping capability pages used to carry this intent
+ * (/external-dependency-intelligence, /dependency-monitoring,
+ * /incident-evidence, /sla-evidence) plus /track. They are retired and
+ * 308-redirected by `next.config.ts`, so every intent above resolves to
+ * exactly one page and no two public pages compete for it.
  *
- * Every indexable page answers: WHO / WHAT problem / WHY it matters /
- * HOW RELIASTRA solves it / WHAT evidence supports it / WHAT next.
+ * PUBLIC_PAGES is the sitemap's source list. It is *derived* for the parts
+ * that grow: glossary terms, research hubs, non-empty categories and
+ * published papers are appended from `@/lib/routes`, so publishing a paper
+ * cannot leave it out of the sitemap. The hand-written core below is only the
+ * fixed set of product, docs and legal pages.
  */
 
 export const SITE_URL =
   (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com').replace(/\/$/, '');
 
 export const SITE_NAME = 'RELIASTRA';
-export const SITE_TAGLINE = 'External Dependency Intelligence';
+export const SITE_TAGLINE = 'Independent dependency observation';
 export const SITE_DESCRIPTION =
-  'RELIASTRA monitors the third-party APIs and services your product depends on, attributes failures to the responsible dependency, and produces independent, timestamped SLA evidence.';
+  'RELIASTRA probes the external services your software depends on, records every observation, confirms faults deterministically, and keeps evidence a third party can verify without an account.';
 
 export const SITE_ORG = {
   name: 'Reliastra, Inc.',
@@ -203,68 +210,7 @@ export function articleJsonLd(input: {
 // Only canonical, indexable, server-rendered pages. Authenticated, token-scoped
 // and console routes are deliberately absent (see robots.ts + per-page noindex).
 
-export const PUBLIC_PAGES = [
-  { path: '/', changeFrequency: 'daily' as const, priority: 1.0 },
-  { path: '/product', changeFrequency: 'weekly' as const, priority: 0.9 },
-  { path: '/creators', changeFrequency: 'monthly' as const, priority: 0.5 },
-  { path: '/external-dependency-intelligence', changeFrequency: 'weekly' as const, priority: 0.9 },
-  { path: '/dependency-monitoring', changeFrequency: 'weekly' as const, priority: 0.9 },
-  { path: '/sla-evidence', changeFrequency: 'weekly' as const, priority: 0.9 },
-  { path: '/incident-evidence', changeFrequency: 'weekly' as const, priority: 0.9 },
-  { path: '/track', changeFrequency: 'hourly' as const, priority: 0.9 },
-  { path: '/pricing', changeFrequency: 'weekly' as const, priority: 0.8 },
-  { path: '/security', changeFrequency: 'monthly' as const, priority: 0.7 },
-  { path: '/docs', changeFrequency: 'weekly' as const, priority: 0.8 },
-  { path: '/docs/quickstart', changeFrequency: 'monthly' as const, priority: 0.7 },
-  { path: '/docs/monitoring', changeFrequency: 'monthly' as const, priority: 0.7 },
-  { path: '/docs/evidence', changeFrequency: 'monthly' as const, priority: 0.7 },
-  { path: '/docs/api', changeFrequency: 'monthly' as const, priority: 0.7 },
-  { path: '/glossary', changeFrequency: 'monthly' as const, priority: 0.7 },
-  { path: '/glossary/external-dependency-intelligence', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/dependency-monitoring', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/incident-attribution', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/sla-evidence', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/vendor-reliability', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/dependency-telemetry', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/infrastructure-evidence', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/external-dependency-fault-report', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/independent-measurement', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/quorum-detection', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/transport-error', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/vendor-reported-status', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/partial-outage', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/availability', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/latency', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/observation-density', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/telemetry-integrity', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/dependency-blast-radius', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/failure-domain', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/control-plane', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/data-plane', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/external-trust-boundary', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/ai-api-dependency', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/model-routing', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/observability-blind-spot', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/explicit-deny', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/implicit-deny', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/identity-based-policy', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/resource-based-policy', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/permissions-boundary', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/glossary/non-human-identity', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/research', changeFrequency: 'weekly' as const, priority: 0.8 },
-  { path: '/research/ai-infrastructure', changeFrequency: 'hourly' as const, priority: 0.85 },
-  // Research categories. A category is listed only when it has papers - an
-  // empty category is a thin page, and the category route 404s rather than
-  // rendering one.
-  { path: '/research/measurement-integrity', changeFrequency: 'weekly' as const, priority: 0.8 },
-  { path: '/research/cloud-security', changeFrequency: 'weekly' as const, priority: 0.8 },
-  { path: '/about', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/contact', changeFrequency: 'monthly' as const, priority: 0.6 },
-  { path: '/status', changeFrequency: 'daily' as const, priority: 0.6 },
-  { path: '/privacy', changeFrequency: 'yearly' as const, priority: 0.3 },
-  { path: '/terms', changeFrequency: 'yearly' as const, priority: 0.3 },
-  { path: '/refund-policy', changeFrequency: 'yearly' as const, priority: 0.3 },
-] as const;
+
 
 // ── Glossary (concept layer: definition → problem → why → example → approach) ─
 
@@ -286,17 +232,17 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'External Dependency Intelligence',
     short: 'Independent knowledge about the third-party services your product depends on.',
     definition:
-      'External Dependency Intelligence is the practice of continuously observing the third-party APIs and services your infrastructure depends on - from outside both your stack and the vendor’s - and turning those observations into attributable, timestamped records of behavior.',
+      'External Dependency Intelligence is the practice of continuously observing the third-party APIs and services your software depends on - from outside both your stack and the vendor’s - and turning those observations into attributable, timestamped records of behaviour.',
     problem:
       'Your own monitoring tells you that your checkout is failing. It cannot tell you whether the cause is your code or the payment provider three hops away whose status page still reads “operational”.',
     whyItMatters:
       'Without an independent record, every vendor incident becomes an argument about whose system failed. With one, it becomes a comparison of two measured timelines.',
     example:
-      'At 14:02 your error rate spikes. RELIASTRA’s regional probes show your payment provider’s API timing out from two regions over the same window, while your database latency is flat. The investigation starts at the vendor, not in your codebase.',
+      'At 14:02 your error rate spikes. Over the same window, RELIASTRA’s own probe of your payment provider’s endpoint starts timing out while its probe of your health endpoint stays flat. The dependency window is documented before anyone finishes arguing about it.',
     howReliastra:
       'RELIASTRA checks each configured dependency on a fixed interval from its own infrastructure, records latency, status codes and outcomes with timestamps, applies a deterministic rule before declaring incidents, and binds evidence reports to checksums you can verify.',
     related: [
-      { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence' },
+      { label: 'Product', href: '/product' },
       { label: 'Incident attribution', href: '/glossary/incident-attribution' },
       { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
     ],
@@ -304,7 +250,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
   {
     slug: 'dependency-monitoring',
     term: 'Dependency Monitoring',
-    short: 'Continuous third-party API observation with quorum-confirmed incidents.',
+    short: 'Continuous third-party observation with deterministic fault confirmation.',
     definition:
       'Dependency monitoring is the continuous probing of external endpoints your product relies on - APIs, auth providers, payment gateways, cloud services - to detect degradation before your users report it.',
     problem:
@@ -312,13 +258,13 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'A dependency that fails silently breaks your product while every internal dashboard stays green. Direct measurement closes that blind spot.',
     example:
-      'Your auth provider starts returning 500s intermittently. RELIASTRA’s scheduled checks record exactly which calls failed and for how long, separating a brief blip from a sustained vendor-wide outage.',
+      'Your auth provider starts returning 500s intermittently. Scheduled checks record exactly which probes failed, with timestamps and latencies, separating a single lost request from a fault window that two consecutive checks confirm.',
     howReliastra:
-      'One scheduler dispatches one task per dependency per region through a message broker to workers. Every result carries its region. Recovery requires consecutive successes, so flapping does not page your team twice.',
+      'One scheduler dispatches one check task per dependency through a message broker to a worker. Every result carries the region label of the worker that ran it, and a detection policy parameterised by observation topology decides the confirmation rule. Recovery requires consecutive successes, so flapping does not page you twice.',
     related: [
-      { label: 'Dependency monitoring', href: '/dependency-monitoring' },
+      { label: 'Product', href: '/product' },
       { label: 'Vendor reliability', href: '/glossary/vendor-reliability' },
-      { label: 'Track vendors', href: '/track' },
+      { label: 'Track vendors', href: '/observatory' },
     ],
   },
   {
@@ -332,11 +278,11 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'Correct attribution decides where engineers look first, what gets rolled back, what gets escalated to a vendor, and what evidence supports an SLA claim.',
     example:
-      'Your incident window (14:02–14:19) overlaps a period in which the dependency was independently observed failing across two regions. That overlap is a fact about two measured timelines.',
+      'Your incident window (14:02–14:19) overlaps a period in which the dependency was independently observed failing from RELIASTRA’s own infrastructure. That overlap is a fact about two measured timelines - not a finding about cause.',
     howReliastra:
       'RELIASTRA keeps your incident history and the dependency’s observation history on the same timeline, applies a deterministic correlation engine with confidence levels, and refuses to claim causation - only correlated, timestamped evidence.',
     related: [
-      { label: 'Incident evidence', href: '/incident-evidence' },
+      { label: 'Evidence records', href: '/product/evidence' },
       { label: 'SLA evidence', href: '/glossary/sla-evidence' },
       { label: 'Methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
     ],
@@ -346,17 +292,17 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     term: 'SLA Evidence',
     short: 'Timestamped, checksummed records of vendor behavior for credit conversations.',
     definition:
-      'SLA evidence is an independent, timestamped record of a vendor’s observed behavior during a failure window - suitable for bringing into a service-credit conversation governed by your contract with that vendor.',
+      'SLA evidence is an independent, timestamped record of a vendor’s observed behaviour during a failure window - the kind of artifact you can attach to a service-credit conversation governed by your contract with that vendor.',
     problem:
       'Screenshots and Slack messages do not settle credit disputes. The vendor’s own status page is written by the counterparty to the claim.',
     whyItMatters:
       'An SLA claim needs an independent record of the window. A vendor status page is written by the counterparty to the claim.',
     example:
-      'A 17-minute degradation with per-minute observations from two regions and the correlated incident window, compiled into one report with a verifiable checksum.',
+      'A 17-minute degradation with every scheduled observation in the window, the detection record that confirmed it and the correlated incident, compiled into one artifact with a verifiable checksum.',
     howReliastra:
-      'When a vendor incident is confirmed, RELIASTRA compiles the independent observations, the window and the attribution result. Reports are checksummed, bound to your organization, and verifiable without disclosing endpoints or credentials.',
+      'When an incident resolves, RELIASTRA compiles the retained observations, the detection rule that applied and the attribution result into one record. Records carry the producing account binding and a checksum, and can be verified by a third party without disclosing endpoints or credentials.',
     related: [
-      { label: 'SLA evidence', href: '/sla-evidence' },
+      { label: 'Evidence records', href: '/product/evidence' },
       { label: 'Infrastructure evidence', href: '/glossary/infrastructure-evidence' },
       { label: 'Evidence docs', href: '/docs/evidence' },
     ],
@@ -372,11 +318,11 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'Reliability determines architecture (retries, fallbacks, multi-vendor), contract terms (SLA clauses, credits), and incident readiness (who gets paged).',
     example:
-      'Two payment providers both claim four nines. Independent 30-day measurement shows one at 99.98% with a 340ms p95, the other at 99.91% with three confirmed incidents. The architecture decision writes itself.',
+      'Two payment providers both claim four nines. Independent 30-day measurement shows one at 99.98% with a 340 ms p95 and no confirmed fault window, the other at 99.91% with three. The comparison is only meaningful because the window and the observation count are printed beside each figure.',
     howReliastra:
-      'RELIASTRA publishes aggregated posture only for vendors made public, always with window and methodology stated. Public Track pages show uptime, latency and incident history measured - not self-reported.',
+      'RELIASTRA publishes aggregates only for vendors made public, always with the window, the observation count and the observation point stated. Observatory pages show availability, latency and incident history as measured - never mirrored from a status page.',
     related: [
-      { label: 'Track vendors', href: '/track' },
+      { label: 'Track vendors', href: '/observatory' },
       { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
       { label: 'Research agenda', href: '/research/reliastra-research-agenda' },
     ],
@@ -384,9 +330,9 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
   {
     slug: 'dependency-telemetry',
     term: 'Dependency Telemetry',
-    short: 'The raw observations behind every reliability claim: checks, regions, outcomes.',
+    short: 'The raw observations behind every reliability claim: checks, outcomes, timestamps.',
     definition:
-      'Dependency telemetry is the retained record of every probe against a dependency - timestamp, region of origin, latency, status code and outcome - from which uptime, latency and incident figures are derived.',
+      'Dependency telemetry is the retained record of every probe against a dependency - timestamp, the region label of the worker that issued it, latency, status code and outcome - from which availability, latency and incident figures are derived.',
     problem:
       'An uptime percentage without its underlying observations cannot be audited. You cannot distinguish “vendor down” from “we never ran the probe”.',
     whyItMatters:
@@ -394,7 +340,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     example:
       'A gap in the chart is labeled explicitly: policy-blocked target, dispatch failure, or dead scheduler - three different causes with three different owners, never collapsed into “no data”.',
     howReliastra:
-      'Each stored result records region, outcome, status code, latency and execution time. Missed probes are never backfilled. Retention follows the plan (24 hours on Free up to 90 days on Pro).',
+      'Each stored result records the region label, outcome, status code, latency and execution time. Missed probes are never backfilled: a gap stays a gap. Retention is 90 days on the Developer plan, and 24 hours once a trial ends without a subscription.',
     related: [
       { label: 'Monitoring docs', href: '/docs/monitoring' },
       { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
@@ -411,9 +357,9 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'Evidence converts a transient outage into a durable, checkable artifact: postmortems cite it, vendors respond to it, contracts reference it.',
     example:
-      'A fault report covering a 22-minute window: per-region observations, quorum verdict, correlated customer impact, and a SHA-256 checksum binding the report to the organization that generated it.',
+      'A record covering a 22-minute window: every observation in it, the detection record with the rule id that applied, the correlated incident, and a SHA-256 checksum over the payload plus an Ed25519 signature when a signing key is configured.',
     howReliastra:
-      'Generated reports are checksummed and bound to the producing organization. A public verification reference confirms a report exists and matches its checksum - without disclosing endpoints, headers or account details.',
+      'Generated records are checksummed and bound to the account that produced them. The unauthenticated verification endpoint confirms a record exists and matches its hashes - without disclosing endpoints, headers or account details.',
     related: [
       { label: 'Incident evidence', href: '/incident-evidence' },
       { label: 'Fault reports', href: '/glossary/external-dependency-fault-report' },
@@ -430,9 +376,9 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     whyItMatters:
       'A single compiled report replaces a scattered thread. It is what gets attached to vendor tickets, postmortems and SLA claims.',
     example:
-      'Report contents: dependency, window (UTC), per-region timeline, quorum verdict, severity, correlated incidents, methodology reference, checksum, verification link.',
+      'Contents: dependency, window (UTC), the detection record with the rule id that applied, every observation in the window, severity, correlated incidents, the attribution result, methodology version, payload and document checksums, verification link.',
     howReliastra:
-      'Reports are generated from retained telemetry on detection or on demand, carry the organization binding and checksum, and expose a public verification endpoint that confirms existence and integrity - never private configuration.',
+      'Records are generated from retained observations when an incident resolves or on demand, carry the account binding and the checksums, and expose an unauthenticated verification endpoint that confirms existence and integrity - never private configuration.',
     related: [
       { label: 'SLA evidence', href: '/sla-evidence' },
       { label: 'Evidence docs', href: '/docs/evidence' },
@@ -454,7 +400,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
       'Independence is stated as scope, not claimed as authority: which endpoint, which origin, which method, which limits - published in the record itself so a reader can weigh the observation without trusting the brand. See the measurement methodology.',
     related: [
       { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability' },
-      { label: 'Public observatory', href: '/track' },
+      { label: 'Public observatory', href: '/observatory' },
       { label: 'Vendor-reported status', href: '/glossary/vendor-reported-status' },
     ],
   },
@@ -487,7 +433,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     problem:
       'Monitoring that collapses “no response” and “server returned 500” into one red dot destroys the distinction between an unreachable service and a reachable-but-failing one - two incidents with different owners, symptoms and fixes.',
     whyItMatters:
-      'Transport errors localize: persistent failures from one origin but not another suggest a path or edge problem; failures from every origin suggest the target; timeouts under load can precede outright refusal and mark a degradation arc.',
+      'Transport errors keep their identity in the record, which is what lets a later reader separate an unreachable service from a reachable-but-failing one. Working out where a failure sits needs more than one vantage point, and RELIASTRA runs one today - so a transport error is reported as an observation of the path it probed, not as a verdict about the target.',
     example:
       'RELIASTRA stores each observation with its outcome: status code and latency when a response arrived; an explicit error type when it did not. Availability counts “no expected response,” so the taxonomy stays visible in every aggregate.',
     howReliastra:
@@ -515,7 +461,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     related: [
       { label: 'Independent measurement', href: '/glossary/independent-measurement' },
       { label: 'Vendor reliability', href: '/glossary/vendor-reliability' },
-      { label: 'Public observatory', href: '/track' },
+      { label: 'Public observatory', href: '/observatory' },
     ],
   },
   {
@@ -531,7 +477,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     example:
       'One region of a provider returning 5xx while two others serve normally; completions fast while realtime routes hang; public API degraded while the consumer app is untouched. Each is invisible to any single number - and to any observation from one vantage point.',
     howReliastra:
-      'Per-observation storage with region, status and error type is what makes a partial outage visible: RELIASTRA reports exactly which origins, endpoints and windows observed failure, and prints “insufficient data” where its single-origin public record cannot speak to the rest.',
+      'Per-observation storage with an explicit error type is what makes the shape of a partial outage visible: RELIASTRA reports the exact endpoint and window it observed failing, and prints “insufficient data” wherever a record from one observation point cannot speak to the rest of the surface.',
     related: [
       { label: 'Quorum detection', href: '/glossary/quorum-detection' },
       { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
@@ -555,7 +501,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     related: [
       { label: 'Dependency telemetry', href: '/glossary/dependency-telemetry' },
       { label: 'Transport error', href: '/glossary/transport-error' },
-      { label: 'Public observatory', href: '/track' },
+      { label: 'Public observatory', href: '/observatory' },
     ],
   },
   {
@@ -898,4 +844,90 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
       { label: 'AWS IAM policy evaluation order', href: '/research/cloud-security/aws-iam-policy-evaluation-order' },
     ],
   },
+];
+
+/* ── Sitemap source list ─────────────────────────────────────────────────── */
+
+export type PublicPage = {
+  path: string;
+  changeFrequency: 'daily' | 'hourly' | 'weekly' | 'monthly' | 'yearly';
+  priority: number;
+};
+
+/**
+ * Fixed public pages. The order is the order a reader would meet them in, and
+ * the sitemap emits them in this order.
+ */
+const CORE_PUBLIC_PAGES: PublicPage[] = [
+  { path: '/', changeFrequency: 'daily', priority: 1.0 },
+  { path: '/product', changeFrequency: 'weekly', priority: 0.9 },
+  { path: '/product/evidence', changeFrequency: 'weekly', priority: 0.9 },
+  { path: '/observatory', changeFrequency: 'hourly', priority: 0.9 },
+  { path: '/pricing', changeFrequency: 'weekly', priority: 0.8 },
+  { path: '/docs', changeFrequency: 'weekly', priority: 0.8 },
+  { path: DOCS_ROUTES.quickstart, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.concepts, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.configuration, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.monitoring, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.incidents, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.evidence, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.verification, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.api, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.cli, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.webhooks, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.methodology, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.security, changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/research', changeFrequency: 'weekly', priority: 0.8 },
+  { path: '/glossary', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/creators', changeFrequency: 'monthly', priority: 0.5 },
+  { path: '/about', changeFrequency: 'monthly', priority: 0.6 },
+  { path: '/security', changeFrequency: 'yearly', priority: 0.5 },
+  { path: '/contact', changeFrequency: 'yearly', priority: 0.4 },
+  { path: '/status', changeFrequency: 'daily', priority: 0.5 },
+  { path: '/privacy', changeFrequency: 'yearly', priority: 0.3 },
+  { path: '/terms', changeFrequency: 'yearly', priority: 0.3 },
+  { path: '/refund-policy', changeFrequency: 'yearly', priority: 0.3 },
+];
+
+/**
+ * The sitemap's source list.
+ *
+ * Derived sections, in order: every glossary term, every research hub, every
+ * category that actually holds a paper (an empty category route 404s rather
+ * than rendering a thin page, so it must not be advertised), every published
+ * paper, then the fixed pages.
+ *
+ * Uniqueness is asserted by `src/seo/__tests__/seo.test.ts`: a duplicate path
+ * in a sitemap is a crawl signal about the site's own uncertainty.
+ */
+export const PUBLIC_PAGES: PublicPage[] = [
+  ...CORE_PUBLIC_PAGES,
+  ...GLOSSARY_TERMS.map(
+    (g): PublicPage => ({
+      path: `/glossary/${g.slug}`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    })
+  ),
+  ...RESEARCH_HUBS.map(
+    (h): PublicPage => ({
+      path: researchHubRoute(h.slug),
+      changeFrequency: 'hourly',
+      priority: 0.85,
+    })
+  ),
+  ...RESEARCH_CATEGORIES.filter((c) => researchCategoryArticles(c.slug).length > 0).map(
+    (c): PublicPage => ({
+      path: researchCategoryRoute(c.slug),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    })
+  ),
+  ...RESEARCH_ARTICLES.map(
+    (a): PublicPage => ({
+      path: researchRoute(a.slug),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    })
+  ),
 ];

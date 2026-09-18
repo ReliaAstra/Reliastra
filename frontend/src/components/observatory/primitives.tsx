@@ -47,7 +47,7 @@ export function ObservatoryShell({
               </Link>
               <span aria-hidden className="h-4 w-px shrink-0 bg-[var(--ob-line-2)]" />
               <Link
-                href={PUBLIC_ROUTES.track}
+                href={PUBLIC_ROUTES.observatory}
                 className="ob-label truncate transition-colors hover:text-[var(--ob-signal)]"
               >
                 Observatory
@@ -55,7 +55,7 @@ export function ObservatoryShell({
             </div>
             <div className="flex shrink-0 items-center gap-5">
               <Link
-                href={PUBLIC_ROUTES.externalDependencyIntelligence}
+                href={PUBLIC_ROUTES.product}
                 className="ob-label hidden transition-colors hover:text-[var(--ob-text)] sm:inline"
               >
                 What this measures

@@ -276,7 +276,7 @@ export default async function AiInfrastructureHubPage() {
               ...rows.map((r) => ({
                 '@type': 'WebPage',
                 name: `${r.detail.display_name} reliability record`,
-                url: canonicalUrl(SHARE_ROUTES.trackVendor(r.detail.vendor_name)),
+                url: canonicalUrl(SHARE_ROUTES.observatoryVendor(r.detail.vendor_name)),
               })),
               ...hubArticles.map((a) => ({
                 '@type': 'TechArticle',
@@ -362,7 +362,7 @@ export default async function AiInfrastructureHubPage() {
             columns={columns}
             rows={rows}
             rowKey={(r) => r.item.id}
-            rowHref={(r) => SHARE_ROUTES.trackVendor(r.item.vendor_name)}
+            rowHref={(r) => SHARE_ROUTES.observatoryVendor(r.item.vendor_name)}
             caption="Availability is measured endpoint availability (expected HTTP 200 within 15 seconds), not service health. Open a provider for its full record: per-region observations, telemetry windows, incidents and evidence."
           />
         ) : (
@@ -424,7 +424,7 @@ export default async function AiInfrastructureHubPage() {
                 >
                   <h3 className="ob-h4">
                     <Link
-                      href={SHARE_ROUTES.trackVendor(r.detail.vendor_name)}
+                      href={SHARE_ROUTES.observatoryVendor(r.detail.vendor_name)}
                       className="ob-link"
                     >
                       {answer.question}
@@ -461,7 +461,7 @@ export default async function AiInfrastructureHubPage() {
             {incidentRows.map(({ vendor, incident }) => (
               <li key={incident.incident_id}>
                 <Link
-                  href={SHARE_ROUTES.trackIncident(vendor.vendor_name, incident.incident_id)}
+                  href={SHARE_ROUTES.observatoryIncident(vendor.vendor_name, incident.incident_id)}
                   className="group flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1 border-t border-[var(--ob-line)] py-4 first:border-t-0"
                 >
                   <span className="text-[14.5px] text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">
@@ -614,7 +614,7 @@ export default async function AiInfrastructureHubPage() {
             The record gives you a measured window: which observations failed, from where, and
             when they recovered. Correlation with your own incident window is evidence of overlap,
             never proof of causation;{' '}
-            <Link href={PUBLIC_ROUTES.incidentEvidence} className="ob-link">
+            <Link href={PUBLIC_ROUTES.productEvidence} className="ob-link">
               incident attribution
             </Link>{' '}
             states what RELIASTRA does and does not claim.
@@ -646,7 +646,7 @@ export default async function AiInfrastructureHubPage() {
                 <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
                   Monitor your dependencies
                 </Link>
-                <Link href={PUBLIC_ROUTES.dependencyMonitoring} className="ob-btn ob-btn-outline">
+                <Link href={PUBLIC_ROUTES.product} className="ob-btn ob-btn-outline">
                   How it works
                 </Link>
               </div>

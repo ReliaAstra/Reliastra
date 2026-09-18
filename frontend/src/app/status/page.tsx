@@ -29,7 +29,7 @@ export default function StatusPage() {
         lede="RELIASTRA’s own health, reported the way vendors are reported."
         breadcrumbs={crumbs}
         related={[
-          { label: 'Live vendor status', href: '/track', description: 'Vendor posture, not platform health.' },
+          { label: 'Live vendor status', href: '/observatory', description: 'Vendor posture, not platform health.' },
           { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability', description: 'How liveness and states work.' },
           { label: 'Contact', href: '/contact', description: 'Report a platform problem.' },
         ]}
@@ -51,7 +51,7 @@ export default function StatusPage() {
           <h2>Vendor status vs platform status</h2>
           <p>
             This page reports RELIASTRA’s own health. Live third-party posture lives on{' '}
-            <a href="/track">Track</a>, where each vendor page shows current state,
+            <a href="/observatory">Track</a>, where each vendor page shows current state,
             uptime, latency and incident history measured independently.
           </p>
           <h2>Reporting a problem</h2>

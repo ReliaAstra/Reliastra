@@ -30,13 +30,14 @@ export default function ReferralUnavailablePage() {
 
           <p className="ob-lede mt-8">
             The code in this address could not be attributed to a RELIASTRA
-            partner. It may be mistyped, the partner account may no longer
-            be in the program, or the link may have been deactivated.
+            creator. It may be mistyped, the creator may no longer be in the
+            program, or the link may have been deactivated.
           </p>
 
           <p className="ob-body mt-4 max-w-[58ch]">
-            You can continue to RELIASTRA without a referral. Creating an
-            organization does not require a partner link.
+            You can continue to RELIASTRA without a referral: nothing about
+            the product or its price changes, and no referral link is
+            required to create an account.
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -44,7 +45,7 @@ export default function ReferralUnavailablePage() {
               Return to RELIASTRA
             </Link>
             <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-outline">
-              Create an organization
+              Create an account
             </Link>
           </div>
         </div>

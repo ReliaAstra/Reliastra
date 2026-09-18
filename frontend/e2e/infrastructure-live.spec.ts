@@ -134,7 +134,7 @@ test('customer probe results and public monitoring are real and revalidate', asy
   await expect(page.getByRole('link', { name: /npm Registry/ })).toBeVisible();
   await expect(page.getByRole('link', { name: /npm Registry/ })).toContainText(/Operational|Check failed|No recent data/);
   await page.getByRole('link', { name: /npm Registry/ }).click();
-  await expect(page).toHaveURL(/\/track\/npm-registry/);
+  await expect(page).toHaveURL(/\/observatory\/npm-registry/);
   await page.screenshot({ path: 'test-results/public-observations.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await noOverflow(page);

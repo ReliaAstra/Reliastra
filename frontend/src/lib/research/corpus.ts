@@ -17,7 +17,7 @@ import type { ResearchPaper } from './types';
  *  C  GET https://api.reliastra.com/v1/vendors/openai               11:39:38Z
  *  D  GET …/vendors/openai/timeline?window=1h&resolution=1m         11:39:46Z
  *  E  GET https://status.openai.com/api/v2/summary.json             ~11:36Z
- *  F  GET https://reliastra.com/track/openai  (rendered record)     ~11:24Z
+ *  F  GET https://reliastra.com/observatory/openai  (rendered record)     ~11:24Z
  */
 
 export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
@@ -93,7 +93,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
       {
         role: 'system',
         name: 'RELIASTRA public vendor record',
-        note: 'the rendered page at /track/openai',
+        note: 'the rendered page at /observatory/openai',
       },
     ],
     observation: {
@@ -177,7 +177,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
         kind: 'reliastra-measurement',
         title: 'RELIASTRA public vendor record - OpenAI',
         publisher: 'Reliastra, Inc.',
-        url: 'https://reliastra.com/track/openai',
+        url: 'https://reliastra.com/observatory/openai',
         accessedAt: '2026-09-11',
         note: 'The rendered page a reader actually sees, captured 11 September 2026.',
       },
@@ -245,7 +245,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
     ],
     relatedEvidence: [
       {
-        href: '/track/openai',
+        href: '/observatory/openai',
         label: 'The live OpenAI record',
         description: 'The public availability record this paper audits, as it renders now.',
       },
@@ -321,7 +321,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
     evidenceBasis: 'measured',
     entities: [
       { role: 'system', name: 'observedCadenceSeconds', note: 'the estimator, in frontend/src/lib/track-api.ts' },
-      { role: 'system', name: 'RELIASTRA public vendor record', note: '/track/openai, the page that prints the cadence' },
+      { role: 'system', name: 'RELIASTRA public vendor record', note: '/observatory/openai, the page that prints the cadence' },
       { role: 'endpoint', name: 'https://status.openai.com', note: 'the dependency whose cadence was misreported' },
       { role: 'region', name: 'us-east', note: 'the observation origin of the captured series' },
     ],
@@ -435,7 +435,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
         description: 'The audit that would have inherited this fivefold error as its denominator.',
       },
       {
-        href: '/track/openai',
+        href: '/observatory/openai',
         label: 'The live OpenAI record',
         description: 'The page that published two cadences at once.',
       },
@@ -640,7 +640,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
         description: 'Independently measured records for AI provider endpoints, with their stated limits.',
       },
       {
-        href: '/track/openai',
+        href: '/observatory/openai',
         label: 'The live OpenAI record',
         description: 'The status-plane record this paper uses to separate the two planes.',
       },
@@ -1068,7 +1068,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
         description: 'The definition, and why a control-plane failure presents as an application bug.',
       },
       {
-        href: '/track',
+        href: '/observatory',
         label: 'Public dependency index',
         description: 'Independently measured records for the vendors RELIASTRA makes public.',
       },
@@ -1247,7 +1247,7 @@ export const RESEARCH_PAPERS: readonly ResearchPaper[] = [
     ],
     relatedEvidence: [
       {
-        href: '/track/openai',
+        href: '/observatory/openai',
         label: 'The live OpenAI record',
         description: 'The independently measured record for the same vendor, kept deliberately unreconciled.',
       },

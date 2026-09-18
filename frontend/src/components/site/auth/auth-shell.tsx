@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { Wordmark } from '@/components/site/wordmark';
 import { cn } from '@/lib/utils';
@@ -25,6 +24,13 @@ import { cn } from '@/lib/utils';
  * Content rule: the aside may state only what the product verifiably does.
  * The previous version claimed "SOC 2-aligned controls" in a footer strip;
  * there is no such attestation, so it is gone.
+ *
+ * The desktop column used to carry a stock photograph of a data centre. It was
+ * the wrong register for this product twice over: a stock photo of somebody
+ * else's racks says nothing true about a measurement service, and the four
+ * photographs cost 716 KB before a visitor had created an account. The column
+ * is now drawn - a survey grid with one measured point on it - and the only
+ * bytes are CSS.
  */
 export function AuthShell({
   eyebrow,
@@ -33,8 +39,6 @@ export function AuthShell({
   children,
   footer,
   aside,
-  image = '/media/edge-infrastructure-night.jpg',
-  imageAlt = 'Night view of edge infrastructure: a lit equipment cabinet beside dark fibre trunking.',
 }: {
   eyebrow: string;
   title: string;
@@ -42,8 +46,6 @@ export function AuthShell({
   children: ReactNode;
   footer?: ReactNode;
   aside?: ReactNode;
-  image?: string;
-  imageAlt?: string;
 }) {
   return (
     <div className="ob flex min-h-screen flex-col lg:flex-row">
@@ -86,17 +88,9 @@ export function AuthShell({
         )}
       </div>
 
-      {/* Evidence column: desktop only, so mobile never downloads it */}
+      {/* The technical column: desktop only, no request, no photograph */}
       <aside className="relative hidden flex-1 overflow-hidden border-l border-[var(--ob-line)] bg-[var(--ob-base)] lg:block">
-        <Image
-          src={image}
-          alt={imageAlt}
-          fill
-          sizes="50vw"
-          quality={70}
-          className="ob-photo object-cover object-center opacity-[0.42]"
-        />
-        <div className="ob-scrim-left absolute inset-0" aria-hidden />
+        <div className="ob-grid-field absolute inset-0" aria-hidden />
         <div className="relative flex h-full flex-col justify-between p-14 xl:p-16">
           <p className="ob-mono text-[var(--ob-text-4)]">reliastra.com</p>
           {aside ?? <DefaultAside />}

@@ -151,7 +151,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         description: 'What we intend to publish, and what we will not.',
       },
       {
-        href: PUBLIC_ROUTES.track,
+        href: PUBLIC_ROUTES.observatory,
         label: 'Track a vendor',
         description: 'Public, aggregated posture for vendors made public.',
       },
@@ -512,7 +512,7 @@ done`}</PRE>
           You now have your own observation series with the same semantics as
           RELIASTRA’s - status code, latency, UTC time - which you can compare
           against the stored timeline on{' '}
-          <a href={SHARE_ROUTES.trackVendor('openai')}>the OpenAI record</a>{' '}
+          <a href={SHARE_ROUTES.observatoryVendor('openai')}>the OpenAI record</a>{' '}
           or the public API behind it:
         </P>
         <PRE>{`curl -s https://api.reliastra.com/v1/vendors/openai/timeline?window=24h | jq '.points[-5:]'`}</PRE>
@@ -569,7 +569,7 @@ done`}</PRE>
         </LI>
         <LI>
           The OpenAI record at{' '}
-          <a href={SHARE_ROUTES.trackVendor('openai')}>/track/openai</a>{' '}
+          <a href={SHARE_ROUTES.observatoryVendor('openai')}>/observatory/openai</a>{' '}
           shows the live observation series, the endpoint it applies to, and
           the region it comes from - including its current “no public incident
           records” state and what that absence does and does not mean.
@@ -601,7 +601,7 @@ done`}</PRE>
     ),
     related: [
       {
-        href: SHARE_ROUTES.trackVendor('openai'),
+        href: SHARE_ROUTES.observatoryVendor('openai'),
         label: 'OpenAI - live reliability record',
         description: 'The measured record this article describes.',
       },
@@ -616,7 +616,7 @@ done`}</PRE>
         description: 'What to capture when the answer is “partly down.”',
       },
       {
-        href: PUBLIC_ROUTES.track,
+        href: PUBLIC_ROUTES.observatory,
         label: 'Public dependency index',
         description: 'Every measured provider, and which endpoint each row means.',
       },
@@ -766,7 +766,7 @@ done`}</PRE>
         <LI>
           The three-record triangulation (own telemetry, vendor status
           reporting, independent observation) is the operating model of{' '}
-          <a href={PUBLIC_ROUTES.track}>the public observatory</a>; the public
+          <a href={PUBLIC_ROUTES.observatory}>the public observatory</a>; the public
           API and stored timelines cited in{' '}
           <a href={researchRoute('is-openai-down')}>the OpenAI article</a> are
           the same data customer monitoring gets, one trust layer out.
@@ -774,7 +774,7 @@ done`}</PRE>
         <LI>
           The correlation rule quoted here - overlapping windows with
           confidence levels, causation explicitly refused - is{' '}
-          <a href={PUBLIC_ROUTES.incidentEvidence}>the attribution design</a>,
+          <a href={PUBLIC_ROUTES.productEvidence}>the attribution design</a>,
           published so it can be checked.
         </LI>
         <LI>
@@ -816,7 +816,7 @@ done`}</PRE>
         description: 'The rules behind the observations you cite.',
       },
       {
-        href: PUBLIC_ROUTES.slaEvidence,
+        href: PUBLIC_ROUTES.productEvidence,
         label: 'SLA evidence',
         description: 'What a credit conversation accepts, and what it does not.',
       },

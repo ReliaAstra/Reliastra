@@ -115,8 +115,20 @@ export default function ResearchIndexPage() {
   // paper is the kind of inflation this page exists to avoid, and it is the kind
   // of inconsistency a technical reader notices in four seconds.
   const papers = RESEARCH_PAPERS.length;
-  const plural = (count: number, singular: string) =>
-    `${count} ${count === 1 ? singular : `${singular}s`}`;
+  // English plurals, not `singular + 's'`. "10 entrys" was shipped on this
+  // page and read as a typo in the one place a reader is deciding whether the
+  // work is careful.
+  const plural = (count: number, singular: string) => {
+    const forms: Record<string, string> = {
+      entry: 'entries',
+      paper: 'papers',
+      brief: 'briefs',
+      note: 'notes',
+      audit: 'audits',
+    };
+    const pluralForm = forms[singular] ?? `${singular}s`;
+    return `${count} ${count === 1 ? singular : pluralForm}`;
+  };
   const measured = RESEARCH_PAPERS.filter((p) => p.evidenceBasis === 'measured').length;
   const reproducible = RESEARCH_PAPERS.filter((p) =>
     p.artifacts.some((a) => a.kind === 'script' || a.kind === 'dataset')
@@ -354,11 +366,11 @@ export default function ResearchIndexPage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
-              <Link href={PUBLIC_ROUTES.track} className="ob-btn ob-btn-signal">
+              <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-signal">
                 Public dependency index
               </Link>
               <Link
-                href={PUBLIC_ROUTES.externalDependencyIntelligence}
+                href={PUBLIC_ROUTES.product}
                 className="ob-btn ob-btn-outline"
               >
                 The category

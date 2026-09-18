@@ -27,11 +27,11 @@ const VIEWPORTS = [
 /** One representative of every public page archetype. */
 const ARCHETYPES = [
   { name: 'home', path: '/' },
-  { name: 'concept', path: '/external-dependency-intelligence' },
+  { name: 'product overview', path: '/product' },
   { name: 'pricing', path: '/pricing' },
   { name: 'research index', path: '/research' },
   { name: 'research article', path: '/research/the-dependency-gap' },
-  { name: 'dependency index', path: '/track' },
+  { name: 'dependency index', path: '/observatory' },
   { name: 'legal', path: '/terms' },
   { name: 'creators', path: '/creators' },
   { name: 'customer sign in', path: '/login' },
@@ -311,7 +311,7 @@ test.describe('error states', () => {
   test('an unknown vendor 404s rather than inventing a record', async ({
     request,
   }) => {
-    const res = await request.get('/track/not-a-real-vendor-zzz');
+    const res = await request.get('/observatory/not-a-real-vendor-zzz');
     expect([404, 200]).toContain(res.status());
     if (res.status() === 200) {
       // The only acceptable 200 is the explicit "unreachable" state, which

@@ -13,10 +13,15 @@ import {
   websiteJsonLd,
 } from '@/lib/seo';
 import {
+  DOCS_ROUTES,
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
+  RESEARCH_CATEGORIES,
   RESEARCH_HUBS,
+  RETIRED_ROUTES,
   researchArticle,
+  researchCategoryArticles,
+  researchCategoryRoute,
   researchHubArticles,
   researchHubRoute,
   researchRoute,
@@ -49,7 +54,10 @@ const PRIVATE_FRAGMENTS = [
 describe('canonical URL architecture', () => {
   it('produces absolute HTTPS canonical URLs', () => {
     expect(canonicalUrl('/')).toBe('https://reliastra.com/');
-    expect(canonicalUrl('/track')).toBe('https://reliastra.com/track');
+    expect(canonicalUrl('/observatory')).toBe('https://reliastra.com/observatory');
+    expect(canonicalUrl('/product/evidence')).toBe(
+      'https://reliastra.com/product/evidence'
+    );
     expect(canonicalUrl('/glossary/sla-evidence')).toBe(
       'https://reliastra.com/glossary/sla-evidence'
     );
@@ -111,12 +119,12 @@ describe('canonical URL architecture', () => {
 
   it('keeps the vendor segment free of a segment-level loading boundary', () => {
     // Soft-404 regression guard. `track/[vendor]/loading.tsx` committed a 200
-    // before the page body could call notFound(), so `/track/<unknown>` and
-    // `/track/<vendor>/incidents/<unknown>` served "not found" copy with an
+    // before the page body could call notFound(), so `/observatory/<unknown>` and
+    // `/observatory/<vendor>/incidents/<unknown>` served "not found" copy with an
     // indexable 200. A loading boundary ABOVE a segment that can 404 is
     // therefore forbidden; the boundary below (the telemetry Suspense) is
     // fine because it only renders after the page has decided it exists.
-    const boundary = new URL('../../app/track/[vendor]/loading.tsx', import.meta.url);
+    const boundary = new URL('../../app/observatory/[vendor]/loading.tsx', import.meta.url);
     expect(existsSync(boundary)).toBe(false);
   });
 
@@ -138,17 +146,58 @@ describe('canonical URL architecture', () => {
     // The lightweight creator page is indexable.
     expect(paths).toContain(PUBLIC_ROUTES.creators);
   });
+
+  it('advertises the consolidated IA and nothing that redirects away', () => {
+    // A sitemap entry pointing at a 308 is a contradiction: the crawler is
+    // told the URL is canonical and then told it is not. After the
+    // developer-first consolidation the four capability pages and /track are
+    // retired, so none of them may appear here.
+    const paths = PUBLIC_PAGES.map((p) => p.path);
+    for (const retired of Object.values(RETIRED_ROUTES)) {
+      expect(paths).not.toContain(retired);
+    }
+    // The consolidated surfaces are advertised.
+    for (const path of [
+      PUBLIC_ROUTES.product,
+      PUBLIC_ROUTES.productEvidence,
+      PUBLIC_ROUTES.observatory,
+    ]) {
+      expect(paths).toContain(path);
+    }
+  });
+
+  it('advertises every published paper, and only paths a route exists for', () => {
+    const paths = PUBLIC_PAGES.map((p) => p.path);
+    for (const article of RESEARCH_ARTICLES) {
+      expect(paths).toContain(researchRoute(article.slug));
+    }
+    // Every advertised path is one of: a declared public route, a docs
+    // guide, or a derived glossary / research path. A literal typo in a
+    // sitemap entry is otherwise invisible until Search Console reports it.
+    const declared = new Set<string>([
+      ...Object.values(PUBLIC_ROUTES),
+      ...Object.values(DOCS_ROUTES),
+      ...GLOSSARY_TERMS.map((g) => `/glossary/${g.slug}`),
+      ...RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)),
+      ...RESEARCH_HUBS.map((h) => researchHubRoute(h.slug)),
+      ...RESEARCH_CATEGORIES.filter((c) => researchCategoryArticles(c.slug).length > 0).map(
+        (c) => researchCategoryRoute(c.slug)
+      ),
+    ]);
+    const orphaned = paths.filter((p) => !declared.has(p));
+    expect(orphaned).toEqual([]);
+  });
 });
 
 describe('metadata system', () => {
   it('builds unique title/description/canonical/OG/Twitter per page', () => {
     const m: any = buildMetadata({
-      title: 'SLA Evidence & Outage Proof',
-      description: 'Timestamped SLA evidence.',
-      path: '/sla-evidence',
+      title: 'Evidence records',
+      description: 'Timestamped, independently verifiable evidence.',
+      path: '/product/evidence',
     });
-    expect(m.alternates.canonical).toBe('https://reliastra.com/sla-evidence');
-    expect(m.openGraph.url).toBe('https://reliastra.com/sla-evidence');
+    expect(m.alternates.canonical).toBe('https://reliastra.com/product/evidence');
+    expect(m.openGraph.url).toBe('https://reliastra.com/product/evidence');
     expect(m.openGraph.images[0]).toMatchObject({
       url: 'https://reliastra.com/opengraph-image.png',
       width: 1200,
@@ -179,7 +228,7 @@ describe('structured data', () => {
       softwareAppJsonLd(),
       breadcrumbJsonLd([
         { name: 'Home', path: '/' },
-        { name: 'SLA evidence', path: '/sla-evidence' },
+        { name: 'Evidence records', path: '/product/evidence' },
       ]),
       faqJsonLd([{ q: 'What is SLA evidence?', a: 'Timestamped records.' }]),
       articleJsonLd({
@@ -253,10 +302,24 @@ describe('machine-readable discovery', () => {
       expect(res.headers.get('Content-Type')).toContain('text/plain');
       const body = await res.text();
       expect(body).toContain('https://reliastra.com/');
-      expect(body).toContain('External Dependency Intelligence');
+      // The proposition a model should repeat, and the limit it must not
+      // drop: both files state that one observation point is deployed, so an
+      // answer generated from them cannot invent multi-region confirmation.
+      expect(body).toContain('RELIASTRA');
+      expect(body.toLowerCase()).toContain('observation point');
+      expect(body).not.toContain('multi-region confirmation is claimed');
     }
     const body = await (await llms.GET()).text();
-    for (const path of ['/creators', '/track', '/docs', '/pricing', '/security', '/research']) {
+    for (const path of [
+      '/creators',
+      '/observatory',
+      '/product',
+      '/product/evidence',
+      '/docs',
+      '/pricing',
+      '/security',
+      '/research',
+    ]) {
       expect(body).toContain(`https://reliastra.com${path}`);
     }
     // The AI infrastructure hub and its scope statement must be machine-readable.
@@ -264,34 +327,29 @@ describe('machine-readable discovery', () => {
     expect(body).toContain('status.openai.com');
   });
 
-  it('keeps public page titles unique across the IA', () => {
-    // Titles below mirror the `buildMetadata` inputs of indexable pages
-    // (the `| RELIASTRA` template suffix applies at render). Any duplicate
-    // here is a real duplicate-title defect, not a template artifact.
-    const titles = [
-      'RELIASTRA - External Dependency Intelligence',
-      'Product - External Dependency Intelligence platform',
-      'For agencies & MSPs',
-      'External Dependency Intelligence',
-      'Third-Party Dependency Monitoring',
-      'SLA Evidence & Outage Proof',
-      'Incident Evidence & Outage Attribution',
-      'Track - Public vendor status | RELIASTRA',
-      'Pricing - Free, Pro & Enterprise',
-      'Security - How RELIASTRA protects your data',
-      'Documentation',
-      'Quickstart - First check in minutes',
-      'Monitoring docs - Checks, regions, states',
-      'Evidence docs - Generate, share, verify',
-      'API docs - Programmatic access',
-      'Glossary - Dependency intelligence concepts',
-      'Research - Independent infrastructure intelligence',
-      'AI infrastructure status & reliability - the independent observatory',
-      'About - Why RELIASTRA exists',
-      'Contact - Talk to RELIASTRA',
-      'Status - Platform health',
-      'Partner Network - Earn recurring revenue',
-    ];
-    expect(new Set(titles).size).toBe(titles.length);
+  it('reads each discovery file as plain text a machine can lift URLs from', async () => {
+    // The previous version of this test compared a hand-written list of
+    // titles against itself, which asserted nothing about the site: it would
+    // have passed unchanged with every title in the file wrong, and it did.
+    // What is actually checkable here is that both files are self-consistent
+    // - every URL they advertise is absolute and on the canonical origin.
+    for (const mod of [
+      await import('@/app/llms.txt/route'),
+      await import('@/app/llms-full.txt/route'),
+    ]) {
+      const body = await (await mod.GET()).text();
+      const urls = [...body.matchAll(/https?:\/\/[^\s)>,]+/g)].map((m) => m[0]);
+      expect(urls.length).toBeGreaterThan(10);
+      // Citations to AWS docs, RFCs, vendor status endpoints and published
+      // papers are expected - the research corpus carries its sources. What
+      // must hold is that every URL RELIASTRA owns is on the canonical HTTPS
+      // origin: `www.`, a preview host or plain HTTP in a discovery file is a
+      // duplicate-origin signal to a crawler.
+      const ours = urls.filter((u) => u.includes('reliastra.com'));
+      expect(ours.length).toBeGreaterThan(5);
+      for (const u of ours) {
+        expect(u).toMatch(/^https:\/\/(api\.)?reliastra\.com/);
+      }
+    }
   });
 });

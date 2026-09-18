@@ -28,8 +28,8 @@ const SECTIONS = [
     ],
   },
   {
-    title: '4. Plans, billing & payouts',
-    body: 'Paid plans renew monthly until cancelled and are billed through our payment provider. Plan limits (dependency count, team size, retention, check interval) are enforced server-side. Partner referral commissions accrue per the partner program terms shown at enrollment, including hold periods and payout minimums; commission reversals apply on refunds and chargebacks of the underlying subscription payment.',
+    title: '4. Plan, billing & payouts',
+    body: 'There is one plan. It renews monthly until cancelled and is billed through our payment provider. Plan limits (dependency count, retention, check interval) are enforced server-side, and the same limits apply to every account. Creator referral rewards accrue under the Technical Creator Program terms shown at enrollment, including hold periods and payout minimums; reversals apply on refunds and chargebacks of the underlying subscription payment.',
   },
   {
     title: '5. Evidence reports',
@@ -106,9 +106,9 @@ export default function TermsPage() {
 
       <div className="ob-alert ob-alert-note mt-12">
         <p className="text-[14px] leading-[1.65] text-[var(--ob-text-2)]">
-          These terms govern the RELIASTRA product. Partner Network
-          participants are additionally bound by the partner program terms
-          presented at enrollment.
+          These terms govern the RELIASTRA product. Technical Creator Program
+          participants are additionally bound by the program terms presented at
+          enrollment.
         </p>
       </div>
     </MarketingPage>

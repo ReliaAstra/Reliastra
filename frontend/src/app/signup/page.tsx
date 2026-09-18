@@ -114,15 +114,13 @@ export default function CustomerSignupPage() {
 
   return (
     <AuthShell
-      eyebrow="Create your organization"
-      title="Start monitoring"
-      intro="14 days of full Developer capabilities. No payment method required."
-      image="/media/fiber-patch-panel.jpg"
-      imageAlt="Macro view of a fibre patch panel: densely stacked duplex connectors and coiled jumpers."
+      eyebrow="Create your account"
+      title="Start observing"
+      intro="One account, one plan: $9/month, 25 dependencies, 90 days of observations. The first 14 days are full capability and need no payment method."
       aside={<SignupAside />}
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          14-day trial. No payment method required.
+          14 days of full capability. No payment method required.
         </p>
       }
     >
@@ -130,7 +128,7 @@ export default function CustomerSignupPage() {
         <AuthAlert tone="note">
           Referred by{' '}
           <span className="ob-mono text-[var(--ob-text-2)]">{referralCode}</span>
-          . This organization will be attributed to the partner.
+          . This account will be attributed to that creator.
         </AuthAlert>
       )}
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
@@ -144,22 +142,22 @@ export default function CustomerSignupPage() {
       >
         <Field
           id="fullName"
-          label="Full name"
+          label="Name"
           type="text"
           autoComplete="name"
           autoFocus
           required
-          placeholder="Alex Rivera"
+          placeholder="Your name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
         />
         <Field
           id="email"
-          label="Work email"
+          label="Email"
           type="email"
           autoComplete="email"
           required
-          placeholder="you@company.com"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -184,8 +182,8 @@ export default function CustomerSignupPage() {
           }
         />
 
-        <AuthSubmit loading={loading} loadingLabel="Creating organization…">
-          Create organization
+        <AuthSubmit loading={loading} loadingLabel="Creating account…">
+          Create account
         </AuthSubmit>
 
         <p className="text-[12.5px] leading-[1.6] text-[var(--ob-text-4)]">
@@ -202,7 +200,7 @@ export default function CustomerSignupPage() {
       </form>
 
       <p className="mt-7 text-[13.5px] text-[var(--ob-text-3)]">
-        Already have an organization?{' '}
+        Already have an account?{' '}
         <Link href={AUTH_ROUTES.login} className="ob-link">
           Sign in
         </Link>

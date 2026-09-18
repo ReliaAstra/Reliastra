@@ -115,9 +115,9 @@ export default function PrivacyPage() {
           <a href="mailto:support@reliastra.com" className="ob-link">
             support@reliastra.com
           </a>
-          . If you arrived from the Partner Network, note that partners are
-          additionally covered by the partner-specific terms presented during
-          program enrollment.
+          . If you arrived through the Technical Creator Program, note that
+          creators are additionally covered by the program terms presented at
+          enrollment.
         </p>
       </div>
     </MarketingPage>

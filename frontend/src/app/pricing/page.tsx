@@ -283,13 +283,13 @@ export default function PricingPage() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start trial
+                Start observing
               </Link>
               <Link
-                href={PUBLIC_ROUTES.contact}
+                href={PUBLIC_ROUTES.productEvidence}
                 className="ob-btn ob-btn-outline"
               >
-                Talk to sales
+                What a record contains
               </Link>
             </div>
           </div>

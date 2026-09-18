@@ -1,0 +1,32 @@
+{
+  "name": "@reliastra/cli",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Command-line access to RELIASTRA: dependencies, observations, incidents, evidence and verification.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "reliastra": "./bin/reliastra.mjs"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "lint": "node --check bin/reliastra.mjs"
+  },
+  "keywords": [
+    "reliastra",
+    "dependency-monitoring",
+    "evidence",
+    "observability",
+    "cli"
+  ],
+  "dependencies": {},
+  "devDependencies": {}
+}

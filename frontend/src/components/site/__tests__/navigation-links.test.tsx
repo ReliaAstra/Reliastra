@@ -14,10 +14,15 @@ import {
   ADMIN_ROUTES,
   AUTH_ROUTES,
   CONSOLE_ROUTES,
+  DOCS_ROUTES,
   LANDING_SECTIONS,
   PUBLIC_ROUTES,
   RESEARCH_ARTICLES,
+  RESEARCH_CATEGORIES,
   RESEARCH_HUBS,
+  RETIRED_ROUTES,
+  researchCategoryArticles,
+  researchCategoryRoute,
   researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
@@ -43,8 +48,14 @@ const STATIC_ROUTES = new Set<string>([
   ...Object.values(AUTH_ROUTES),
   ...Object.values(CONSOLE_ROUTES),
   ...Object.values(ADMIN_ROUTES),
+  ...Object.values(DOCS_ROUTES),
   ...RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)),
   ...RESEARCH_HUBS.map((h) => researchHubRoute(h.slug)),
+  // A category route exists only while it holds a paper; the route 404s
+  // otherwise, so an empty category is not a valid destination.
+  ...RESEARCH_CATEGORIES.filter((c) => researchCategoryArticles(c.slug).length > 0).map((c) =>
+    researchCategoryRoute(c.slug)
+  ),
 ]);
 
 // The partner portal and agency surfaces are removed (stage-1 B2B removal):
@@ -89,9 +100,9 @@ function isExternal(href: string): boolean {
   );
 }
 
-/** A path pattern for `/track/[vendor]`, the one dynamic public route linked. */
+/** A path pattern for `/observatory/[vendor]`, the one dynamic public route linked. */
 function isDynamicVendorRoute(href: string): boolean {
-  return /^\/track\/[^/?#]+$/.test(href);
+  return /^\/observatory\/[^/?#]+$/.test(href);
 }
 
 function flattenNavConfig(): NavLink[] {
@@ -230,11 +241,11 @@ describe('public navigation link integrity', () => {
     const hrefs = new Set(flattenNavConfig().map((l) => l.href));
     for (const href of [
       PUBLIC_ROUTES.creators,
-      PUBLIC_ROUTES.externalDependencyIntelligence,
-      PUBLIC_ROUTES.dependencyMonitoring,
-      PUBLIC_ROUTES.slaEvidence,
-      PUBLIC_ROUTES.incidentEvidence,
-      PUBLIC_ROUTES.track,
+      PUBLIC_ROUTES.product,
+      PUBLIC_ROUTES.product,
+      PUBLIC_ROUTES.productEvidence,
+      PUBLIC_ROUTES.productEvidence,
+      PUBLIC_ROUTES.observatory,
       PUBLIC_ROUTES.docs,
       PUBLIC_ROUTES.pricing,
       PUBLIC_ROUTES.security,
@@ -247,18 +258,52 @@ describe('public navigation link integrity', () => {
   it('renders the product panel links without JavaScript', () => {
     // The desktop panel is always mounted (visibility-only toggle), so the
     // hierarchy links exist in the SSR HTML crawlers receive.
-    expect(headerMarkup).toContain(PUBLIC_ROUTES.externalDependencyIntelligence);
-    expect(headerMarkup).toContain(PUBLIC_ROUTES.dependencyMonitoring);
-    expect(headerMarkup).toContain(PUBLIC_ROUTES.slaEvidence);
+    expect(headerMarkup).toContain(PUBLIC_ROUTES.product);
+    expect(headerMarkup).toContain(PUBLIC_ROUTES.product);
+    expect(headerMarkup).toContain(PUBLIC_ROUTES.productEvidence);
   });
 
-  it('links every published research article from the footer', () => {
+  it('links the research index and every hub from the footer', () => {
+    // The footer deliberately does not list all nine papers: a nine-item
+    // research column is a directory, not navigation, and it pushed the
+    // legal and project rows off the first screen. The index page is the
+    // place that must reach every paper, and the test below checks it there.
     const hrefs = new Set(hrefsOf(footerMarkup));
+    expect(hrefs.has(PUBLIC_ROUTES.research)).toBe(true);
+    for (const hub of RESEARCH_HUBS) {
+      expect(
+        hrefs.has(researchHubRoute(hub.slug)),
+        `footer does not link hub ${hub.slug}`
+      ).toBe(true);
+    }
+  });
+
+  it('links every published paper from the research index', async () => {
+    const { default: ResearchPage } = await import('@/app/research/page');
+    const html = renderToStaticMarkup(await ResearchPage());
+    const hrefs = new Set(hrefsOf(html));
     for (const article of RESEARCH_ARTICLES) {
       expect(
         hrefs.has(researchRoute(article.slug)),
-        `footer does not link ${article.slug}`
+        `research index does not link ${article.slug}`
       ).toBe(true);
+    }
+  });
+
+  it('never points at a retired URL', () => {
+    // The consolidation retired four capability pages and /track. A link to
+    // one of them still works - through a 308 - which is exactly why it needs
+    // a test: the redirect hides the stale destination from a reader but not
+    // from a crawler, and the next person to edit navigation would never
+    // notice. `RETIRED_ROUTES` is the single list of what must not be linked.
+    const retired = Object.values(RETIRED_ROUTES);
+    for (const href of allHrefs) {
+      for (const path of retired) {
+        expect(
+          href === path || href.startsWith(`${path}/`),
+          `link to retired URL ${path}`
+        ).toBe(false);
+      }
     }
   });
 });

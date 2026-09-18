@@ -209,7 +209,7 @@ export function ResearchCategoryPage({ slug }: { slug: string }) {
             ))}
             <li>
               <Link
-                href={PUBLIC_ROUTES.track}
+                href={PUBLIC_ROUTES.observatory}
                 className="group flex flex-col gap-1.5 border-t border-[var(--ob-line)] py-5"
               >
                 <span className="text-[15px] font-semibold text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">

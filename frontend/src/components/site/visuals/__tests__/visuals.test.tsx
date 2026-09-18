@@ -78,7 +78,7 @@ describe('evidence artifact', () => {
     // addressee, a citable reference, the finding before the tables, and an
     // address anyone can check. Formatting is part of the claim: enum tokens
     // appear as labels.
-    expect(html.artifact).toContain('Prepared for Northwind Commerce Ltd');
+    expect(html.artifact).toContain('Prepared for example-org');
     expect(html.artifact).toMatch(/RA-\d{8}-[A-Z]+-[0-9A-F]{5}/);
     expect(html.artifact).toContain('What the record shows');
     expect(html.artifact).toContain('Measured availability');

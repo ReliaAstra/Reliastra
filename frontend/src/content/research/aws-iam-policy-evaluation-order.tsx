@@ -954,7 +954,7 @@ func PlanVerification(ctx RequestContext) []Route {
       description: 'The definition, and why a control-plane failure presents as an application bug.',
     },
     {
-      href: PUBLIC_ROUTES.track,
+      href: PUBLIC_ROUTES.observatory,
       label: 'Public dependency index',
       description: 'Independently measured records for the vendors made public.',
     },
