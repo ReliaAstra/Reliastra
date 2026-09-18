@@ -154,7 +154,7 @@ export function MarketingPage({
                 Start observing
               </CTA>
               <CTA href={PUBLIC_ROUTES.observatory} tone="outline">
-                Public dependency data
+                Open the observatory
               </CTA>
             </div>
           </div>
