@@ -2,8 +2,8 @@
 
 These tests lock the commercial invariants of the FX-pricing refactor:
 
-* the USD product price list is exactly ``Free $0 · Pro $39/mo · Pro $390/yr ·
-  Enterprise custom``;
+* the USD product price list is exactly ``Developer $9/mo`` - one paid
+  product, monthly billing only (annual and enterprise are not configured);
 * the NGN payment price is the USD price **converted at the live rate**
   (``round(USD minor units x rate)``), and a missing rate disables checkout
   instead of guessing - never the USD minor units, never a fixed figure;
@@ -57,52 +57,56 @@ RATE = 1322.0
 
 
 def test_canonical_usd_price_list():
+    """One paid product: Developer $9/mo. Annual billing does not exist."""
     assert PRODUCT_CURRENCY == "USD"
     assert PLAN_PRICES_USD["free"] == 0
-    assert PLAN_PRICES_USD["pro"] == 39
-    assert PLAN_ANNUAL_PRICES_USD["pro"] == 390
-    assert PLAN_ANNUAL_PRICES_USD["enterprise"] is None  # custom - never a number
+    assert PLAN_PRICES_USD["pro"] == 9
+    assert PLAN_ANNUAL_PRICES_USD["pro"] is None  # no annual billing
+    assert PLAN_ANNUAL_PRICES_USD["enterprise"] is None
     assert PLAN_BILLING_AVAILABILITY["enterprise"] == "contact_sales"
     assert PLAN_BILLING_AVAILABILITY["pro"] == "self_serve"
 
 
 def test_product_price_minor_units_are_usd_cents():
     monthly = resolve_payment_price("pro", MONTHLY, rate=RATE)
-    annual = resolve_payment_price("pro", ANNUAL, rate=RATE)
     assert monthly.product_currency == "USD"
-    assert monthly.product_amount == 3900
-    assert annual.product_amount == 39000
+    assert monthly.product_amount == 900
+    # No annual billing: the annual interval is unconfigured for every plan.
+    annual = resolve_payment_price("pro", ANNUAL, rate=RATE)
+    assert annual.product_amount is None
+    assert annual.is_configured is False
 
 
 # ── the NGN payment price is the USD price converted at the live rate ────────
 
 
 def test_conversion_is_round_minor_units_times_rate():
-    # cents x (NGN/USD) == kobo: 3900 x 1322 = 5,155,800 -> ₦51,558.00.
-    assert converted_payment_amount(3900, 1322.0) == 5_155_800
-    assert converted_payment_amount(39000, 1322.0) == 51_558_000
+    # cents x (NGN/USD) == kobo: 900 x 1322 = 1,189,800 -> ₦51,558.00.
+    assert converted_payment_amount(900, 1322.0) == 1_189_800
+    assert converted_payment_amount(9000, 1322.0) == 11_898_000
     # Fractional kobo round to the nearest minor unit, never truncate.
-    assert converted_payment_amount(3900, 1322.5) == round(3900 * 1322.5)
+    assert converted_payment_amount(900, 1322.5) == round(900 * 1322.5)
 
 
 def test_payment_amount_is_the_usd_price_converted_not_a_fixed_figure():
     monthly = resolve_payment_price("pro", MONTHLY, rate=RATE)
     assert monthly.payment_currency == "NGN"
-    assert monthly.payment_amount == 5_155_800
+    assert monthly.payment_amount == 1_189_800
     assert monthly.payment_amount != monthly.product_amount
-    annual = resolve_payment_price("pro", ANNUAL, rate=RATE)
-    assert annual.payment_amount == 51_558_000
-    assert checkout_amount("pro", MONTHLY, rate=RATE) == 5_155_800
+    assert checkout_amount("pro", MONTHLY, rate=RATE) == 1_189_800
+    # Annual checkout does not exist and must never resolve to an amount.
+    with pytest.raises(PaymentPriceNotConfigured):
+        checkout_amount("pro", ANNUAL, rate=RATE)
 
 
 def test_payment_amount_moves_with_the_rate():
     """A different rate is a different charge - the figure is the conversion."""
-    assert checkout_amount("pro", MONTHLY, rate=RATE) == 5_155_800
-    assert checkout_amount("pro", MONTHLY, rate=1650.0) == round(3900 * 1650.0)
+    assert checkout_amount("pro", MONTHLY, rate=RATE) == 1_189_800
+    assert checkout_amount("pro", MONTHLY, rate=1650.0) == round(900 * 1650.0)
 
 
 def test_enterprise_and_free_never_have_payment_prices():
-    """Enterprise is Contact Sales, Free has nothing to charge."""
+    """Enterprise is not offered, Free has nothing to charge, annual is gone."""
     for plan in ("enterprise", "free"):
         for interval in (MONTHLY, ANNUAL):
             price = resolve_payment_price(plan, interval, rate=RATE)
@@ -110,6 +114,9 @@ def test_enterprise_and_free_never_have_payment_prices():
             assert price.is_configured is False
     with pytest.raises(PaymentPriceNotConfigured):
         checkout_amount("enterprise", MONTHLY, rate=RATE)
+    # Annual is unconfigured for the paid plan too: monthly is the only
+    # interval the product sells.
+    assert resolve_payment_price("pro", ANNUAL, rate=RATE).is_configured is False
 
 
 def test_missing_rate_disables_checkout_instead_of_guessing():
@@ -120,7 +127,7 @@ def test_missing_rate_disables_checkout_instead_of_guessing():
     with pytest.raises(PaymentPriceNotConfigured):
         checkout_amount("pro", MONTHLY)
     # The product price is untouched: checkout stops, it does not reprice.
-    assert price.product_amount == 3900
+    assert price.product_amount == 900
     # A non-positive rate is treated exactly like an absent one.
     for bad in (0, -1):
         assert resolve_payment_price("pro", MONTHLY, rate=bad).payment_amount is None
@@ -131,7 +138,7 @@ def test_usd_deployment_charges_the_product_price_directly(monkeypatch):
     monkeypatch.setattr(settings, "PAYSTACK_CURRENCY", "USD")
     monthly = resolve_payment_price("pro", MONTHLY)
     assert monthly.payment_currency == "USD"
-    assert monthly.payment_amount == 3900  # cents - same currency as the list
+    assert monthly.payment_amount == 900  # cents - same currency as the list
     assert monthly.is_configured is True
     assert checkout_ready() is True
     # With matching currencies there is nothing to disclose.
@@ -144,14 +151,15 @@ def test_usd_deployment_charges_the_product_price_directly(monkeypatch):
 
 def test_transparency_triple_words_and_values():
     lines = transparency_lines("pro", MONTHLY, rate=RATE)
-    assert lines["product_price"] == "$39.00 (USD)"
-    assert lines["actual_charge"] == "\u20a651,558.00 (NGN)"
+    assert lines["product_price"] == "$9.00 (USD)"
+    assert lines["actual_charge"] == "\u20a611,898.00 (NGN)"
     assert lines["payment_provider"] == "Paystack"
     assert lines["payment_provider"] == PAYMENT_PROVIDER
     assert PAYMENT_PROVIDER_DISPLAY.startswith(PAYMENT_PROVIDER)
+    # No annual billing: the transparency triple refuses to invent numbers.
     annual = transparency_lines("pro", ANNUAL, rate=RATE)
-    assert annual["product_price"] == "$390.00 (USD)"
-    assert annual["actual_charge"] == "\u20a6515,580.00 (NGN)"
+    assert annual["product_price"] is None
+    assert annual["actual_charge"] is None
 
 
 def test_enterprise_transparency_has_no_invented_numbers():
@@ -167,8 +175,8 @@ def test_missing_rate_never_falls_back_to_a_number():
 
 
 def test_money_formatting_always_carries_the_iso_code():
-    assert format_money(3900, "USD") == "$39.00 (USD)"
-    assert format_money(5_155_800, "NGN") == "\u20a651,558.00 (NGN)"
+    assert format_money(900, "USD") == "$9.00 (USD)"
+    assert format_money(1_189_800, "NGN") == "\u20a611,898.00 (NGN)"
     assert format_money(None, "NGN") == ""
 
 
@@ -192,8 +200,9 @@ def test_currency_info_embeds_provider_and_resolved_amounts():
     info = currency_info(rate=RATE)
     assert info["payment_provider"] == "Paystack"
     assert info["checkout_ready"] is True
-    assert info["plan_payment_amounts"]["pro"]["monthly"] == "\u20a651,558.00 (NGN)"
-    assert info["plan_payment_amounts"]["pro"]["annual"] == "\u20a6515,580.00 (NGN)"
+    assert info["plan_payment_amounts"]["pro"]["monthly"] == "\u20a611,898.00 (NGN)"
+    # Annual is unconfigured everywhere, so it never appears as a number.
+    assert info["plan_payment_amounts"]["pro"].get("annual") in (None, "")
 
 
 # ── architecture guard: the rate is passed in, never imported ────────────────
@@ -250,4 +259,4 @@ def test_charge_amount_is_a_function_of_the_rate_argument():
     with pytest.raises(PaymentPriceNotConfigured):
         checkout_amount("pro", MONTHLY)
     # With a rate the charge is exactly the conversion of that rate.
-    assert checkout_amount("pro", MONTHLY, rate=1322.0) == 5_155_800
+    assert checkout_amount("pro", MONTHLY, rate=1322.0) == 1_189_800

@@ -326,9 +326,9 @@ def test_payment_price_is_live_converted():
     from app.core import payment_pricing
 
     priced = payment_pricing.resolve_payment_price("pro", "monthly", rate=1322.0)
-    assert priced.product_amount == 3900  # USD list price, untouched
+    assert priced.product_amount == 900  # USD list price, untouched
     assert priced.payment_currency == "NGN"
-    assert priced.payment_amount == 5_155_800
+    assert priced.payment_amount == 1_189_800
     assert priced.is_configured is True
 
     unpriced = payment_pricing.resolve_payment_price("pro", "monthly")
@@ -337,7 +337,7 @@ def test_payment_price_is_live_converted():
     with pytest.raises(payment_pricing.PaymentPriceNotConfigured):
         payment_pricing.checkout_amount("pro", "monthly")
     # Still derived from the USD price: the list price is unchanged by any rate.
-    assert unpriced.product_amount == 3900
+    assert unpriced.product_amount == 900
 
 
 # ---------------------------------------------------------------------------

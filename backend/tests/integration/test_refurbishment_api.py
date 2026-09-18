@@ -34,42 +34,19 @@ async def test_agency_ai_and_dashboard_endpoints(
     await vendor_service.seed_vendors(db_session)
     await db_session.commit()
 
-    # The agency API is mounted again now that the multi-client operations
-    # console exists. Creating a client also flips ``has_agency_mode`` on the
-    # organization, which is what makes the surface visible in the console.
+    # The agency surface is unmounted (stage 1 of the two-stage B2B removal):
+    # module code is preserved, but the endpoints no longer exist - not even
+    # as 401/403, so no client can mistake them for an available capability.
     client_response = await async_client.post(
         "/v1/clients",
         headers=headers,
         json={"name": "Customer One"},
     )
-    assert client_response.status_code == 201, client_response.text
-    client_id = client_response.json()["id"]
-
+    assert client_response.status_code == 404, client_response.text
     listed = await async_client.get("/v1/clients", headers=headers)
-    assert listed.status_code == 200, listed.text
-    assert any(row["id"] == client_id for row in listed.json())
-
-    app_response = await async_client.post(
-        f"/v1/clients/{client_id}/applications",
-        headers=headers,
-        json={"name": "Production"},
-    )
-    assert app_response.status_code == 201, app_response.text
-
-    # An application under a client that does not belong to this org is not
-    # found, not forbidden-after-the-fact: tenancy is enforced on read.
-    foreign = await async_client.post(
-        "/v1/clients/00000000-0000-0000-0000-000000000000/applications",
-        headers=headers,
-        json={"name": "Production"},
-    )
-    assert foreign.status_code == 404
-
+    assert listed.status_code == 404
     portfolio = await async_client.get("/v1/agency/portfolio", headers=headers)
-    assert portfolio.status_code == 200, portfolio.text
-    body = portfolio.json()
-    assert body["totals"]["clients"] >= 1
-    assert body["share_token"]
+    assert portfolio.status_code == 404
 
     # The AI explainer is Reliastra-managed: tenants cannot register providers.
     removed_provider_routes = await async_client.post(

@@ -28,8 +28,8 @@ from tests.helpers import TEST_OTP_CODE, register_and_verify
 
 #: The contract-testing rate the integration conftest pins (NGN per 1 USD).
 FX_RATE = 1322.0
-MONTHLY_MINOR = 5_155_800  # $39.00 x 1322 -> ₦51,558.00
-ANNUAL_MINOR = 51_558_000  # $390.00 x 1322 -> ₦515,580.00
+MONTHLY_MINOR = 1_189_800  # $9.00 x 1322 -> ₦11,898.00
+ANNUAL_MINOR = 11_898_000  # $9.00 x 1322 -> ₦11,898.00
 
 
 @pytest.fixture(autouse=True)
@@ -190,9 +190,9 @@ async def test_pricing_endpoint_discloses_the_processing_currency(async_client):
     assert payment["differs_from_product_currency"] is True
     assert payment["notice"] == NGN_CURRENCY_NOTICE
     pro = next(p for p in payload["plans"] if p["plan"] == "pro")
-    assert pro["price_usd"] == 39
+    assert pro["price_usd"] == 9
     # The converted payment price, formatted with the code as text.
-    assert pro["payment_amount_display"] == "\u20a651,558.00 (NGN)"
+    assert pro["payment_amount_display"] == "\u20a611,898.00 (NGN)"
     assert re.search(r"\(NGN\)", pro["payment_amount_display"])
 
 
@@ -250,7 +250,7 @@ async def test_initialize_sends_the_converted_payment_price(async_client, auth_d
     assert captured["amount"] != 3900
     assert body["currency"] == "NGN"
     assert body["amount_minor"] == MONTHLY_MINOR
-    assert body["amount_display"] == "\u20a651,558.00 (NGN)"
+    assert body["amount_display"] == "\u20a611,898.00 (NGN)"
     # Metadata lets the webhook restate the same charge without re-deriving.
     assert captured["metadata"]["currency"] == "NGN"
 
@@ -277,7 +277,7 @@ async def test_initialize_refuses_when_no_rate_is_available(
     # not about which code the API happens to use for it.
     assert res.status_code in (400, 409, 422), res.text
     assert "cannot price this plan" in res.text
-    assert "$39.00 (USD)" in res.text
+    assert "$9.00 (USD)" in res.text
     assert '"price_not_configured"' in res.text
     assert called.awaited is False
 
@@ -348,17 +348,17 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     # price, the amount ACTUALLY charged (with the ISO code Paystack settled
     # in) and the provider - and the USD figure may appear only as the
     # clearly-labelled product price, never as the charge.
-    assert "\u20a651,558.00 (NGN)" in receipt["body"]
-    assert "\u20a651,558.00 (NGN)" in receipt["html_body"]
-    assert "Product price: $39.00 (USD)" in receipt["body"]
-    assert "Actual charge: \u20a651,558.00 (NGN)" in receipt["body"]
+    assert "\u20a611,898.00 (NGN)" in receipt["body"]
+    assert "\u20a611,898.00 (NGN)" in receipt["html_body"]
+    assert "Product price: $9.00 (USD)" in receipt["body"]
+    assert "Actual charge: \u20a611,898.00 (NGN)" in receipt["body"]
     assert "Payment provider: Paystack" in receipt["body"]
     assert "payment was collected by Paystack in NGN" in receipt["body"]
     assert reference in receipt["body"]
     assert "Pro" in confirmation["body"]
     # The confirmation mail carries the same triple.
-    assert "Product price: $39.00 (USD)" in confirmation["body"]
-    assert "Actual charge: \u20a651,558.00 (NGN)" in confirmation["body"]
+    assert "Product price: $9.00 (USD)" in confirmation["body"]
+    assert "Actual charge: \u20a611,898.00 (NGN)" in confirmation["body"]
     assert "Payment provider: Paystack" in confirmation["body"]
 
     # ── The charge is ALSO persisted as a transaction record: receipts and
@@ -371,10 +371,10 @@ async def test_confirmed_payment_emails_confirmation_and_receipt(
     match = next(t for t in items if t["reference"] == reference)
     assert match["charged_currency"] == "NGN"
     assert match["charged_amount_minor"] == MONTHLY_MINOR
-    assert match["charged_amount_display"] == "\u20a651,558.00 (NGN)"
+    assert match["charged_amount_display"] == "\u20a611,898.00 (NGN)"
     assert match["product_currency"] == "USD"
-    assert match["product_amount_minor"] == 3900
-    assert match["product_price_display"] == "$39.00 (USD)"
+    assert match["product_amount_minor"] == 900
+    assert match["product_price_display"] == "$9.00 (USD)"
     assert match["status"] == "success"
 
 

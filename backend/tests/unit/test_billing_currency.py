@@ -2,15 +2,15 @@
 
 ``PLAN_AMOUNTS`` is the USD product price in minor units (cents). Comparing
 ``data["amount"]`` as a bare integer let a transaction settled in a weaker
-currency clear the gate: a $39 plan is 3900 cents, but 3900 NGN is about
-$2.50 - 3900 == 3900. When Paystack settles in a different currency the
+currency clear the gate: a $9 plan is 900 cents, but 900 NGN is about
+$0.60 - 900 == 900. When Paystack settles in a different currency the
 expected amount is that USD price converted at the live rate, and the
 currency check must still run first: an amount-only comparison across
 currencies is meaningless.
 
 Covers the canonical 3-tier architecture:
-- PRO monthly = $39  -> 3900 minor units
-- PRO annual  = $390 -> 39000 minor units
+- PRO (Developer) monthly = $9 -> 900 minor units
+- Annual billing does not exist anymore and must be rejected
 """
 
 import uuid
@@ -20,10 +20,11 @@ import pytest
 
 from app.config import settings
 from app.core.exceptions import ValidationException
-from app.modules.billing.service import PLAN_AMOUNTS, BillingService
+from app.core.permissions import PLAN_AMOUNTS, PLAN_ANNUAL_AMOUNTS
+from app.modules.billing.service import BillingService
 
 
-def _result(org_id, *, currency="USD", amount=3900, plan="pro", interval="monthly", include_currency=True):
+def _result(org_id, *, currency="USD", amount=900, plan="pro", interval="monthly", include_currency=True):
     data = {
         "status": "success",
         "amount": amount,
@@ -46,15 +47,17 @@ def _service(result):
 
 
 @pytest.mark.asyncio
-async def test_pro_monthly_price_is_3900_minor_units():
-    assert PLAN_AMOUNTS["pro"] == 3900
+async def test_pro_monthly_price_is_900_minor_units():
+    """One paid product, $9/month: 900 minor units. No annual amount exists."""
+    assert PLAN_AMOUNTS["pro"] == 900
+    assert PLAN_ANNUAL_AMOUNTS == {}
 
 
 @pytest.mark.asyncio
 async def test_wrong_currency_with_numerically_correct_amount_is_rejected():
-    """The core case: 3900 NGN must not buy a 3900-USD-cent plan."""
+    """The core case: 900 NGN must not buy a 900-USD-cent plan."""
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="NGN", amount=3900))
+    service = _service(_result(org_id, currency="NGN", amount=900))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(ValidationException, match="currency"),
@@ -88,7 +91,7 @@ async def test_missing_currency_is_rejected_not_assumed_correct():
 @pytest.mark.asyncio
 async def test_correct_currency_but_short_amount_is_rejected():
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="USD", amount=3899))
+    service = _service(_result(org_id, currency="USD", amount=899))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(ValidationException, match="cover"),
@@ -99,7 +102,7 @@ async def test_correct_currency_but_short_amount_is_rejected():
 @pytest.mark.asyncio
 async def test_correct_currency_is_case_insensitive_and_passes_the_gate():
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="usd", amount=3900))
+    service = _service(_result(org_id, currency="usd", amount=900))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(Exception) as exc,
@@ -111,30 +114,30 @@ async def test_correct_currency_is_case_insensitive_and_passes_the_gate():
 
 
 @pytest.mark.asyncio
-async def test_annual_checkout_charges_390_not_monthly():
-    """Annual bill ($390 / 39000 minor units) must not be rejected as an
-    undersized monthly amount, and monthly `$39` must not clear an annual
-    charge. Guards the original annual-billing bug."""
+async def test_annual_checkout_is_rejected_because_annual_billing_is_gone():
+    """The product sells one interval (monthly). A transaction claiming the
+    annual interval must be rejected as unconfigured, never priced from the
+    monthly amount."""
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="USD", amount=39000, interval="annual"))
+    service = _service(_result(org_id, currency="USD", amount=90000, interval="annual"))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
         pytest.raises(Exception) as exc,
     ):
         await service.verify_transaction(AsyncMock(), "ref_x")
-        msg = str(exc.value).lower()
-        assert "currency" not in msg and "cover" not in msg
+    msg = str(exc.value).lower()
+    assert "self-serve" in msg or "not available" in msg
 
 
 @pytest.mark.asyncio
 async def test_monthly_amount_does_not_clear_annual_checkout():
-    """$39 (monthly) offered against an annual transaction must be rejected
-    as an undersized amount - the annual billing bug the other way around."""
+    """A monthly-priced transaction labelled annual must still be rejected -
+    annual is unconfigured, so nothing clears it."""
     org_id = uuid.uuid4()
-    service = _service(_result(org_id, currency="USD", amount=3900, interval="annual"))
+    service = _service(_result(org_id, currency="USD", amount=900, interval="annual"))
     with (
         patch.object(settings, "PAYSTACK_CURRENCY", "USD"),
-        pytest.raises(ValidationException, match="cover"),
+        pytest.raises(ValidationException),
     ):
         await service.verify_transaction(AsyncMock(), "ref_x")
 

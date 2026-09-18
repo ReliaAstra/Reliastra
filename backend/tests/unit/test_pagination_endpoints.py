@@ -33,25 +33,34 @@ async def test_vendors_list_is_cursor_paginated(async_client, db_session):
 
 
 @pytest.mark.asyncio
-async def test_org_members_list_is_cursor_paginated(async_client, auth_data):
+async def test_org_members_list_is_cursor_paginated(
+    async_client, auth_data, db_session
+):
+    import uuid as _uuid
+
+    from app.modules.organizations.models import OrganizationMember
+    from app.modules.users.models import User
+
     headers = auth_data["headers"]
     org_id = auth_data["org_id"]
 
+    # The org is single-seat now, so members are seeded directly instead of
+    # invited through the API (which correctly refuses additional seats).
     for i in range(3):
-        await async_client.post(
-            "/v1/auth/register",
-            json={
-                "email": f"member{i}@reliastra.com",
-                "password": "Password123!",
-                "full_name": f"Member {i}",
-            },
+        user = User(
+            email=f"member{i}@reliastra.com",
+            password_hash="x",
+            full_name=f"Member {i}",
+            is_active=True,
         )
-        invite = await async_client.post(
-            "/v1/orgs/members",
-            headers=headers,
-            json={"email": f"member{i}@reliastra.com", "role": "member"},
+        db_session.add(user)
+        await db_session.flush()
+        db_session.add(
+            OrganizationMember(
+                id=_uuid.uuid4(), org_id=uuid.UUID(org_id), user_id=user.id
+            )
         )
-        assert invite.status_code == 201, invite.text
+    await db_session.commit()
 
     res = await async_client.get(
         "/v1/orgs/members",

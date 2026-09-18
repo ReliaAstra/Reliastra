@@ -497,10 +497,10 @@ class BillingService:
         status = subscription.status if subscription else None
         last4 = getattr(subscription, "payment_method_last4", None) if subscription else None
         brand = getattr(subscription, "payment_method_brand", None) if subscription else None
-        exp_month, exp_year = None, None
+        expiry_month, exp_year = None, None
         month_raw = getattr(subscription, "payment_method_exp_month", None) if subscription else None
         if isinstance(month_raw, int):
-            exp_month = month_raw
+            expiry_month = month_raw
         year_raw = getattr(subscription, "payment_method_exp_year", None) if subscription else None
         if isinstance(year_raw, int):
             exp_year = year_raw
@@ -545,7 +545,7 @@ class BillingService:
             canceled_at=canceled_at if isinstance(canceled_at, datetime) else None,
             payment_method_brand=brand if isinstance(brand, str) else None,
             payment_method_last4=last4 if isinstance(last4, str) else None,
-            payment_method_exp_month=exp_month if isinstance(exp_month, int) else None,
+            payment_method_exp_month=expiry_month if isinstance(expiry_month, int) else None,
             payment_method_exp_year=exp_year if isinstance(exp_year, int) else None,
             payment_method_channel=channel if isinstance(channel, str) else None,
             payment_method_display=_payment_method_display(subscription) if subscription else None,

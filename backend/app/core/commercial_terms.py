@@ -47,27 +47,29 @@ def _pro_price() -> int:
 
 def trial_summary() -> str:
     return (
-        f"Every new organization receives {TRIAL_DAYS} days of Pro capabilities. "
-        "No payment method is required to start. When the trial ends without a "
-        "paid subscription, the organization continues on Free."
+        f"Every new account receives {TRIAL_DAYS} days of full Developer "
+        "capabilities. No payment method is required to start. When the trial "
+        "ends without a subscription, the account keeps running on reduced "
+        "limits."
     )
 
 
 def trial_end_summary() -> str:
     price = _pro_price()
     return (
-        f"When the {TRIAL_DAYS}-day trial ends, the organization reverts to the "
-        f"Free plan unless a paid Pro subscription (${price} USD / month) is "
-        "active. Configuration and history are preserved."
+        f"When the {TRIAL_DAYS}-day trial ends, the account keeps running on "
+        f"reduced limits (3 dependencies, 1-minute checks, 24-hour retention) "
+        f"unless a Developer subscription (${price} USD / month) is active. "
+        "Configuration and history are preserved."
     )
 
 
 def price_after_trial_summary() -> str:
     price = _pro_price()
     return (
-        f"Pro is ${price} USD per month after the trial, billed through Paystack "
-        "for the selected interval. Payment is collected when you subscribe, "
-        "not when the trial starts."
+        f"Developer is ${price} USD per month after the trial, billed monthly "
+        "through Paystack. Payment is collected when you subscribe, not when "
+        "the trial starts."
     )
 
 
@@ -81,9 +83,9 @@ def cancellation_summary() -> str:
 
 def cancellation_after_effect() -> str:
     return (
-        "After cancellation takes effect, the organization returns to the Free "
-        "plan. Monitors, configuration and history are preserved; Free limits "
-        "apply. You can resume before the period ends if you change your mind."
+        "After cancellation takes effect, the account keeps running on reduced "
+        "limits. Monitors, configuration and history are preserved. You can "
+        "resubscribe at any time."
     )
 
 
@@ -98,9 +100,10 @@ def refund_summary() -> str:
 
 def refund_eligibility() -> str:
     return (
-        "Refund requests apply to paid Pro charges collected through Paystack. "
-        f"The {TRIAL_DAYS}-day evaluation does not require payment, so there is "
-        "nothing to refund during the trial. Free plans are not charged."
+        "Refund requests apply to paid Developer charges collected through "
+        f"Paystack. The {TRIAL_DAYS}-day evaluation does not require payment, "
+        "so there is nothing to refund during the trial. Accounts on reduced "
+        "post-trial limits are not charged."
     )
 
 
@@ -155,16 +158,16 @@ def promotional_treatment() -> str:
 def terms_acceptance_label() -> str:
     return (
         f"I agree to the Terms of Service and understand the cancellation and "
-        f"refund terms. Pro is ${_pro_price()} USD per month after the "
+        f"refund terms. Developer is ${_pro_price()} USD per month after the "
         f"{TRIAL_DAYS}-day trial."
     )
 
 
 def checkout_what_you_buy() -> str:
     return (
-        f"RELIASTRA Pro: 50 dependencies, 15-second checks, 90-day retention, "
-        f"attribution, evidence and API access, billed ${_pro_price()} USD per "
-        "month (or the published annual price) through Paystack."
+        f"RELIASTRA Developer: 25 dependencies, 30-second checks, 90-day "
+        f"retention, attribution, evidence and API access, billed "
+        f"${_pro_price()} USD per month through Paystack."
     )
 
 
