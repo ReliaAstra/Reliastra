@@ -184,9 +184,11 @@ export function ObservationSetupSequence() {
               <EnvFact
                 label="Monitor allowance"
                 value={
-                  plan?.max_dependencies == null
-                    ? 'unlimited'
-                    : `${deps.data?.length ?? 0} of ${plan.max_dependencies}`
+                  plan == null
+                    ? 'not reported'
+                    : plan.max_dependencies == null
+                      ? 'unlimited'
+                      : `${deps.data?.length ?? 0} of ${plan.max_dependencies}`
                 }
               />
               <EnvFact

@@ -203,7 +203,9 @@ export function SettingsPage() {
                 ? `up to ${plan.max_dependencies}`
                 : current.dependencies != null
                   ? `up to ${current.dependencies}`
-                  : 'unlimited'}
+                  : plan
+                    ? 'unlimited'
+                    : 'not reported'}
             </Row>
             <Row label="Minimum check interval" mono>
               {intervalLabel(plan?.min_check_interval_seconds ?? null)}
