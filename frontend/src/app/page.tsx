@@ -83,6 +83,7 @@ export default function Home() {
             <li><a href="/product">Product</a></li>
             <li><a href="/product/evidence">Evidence records</a></li>
             <li><a href="/observatory">Public observatory</a></li>
+            <li><a href="/agencies">Agencies</a></li>
             <li><a href="/docs/quickstart">Quickstart</a></li>
             <li><a href="/docs/methodology">Methodology</a></li>
             <li><a href="/research">Research</a></li>

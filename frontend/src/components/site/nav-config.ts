@@ -106,14 +106,14 @@ export const PRODUCT_PANEL: NavGroup[] = [
 export const PRIMARY_NAV: NavLink[] = [
   { label: 'Product', href: PUBLIC_ROUTES.product },
   { label: 'Observatory', href: PUBLIC_ROUTES.observatory },
-  { label: 'Docs', href: PUBLIC_ROUTES.docs },
   { label: 'Research', href: PUBLIC_ROUTES.research },
+  { label: 'Agencies', href: PUBLIC_ROUTES.agencies },
   { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
 ];
 
 export const HEADER_ACTIONS = {
   signIn: { label: 'Sign in', href: AUTH_ROUTES.login },
-  start: { label: 'Start observing', href: AUTH_ROUTES.signup },
+  start: { label: 'Start monitoring', href: AUTH_ROUTES.signup },
 } as const;
 
 /* ── Documentation ──────────────────────────────────────────────────────── */
@@ -190,6 +190,7 @@ export const FOOTER_GROUPS: NavGroup[] = [
       { label: 'Overview', href: PUBLIC_ROUTES.product },
       { label: 'Evidence records', href: PUBLIC_ROUTES.productEvidence },
       { label: 'Public observatory', href: PUBLIC_ROUTES.observatory },
+      { label: 'Agencies', href: PUBLIC_ROUTES.agencies },
       { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
     ],
   },

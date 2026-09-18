@@ -58,11 +58,12 @@ const STATIC_ROUTES = new Set<string>([
   ),
 ]);
 
-// The partner portal and agency surfaces are removed (stage-1 B2B removal):
-// no public navigation may point at them.
+// The partner portal and the agency/client console surfaces are removed
+// (stage-1 B2B removal): no public navigation may point at them. The
+// `/agencies` marketing page has been restored as a first-class route, so it
+// is a legitimate destination again and deliberately absent from this list.
 const REMOVED_B2B_URLS = [
   '/partner',
-  '/agencies',
   '/portal',
   '/agency',
   '/clients',

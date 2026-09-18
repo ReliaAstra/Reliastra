@@ -33,10 +33,11 @@ const nextConfig: NextConfig = {
   // shared or bookmarked as `/dashboard/<section>` therefore 404. Redirect the
   // `/dashboard/*` shape onto the canonical routes instead of dead-ending.
   //
-  // NOTE: the B2B surfaces (/agencies, /partner*, /portal, console
-  // /agency + /clients) were removed in the developer-first refurbishment
-  // (stage 1 of a two-stage removal). Their URLs resolve to the closest
-  // surviving destination below; the destinations own the explanation.
+  // NOTE: the B2B console surfaces (/partner*, /portal, console /agency +
+  // /clients) were removed in the developer-first refurbishment. Their URLs
+  // resolve to the closest surviving destination below; the destinations
+  // own the explanation. The `/agencies` marketing page has since been
+  // restored and is served directly.
   async redirects() {
     const consoleSections = [
       "settings",
@@ -118,14 +119,9 @@ const nextConfig: NextConfig = {
         destination: "/creators",
         permanent: true,
       },
-      // The agencies marketing page and the agency/client console surfaces
-      // are gone. Marketing lands on the product overview; console
-      // bookmarks land on the dashboard.
-      {
-        source: "/agencies",
-        destination: "/product",
-        permanent: true,
-      },
+      // The agency/client console surfaces are gone; console bookmarks land
+      // on the dashboard. The `/agencies` marketing page itself has been
+      // restored as a first-class route, so it no longer redirects.
       {
         source: "/organization",
         destination: "/dashboard",

@@ -1,43 +1,34 @@
 import Link from 'next/link';
-import { Wordmark } from './wordmark';
 import { FOOTER_GROUPS, SOCIAL_LINKS } from './nav-config';
 import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 /**
  * Global footer.
  *
- * This is the complete public site map, and it is generated entirely from
- * `nav-config` (which in turn only references `lib/routes`). There is no way
- * to author a `#` link, a placeholder, or a slug that does not resolve.
- *
- * Server component: the footer is the same on every page and should never
- * cost a hydration pass.
+ * Dark, minimal, typographic: the full site map in small columns, contact
+ * and legal beneath one oversized wordmark. Server component, generated
+ * entirely from `nav-config` (which in turn only references `lib/routes`),
+ * so there is nowhere to author a placeholder link.
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
     <footer className="border-t border-[var(--ob-line)] bg-[var(--ob-void)]">
-      <div className="ob-container py-16 md:py-20">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-16">
+      <div className="ob-container pt-16 md:pt-20">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-16">
           {/* Identity */}
           <div className="flex flex-col gap-6">
-            <Link href={PUBLIC_ROUTES.home} aria-label="RELIASTRA home">
-              <Wordmark size="lg" />
-            </Link>
-            <p className="max-w-[36ch] text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
-              RELIASTRA probes the external services your software depends on,
-              records every observation, confirms faults deterministically, and
-              keeps evidence that holds up outside your own logs.
+            <p className="max-w-[34ch] text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
+              External dependency intelligence: independent observation of the
+              third-party services your infrastructure runs on, with evidence
+              a third party can verify.
             </p>
             <dl className="flex flex-col gap-3 pt-2">
               <div className="flex gap-3">
                 <dt className="ob-label w-16 shrink-0 pt-[3px]">Support</dt>
                 <dd className="text-[13px]">
-                  <a
-                    className="ob-link"
-                    href="mailto:support@reliastra.com"
-                  >
+                  <a className="ob-link" href="mailto:support@reliastra.com">
                     support@reliastra.com
                   </a>
                 </dd>
@@ -51,12 +42,20 @@ export function SiteFooter() {
                 </dd>
               </div>
             </dl>
+            <p className="flex flex-wrap gap-x-5 gap-y-1 pt-2 text-[13px]">
+              <Link className="ob-link" href={AUTH_ROUTES.signup}>
+                Start monitoring
+              </Link>
+              <Link className="ob-link" href={AUTH_ROUTES.login}>
+                Sign in
+              </Link>
+            </p>
           </div>
 
           {/* Site map */}
           <nav
             aria-label="Footer"
-            className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 xl:grid-cols-6"
+            className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 xl:grid-cols-5"
           >
             {FOOTER_GROUPS.map((group) => (
               <div key={group.label}>
@@ -90,27 +89,24 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        {/* Account entry point, stated explicitly. There is one kind of
-            account — an engineer's, not an organization's — and a visitor
-            should never have to guess that. */}
-        <div className="mt-16 border-t border-[var(--ob-line)] pt-10">
-          <p className="ob-label">Start</p>
-          <p className="mt-2 max-w-[52ch] text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
-            Add one endpoint you already depend on, and read what the probe
-            records before deciding whether the rest is useful. One plan,
-            $9/month, no card to start.
-          </p>
-          <p className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
-            <Link className="ob-link" href={AUTH_ROUTES.signup}>
-              Start observing
-            </Link>
-            <Link className="ob-link" href={AUTH_ROUTES.login}>
-              Sign in
-            </Link>
-          </p>
+        {/* The oversized sign-off: one light wordmark, no other art. */}
+        <div className="mt-16 border-t border-[var(--ob-line)] pt-10 md:mt-20 md:pt-12">
+          <Link
+            href={PUBLIC_ROUTES.home}
+            aria-label="RELIASTRA home"
+            className="block select-none leading-none"
+          >
+            <span
+              aria-hidden
+              className="block whitespace-nowrap font-semibold uppercase tracking-[-0.015em] text-[var(--ob-text)]"
+              style={{ fontSize: 'clamp(2.6rem, 9.2vw, 8.5rem)', lineHeight: 0.95 }}
+            >
+              Reliastra
+            </span>
+          </Link>
         </div>
 
-        <div className="mt-12 flex flex-col gap-5 border-t border-[var(--ob-line)] pt-8 md:flex-row md:items-center md:justify-between">
+        <div className="mt-10 flex flex-col gap-5 border-t border-[var(--ob-line)] py-8 md:flex-row md:items-center md:justify-between">
           <p className="ob-label normal-case tracking-[0.05em]">
             © {year} Reliastra, Inc. All rights reserved.
           </p>

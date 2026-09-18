@@ -9,8 +9,8 @@ import { fetchTrackedVendors, fetchVendorPublicIncidents } from '@/lib/track-api
  * Excludes (deliberately): authenticated console routes, /admin/*, auth
  * pages (/login, /signup, /verify-email, /reset-password), token-scoped
  * shares (/reports/*), /checkout, /api/*, and the removed B2B surfaces
- * (agencies, partner portal, client portals) - none of which must create
- * index bloat.
+ * (partner portal, client portals) - none of which must create index bloat.
+ * The `/agencies` marketing page is a first-class route again and is listed.
  *
  * Includes: all canonical marketing/docs/glossary/research pages, the
  * research hub and its nested articles, live public vendor pages enumerated

@@ -6,7 +6,7 @@ import { DETECTION, OBSERVATION_LABEL, PROBE_INTERVAL_SECONDS } from '@/lib/meth
  * and the record that follows.
  *
  * This is not a screenshot and not an illustration of a concept. It is the real
- * shape of the data — the fields are the columns on `check_results`, the rule
+ * shape of the data - the fields are the columns on `check_results`, the rule
  * id is the one the detector actually fires, and the evidence line carries the
  * fields the artifact actually prints. Values are illustrative, and the panel
  * says so, because the alternative is a homepage that shows invented
@@ -30,8 +30,8 @@ type Probe = {
 const PROBES: Probe[] = [
   { at: '09:51:00Z', code: '200', latency: '181 ms', verdict: 'up' },
   { at: '09:52:00Z', code: '200', latency: '184 ms', verdict: 'up' },
-  { at: '09:53:00Z', code: '—', latency: '—', verdict: 'failed', detail: 'connect timeout' },
-  { at: '09:54:00Z', code: '—', latency: '—', verdict: 'failed', detail: 'connect timeout' },
+  { at: '09:53:00Z', code: '-', latency: '-', verdict: 'failed', detail: 'connect timeout' },
+  { at: '09:54:00Z', code: '-', latency: '-', verdict: 'failed', detail: 'connect timeout' },
   { at: '09:55:00Z', code: '503', latency: '2 ms', verdict: 'failed', detail: 'service unavailable' },
 ];
 

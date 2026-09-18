@@ -193,7 +193,7 @@ export default function ResearchIndexPage() {
             className="mb-9"
           />
           <Eyebrow>Research</Eyebrow>
-          <h1 className="ob-h1 mt-5 max-w-[20ch]">
+          <h1 className="ob-display mt-6 max-w-[15ch]">
             The gap between what operators think is happening and what the evidence shows.
           </h1>
           <p className="ob-lede mt-6 max-w-[62ch]">

@@ -10,11 +10,11 @@
  *
  * Two rules it inherits from the rest of the console:
  *
- *  - Nothing is shown that does not exist. There is no SDK, so no SDK section;
+ * - Nothing is shown that does not exist. There is no SDK, so no SDK section;
  *    webhook secrets are generated here and shown exactly once, because the
  *    backend stores only a hash and a console that "showed" them later would be
  *    lying.
- *  - The commands printed are the ones the CLI implements, and the test suite
+ * - The commands printed are the ones the CLI implements, and the test suite
  *    checks that (`docs-cli-surface.test.ts` reads the CLI's own command table
  *    against the documentation, and these strings are asserted against it too).
  */
@@ -61,7 +61,7 @@ function Command({ children }: { children: string }) {
 function RevealedSecret({ value }: { value: string }) {
   return (
     <div className="mt-3 border border-[var(--obc-line-2)] bg-[var(--obc-raised)] p-4">
-      <p className="obc-label">Signing secret — shown once</p>
+      <p className="obc-label">Signing secret - shown once</p>
       <p className="obc-body mt-2 max-w-[70ch] text-[12px]">
         The backend stores only a hash of this value, so it cannot be shown again.
         Put it in the consumer now; it is what verifies{' '}
@@ -185,7 +185,7 @@ function ApiKeys() {
 
         {created && (
           <div className="border border-[var(--obc-line-2)] bg-[var(--obc-raised)] p-4">
-            <p className="obc-label">Key — shown once</p>
+            <p className="obc-label">Key - shown once</p>
             <p className="obc-body mt-2 max-w-[70ch] text-[12px]">
               Only a hash is stored. Put it in a secret store and expose it as{' '}
               <code className="font-[family-name:var(--ob-font-mono)]">RELIASTRA_TOKEN</code>.
@@ -484,8 +484,8 @@ export function DeveloperSettingsPage() {
       <Section id="reach" title="What each credential reaches">
         <dl>
           <Fact label="Session" value="Console, keys, webhooks, account" mono={false} />
-          <Fact label="API key" value="Dependencies, observations, incidents, evidence — by scope" mono={false} />
-          <Fact label="Public" value="Verification records and the observatory — no credential" mono={false} />
+          <Fact label="API key" value="Dependencies, observations, incidents, evidence - by scope" mono={false} />
+          <Fact label="Public" value="Verification records and the observatory - no credential" mono={false} />
         </dl>
         <p className="obc-body mt-4 max-w-[80ch] text-[12px] text-[var(--obc-text-3)]">
           Keys are denied by default: they cannot read accounts, manage keys or configure

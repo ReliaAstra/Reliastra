@@ -58,7 +58,7 @@ export default function CreatorsPage() {
         <Container className="py-14 md:py-20">
           <Breadcrumb items={crumbs} className="mb-8" />
           <Eyebrow>Creators</Eyebrow>
-          <h1 className="ob-h1 mt-5 max-w-[20ch]">
+          <h1 className="ob-display mt-6 max-w-[15ch]">
             For people who publish about infrastructure.
           </h1>
           <p className="ob-lede mt-6 max-w-[60ch]">

@@ -18,12 +18,12 @@
  * claims a topology, a threshold or a capability this module does not declare.
  *
  * Sources of truth, verify before editing:
- *   - backend/app/config.py                       OBSERVATION_TOPOLOGY,
+ *  - backend/app/config.py                       OBSERVATION_TOPOLOGY,
  *                                                 SINGLE_TOPOLOGY_FAILURE_CHECKS
- *   - backend/app/modules/checks/detection.py     DetectionRule, thresholds
- *   - backend/app/modules/attribution/service.py  WEIGHTS, thresholds, version
- *   - backend/app/modules/checks/constants.py     QUORUM_* (multi topology)
- *   - frontend/src/lib/product-contract.ts        transcribed contract
+ *  - backend/app/modules/checks/detection.py     DetectionRule, thresholds
+ *  - backend/app/modules/attribution/service.py  WEIGHTS, thresholds, version
+ *  - backend/app/modules/checks/constants.py     QUORUM_* (multi topology)
+ *  - frontend/src/lib/product-contract.ts        transcribed contract
  */
 
 import {
@@ -166,10 +166,10 @@ export const EVIDENCE_CANNOT = [
  * measured, counted or rendered as a live figure.
  */
 export const NETWORK_DIRECTION = [
-  'Independent observations — what RELIASTRA measures itself, today.',
-  'Application signals — what a participating application can report about its own dependency calls.',
-  'Correlation — the same dependency degrading for unrelated applications at the same time.',
-  'Attribution — a dependency’s behaviour described from many vantage points instead of one.',
+  'Independent observations - what RELIASTRA measures itself, today.',
+  'Application signals - what a participating application can report about its own dependency calls.',
+  'Correlation - the same dependency degrading for unrelated applications at the same time.',
+  'Attribution - a dependency’s behaviour described from many vantage points instead of one.',
 ] as const;
 
 /* ── Sentences shared across surfaces ───────────────────────────────────── */
