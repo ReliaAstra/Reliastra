@@ -120,3 +120,32 @@ class EvidenceSnapshotRepository:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_by_report_checksum(
+        session: AsyncSession, report_checksum: str
+    ) -> EvidenceSnapshot | None:
+        """The snapshot that issued the exact bytes a report holds.
+
+        The verification id is the one identifier a recipient of an artifact
+        needs and the one an account cannot currently read back: it is printed
+        inside the document and the QR code, but no response carries it, so a
+        client holding a report id could not reach the verification record that
+        proves it. That gap is what this lookup closes.
+
+        ``report_checksum`` is the SHA-256 of the bytes, recorded on the
+        immutable snapshot at the same moment the report row recorded the same
+        value, so equality is an exact binding rather than a heuristic. A
+        regeneration produces different bytes because the generation timestamp
+        is inside the document, so a match is 1:1 in practice; if two artifacts
+        ever did share bytes they would be the same document with the same
+        hashed facts, and either verification record would answer for both.
+        ``created_at`` descending keeps the answer deterministic regardless.
+        """
+        result = await session.execute(
+            select(EvidenceSnapshot)
+            .where(EvidenceSnapshot.report_checksum == report_checksum)
+            .order_by(EvidenceSnapshot.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()

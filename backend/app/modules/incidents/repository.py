@@ -75,6 +75,7 @@ class IncidentRepository:
         limit: int = 50,
         status_filter: str | None = None,
         severity_filter: str | None = None,
+        dependency_filter: uuid.UUID | None = None,
     ) -> list[Incident]:
         query = (
             select(Incident)
@@ -86,6 +87,12 @@ class IncidentRepository:
             query = query.where(Incident.status == status_filter)
         if severity_filter:
             query = query.where(Incident.severity == severity_filter)
+        # Scoping the list to one dependency is what makes "did this endpoint
+        # fail, and when" answerable without pulling the account's whole
+        # incident history and filtering it in the client. It is also the
+        # filter the CLI's `deps show` and `incidents list --dependency` use.
+        if dependency_filter is not None:
+            query = query.where(Incident.dependency_id == dependency_filter)
         result = await session.execute(query)
         return list(result.scalars().all())
 

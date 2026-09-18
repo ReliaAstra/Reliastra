@@ -2,7 +2,6 @@ import {
   dependencyLabel,
   intervalLabel,
   retentionLabel,
-  seatLabel,
   type PlanMeta,
 } from '@/lib/dashboard/plans';
 import { AUTH_ROUTES } from '@/lib/routes';
@@ -45,8 +44,19 @@ export function planLimits(p: PlanMeta): [string, string][] {
     ['Dependencies', dependencyLabel(p.dependencies)],
     ['Check interval', intervalLabel(p.minIntervalSeconds)],
     ['Retention', retentionLabel(p.retentionDays)],
-    ['Team', seatLabel(p.teamMembers)],
+    // Not `seatLabel`: that helper is written for the console's billing view,
+    // where a count of seats is a real quantity to manage. On the public page
+    // it produced "Team 1 seat", which describes an organisation buying
+    // access for colleagues - the commercial model this product does not
+    // have. One account, one engineer.
+    ['Accounts', teamLabel(p.teamMembers)],
   ];
+}
+
+/** Public wording for the account count. There is no seat to buy. */
+function teamLabel(count: number | null | undefined): string {
+  if (count == null) return '—';
+  return count === 1 ? '1 account' : `${count} accounts`;
 }
 
 export function planCta(p: PlanMeta): { href: string; label: string } {

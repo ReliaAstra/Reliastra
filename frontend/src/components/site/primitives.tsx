@@ -433,7 +433,7 @@ export function RecordLink({
 export function CTABand({
   title,
   body,
-  primary = { href: '/signup', label: 'Start monitoring' },
+  primary = { href: '/signup', label: 'Start observing' },
   secondary,
   tone = 'base',
 }: {

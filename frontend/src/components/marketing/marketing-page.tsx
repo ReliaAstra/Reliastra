@@ -42,8 +42,8 @@ export function MarketingPage({
   sideNav,
   children,
   related,
-  ctaTitle = 'Know what you depend on. Prove what it did.',
-  ctaBody = 'RELIASTRA observes the external services your product relies on, attributes their failures, and produces evidence you can act on. Every new organization starts on a 14-day Pro trial.',
+  ctaTitle = 'Add one dependency you already own.',
+  ctaBody = 'RELIASTRA probes the external services your software relies on, confirms a fault deterministically, and keeps a record you can verify later. One plan, $9/month, and a 14-day trial that needs no card.',
 }: {
   eyebrow: string;
   title: string;
@@ -151,10 +151,10 @@ export function MarketingPage({
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
               <CTA href={AUTH_ROUTES.signup} tone="signal">
-                Start monitoring
+                Start observing
               </CTA>
-              <CTA href={PUBLIC_ROUTES.track} tone="outline">
-                Public dependency data
+              <CTA href={PUBLIC_ROUTES.observatory} tone="outline">
+                Open the observatory
               </CTA>
             </div>
           </div>

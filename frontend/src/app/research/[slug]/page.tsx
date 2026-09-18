@@ -137,10 +137,10 @@ export default async function ResearchArticlePage({ params }: Params) {
         methodology={content.methodology}
         related={content.related}
         vendorLinks={[
-          { href: PUBLIC_ROUTES.track, label: 'Public dependency index' },
+          { href: PUBLIC_ROUTES.observatory, label: 'Public dependency index' },
           { href: PUBLIC_ROUTES.research, label: 'Research home' },
           {
-            href: PUBLIC_ROUTES.externalDependencyIntelligence,
+            href: PUBLIC_ROUTES.product,
             label: 'External Dependency Intelligence',
           },
         ]}

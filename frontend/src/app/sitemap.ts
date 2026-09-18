@@ -53,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const page = await fetchTrackedVendors(100);
     const vendors = (page.items ?? []).filter((v) => v.is_public !== false && v.vendor_name);
     const vendorEntries: MetadataRoute.Sitemap = vendors.map((v) => ({
-      url: `${base}/track/${encodeURIComponent(v.vendor_name)}`,
+      url: `${base}/observatory/${encodeURIComponent(v.vendor_name)}`,
       lastModified: v.last_check_at ? new Date(v.last_check_at) : now,
       changeFrequency: 'hourly' as const,
       priority: 0.8,
@@ -65,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           try {
             const incidents = await fetchVendorPublicIncidents(v.vendor_name);
             return (incidents ?? []).map((inc) => ({
-              url: `${base}/track/${encodeURIComponent(v.vendor_name)}/incidents/${inc.incident_id}`,
+              url: `${base}/observatory/${encodeURIComponent(v.vendor_name)}/incidents/${inc.incident_id}`,
               lastModified: new Date(inc.resolved_at ?? inc.started_at),
               changeFrequency: 'monthly' as const,
               priority: 0.7,

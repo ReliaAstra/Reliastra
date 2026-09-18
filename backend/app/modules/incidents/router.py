@@ -35,6 +35,7 @@ async def list_incidents(
     cursor: str | None = Query(default=None),
     status: IncidentStatus | None = Query(default=None),
     severity: IncidentSeverity | None = Query(default=None),
+    dependency_id: uuid.UUID | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_org: Organization = Depends(get_current_org),
     service: IncidentService = Depends(get_inc_service),
@@ -45,6 +46,7 @@ async def list_incidents(
         limit=limit + 1,
         status=status.value if status else None,
         severity=severity.value if severity else None,
+        dependency_id=dependency_id,
     )
     return slice_page(rows, limit)
 

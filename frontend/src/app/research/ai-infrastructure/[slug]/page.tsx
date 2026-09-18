@@ -137,7 +137,7 @@ export default async function HubArticlePage({ params }: Params) {
         methodology={content.methodology}
         related={content.related}
         vendorLinks={[
-          { href: PUBLIC_ROUTES.track, label: 'Public dependency index' },
+          { href: PUBLIC_ROUTES.observatory, label: 'Public dependency index' },
           { href: researchHubRoute(HUB), label: 'AI infrastructure hub' },
           { href: PUBLIC_ROUTES.research, label: 'Research home' },
         ]}

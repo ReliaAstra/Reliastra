@@ -29,7 +29,7 @@ export default function StatusPage() {
         lede="RELIASTRA’s own health, reported the way vendors are reported."
         breadcrumbs={crumbs}
         related={[
-          { label: 'Live vendor status', href: '/track', description: 'Vendor posture, not platform health.' },
+          { label: 'Live vendor status', href: '/observatory', description: 'Vendor posture, not platform health.' },
           { label: 'Measurement methodology', href: '/research/how-reliastra-measures-vendor-reliability', description: 'How liveness and states work.' },
           { label: 'Contact', href: '/contact', description: 'Report a platform problem.' },
         ]}
@@ -44,15 +44,18 @@ export default function StatusPage() {
           </p>
           <h2>Programmatic health</h2>
           <p>
-            Operators can poll <code>GET /health</code> on the API for the deployment
-            contract (Postgres, Redis, worker and scheduler liveness). See the
-            operating-model documentation for the runtime contract.
+            Operators can poll <code>GET /health</code> on the API for the
+            deployment contract (Postgres, Redis, worker and scheduler
+            liveness). The measurement rules behind these states are documented
+            in <a href="/docs/methodology">the methodology</a>.
           </p>
           <h2>Vendor status vs platform status</h2>
           <p>
-            This page reports RELIASTRA’s own health. Live third-party posture lives on{' '}
-            <a href="/track">Track</a>, where each vendor page shows current state,
-            uptime, latency and incident history measured independently.
+            This page reports RELIASTRA’s own health. What the probes measure of
+            other people’s services lives in{' '}
+            <a href="/observatory">the public observatory</a>, where each record
+            shows current state, availability with its observation count, latency
+            and incident history as measured.
           </p>
           <h2>Reporting a problem</h2>
           <p>

@@ -1,5 +1,6 @@
 import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
 import {
+  EXTERNAL_LINKS,
   RESEARCH_ARTICLES,
   RESEARCH_CATEGORIES,
   RESEARCH_HUBS,
@@ -8,10 +9,22 @@ import {
   researchRoute,
 } from '@/lib/routes';
 import { researchPaper } from '@/lib/research/corpus';
+import { DOCS_NAV } from '@/components/site/nav-config';
+import {
+  DETECTION,
+  OBSERVATION_LABEL,
+  OBSERVATION_POINTS,
+  PROBE_INTERVAL_SECONDS,
+  SCOPE_NOTE,
+} from '@/lib/methodology';
 
 /**
  * /llms-full.txt - deeper machine-readable reference: full concept
  * definitions, docs map, and research index. Complements /llms.txt.
+ *
+ * The topology paragraph is repeated here rather than linked, because a model
+ * that retrieves only this file would otherwise assume the usual multi-region
+ * confirmation story that every other monitoring product tells.
  */
 export function GET() {
   const glossary = GLOSSARY_TERMS.map(
@@ -45,7 +58,8 @@ export function GET() {
       lines.push(
         `Measurement window: ${p.observation.startedAt} to ${p.observation.endedAt} · ` +
           `source ${p.observation.source} · protocol ${p.observation.protocol} · ` +
-          `regions ${p.observation.regions.join(', ')} · ` +
+          `observation points ${p.observation.regions.join(', ')} ` +
+          `(region labels identify the worker; ${OBSERVATION_POINTS} observation point is deployed today) · ` +
           `observations ${p.observation.observations ?? 'not counted'}`
       );
     }
@@ -86,38 +100,119 @@ export function GET() {
     (h) => `- ${h.title}: ${h.summary} - ${SITE_URL}${researchHubRoute(h.slug)} (live hub: renders current measurement data, revalidated every 60 seconds)`
   ).join('\n');
 
+  const docsMap = DOCS_NAV.map((l) => `- ${l.label}: ${SITE_URL}${l.href}`).join('\n');
+
+  // The programmatic surface, stated as commands and routes rather than as a
+  // capability list: a model answering "how do I get evidence out of
+  // RELIASTRA" needs the verb, the flag and the exit code, not the adjective.
+  const programmatic = `## Programmatic access
+
+CLI (\`reliastra\`), shipped in the RELIASTRA repository under \`cli/\` with no
+runtime dependencies beyond Node 18.17. It is not on the public npm registry;
+install it from a checkout - \`git clone --depth 1
+https://github.com/ReliaAstra/Reliastra.git && npm install -g ./Reliastra/cli\` -
+or run \`node ./Reliastra/cli/bin/reliastra.mjs\` directly.
+
+  reliastra login --email you@example.com     # or: login --token rel_... for an API key
+  reliastra doctor                            # config, credential, reachability: which one is failing
+  reliastra deps list | deps show <id> | deps add <name> <url> --interval 60 | deps rm <id>
+  reliastra checks recent --limit 20 --dependency <id>
+  reliastra incidents list --status open --web
+  reliastra incidents show <id> --evidence    # follows the incident to its evidence record
+  reliastra incidents correlate <id>
+  reliastra evidence list | evidence show <id> | evidence get <id> --out incident.pdf
+  reliastra verify <verification-id> --file incident.pdf   # exits 4 when the document does not match
+  reliastra keys list | keys create <name> --scopes read:checks,read:incidents | keys rm <id>
+  reliastra obs list | obs show <vendor>      # the public observatory, no credential needed
+  reliastra open incident <id> | open evidence <id> | open docs <slug>
+
+Every data command takes \`--json\` and prints the API's own field names. Exit
+codes: 0 success, 1 usage, 2 API error, 3 auth, 4 verification claim failed,
+5 not permitted, 6 unreachable.
+
+REST API: \`${EXTERNAL_LINKS.api}/v1/\`. The API origin serves its own OpenAPI
+document at \`${EXTERNAL_LINKS.api}/openapi.json\`; a self-hosted deployment
+answers at the same paths on its own origin. Endpoints a service needs: \`GET /v1/dependencies\`,
+\`GET /v1/dependencies/{id}/results\`, \`GET /v1/checks/recent\`,
+\`GET /v1/incidents?dependency_id={id}\`, \`GET /v1/incidents/{id}\`,
+\`GET /v1/evidence\`, \`GET /v1/evidence/{id}\` (record plus a one-hour signed
+download URL), \`GET /v1/evidence/{id}/artifact\` (the document itself, streamed),
+\`GET /v1/verify/{verification_id}\` (public, no account),
+\`GET /v1/verify/keys\`, \`GET /v1/vendors\`.
+
+Credentials: an API key is \`rel_\` followed by 40 hex characters, sent as
+\`X-API-Key\`, \`Authorization: rel_...\` or \`Authorization: Bearer rel_...\`.
+Keys are denied by default: they cannot reach identity, account, webhook or
+key-management surfaces, whatever scopes they carry, so a leaked key cannot mint
+a credential or redirect events.
+
+Webhooks: \`POST /v1/webhooks\` with \`events\` from incident.opened,
+incident.updated, incident.resolved and evidence.ready (the enum also accepts
+vendor.degraded, vendor.down, vendor.recovered, sla.breach and check.failed,
+which nothing emits yet). Deliveries are signed with HMAC-SHA256 when the
+subscription has a secret, carry X-Reliastra-Event, X-Reliastra-Delivery and
+X-Reliastra-Signature headers, and are retried on a fixed backoff
+(1m, 5m, 15m, 1h, 3h, then permanently failed). Configuration is session-only.
+`;
+
   const body = `# RELIASTRA - Full reference (llms-full.txt)
 
-> External Dependency Intelligence. Know when your dependencies fail. Prove what happened.
+> RELIASTRA probes the external services software depends on, records every
+> observation, confirms faults deterministically, and keeps evidence a third
+> party can verify without an account.
 > Canonical origin: ${SITE_URL}/ - all URLs below are absolute canonical URLs.
 
 ## Product
 
-RELIASTRA monitors third-party endpoints you configure ("dependencies"),
-correlates their failures with your reported incidents, attributes likely
-causes with a deterministic engine, and generates verifiable evidence reports.
-One paid plan: Developer ($9/mo, 25 dependencies, 30-second checks, 90-day
-retention, evidence + attribution + API). New accounts get a 14-day trial with
-full Developer capabilities; without a subscription they keep running on
-reduced limits (3 dependencies, 1-minute checks, 24h retention).
+RELIASTRA observes third-party endpoints you configure ("dependencies"),
+correlates their failures with incidents you report, classifies likely causes
+with a deterministic, versioned engine, and compiles evidence records that can
+be verified without an account. It is a tool for individual engineers: one
+plan, one seat, no organisation administration, no sales process.
+
+One paid plan: Developer ($9/month). New accounts get a 14-day trial with full
+Developer capabilities; without a subscription they keep running on reduced
+limits (3 dependencies, 1-minute checks, 24-hour retention).
+
+## What is observed, and from where (state this exactly)
+
+- Observation points deployed today: ${OBSERVATION_POINTS} (${OBSERVATION_LABEL}).
+- Default probe interval: ${PROBE_INTERVAL_SECONDS} seconds.
+- A \`region\` field appears on every observation. It names the worker that
+  ran the probe. With one observation point it carries no confirmation weight,
+  and RELIASTRA does not claim multi-region or quorum confirmation.
+- An incident opens after ${DETECTION.failureChecks} consecutive failed checks
+  (rule \`${DETECTION.ruleId}\`) and resolves after ${DETECTION.recoveryChecks}
+  consecutive successes (rule \`${DETECTION.recoveryRuleId}\`). One failed probe
+  is recorded, not declared.
+- Missed probes are never backfilled. Response bodies are never read or stored.
+- Public records currently target vendor-published status-site endpoints (for
+  example https://status.openai.com for OpenAI). The status text published at
+  those URLs is never read or reconciled; only the endpoint's HTTP behaviour is
+  measured. A vendor's API, models or routes are not covered unless an API
+  endpoint is listed as an observed target on the record.
+
+${SCOPE_NOTE}
+
+${programmatic}
 
 ## Differentiation from uptime monitoring
 
 | Uptime monitoring | RELIASTRA |
 |---|---|
-| Watches your services | Watches your vendors' APIs |
-| Alerts "checkout is down" | Answers "was it you or Stripe?" |
-| Vendor status page as evidence | Independent scheduled probes as evidence |
-| Single-perspective timeline | Your incidents + vendor observations on one timeline |
-| Screenshots for SLA claims | Checksummed, verifiable fault reports for SLA claims |
+| Watches your services | Watches the third-party services your software calls |
+| Alerts "checkout is down" | Answers "was it you or the dependency?" |
+| Your own vantage point | A vantage point outside both your network and the vendor's |
+| Vendor status page as evidence | Independent scheduled probes, retained as records |
+| Screenshots for SLA claims | Checksummed, third-party-verifiable fault records |
+
+What RELIASTRA does not do: it does not instrument the vendor's internal
+systems, it does not replace application tracing, and it does not tell you why
+a dependency failed.
 
 ## Documentation map
 
-- Docs home: ${SITE_URL}/docs
-- Quickstart: ${SITE_URL}/docs/quickstart
-- Monitoring: ${SITE_URL}/docs/monitoring
-- Evidence: ${SITE_URL}/docs/evidence
-- API: ${SITE_URL}/docs/api
+${docsMap}
 
 ## Glossary (canonical definitions)
 
@@ -133,12 +228,13 @@ ${categories}
 
 ${research}
 
-## Vendor tracking
+## Public observatory
 
-- Index: ${SITE_URL}/track
-- Detail pattern: ${SITE_URL}/track/{vendor} (only for vendors with real telemetry; empty/fabricated vendors are never generated)
-- Incident pattern: ${SITE_URL}/track/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist
-- Each vendor page exposes: current state, 1h/6h/24h/7d/30d/90d availability windows with observation counts, latency (mean/p95), monitored endpoints with regions, incident history, methodology note, refresh cadence (60s), all timestamps UTC.
+- Index: ${SITE_URL}/observatory
+- Detail pattern: ${SITE_URL}/observatory/{vendor} (only for vendors with real telemetry; empty or fabricated vendors are never generated)
+- Incident pattern: ${SITE_URL}/observatory/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist
+- Each vendor page exposes: current state, availability windows with the observation count behind every figure, latency (mean/p95), monitored endpoints with the observation point that probed them, incident history, methodology note, refresh cadence (60s), all timestamps UTC.
+- A window with no observations reads "insufficient data". It never reads 0% or 100%.
 - IMPORTANT - what the public records measure: scheduled HTTP GETs against the vendor's *listed public endpoint* (currently vendor status sites such as https://status.openai.com), recording HTTP status, latency and transport errors. A page never asserts that the vendor's API or product is up or down beyond the listed endpoint, and RELIASTRA does not read the status text the vendor publishes at those URLs. State word "Responding" = the endpoint answered with the expected response in the last five observations.
 
 ## Verification checklist for agents
@@ -153,7 +249,14 @@ ${research}
 
 ## Contact
 
-- support@reliastra.com, sales@reliastra.com, https://github.com/ReliaAstra
+- support@reliastra.com (product), security@reliastra.com (vulnerability reports),
+  https://github.com/ReliaAstra, https://github.com/EmmanuelAdesina (maintainer)
+
+## Retired URLs (308 redirects in next.config.ts)
+
+/track and /track/* -> /observatory and /observatory/*;
+/external-dependency-intelligence and /dependency-monitoring -> /product;
+/incident-evidence and /sla-evidence -> /product/evidence.
 `;
 
   return new Response(body, {

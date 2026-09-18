@@ -50,8 +50,8 @@ export default function ContactPage() {
           <h2>Support</h2>
           <p>
             <a href="mailto:support@reliastra.com">support@reliastra.com</a> - account,
-            monitoring, evidence and billing questions. Include your organization name
-            and, for incident questions, the dependency and window (UTC).
+            monitoring, evidence and billing questions. Include the email on the
+            account and, for incident questions, the dependency and window (UTC).
           </p>
           <h2>Billing</h2>
           <p>

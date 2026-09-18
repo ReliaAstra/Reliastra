@@ -82,6 +82,28 @@ class ConflictException(AppException):
         )
 
 
+class ArtifactMissingException(AppException):
+    """A stored object that a record points at is not in storage.
+
+    409 rather than 500. The request was well-formed and the record exists; it
+    is the record's own state that makes the artifact impossible to serve, and
+    the remedy ("regenerate it") is something the caller can act on. A generic
+    500 would say "we broke", which is true but not actionable.
+    """
+
+    def __init__(
+        self,
+        message: str = "The stored artifact is missing from object storage",
+        details: dict[str, Any] | list[dict[str, Any]] | None = None,
+    ) -> None:
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_409_CONFLICT,
+            code="ARTIFACT_MISSING",
+            details=details,
+        )
+
+
 class RateLimitExceededException(AppException):
     def __init__(
         self,

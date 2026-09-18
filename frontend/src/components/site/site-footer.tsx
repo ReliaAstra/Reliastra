@@ -25,11 +25,10 @@ export function SiteFooter() {
             <Link href={PUBLIC_ROUTES.home} aria-label="RELIASTRA home">
               <Wordmark size="lg" />
             </Link>
-            <p className="max-w-[34ch] text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
-              External Dependency Intelligence. RELIASTRA observes the third-party
-              infrastructure your business runs on, attributes failures to the
-              service responsible, and produces evidence that holds up outside
-              your own logs.
+            <p className="max-w-[36ch] text-[14px] leading-[1.65] text-[var(--ob-text-3)]">
+              RELIASTRA probes the external services your software depends on,
+              records every observation, confirms faults deterministically, and
+              keeps evidence that holds up outside your own logs.
             </p>
             <dl className="flex flex-col gap-3 pt-2">
               <div className="flex gap-3">
@@ -44,10 +43,10 @@ export function SiteFooter() {
                 </dd>
               </div>
               <div className="flex gap-3">
-                <dt className="ob-label w-16 shrink-0 pt-[3px]">Sales</dt>
+                <dt className="ob-label w-16 shrink-0 pt-[3px]">Security</dt>
                 <dd className="text-[13px]">
-                  <a className="ob-link" href="mailto:sales@reliastra.com">
-                    sales@reliastra.com
+                  <a className="ob-link" href="mailto:security@reliastra.com">
+                    security@reliastra.com
                   </a>
                 </dd>
               </div>
@@ -92,16 +91,18 @@ export function SiteFooter() {
         </div>
 
         {/* Account entry point, stated explicitly. There is one kind of
-            account; a visitor should never have to guess. */}
+            account — an engineer's, not an organization's — and a visitor
+            should never have to guess that. */}
         <div className="mt-16 border-t border-[var(--ob-line)] pt-10">
           <p className="ob-label">Start</p>
           <p className="mt-2 max-w-[52ch] text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
-            Monitor the external dependencies your software actually depends
-            on, and keep evidence of what happens to them.
+            Add one endpoint you already depend on, and read what the probe
+            records before deciding whether the rest is useful. One plan,
+            $9/month, no card to start.
           </p>
           <p className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
             <Link className="ob-link" href={AUTH_ROUTES.signup}>
-              Create an account
+              Start observing
             </Link>
             <Link className="ob-link" href={AUTH_ROUTES.login}>
               Sign in

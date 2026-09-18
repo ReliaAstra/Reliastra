@@ -20,10 +20,17 @@ const awsIamModule = { 'aws-iam-policy-evaluation-order': awsIamPolicyEvaluation
  * Body copy for `/research/[slug]`.
  *
  * Every claim here describes behaviour that exists in the codebase - check
- * scheduling, quorum rules, the SSRF policy, the check-state taxonomy, evidence
- * checksums and retention. Nothing is a projection, a benchmark or a statistic
- * we cannot reproduce. Where we do not have data we say so rather than
+ * scheduling, the confirmation rule, the SSRF policy, the check-state taxonomy,
+ * evidence checksums and retention. Nothing is a projection, a benchmark or a
+ * statistic we cannot reproduce. Where we do not have data we say so rather than
  * inventing a number, which is the standard the research agenda commits to.
+ *
+ * One rule holds across every paper: the deployed detector is the single
+ * observation point's consecutive-failure rule (`single.consecutive_failures`,
+ * threshold 2). The multi-point quorum exists in the backend as an alternative
+ * policy and is NOT deployed, so no paper here may describe it as though it
+ * were running. `src/lib/__tests__/methodology.test.tsx` fails the suite when a
+ * public surface forgets that.
  */
 
 export type ResearchArticleBody = {
@@ -90,8 +97,8 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         </P>
         <P>
           RELIASTRA checks each configured endpoint on a fixed interval and
-          writes every observation - latency, status code, regional origin and
-          outcome - to a retained history. When your own incident window
+          writes every observation - latency, status code, the region label of
+          the worker that issued it, and outcome - to a retained history. When your own incident window
           overlaps a period in which the dependency was independently observed
           failing, that overlap is a fact about two measured timelines rather
           than an inference from a status page.
@@ -110,17 +117,20 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
     evidence: (
       <ul>
         <LI>
-          Every observation is written with its regional origin, so a single
-          region&rsquo;s network path cannot masquerade as a vendor-wide outage.
+          The limits of a record are printed with the record. RELIASTRA issues
+          probes from one observation point today, so a stored row is a fact
+          about the path that probe took - it is never presented as a
+          vendor-wide verdict, and the record says which observation point
+          produced it.
         </LI>
         <LI>
-          Observations are retained per plan - from 24 hours on Free up to 90
-          days on Pro, with custom retention on Enterprise - and pruned by
-          scheduled jobs rather than kept indefinitely.
+          Observations are retained for 90 days on the Developer plan, and for
+          24 hours once a trial ends without a subscription. Retention prunes
+          by scheduled job rather than keeping history indefinitely.
         </LI>
         <LI>
-          Generated evidence reports are checksummed and bound to the
-          organisation that produced them. A public verification reference
+          Generated evidence records are checksummed and bound to the account
+          that produced them. A public verification reference
           confirms a report exists and matches its checksum without disclosing
           endpoints, headers or account details.
         </LI>
@@ -143,7 +153,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
       {
         href: researchRoute('how-reliastra-measures-vendor-reliability'),
         label: 'How RELIASTRA measures vendor reliability',
-        description: 'Regional origination, retries, quorum and the refusals.',
+        description: 'Origination, retries, the confirmation rule and the refusals.',
       },
       {
         href: researchRoute('reliastra-research-agenda'),
@@ -151,7 +161,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         description: 'What we intend to publish, and what we will not.',
       },
       {
-        href: PUBLIC_ROUTES.track,
+        href: PUBLIC_ROUTES.observatory,
         label: 'Track a vendor',
         description: 'Public, aggregated posture for vendors made public.',
       },
@@ -172,9 +182,9 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         <H>1. Checks are scheduled, not sampled on demand</H>
         <P>
           A single authoritative scheduler dispatches checks on a fixed interval
-          per dependency. Each due dependency produces one independent task per
-          configured region, published through a message broker and executed by
-          a worker. Checks never run inside the API process that serves your
+          per dependency. Each due dependency produces one task, published
+          through a message broker and executed by a worker, which stamps its
+          region label on the result it writes. Checks never run inside the API process that serves your
           dashboard, so a busy dashboard cannot delay a probe and a slow probe
           cannot block the API.
         </P>
@@ -221,9 +231,9 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           observations behind the vendor pages are stored, but the public
           pipeline does not open incident records. A vendor page&rsquo;s empty
           incident list is therefore a precise fact about the published-incident
-          channel - records that appear there are opened when the organisation
-          monitoring the dependency releases the evidence - and never a claim
-          that no outage occurred.
+          channel - records that appear there are opened when the account
+          holding the monitoring releases the evidence - and never a claim that
+          no outage occurred.
         </P>
 
         <H>4. Targets are validated before they are probed</H>
@@ -269,12 +279,12 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
     evidence: (
       <ul>
         <LI>
-          Each stored result records its region, outcome, status code, latency
-          and execution time.
+          Each stored result records its region label, outcome, status code,
+          latency and execution time.
         </LI>
         <LI>
-          Dispatch failures are counted and logged with the dependency, region
-          and failure reason, and the next scheduled attempt is left untouched
+          Dispatch failures are counted and logged with the dependency, the
+          worker and the failure reason, and the next scheduled attempt is left untouched
           so the check is retried rather than silently forgiven.
         </LI>
         <LI>
@@ -299,10 +309,10 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           than healthy.
         </P>
         <P>
-          Known limitations, stated plainly: the public observatory probes from
-          a single deployed origin, so it cannot distinguish a vendor-wide
-          outage from a failure of the path to one geography, and it cannot
-          corroborate recovery across regions it does not observe from. We do
+          Known limitations, stated plainly: RELIASTRA operates one
+          observation point, so its records cannot distinguish a vendor-wide
+          outage from a failure of the path that probe took, and they cannot
+          corroborate recovery from any vantage point it does not hold. We do
           not measure end-user experience, only server-to-server responses.
           Endpoints are not proxies for companies: a status site answers for
           itself, and an API route answers for one route. And a dependency that
@@ -406,7 +416,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
           </LI>
           <LI>
             <strong>Provenance.</strong> The observation is issued by RELIASTRA
-            infrastructure, stored with its region and error type, and is
+            infrastructure, stored with its region label and error type, and is
             timestamped in UTC. It cannot be edited after the fact from the
             public surface.
           </LI>
@@ -416,7 +426,7 @@ export const RESEARCH_ARTICLE_BODIES: Record<string, ResearchArticleBody> = {
         <P>
           The public observatory currently observes{' '}
           <CODE>https://status.openai.com</CODE> - OpenAI’s status site itself
-          - from a single observation region, on the cadence published on the
+          - from a single observation point, on the cadence published on the
           record page (measured, not assumed, because the configured interval
           is not exposed by any public endpoint). From that, the record can
           honestly answer:
@@ -512,7 +522,7 @@ done`}</PRE>
           You now have your own observation series with the same semantics as
           RELIASTRA’s - status code, latency, UTC time - which you can compare
           against the stored timeline on{' '}
-          <a href={SHARE_ROUTES.trackVendor('openai')}>the OpenAI record</a>{' '}
+          <a href={SHARE_ROUTES.observatoryVendor('openai')}>the OpenAI record</a>{' '}
           or the public API behind it:
         </P>
         <PRE>{`curl -s https://api.reliastra.com/v1/vendors/openai/timeline?window=24h | jq '.points[-5:]'`}</PRE>
@@ -560,8 +570,8 @@ done`}</PRE>
         <LI>
           Every figure cited in this article (15-second deadline, five redirect
           hops, expected status 200, the two-check persistence rule, the
-          60-second quorum window, the 15-minute staleness threshold) is the
-          shipped configuration described in{' '}
+          15-minute staleness threshold) is the shipped configuration described
+          in{' '}
           <a href={researchRoute('how-reliastra-measures-vendor-reliability')}>
             the measurement methodology
           </a>
@@ -569,10 +579,11 @@ done`}</PRE>
         </LI>
         <LI>
           The OpenAI record at{' '}
-          <a href={SHARE_ROUTES.trackVendor('openai')}>/track/openai</a>{' '}
+          <a href={SHARE_ROUTES.observatoryVendor('openai')}>/observatory/openai</a>{' '}
           shows the live observation series, the endpoint it applies to, and
-          the region it comes from - including its current “no public incident
-          records” state and what that absence does and does not mean.
+          the region label on its observations - including its current
+          “no public incident records” state and what that absence does and
+          does not mean.
         </LI>
         <LI>
           The curl recipe above measures the same target as the public record;
@@ -601,7 +612,7 @@ done`}</PRE>
     ),
     related: [
       {
-        href: SHARE_ROUTES.trackVendor('openai'),
+        href: SHARE_ROUTES.observatoryVendor('openai'),
         label: 'OpenAI - live reliability record',
         description: 'The measured record this article describes.',
       },
@@ -616,7 +627,7 @@ done`}</PRE>
         description: 'What to capture when the answer is “partly down.”',
       },
       {
-        href: PUBLIC_ROUTES.track,
+        href: PUBLIC_ROUTES.observatory,
         label: 'Public dependency index',
         description: 'Every measured provider, and which endpoint each row means.',
       },
@@ -744,10 +755,11 @@ done`}</PRE>
           If the dependency failure and the vendor silence need to support a
           credit claim, the same structure is what an SLA conversation accepts:
           an independent, timestamped record of the window - not a Slack
-          thread. That is the product function RELIASTRA automates: fixed-interval
-          observations of the dependencies you name, per-region results stored
-          as they happen, and a compiled, checksummed report for the window -
-          so the record exists whether or not anyone remembered to look.
+          thread. That is the product function RELIASTRA automates:
+          fixed-interval observations of the dependencies you name, every result
+          stored as it happens, and a compiled, checksummed record for the
+          window - so the record exists whether or not anyone remembered to
+          look.
         </P>
 
         <H>What this playbook does not do</H>
@@ -766,7 +778,7 @@ done`}</PRE>
         <LI>
           The three-record triangulation (own telemetry, vendor status
           reporting, independent observation) is the operating model of{' '}
-          <a href={PUBLIC_ROUTES.track}>the public observatory</a>; the public
+          <a href={PUBLIC_ROUTES.observatory}>the public observatory</a>; the public
           API and stored timelines cited in{' '}
           <a href={researchRoute('is-openai-down')}>the OpenAI article</a> are
           the same data customer monitoring gets, one trust layer out.
@@ -774,13 +786,13 @@ done`}</PRE>
         <LI>
           The correlation rule quoted here - overlapping windows with
           confidence levels, causation explicitly refused - is{' '}
-          <a href={PUBLIC_ROUTES.incidentEvidence}>the attribution design</a>,
+          <a href={PUBLIC_ROUTES.productEvidence}>the attribution design</a>,
           published so it can be checked.
         </LI>
         <LI>
           The record format above mirrors the fields of a compiled evidence
-          report: dependency, window, per-region observations, methodology,
-          checksum.
+          record: dependency, window, every observation in it, the detection
+          rule that applied, methodology version, checksums.
         </LI>
       </ul>
     ),
@@ -816,7 +828,7 @@ done`}</PRE>
         description: 'The rules behind the observations you cite.',
       },
       {
-        href: PUBLIC_ROUTES.slaEvidence,
+        href: PUBLIC_ROUTES.productEvidence,
         label: 'SLA evidence',
         description: 'What a credit conversation accepts, and what it does not.',
       },
@@ -842,7 +854,8 @@ done`}</PRE>
         <ul>
           <LI>
             <strong>Methodology.</strong> How checks are scheduled, origination,
-            retries, quorum rules, and the failure taxonomy. This is the
+            retries, the confirmation rule that applies today, and the failure
+            taxonomy. This is the
             minimum required for anyone to evaluate our numbers, so it is
             published first and kept current.
           </LI>
@@ -888,9 +901,9 @@ done`}</PRE>
             instead of estimating.
           </LI>
           <LI>
-            Evidence reports remain the property of the organisation that
-            generated them, and public verification confirms only that a report
-            exists and matches its checksum.
+            Evidence records remain the property of the account that generated
+            them, and public verification confirms only that a record exists and
+            matches its checksums.
           </LI>
         </ul>
 

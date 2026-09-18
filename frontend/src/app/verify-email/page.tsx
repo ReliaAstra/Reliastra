@@ -148,7 +148,7 @@ function VerifyEmailContent() {
         intro="Your address is verified."
       >
         <AuthAlert tone="ok">
-          Verification complete. Your organization is ready.
+          Verified. Your account is active.
         </AuthAlert>
         <Link
           href="/dashboard"
@@ -204,7 +204,7 @@ function VerifyEmailContent() {
           required
           autoFocus
           autoComplete="email"
-          placeholder="you@company.com"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />

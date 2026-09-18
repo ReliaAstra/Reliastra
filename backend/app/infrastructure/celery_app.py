@@ -86,6 +86,7 @@ celery_app = Celery(
         "app.modules.vendors.tasks",
         "app.modules.incidents.tasks",
         "app.modules.evidence.tasks",
+        "app.modules.webhooks.tasks",
         "app.modules.notifications.tasks",
         "app.modules.observations.tasks",
         "app.modules.api_keys.tasks",
@@ -193,6 +194,17 @@ celery_app.conf.update(
             "task": "app.modules.evidence.tasks.retry_failed_evidence_generation",
             "schedule": 300.0,
             "options": {"expires": 240},
+        },
+        # Webhook deliveries whose first attempt failed are retried on the
+        # engine's own backoff schedule (1m, 5m, 15m, 1h, 3h). Nothing else
+        # drains them: the retry record lives in the database, so a sweep is
+        # what turns it back into a request. Runs more often than the shortest
+        # backoff so a delivery is never late by more than a few minutes, and
+        # ``expires`` keeps a backlog from stampeding after an outage.
+        "webhook-delivery-retry": {
+            "task": "app.modules.webhooks.tasks.retry_pending_deliveries",
+            "schedule": 60.0,
+            "options": {"expires": 55},
         },
         "retention-cleanup-monthly": {
             "task": "app.modules.observations.tasks.retention_cleanup",

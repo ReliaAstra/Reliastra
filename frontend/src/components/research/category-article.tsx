@@ -80,9 +80,9 @@ export function ResearchCategoryArticlePage({
         methodology={content.methodology}
         related={content.related}
         vendorLinks={[
-          { href: PUBLIC_ROUTES.track, label: 'Public dependency index' },
+          { href: PUBLIC_ROUTES.observatory, label: 'Public dependency index' },
           { href: PUBLIC_ROUTES.research, label: 'Research home' },
-          { href: PUBLIC_ROUTES.externalDependencyIntelligence, label: 'External Dependency Intelligence' },
+          { href: PUBLIC_ROUTES.product, label: 'External Dependency Intelligence' },
         ]}
       >
         {content.body}

@@ -1,56 +1,55 @@
 import { SiteShell } from '@/components/site/site-shell';
 import { HomeHero } from './hero';
 import {
-  EvidenceArtifactSection,
-  EvidenceLayerSection,
+  EvidenceSection,
   FinalCTASection,
-  HowItWorksSection,
-  IncidentStorySection,
+  IncidentSection,
+  IntegrationSection,
   MaintainerSection,
   ObservationSection,
   ProblemSection,
   ReferenceSection,
 } from './sections';
 import { ResearchTeaser } from './research-teaser';
-import { LiveIntelligenceSection } from './live-intelligence';
+import { ObservatorySection } from './observatory-section';
 import { PricingSummary } from './pricing-summary';
 
 /**
  * The RELIASTRA homepage.
  *
- * The narrative is: claim, then show, then explain. The product is on screen
- * before the method is described, because the method is only interesting once
- * a visitor has seen what it produces.
+ * The page answers nine questions in the order an engineer asks them, and each
+ * section exists to answer one of them:
  *
- *   01 hero          the proposition
- *   02 problem       the dependencies you do not control
- *   03 RELIASTRA     the independent record
- *   04 observation   the topology, drawn
- *   05 incident      one incident, start to finished record
- *   06 evidence      the artifact, its chart, its verdict
- *   07 method        observe, correlate, document, prove
- *   08 research      the method, published
- *   09 public data   live independent vendor observation
- *   10 pricing       what it costs
- *      reference     definitions
- *   11 CTA           start
+ *   01 problem       why does this need to exist
+ *   02 observation   what does it actually measure
+ *   03 incident      when does it decide something is wrong
+ *   04 evidence      what do I get out of it
+ *   05 integration   how does it reach my systems
+ *   06 research      what is the method, and can I check it
+ *   07 observatory   is there real data behind this
+ *   08 pricing       what does it cost
+ *   09 reference     the questions this page raised, answered plainly
+ *   10 maintainer    who is behind it
  *
- * Entirely server-rendered. The only client JavaScript on this page is the
- * header (mobile menu + scroll state); the product visuals are static markup
- * and SVG, so they cost no hydration pass.
+ * There is no customer-logo band, no metric counters and no testimonial
+ * carousel, because the product has no customers to quote yet and a fabricated
+ * one would undermine the only thing it is selling. Where a section could not
+ * be backed by something real, it does not appear.
+ *
+ * Entirely server-rendered except the observatory's live refresh and the
+ * documentation code blocks' copy control. The header owns the rest.
  */
 export function HomeLanding() {
   return (
     <SiteShell overHero>
       <HomeHero />
       <ProblemSection />
-      <EvidenceLayerSection />
       <ObservationSection />
-      <IncidentStorySection />
-      <EvidenceArtifactSection />
-      <HowItWorksSection />
+      <IncidentSection />
+      <EvidenceSection />
+      <IntegrationSection />
       <ResearchTeaser />
-      <LiveIntelligenceSection />
+      <ObservatorySection />
       <PricingSummary />
       <ReferenceSection />
       <MaintainerSection />

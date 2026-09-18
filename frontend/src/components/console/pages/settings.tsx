@@ -62,7 +62,7 @@ export function SettingsPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-4 border-b border-[var(--obc-line)] py-4"><Link className="obc-link" href="/settings/notifications">Notifications →</Link><Link className="obc-link" href="/settings/billing">Billing →</Link></div>
+      <div className="flex flex-wrap gap-4 border-b border-[var(--obc-line)] py-4"><Link className="obc-link" href="/settings/developer">Developer →</Link><Link className="obc-link" href="/settings/notifications">Notifications →</Link><Link className="obc-link" href="/settings/billing">Billing →</Link></div>
       <Section title="Organization" hint="Displayed on evidence records and shared reports.">
         <form
           className="max-w-xl"
@@ -203,7 +203,9 @@ export function SettingsPage() {
                 ? `up to ${plan.max_dependencies}`
                 : current.dependencies != null
                   ? `up to ${current.dependencies}`
-                  : 'unlimited'}
+                  : plan
+                    ? 'unlimited'
+                    : 'not reported'}
             </Row>
             <Row label="Minimum check interval" mono>
               {intervalLabel(plan?.min_check_interval_seconds ?? null)}

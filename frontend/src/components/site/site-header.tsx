@@ -232,7 +232,7 @@ export function SiteHeader({
                   href={HEADER_ACTIONS.start.href}
                   className="ob-btn ob-btn-signal ob-btn-sm ob-btn-block"
                 >
-                  Start monitoring
+                  Start observing
                 </Link>
               </div>
             </div>

@@ -1,5 +1,7 @@
 /**
- * Server-side data access for the public observatory (`/track`, `/track/[vendor]`).
+ * Server-side data access for the public observatory (`/observatory`, `/observatory/[vendor]`).
+ * The module keeps its original name because two published research papers cite
+ * this path as an artifact URL; renaming the file would break their references.
  *
  * Every endpoint here is a real, unauthenticated route on the RELIASTRA API
  * (`app/modules/vendors/router.py` and the public half of

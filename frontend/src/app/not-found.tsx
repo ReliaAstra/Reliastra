@@ -60,7 +60,7 @@ export default function RootNotFound() {
             <Link href="/" className="ob-btn ob-btn-signal">
               Return to RELIASTRA
             </Link>
-            <Link href={PUBLIC_ROUTES.track} className="ob-btn ob-btn-outline">
+            <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">
               Public dependency index
             </Link>
           </div>

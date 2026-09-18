@@ -189,6 +189,24 @@ class IncidentService:
         except Exception as exc:
             logger.warning("Failed to dispatch alert for incident %s: %s", incident.id, exc)
 
+        # Webhook subscribers, on the same non-fatal footing as the alert above:
+        # the incident is recorded whether or not anybody's endpoint answers.
+        from app.modules.webhooks.dispatch import dispatch_event_after_commit
+
+        dispatch_event_after_commit(
+            session,
+            org_id,
+            "incident.opened",
+            {
+                "incident_id": str(incident.id),
+                "dependency_id": str(dependency_id),
+                "started_at": incident.started_at.isoformat(),
+                "severity": incident.severity,
+                "status": incident.status,
+                "detection": detection or {},
+            },
+        )
+
         try:
             from app.core.metrics import incidents_total
 
@@ -280,6 +298,26 @@ class IncidentService:
             event='incident.resolved', title='Incident resolved',
             body='The dependency has recovered.', metadata={'dependency_id': str(updated.dependency_id)},
         ))
+
+        from app.modules.webhooks.dispatch import dispatch_event_after_commit
+
+        dispatch_event_after_commit(
+            session,
+            updated.org_id,
+            "incident.resolved",
+            {
+                "incident_id": str(updated.id),
+                "dependency_id": str(updated.dependency_id),
+                "started_at": updated.started_at.isoformat(),
+                "resolved_at": (
+                    updated.resolved_at.isoformat() if updated.resolved_at else None
+                ),
+                "severity": updated.severity,
+                "status": updated.status,
+                "root_cause": updated.root_cause,
+                "detection": detection or {},
+            },
+        )
 
         await self.request_evidence_generation(session, updated)
 
@@ -421,9 +459,15 @@ class IncidentService:
         limit: int = 50,
         status: str | None = None,
         severity: str | None = None,
+        dependency_id: uuid.UUID | None = None,
     ) -> list[IncidentResponse]:
         incidents = await self.repository.list_for_org(
-            session, org_id, limit=limit, status_filter=status, severity_filter=severity
+            session,
+            org_id,
+            limit=limit,
+            status_filter=status,
+            severity_filter=severity,
+            dependency_filter=dependency_id,
         )
         return [IncidentResponse.model_validate(inc) for inc in incidents]
 
@@ -465,14 +509,33 @@ class IncidentService:
         if request.description is not None:
             update_kwargs["description"] = request.description
 
+        changed = sorted(update_kwargs)
         updated = (
             await self.repository.update(session, incident, **update_kwargs)
             if update_kwargs
             else incident
         )
         if resolving:
+            # Resolution has its own event; sending both would tell a consumer
+            # "updated" and "resolved" for one action.
             updated = await self.resolve_incident(
                 session, incident.id, org_id=org_id
+            )
+        elif changed:
+            from app.modules.webhooks.dispatch import dispatch_event_after_commit
+
+            dispatch_event_after_commit(
+                session,
+                org_id,
+                "incident.updated",
+                {
+                    "incident_id": str(updated.id),
+                    "dependency_id": str(updated.dependency_id),
+                    "changed": changed,
+                    "severity": updated.severity,
+                    "status": updated.status,
+                    "root_cause": updated.root_cause,
+                },
             )
         return IncidentResponse.model_validate(updated)
 

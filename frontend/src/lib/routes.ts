@@ -16,24 +16,17 @@
 export const PUBLIC_ROUTES = {
   home: '/',
   product: '/product',
-  creators: '/creators',
-  externalDependencyIntelligence: '/external-dependency-intelligence',
-  dependencyMonitoring: '/dependency-monitoring',
-  slaEvidence: '/sla-evidence',
-  incidentEvidence: '/incident-evidence',
-  track: '/track',
+  productEvidence: '/product/evidence',
+  observatory: '/observatory',
   pricing: '/pricing',
-  security: '/security',
-  docs: '/docs',
-  docsQuickstart: '/docs/quickstart',
-  docsMonitoring: '/docs/monitoring',
-  docsEvidence: '/docs/evidence',
-  docsApi: '/docs/api',
-  glossary: '/glossary',
+  creators: '/creators',
   research: '/research',
   about: '/about',
-  contact: '/contact',
+  glossary: '/glossary',
+  security: '/security',
   status: '/status',
+  contact: '/contact',
+  docs: '/docs',
   privacy: '/privacy',
   terms: '/terms',
   refundPolicy: '/refund-policy',
@@ -44,6 +37,57 @@ export const PUBLIC_ROUTES = {
    */
   support: '/support',
 } as const;
+
+/**
+ * Pages retired in the developer-first refurbishment.
+ *
+ * Each old URL now resolves to the page that absorbed its content, as a 308
+ * (see `next.config.ts`). They are listed here rather than written as string
+ * literals in the redirect map so the link-integrity test can assert that no
+ * navigation entry, sitemap entry or body link points at a URL that only
+ * redirects.
+ *
+ * The consolidation itself: four capability pages made three different claims
+ * about the same two things (monitoring and evidence), each with its own
+ * metadata, its own diagram and a different description of the detection rule.
+ * One product page now owns that explanation, and `/product/evidence` owns the
+ * artifact. `/track` became `/observatory` because that is what the surface
+ * actually is - a public instrument, not a vendor directory.
+ */
+export const RETIRED_ROUTES = {
+  externalDependencyIntelligence: '/external-dependency-intelligence',
+  dependencyMonitoring: '/dependency-monitoring',
+  incidentEvidence: '/incident-evidence',
+  slaEvidence: '/sla-evidence',
+  track: '/track',
+  vendorTracking: '/vendor-tracking',
+} as const;
+
+/**
+ * Documentation routes.
+ *
+ * One entry per published guide, keyed by slug. `src/lib/docs/corpus.ts` holds
+ * the content and is the list `generateStaticParams` reads, so this object and
+ * the corpus are checked against each other by the docs test: a guide cannot
+ * exist in one and not the other.
+ */
+export const DOCS_ROUTES = {
+  index: '/docs',
+  quickstart: '/docs/quickstart',
+  concepts: '/docs/concepts',
+  configuration: '/docs/configuration',
+  monitoring: '/docs/monitoring',
+  incidents: '/docs/incidents',
+  evidence: '/docs/evidence',
+  verification: '/docs/verification',
+  api: '/docs/api',
+  cli: '/docs/cli',
+  webhooks: '/docs/webhooks',
+  methodology: '/docs/methodology',
+  security: '/docs/security',
+} as const;
+
+export type DocsSlug = Exclude<keyof typeof DOCS_ROUTES, 'index'>;
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 
@@ -64,6 +108,7 @@ export const CONSOLE_ROUTES = {
   evidence: '/evidence',
   onboarding: '/onboarding',
   settings: '/settings',
+  developer: '/settings/developer',
   billing: '/settings/billing',
   notifications: '/settings/notifications',
 } as const;
@@ -88,15 +133,16 @@ export const ADMIN_ROUTES = {
 
 export const SHARE_ROUTES = {
   report: (token: string) => `/reports/${token}`,
-  trackVendor: (vendor: string) => `/track/${vendor}`,
+  /** The public record for one measured vendor. */
+  observatoryVendor: (vendor: string) => `/observatory/${encodeURIComponent(vendor)}`,
   /**
    * Permanent public incident record for one measured vendor. The URL is
    * derived from the incident id exactly as the measurement API returns it,
    * so an incident record is stable forever: the list page is where freshness
    * lives, the incident page is a historical artifact and never re-truthed.
    */
-  trackIncident: (vendor: string, incidentId: string) =>
-    `/track/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,
+  observatoryIncident: (vendor: string, incidentId: string) =>
+    `/observatory/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,
   /**
    * Canonical creator referral URL. Technical creators share this;
    * `/r/{code}` records the click, sets the attribution cookie, and
@@ -369,10 +415,34 @@ export function isResearchSlug(slug: string): slug is ResearchSlug {
  */
 export const CREATORS_ROUTE = '/creators' as const;
 
+// ── Documentation ───────────────────────────────────────────────────────────
+
+/**
+ * A documentation URL.
+ *
+ * Docs are addressed as `/docs/{slug}` for every guide except the index, and
+ * the slug list lives in `lib/docs/corpus.ts` - the same list
+ * `generateStaticParams` reads. A guide therefore cannot exist in the sidebar
+ * and not as a route, which is the failure this replaces: the previous docs
+ * set was five hand-written pages whose side navigation was a second,
+ * hand-maintained list.
+ */
+export function docsRoute(slug: string): string {
+  return slug === 'index' ? PUBLIC_ROUTES.docs : `${PUBLIC_ROUTES.docs}/${slug}`;
+}
+
 // ── External ────────────────────────────────────────────────────────────────
 
 export const EXTERNAL_LINKS = {
   github: 'https://github.com/ReliaAstra',
+  /**
+   * The API origin. Not `reliastra.com/api`: the backend answers on its own
+   * hostname, and `lib/backend-proxy.ts` proxies the console to the same one.
+   * Machine-readable surfaces (llms.txt, llms-full.txt, the docs) state the
+   * endpoint a caller actually has to reach, so the origin lives here once
+   * instead of being spelled out per page.
+   */
+  api: 'https://api.reliastra.com',
   billingEmail: 'mailto:billing@reliastra.com?subject=Pro%20plan%20pricing',
 } as const;
 
@@ -399,9 +469,9 @@ export const LANDING_SECTIONS = [
   'observation',
   'incident',
   'evidence',
-  'how-it-works',
+  'integration',
   'research',
-  'public-intelligence',
+  'observatory',
   'pricing',
   'reference',
   'maintainer',

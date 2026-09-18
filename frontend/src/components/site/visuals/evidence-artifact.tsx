@@ -32,7 +32,11 @@ import {
 
 const REPORT = {
   reference: 'RA-20251114-PAYMENTSAP-E0B13',
-  preparedFor: 'Northwind Commerce Ltd',
+  // Deliberately not a company-sounding name: an illustrative record that
+  // names a plausible customer is the one thing a reader cannot tell from a
+  // real one at a glance. The panel is labelled illustrative, and the value
+  // reads as a placeholder beside the `.example` endpoint it measures.
+  preparedFor: 'example-org',
   orgId: 'a41d6c02-3e88-4f17-9a25-7b6c0d1e5f92',
   recordState: 'Final · incident resolved',
   issued: '14 Nov 2025, 10:02:11 UTC',

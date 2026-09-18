@@ -1315,6 +1315,31 @@ class EvidenceService:
                 exc,
             )
 
+        # The artifact is retrievable from this moment, so `evidence.ready` is
+        # sent here rather than when generation was requested: a subscriber that
+        # acts on the event can immediately call the API for it. Non-fatal, like
+        # the alert above - an unreachable subscriber must not fail generation.
+        from app.modules.webhooks.dispatch import dispatch_event_after_commit
+
+        dispatch_event_after_commit(
+            session,
+            incident.org_id,
+            "evidence.ready",
+            {
+                "report_id": str(report.id),
+                "incident_id": str(incident.id),
+                "dependency_id": str(incident.dependency_id),
+                "verification_id": verification_id,
+                "checksum": report.checksum,
+                "generated_at": (
+                    report.generated_at.isoformat() if report.generated_at else None
+                ),
+                "expires_at": (
+                    report.expires_at.isoformat() if report.expires_at else None
+                ),
+            },
+        )
+
     # ── read paths ────────────────────────────────────────────────────────
 
     async def list_reports(
@@ -1332,6 +1357,7 @@ class EvidenceService:
         deleted from the bucket is a broken artifact and must be reported as
         one - issuing a link that 404s would be worse than an error.
         """
+        from app.core.exceptions import ArtifactMissingException
         from app.infrastructure.storage import StorageObjectMissing
 
         report = await self.repository.get_by_id(session, report_id)
@@ -1341,9 +1367,10 @@ class EvidenceService:
         try:
             stored = storage_client.stat_object(report.file_path)
         except StorageObjectMissing as exc:
-            raise EvidenceGenerationError(
+            raise ArtifactMissingException(
                 f"The stored artifact for report {report.id} is missing from "
-                "object storage. Regenerate the report to restore it."
+                "object storage. Regenerate the report to restore it.",
+                details=[{"field": "report_id", "issue": "artifact_missing"}],
             ) from exc
 
         if int(stored.get("size_bytes") or 0) != int(report.file_size_bytes):
@@ -1358,7 +1385,63 @@ class EvidenceService:
         data["download_url"] = storage_client.get_presigned_url(
             report.file_path, expires_seconds=3600
         )
+
+        # Attach the path from this artifact back to its own verification
+        # record. Without it the CLI (and the console) can retrieve a document
+        # but cannot answer the question the document exists to answer - "is
+        # this what RELIASTRA issued?" - without the operator finding the
+        # verification id inside the PDF and typing it.
+        snapshot = await self.snapshot_repository.get_by_report_checksum(
+            session, report.checksum
+        )
+        if snapshot is not None:
+            data["verification_id"] = snapshot.verification_id
+            data["verification_url"] = design.verification_url(
+                snapshot.verification_id
+            )
+            data["data_hash"] = snapshot.data_hash
+            data["methodology_version"] = snapshot.methodology_version
+            data["signed"] = snapshot.signature is not None
+            data["signature_alg"] = snapshot.signature_alg
+
         return EvidenceReportDownloadResponse.model_validate(data)
+
+    async def get_report_artifact(
+        self, session: AsyncSession, org_id: uuid.UUID, report_id: uuid.UUID
+    ) -> tuple[bytes, str, str]:
+        """Read a report's rendered bytes for the account that owns it.
+
+        Returns ``(payload, filename, checksum)``. The same three checks as the
+        metadata path apply, in the same order: the report must belong to this
+        account, and the stored object must actually exist - a record whose
+        artifact is gone is a broken artifact, and streaming an empty response
+        would report that as a successful download.
+        """
+        from app.core.exceptions import ArtifactMissingException
+        from app.infrastructure.storage import StorageObjectMissing
+
+        report = await self.repository.get_by_id(session, report_id)
+        if not report or report.org_id != org_id:
+            raise ResourceNotFoundException("Evidence report not found")
+
+        try:
+            payload = storage_client.download_bytes(report.file_path)
+        except StorageObjectMissing as exc:
+            raise ArtifactMissingException(
+                f"The stored artifact for report {report.id} is missing from "
+                "object storage. Regenerate the report to restore it.",
+                details=[{"field": "report_id", "issue": "artifact_missing"}],
+            ) from exc
+
+        if len(payload) != int(report.file_size_bytes):
+            logger.warning(
+                "Stored artifact for report %s is %d bytes; the record says %s",
+                report.id,
+                len(payload),
+                report.file_size_bytes,
+            )
+
+        return payload, f"reliastra-evidence-{report.id}.pdf", report.checksum
 
     async def regenerate_report(
         self, session: AsyncSession, org_id: uuid.UUID, report_id: uuid.UUID

@@ -19,12 +19,12 @@ const SECTIONS = [
   { title: 'Where refunds are sent', body: COMMERCIAL_COPY.refundDestination },
   {
     title: 'Processing',
-    body: 'Issued refunds are processed by Paystack to the original payment method. The corresponding billing history row is marked refunded. Partner commissions on a refunded payment are reversed.',
+    body: 'Issued refunds are processed by Paystack to the original payment method. The corresponding billing history row is marked refunded. Creator rewards on a refunded payment are reversed.',
   },
   { title: 'Cancellation versus refund', body: COMMERCIAL_COPY.cancellationVersusRefund },
   {
     title: 'Promotional and discounted subscriptions',
-    body: 'If a discounted or promotional payment is refunded, the refund is of the amount actually collected. Partner commissions on that payment are reversed.',
+    body: 'If a discounted or promotional payment is refunded, the refund is of the amount actually collected. Creator rewards on that payment are reversed.',
   },
   { title: 'Trial', body: COMMERCIAL_COPY.trialSummary },
   { title: 'After the trial', body: COMMERCIAL_COPY.trialEndSummary },

@@ -141,10 +141,10 @@ function CustomerLoginPageContent() {
     <AuthShell
       eyebrow="Customer sign in"
       title="Sign in"
-      intro="Open your organization’s console."
+      intro="Open your console."
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
-          One account for the whole console.
+          One account. The console, the API and the CLI all use it.
         </p>
       }
     >
@@ -158,12 +158,12 @@ function CustomerLoginPageContent() {
       >
         <Field
           id="email"
-          label="Work email"
+          label="Email"
           type="email"
           autoComplete="email"
           autoFocus
           required
-          placeholder="you@company.com"
+          placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -200,7 +200,7 @@ function CustomerLoginPageContent() {
       <p className="mt-7 text-[13.5px] text-[var(--ob-text-3)]">
         New to RELIASTRA?{' '}
         <Link href={AUTH_ROUTES.signup} className="ob-link">
-          Create an organization
+          Create an account
         </Link>
       </p>
       <p className="mt-3 text-[12.5px] leading-[1.6] text-[var(--ob-text-4)]">

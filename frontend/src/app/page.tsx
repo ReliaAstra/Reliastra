@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { HomeLanding } from '@/components/site/home/home-landing';
+import { HOME_DEFINITIONS } from '@/components/site/home/sections';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
   SITE_URL,
@@ -10,48 +11,26 @@ import {
   websiteJsonLd,
 } from '@/lib/seo';
 
-const HOME_FAQS = [
-  {
-    q: 'How is RELIASTRA different from uptime monitoring?',
-    a: 'Uptime monitors check your own infrastructure. RELIASTRA monitors the third-party APIs you depend on from its own infrastructure, correlates their degradation with your incidents, and generates evidence reports you can send to a vendor.',
-  },
-  {
-    q: 'What counts as an independent observation?',
-    a: 'A check issued from RELIASTRA infrastructure, separate from yours and the vendor’s, recorded with its timestamp, region, status code and latency.',
-  },
-  {
-    q: 'Which vendors can RELIASTRA monitor?',
-    a: 'Any HTTP endpoint that returns a status code.',
-  },
-  {
-    q: 'What is in an evidence report?',
-    a: 'The incident window, the dependency, the regions that observed it, the retained observations, the attribution result and a SHA-256 checksum of the report.',
-  },
-  {
-    q: 'Who can see my monitoring data?',
-    a: 'Only your account. Monitoring data and evidence reports are never shared with the vendors being measured.',
-  },
-];
 
 export const metadata: Metadata = {
-  title: 'RELIASTRA - External Dependency Intelligence',
+  title: 'RELIASTRA - Observe external dependencies',
   description:
-    'Independent monitoring of the third-party APIs you depend on. Incidents attributed to the responsible dependency. Timestamped, checksummed evidence.',
+    'RELIASTRA probes the external services your software depends on, records every observation, confirms faults deterministically, and keeps a verifiable record of what happened.',
   alternates: { canonical: canonicalUrl('/') },
   robots: { index: true, follow: true },
   openGraph: {
-    title: 'RELIASTRA - External Dependency Intelligence',
+    title: 'RELIASTRA - Observe external dependencies',
     description:
-      'Independent monitoring of third-party APIs. Incident attribution. Timestamped, checksummed evidence.',
+      'Independent observation of the third-party APIs your software depends on. Deterministic fault confirmation. Verifiable evidence.',
     url: SITE_URL + '/',
     siteName: 'RELIASTRA',
     type: 'website',
-    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'RELIASTRA - External Dependency Intelligence' }],
+    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'RELIASTRA - observe external dependencies' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RELIASTRA - External Dependency Intelligence',
-    description: 'Monitor third-party APIs. Attribute incidents. Export evidence.',
+    title: 'RELIASTRA - Observe external dependencies',
+    description: 'Observe third-party APIs. Confirm faults. Keep verifiable evidence.',
     images: [`${SITE_URL}/opengraph-image.png`],
   },
 };
@@ -78,14 +57,16 @@ export default function Home() {
             '@type': 'WebPage',
             '@id': canonicalUrl('/'),
             url: canonicalUrl('/'),
-            name: 'RELIASTRA - External Dependency Intelligence',
+            name: 'RELIASTRA - Observe external dependencies',
             description:
-              'Monitor third-party APIs independently, attribute incidents, and generate SLA evidence.',
+              'Observe the external services software depends on, record every probe, and keep verifiable evidence.',
             isPartOf: { '@id': `${SITE_URL}/#website` },
             about: { '@id': `${SITE_URL}/#organization` },
             inLanguage: 'en',
           },
-          faqJsonLd(HOME_FAQS),
+          // Built from the definitions the page actually renders, so the
+          // structured data cannot describe a different product than the copy.
+          faqJsonLd(HOME_DEFINITIONS),
         ]}
       />
       {/* No-JS / minimal-crawler fallback: the SSR landing above already
@@ -94,19 +75,19 @@ export default function Home() {
       <noscript>
         <div>
           <p>
-            RELIASTRA - External Dependency Intelligence. Independent
-            monitoring of third-party APIs, incident attribution and evidence.
+            RELIASTRA observes the external services your software depends on:
+            independent probes, deterministic fault confirmation, and verifiable
+            evidence records.
           </p>
           <ul>
             <li><a href="/product">Product</a></li>
-            <li><a href="/external-dependency-intelligence">External Dependency Intelligence</a></li>
-            <li><a href="/dependency-monitoring">Dependency monitoring</a></li>
-            <li><a href="/sla-evidence">SLA evidence</a></li>
-            <li><a href="/incident-evidence">Incident evidence</a></li>
-            <li><a href="/track">Track vendors</a></li>
-            <li><a href="/pricing">Pricing</a></li>
-            <li><a href="/docs">Documentation</a></li>
+            <li><a href="/product/evidence">Evidence records</a></li>
+            <li><a href="/observatory">Public observatory</a></li>
+            <li><a href="/docs/quickstart">Quickstart</a></li>
+            <li><a href="/docs/methodology">Methodology</a></li>
             <li><a href="/research">Research</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+            <li><a href="/about">About</a></li>
           </ul>
         </div>
       </noscript>

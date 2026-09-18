@@ -436,6 +436,27 @@ export interface ApiKeyItem {
   created_at: string;
 }
 
+/** A webhook subscription. The URL is masked and the secret is only previewed. */
+export interface WebhookItem {
+  id: string;
+  name: string;
+  url_masked: string;
+  events: string[];
+  is_active: boolean;
+  secret_preview: string | null;
+  failure_count: number;
+  last_delivery_at: string | null;
+  created_at: string;
+}
+
+/** The result of a synthetic delivery, with what the consumer answered. */
+export interface WebhookTestResult {
+  success: boolean;
+  status_code: number | null;
+  response_body: string | null;
+  latency_ms: number;
+}
+
 export interface ApiKeyCreateResponse extends ApiKeyItem {
   /** Shown exactly once at creation; the backend stores only a hash. */
   full_key: string;

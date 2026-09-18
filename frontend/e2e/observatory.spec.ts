@@ -26,9 +26,9 @@ import { expect, test, type Page, type Request } from '@playwright/test';
  * observed), which are the two ends of the state space.
  */
 
-const RECORD = '/track/auth0';
-const EMPTY_RECORD = '/track/newrelic';
-const INDEX = '/track';
+const RECORD = '/observatory/auth0';
+const EMPTY_RECORD = '/observatory/newrelic';
+const INDEX = '/observatory';
 
 const VIEWPORTS = [
   { name: '375', width: 375, height: 812 },
@@ -338,7 +338,7 @@ test.describe('measurement integrity', () => {
     // rewrite the status line once the shell has flushed - the same is true of
     // /portal/[token] and /reports/[token]. What must hold regardless is that
     // the page states there is no record, invents nothing, and is not indexed.
-    const res = await page.goto('/track/not-a-real-vendor-zzz', { waitUntil: 'networkidle' });
+    const res = await page.goto('/observatory/not-a-real-vendor-zzz', { waitUntil: 'networkidle' });
     expect([200, 404]).toContain(res?.status());
     await expect(page.locator('body')).toContainText(/does not publish a record/i);
     const robots = await page.locator('meta[name="robots"]').first().getAttribute('content');
@@ -459,7 +459,7 @@ test.describe('seo', () => {
     expect(descriptions[0]).toMatch(/Independent/i);
 
     const canonical = head.match(/<link rel="canonical" href="([^"]+)"/);
-    expect(canonical?.[1]).toMatch(/\/track\/auth0$/);
+    expect(canonical?.[1]).toMatch(/\/observatory\/auth0$/);
 
     expect(head).toMatch(/property="og:title"/);
     expect(head).toMatch(/name="twitter:card"/);

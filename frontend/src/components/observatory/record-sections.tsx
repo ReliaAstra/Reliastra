@@ -43,14 +43,7 @@ import {
 } from './primitives';
 import { LiveObservation } from './live-observation';
 import { EvidenceRequest } from './evidence-request';
-import {
-  AUTH_ROUTES,
-  PUBLIC_ROUTES,
-  RESEARCH_ARTICLES,
-  SHARE_ROUTES,
-  researchHubRoute,
-  researchRoute,
-} from '@/lib/routes';
+import { DOCS_ROUTES, AUTH_ROUTES, PUBLIC_ROUTES, RESEARCH_ARTICLES, SHARE_ROUTES, researchHubRoute, researchRoute, } from '@/lib/routes';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    The vendor record, section by section.
@@ -362,7 +355,7 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
       index="01"
       id="current-observation"
       title="Current observation"
-      note="The most recent completed observation per region. One request, one response, one timestamp."
+      note="The most recent completed observation per region label. One request, one response, one timestamp."
       aside={
         <span className="ob-label text-right">
           {rows.length} region{rows.length === 1 ? '' : 's'} · region-scoped
@@ -377,8 +370,8 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
           from="lg"
           caption={
             rows.length >= 2
-              ? 'A region reporting no response is not automatically an outage: an incident is confirmed when independent observation points agree - two or more within the same 60-second window where a multi-origin fleet is in place, or consecutive failures from the single observation point under the deployed single-origin topology.'
-              : 'These observations come from a single origin, so they can show that the endpoint answered or did not - they cannot corroborate a vendor-wide outage, and no incident record is opened from them. A region reporting no response is a fact about this path, at this minute.'
+              ? 'Every row above is a region label, not a second opinion: RELIASTRA runs one observation point today, and nothing here is corroboration from an independent origin. A region reporting no response is a fact about the path that probe took, at that minute.'
+              : 'These observations come from a single observation point, so they can show that the endpoint answered or did not - they cannot corroborate a vendor-wide outage. A region reporting no response is a fact about this path, at this minute.'
           }
         />
       ) : (
@@ -571,7 +564,7 @@ export function NetworkSection({
       index="04"
       id="network"
       title="Observation network"
-      note="The observation regions scheduled for this dependency. An incident requires at least two regions to fail inside the same window."
+      note="The observation regions scheduled for this dependency, and the interval actually observed per region label. With one observation point deployed, a region label names the worker that ran the probe rather than a second vantage point."
     >
       <div className="flex flex-col gap-10">
         {children}
@@ -692,13 +685,13 @@ export function IncidentsSection({
       title="Observed incidents"
       note={
         <>
-          Public incident records for {vendorName} are published when the organisation holding the
-          monitoring releases an evidence report. The public probing pipeline itself stores
+          Public incident records for {vendorName} are published when the account holding the
+          monitoring releases an evidence record. The public probing pipeline itself stores
           endpoint observations; it does not open incident records, and this record is observed
           from{' '}
           {regionCount > 1
-            ? `${regionCount} origins`
-            : 'a single origin'}
+            ? `${regionCount} region labels on one observation point`
+            : 'a single observation point'}
           , so an empty list here is a statement about the public
           incident channel - never a claim that no outage occurred.
         </>
@@ -760,12 +753,13 @@ export function EvidenceSection({
       title="Evidence records"
       note={
         <>
-          The checksummed artifact behind an incident: observations, regions, timestamps.
-          Released to a named requester, not an open link.
+          The checksummed artifact behind an incident: the observations, the detection record,
+          the attribution result and their timestamps. Released to a named requester, not an
+          open link.
         </>
       }
       aside={
-        <Link href={PUBLIC_ROUTES.incidentEvidence} className="ob-link text-[13px]">
+        <Link href={PUBLIC_ROUTES.productEvidence} className="ob-link text-[13px]">
           What an evidence record contains
         </Link>
       }
@@ -826,7 +820,7 @@ export function EvidenceSection({
             them.
           </p>
           <p className="mt-3">
-            <Link href={PUBLIC_ROUTES.slaEvidence} className="ob-link">
+            <Link href={PUBLIC_ROUTES.productEvidence} className="ob-link">
               How evidence is used in an SLA claim
             </Link>
           </p>
@@ -878,7 +872,7 @@ export function MethodologySection({
           {regions.length ? (
             <span className="obs-num obs-num-sm">{regions.join(', ')}</span>
           ) : (
-            'RELIASTRA regions'
+            'the RELIASTRA observation point'
           )}
           . Where a listed endpoint is {detail.display_name}&apos;s public status site, the probe
           measures that site&apos;s own availability and response time as an HTTP service; the
@@ -886,7 +880,7 @@ export function MethodologySection({
         </SpecRow>
         <SpecRow term="Interval" wide>
           {cadenceSeconds
-            ? `About every ${cadenceSeconds} seconds per region, measured from the last hour of observations. `
+            ? `About every ${cadenceSeconds} seconds, measured from the spacing of observations in the last hour. `
             : 'Not derivable from the current window. '}
           The configured interval is not exposed publicly.
         </SpecRow>
@@ -917,8 +911,9 @@ export function MethodologySection({
           observations is insufficient data, never 100%.
         </SpecRow>
         <SpecRow term="Latency" wide>
-          Mean and 95th percentile of response times in the window, in milliseconds, across all
-          regions. The chart breaks the line where a bucket has no successful response.
+          Mean and 95th percentile of response times in the window, in milliseconds, across
+          every observation in it. The chart breaks the line where a bucket has no successful
+          response.
         </SpecRow>
         <SpecRow term="Freshness" wide>
           Rendered on the server and revalidated every 60 seconds. An observation older than 15
@@ -930,9 +925,9 @@ export function MethodologySection({
           degraded, and vice versa. Read both.
         </SpecRow>
         <SpecRow term="Limits" wide>
-          These figures describe the listed endpoints, observed from the listed regions. They are
-          not a statement about every service the vendor operates, about specific API routes or
-          models, or about your integration.
+          These figures describe the listed endpoints, observed from the listed region labels.
+          They are not a statement about every service the vendor operates, about specific API
+          routes or models, or about your integration.
         </SpecRow>
       </dl>
     </RecordSection>
@@ -1003,7 +998,7 @@ export function DistinctionSection({ record }: { record: VendorRecord }) {
         </SpecRow>
         <SpecRow term="Scope" wide>
           These observations describe the listed endpoints from the listed
-          regions. They are not a statement about every service{' '}
+          region labels. They are not a statement about every service{' '}
           {detail.display_name} operates, or about your specific integration.
         </SpecRow>
       </dl>
@@ -1099,7 +1094,7 @@ export function RelatedSection({
               {others.map((v) => (
                 <li key={v.id}>
                   <Link
-                    href={SHARE_ROUTES.trackVendor(v.vendor_name)}
+                    href={SHARE_ROUTES.observatoryVendor(v.vendor_name)}
                     className="group flex items-baseline justify-between gap-6 border-t border-[var(--ob-line)] py-3 transition-colors hover:border-[var(--ob-line-3)]"
                   >
                     <span className="text-[14px] text-[var(--ob-text)] transition-colors group-hover:text-[var(--ob-signal)]">
@@ -1111,7 +1106,7 @@ export function RelatedSection({
               ))}
               <li>
                 <Link
-                  href={PUBLIC_ROUTES.track}
+                  href={PUBLIC_ROUTES.observatory}
                   className="flex items-baseline gap-2 border-t border-[var(--ob-line)] py-3 text-[13px] text-[var(--ob-signal)]"
                 >
                   All tracked dependencies →
@@ -1142,10 +1137,10 @@ export function RelatedSection({
               </li>
             ))}
             {[
-              { href: PUBLIC_ROUTES.docsMonitoring, label: 'Monitoring documentation', kind: 'Docs' },
-              { href: PUBLIC_ROUTES.docsEvidence, label: 'Evidence documentation', kind: 'Docs' },
+              { href: DOCS_ROUTES.monitoring, label: 'Monitoring documentation', kind: 'Docs' },
+              { href: DOCS_ROUTES.evidence, label: 'Evidence documentation', kind: 'Docs' },
               {
-                href: PUBLIC_ROUTES.externalDependencyIntelligence,
+                href: PUBLIC_ROUTES.product,
                 label: 'External dependency intelligence',
                 kind: 'Concept',
               },
@@ -1189,7 +1184,7 @@ export function RecordCTA({ vendorName }: { vendorName: string }) {
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-                Start monitoring
+                Start observing
               </Link>
               <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
                 Pricing
@@ -1220,10 +1215,10 @@ export function RecordUnavailable({ vendorName }: { vendorName: string }) {
         {vendorName}.
       </p>
       <div className="mt-10 flex flex-wrap gap-3">
-        <Link href={SHARE_ROUTES.trackVendor(vendorName)} className="ob-btn ob-btn-outline">
+        <Link href={SHARE_ROUTES.observatoryVendor(vendorName)} className="ob-btn ob-btn-outline">
           Retry this record
         </Link>
-        <Link href={PUBLIC_ROUTES.track} className="ob-btn ob-btn-outline">
+        <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">
           All tracked dependencies
         </Link>
         <Link href={PUBLIC_ROUTES.status} className="ob-btn ob-btn-outline">
@@ -1231,8 +1226,8 @@ export function RecordUnavailable({ vendorName }: { vendorName: string }) {
         </Link>
       </div>
       <p className="ob-small mt-10 max-w-[62ch]">
-        If this persists, the platform status page reports whether the measurement network itself is
-        degraded. The default observation region is {DEFAULT_REGION}.
+        If this persists, the platform status page reports whether the measurement network itself
+        is degraded. The deployed observation point is {DEFAULT_REGION}.
       </p>
     </div>
   );

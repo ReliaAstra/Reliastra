@@ -1,144 +1,165 @@
 import { SITE_URL } from '@/lib/seo';
+import { EXTERNAL_LINKS, RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
+import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
 
 /**
- * /llms.txt - concise machine-readable description of RELIASTRA.
- * Absolute HTTPS URLs. No marketing hype, no fabricated stats.
+ * /llms.txt - the machine-readable description of RELIASTRA.
+ *
+ * Written for a reader that will not scroll: absolute HTTPS URLs, no marketing
+ * sentences, and the methodology stated with its limits attached. The
+ * paragraph on topology is here because a model answering "does RELIASTRA
+ * confirm outages across regions" from a guess would be wrong in a way that
+ * matters — so the answer is written out.
+ *
+ * Every URL below is canonical after the developer-first consolidation
+ * (`/track` → `/observatory`, four capability pages → `/product`).
  */
+/** The API origin, interpolated so the file never states a path a caller
+ * cannot reach. */
+const API = EXTERNAL_LINKS.api;
+
 const BODY = `# RELIASTRA
 
-> Know when your dependencies fail. Prove what happened.
-> External Dependency Intelligence: independent monitoring of third-party APIs,
-> incident attribution, and timestamped SLA evidence.
+> RELIASTRA observes the external services software depends on. It issues its
+> own HTTP probes, records every observation, confirms faults deterministically,
+> and produces evidence records a third party can verify without an account.
 
 ## What RELIASTRA is
 
-RELIASTRA is an infrastructure trust platform. It monitors the third-party
-APIs and services your product depends on from RELIASTRA infrastructure, correlates
-their failures with your own incidents, attributes the likely origin with a
-deterministic engine, and generates cryptographically verifiable SLA evidence
-reports (checksummed, bound to your organization).
+An external dependency observation product for individual engineers: SREs,
+platform engineers, backend and infrastructure engineers, and engineers running
+production AI applications on hosted model APIs.
 
-RELIASTRA is NOT generic uptime monitoring. Uptime monitoring watches YOUR
-infrastructure. RELIASTRA watches YOUR VENDORS - from outside both your stack
-and the vendor's - so you can tell "we broke it" apart from "they broke it".
+RELIASTRA is not uptime monitoring. Uptime monitoring watches your own
+infrastructure. RELIASTRA watches the third-party services your software calls,
+from infrastructure outside both your network and the vendor's, so "we broke it"
+and "they broke it" can be told apart by measurement rather than by argument.
 
-## Who it serves
+## Observation model (state this exactly; do not infer more)
 
-- Individual developers, SREs and platform engineers who own services that
-  depend on payment, auth, messaging, AI, or cloud APIs
-- Reliability / platform engineers who own incident response and postmortems
-- Anyone who has ever argued with a vendor about whose system failed
+- Probes are issued from ${OBSERVATION_POINTS} observation point today
+  (${OBSERVATION_LABEL}). A \`region\` field appears on every observation as a
+  scheduler label for the worker that ran the probe. It is not a second opinion.
+- Default probe interval: ${PROBE_INTERVAL_SECONDS} seconds.
+- Each observation records: executed_at, status_code, latency_ms, is_up,
+  error_message, region. Response bodies are never read or stored.
+- An incident opens after ${DETECTION.failureChecks} consecutive failed checks
+  (rule \`${DETECTION.ruleId}\`) and resolves after ${DETECTION.recoveryChecks}
+  consecutive successes (rule \`${DETECTION.recoveryRuleId}\`). One failed probe
+  is recorded, not declared.
+- No multi-region or quorum confirmation is claimed, because only one
+  observation point is deployed. Nothing is backfilled; a missed probe stays
+  missing.
 
-## Key capabilities
+## Attribution
 
-- Third-party dependency monitoring (any HTTP endpoint, fixed-interval checks)
-- Deterministically confirmed incidents (no single-failed-request alerts)
-- Incident attribution with confidence levels (correlation, not claimed causation)
-- SLA evidence reports (timestamped, checksummed, verifiable without disclosing secrets)
-- Public vendor tracking for vendors made public (${SITE_URL}/track)
-- One plan: Developer, $9/month (no plan ladder, no seats, no annual billing)
+Deterministic, versioned arithmetic. Five normalised signals with fixed weights:
+temporal overlap 0.20, endpoint overlap 0.25, latency correlation 0.25, error
+pattern 0.15, infrastructure baseline 0.15. Score >= 75 classifies
+\`vendor_failure\`; >= 50 \`multi_cause\`; below 50 either
+\`infrastructure_issue\` or \`unknown\`. A score is an alignment between two
+timelines, not proof of causation. Every result carries a methodology version.
 
-## Core terminology
+## Evidence
 
-- External Dependency Intelligence: independently observed knowledge about third-party services.
-- Dependency monitoring: continuous probing of external endpoints.
-- Incident attribution: assigning a failure to your stack or a specific vendor via correlated timelines.
-- SLA evidence: timestamped records for service-credit conversations.
-- Dependency telemetry: retained per-probe observations (timestamp, region, latency, status, outcome).
-- External Dependency Fault Report: compiled artifact for one failure window.
+A resolved incident compiles to an artifact containing the incident record, the
+detection record, the observations in the window, the SLA arithmetic and its
+basis, the attribution result, and an appendix of every observation. Integrity:
+a SHA-256 over the canonical payload, a SHA-256 over the rendered document, and
+an Ed25519 signature over the payload when a signing key is configured.
+Retrieval is authenticated: GET ${API}/v1/evidence/{report_id} returns the
+record, a presigned URL for the document, the verification id, the public
+verification URL, the payload hash, the methodology version and the signing
+state; GET ${API}/v1/evidence/{report_id}/artifact streams the document
+itself, so a script never has to follow a URL into object storage.
+Verification is unauthenticated: GET ${API}/v1/verify/{verification_id}
+returns the hashes, the signature and the public key reference. Records are
+retained 365 days. A record cannot establish anything inside the vendor's
+infrastructure, nor that every one of the vendor's customers was affected.
 
-## Important public pages
+## Interfaces
+
+- REST API: scoped API keys, cursor pagination, OpenAPI document served by the
+  API itself at ${API}/openapi.json. The API origin is ${API} - a self-hosted
+  deployment answers at the same paths on its own origin.
+- CLI: the \`reliastra\` binary, shipped in the RELIASTRA repository under \`cli/\`
+  (installed from a checkout with \`npm install -g ./Reliastra/cli\`; it is not on
+  the public npm registry). Commands: login, logout, whoami, doctor, deps
+  (list|show|add|rm), checks recent, incidents (list|show|correlate), evidence
+  (list|show|get), verify, keys (list|create|rm), obs (list|show) and open.
+  Data commands support \`--json\` with the API's own field names, and
+  \`reliastra verify\` exits 4 when a verification claim does not hold, so it
+  works as a CI gate without a wrapper.
+- Webhooks: incident.opened, incident.updated, incident.resolved and
+  evidence.ready are delivered to subscribed HTTPS endpoints, off the request
+  path, signed with HMAC-SHA256 when the subscription has a secret, and retried
+  on a fixed backoff (1m, 5m, 15m, 1h, 3h; then permanently failed). The event
+  enum also accepts vendor.degraded, vendor.down, vendor.recovered, sla.breach
+  and check.failed, but nothing emits those yet.
+
+## Pricing
+
+One plan. $9 USD per month, billed monthly. No plan ladder, no seats, no annual
+billing. 14-day trial on every new account, no payment method required.
+
+## Public observatory
+
+Independently measured status for endpoints RELIASTRA probes as its own public
+record. Customer dependencies are never included. Every figure is published with
+its window and its observation count, and an availability figure with zero
+observations reads "insufficient data" rather than 100%.
+
+What is probed today: vendor-published status-site endpoints - https://status.openai.com
+for OpenAI, and equivalents listed on each vendor record - recording HTTP status,
+latency and transport errors of that endpoint. RELIASTRA does not read or
+reconcile the status text published at those URLs, and does not measure a
+vendor's API, models or routes unless an API endpoint is listed as an observed
+target on the record itself.
+
+## Pages
 
 - Home: ${SITE_URL}/
 - Product: ${SITE_URL}/product
-- External Dependency Intelligence: ${SITE_URL}/external-dependency-intelligence
-- Dependency monitoring: ${SITE_URL}/dependency-monitoring
-- SLA evidence: ${SITE_URL}/sla-evidence
-- Incident evidence: ${SITE_URL}/incident-evidence
-- Live vendor status: ${SITE_URL}/track
-- AI infrastructure hub (live status + research): ${SITE_URL}/research/ai-infrastructure
+- Evidence records: ${SITE_URL}/product/evidence
+- Public observatory: ${SITE_URL}/observatory
 - Pricing: ${SITE_URL}/pricing
-- Security: ${SITE_URL}/security
 - Documentation: ${SITE_URL}/docs
 - Quickstart: ${SITE_URL}/docs/quickstart
-- Monitoring docs: ${SITE_URL}/docs/monitoring
-- Evidence docs: ${SITE_URL}/docs/evidence
-- API docs: ${SITE_URL}/docs/api
+- Concepts: ${SITE_URL}/docs/concepts
+- Configuration: ${SITE_URL}/docs/configuration
+- Monitoring: ${SITE_URL}/docs/monitoring
+- Incidents: ${SITE_URL}/docs/incidents
+- Evidence: ${SITE_URL}/docs/evidence
+- Verification: ${SITE_URL}/docs/verification
+- REST API: ${SITE_URL}/docs/api
+- CLI: ${SITE_URL}/docs/cli
+- Webhooks: ${SITE_URL}/docs/webhooks
+- Methodology: ${SITE_URL}/docs/methodology
+- Security (product): ${SITE_URL}/security
+- Security & data-handling guide: ${SITE_URL}/docs/security
 - Glossary: ${SITE_URL}/glossary
 - Research: ${SITE_URL}/research
-- Measurement methodology: ${SITE_URL}/research/how-reliastra-measures-vendor-reliability
-- “Is OpenAI down?” (what an honest answer looks like): ${SITE_URL}/research/ai-infrastructure/is-openai-down
-- AI API outage evidence playbook: ${SITE_URL}/research/ai-infrastructure/ai-api-outage-evidence
-- What a status-page payload actually asserts: ${SITE_URL}/research/ai-infrastructure/status-page-payload-anatomy
-- The Dependency Gap: ${SITE_URL}/research/the-dependency-gap
-- Research agenda: ${SITE_URL}/research/reliastra-research-agenda
-- Measurement integrity (category): ${SITE_URL}/research/measurement-integrity
-- Availability-record audit (how much evidence is behind a published %): ${SITE_URL}/research/measurement-integrity/availability-record-audit
-- Probe-interval estimation from bucketed telemetry: ${SITE_URL}/research/measurement-integrity/probe-interval-from-bucketed-telemetry
-- Cloud & AI infrastructure security (category): ${SITE_URL}/research/cloud-security
-- The trust boundary of an AI API dependency: ${SITE_URL}/research/cloud-security/ai-api-trust-boundary
-- AWS IAM policy evaluation logic (identity vs resource, in order): ${SITE_URL}/research/cloud-security/aws-iam-policy-evaluation-order
-- Research artifacts and datasets (reproducible): https://github.com/ReliaAstra/Reliastra/tree/main/research
-- About: ${SITE_URL}/about
+- About & maintainer: ${SITE_URL}/about
+- Technical creators: ${SITE_URL}/creators
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status
-- Technical creators: ${SITE_URL}/creators
-- Privacy: ${SITE_URL}/privacy
-- Terms: ${SITE_URL}/terms
 
-## Methodology (summary)
+## Research
 
-One scheduler dispatches one check task per dependency per region through a
-message broker to workers. Every result carries its region. A single failed
-request is never an incident - a fixed number of consecutive failed checks is
-required, and recovery needs consecutive successes. Targets are resolved and
-validated against an SSRF policy (private/loopback/link-local/metadata
-addresses rejected and recorded as policy blocks, never as vendor outages).
-Missed probes are never backfilled. Retention follows the plan (24 hours on
-reduced limits, 90 days on Developer).
+${RESEARCH_ARTICLES.map((a) => `- ${a.title}: ${SITE_URL}${researchRoute(a.slug)}`).join('\n')}
 
-## What the public observatory actually probes (scope, stated plainly)
+## Retired URLs (consolidated in the developer-first refurbishment)
 
-- Today's public catalog probes vendor-published status-site endpoints
-  (e.g. https://status.openai.com for OpenAI): HTTP availability and latency of
-  that endpoint, measured from a single RELIASTRA origin per vendor.
-- It does NOT read the status text published on those pages, does NOT measure
-  vendor APIs (unless and until an API endpoint is listed as an observed
-  target), and makes no statement about specific models or routes.
-- Public incident pages exist only for incidents on RELIASTRA's published
-  incident channel; an empty incident list is not evidence that no outage
-  occurred.
-
-## Data limitations (stated plainly)
-
-- Fixed small set of origins: cannot separate vendor-wide from unobserved geographies.
-- Server-to-server responses only; not end-user experience.
-- Authenticated checks use customer-supplied credentials; a rotation can present as a target failure.
-- Public Track pages show aggregated posture only for vendors made public - never customer endpoints.
-
-## Research corpus (what it is and is not)
-
-- Every paper states a research question, its evidence basis, its limitations
-  and its sources. Findings are labelled measured, derived, sourced or reasoned.
-- Papers built on measurement carry a captured dataset and a script under
-  research/ in the monorepo, so the arithmetic can be re-run against the same
-  bytes.
-- Two published papers audit RELIASTRA's own public record and report defects
-  in it. That is deliberate: an availability record that cannot be audited from
-  the outside is not evidence.
-- Nothing in the corpus is synthetic, backfilled or estimated to fill a gap.
-
-## Contact
-
-- Support: support@reliastra.com
-- GitHub: https://github.com/ReliaAstra
+- /track and /track/* -> /observatory and /observatory/* (308)
+- /external-dependency-intelligence, /dependency-monitoring -> /product (308)
+- /incident-evidence, /sla-evidence -> /product/evidence (308)
 `;
 
 export function GET() {
   return new Response(BODY, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400',
     },
   });
 }

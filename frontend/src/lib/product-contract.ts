@@ -145,6 +145,15 @@ export const OBSERVATION_POINT_COUNT = 1;
  */
 export const DETECTION_FAILURE_CHECKS = 2;
 
+/**
+ * Consecutive successful checks required before an open incident resolves.
+ * Mirrors `CONSECUTIVE_RECOVERY_CHECKS` in
+ * `backend/app/modules/checks/constants.py`. The recovery rule is symmetric on
+ * purpose: a threshold that opens on two failures but closes on one produces
+ * an incident log that flutters with the target.
+ */
+export const DETECTION_RECOVERY_CHECKS = 2;
+
 /** How the console names the single place measurements come from. */
 export const OBSERVATION_POINT_LABEL = 'RELIASTRA observation point';
 
@@ -327,6 +336,14 @@ export const EVIDENCE_FOOTER_FIELDS = [
 ] as const;
 
 export const EVIDENCE_EXPIRY_DAYS = 365;
+
+/**
+ * Schema version stamped on the compiled artifact. Mirrors
+ * `EVIDENCE_SCHEMA_VERSION` in `backend/app/modules/evidence/service.py`: the
+ * version moves only when the artifact's structure changes in a way a verifier
+ * would need to know about.
+ */
+export const EVIDENCE_SCHEMA_VERSION = '2.0';
 
 /* ── Check results ──────────────────────────────────────────────────────── */
 

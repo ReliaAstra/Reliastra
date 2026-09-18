@@ -35,6 +35,8 @@ import type {
   SupportTicketListResponse,
   UserMe,
   VendorStatus,
+  WebhookItem,
+  WebhookTestResult,
 } from './types';
 import { unwrapList } from './types';
 
@@ -535,6 +537,30 @@ export const api = {
     }),
 
   deleteApiKey: (id: string) => request<void>(`/api-keys/${id}`, { method: 'DELETE' }),
+
+  // ── Webhooks ─────────────────────────────────────────────────────────────
+  //
+  // Webhook configuration is session-only by design: the API refuses it to
+  // programmatic keys, so a leaked key cannot redirect an account's events to
+  // an endpoint somebody else controls. The console is where these changes are
+  // made, and the CLI does not offer them.
+
+  webhooks: () => request<WebhookItem[]>('/webhooks'),
+
+  createWebhook: (body: { name: string; url: string; events: string[]; secret?: string }) =>
+    request<WebhookItem>('/webhooks', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  deleteWebhook: (id: string) => request<void>(`/webhooks/${id}`, { method: 'DELETE' }),
+
+  testWebhook: (id: string) =>
+    request<WebhookTestResult>(`/webhooks/${id}/test`, {
+      method: 'POST',
+      body: JSON.stringify({ event: 'incident.opened' }),
+    }),
+
 
   // ── Billing (real Paystack flow) ────────────────────────────────────────
 

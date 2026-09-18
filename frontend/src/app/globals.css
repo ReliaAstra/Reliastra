@@ -1897,32 +1897,14 @@
   vertical-align: top;
 }
 
-/* ── Cinematic image treatment ──────────────────────────────────────────── */
-
-/* Photography is desaturated and darkened so type always wins the contrast
-   fight. The scrim is a flat gradient to black - not a colour wash. */
-.ob-photo {
-  filter: saturate(0.55) contrast(1.05) brightness(0.82);
-}
-.ob-scrim-bottom {
-  background: linear-gradient(
-    to top,
-    var(--ob-void) 0%,
-    rgba(8, 9, 10, 0.92) 22%,
-    rgba(8, 9, 10, 0.55) 52%,
-    rgba(8, 9, 10, 0.25) 78%,
-    rgba(8, 9, 10, 0.35) 100%
-  );
-}
-.ob-scrim-left {
-  background: linear-gradient(
-    to right,
-    rgba(8, 9, 10, 0.95) 0%,
-    rgba(8, 9, 10, 0.75) 40%,
-    rgba(8, 9, 10, 0.25) 75%,
-    rgba(8, 9, 10, 0.15) 100%
-  );
-}
+/* ── Removed: photographic treatment ──────────────────────────────────────
+   `.ob-photo`, `.ob-scrim-bottom` and `.ob-scrim-left` existed to desaturate
+   and darken stock photographs of data centres. The public site no longer
+   carries a photograph of anybody else's hardware: every visual on it is
+   drawn from the product's own vocabulary, so the treatment and its scrims
+   went with the images. The `public/media` directory was deleted in the same
+   change.
+   ───────────────────────────────────────────────────────────────────────── */
 
 /* Engineering rule marks: a 1px measure tick, used to separate data rows. */
 .ob-ticks {
@@ -2701,6 +2683,63 @@
   .ob-drift { transform: scale(1.06); }
   .ob-rise { opacity: 1; transform: none; }
 }
+
+/* ── Homepage hero: measurement field ─────────────────────────────────────
+   A ruled grid, drawn with gradients rather than an image: no request, no
+   CLS, and it reads as the graph paper of an instrument instead of as an
+   ambient "tech" texture. Two rules, one unit apart, faded out radially so
+   the field does not fight the type. */
+.ob-grid-field {
+  background-image:
+    linear-gradient(to right, rgba(242, 242, 238, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(242, 242, 238, 0.035) 1px, transparent 1px);
+  background-size: 76px 76px;
+  mask-image: radial-gradient(120% 90% at 78% 12%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(120% 90% at 78% 12%, #000 0%, transparent 72%);
+}
+
+/* ── Observation ledger ───────────────────────────────────────────────────
+   The hero's product surface. A real record shape, rendered as markup: no
+   image to go stale, and the numbers in it are the fields the backend
+   actually stores. */
+.ob-ledger {
+  border: 1px solid var(--ob-line-2);
+  background: linear-gradient(180deg, var(--ob-base) 0%, var(--ob-void) 100%);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* The failed probes and the verdict arrive in sequence, so the eye reads the
+   record the way the system produced it. Nothing here is decorative: with the
+   animation removed the panel is identical, which is what reduced-motion
+   users get. */
+@keyframes ob-ledger-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.ob-ledger-fail,
+.ob-ledger-verdict,
+.ob-ledger-record {
+  animation: ob-ledger-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ob-ledger-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.ob-ledger-pulse { animation: ob-ledger-pulse 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ob-ledger-fail,
+  .ob-ledger-verdict,
+  .ob-ledger-record { animation: none; opacity: 1; transform: none; }
+  .ob-ledger-pulse { animation: none; }
+}
+
+/* Code blocks inside a three-up grid: keep the horizontal scroll contained to
+   the block, never to the page. */
+.ob-ledger .ob-mono,
+.ob-scroll-x code { font-variant-numeric: tabular-nums; }
 
 /* ── Print: research articles must survive being printed for a review ───── */
 @media print {

@@ -51,16 +51,53 @@ const nextConfig: NextConfig = {
         destination: "/opengraph-image.png",
         permanent: true,
       },
-      // "Vendor Tracking" is the public label for the Track experience, but
-      // the canonical route is `/track` - redirect instead of duplicating.
+      // ── Developer-first consolidation (this refurbishment) ───────────
+      // Four capability pages made three different claims about the same two
+      // subjects, each with its own metadata and its own description of the
+      // detection rule. One product page owns that explanation now, and
+      // `/product/evidence` owns the artifact. `/track` became `/observatory`
+      // because the surface is a public measurement instrument, not a vendor
+      // directory. Permanent (308) so the equity moves with the content.
+      {
+        source: "/external-dependency-intelligence",
+        destination: "/product",
+        permanent: true,
+      },
+      {
+        source: "/dependency-monitoring",
+        destination: "/product",
+        permanent: true,
+      },
+      {
+        source: "/incident-evidence",
+        destination: "/product/evidence",
+        permanent: true,
+      },
+      {
+        source: "/sla-evidence",
+        destination: "/product/evidence",
+        permanent: true,
+      },
+      // Public observatory. Records keep their path under the new root, so a
+      // URL someone cited in an incident review still resolves.
+      {
+        source: "/track",
+        destination: "/observatory",
+        permanent: true,
+      },
+      {
+        source: "/track/:path*",
+        destination: "/observatory/:path*",
+        permanent: true,
+      },
       {
         source: "/vendor-tracking",
-        destination: "/track",
+        destination: "/observatory",
         permanent: true,
       },
       {
         source: "/vendor-tracking/:path*",
-        destination: "/track/:path*",
+        destination: "/observatory/:path*",
         permanent: true,
       },
       // ── Removed B2B surfaces ──────────────────────────────────────────

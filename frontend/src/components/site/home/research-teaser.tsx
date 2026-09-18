@@ -16,19 +16,23 @@ import { formatArticleDate, readingTimeFor } from '@/lib/research-meta';
  * `RESEARCH_ARTICLES`, so this section cannot link to a slug that 404s.
  */
 export function ResearchTeaser() {
-  const [lead, ...rest] = RESEARCH_ARTICLES;
+  // The lead is the founding paper rather than the newest one: a visitor
+  // arriving cold needs the problem statement before the measurement audits,
+  // and the index beside it carries the recent work.
+  const lead = RESEARCH_ARTICLES.find((a) => a.slug === 'the-dependency-gap') ?? RESEARCH_ARTICLES[0];
+  const rest = RESEARCH_ARTICLES.filter((a) => a.slug !== lead.slug).slice(0, 4);
 
   return (
     <Section id="research" tone="void" aria-labelledby="research-title">
       <Container>
-        <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-5">
-            <Eyebrow index="08">Research</Eyebrow>
+            <Eyebrow index="06">Research</Eyebrow>
             <h2 id="research-title" className="ob-h2 max-w-[18ch]">
               Our method is published, so it can be checked.
             </h2>
           </div>
-          <p className="ob-body max-w-[42ch] md:text-right">
+          <p className="ob-body max-w-[46ch]">
             Measurement methodology and failure analysis, in the open.
           </p>
         </div>
@@ -55,8 +59,13 @@ export function ResearchTeaser() {
 
           {/* Index */}
           <div className="flex flex-col">
-            <p className="ob-label border-b border-[var(--ob-line)] pb-4">
-              Also published
+            <p className="ob-label flex items-baseline justify-between border-b border-[var(--ob-line)] pb-4">
+              <span>Also published</span>
+              {/* Entries, not papers. Five of the ten carry a corpus record
+                  with a research question and a methodology; the rest are
+                  briefs. Calling all ten "papers" is the inflation the
+                  research index exists to avoid. */}
+              <span>{RESEARCH_ARTICLES.length} entries</span>
             </p>
             {rest.map((article) => (
               <Link

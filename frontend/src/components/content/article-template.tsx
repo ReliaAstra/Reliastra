@@ -233,9 +233,9 @@ export function ArticleTemplate({
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-              Start monitoring
+              Start observing
             </Link>
-            <Link href={PUBLIC_ROUTES.track} className="ob-btn ob-btn-outline">
+            <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">
               Public dependency index
             </Link>
           </div>
