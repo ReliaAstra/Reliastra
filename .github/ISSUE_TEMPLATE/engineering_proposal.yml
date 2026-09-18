@@ -1,0 +1,52 @@
+name: Propose engineering work
+description: Define a testable change to telemetry, attribution, evidence, probes, APIs, or tooling.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Inspect the current implementation and search existing issues before proposing new work.
+        Use a Discussion for unresolved architectural questions once Discussions is enabled;
+        until then this form can capture the question. Say when you want design review; maintainers can relabel it as question.
+        Explain failure cases and alternatives. A counterexample is welcome; a feature pitch is not required.
+        Do not post vulnerabilities, secrets, customer data, or private infrastructure details here.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and why it matters
+      description: Describe a concrete limitation or failure mode and its effect on engineers using RELIASTRA.
+    validations:
+      required: true
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Existing implementation
+      description: Relevant modules, APIs, tests, and behavior already present. How is this different from existing capabilities or issues?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed scope and alternatives
+      description: Desired outcome, non-goals, design options, and unresolved questions. Do not assume the current methodology is correct.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and tests
+      description: Observable outcomes and tests that could disprove the proposed behavior. Include missing data and failure cases where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Security, compatibility, and operations
+      description: Consider auth/scopes, tenant isolation, SSRF, validation, rate limits, provenance, migrations, cost, replay safety, and rollback. State what is not applicable or not yet known.
+    validations:
+      required: true
+  - type: input
+    id: related
+    attributes:
+      label: Related discussion or issue
+      description: Link prior design review or investigation, if available.
