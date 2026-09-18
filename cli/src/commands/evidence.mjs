@@ -126,7 +126,11 @@ async function getEvidence({ args, flags, client, session, webUrls }) {
     return EXIT.usage;
   }
   const out = flags.out ?? `reliastra-evidence-${id}.pdf`;
-  const buffer = await client.download(`/v1/evidence/${encodeURIComponent(id)}/download`);
+  // The owner-addressed artifact route, not the public token-addressed
+  // `/download` (that one is the evidence gate, and it takes a report token
+  // rather than a report id). Streaming here means the CLI never has to follow
+  // a presigned URL onto object storage.
+  const buffer = await client.download(`/v1/evidence/${encodeURIComponent(id)}/artifact`);
   writeFileSync(out, buffer);
 
   // The hash of the bytes on disk, computed here rather than echoed from the

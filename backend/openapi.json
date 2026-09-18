@@ -1807,6 +1807,9 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "The stored artifact behind this record is missing from object storage. Regenerate the report to restore it."
           }
         }
       }
@@ -5996,6 +5999,54 @@
                 "schema": {}
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/evidence/{report_id}/artifact": {
+      "get": {
+        "tags": [
+          "Evidence"
+        ],
+        "summary": "Download Evidence Artifact",
+        "description": "Stream the artifact itself, to the account that owns it.\n\n``GET /v1/evidence/{report_id}`` answers with metadata and a presigned URL,\nwhich is the right shape for a browser: the bytes come from object storage\nwithout passing through this service. It is the wrong shape for a client\nthat is not a browser - a presigned URL is a third party's host, it expires,\nand the machine interface should not require a caller to follow a redirect\ninto somebody else's infrastructure to obtain a file this API already\nowns. So the bytes are served here too, under the same authorization as the\nrecord, and the CLI uses this route.\n\nDistinct from ``GET /v1/evidence/{report_token}/download``, which is the\npublic, token-addressed, owner-consented download for the evidence gate.\n'artifact' versus 'download' keeps the two from being confused with each\nother in a route table or a log.",
+        "operationId": "download_evidence_artifact_v1_evidence__report_id__artifact_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The rendered evidence artifact, streamed to its owner.",
+            "content": {
+              "application/pdf": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The stored artifact behind this record is missing from object storage. Regenerate the report to restore it."
           }
         }
       }

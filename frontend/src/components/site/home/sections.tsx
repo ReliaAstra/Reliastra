@@ -381,10 +381,10 @@ export function EvidenceSection() {
 
 /* ── 05 · Integration ───────────────────────────────────────────────────── */
 
-const CLI_SNIPPET = `$ reliastra deps add "Payments API" https://api.example.com/health \\
-    --interval 60
-$ reliastra checks recent --limit 5
-$ reliastra verify 8Kd2xQ7m --file evidence.pdf
+const CLI_SNIPPET = `$ reliastra incidents list --status open --web
+$ reliastra incidents show 9f1c8b0e --evidence
+$ reliastra evidence get 7c1d0a5f --out incident.pdf
+$ reliastra verify 8Kd2xQ7m --file incident.pdf
 # exit 0 · the file matches the record
 # exit 4 · a missing record, or a file that changed`;
 
@@ -394,11 +394,13 @@ const API_SNIPPET = `curl -sS https://api.reliastra.com/v1/incidents \\
 
 const HOOK_SNIPPET = `{
   "event": "incident.opened",
+  "timestamp": "2026-09-18T09:53:02.114+00:00",
   "data": {
     "incident_id": "9f1c8b0e-…",
     "dependency_id": "d4e5f6a7-…",
     "started_at": "2026-09-18T09:53:00Z",
-    "detection": { "rule": "single.consecutive_failures" }
+    "severity": "major",
+    "detection": { "rule": "single.consecutive_failures", "required": 2 }
   }
 }`;
 
@@ -426,7 +428,7 @@ export function IntegrationSection() {
               label: 'CLI',
               href: DOCS_ROUTES.cli,
               blurb:
-                'Login once, script the rest. `--json` emits the API’s own shape, and verification returns a status code so it works as a CI gate.',
+                'Login once, script the rest. Every record the CLI prints has a console page, `--json` emits the API’s own shape, and verification returns a status code so it works as a CI gate.',
               code: CLI_SNIPPET,
               lang: 'bash',
             },
@@ -442,7 +444,7 @@ export function IntegrationSection() {
               label: 'Webhooks',
               href: DOCS_ROUTES.webhooks,
               blurb:
-                'Incident opened, incident resolved, evidence ready. Retried with backoff, each delivery carrying an id you can deduplicate on.',
+                'Incident opened, updated, resolved, evidence ready. Signed with HMAC-SHA256, retried on a fixed backoff, each delivery carrying an id you can deduplicate on.',
               code: HOOK_SNIPPET,
               lang: 'json',
             },

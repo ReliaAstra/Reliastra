@@ -362,9 +362,15 @@ async def test_a_missing_artifact_is_reported_as_a_failure(
     pdf_name = _pdf_objects(evidence_storage)[0]
     evidence_storage.objects.pop(pdf_name)
 
-    with pytest.raises(EvidenceGenerationError) as excinfo:
+    from app.core.exceptions import ArtifactMissingException
+
+    # 409 and a machine-readable code, not a bare 500: the record is intact,
+    # the object behind it is not, and the caller can act on that.
+    with pytest.raises(ArtifactMissingException) as excinfo:
         await evidence_service.get_report_download(db_session, org_id, report.id)
     assert "missing from object storage" in str(excinfo.value)
+    assert excinfo.value.status_code == 409
+    assert excinfo.value.code == "ARTIFACT_MISSING"
 
 
 @pytest.mark.asyncio
@@ -400,13 +406,17 @@ async def test_a_plan_without_evidence_is_a_deliberate_state(
     )
     await db_session.commit()
 
-    dispatch = mocker.patch("app.infrastructure.after_commit.dispatch_after_commit")
+    # The generation publish is a Celery chain (drain the observation outbox,
+    # then generate). Asserting on the chain rather than on the after_commit
+    # primitive keeps this about *what was queued* - the primitive is also used
+    # for webhook dispatch, which a resolution legitimately does.
+    queued = mocker.patch("celery.chain")
     await incident_service.resolve_incident(db_session, incident.id, org_id=org_id)
     await db_session.commit()
     await db_session.refresh(incident)
 
     # Nothing is queued, so no job can retry and die three times.
-    dispatch.assert_not_called()
+    queued.assert_not_called()
     assert incident.evidence_status == EvidenceStatus.NOT_ENTITLED.value
     assert incident.status == IncidentStatus.RESOLVED.value
 

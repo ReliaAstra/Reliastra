@@ -108,6 +108,7 @@ export const CONSOLE_ROUTES = {
   evidence: '/evidence',
   onboarding: '/onboarding',
   settings: '/settings',
+  developer: '/settings/developer',
   billing: '/settings/billing',
   notifications: '/settings/notifications',
 } as const;

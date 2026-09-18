@@ -7,15 +7,18 @@ public verification of that record.
 No runtime dependencies. Node 18.17 or newer.
 
 ```bash
-npm install -g @reliastra/cli      # installs `reliastra`
+git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
+npm install -g ./Reliastra/cli      # installs `reliastra`
 reliastra --help
 ```
 
-Other ways to run it:
+The package is `cli/` in that repository. It is **not published to the public
+npm registry**, so `npm install -g @reliastra/cli` and `npx @reliastra/cli` have
+nothing to resolve. Without installing anything, run the file directly from a
+checkout:
 
 ```bash
-npx @reliastra/cli deps list        # without installing
-node bin/reliastra.mjs --help       # from a checkout of this repository
+node ./Reliastra/cli/bin/reliastra.mjs deps list
 ```
 
 Every command supports `--help` (`reliastra evidence get --help`), and
@@ -135,11 +138,14 @@ Exit 4 is returned for a missing record, a hash mismatch, an expected-hash
 mismatch, and a verification service that could not be read — the last one
 deliberately, because "we could not check" must not be reported as a pass.
 
+`verify` needs no credential: the record it reads is public, which is the whole
+point of a verification endpoint. So the pipeline step is one line after a
+checkout, with no secret and no install:
+
 ```yaml
 # GitHub Actions
-- run: npx @reliastra/cli verify "$VERIFICATION_ID" --file evidence.pdf
-  env:
-    RELIASTRA_TOKEN: ${{ secrets.RELIASTRA_TOKEN }}
+- uses: actions/checkout@v4
+- run: node ./Reliastra/cli/bin/reliastra.mjs verify "$VERIFICATION_ID" --file incident.pdf
 ```
 
 ## 5. Move between the terminal and the web

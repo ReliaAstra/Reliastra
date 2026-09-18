@@ -45,6 +45,7 @@ export function consoleNavGroups(
       label: 'Account',
       items: [
         { href: '/settings', label: 'Settings' },
+        { href: '/settings/developer', label: 'Developer' },
         { href: '/settings/billing', label: 'Billing' },
         { href: '/settings/notifications', label: 'Notifications' },
         { href: '/support', label: 'Support' },

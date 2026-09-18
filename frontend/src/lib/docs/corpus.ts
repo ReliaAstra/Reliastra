@@ -23,9 +23,30 @@ export const DOCS: Doc[] = [
   {
     slug: 'quickstart',
     title: 'Quickstart',
-    summary: 'Add a dependency, read the first observation, and understand what the next two failures mean.',
+    summary: 'Install the CLI, add an endpoint, read the first observation, and follow an incident through to its evidence record.',
     group: 'Start',
     sections: [
+      {
+        id: 'install',
+        heading: 'Install the CLI',
+        blocks: [
+          {
+            kind: 'p',
+            text: 'Everything below is one path, and the fastest way through it is the CLI: a single binary, no dependencies, Node 18.17 or newer.',
+          },
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: `git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
+npm install -g ./Reliastra/cli
+reliastra --version`,
+          },
+          {
+            kind: 'p',
+            text: 'The CLI lives in that repository at `cli/` and installs from the checkout. It is not on the public npm registry, so an install by name does not resolve — `npm install -g ./Reliastra/cli` is the working form. Node 18.17 or newer, no dependencies.',
+          },
+        ],
+      },
       {
         id: 'what-you-need',
         heading: 'What you need',
@@ -116,15 +137,96 @@ EXECUTED (UTC)         RESULT   STATUS  LATENCY   DETAIL  DEP
         ],
       },
       {
+        id: 'an-incident',
+        heading: 'Follow an incident',
+        blocks: [
+          {
+            kind: 'p',
+            text: `When the detector opens an incident, the incident — not the individual probe — is the thing to read. Its window, severity and root-cause field are one record:`,
+          },
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: `reliastra incidents list --status open
+reliastra incidents show <incident-id>
+reliastra incidents show <incident-id> --evidence`,
+          },
+          {
+            kind: 'p',
+            text: '`--evidence` follows the record to the evidence artifact issued for it, so the window, the detector’s rule, the observation list and the integrity hashes are one command away rather than three.',
+          },
+          {
+            kind: 'note',
+            tone: 'note',
+            title: 'Correlation is not causation',
+            text: '`reliastra incidents correlate <id>` scores an overlapping dependency degradation against this window using five weighted signals under a published methodology version. An alignment between two timelines is what it reports, and that is all it reports.',
+          },
+        ],
+      },
+      {
+        id: 'retrieve-evidence',
+        heading: 'Retrieve evidence and verify it',
+        blocks: [
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: `reliastra evidence list
+reliastra evidence show <report-id>              # prints the public verification URL
+reliastra evidence get <report-id> --out incident.pdf
+reliastra verify <verification-id> --file incident.pdf`,
+          },
+          {
+            kind: 'p',
+            text: '`verify` needs no account: it reads the public verification record, recomputes the SHA-256 of the bytes on disk and compares it with the checksum recorded at issue time. It exits 4 when they disagree, which is what makes it usable directly as a gate:',
+          },
+          {
+            kind: 'code',
+            lang: 'yaml',
+            caption: 'GitHub Actions',
+            code: `- uses: actions/checkout@v4
+- run: node ./Reliastra/cli/bin/reliastra.mjs verify "$VERIFICATION_ID" --file incident.pdf`,
+          },
+        ],
+      },
+      {
+        id: 'terminal-and-web',
+        heading: 'Between the terminal and the web',
+        blocks: [
+          {
+            kind: 'p',
+            text: 'The CLI and the console are two views of one record, and the CLI prints the address of the other view rather than describing what it would show.',
+          },
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: `reliastra open incident <incident-id> --browser
+reliastra open verify <verification-id>          # prints the URL; no account needed
+open "$(reliastra open evidence <report-id>)"    # printing is the default, so this composes`,
+          },
+          {
+            kind: 'list',
+            items: [
+              'Every identifier is the same in both places: an incident id from `incidents list` opens the same incident in the console.',
+              '`--json` prints the API’s own shape, so a script sees exactly what the API returned.',
+              '`--web` adds the console URL to the list commands; `evidence show` prints the verification URL unconditionally.',
+              'A self-hosted deployment points the links at its own origin with `--site-url` or `RELIASTRA_SITE_URL`.',
+            ],
+          },
+        ],
+      },
+      {
         id: 'next',
         heading: 'Where to go next',
         blocks: [
           {
             kind: 'definitions',
             items: [
+              { term: 'CLI', def: 'Every command, the exit codes, and how to use it in a pipeline.' },
+              { term: 'REST API', def: 'The endpoints behind the CLI, scopes for API keys, pagination and error semantics.' },
               { term: 'Configuration', def: 'Intervals, expected status codes, secret headers, disabling without deleting.' },
               { term: 'Incidents', def: 'How the detector decides, what severity means, and how an incident closes.' },
               { term: 'Evidence', def: 'Turning a resolved incident into a record you can hand to someone.' },
+              { term: 'Verification', def: 'What the public record proves, and what it deliberately does not.' },
             ],
           },
         ],
@@ -671,8 +773,9 @@ reliastra evidence get 4b2e… --out incident-2026-09-18.pdf`,
             kind: 'code',
             lang: 'yaml',
             caption: '.github/workflows/evidence.yml',
-            code: `- name: Verify the evidence record
-  run: npx @reliastra/cli verify "\${{ vars.VERIFICATION_ID }}" --file evidence.pdf`,
+            code: `- uses: actions/checkout@v4
+- name: Verify the evidence record
+  run: node ./Reliastra/cli/bin/reliastra.mjs verify "\${{ vars.VERIFICATION_ID }}" --file incident.pdf`,
           },
         ],
       },
@@ -735,23 +838,80 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
               ['GET /v1/dependencies/{id}/results', 'Observations for one dependency'],
               ['GET /v1/dependencies/{id}/history', 'Aggregated history over a window'],
               ['GET /v1/checks/recent', 'The most recent observations across dependencies'],
-              ['GET /v1/incidents', 'List incidents (`limit`, `cursor`, `status`, `severity`)'],
+              ['GET /v1/incidents', 'List incidents (`limit`, `cursor`, `status`, `severity`, `dependency_id`)'],
               ['GET /v1/incidents/{id}', 'One incident with its correlations'],
               ['PATCH /v1/incidents/{id}', 'Set status, severity, root cause or description'],
               ['POST /v1/incidents/{id}/correlate', 'Record a correlated dependency'],
               ['GET /v1/incidents/{id}/evidence', 'The evidence record for this incident'],
               ['GET /v1/evidence', 'List evidence records'],
-              ['GET /v1/evidence/{id}', 'One record’s metadata and checksum'],
-              ['GET /v1/evidence/{id}/download', 'The rendered artifact'],
+              ['GET /v1/evidence/{id}', 'One record: checksum, verification id and URL, payload hash, and a one-hour signed `download_url`'],
+              ['GET /v1/evidence/{id}/artifact', 'The rendered artifact itself, streamed. Use this from a script'],
+              ['GET /v1/evidence/{report_token}/download', 'Public gate download by token, for a shared record'],
               ['POST /v1/evidence/{id}/regenerate', 'Rebuild an artifact from its incident'],
               ['GET /v1/verify/{verification_id}', 'Public verification record. No authentication.'],
               ['GET /v1/verify/keys', 'Public signing keys, in JWK form'],
               ['GET /v1/vendors', 'The public observatory index'],
               ['GET /v1/vendors/{name}', 'One vendor’s public record'],
-              ['GET|POST /v1/webhooks', 'List or create webhook subscriptions'],
-              ['GET /v1/api-keys', 'List keys (prefixes only)'],
+              ['GET|POST /v1/webhooks', 'List or create webhook subscriptions (session only)'],
+              ['GET /v1/api-keys', 'List keys (prefixes only; needs `read:api_keys`)'],
               ['POST /v1/api-keys', 'Issue a key. The full value is returned once.'],
             ],
+          },
+        ],
+      },
+      {
+        id: 'evidence-path',
+        heading: 'From an artifact to its verification',
+        blocks: [
+          {
+            kind: 'p',
+            text: 'A resolved incident produces an evidence record. `GET /v1/evidence/{id}` returns everything needed to check the artifact it issued, including the public verification id and URL that are printed inside the document itself:',
+          },
+          {
+            kind: 'code',
+            lang: 'json',
+            caption: 'GET /v1/evidence/{id}',
+            code: `{
+  "id": "7c1d0a5f-…",
+  "incident_id": "9f1c8b0e-…",
+  "checksum": "0c72…",              // SHA-256 of the rendered document
+  "data_hash": "3f9a…",             // SHA-256 of the canonical facts payload
+  "verification_id": "8Kd2xQ7mB4pL",
+  "verification_url": "https://reliastra.com/reports/8Kd2xQ7mB4pL",
+  "methodology_version": "2.0",
+  "signed": false,                  // this deployment issues unsigned artifacts
+  "expires_at": "2027-09-04T09:12:00Z"
+}`,
+          },
+          {
+            kind: 'p',
+            text: '`verification_url` opens a page that needs no account, and `GET /v1/verify/{verification_id}` is the same record as JSON. `GET /v1/verify/keys` publishes the Ed25519 public keys for deployments that sign, so a third party can check a signature without trusting either endpoint.',
+          },
+        ],
+      },
+      {
+        id: 'api-keys',
+        heading: 'What an API key can and cannot reach',
+        blocks: [
+          {
+            kind: 'p',
+            text: 'Keys are denied by default. A key can reach the dependency, observation, incident and evidence surfaces its scopes allow; it cannot reach identity, account, webhook or key-management surfaces at all, whatever scopes it carries. That boundary is deliberate: a leaked key must not be able to mint credentials or read the account.',
+          },
+          {
+            kind: 'table',
+            columns: ['Surface', 'API key', 'Session'],
+            rows: [
+              ['Dependencies, observations, incidents, evidence', 'With the matching scope', 'Yes'],
+              ['Webhook configuration', 'No', 'Yes'],
+              ['API key management', 'No (unless the key carries `read:api_keys`)', 'Yes'],
+              ['Account and identity', 'No', 'Yes'],
+            ],
+          },
+          {
+            kind: 'note',
+            tone: 'info',
+            title: 'Programmatic reads are still first-class',
+            text: '`GET /v1/dependencies/{id}/results`, `GET /v1/incidents?dependency_id=…` and `GET /v1/evidence/{id}` cover the whole read path a service needs. Use the CLI or the console for webhooks and keys, where a human is making the change.',
           },
         ],
       },
@@ -813,7 +973,8 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
   {
     slug: 'cli',
     title: 'CLI',
-    summary: 'Install the CLI, sign in once, and use it in a pipeline. Includes the exit codes.',
+    summary:
+      'Install, authenticate, read dependencies and incidents, retrieve evidence, and gate a pipeline on verification.',
     group: 'Integrate',
     sections: [
       {
@@ -823,33 +984,46 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
           {
             kind: 'code',
             lang: 'bash',
-            code: `npm install -g @reliastra/cli
+            code: `git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
+npm install -g ./Reliastra/cli
 reliastra --help`,
           },
           {
             kind: 'p',
-            text: 'Node 18.17 or newer. No dependencies. If you use it only inside a pipeline, `npx @reliastra/cli` avoids a global install.',
+            text: 'Node 18.17 or newer, no dependencies, no build step. The package is `cli/` in the repository and is not published to the public npm registry yet, so `npx` has nothing to resolve; a pipeline runs the file directly after checkout — `node ./Reliastra/cli/bin/reliastra.mjs`. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
           },
         ],
       },
       {
         id: 'auth',
-        heading: 'Sign in',
+        heading: 'Authenticate',
         blocks: [
           {
             kind: 'code',
             lang: 'bash',
-            code: `reliastra login --email you@example.com
-# session stored in ~/.config/reliastra/config.json (mode 0600)`,
+            code: `# A session for this machine
+reliastra login --email you@example.com
+
+# Or store an API key, which is what a service should use
+reliastra login --token rel_…`,
           },
           {
             kind: 'p',
-            text: 'Credential precedence is `--token` → `RELIASTRA_TOKEN` → the config file, and `whoami` prints which one it used. In CI, prefer an API key over a session token: a key is scoped and independently revocable.',
+            text: 'Credential precedence is `--token` → `RELIASTRA_TOKEN` → the config file, and `whoami` prints which one was used — the first question in any support thread. A password is never accepted as a flag: it comes from a prompt, or from `RELIASTRA_PASSWORD` in automation, so it cannot reach shell history or a process listing.',
+          },
+          {
+            kind: 'p',
+            text: 'A session token can read the account; an API key cannot, by design — identity and account surfaces are closed to keys. The CLI detects which credential it holds and reports the right thing rather than sending you to re-login for a problem re-login cannot fix.',
           },
           {
             kind: 'code',
             lang: 'bash',
-            code: `RELIASTRA_TOKEN=rel_… reliastra deps list --json`,
+            caption: 'Something is wrong, and you want to know what',
+            code: `reliastra doctor`,
+          },
+          {
+            kind: 'p',
+            text: '`doctor` checks the config file (including its permissions), the credential and the API, and names which of them failed. It needs no valid credential to be useful: “the API is unreachable” and “your credential was rejected” have different fixes and different exit codes.',
           },
         ],
       },
@@ -861,25 +1035,69 @@ reliastra --help`,
             kind: 'table',
             columns: ['Command', 'What it does'],
             rows: [
-              ['`reliastra login` / `logout` / `whoami`', 'Session handling'],
-              ['`reliastra deps list` / `add` / `rm`', 'Dependencies being probed'],
-              ['`reliastra checks recent`', 'The most recent observations, newest first'],
-              ['`reliastra incidents list` / `show` / `correlate`', 'Incidents and their correlations'],
-              ['`reliastra evidence list` / `show` / `get`', 'Evidence records and artifact download'],
-              ['`reliastra verify <id>`', 'Check a document against the public verification record'],
-              ['`reliastra keys list` / `create`', 'API keys'],
-              ['`reliastra obs list` / `show`', 'The public observatory, unauthenticated'],
+              ['`reliastra login` / `logout` / `whoami`', 'Session and credential handling'],
+              ['`reliastra doctor`', 'Check config, credential and API, and name the failure'],
+              ['`reliastra deps list` / `show <id>` / `add` / `rm`', 'What is being probed, and one dependency in full'],
+              ['`reliastra checks recent`', 'Raw observations, newest first (`--dependency <id>`)'],
+              ['`reliastra incidents list` / `show <id>` / `correlate <id>`', 'Incidents, their windows, and correlation scores'],
+              ['`reliastra evidence list` / `show <id>` / `get <id>`', 'Evidence records and artifact download'],
+              ['`reliastra verify <verification-id>`', 'Check a document against the public record. No account needed'],
+              ['`reliastra keys list` / `create` / `rm`', 'API keys for CI and other services'],
+              ['`reliastra obs list` / `show <vendor>`', 'The public observatory, unauthenticated'],
+              ['`reliastra open <kind> [id]`', 'Print (or open) the web page for a resource'],
             ],
           },
           {
             kind: 'p',
-            text: 'Every command accepts `--json`, and the JSON is the API’s own shape: no renamed fields, no dropped nulls, no derived values.',
+            text: 'Every command accepts `--json`, and the JSON is the API’s own shape: no renamed fields, no dropped nulls, no derived values. `--quiet` drops the explanatory lines.',
           },
           {
             kind: 'code',
             lang: 'bash',
             code: `reliastra checks recent --json | jq '[.[] | select(.is_up == false)] | length'
-reliastra deps list --json | jq -r '.[] | "\\(.name)\\t\\(.endpoint_url)"'`,
+reliastra deps list --json | jq -r '.[] | "\(.name)\t\(.endpoint_url)"'
+reliastra incidents list --status open --web`,
+          },
+        ],
+      },
+      {
+        id: 'evidence',
+        heading: 'Evidence and verification',
+        blocks: [
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: `reliastra incidents show <incident-id> --evidence
+reliastra evidence show <report-id>            # prints the public verification URL
+reliastra evidence get <report-id> --out incident.pdf --payload
+reliastra verify <verification-id> --file incident.pdf`,
+          },
+          {
+            kind: 'p',
+            text: '`evidence get` writes the artifact and prints the SHA-256 of the bytes it wrote, computed locally — comparing that with the recorded checksum is the only way to know the transfer was faithful. `verify` is unauthenticated on purpose: it serves somebody who was handed a document and has no account.',
+          },
+          {
+            kind: 'note',
+            tone: 'warn',
+            title: 'Failing closed',
+            text: 'A missing record, a changed file, a hash mismatch and a verification service that cannot be read all exit 4. “We could not check” must never be reported as a pass, so it is not.',
+          },
+        ],
+      },
+      {
+        id: 'web',
+        heading: 'Terminal and web',
+        blocks: [
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: `reliastra open incident <incident-id> --browser
+reliastra open verify <verification-id>        # public page, no account needed
+open "$(reliastra open evidence <report-id>)"  # printing is the default, so this composes`,
+          },
+          {
+            kind: 'p',
+            text: '`--web` adds the console URL to `deps list`, `incidents list` and `evidence list`. `--site-url` (or `RELIASTRA_SITE_URL`) points the links at a self-hosted origin.',
           },
         ],
       },
@@ -892,11 +1110,17 @@ reliastra deps list --json | jq -r '.[] | "\\(.name)\\t\\(.endpoint_url)"'`,
             columns: ['Code', 'Meaning'],
             rows: [
               ['0', 'Success'],
-              ['1', 'Usage error'],
-              ['2', 'The API returned an error'],
-              ['3', 'Authentication required or expired'],
+              ['1', 'Usage error, or invalid configuration'],
+              ['2', 'The API returned an error (validation, not found, upstream)'],
+              ['3', 'Authentication required, rejected, or expired'],
               ['4', 'A verification claim did not hold'],
+              ['5', 'Authenticated, but not permitted to make this call'],
+              ['6', 'The API could not be reached at all'],
             ],
+          },
+          {
+            kind: 'p',
+            text: 'A pipeline can therefore tell a rejected credential (3) from a missing scope (5) from a network failure (6) without parsing prose. Errors are classified and printed without stack traces; a 403 names the scope that was missing.',
           },
           {
             kind: 'code',
@@ -905,6 +1129,27 @@ reliastra deps list --json | jq -r '.[] | "\\(.name)\\t\\(.endpoint_url)"'`,
             code: `reliastra verify "$VERIFICATION_ID" --file evidence.pdf
 # 0 — the file matches the record
 # 4 — a missing record, a changed file, or a service that could not be read`,
+          },
+        ],
+      },
+      {
+        id: 'configuration',
+        heading: 'Configuration',
+        blocks: [
+          {
+            kind: 'table',
+            columns: ['Variable', 'Effect'],
+            rows: [
+              ['`RELIASTRA_TOKEN`', 'Bearer token or API key for this invocation'],
+              ['`RELIASTRA_API_URL`', 'API base URL (default `https://api.reliastra.com`)'],
+              ['`RELIASTRA_SITE_URL`', 'Web origin used for links (default `https://reliastra.com`)'],
+              ['`RELIASTRA_CONFIG`', 'Path to the config file'],
+              ['`RELIASTRA_PASSWORD`', 'Password for a non-interactive `login`'],
+            ],
+          },
+          {
+            kind: 'p',
+            text: 'The config file is written with mode 0600 in a 0700 directory. `logout` revokes the session server-side and removes the file even if the API cannot be reached, so an outage cannot leave a token on disk. No credential is ever printed: `whoami` and `doctor` report where a credential came from, never its value.',
           },
         ],
       },
@@ -928,7 +1173,7 @@ reliastra deps list --json | jq -r '.[] | "\\(.name)\\t\\(.endpoint_url)"'`,
             code: `curl -sS -X POST https://api.reliastra.com/v1/webhooks \\
   -H "Authorization: Bearer $RELIASTRA_TOKEN" \\
   -H 'Content-Type: application/json' \\
-  -d '{"url":"https://ops.example.com/hooks/reliastra","events":["incident.opened","incident.resolved","evidence.ready"]}'`,
+  -d '{"url":"https://ops.example.com/hooks/reliastra","events":["incident.opened","incident.updated","incident.resolved","evidence.ready"]}'`,
           },
         ],
       },
@@ -940,26 +1185,50 @@ reliastra deps list --json | jq -r '.[] | "\\(.name)\\t\\(.endpoint_url)"'`,
             kind: 'definitions',
             items: [
               { term: 'incident.opened', def: 'The detector confirmed a failure run. Carries the incident id, dependency id, window and the rule that fired.' },
-              { term: 'incident.resolved', def: 'The recovery rule was satisfied.' },
-              { term: 'evidence.ready', def: 'An artifact was generated and is retrievable.' },
+              { term: 'incident.updated', def: 'A field on an open incident changed by hand (severity, status, root cause, description). Carries the field names that changed.' },
+              { term: 'incident.resolved', def: 'The recovery rule was satisfied. Carries the window and the root-cause field as they stand at resolution.' },
+              { term: 'evidence.ready', def: 'An artifact was generated and is retrievable. Carries the report id, the verification id and the document checksum, so a consumer can act on it without a second lookup.' },
             ],
+          },
+          {
+            kind: 'note',
+            tone: 'warn',
+            text: 'The API accepts five further values — `vendor.degraded`, `vendor.down`, `vendor.recovered`, `sla.breach` and `check.failed` — because they are part of the event enum. Nothing emits them yet, so a subscription that names one stores successfully and never fires. They are listed here rather than omitted: a silent no-op is worse than a documented gap.',
           },
           {
             kind: 'code',
             lang: 'json',
-            caption: 'incident.opened',
+            caption: 'incident.opened — body',
             code: `{
   "event": "incident.opened",
-  "delivery_id": "dlv_01J8…",
-  "created_at": "2026-09-18T10:06:02Z",
+  "timestamp": "2026-09-18T10:06:02.412+00:00",
   "data": {
     "incident_id": "9f1c8b0e-…",
     "dependency_id": "d4e5f6a7-…",
     "started_at": "2026-09-18T09:55:00Z",
     "severity": "major",
+    "status": "open",
     "detection": { "rule": "${DETECTION.ruleId}", "required": ${DETECTION.failureChecks} }
   }
 }`,
+          },
+          {
+            kind: 'table',
+            columns: ['Header', 'Value'],
+            rows: [
+              ['`X-Reliastra-Event`', 'The event type, so a consumer can route without parsing the body'],
+              ['`X-Reliastra-Delivery`', 'A unique delivery id — deduplicate on this, not on the body'],
+              ['`X-Reliastra-Signature`', '`sha256=<hmac>` over the raw body, when the subscription has a secret'],
+            ],
+          },
+          {
+            kind: 'list',
+            items: [
+              '`incident.opened` is sent once, when the detector confirms a failure run. A repeat call for an incident that is already open dispatches nothing.',
+              '`incident.updated` carries the field names that changed (`"changed": ["severity"]`), and is not sent when an update resolves the incident.',
+              '`incident.resolved` carries the window and the root-cause field as they stand at resolution.',
+              '`evidence.ready` is sent after the artifact exists and is retrievable, with the report id, the verification id and the document checksum.',
+            ],
           },
         ],
       },
@@ -970,10 +1239,11 @@ reliastra deps list --json | jq -r '.[] | "\\(.name)\\t\\(.endpoint_url)"'`,
           {
             kind: 'list',
             items: [
-              'Deliveries are retried with backoff on non-2xx responses. A 2xx within ten seconds marks it delivered.',
-              'Every delivery carries a delivery id, so a consumer can deduplicate rather than process twice.',
+              'A 2xx within ten seconds marks the delivery successful. Anything else is recorded against the delivery and retried on a fixed backoff: 1m, 5m, 15m, 1h, 3h, then permanently failed.',
+              'Delivery happens off the request that caused it, on the task queue, so a slow consumer cannot affect incident detection or evidence generation.',
+              'Every delivery carries a delivery id in a header, so a consumer can deduplicate rather than process twice.',
               '`GET /v1/webhooks/{id}/deliveries` lists recent attempts with their response codes, which is how you diagnose a consumer that has started failing.',
-              '`POST /v1/webhooks/{id}/test` sends a synthetic delivery. It is labelled as a test in the payload.',
+              '`POST /v1/webhooks/{id}/test` sends a synthetic delivery, in the same envelope, so one parser covers both paths.',
             ],
           },
           {

@@ -131,7 +131,12 @@ const routes = {
   'POST /v1/api-keys': (body) => [201, { id: 'k2', name: body.name, prefix: 'rel_cd34', scopes: ['read:checks', 'write:dependencies'], full_key: 'rel_cd34_secret', created_at: '2026-09-18T00:00:00Z' }],
   'GET /v1/vendors': () => [200, { items: [{ vendor_name: 'openai', display_name: 'OpenAI', category: 'ai', recent_status: 'operational', latency_ms: 143.2, last_check_at: '2026-09-18T10:00:00Z' }] }],
   'GET /v1/vendors/openai': () => [200, { vendor_name: 'openai', display_name: 'OpenAI', category: 'ai', recent_status: 'operational', endpoints: [{ endpoint_url: 'https://api.openai.com/v1/models', health_status: 'up', last_check_at: '2026-09-18T10:00:00Z' }] }],
-  'GET /v1/evidence/rep-1/download': () => [200, PDF_BYTES, 'application/pdf'],
+  // The owner-addressed artifact route. There is deliberately no route for
+  // `GET /v1/evidence/{id}/download` here: that path belongs to the public
+  // evidence gate and takes a report *token*, so a CLI that called it with a
+  // report id would 404 against the real API. The harness would do the same,
+  // which is what makes this file a regression guard for the route.
+  'GET /v1/evidence/rep-1/artifact': () => [200, PDF_BYTES, 'application/pdf'],
 };
 
 let server;

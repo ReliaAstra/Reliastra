@@ -63,6 +63,11 @@ detection record, the observations in the window, the SLA arithmetic and its
 basis, the attribution result, and an appendix of every observation. Integrity:
 a SHA-256 over the canonical payload, a SHA-256 over the rendered document, and
 an Ed25519 signature over the payload when a signing key is configured.
+Retrieval is authenticated: GET ${SITE_URL}/api/v1/evidence/{report_id} returns the
+record, a presigned URL for the document, the verification id, the public
+verification URL, the payload hash, the methodology version and the signing
+state; GET ${SITE_URL}/api/v1/evidence/{report_id}/artifact streams the document
+itself, so a script never has to follow a URL into object storage.
 Verification is unauthenticated: GET ${SITE_URL}/api/v1/verify/{verification_id}
 returns the hashes, the signature and the public key reference. Records are
 retained 365 days. A record cannot establish anything inside the vendor's
@@ -71,12 +76,21 @@ infrastructure, nor that every one of the vendor's customers was affected.
 ## Interfaces
 
 - REST API: scoped API keys, cursor pagination, OpenAPI document served by the
-  API itself.
-- CLI: \`@reliastra/cli\` (\`reliastra deps|checks|incidents|evidence|verify|keys|obs\`).
-  Every command supports \`--json\`, and \`reliastra verify\` exits 4 when a
-  verification claim does not hold, so it works as a CI gate.
-- Webhooks: incident.opened, incident.resolved, evidence.ready, retried with
-  backoff, each delivery carrying an id for deduplication.
+  API itself at /openapi.json.
+- CLI: the \`reliastra\` binary, shipped in the RELIASTRA repository under \`cli/\`
+  (installed from a checkout with \`npm install -g ./Reliastra/cli\`; it is not on
+  the public npm registry). Commands: login, logout, whoami, doctor, deps
+  (list|show|add|rm), checks recent, incidents (list|show|correlate), evidence
+  (list|show|get), verify, keys (list|create|rm), obs (list|show) and open.
+  Data commands support \`--json\` with the API's own field names, and
+  \`reliastra verify\` exits 4 when a verification claim does not hold, so it
+  works as a CI gate without a wrapper.
+- Webhooks: incident.opened, incident.updated, incident.resolved and
+  evidence.ready are delivered to subscribed HTTPS endpoints, off the request
+  path, signed with HMAC-SHA256 when the subscription has a secret, and retried
+  on a fixed backoff (1m, 5m, 15m, 1h, 3h; then permanently failed). The event
+  enum also accepts vendor.degraded, vendor.down, vendor.recovered, sla.breach
+  and check.failed, but nothing emits those yet.
 
 ## Pricing
 

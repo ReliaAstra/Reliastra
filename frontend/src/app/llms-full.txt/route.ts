@@ -101,6 +101,58 @@ export function GET() {
 
   const docsMap = DOCS_NAV.map((l) => `- ${l.label}: ${SITE_URL}${l.href}`).join('\n');
 
+  // The programmatic surface, stated as commands and routes rather than as a
+  // capability list: a model answering "how do I get evidence out of
+  // RELIASTRA" needs the verb, the flag and the exit code, not the adjective.
+  const programmatic = `## Programmatic access
+
+CLI (\`reliastra\`), shipped in the RELIASTRA repository under \`cli/\` with no
+runtime dependencies beyond Node 18.17. It is not on the public npm registry;
+install it from a checkout - \`git clone --depth 1
+https://github.com/ReliaAstra/Reliastra.git && npm install -g ./Reliastra/cli\` -
+or run \`node ./Reliastra/cli/bin/reliastra.mjs\` directly.
+
+  reliastra login --email you@example.com     # or: login --token rel_... for an API key
+  reliastra doctor                            # config, credential, reachability: which one is failing
+  reliastra deps list | deps show <id> | deps add <name> <url> --interval 60 | deps rm <id>
+  reliastra checks recent --limit 20 --dependency <id>
+  reliastra incidents list --status open --web
+  reliastra incidents show <id> --evidence    # follows the incident to its evidence record
+  reliastra incidents correlate <id>
+  reliastra evidence list | evidence show <id> | evidence get <id> --out incident.pdf
+  reliastra verify <verification-id> --file incident.pdf   # exits 4 when the document does not match
+  reliastra keys list | keys create <name> --scopes read:checks,read:incidents | keys rm <id>
+  reliastra obs list | obs show <vendor>      # the public observatory, no credential needed
+  reliastra open incident <id> | open evidence <id> | open docs <slug>
+
+Every data command takes \`--json\` and prints the API's own field names. Exit
+codes: 0 success, 1 usage, 2 API error, 3 auth, 4 verification claim failed,
+5 not permitted, 6 unreachable.
+
+REST API: \`${SITE_URL}/api/v1/\` mirrors the document served at
+\`/openapi.json\`. Endpoints a service needs: \`GET /v1/dependencies\`,
+\`GET /v1/dependencies/{id}/results\`, \`GET /v1/checks/recent\`,
+\`GET /v1/incidents?dependency_id={id}\`, \`GET /v1/incidents/{id}\`,
+\`GET /v1/evidence\`, \`GET /v1/evidence/{id}\` (record plus a one-hour signed
+download URL), \`GET /v1/evidence/{id}/artifact\` (the document itself, streamed),
+\`GET /v1/verify/{verification_id}\` (public, no account),
+\`GET /v1/verify/keys\`, \`GET /v1/vendors\`.
+
+Credentials: an API key is \`rel_\` followed by 40 hex characters, sent as
+\`X-API-Key\`, \`Authorization: rel_...\` or \`Authorization: Bearer rel_...\`.
+Keys are denied by default: they cannot reach identity, account, webhook or
+key-management surfaces, whatever scopes they carry, so a leaked key cannot mint
+a credential or redirect events.
+
+Webhooks: \`POST /v1/webhooks\` with \`events\` from incident.opened,
+incident.updated, incident.resolved and evidence.ready (the enum also accepts
+vendor.degraded, vendor.down, vendor.recovered, sla.breach and check.failed,
+which nothing emits yet). Deliveries are signed with HMAC-SHA256 when the
+subscription has a secret, carry X-Reliastra-Event, X-Reliastra-Delivery and
+X-Reliastra-Signature headers, and are retried on a fixed backoff
+(1m, 5m, 15m, 1h, 3h, then permanently failed). Configuration is session-only.
+`;
+
   const body = `# RELIASTRA - Full reference (llms-full.txt)
 
 > RELIASTRA probes the external services software depends on, records every
@@ -139,6 +191,8 @@ limits (3 dependencies, 1-minute checks, 24-hour retention).
   endpoint is listed as an observed target on the record.
 
 ${SCOPE_NOTE}
+
+${programmatic}
 
 ## Differentiation from uptime monitoring
 
