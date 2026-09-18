@@ -39,7 +39,7 @@ const SECTIONS = [
   {
     title: 'Retention',
     body: [
-      'Check history is retained according to your plan (24 hours on Free up to 90 days on Pro, with custom retention on Enterprise) and is pruned automatically by scheduled jobs.',
+      'Check history is retained according to your plan (24 hours on reduced post-trial limits up to 90 days on Developer) and is pruned automatically by scheduled jobs.',
       'Billing records are retained as long as required for tax and accounting compliance.',
     ],
   },

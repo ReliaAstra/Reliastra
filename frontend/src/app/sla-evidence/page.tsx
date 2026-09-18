@@ -58,7 +58,7 @@ export default function SlaEvidencePage() {
         <Prose>
           <h2>Who this is for</h2>
           <p>
-            Anyone who pays for a vendor SLA - SaaS operators, platform teams, agencies
+            Anyone who pays for a vendor SLA - SaaS operators, platform teams, consultancies
             billing clients for reliability - and has learned that claiming credits with
             “the site was down for a while” goes nowhere.
           </p>

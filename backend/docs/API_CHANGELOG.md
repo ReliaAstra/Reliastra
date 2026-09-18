@@ -2,6 +2,45 @@
 
 This is a **breaking** release. Update clients before deploying.
 
+## Developer-first commercial model & B2B surface removal (stage 1)
+
+The commercial model is **one paid plan** and the B2B API surfaces are
+unmounted. Full disposition: `docs/redesign/developer-first-refurbishment.md`.
+
+### Pricing
+
+- `GET /v1/pricing` returns exactly one plan (`pro`, display name
+  **Developer**): $9 USD/month, monthly billing only. `price_annual_usd` is
+  `null`; annual checkout requests are rejected as unconfigured.
+- Plan limits: 25 dependencies, 30-second minimum check interval, 90-day
+  retention, 1 team member. Feature flags no longer include
+  `client_groups_isolation`, `client_facing_reports`, `custom_branded_evidence`
+  or `agency_branding`.
+- Enterprise is no longer advertised on any public surface.
+
+### Removed endpoints (404, not deprecated)
+
+`/v1/clients*`, `/v1/agency/*`, `/v1/partners/*` (portal API),
+`/v1/admin/partners*`, `/v1/vendors/badge-embed-code`,
+`/v1/vendors/{name}/badge.svg`, `/v1/vendor-submissions*`, `/v1/admin/vendor-submissions*`,
+`/v1/growth/*`, `/v1/status`, `/v1/status-page*`, `/v1/public/analytics*`,
+email-center campaign admin, `/v1/admin/outreach*`,
+`/v1/referrals/leaderboard`, `POST /v1/referrals/claim-reward`.
+
+### Kept partner-surface endpoints (Technical Creator Program)
+
+- `GET /v1/public/referral/{code}` - resolve an `/r/{code}` link (click count,
+  safe destination, signup attribution code).
+- `GET /v1/referrals/my-referral` - the authenticated user's own code/stats.
+- Creator rewards are settled manually; there is no self-serve claiming.
+
+### Billing behavior
+
+- `POST /v1/billing/initialize` accepts `billing_interval: monthly` only;
+  `annual` returns 409 without creating a Paystack transaction.
+- Verification enforces the single-plan monthly amount (900 USD cents or the
+  live-rate NGN conversion) exactly as before.
+
 ## Auth
 
 `POST /v1/auth/register` now returns a single payload:

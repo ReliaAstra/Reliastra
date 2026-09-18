@@ -1,16 +1,29 @@
 # RELIASTRA
 
-Reliastra monitors third-party vendor APIs and services, correlates failures with customer-reported incidents, attributes blame with a deterministic engine, and generates cryptographically verifiable SLA evidence reports.
+RELIASTRA monitors the third-party APIs your software depends on, correlates
+their failures with your incidents, attributes the failure with a deterministic
+engine, and generates cryptographically verifiable evidence reports.
 
-This is the canonical Reliastra monorepo: the Next.js frontend and the FastAPI backend live side by side as independent applications.
+One engineer can understand, adopt and pay for it: **one plan, $9/month,
+monthly billing**. New accounts get a 14-day trial of full capabilities; after
+the trial an account without a subscription keeps running on reduced limits.
+
+The direction underneath the product is larger: a dependency intelligence
+network built from independent observations across real software systems. It
+is being earned through real usage, not claimed in advance - the public
+observatory states exactly what it measures and how many vantage points exist.
+
+This is the canonical Reliastra monorepo: the Next.js frontend and the FastAPI
+backend live side by side as independent applications.
 
 ## Repository structure
 
 ```
 Reliastra/
-├── frontend/     # Next.js app (marketing, partner network, dashboard UI)
+├── frontend/     # Next.js app (marketing site, observatory, console UI)
 ├── backend/      # FastAPI app (API, workers, evidence, billing)
-├── docs/architecture/
+├── docs/         # architecture, operations, research notes
+├── research/     # reproducible research artifacts and datasets
 ├── .github/workflows/
 ├── Makefile
 └── README.md
@@ -114,7 +127,7 @@ Do not commit `.env` files.
 | App | Template | Purpose |
 |-----|----------|---------|
 | Frontend | `frontend/.env.example` | Prisma `DATABASE_URL` (local SQLite) |
-| Backend | `backend/.env.example` | Supabase Postgres, Redis, JWT `SECRET_KEY`, CORS, OAuth, Paystack, Supabase S3, SMTP, partner program |
+| Backend | `backend/.env.example` | Supabase Postgres, Redis, JWT `SECRET_KEY`, CORS, OAuth, Paystack, Supabase S3, SMTP |
 
 Backend required for a real run: `DATABASE_URL` (Supabase Postgres), `REDIS_URL`, `SECRET_KEY`. Production also needs `ENVIRONMENT=production`, `CORS_ORIGINS`, and the `SUPABASE_S3_*` keys for evidence storage.
 

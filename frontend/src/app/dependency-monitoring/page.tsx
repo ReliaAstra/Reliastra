@@ -86,9 +86,8 @@ export default function DependencyMonitoringPage() {
           </p>
           <h2>Plan limits (enforced server-side)</h2>
           <ul>
-            <li><strong>Free:</strong> 3 dependencies · 1-minute checks · 24-hour retention · email alerts.</li>
-            <li><strong>Pro:</strong> 50 dependencies · 15-second checks · 90-day retention · Slack + API + attribution + evidence.</li>
-            <li><strong>Enterprise:</strong> custom scale, client isolation, white-label reporting.</li>
+            <li><strong>Developer ($9/month):</strong> 25 dependencies · 30-second checks · 90-day retention · Slack + API + attribution + evidence.</li>
+            <li><strong>After a trial without a subscription:</strong> 3 dependencies · 1-minute checks · 24-hour retention · email alerts.</li>
           </ul>
           <h2>What to do next</h2>
           <p>

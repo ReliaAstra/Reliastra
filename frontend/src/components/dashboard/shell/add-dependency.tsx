@@ -27,20 +27,10 @@ export function AddDependencyPanel() {
   const editingId = useAppStore((s) => s.editingDependencyId);
   const setOpen = useAppStore((s) => s.setAddDependencyOpen);
   const plan = useAppStore((s) => s.plan);
-  const selectedClientId = useAppStore((s) => s.selectedClientId);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const { data: deps } = useDependencies();
   const create = useCreateDependency();
   const update = useUpdateDependency();
-  const currentPlan = effectivePlan(plan);
-  const agencyEnabled = currentPlan.id === 'enterprise';
-
-  const { data: clients } = useClients(agencyEnabled);
-  const [selectedClientForDep, setSelectedClientForDep] = useState<string>('');
-  const { data: applications } = useApplications(
-    selectedClientForDep || undefined,
-    Boolean(selectedClientForDep) && agencyEnabled
-  );
 
   const [name, setName] = useState('');
   const [applicationId, setApplicationId] = useState<string>('');
@@ -78,13 +68,8 @@ export function AddDependencyPanel() {
       setThreshold(500);
       setActive(true);
       setApplicationId('');
-      if (selectedClientId) {
-        setSelectedClientForDep(selectedClientId);
-      } else {
-        setSelectedClientForDep('');
-      }
     }
-  }, [open, editingId, deps, selectedClientId]);
+  }, [open, editingId, deps]);
 
   useEffect(() => {
     if (!open) return;
@@ -161,61 +146,6 @@ export function AddDependencyPanel() {
             </div>
           )}
 
-          {agencyEnabled && (clients?.length ?? 0) > 0 && (
-            <div className="mb-5 rounded-xl border border-rs-border-subtle bg-rs-base p-4">
-              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-rs-text-tertiary">
-                <Building2 size={13} className="text-rs-brand" />
-                <span>Agency Hierarchy Assignment</span>
-              </div>
-              <p className="mb-3 text-xs leading-relaxed text-rs-text-secondary">
-                Assign this dependency to an application so uptime rolls up accurately to your client&apos;s SLA posture.
-              </p>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="rs-label mb-1 block text-xs">Client</label>
-                  <select
-                    value={selectedClientForDep}
-                    onChange={(e) => {
-                      setSelectedClientForDep(e.target.value);
-                      setApplicationId('');
-                    }}
-                    className={field}
-                  >
-                    <option value="">Select a client workspace…</option>
-                    {(clients ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedClientForDep && (
-                  <div>
-                    <label className="rs-label mb-1 block text-xs">Application</label>
-                    <select
-                      value={applicationId}
-                      onChange={(e) => setApplicationId(e.target.value)}
-                      className={field}
-                    >
-                      <option value="">Select an application…</option>
-                      {(applications ?? []).map((app) => (
-                        <option key={app.id} value={app.id}>
-                          {app.name}
-                        </option>
-                      ))}
-                    </select>
-                    {(applications?.length ?? 0) === 0 && (
-                      <p className="mt-1 text-[11px] text-rs-text-tertiary">
-                        This client has no applications yet. Create an application from the client workspace.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           <label className="mb-4 block">
             <span className="rs-label mb-1.5 block">Name</span>
