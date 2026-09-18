@@ -1,8 +1,8 @@
 # RELIASTRA
 
-RELIASTRA monitors the third-party APIs your software depends on, correlates
-their failures with your incidents, attributes the failure with a deterministic
-engine, and generates cryptographically verifiable evidence reports.
+RELIASTRA records observations of third-party APIs, investigates their overlap
+with incidents, and generates evidence artifacts. Its deterministic attribution
+engine is a methodology to test, not proof that correlation establishes causality.
 
 One engineer can understand, adopt and pay for it: **one plan, $9/month,
 monthly billing**. New accounts get a 14-day trial of full capabilities; after
@@ -16,29 +16,44 @@ observatory states exactly what it measures and how many vantage points exist.
 This is the canonical Reliastra monorepo: the Next.js frontend and the FastAPI
 backend live side by side as independent applications.
 
+## Engineering & Contributing
+
+Technical review and focused implementation contributions are welcome. Challenge
+the attribution assumptions, try the [CLI](cli/README.md) or development setup
+below, and report concrete failures with sanitized, reproducible evidence.
+
+- [Discussions](https://github.com/ReliaAstra/Reliastra/discussions) — architectural questions and methodology review.
+- [Issues](https://github.com/ReliaAstra/Reliastra/issues) — reproducible problems and scoped implementation work.
+- [Contributor guide](.github/CONTRIBUTING.md), [architecture](docs/architecture/OVERVIEW.md), and [engineering roadmap](docs/ROADMAP.md).
+
+Discussions is pending administrator enablement; the [four initial engineering
+questions and setup status](docs/engineering/discussion-starters.md) are preserved
+in the repository. Until then, use an issue for technical review.
+
 ## Repository structure
 
-```
+```text
 Reliastra/
 ├── frontend/     # Next.js app (marketing site, observatory, console UI)
 ├── backend/      # FastAPI app (API, workers, evidence, billing)
+├── cli/          # Node.js CLI for dependencies, incidents, evidence, verification
 ├── docs/         # architecture, operations, research notes
 ├── research/     # reproducible research artifacts and datasets
-├── .github/workflows/
+├── .github/      # contributor guidance, issue forms, workflows
 ├── Makefile
 └── README.md
 ```
 
 Source applications were consolidated from:
 
-- Frontend: https://github.com/ReliaAstra/Frontend
-- Backend: https://github.com/ReliaAstra/Reliastra-backend
+- [Frontend](https://github.com/ReliaAstra/Frontend)
+- [Backend](https://github.com/ReliaAstra/Reliastra-backend)
 
 Those repositories are kept as references. Application code was not rewritten for this move.
 
 ## Architecture
 
-```
+```text
 User
   ↓
 Next.js frontend          frontend/
@@ -46,14 +61,14 @@ Next.js frontend          frontend/
 Reliastra API             backend/  (FastAPI, /v1/*)
   ↓
 Supabase Postgres · Redis · Celery · Supabase Storage (S3)
+  ↓
+Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
+```
 
 > **Check execution requires Postgres, Redis, a Celery worker and Celery Beat.**
 > Checks never run inside the API process, and there is no in-process scheduler
 > or fallback. See [`docs/checks-operating-model.md`](docs/checks-operating-model.md)
 > for the runtime contract, the health endpoint and how to verify a deployment.
-  ↓
-Vendor APIs, Google/GitHub OAuth, Paystack, SMTP
-```
 
 Details: [`docs/architecture/OVERVIEW.md`](docs/architecture/OVERVIEW.md).
 
@@ -61,7 +76,9 @@ API contract changes - including the billing/checkout endpoints and their status
 semantics - are recorded in
 [`backend/docs/API_CHANGELOG.md`](backend/docs/API_CHANGELOG.md).
 
-The frontend proxies Partner Network calls to the production API at `https://api.reliastra.com/v1`. Override with `RELIASTRA_API_URL` for local or staging backends.
+The frontend uses server-side `/api/v1/*` routes to proxy the backend `/v1/*`
+API. Set `RELIASTRA_API_URL` for a local or staging backend; do not point a
+development session at production by accident.
 
 ## Frontend development
 
@@ -83,14 +100,17 @@ Other scripts from `frontend/package.json`:
 |--------|---------|
 | `npm run dev` | Next.js dev server on :3000 |
 | `npm run build` | Production build (standalone) |
-| `npm run start` | Serve standalone build via Bun |
+| `npm run start` | Serve standalone build via Node.js |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
+| `npm test` | Vitest unit tests |
 | `npm run db:generate` | `prisma generate` |
 | `npm run db:push` | `prisma db push` |
 | `npm run db:migrate` | `prisma migrate dev` |
 | `npm run db:reset` | `prisma migrate reset` |
 
-There is no frontend unit-test script in `package.json`.
+Frontend browser tests live in `frontend/e2e/`; their runtime setup depends on
+the workflow being exercised.
 
 ## Backend development
 
@@ -142,11 +162,15 @@ pytest -v
 pytest tests/unit -v
 pytest tests/integration -v
 pytest tests/e2e -v
+```
 
-# Frontend lint
-cd frontend
-npm install
-npm run lint
+```bash
+# Frontend (from the repository root)
+(cd frontend && npm install && npx prisma generate)
+(cd frontend && npm run lint && npm run typecheck && npm test)
+
+# CLI (no dependencies to install)
+(cd cli && npm test && npm run lint)
 ```
 
 Or from the repo root: `make test` (backend pytest) and `make lint`.
@@ -191,7 +215,9 @@ Frontend and backend deploy independently. This monorepo does not force a combin
 - **Backend:** Docker image (GHCR) and/or Nixpacks. GitHub Actions CD builds `backend/` and deploys the API container to the existing VPS. Compose file: `backend/docker-compose.production.yml`.
 - **PaaS root directory** for backend-only hosts (Railway, Render, Nixpacks) must be `backend/`.
 
-CI is path-aware: changes under `frontend/**` run frontend checks; changes under `backend/**` run backend lint/import/security/tests.
+See [CI](.github/workflows/ci.yml) for the current validation, test, security,
+and build jobs. Frontend unit tests and CLI checks have explicit commands above;
+do not assume they are already included in the workflow.
 
 ## License
 
