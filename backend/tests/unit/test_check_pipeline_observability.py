@@ -308,7 +308,7 @@ async def test_dispatch_failure_increments_metric_and_keeps_dependency_due(
 
     class _BrokenTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             raise OperationalError("Error while reading from socket")
 
     with patch("app.modules.checks.tasks.execute_check", _BrokenTask):
@@ -338,7 +338,7 @@ async def test_unreachable_broker_skips_the_cycle_without_touching_the_database(
 ):
     """No hot loop: 500 due deps must not mean 500 failed publishes per tick."""
     monkeypatch.setattr(
-        "app.infrastructure.redis_client.safe_redis_ping", AsyncMock(return_value=False)
+        "app.platform.integrations.redis.safe_redis_ping", AsyncMock(return_value=False)
     )
     dep = _due_dep()
     service = _dispatch_service([dep])
@@ -372,7 +372,7 @@ async def test_fail_fast_stops_the_cycle_after_the_first_publish_failure(
 
     class _BrokenTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             attempts.append(dep_id)
             raise OperationalError("broker gone")
 
@@ -396,7 +396,7 @@ async def test_successful_dispatch_is_counted_and_marks_the_dependency_queued(
 
     class _OkTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             return MagicMock(id="task-123")
 
     with patch("app.modules.checks.tasks.execute_check", _OkTask):
@@ -435,7 +435,7 @@ async def test_inflight_marker_suppresses_a_duplicate_dispatch(fake_redis):
 
     class _SpyTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             calls.append(region)
             return MagicMock(id="task-x")
 

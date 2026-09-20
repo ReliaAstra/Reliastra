@@ -184,12 +184,10 @@ async def _reset_http_pools() -> AsyncGenerator[None, None]:
 
     await reset_shared_clients()
     from app.modules.billing import service as billing_service
-    from app.modules.checks import service as checks_service
     from app.modules.notifications import service as notifications_service
     from app.platform.integrations import email_resend as resend_module
 
     billing_service._paystack_http_client = None
-    checks_service._http_client = None
     notifications_service._notification_http_client = None
     resend_module._client = None
 

@@ -2,8 +2,8 @@ import logging
 import uuid
 from typing import Any
 
-from app.infrastructure.async_tasks import async_task_body
-from app.infrastructure.celery_app import celery_app
+from app.platform.messaging.async_tasks import async_task_body
+from app.platform.messaging.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 

@@ -80,11 +80,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     except Exception:  # pragma: no cover - shutdown must never raise
         logger.debug("Error closing pinned transports", exc_info=True)
     try:
-        from app.modules.checks.service import close_http_client
-        await close_http_client()
-    except Exception:  # pragma: no cover - shutdown must never raise
-        logger.debug("Error closing check HTTP client", exc_info=True)
-    try:
         from app.modules.notifications.service import close_notification_http_client
         await close_notification_http_client()
     except Exception:  # pragma: no cover - shutdown must never raise

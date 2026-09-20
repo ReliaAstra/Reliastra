@@ -25,6 +25,7 @@ async def test_schedule_dispatch_passes_trace_kwargs_to_delay():
     """schedule_due_checks publishes execute_check with trace context."""
     import uuid
 
+    from app.modules.checks import dispatch as dispatch_module
     from app.modules.checks import service as service_module
 
     token = set_trace_context(new_trace())
@@ -42,7 +43,7 @@ async def test_schedule_dispatch_passes_trace_kwargs_to_delay():
 
         with (
             patch.object(
-                service_module.circuit_breaker,
+                dispatch_module.circuit_breaker,
                 "should_dispatch",
                 new=AsyncMock(return_value=True),
             ),
