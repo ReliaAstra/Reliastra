@@ -1,24 +1,72 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <title>RELIASTRA. External Dependency Intelligence</title>
-  <desc>Silver futuristic wordmark on black. Know when your dependencies fail. Prove what happened. reliastra.com</desc>
+  <title>RELIASTRA — Infrastructure you can prove</title>
+  <desc>RELIASTRA independently observes the external services software depends on, correlates failures, and produces verifiable evidence.</desc>
   <defs>
-    <radialGradient id="ambient"><stop stop-color="#1b253c" stop-opacity=".65"/><stop offset="1" stop-color="#020305" stop-opacity="0"/></radialGradient>
-    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".5" stop-color="#e6e8ec"/><stop offset="1" stop-color="#b4bac4"/></linearGradient>
-    <linearGradient id="rule"><stop stop-color="#202734"/><stop offset=".5" stop-color="#667084"/><stop offset="1" stop-color="#202734"/></linearGradient>
-    <filter id="glow" x="-20%" y="-100%" width="140%" height="300%"><feGaussianBlur stdDeviation="16"/></filter>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#273034" stroke-width="1" opacity=".34"/>
+    </pattern>
   </defs>
-  <rect width="100%" height="100%" fill="#020305"/>
-  <ellipse cx="600" cy="209" rx="744" ry="250" fill="url(#ambient)"/>
-  <g font-family="DejaVu Sans, sans-serif" text-anchor="middle">
-    <text x="600" y="83" font-size="15" letter-spacing="4.3" fill="#a8b0bf">EXTERNAL DEPENDENCY INTELLIGENCE</text>
-    <g transform="translate(84 174) scale(1.0127576054955838)">
-      <g fill="#a5b6dc" opacity=".24" filter="url(#glow)"><g transform="translate(0 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(127 0)"><path d="M0 0H100V13H0ZM0 28H100V41H0ZM0 57H100V70H0Z"/></g><g transform="translate(254 0)"><path d="M0 0H15V57H85V70H14Q0 70 0 56Z"/></g><g transform="translate(366 0)"><path d="M0 0H15V70H0Z"/></g><g transform="translate(408 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g><g transform="translate(536 0)"><path d="M100 0H23Q0 0 0 21Q0 42 23 42H77Q87 42 87 50Q87 57 77 57H3V70H77Q101 70 101 49Q101 29 78 29H24Q14 29 14 21Q14 13 24 13H100Z"/></g><g transform="translate(664 0)"><path d="M0 0H100V13H57V70H43V13H0Z"/></g><g transform="translate(791 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(918 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g></g>
-      <g fill="url(#silver)"><g transform="translate(0 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(127 0)"><path d="M0 0H100V13H0ZM0 28H100V41H0ZM0 57H100V70H0Z"/></g><g transform="translate(254 0)"><path d="M0 0H15V57H85V70H14Q0 70 0 56Z"/></g><g transform="translate(366 0)"><path d="M0 0H15V70H0Z"/></g><g transform="translate(408 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g><g transform="translate(536 0)"><path d="M100 0H23Q0 0 0 21Q0 42 23 42H77Q87 42 87 50Q87 57 77 57H3V70H77Q101 70 101 49Q101 29 78 29H24Q14 29 14 21Q14 13 24 13H100Z"/></g><g transform="translate(664 0)"><path d="M0 0H100V13H57V70H43V13H0Z"/></g><g transform="translate(791 0)"><path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/></g><g transform="translate(918 0)"><path d="M0 70L47 3Q50 -2 54 3L101 70H84L51 23L17 70Z"/></g></g>
-    </g>
-    <text x="600" y="345" font-size="46" letter-spacing="-1.7" fill="#f3f4f6">Know when your dependencies fail.</text>
-    <text x="600" y="408" font-size="46" letter-spacing="-1.7" fill="#f3f4f6">Prove what happened.</text>
-    <text x="600" y="470" font-size="18" letter-spacing=".3" fill="#9ba5b5">Independent monitoring. Timestamped SLA evidence.</text>
-    <path d="M84 523H1116" stroke="url(#rule)"/>
-    <text x="600" y="572" font-size="18" letter-spacing="2" fill="#c8cdd6">reliastra.com</text>
+  <rect width="100%" height="100%" fill="#08090A"/>
+  <rect x="708" y="42" width="444" height="546" fill="url(#grid)" opacity=".72"/>
+  <text x="1136" y="585" text-anchor="end" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="150" letter-spacing="-10" fill="#0F1518" opacity=".95">01</text>
+  <line x1="64" y1="42" x2="1136" y2="42" stroke="#1A2225"/>
+  <line x1="64" y1="588" x2="1136" y2="588" stroke="#1A2225"/>
+  <g transform="translate(64 74) scale(1)">
+    <text x="0" y="0" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="3.4" fill="#F2F2EE">RELIASTRA</text>
+    <rect x="131" y="-11" width="8" height="8" fill="#D9A441"/>
+  </g>
+  <text x="1136" y="74" text-anchor="end" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" letter-spacing="1.5" fill="#596467">OBSERVATION SYSTEM / 01—03</text>
+
+  <g>
+    <path d="M48 145h8M48 177h8M48 209h8M48 241h8" stroke="#293236"/>
+    <text x="64" y="157" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" letter-spacing="2.1" fill="#D9A441">EXTERNAL DEPENDENCY INTELLIGENCE</text>
+    <text x="64" y="222" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="58" font-weight="600" letter-spacing="-2.8" fill="#F2F2EE">INFRASTRUCTURE</text>
+    <text x="64" y="283" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="58" font-weight="600" letter-spacing="-2.8" fill="#F2F2EE">YOU CAN</text>
+    <text x="64" y="344" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="58" font-weight="600" letter-spacing="-2.8" fill="#F2F2EE">PROVE.</text>
+    <text x="64" y="425" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="16" letter-spacing="-.25" fill="#C6CCCA">Independent observation for the services your</text>
+    <text x="64" y="449" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="16" letter-spacing="-.25" fill="#C6CCCA">software depends on.</text>
+  </g>
+
+  <line x1="684" y1="118" x2="684" y2="588" stroke="#1A2225"/>
+  <g>
+    <rect x="738" y="142" width="398" height="368" fill="#0D1012" stroke="#293236"/>
+    <line x1="738" y1="190" x2="1136" y2="190" stroke="#293236"/>
+    <text x="762" y="172" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" letter-spacing="1.6" fill="#8A9497">DEPENDENCY SURFACE</text>
+    <text x="1112" y="172" text-anchor="end" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" letter-spacing="1.2" fill="#D9A441">LIVE / 001</text>
+
+    <text x="762" y="228" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" letter-spacing="1.2" fill="#596467">YOUR SYSTEM</text>
+    <rect x="762" y="246" width="143.28" height="50" fill="#111518" stroke="#596467"/>
+    <circle cx="777" cy="271" r="4" fill="#D9A441"/>
+    <text x="789" y="275" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="11" font-weight="600" fill="#F2F2EE">PRODUCT</text>
+
+    <path d="M905.28 271H934.88M934.88 263V341M934.88 263H960.88M934.88 341H960.88" fill="none" stroke="#293236"/>
+    <path d="M955.88 260l5 3-5 3M955.88 338l5 3-5 3" fill="none" stroke="#596467"/>
+
+    <rect x="960.88" y="238" width="151.12" height="50" fill="#111518" stroke="#293236"/>
+    <circle cx="974.88" cy="263" r="3" fill="#72B68A"/>
+    <text x="985.88" y="261" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" fill="#F2F2EE">payments.api</text>
+    <text x="985.88" y="276" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" letter-spacing=".8" fill="#596467">RESPONDING</text>
+
+    <rect x="960.88" y="316" width="151.12" height="50" fill="#111518" stroke="#293236"/>
+    <circle cx="974.88" cy="341" r="3" fill="#D9A441"/>
+    <text x="985.88" y="339" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="11" fill="#F2F2EE">identity.api</text>
+    <text x="985.88" y="354" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" letter-spacing=".8" fill="#D9A441">OBSERVING</text>
+
+    <line x1="762" y1="402" x2="1112" y2="402" stroke="#293236"/>
+    <text x="762" y="422" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="9" letter-spacing="1" fill="#596467">OBSERVATION WINDOW</text>
+    <text x="1112" y="422" text-anchor="end" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" fill="#C6CCCA">00:08:14</text>
+    <path d="M762 454L800.5 455L832 450L870.5 452L909 447L944 451L979 443L1017.5 447L1056 438L1112 439" fill="none" stroke="#C6CCCA" stroke-width="1.5"/>
+    <line x1="1017.5" y1="440" x2="1017.5" y2="460" stroke="#D9A441" stroke-dasharray="2 4"/>
+    <circle cx="1017.5" cy="447" r="3" fill="#D9A441"/>
+  </g>
+
+  <g>
+    <line x1="64" y1="493" x2="616" y2="493" stroke="#293236"/>
+    <text x="64" y="532" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" letter-spacing="1.5" fill="#596467">OBSERVE</text>
+    <text x="209" y="532" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" letter-spacing="1.5" fill="#596467">ATTRIBUTE</text>
+    <text x="386" y="532" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="10" letter-spacing="1.5" fill="#596467">EVIDENCE</text>
+    <rect x="146" y="523" width="6" height="6" fill="#D9A441"/>
+    <rect x="323" y="523" width="6" height="6" fill="#D9A441"/>
+    <text x="64" y="588" font-family="DejaVu Sans Mono, Consolas, monospace" font-size="12" letter-spacing="2" fill="#8A9497">reliastra.com</text>
   </g>
 </svg>
