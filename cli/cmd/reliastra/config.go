@@ -2,10 +2,10 @@
 //
 // Precedence, highest first:
 //
-//  1. explicit CLI flags            (--api-url, --token)
-//  2. environment                   (RELIASTRA_API_URL, RELIASTRA_TOKEN)
-//  3. the config file               (~/.config/reliastra/config.json)
-//  4. the documented default        (https://api.reliastra.com)
+//	explicit CLI flags      (--api-url, --token)
+//	environment             (RELIASTRA_API_URL, RELIASTRA_TOKEN)
+//	the config file         (~/.config/reliastra/config.json)
+//	the documented default  (https://api.reliastra.com)
 //
 // The config file holds a refresh token, so it is written with mode 0600 and
 // the containing directory with 0700. On a platform where those modes are not

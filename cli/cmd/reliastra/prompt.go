@@ -1,15 +1,16 @@
 // Terminal prompts.
 //
-// Two rules, both about not lying to the operator:
+// Two rules, both about not lying to the operator.
 //
-//  1. A secret is never accepted as a flag. An argument lands in shell history
-//     and in every process listing on the machine, which turns a convenience
-//     into a credential leak. It comes from a prompt, or from an environment
-//     variable when there is no terminal.
-//  2. Nothing destructive happens without a typed confirmation when a person is
-//     present, and nothing destructive happens *at all* without `--yes` when
-//     there is not. A prompt that reads EOF and proceeds is worse than no
-//     prompt, because it looks like it asked.
+// A secret is never accepted as a flag. An argument lands in shell history
+// and in every process listing on the machine, which turns a convenience
+// into a credential leak. It comes from a prompt, or from an environment
+// variable when there is no terminal.
+//
+// Nothing destructive happens without a typed confirmation when a person is
+// present, and nothing destructive happens at all without `--yes` when
+// there is not. A prompt that reads EOF and proceeds is worse than no
+// prompt, because it looks like it asked.
 package main
 
 import (

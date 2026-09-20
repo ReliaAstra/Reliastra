@@ -2,12 +2,12 @@
 // being probed, what each probe recorded, what the detector concluded, the
 // evidence record that follows, and the public verification of that record.
 //
-// Design rules, in order of importance:
+// Design rules, in order of importance. Every command that prints data
+// supports `--json`, and the JSON is the API's own shape: scripts and
+// humans get the same truth.
 //
-//  1. Every command that prints data supports `--json`, and the JSON is the
-//     API's own shape. Scripts and humans get the same truth.
-//  2. Exit codes are meaningful, because the interesting use of this tool is
-//     inside a pipeline:
+// Exit codes are meaningful, because the interesting use of this tool is
+// inside a pipeline:
 //
 //	0  success
 //	1  usage error, or invalid configuration
@@ -17,21 +17,25 @@
 //	5  authenticated, but not permitted to do this
 //	6  the API could not be reached at all
 //
-//     `reliastra verify <id> --expect-hash <sha256>` therefore works as a CI
-//     gate without a wrapper script, and a pipeline can tell "the record does
-//     not match" (4) from "the network is down" (6) without parsing prose.
-//  3. Nothing is buffered silently and nothing is invented: a field the API did
-//     not return prints as `—`, never as `0`, `unknown`, or `null`.
-//  4. No dependencies. A monitoring client that cannot install on a build
-//     runner is not a monitoring client. This module uses the Go standard
-//     library only (see go.mod: it has no requirements).
-//  5. `--help` works everywhere, including mid-command
-//     (`reliastra evidence get --help`), and the text explains what the command
-//     prints, not only its flags.
-//  6. Standard output carries the answer and its synopsis: data, usage
-//     lines and the prose a command prints about its own result. Errors, fixes
-//     and prompts go to standard error, so a failing invocation never pollutes
-//     a pipeline with a half-answer.
+// `reliastra verify <id> --expect-hash <sha256>` therefore works as a CI
+// gate without a wrapper script, and a pipeline can tell "the record does
+// not match" (4) from "the network is down" (6) without parsing prose.
+//
+// Nothing is buffered silently and nothing is invented: a field the API did
+// not return prints as `—`, never as `0`, `unknown`, or `null`.
+//
+// No dependencies. A monitoring client that cannot install on a build
+// runner is not a monitoring client. This module uses the Go standard
+// library only (see go.mod: it has no requirements).
+//
+// `--help` works everywhere, including mid-command
+// (`reliastra evidence get --help`), and the text explains what the command
+// prints, not only its flags.
+//
+// Standard output carries the answer and its synopsis: data, usage
+// lines and the prose a command prints about its own result. Errors, fixes
+// and prompts go to standard error, so a failing invocation never pollutes
+// a pipeline with a half-answer.
 package main
 
 import (

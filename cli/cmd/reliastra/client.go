@@ -1,15 +1,15 @@
 // The HTTP layer.
 //
-// Two properties matter more than convenience here:
+// Two properties matter more than convenience here. A failure is an error,
+// not an empty result: the API returns `{"items": []}` for "you have no
+// dependencies" and 401 for "your token expired", and a CLI that prints an
+// empty table for both teaches its user to distrust it. Status codes are
+// mapped onto typed errors instead, and non-2xx responses never reach
+// a renderer.
 //
-//  1. **A failure is an error, not an empty result.** The API returns
-//     `{"items": []}` for "you have no dependencies" and 401 for "your token
-//     expired". A CLI that prints an empty table for both teaches its user to
-//     distrust it, so status codes are mapped onto typed errors and non-2xx
-//     responses never reach a renderer.
-//  2. **A 401 on an access token is retried once with the refresh token**, and
-//     the rotated pair is persisted. Short access-token lifetimes are normal;
-//     forcing a re-login every fifteen minutes is not.
+// A 401 on an access token is retried once with the refresh token, and the
+// rotated pair is persisted. Short access-token lifetimes are normal;
+// forcing a re-login every fifteen minutes is not.
 package main
 
 import (
