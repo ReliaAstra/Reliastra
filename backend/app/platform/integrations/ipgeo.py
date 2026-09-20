@@ -18,7 +18,6 @@ import hashlib
 import ipaddress
 import logging
 
-import httpx
 
 from app.platform.integrations.redis import get_redis, safe_redis_get, safe_redis_setex
 
@@ -53,7 +52,9 @@ def country_from_headers(headers) -> str | None:
 
 async def _lookup_ipinfo(ip: str, token: str) -> str | None:
     try:
-        async with httpx.AsyncClient(timeout=_LOOKUP_TIMEOUT_SECONDS) as client:
+        from app.platform.integrations.http import build_client
+
+        async with build_client("ipgeo", timeout=_LOOKUP_TIMEOUT_SECONDS) as client:
             resp = await client.get(
                 f"https://ipinfo.io/{ip}/country", params={"token": token}
             )
@@ -67,7 +68,9 @@ async def _lookup_ipinfo(ip: str, token: str) -> str | None:
 
 async def _lookup_ipapi(ip: str) -> str | None:
     try:
-        async with httpx.AsyncClient(timeout=_LOOKUP_TIMEOUT_SECONDS) as client:
+        from app.platform.integrations.http import build_client
+
+        async with build_client("ipgeo", timeout=_LOOKUP_TIMEOUT_SECONDS) as client:
             resp = await client.get(f"https://ipapi.co/{ip}/country/")
             if resp.status_code == 200:
                 country = resp.text.strip().upper()

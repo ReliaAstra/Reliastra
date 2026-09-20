@@ -63,20 +63,28 @@ _MAX_REDIRECTS = 5
 
 
 def get_http_client() -> httpx.AsyncClient:
+    """Pooled client for IP-literal probe targets (see module comment).
+
+    The factory owns the pool; ``_http_client`` is a mirror so existing
+    ``close_http_client``/test hooks keep working.
+    """
     global _http_client
-    if _http_client is None:
-        _http_client = httpx.AsyncClient(
-            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
-            timeout=httpx.Timeout(30.0),
-        )
+    from app.platform.integrations.http import get_shared_client
+
+    _http_client = get_shared_client(
+        "checks",
+        limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+        timeout=httpx.Timeout(30.0),
+    )
     return _http_client
 
 
 async def close_http_client() -> None:
     global _http_client
-    if _http_client is not None:
-        await _http_client.aclose()
-        _http_client = None
+    from app.platform.integrations.http import aclose_shared_client
+
+    await aclose_shared_client("checks")
+    _http_client = None
 
 
 class CheckService:
@@ -289,8 +297,15 @@ class CheckService:
             for region in regions:
                 try:
                     from app.modules.checks.tasks import execute_check as execute_check_task
+                    from app.platform.observability.context import get_request_id
+                    from app.platform.observability.tracing import task_context_kwargs
 
-                    execute_check_task.delay(str(dep.id), region)
+                    execute_check_task.delay(
+                        str(dep.id),
+                        region,
+                        request_id=get_request_id(),
+                        **task_context_kwargs(),
+                    )
                     dispatched_for_dep += 1
                     checks_scheduled_total.labels(region=region).inc()
                     # Best-effort marker: this is what lets the state endpoint
@@ -832,9 +847,19 @@ class CheckService:
             regions = list(configured)
 
         queued: list[dict[str, Any]] = []
+        from app.platform.observability.context import get_request_id
+        from app.platform.observability.tracing import task_context_kwargs
+
         for target_region in regions:
             try:
-                async_result = execute_check_task.delay(str(dep.id), target_region)
+                # The on-demand trigger runs inside the API request, so the
+                # worker joins the caller's trace: one id from click to probe.
+                async_result = execute_check_task.delay(
+                    str(dep.id),
+                    target_region,
+                    request_id=get_request_id(),
+                    **task_context_kwargs(),
+                )
             except Exception as exc:
                 reason = type(exc).__name__
                 checks_dispatch_failures_total.labels(

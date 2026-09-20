@@ -269,7 +269,7 @@ async def test_manual_trigger_enqueues_the_same_task_the_scheduler_uses(
 
     class _RecordingTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             delayed.append((dep_id, region))
             return sentinel
 
@@ -305,7 +305,7 @@ async def test_manual_trigger_defaults_to_every_configured_region(
 
     class _RecordingTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             delayed.append(region)
             return MagicMock(id="t", state="PENDING")
 
@@ -328,7 +328,7 @@ async def test_manual_trigger_reports_503_when_the_broker_is_down(
 
     class _BrokenTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             raise OperationalError("Error while reading from socket")
 
     with patch("app.modules.checks.tasks.execute_check", _BrokenTask):
@@ -395,7 +395,7 @@ async def test_manual_trigger_is_rate_limited_per_organization(
 
     class _RecordingTask:
         @staticmethod
-        def delay(dep_id, region, request_id=None):
+        def delay(dep_id, region, request_id=None, **kwargs):
             return MagicMock(id="t", state="PENDING")
 
     with patch("app.modules.checks.tasks.execute_check", _RecordingTask):

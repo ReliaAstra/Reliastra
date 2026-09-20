@@ -107,8 +107,10 @@ async def _fetch_rate() -> dict | None:
     """One attempt at the configured source. Never raises."""
     target = payment_currency()
     try:
-        async with httpx.AsyncClient(
-            timeout=settings.FX_REFERENCE_TIMEOUT_SECONDS
+        from app.platform.integrations.http import build_client
+
+        async with build_client(
+            "fx", timeout=settings.FX_REFERENCE_TIMEOUT_SECONDS
         ) as client:
             response = await client.get(settings.FX_REFERENCE_URL)
             response.raise_for_status()

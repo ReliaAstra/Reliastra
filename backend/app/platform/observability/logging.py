@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from app.platform.observability.context import get_request_id, get_user_id
+from app.platform.observability.tracing import get_trace_context
 
 
 def redact_secrets(message: str) -> str:
@@ -50,6 +51,10 @@ class JsonFormatter(logging.Formatter):
         user_id = get_user_id()
         if user_id:
             payload["user_id"] = user_id
+        trace = get_trace_context()
+        if trace is not None:
+            payload["trace_id"] = trace.trace_id
+            payload["span_id"] = trace.span_id
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
         if record.stack_info:

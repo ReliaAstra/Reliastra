@@ -17,17 +17,20 @@ _client: httpx.AsyncClient | None = None
 
 
 def _client_get() -> httpx.AsyncClient:
+    """Pooled Resend client (factory-owned pool, module-global mirror)."""
     global _client
-    if _client is None:
-        _client = httpx.AsyncClient(timeout=TIMEOUT, limits=LIMITS)
+    from app.platform.integrations.http import get_shared_client
+
+    _client = get_shared_client("resend", timeout=TIMEOUT, limits=LIMITS)
     return _client
 
 
 async def close_resend_client() -> None:
     global _client
-    if _client is not None:
-        await _client.aclose()
-        _client = None
+    from app.platform.integrations.http import aclose_shared_client
+
+    await aclose_shared_client("resend")
+    _client = None
 
 
 def _from_for_category(category: str) -> str:

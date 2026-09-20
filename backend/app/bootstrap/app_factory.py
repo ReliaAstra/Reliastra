@@ -4,7 +4,7 @@
 
 1. logging + exception handlers (JSON error envelope everywhere),
 2. CORS,
-3. middleware (CORS → RequestId → Tenant → Idempotency → router),
+3. middleware (CORS → Observability → RequestId → Tenant → Idempotency → router),
 4. domain routers (see :mod:`app.bootstrap.routers` for the mount table),
 5. health/observability endpoints (see :mod:`app.bootstrap.health`).
 
@@ -20,7 +20,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.bootstrap.health import health_router
 from app.bootstrap.lifespan import lifespan
-from app.bootstrap.middleware import IdempotencyMiddleware, RequestIdMiddleware
+from app.bootstrap.middleware import (
+    IdempotencyMiddleware,
+    ObservabilityMiddleware,
+    RequestIdMiddleware,
+)
 from app.bootstrap.routers import mount_routers
 from app.config import settings
 from app.platform.observability.logging import configure_logging
@@ -70,6 +74,7 @@ def create_app() -> FastAPI:
         ],
     )
 
+    app.add_middleware(ObservabilityMiddleware)
     app.add_middleware(RequestIdMiddleware)
     app.add_middleware(TenantContextMiddleware)
     app.add_middleware(IdempotencyMiddleware)

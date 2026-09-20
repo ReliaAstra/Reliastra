@@ -105,20 +105,24 @@ _paystack_http_client: httpx.AsyncClient | None = None
 
 
 def _get_paystack_http_client() -> httpx.AsyncClient:
+    """Pooled Paystack client (factory-owned pool, module-global mirror)."""
     global _paystack_http_client
-    if _paystack_http_client is None:
-        _paystack_http_client = httpx.AsyncClient(
-            limits=httpx.Limits(max_connections=20, max_keepalive_connections=5),
-            timeout=httpx.Timeout(10.0),
-        )
+    from app.platform.integrations.http import get_shared_client
+
+    _paystack_http_client = get_shared_client(
+        "paystack",
+        limits=httpx.Limits(max_connections=20, max_keepalive_connections=5),
+        timeout=httpx.Timeout(10.0),
+    )
     return _paystack_http_client
 
 
 async def close_paystack_http_client() -> None:
     global _paystack_http_client
-    if _paystack_http_client is not None:
-        await _paystack_http_client.aclose()
-        _paystack_http_client = None
+    from app.platform.integrations.http import aclose_shared_client
+
+    await aclose_shared_client("paystack")
+    _paystack_http_client = None
 
 
 class PaystackClient:

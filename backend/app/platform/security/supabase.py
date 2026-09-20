@@ -24,7 +24,6 @@ import logging
 import time
 from typing import Any
 
-import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +40,9 @@ async def _fetch_jwks(supabase_url: str) -> list[dict[str, Any]]:
 
     url = f"{supabase_url.rstrip('/')}/auth/v1/.well-known/jwks"
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        from app.platform.integrations.http import build_client
+
+        async with build_client("supabase-jwks", timeout=10.0) as client:
             resp = await client.get(url)
             resp.raise_for_status()
             data = resp.json()

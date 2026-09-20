@@ -9,7 +9,6 @@ import-parity test (``tests/unit/test_import_parity.py``).
 from app.platform.security.supabase import (  # noqa: F401
     Any,
     annotations,
-    httpx,
     json,
     logger,
     logging,
@@ -24,7 +23,6 @@ from app.platform.security.supabase import (  # noqa: F401
 __all__ = [
     "Any",
     "annotations",
-    "httpx",
     "json",
     "logger",
     "logging",

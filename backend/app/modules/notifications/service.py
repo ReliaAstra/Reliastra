@@ -38,22 +38,26 @@ _notification_http_client: httpx.AsyncClient | None = None
 
 
 def get_notification_http_client() -> httpx.AsyncClient:
+    """Pooled alert client (factory-owned pool, module-global mirror)."""
     global _notification_http_client
-    if _notification_http_client is None:
-        _notification_http_client = httpx.AsyncClient(
-            limits=httpx.Limits(
-                max_connections=50, max_keepalive_connections=10
-            ),
-            timeout=httpx.Timeout(10.0),
-        )
+    from app.platform.integrations.http import get_shared_client
+
+    _notification_http_client = get_shared_client(
+        "notifications",
+        limits=httpx.Limits(
+            max_connections=50, max_keepalive_connections=10
+        ),
+        timeout=httpx.Timeout(10.0),
+    )
     return _notification_http_client
 
 
 async def close_notification_http_client() -> None:
     global _notification_http_client
-    if _notification_http_client is not None:
-        await _notification_http_client.aclose()
-        _notification_http_client = None
+    from app.platform.integrations.http import aclose_shared_client
+
+    await aclose_shared_client("notifications")
+    _notification_http_client = None
 
 
 def _webhook_secret_for_org(org_id: uuid.UUID) -> bytes:

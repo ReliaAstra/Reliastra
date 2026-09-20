@@ -4,8 +4,8 @@ Moved verbatim from ``app.main`` during the bootstrap extraction. Behavior is
 unchanged; only the import paths moved to canonical locations.
 
 Execution order (outermost first) is set in
-:func:`app.bootstrap.app_factory.create_app`: CORS → RequestId → Tenant →
-Idempotency → router.
+:func:`app.bootstrap.app_factory.create_app`: CORS → Observability →
+RequestId → Tenant → Idempotency → router.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import time
 import uuid
 
 from fastapi import Request, Response, status
@@ -25,6 +26,17 @@ from app.platform.integrations.redis import (
     safe_redis_setex,
 )
 from app.platform.observability.context import request_id_var, set_request_id
+from app.platform.observability.metrics import (
+    http_request_duration_seconds,
+    http_requests_total,
+)
+from app.platform.observability.tracing import (
+    format_traceparent,
+    new_trace,
+    parse_traceparent,
+    reset_trace_context,
+    set_trace_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -189,3 +201,47 @@ class IdempotencyMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             logger.warning("Idempotency cache fallback (Redis error): %s", exc)
             return await call_next(request)
+
+
+class ObservabilityMiddleware(BaseHTTPMiddleware):
+    """Trace context + Prometheus metrics for every inbound request.
+
+    * Joins the caller's W3C ``traceparent`` when present, else starts a new
+      trace, and echoes this hop's ``traceparent`` on the response so callers
+      (and the CLI's ``--debug``) can correlate both sides from one id.
+    * Feeds ``reliastra_http_requests_total`` and
+      ``reliastra_http_request_duration_seconds``. The ``route`` label uses
+      the matched path *template* (``/v1/deps/{id}``, never the raw id) so
+      label cardinality stays bounded; unmatched requests record ``unknown``.
+    * Never breaks a request: metric recording is best-effort, and the
+      trace token is always reset.
+    """
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        ctx = parse_traceparent(request.headers.get("traceparent")) or new_trace()
+        token = set_trace_context(ctx)
+        start = time.monotonic()
+        status_code = 500
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+        finally:
+            elapsed = time.monotonic() - start
+            route = request.scope.get("route")
+            route_label = getattr(route, "path", None) or "unknown"
+            try:
+                http_requests_total.labels(
+                    method=request.method, status=str(status_code)
+                ).inc()
+                http_request_duration_seconds.labels(
+                    method=request.method,
+                    route=route_label,
+                    status=str(status_code),
+                ).observe(elapsed)
+            except Exception:  # pragma: no cover - metrics must never break requests
+                logger.debug("request metrics recording failed", exc_info=True)
+            reset_trace_context(token)
+        response.headers["traceparent"] = format_traceparent(ctx)
+        return response
