@@ -110,8 +110,8 @@ async def test_api_key_cannot_reach_unmapped_paths(monkeypatch):
     monkeypatch.setattr(user_repo_mod, "UserRepository", StubUserRepo)
 
     # Rate limiter: force allow without redis (imported inside the function
-    # from app.core.rate_limit, so patch at the source module).
-    import app.core.rate_limit as rl_mod
+    # from app.platform.web.rate_limit, so patch at the source module).
+    import app.platform.web.rate_limit as rl_mod
 
     async def allow(*a, **k):
         return None
@@ -380,7 +380,7 @@ async def test_paid_payout_cannot_be_marked_failed():
 
 
 def test_xff_ignored_when_zero_hops(monkeypatch):
-    from app.core import rate_limit as rl
+    from app.platform.web import rate_limit as rl
 
     monkeypatch.setattr(rl, "_TRUSTED_PROXY_HOPS", 0)
     ip = rl.client_ip_from_request(

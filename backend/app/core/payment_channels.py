@@ -34,6 +34,7 @@ from app.modules.billing.channels import (  # noqa: F401
     resolve_checkout_channels,
     settings,
     settled_channel_is_acceptable,
+    _normalize,
 )
 
 __all__ = [

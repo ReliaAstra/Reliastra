@@ -31,6 +31,11 @@ from app.platform.integrations.email_layout import (  # noqa: F401
     render_text,
     settings,
     site_url,
+    _BODY_WIDTH_PX,
+    _CLOSE_BODY,
+    _FULL_DOCUMENT,
+    _STYLE,
+    _standalone,
 )
 
 __all__ = [

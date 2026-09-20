@@ -25,7 +25,7 @@ def test_validate_blocks_private_ip_literal():
 
 def test_validate_blocks_hostname_resolving_to_private_ip():
     with patch(
-        "app.core.ssrf_protection._resolve_hostname",
+        "app.platform.security.ssrf._resolve_hostname",
         return_value=["192.168.1.10"],
     ):
         with pytest.raises(ValueError):
@@ -34,7 +34,7 @@ def test_validate_blocks_hostname_resolving_to_private_ip():
 
 def test_resolve_pinned_target_returns_public_ips():
     with patch(
-        "app.core.ssrf_protection._resolve_hostname",
+        "app.platform.security.ssrf._resolve_hostname",
         return_value=["93.184.216.34"],
     ):
         target = resolve_pinned_target("https://example.com/health")
@@ -48,7 +48,7 @@ def test_resolve_pinned_target_returns_public_ips():
 def test_resolve_pinned_target_raises_when_any_ip_is_private():
     # DNS rebinding protection: even ONE private IP in the answer set blocks.
     with patch(
-        "app.core.ssrf_protection._resolve_hostname",
+        "app.platform.security.ssrf._resolve_hostname",
         return_value=["93.184.216.34", "169.254.169.254"],
     ):
         with pytest.raises(ValueError):

@@ -16,6 +16,9 @@ from app.platform.security.supabase import (  # noqa: F401
     map_supabase_user,
     time,
     verify_supabase_token,
+    _decode_jwt_payload,
+    _fetch_jwks,
+    _jwks_cache,
 )
 
 __all__ = [

@@ -28,6 +28,7 @@ from app.platform.web.errors import (  # noqa: F401
     logging,
     setup_exception_handlers,
     status,
+    _normalize_details,
 )
 
 __all__ = [

@@ -12,6 +12,7 @@ from app.platform.persistence.connect_args import (  # noqa: F401
     build_ssl_connect_args,
     logger,
     logging,
+    _ssl,
 )
 
 __all__ = [

@@ -24,6 +24,9 @@ from app.platform.integrations.redis import (  # noqa: F401
     safe_redis_setex,
     set_test_redis,
     settings,
+    _SOCKET_CONNECT_TIMEOUT,
+    _SOCKET_TIMEOUT,
+    _redis_client,
 )
 
 __all__ = [

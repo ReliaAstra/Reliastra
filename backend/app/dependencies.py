@@ -37,6 +37,9 @@ from app.api.deps import (  # noqa: F401
     security_api_key,
     security_bearer,
     uuid,
+    _has_scope,
+    _infer_scope,
+    _require_verified_email,
 )
 
 __all__ = [

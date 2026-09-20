@@ -262,7 +262,7 @@ async def test_initialize_refuses_when_no_rate_is_available(
     async def _down(*_a, **_k):
         return None
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
+    monkeypatch.setattr("app.modules.billing.fx_reference._fetch_rate", _down)
     called = mocker.patch(
         "app.modules.billing.service.PaystackClient.initialize_transaction",
         new=AsyncMockLike(),

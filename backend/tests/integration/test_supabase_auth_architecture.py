@@ -30,7 +30,7 @@ async def test_supabase_auth_valid_login_and_provisioning(async_client, mocker):
 
     # Patch the verify_supabase_token helper to return our mock payload
     mocker.patch(
-        "app.core.supabase.verify_supabase_token",
+        "app.platform.security.supabase.verify_supabase_token",
         new=AsyncMock(return_value=mock_payload),
     )
 
@@ -60,7 +60,7 @@ async def test_supabase_auth_invalid_and_expired_tokens(async_client, mocker):
     """
     # Case 1: verify_supabase_token returns None (e.g. invalid/expired token)
     mocker.patch(
-        "app.core.supabase.verify_supabase_token",
+        "app.platform.security.supabase.verify_supabase_token",
         new=AsyncMock(return_value=None),
     )
 

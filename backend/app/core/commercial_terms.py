@@ -40,6 +40,7 @@ from app.modules.billing.commercial_terms import (  # noqa: F401
     terms_acceptance_label,
     trial_end_summary,
     trial_summary,
+    _pro_price,
 )
 
 __all__ = [

@@ -22,6 +22,7 @@ from app.platform.observability.logging import (  # noqa: F401
     redact_secrets,
     sys,
     timezone,
+    _should_use_json,
 )
 
 __all__ = [

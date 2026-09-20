@@ -19,6 +19,12 @@ from app.platform.integrations.email_resend import (  # noqa: F401
     send_via_resend,
     send_via_resend_sync,
     settings,
+    _api_key,
+    _build_payload,
+    _client,
+    _client_get,
+    _from_for_category,
+    _reply_to_for_category,
 )
 
 __all__ = [

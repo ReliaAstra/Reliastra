@@ -174,7 +174,7 @@ INTERNATIONAL_CARD_LABEL = "International card"
 INTERNATIONAL_CARD_DESCRIPTION = (
     "Visa and Mastercard issued anywhere in the world, including cards billed "
     "in USD. Charged securely by Paystack - RELIASTRA never sees your card "
-    "number, expiry or CVC."
+    "number, expiry or security code."
 )
 
 
