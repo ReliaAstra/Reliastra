@@ -11,7 +11,7 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
-from app.core.checkout_reasons import (
+from app.modules.billing.checkout_reasons import (
     CheckoutReason,
     CheckoutRejectedException,
 )
@@ -21,7 +21,7 @@ from app.core.exceptions import (
     ValidationException,
     ServiceUnavailableException,
 )
-from app.core.commercial_terms import (
+from app.modules.billing.commercial_terms import (
     BILLING_EMAIL,
     REFUND_POLICY_PATH,
     SELLER_LEGAL_NAME,
@@ -33,7 +33,7 @@ from app.core.commercial_terms import (
     terms_acceptance_label,
     trial_summary,
 )
-from app.core.permissions import (
+from app.platform.commercial.entitlements import (
     PLAN_AMOUNTS,
     PLAN_ANNUAL_AMOUNTS,
     PLAN_DISPLAY_NAMES,
@@ -50,18 +50,18 @@ from app.core.permissions import (
     is_paid_plan,
     normalize_plan,
 )
-from app.core.payment_channels import (
+from app.modules.billing.channels import (
     checkout_channels,
     method_is_enabled,
     payment_method_descriptors,
     resolve_checkout_channels,
     settled_channel_is_acceptable,
 )
-from app.core.payment_disclosure import (
+from app.modules.billing.disclosure import (
     currency_payload,
     resolve_payment_price_async,
 )
-from app.core.payment_pricing import (
+from app.modules.billing.pricing import (
     ANNUAL as ANNUAL_INTERVAL,
     MONTHLY as MONTHLY_INTERVAL,
     PAYMENT_PROVIDER,
@@ -155,13 +155,13 @@ class PaystackClient:
           dashboard has ticked, which on a Nigerian merchant account means
           USSD, Pay with Bank and QR appear in front of a customer in
           Germany. RELIASTRA declares its own set
-          (:mod:`app.core.payment_channels`) so the checkout stays card-only
+          (:mod:`app.modules.billing.channels`) so the checkout stays card-only
           regardless of what the dashboard is later changed to.
         * the ``plan`` field is *not* sent. Paystack's Initialize Transaction
           reference defines it as the code of a predefined Paystack plan
           (``PLN_...``) and states that supplying it "would invalidate the
           value provided in ``amount``". RELIASTRA's plans are priced by
-          :mod:`app.core.payment_pricing`, not by Paystack plan objects, so the
+          :mod:`app.modules.billing.pricing`, not by Paystack plan objects, so the
           plan name travels in ``metadata`` for reconciliation instead -
           sending ``"pro"`` there would either fail initialization or let the
           dashboard plan silently reprice the transaction.
@@ -224,9 +224,9 @@ class PaystackClient:
 paystack_client = PaystackClient()
 
 # PRODUCT PRICING (USD list price: PLAN_PRICES_USD / PLAN_AMOUNTS in
-# ``app.core.permissions``) and PAYMENT PRICING (the amount actually charged
+# ``app.platform.commercial.entitlements``) and PAYMENT PRICING (the amount actually charged
 # through Paystack, in the processing currency) are two separate concepts and
-# are resolved through ``app.core.payment_pricing``. For a non-USD processor
+# are resolved through ``app.modules.billing.pricing``. For a non-USD processor
 # the payment price is the USD list price converted at the live exchange rate
 # (``resolve_payment_price_async``), and self-serve checkout is disabled when
 # no rate is available rather than silently charging the USD minor-unit figure
@@ -594,7 +594,7 @@ class BillingService:
         a repricing. Display strings are formatted here for the same reason
         every other amount string is: the UI never composes money itself.
         """
-        from app.core.permissions import get_plan_display_name
+        from app.platform.commercial.entitlements import get_plan_display_name
 
         items = []
         for tx in await self.repository.list_transactions(session, org_id):
@@ -869,7 +869,7 @@ class BillingService:
         self-serve - and the page then explains instead of presenting a CTA
         that would fail mid-payment.
         """
-        from app.core.permissions import (
+        from app.platform.commercial.entitlements import (
             PLAN_DESCRIPTIONS,
             PLAN_FEATURES,
             get_plan_billing_availability,

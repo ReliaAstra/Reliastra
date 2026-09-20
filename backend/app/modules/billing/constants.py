@@ -1,4 +1,4 @@
-from app.core.permissions import (
+from app.platform.commercial.entitlements import (
     PLAN_AMOUNTS,
     PLAN_ANNUAL_AMOUNTS,
     PLAN_ANNUAL_PRICES_USD,

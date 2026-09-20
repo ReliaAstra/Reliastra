@@ -21,15 +21,15 @@ from datetime import datetime
 from html import escape
 from uuid import UUID
 
-from app.core.commercial_terms import (
+from app.modules.billing.commercial_terms import (
     BILLING_EMAIL,
     REFUND_POLICY_PATH,
     SELLER_BRAND,
     SELLER_LEGAL_NAME,
     refund_summary,
 )
-from app.core.payment_pricing import format_money
-from app.core.permissions import get_plan_display_name
+from app.modules.billing.pricing import format_money
+from app.platform.commercial.entitlements import get_plan_display_name
 from app.modules.billing.models import BillingTransaction
 
 
