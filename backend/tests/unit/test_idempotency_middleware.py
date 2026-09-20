@@ -34,9 +34,9 @@ async def _post(headers):
 @pytest.mark.asyncio
 async def test_new_key_with_healthy_redis_proceeds():
     with (
-        patch("app.main.safe_redis_get", new=AsyncMock(return_value=None)),
-        patch("app.main.safe_redis_claim", new=AsyncMock(return_value=True)),
-        patch("app.main.safe_redis_setex", new=AsyncMock(return_value=True)),
+        patch("app.bootstrap.middleware.safe_redis_get", new=AsyncMock(return_value=None)),
+        patch("app.bootstrap.middleware.safe_redis_claim", new=AsyncMock(return_value=True)),
+        patch("app.bootstrap.middleware.safe_redis_setex", new=AsyncMock(return_value=True)),
     ):
         res = await _post({"Idempotency-Key": "fresh-key"})
     assert res.status_code == 200
@@ -46,8 +46,8 @@ async def test_new_key_with_healthy_redis_proceeds():
 @pytest.mark.asyncio
 async def test_duplicate_key_in_flight_with_healthy_redis_conflicts():
     with (
-        patch("app.main.safe_redis_get", new=AsyncMock(return_value=None)),
-        patch("app.main.safe_redis_claim", new=AsyncMock(return_value=False)),
+        patch("app.bootstrap.middleware.safe_redis_get", new=AsyncMock(return_value=None)),
+        patch("app.bootstrap.middleware.safe_redis_claim", new=AsyncMock(return_value=False)),
     ):
         res = await _post({"Idempotency-Key": "dupe-key"})
     assert res.status_code == 409
@@ -58,9 +58,9 @@ async def test_duplicate_key_in_flight_with_healthy_redis_conflicts():
 async def test_redis_outage_does_not_produce_a_false_409():
     """The regression: infrastructure failure reported as a client duplicate."""
     with (
-        patch("app.main.safe_redis_get", new=AsyncMock(return_value=None)),
-        patch("app.main.safe_redis_claim", new=AsyncMock(return_value=None)),
-        patch("app.main.safe_redis_setex", new=AsyncMock(return_value=True)),
+        patch("app.bootstrap.middleware.safe_redis_get", new=AsyncMock(return_value=None)),
+        patch("app.bootstrap.middleware.safe_redis_claim", new=AsyncMock(return_value=None)),
+        patch("app.bootstrap.middleware.safe_redis_setex", new=AsyncMock(return_value=True)),
     ):
         res = await _post({"Idempotency-Key": "fresh-key-during-outage"})
     assert res.status_code != 409, "Redis being down is not a duplicate request"
