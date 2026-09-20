@@ -100,13 +100,13 @@ def build_service():
     # Spy on the real renderer: it still produces the document (so template
     # errors surface), and the exact context is available for assertions.
     service.captured_context = {}
-    real_render = service._render_html
+    real_render = service._renderer._render_html
 
     def spy(context):
         service.captured_context = context
         return real_render(context)
 
-    service._render_html = spy
+    service._renderer._render_html = spy
 
     return service, incident, dependency, report
 
