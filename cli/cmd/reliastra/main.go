@@ -60,7 +60,7 @@ const (
 	exitDenied     = 5
 	exitNetwork    = 6
 	// exitInterrupt follows the shell convention for Ctrl+C (128 + SIGINT).
-	exitInterrupt  = 130
+	exitInterrupt = 130
 )
 
 // commandFunc runs one top-level command. The args are the positionals after
@@ -115,7 +115,7 @@ var booleanFlags = map[string]bool{
 	// no command takes it, so the flag validator still rejects it. Without
 	// this entry `--follow <value>` would swallow the value instead of
 	// leaving it positional.
-	"follow":      true,
+	"follow": true,
 }
 
 // flagSet holds the flags that were actually passed. A flag that was not

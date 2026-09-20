@@ -54,16 +54,16 @@ var routes = map[string]routeHandler{
 		return 401, map[string]any{"detail": "Incorrect email or password"}, ""
 	},
 	"GET /v1/users/me": jsonRoute(200, map[string]any{
-		"id":        "u1", "email": "engineer@example.com", "full_name": "Ada Lovelace",
+		"id": "u1", "email": "engineer@example.com", "full_name": "Ada Lovelace",
 		"is_active": true, "is_superuser": false,
 	}),
-	"GET /v1/orgs":         jsonRoute(200, []any{map[string]any{"id": "o1", "name": "personal"}}),
+	"GET /v1/orgs": jsonRoute(200, []any{map[string]any{"id": "o1", "name": "personal"}}),
 	"GET /v1/dependencies": jsonRoute(200, map[string]any{
 		"items": []any{map[string]any{
-			"id":                     "dep-1234abcd", "name": "Stripe API",
+			"id": "dep-1234abcd", "name": "Stripe API",
 			"endpoint_url":           "https://api.stripe.com/v1/charges",
 			"check_interval_seconds": 300, "is_active": true,
-			"last_check_at":          "2026-09-18T10:00:00Z",
+			"last_check_at": "2026-09-18T10:00:00Z",
 		}},
 		"next_cursor": nil,
 	}),
@@ -75,102 +75,102 @@ var routes = map[string]routeHandler{
 		return 201, created, ""
 	},
 	"DELETE /v1/dependencies/dep-1234abcd": jsonRoute(204, nil),
-	"GET /v1/checks/recent":                jsonRoute(200, []any{
+	"GET /v1/checks/recent": jsonRoute(200, []any{
 		map[string]any{
-			"id":          "c1", "dependency_id": "dep-1234abcd", "region": "us-east",
+			"id": "c1", "dependency_id": "dep-1234abcd", "region": "us-east",
 			"executed_at": "2026-09-18T10:00:00Z", "latency_ms": 212.4,
 			"status_code": 200, "is_up": true, "quorum_confirmed": false,
 		},
 		map[string]any{
-			"id":               "c2", "dependency_id": "dep-1234abcd", "region": "us-east",
-			"executed_at":      "2026-09-18T09:55:00Z", "latency_ms": nil,
-			"status_code":      nil, "is_up": false, "error_message": "connect timeout",
+			"id": "c2", "dependency_id": "dep-1234abcd", "region": "us-east",
+			"executed_at": "2026-09-18T09:55:00Z", "latency_ms": nil,
+			"status_code": nil, "is_up": false, "error_message": "connect timeout",
 			"quorum_confirmed": false,
 		},
 	}),
 	"GET /v1/incidents": jsonRoute(200, map[string]any{
 		"items": []any{map[string]any{
-			"id":         "inc-1", "dependency_id": "dep-1234abcd",
+			"id": "inc-1", "dependency_id": "dep-1234abcd",
 			"started_at": "2026-09-18T09:55:00Z", "resolved_at": nil,
-			"severity":   "major", "status": "open", "root_cause": "vendor_failure",
+			"severity": "major", "status": "open", "root_cause": "vendor_failure",
 		}},
 	}),
 	"GET /v1/incidents/inc-1": jsonRoute(200, map[string]any{
-		"id":                 "inc-1", "dependency_id": "dep-1234abcd",
-		"started_at":         "2026-09-18T09:55:00Z", "resolved_at": nil,
-		"severity":           "major", "status": "open", "root_cause": "vendor_failure",
+		"id": "inc-1", "dependency_id": "dep-1234abcd",
+		"started_at": "2026-09-18T09:55:00Z", "resolved_at": nil,
+		"severity": "major", "status": "open", "root_cause": "vendor_failure",
 		"evidence_report_id": "rep-1", "evidence_status": "ready",
-		"correlations":       []any{map[string]any{
-			"id":                     "cor-1", "incident_id": "inc-1", "correlated_dependency_id": "dep-9999",
+		"correlations": []any{map[string]any{
+			"id": "cor-1", "incident_id": "inc-1", "correlated_dependency_id": "dep-9999",
 			"correlation_confidence": 0.9, "time_window_seconds": 300,
-			"correlation_method":     "temporal", "created_at": "2026-09-18T10:05:00Z",
+			"correlation_method": "temporal", "created_at": "2026-09-18T10:05:00Z",
 		}},
 	}),
 	"GET /v1/evidence": jsonRoute(200, []any{map[string]any{
-		"id":              "rep-1", "incident_id": "inc-1",
-		"generated_at":    "2026-09-18T10:10:00Z", "expires_at": "2027-09-18T10:10:00Z",
+		"id": "rep-1", "incident_id": "inc-1",
+		"generated_at": "2026-09-18T10:10:00Z", "expires_at": "2027-09-18T10:10:00Z",
 		"file_size_bytes": len(pdfBytes), "checksum": reportChecksum,
 	}}),
 	"GET /v1/evidence/rep-1": jsonRoute(200, map[string]any{
-		"id":              "rep-1", "incident_id": "inc-1",
-		"generated_at":    "2026-09-18T10:10:00Z", "expires_at": "2027-09-18T10:10:00Z",
+		"id": "rep-1", "incident_id": "inc-1",
+		"generated_at": "2026-09-18T10:10:00Z", "expires_at": "2027-09-18T10:10:00Z",
 		"file_size_bytes": len(pdfBytes), "checksum": reportChecksum,
 		// The fields the download response carries after the API change: the
 		// path from an artifact back to its own verification record.
 		"verification_id": "good-id", "verification_url": "https://reliastra.com/reports/good-id",
-		"data_hash":       "aaaa1111", "methodology_version": "v1.0",
-		"signed":          false, "signature_alg": nil,
-		"download_url":    "https://storage.example/rep-1.pdf?token=…",
+		"data_hash": "aaaa1111", "methodology_version": "v1.0",
+		"signed": false, "signature_alg": nil,
+		"download_url": "https://storage.example/rep-1.pdf?token=…",
 	}),
-	"GET /health":                       jsonRoute(200, map[string]any{"status": "ok"}),
+	"GET /health": jsonRoute(200, map[string]any{"status": "ok"}),
 	"GET /v1/dependencies/dep-1234abcd": jsonRoute(200, map[string]any{
-		"id":                    "dep-1234abcd", "name": "Stripe API",
-		"endpoint_url":          "https://api.stripe.com/v1/charges", "method": "GET",
+		"id": "dep-1234abcd", "name": "Stripe API",
+		"endpoint_url": "https://api.stripe.com/v1/charges", "method": "GET",
 		"expected_status_codes": []any{200, 204}, "check_interval_seconds": 300,
-		"timeout_seconds":       10, "next_check_at": "2026-09-18T10:05:00Z",
-		"is_active":             true, "regions": []any{"us-east"},
-		"last_check_at":         "2026-09-18T10:00:00Z",
+		"timeout_seconds": 10, "next_check_at": "2026-09-18T10:05:00Z",
+		"is_active": true, "regions": []any{"us-east"},
+		"last_check_at": "2026-09-18T10:00:00Z",
 	}),
 	"GET /v1/dependencies/dep-1234abcd/results": jsonRoute(200, map[string]any{
 		"items": []any{map[string]any{
-			"id":          "c1", "dependency_id": "dep-1234abcd", "region": "us-east",
+			"id": "c1", "dependency_id": "dep-1234abcd", "region": "us-east",
 			"executed_at": "2026-09-18T10:00:00Z", "latency_ms": 212.4,
 			"status_code": 200, "is_up": true,
 		}},
 	}),
 	"DELETE /v1/api-keys/k1": jsonRoute(204, nil),
 	"GET /v1/verify/good-id": jsonRoute(200, map[string]any{
-		"found":               true, "incident_id": "inc-1", "dependency_id": "dep-1234abcd",
-		"time_window":         map[string]any{"start": "2026-09-18T09:55:00Z", "end": "2026-09-18T10:06:00Z"},
-		"data_hash":           "aaaa1111", "report_checksum": reportChecksum,
+		"found": true, "incident_id": "inc-1", "dependency_id": "dep-1234abcd",
+		"time_window": map[string]any{"start": "2026-09-18T09:55:00Z", "end": "2026-09-18T10:06:00Z"},
+		"data_hash":   "aaaa1111", "report_checksum": reportChecksum,
 		"methodology_version": "v1.0",
 		"authenticity":        map[string]any{"signed": false, "algorithm": nil, "public_keys": "/v1/verify/keys"},
 	}),
 	"GET /v1/verify/missing-id":  jsonRoute(404, map[string]any{"found": false, "error": "Evidence not found"}),
 	"GET /v1/verify/degraded-id": jsonRoute(503, map[string]any{"found": false, "service_degraded": true}),
-	"GET /v1/api-keys":           jsonRoute(200, []any{map[string]any{
-		"id":     "k1", "name": "ci", "prefix": "rel_ab12",
+	"GET /v1/api-keys": jsonRoute(200, []any{map[string]any{
+		"id": "k1", "name": "ci", "prefix": "rel_ab12",
 		"scopes": []any{"read:checks"}, "created_at": "2026-09-01T00:00:00Z",
 	}}),
 	"POST /v1/api-keys": func(body map[string]any) (int, any, string) {
 		return 201, map[string]any{
-			"id":         "k2", "name": body["name"], "prefix": "rel_cd34",
-			"scopes":     []any{"read:checks", "write:dependencies"}, "full_key": "rel_cd34_secret",
+			"id": "k2", "name": body["name"], "prefix": "rel_cd34",
+			"scopes": []any{"read:checks", "write:dependencies"}, "full_key": "rel_cd34_secret",
 			"created_at": "2026-09-18T00:00:00Z",
 		}, ""
 	},
 	"GET /v1/vendors": jsonRoute(200, map[string]any{
 		"items": []any{map[string]any{
-			"vendor_name":   "openai", "display_name": "OpenAI", "category": "ai",
+			"vendor_name": "openai", "display_name": "OpenAI", "category": "ai",
 			"recent_status": "operational", "latency_ms": 143.2,
 			"last_check_at": "2026-09-18T10:00:00Z",
 		}},
 	}),
 	"GET /v1/vendors/openai": jsonRoute(200, map[string]any{
-		"vendor_name":   "openai", "display_name": "OpenAI", "category": "ai",
+		"vendor_name": "openai", "display_name": "OpenAI", "category": "ai",
 		"recent_status": "operational",
-		"endpoints":     []any{map[string]any{
-			"endpoint_url":  "https://api.openai.com/v1/models", "health_status": "up",
+		"endpoints": []any{map[string]any{
+			"endpoint_url": "https://api.openai.com/v1/models", "health_status": "up",
 			"last_check_at": "2026-09-18T10:00:00Z",
 		}},
 	}),

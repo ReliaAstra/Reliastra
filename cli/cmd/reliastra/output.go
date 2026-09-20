@@ -53,7 +53,7 @@ func resetOutput() {
 func write(text string) {
 	if !strings.HasSuffix(text, "\n") {
 		text += "\n"
-		}
+	}
 	fmt.Fprint(outSink, text)
 }
 

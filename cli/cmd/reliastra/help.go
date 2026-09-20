@@ -156,7 +156,7 @@ var helpEntries = map[string]helpEntry{
 		description: "Store a session for this machine. Prompts for the password; never takes it as a flag.",
 		usage:       "reliastra login [--email <email>] [--token <api-key>]",
 		prints:      []string{"Where the credential was written, and when it expires."},
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--email <email>", "Account email. Falls back to RELIASTRA_EMAIL."},
 			{"--token <api-key>", "Store an API key instead of signing in. Useful on a build runner where no email is available."},
 			{"--print-token", "Write the access token alone on stdout, for piping to another tool on this machine. Not for CI logs."},
@@ -178,7 +178,7 @@ var helpEntries = map[string]helpEntry{
 	"logout": {
 		description: "Revoke the session server-side and delete the stored credential.",
 		usage:       "reliastra logout",
-		notes:       []string{
+		notes: []string{
 			"The local credential is removed even if the API cannot be reached, so a network",
 			"outage cannot leave a token on disk.",
 		},
@@ -187,7 +187,7 @@ var helpEntries = map[string]helpEntry{
 	"whoami": {
 		description: "Show which account this invocation resolves to, and where the credential came from.",
 		usage:       "reliastra whoami [--json]",
-		notes:       []string{
+		notes: []string{
 			"Answers \"which token am I actually using\" - the first question in most support",
 			"threads - by naming the source: flag, environment, or the config file.",
 		},
@@ -197,7 +197,7 @@ var helpEntries = map[string]helpEntry{
 	"doctor": {
 		description: "Check the local configuration, the credential and the API, and say what is wrong.",
 		usage:       "reliastra doctor [--json]",
-		prints:      []string{
+		prints: []string{
 			"One line per check, with `ok`, `warn` or `fail`, then a diagnosis and a next step.",
 		},
 		notes: []string{
@@ -223,7 +223,7 @@ var helpEntries = map[string]helpEntry{
 	"deps list": {
 		description: "List the dependencies being probed, with their most recent observation.",
 		usage:       "reliastra deps list [--limit 100] [--web]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--limit <n>", "Maximum rows. Default 100."},
 			{"--web", "Print the console URL for each dependency."},
 		},
@@ -236,7 +236,7 @@ var helpEntries = map[string]helpEntry{
 	"deps show": {
 		description: "One dependency: configuration, recent observations, and its incident history.",
 		usage:       "reliastra deps show <dependency-id> [--observations 20] [--web]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--observations <n>", "How many recent observations to print. Default 10."},
 			{"--web", "Also print the console URL for this dependency."},
 		},
@@ -249,7 +249,7 @@ var helpEntries = map[string]helpEntry{
 	"deps add": {
 		description: "Start probing an endpoint.",
 		usage:       "reliastra deps add <name> <url> [--interval 300] [--expect 200] [--method GET] [--timeout 10]",
-		args:        []flagDoc{
+		args: []flagDoc{
 			{"name", "A label you will recognise in a list."},
 			{"url", "An http(s) URL. Private, loopback and metadata addresses are refused."},
 		},
@@ -279,7 +279,7 @@ var helpEntries = map[string]helpEntry{
 		description: "Raw observations, newest first.",
 		usage:       "reliastra checks recent [--limit 50] [--dependency <id>]",
 		prints:      []string{"One row per probe: when, from which region label, up or failed, latency, detail."},
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--limit <n>", "Maximum rows. Default 50."},
 			{"--dependency <id>", "Only observations for one dependency."},
 		},
@@ -298,7 +298,7 @@ var helpEntries = map[string]helpEntry{
 		description: "Raw observations, newest first.",
 		usage:       "reliastra checks recent [--limit 50] [--dependency <id>]",
 		prints:      []string{"One row per probe: when, from which region label, up or failed, latency, detail."},
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--limit <n>", "Maximum rows. Default 50."},
 			{"--dependency <id>", "Only observations for one dependency."},
 		},
@@ -322,7 +322,7 @@ var helpEntries = map[string]helpEntry{
 	"incidents list": {
 		description: "Incidents, newest first.",
 		usage:       "reliastra incidents list [--status open|resolved] [--limit 25] [--dependency <id>] [--web]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--status <status>", "Filter by open or resolved."},
 			{"--limit <n>", "Maximum rows. Default 25."},
 			{"--dependency <id>", "Only incidents for one dependency."},
@@ -337,7 +337,7 @@ var helpEntries = map[string]helpEntry{
 	"incidents show": {
 		description: "One incident: window, severity, evidence record, and any correlated dependencies.",
 		usage:       "reliastra incidents show <incident-id> [--web] [--json]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--web", "Also print the console URL for this incident."},
 			{"--evidence", "Fetch and print the evidence record for this incident, if one exists."},
 		},
@@ -356,7 +356,7 @@ var helpEntries = map[string]helpEntry{
 	"incidents correlate": {
 		description: "Align a dependency degradation with this incident window and score the overlap.",
 		usage:       "reliastra incidents correlate <incident-id> [--json]",
-		notes:       []string{
+		notes: []string{
 			"Deterministic and versioned: five weighted signals, published weights, and a",
 			"methodology version on the result. A score is an alignment between two timelines -",
 			"it is not a statement of cause, and the output says so.",
@@ -366,7 +366,7 @@ var helpEntries = map[string]helpEntry{
 	"evidence": {
 		description: "The compiled records RELIASTRA issues for resolved incidents.",
 		usage:       "reliastra evidence <list|show|get> [arguments]",
-		notes:       []string{
+		notes: []string{
 			"An evidence record is the artifact you hand to someone who was not in the room:",
 			"the window, every observation in it, the detector’s rule, the attribution result,",
 			"and the hashes that let a third party check none of it changed.",
@@ -378,7 +378,7 @@ var helpEntries = map[string]helpEntry{
 	"evidence list": {
 		description: "Evidence records issued for this account, newest first.",
 		usage:       "reliastra evidence list [--limit 50] [--web]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--limit <n>", "Maximum rows. Default 50."},
 			{"--web", "Print the console URL for each record."},
 		},
@@ -388,7 +388,7 @@ var helpEntries = map[string]helpEntry{
 	"evidence show": {
 		description: "One evidence record: window, size, document checksum, and how to verify it.",
 		usage:       "reliastra evidence show <report-id> [--web] [--json]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--web", "Also print the console URL for this record."},
 			{"--payload", "Print the canonical payload hash and signature details too."},
 		},
@@ -405,7 +405,7 @@ var helpEntries = map[string]helpEntry{
 	"evidence get": {
 		description: "Write the artifact (PDF) to a file, and print the hash of the bytes on disk.",
 		usage:       "reliastra evidence get <report-id> [--out <path>]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--out <path>", "Where to write it. Default reliastra-evidence-<id>.pdf."},
 		},
 		notes: []string{
@@ -421,7 +421,7 @@ var helpEntries = map[string]helpEntry{
 	"verify": {
 		description: "Check a document against the public verification record. Needs no account.",
 		usage:       "reliastra verify <verification-id> [--file <document.pdf>] [--expect-hash <sha256>] [--json]",
-		args:        []flagDoc{
+		args: []flagDoc{
 			{"verification-id", "The id printed in the artifact footer and encoded in its QR code."},
 		},
 		flags: []flagDoc{
@@ -447,7 +447,7 @@ var helpEntries = map[string]helpEntry{
 	"keys": {
 		description: "API keys for CI, scripts and other services.",
 		usage:       "reliastra keys <list|create|rm> [arguments]",
-		notes:       []string{
+		notes: []string{
 			"A key is scoped, independently revocable, and is not a session: it is never",
 			"refreshed, and it is shown exactly once when created.",
 		},
@@ -467,7 +467,7 @@ var helpEntries = map[string]helpEntry{
 	"keys create": {
 		description: "Issue an API key. The secret is printed once and never stored by us.",
 		usage:       "reliastra keys create <name> [--scopes <list>]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--name <name>", "The key name. Alternative to the positional argument."},
 			{"--scopes <list>", "Comma-separated. Default read:checks, read:incidents, read:evidence, read:dependencies."},
 		},
@@ -485,7 +485,7 @@ var helpEntries = map[string]helpEntry{
 	"obs": {
 		description: "The public observatory: the endpoints RELIASTRA probes on its own record.",
 		usage:       "reliastra obs <list|show> [arguments]",
-		notes:       []string{
+		notes: []string{
 			"Unauthenticated. These are not your dependencies and are never mixed with them;",
 			"the public pipeline stores observations and opens no incidents. No credential is",
 			"read or sent, even when one is configured.",
@@ -496,7 +496,7 @@ var helpEntries = map[string]helpEntry{
 	"obs list": {
 		description: "The public vendor index: recent state per probe, no account needed.",
 		usage:       "reliastra obs list [--limit 100] [--json]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--limit <n>", "Maximum rows. Default 100."},
 		},
 		notes: []string{
@@ -509,7 +509,7 @@ var helpEntries = map[string]helpEntry{
 	"obs show": {
 		description: "One vendor record: endpoints, recent state, and the last observation.",
 		usage:       "reliastra obs show <vendor> [--web] [--json]",
-		flags:       []flagDoc{
+		flags: []flagDoc{
 			{"--vendor <name>", "The vendor name. Alternative to the positional argument."},
 			{"--web", "Also print the public observatory URL for this vendor."},
 		},
@@ -522,7 +522,7 @@ var helpEntries = map[string]helpEntry{
 	"open": {
 		description: "Print - or open - the web page for a resource the CLI can identify.",
 		usage:       "reliastra open <incident|evidence|verify|dependency|observatory|docs> [id]",
-		args:        []flagDoc{
+		args: []flagDoc{
 			{"incident <id>", "The console page where the incident window is charted."},
 			{"evidence <id>", "The console page for one evidence record."},
 			{"verify <id>", "The public verification page for a verification id. No account needed."},

@@ -226,7 +226,7 @@ func addDep(ctx *commandContext) int {
 		"method":       "GET",
 		// One observation point is deployed; the scheduler label is not a
 		// choice the operator makes, so the CLI defaults it.
-		"regions":      []string{"us-east"},
+		"regions": []string{"us-east"},
 	}
 	if ctx.flags.has("region") {
 		body["regions"] = []string{ctx.flags.str("region")}

@@ -164,20 +164,20 @@ func webUrls(siteURL string) siteLinks {
 	return siteLinks{base: strings.TrimRight(siteURL, "/")}
 }
 
-func (s siteLinks) dashboard() string { return s.base + "/dashboard" }
-func (s siteLinks) dependency(id string) string { return s.base + "/dependencies/" + pathEscape(id) }
-func (s siteLinks) incident(id string) string { return s.base + "/incidents/" + pathEscape(id) }
-func (s siteLinks) evidence(id string) string { return s.base + "/evidence/" + pathEscape(id) }
+func (s siteLinks) dashboard() string             { return s.base + "/dashboard" }
+func (s siteLinks) dependency(id string) string   { return s.base + "/dependencies/" + pathEscape(id) }
+func (s siteLinks) incident(id string) string     { return s.base + "/incidents/" + pathEscape(id) }
+func (s siteLinks) evidence(id string) string     { return s.base + "/evidence/" + pathEscape(id) }
 func (s siteLinks) verification(id string) string { return s.base + "/reports/" + pathEscape(id) }
-func (s siteLinks) observatory() string { return s.base + "/observatory" }
-func (s siteLinks) vendor(name string) string { return s.base + "/observatory/" + pathEscape(name) }
+func (s siteLinks) observatory() string           { return s.base + "/observatory" }
+func (s siteLinks) vendor(name string) string     { return s.base + "/observatory/" + pathEscape(name) }
 func (s siteLinks) docs(slug string) string {
 	if slug == "" {
 		return s.base + "/docs"
 	}
 	return s.base + "/docs/" + slug
 }
-func (s siteLinks) quickstart() string { return s.base + "/docs/quickstart" }
-func (s siteLinks) methodology() string { return s.base + "/docs/methodology" }
-func (s siteLinks) product() string { return s.base + "/product" }
+func (s siteLinks) quickstart() string      { return s.base + "/docs/quickstart" }
+func (s siteLinks) methodology() string     { return s.base + "/docs/methodology" }
+func (s siteLinks) product() string         { return s.base + "/product" }
 func (s siteLinks) evidenceProduct() string { return s.base + "/product/evidence" }
