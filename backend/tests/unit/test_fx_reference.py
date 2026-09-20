@@ -20,7 +20,7 @@ import httpx
 import pytest
 
 from app.config import settings
-from app.core import fx_reference
+from app.modules.billing import fx_reference
 from app.core.payment_pricing import FX_REFERENCE_DISCLAIMER
 
 
@@ -156,7 +156,7 @@ async def test_currency_payload_embeds_reference_and_resolves_amounts(mock_httpx
 @pytest.mark.asyncio
 async def test_current_rate_returns_the_rate_used_for_pricing(mock_httpx, monkeypatch):
     """``current_rate`` is the number pricing consumes."""
-    from app.core import fx_reference
+    from app.modules.billing import fx_reference
 
     mock_httpx["transport"] = _transport(
         {"base": "USD", "rates": {"NGN": 1322.0}, "time_last_update_utc": "z"}
@@ -166,7 +166,7 @@ async def test_current_rate_returns_the_rate_used_for_pricing(mock_httpx, monkey
 
 @pytest.mark.asyncio
 async def test_current_rate_is_none_when_the_source_is_down(mock_httpx):
-    from app.core import fx_reference
+    from app.modules.billing import fx_reference
 
     mock_httpx["transport"] = _transport({"nope": True}, status=503)
     assert await fx_reference.current_rate() is None
@@ -175,7 +175,7 @@ async def test_current_rate_is_none_when_the_source_is_down(mock_httpx):
 @pytest.mark.asyncio
 async def test_cached_rate_reads_without_io(mock_httpx):
     """The synchronous cache read serves the email renderers."""
-    from app.core import fx_reference
+    from app.modules.billing import fx_reference
 
     mock_httpx["transport"] = _transport(
         {"base": "USD", "rates": {"NGN": 1322.0}, "time_last_update_utc": "z"}

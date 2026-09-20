@@ -34,7 +34,7 @@ WEBHOOK_SECRET = "sk_test_regression"
 async def test_claim_returns_true_when_key_is_newly_created():
     redis = MagicMock()
     redis.set = AsyncMock(return_value=True)
-    with patch("app.infrastructure.redis_client.get_redis", return_value=redis):
+    with patch("app.platform.integrations.redis.get_redis", return_value=redis):
         assert await safe_redis_claim("k") is True
 
 
@@ -42,7 +42,7 @@ async def test_claim_returns_true_when_key_is_newly_created():
 async def test_claim_returns_false_for_a_genuine_duplicate():
     redis = MagicMock()
     redis.set = AsyncMock(return_value=None)  # real redis-py SET NX miss
-    with patch("app.infrastructure.redis_client.get_redis", return_value=redis):
+    with patch("app.platform.integrations.redis.get_redis", return_value=redis):
         assert await safe_redis_claim("k") is False
 
 
@@ -50,7 +50,7 @@ async def test_claim_returns_false_for_a_genuine_duplicate():
 async def test_claim_returns_none_when_redis_is_unreachable():
     """The whole bug in one assertion: unavailable must NOT be False."""
     with patch(
-        "app.infrastructure.redis_client.get_redis",
+        "app.platform.integrations.redis.get_redis",
         side_effect=ConnectionError("connection refused"),
     ):
         result = await safe_redis_claim("k")
@@ -67,7 +67,7 @@ async def test_claim_returns_none_on_timeout():
 
     redis = MagicMock()
     redis.set = _hang
-    with patch("app.infrastructure.redis_client.get_redis", return_value=redis):
+    with patch("app.platform.integrations.redis.get_redis", return_value=redis):
         assert await safe_redis_claim("k", timeout=0.05) is None
 
 
@@ -104,7 +104,7 @@ async def _call(service, payload):
 @pytest.mark.asyncio
 async def test_webhook_first_delivery_is_processed():
     service = BillingService()
-    service.verify_transaction = AsyncMock()
+    service._verification.verify_transaction = AsyncMock()
     with (
         patch.object(settings, "PAYSTACK_SECRET_KEY", WEBHOOK_SECRET),
         patch(
@@ -114,13 +114,13 @@ async def test_webhook_first_delivery_is_processed():
     ):
         res = await _call(service, _charge_payload())
     assert res.received is True
-    service.verify_transaction.assert_awaited_once()
+    service._verification.verify_transaction.assert_awaited_once()
 
 
 @pytest.mark.asyncio
 async def test_webhook_duplicate_delivery_is_not_processed_twice():
     service = BillingService()
-    service.verify_transaction = AsyncMock()
+    service._verification.verify_transaction = AsyncMock()
     with (
         patch.object(settings, "PAYSTACK_SECRET_KEY", WEBHOOK_SECRET),
         patch(
@@ -130,14 +130,14 @@ async def test_webhook_duplicate_delivery_is_not_processed_twice():
     ):
         res = await _call(service, _charge_payload())
     assert res.received is True
-    service.verify_transaction.assert_not_awaited()
+    service._verification.verify_transaction.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_webhook_refuses_retryably_when_idempotency_store_is_down():
     """Must NOT be read as a duplicate, and must NOT acknowledge with 200."""
     service = BillingService()
-    service.verify_transaction = AsyncMock()
+    service._verification.verify_transaction = AsyncMock()
     with (
         patch.object(settings, "PAYSTACK_SECRET_KEY", WEBHOOK_SECRET),
         patch(
@@ -148,7 +148,7 @@ async def test_webhook_refuses_retryably_when_idempotency_store_is_down():
     ):
         await _call(service, _charge_payload())
     assert exc.value.status_code == 503, "must be retryable, not 2xx/4xx"
-    service.verify_transaction.assert_not_awaited()
+    service._verification.verify_transaction.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -187,7 +187,7 @@ async def test_claim_helper_propagates_all_three_states():
             "app.infrastructure.redis_client.safe_redis_claim",
             new=AsyncMock(return_value=redis_state),
         ):
-            assert await service._claim_webhook_event("evt") is redis_state
+            assert await service._webhooks._claim_webhook_event("evt") is redis_state
 
 
 # ─────────────────────────────────────────────────────────────────────────

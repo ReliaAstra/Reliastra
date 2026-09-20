@@ -223,7 +223,7 @@ async def test_a_failed_generation_is_recorded_and_a_retry_succeeds(
     await db_session.commit()
 
     boom = mocker.patch.object(
-        evidence_service,
+        evidence_service._renderer,
         "_html_to_pdf",
         new=AsyncMock(side_effect=RuntimeError("renderer exploded")),
     )
@@ -322,14 +322,14 @@ async def test_the_artifact_makes_no_multi_point_claims(
     await db_session.commit()
 
     rendered: dict[str, str] = {}
-    real_render = evidence_service._render_html
+    real_render = evidence_service._renderer._render_html
 
     def spy(context):
         html = real_render(context)
         rendered["html"] = html
         return html
 
-    mocker.patch.object(evidence_service, "_render_html", new=spy)
+    mocker.patch.object(evidence_service._renderer, "_render_html", new=spy)
     await evidence_service.generate_for_incident(db_session, incident.id)
 
     html = rendered["html"]

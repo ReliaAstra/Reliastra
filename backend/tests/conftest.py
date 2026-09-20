@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 import os
 import tempfile
@@ -148,26 +147,49 @@ async def fake_redis(mock_redis: fakeredis.aioredis.FakeRedis) -> AsyncGenerator
     yield mock_redis
 
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
-async def _reset_paystack_http_pool() -> AsyncGenerator[None, None]:
-    """Drop the pooled Paystack client between tests.
+@pytest.fixture(scope="function", autouse=True)
+def _clear_observability_context():
+    """Contextvars live on the thread, and pytest reuses threads across tests.
 
-    The billing service caches one process-global httpx.AsyncClient
-    (``_paystack_http_client``). Tests patch ``httpx.AsyncClient`` per test
-    with a MockTransport that captures into that test's own dict - but a
-    client built by an EARLIER test keeps serving later tests, so their
-    requests succeed (200) while landing in the wrong capture dict
-    (``KeyError: 'body'``). ASGITransport never runs app lifespan, so nothing
-    else closes the pool. Reset here; production lifespan still owns it.
+    Any test that enters a span or sets a request id would otherwise leak
+    ambient context into whatever runs next on the same thread. Clearing
+    before *and* after keeps every test's slate observably clean.
+    """
+    from app.platform.observability.context import request_id_var, user_id_var
+    from app.platform.observability.tracing import set_trace_context
+
+    request_id_var.set(None)
+    user_id_var.set(None)
+    set_trace_context(None)
+    yield
+    request_id_var.set(None)
+    user_id_var.set(None)
+    set_trace_context(None)
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def _reset_http_pools() -> AsyncGenerator[None, None]:
+    """Drop every pooled HTTP client between tests.
+
+    Shared pools (Paystack, checks, notifications, Resend) are process-global.
+    Tests patch ``httpx.AsyncClient`` per test with a MockTransport that
+    captures into that test's own dict - but a client built by an EARLIER test
+    keeps serving later tests, so their requests succeed (200) while landing
+    in the wrong capture dict (``KeyError: 'body'``). ASGITransport never runs
+    app lifespan, so nothing else closes the pools. Reset here (factory pools
+    plus the module-global mirrors); production lifespan still owns them.
     """
     yield
-    from app.modules.billing import service as billing_service
+    from app.platform.integrations.http import reset_shared_clients
 
-    client = billing_service._paystack_http_client
+    await reset_shared_clients()
+    from app.modules.billing import service as billing_service
+    from app.modules.notifications import service as notifications_service
+    from app.platform.integrations import email_resend as resend_module
+
     billing_service._paystack_http_client = None
-    if client is not None:
-        with contextlib.suppress(Exception):
-            await client.aclose()
+    notifications_service._notification_http_client = None
+    resend_module._client = None
 
 
 @pytest_asyncio.fixture(scope="function")

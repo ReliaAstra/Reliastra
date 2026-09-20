@@ -44,7 +44,7 @@ async def _fixed_rate_payload(*_args, **_kwargs) -> dict:
 
 @pytest.fixture(autouse=True)
 def _fixed_fx_rate(monkeypatch):
-    from app.core import fx_reference
+    from app.modules.billing import fx_reference
 
     async def _none(*_args, **_kwargs):
         return None

@@ -193,7 +193,7 @@ async def test_no_rate_disables_checkout_instead_of_guessing(
     async def _down(*_a, **_k):
         return None
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
+    monkeypatch.setattr("app.modules.billing.fx_reference._fetch_rate", _down)
     res = await async_client.post(
         "/v1/billing/initialize",
         headers=auth_data["headers"],

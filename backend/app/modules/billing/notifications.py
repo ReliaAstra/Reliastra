@@ -7,8 +7,8 @@ email that forgets it (or ships it twice).
 Currency discipline
 -------------------
 No price string in this module is hardcoded. Product prices come from
-``app.core.permissions`` and payment amounts from
-``app.core.payment_pricing`` - the same two sources the checkout used - so a
+``app.platform.commercial.entitlements`` and payment amounts from
+``app.modules.billing.pricing`` - the same two sources the checkout used - so a
 receipt can never contradict what Paystack actually collected. Receipts state
 the *charged* amount and its ISO currency code in words (``NGN 25,118.00 NGN``
 style output from :func:`format_money`), never a bare symbol.
@@ -27,14 +27,14 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from app.core.fx_reference import cached_rate
-from app.core.payment_pricing import (
+from app.modules.billing.fx_reference import cached_rate
+from app.modules.billing.pricing import (
     PAYMENT_PROVIDER,
     PRODUCT_CURRENCY,
     format_money,
     resolve_payment_price,
 )
-from app.core.permissions import (
+from app.platform.commercial.entitlements import (
     PLAN_PRICES_USD,
     get_plan_annual_price_usd,
     get_plan_display_name,

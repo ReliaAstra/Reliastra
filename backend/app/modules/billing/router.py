@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import (
     ValidationException,
 )
-from app.core.permissions import (
+from app.platform.commercial.entitlements import (
     Plan,
     PLAN_BILLING_AVAILABILITY,
     PLAN_DEPENDENCY_LIMITS,
@@ -23,11 +23,11 @@ from app.core.permissions import (
     get_min_check_interval,
     is_enterprise_plan,
 )
-from app.core.payment_disclosure import (
+from app.modules.billing.disclosure import (
     currency_payload,
     resolve_payment_price_async,
 )
-from app.core.payment_pricing import format_money
+from app.modules.billing.pricing import format_money
 from app.db.session import get_db
 from app.dependencies import (
     get_current_org,
@@ -134,13 +134,13 @@ async def get_pricing_plans() -> PricingPlansResponse:
     the catalog is exactly ``PUBLIC_PLAN_CATALOG``. Legacy internal plans are
     never advertised.
     """
-    from app.core.permissions import (
+    from app.platform.commercial.entitlements import (
         PUBLIC_PLAN_CATALOG,
         TRIAL_DAYS,
         get_plan_annual_price_usd,
     )
-    from app.core.payment_pricing import transparency_lines
-    from app.core.commercial_terms import (
+    from app.modules.billing.pricing import transparency_lines
+    from app.modules.billing.commercial_terms import (
         REFUND_POLICY_PATH,
         TERMS_PATH,
         cancellation_summary,
@@ -215,7 +215,7 @@ async def get_pricing_plans() -> PricingPlansResponse:
 async def get_commercial_terms() -> CommercialTermsResponse:
     """Canonical cancellation, trial and refund copy. Public so pricing and
     the refund-policy page can render the same contract as checkout."""
-    from app.core.commercial_terms import public_policy
+    from app.modules.billing.commercial_terms import public_policy
 
     return CommercialTermsResponse(**public_policy())
 
@@ -242,7 +242,7 @@ async def get_fx_reference() -> dict:
     shared currency object embeds, so nothing has to restate the label, the
     source or the timestamp.
     """
-    from app.core.fx_reference import fx_reference_payload
+    from app.modules.billing.fx_reference import fx_reference_payload
 
     payload = await fx_reference_payload()
     if payload is None:

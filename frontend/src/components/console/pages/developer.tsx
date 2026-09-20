@@ -435,7 +435,7 @@ export function DeveloperSettingsPage() {
         title="Developer"
         meta={
           <>
-            <Fact label="CLI" value="@reliastra/cli" mono={false} />
+            <Fact label="CLI" value="github.com/ReliaAstra/Reliastra/cli" mono={false} />
             <Fact label="API" value="https://api.reliastra.com/v1" />
             <Fact label="Webhooks" value="HMAC-SHA256" mono={false} />
           </>
@@ -452,8 +452,7 @@ export function DeveloperSettingsPage() {
           </Link>
         }
       >
-        <Command>git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git</Command>
-        <Command>npm install -g ./Reliastra/cli</Command>
+        <Command>go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest</Command>
         <Command>reliastra login --email you@example.com</Command>
         <Command>reliastra deps list</Command>
         <Command>reliastra incidents list --status open --web</Command>
@@ -461,8 +460,8 @@ export function DeveloperSettingsPage() {
         <Command>reliastra evidence get &lt;report-id&gt; --out incident.pdf</Command>
         <Command>reliastra verify &lt;verification-id&gt; --file incident.pdf</Command>
         <p className="obc-body mt-4 max-w-[80ch] text-[12px] text-[var(--obc-text-3)]">
-          The CLI lives in the repository under <code>cli/</code>; it is not on the public npm
-          registry, so it installs from the checkout above. Verification exits 4 when a document
+          The CLI is a Go module in the repository under <code>cli/</code>; the Go module
+          proxy serves it straight from there, so the install above needs no registry account. Verification exits 4 when a document
           does not match its record, so it works as a pipeline gate with no wrapper.{' '}
           <Link className="underline decoration-[var(--obc-line-3)]" href={DOCS_ROUTES.cli}>
             CLI reference

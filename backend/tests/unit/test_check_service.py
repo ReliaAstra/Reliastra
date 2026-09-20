@@ -5,7 +5,7 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.modules.checks.service import CheckService, get_http_client
+from app.modules.checks.service import CheckService
 from app.modules.dependencies.schemas import DependencyInternalDTO
 
 
@@ -192,17 +192,6 @@ async def test_execute_check_blocked_url_records_failure_without_http():
 
 
 @pytest.mark.asyncio
-async def test_http_client_is_module_level_pool(mocker):
-    """FIX 2: get_http_client must return the same pooled client."""
-    first = get_http_client()
-    second = get_http_client()
-    assert first is second
-    from app.modules.checks.service import _http_client
-
-    assert _http_client is not None
-
-
-@pytest.mark.asyncio
 async def test_execute_check_records_circuit_breaker(mocker):
     """FIX 8: outcomes feed the circuit breaker."""
     dep_id = uuid.uuid4()
@@ -231,10 +220,10 @@ async def test_execute_check_records_circuit_breaker(mocker):
         "app.modules.incidents.repository.IncidentRepository.get_open_for_dependency",
         new=AsyncMock(return_value=None),
     ), patch(
-        "app.modules.checks.service.circuit_breaker.record_success",
+        "app.modules.checks.probe.circuit_breaker.record_success",
         new=AsyncMock(),
     ) as record_success, patch(
-        "app.modules.checks.service.circuit_breaker.record_failure",
+        "app.modules.checks.probe.circuit_breaker.record_failure",
         new=AsyncMock(),
     ) as record_failure:
         await service.execute_check(session, dep_id, "us-east")

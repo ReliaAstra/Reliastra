@@ -26,7 +26,7 @@ from pathlib import Path
 
 import pytest
 
-from app.core import checkout_reasons
+from app.modules.billing import checkout_reasons
 from app.core.checkout_reasons import (
     AMOUNT_NEUTRAL_REASONS,
     MONEY_MAY_HAVE_MOVED_REASONS,

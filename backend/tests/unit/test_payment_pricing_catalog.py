@@ -214,12 +214,12 @@ def test_currency_info_embeds_provider_and_resolved_amounts():
 #: one resolution of one rate prices the quote, the display and the charge.
 PRICING_PATH_MODULES = (
     (
-        "app/core/payment_pricing.py",
-        ("fx_reference", "payment_disclosure"),
+        "app/modules/billing/pricing.py",
+        ("fx_reference", "disclosure"),
     ),
     (
-        "app/core/permissions.py",
-        ("fx_reference", "payment_disclosure"),
+        "app/platform/commercial/entitlements.py",
+        ("fx_reference", "disclosure"),
     ),
     (
         "app/modules/billing/service.py",

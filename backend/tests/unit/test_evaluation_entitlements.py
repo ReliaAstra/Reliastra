@@ -93,7 +93,7 @@ async def test_active_evaluation_allows_evidence_generation():
     # Service imports OrganizationRepository inside the method, so patch there
     with patch("app.modules.organizations.repository.OrganizationRepository.get_by_id", new=AsyncMock(return_value=org)):
         # Should NOT raise - effective plan is Pro
-        await evidence_service._enforce_evidence_entitlement(AsyncMock(), org.id)  # type: ignore[arg-type]
+        await evidence_service._context._enforce_evidence_entitlement(AsyncMock(), org.id)  # type: ignore[arg-type]
     assert get_effective_plan_for_org(org) == "pro"
 
 
@@ -175,7 +175,7 @@ async def test_expired_evaluation_blocks_evidence():
     svc = ev_mod.EvidenceService()
     with patch("app.modules.organizations.repository.OrganizationRepository.get_by_id", new=AsyncMock(return_value=org)):
         with pytest.raises(ForbiddenException):
-            await svc._enforce_evidence_entitlement(AsyncMock(), org.id)
+            await svc._context._enforce_evidence_entitlement(AsyncMock(), org.id)
 
 
 @pytest.mark.asyncio

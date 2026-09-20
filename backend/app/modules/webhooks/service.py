@@ -87,9 +87,12 @@ class WebhookService:
         use the hostname). Redirects are NOT followed: a 3xx counts as a
         non-2xx delivery outcome instead of a chance to bypass the pin.
         """
+        from app.platform.integrations.http import build_client
+
         target = await resolve_pinned_target_async(url)
         transport = pinned_transport_for(target)
-        async with httpx.AsyncClient(
+        async with build_client(
+            "webhooks",
             transport=transport,
             timeout=_WEBHOOK_TIMEOUT_SECONDS,
             follow_redirects=False,

@@ -91,7 +91,7 @@ def _fresh_fx_cache(monkeypatch):
     cached on purpose in production; without this, whichever FX test ran first
     would decide what the second one saw.
     """
-    from app.core import fx_reference as fx
+    from app.modules.billing import fx_reference as fx
 
     async def _none():
         return None
@@ -179,7 +179,7 @@ async def test_fx_reference_rates_the_charge(
             ),
         }
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _rate_1650)
+    monkeypatch.setattr("app.modules.billing.fx_reference._fetch_rate", _rate_1650)
     quote = (
         await async_client.get(
             "/v1/billing/checkout/quote?plan=pro", headers=auth_data["headers"]
@@ -203,7 +203,7 @@ async def test_no_fx_source_means_no_charge_can_be_offered(
     async def _down(*_a, **_k):
         return None
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
+    monkeypatch.setattr("app.modules.billing.fx_reference._fetch_rate", _down)
     quote = (
         await async_client.get(
             "/v1/billing/checkout/quote?plan=pro", headers=auth_data["headers"]
@@ -246,7 +246,7 @@ async def test_quote_refuses_to_offer_checkout_it_cannot_honour(
     async def _down(*_a, **_k):
         return None
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _down)
+    monkeypatch.setattr("app.modules.billing.fx_reference._fetch_rate", _down)
     res = await async_client.get(
         "/v1/billing/checkout/quote?plan=pro", headers=auth_data["headers"]
     )
@@ -751,7 +751,7 @@ async def test_history_states_what_was_charged_even_after_a_repricing(
             "disclaimer": "d",
         }
 
-    monkeypatch.setattr("app.core.fx_reference._fetch_rate", _new_rate)
+    monkeypatch.setattr("app.modules.billing.fx_reference._fetch_rate", _new_rate)
 
     hist = await async_client.get(
         "/v1/billing/transactions", headers=auth_data["headers"]

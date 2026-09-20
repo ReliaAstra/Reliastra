@@ -16,7 +16,7 @@ async def _run_generator(gen) -> None:
 
 @pytest.mark.asyncio
 async def test_get_db_rolls_back_clean_sessions(monkeypatch):
-    from app.db import session as session_module
+    from app.platform.persistence import session as session_module
 
     clean_session = AsyncMock()
     clean_session.is_active = True
@@ -43,7 +43,7 @@ async def test_get_db_rolls_back_clean_sessions(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_get_db_commits_dirty_sessions(monkeypatch):
-    from app.db import session as session_module
+    from app.platform.persistence import session as session_module
 
     dirty_session = AsyncMock()
     dirty_session.is_active = True
@@ -67,7 +67,7 @@ async def test_get_db_commits_dirty_sessions(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_get_db_rolls_back_on_exception(monkeypatch):
-    from app.db import session as session_module
+    from app.platform.persistence import session as session_module
 
     failing = AsyncMock()
     failing.is_active = True
@@ -91,7 +91,7 @@ async def test_get_db_rolls_back_on_exception(monkeypatch):
 @pytest.mark.asyncio
 async def test_get_db_commits_when_writes_were_flushed(monkeypatch):
     """FIX 38: flushed INSERTs (which leave session.new) must still commit."""
-    from app.db import session as session_module
+    from app.platform.persistence import session as session_module
 
     flushed = AsyncMock()
     flushed.is_active = True

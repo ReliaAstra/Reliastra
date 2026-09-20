@@ -110,9 +110,9 @@ python -m pip install ruff
 (cd frontend && npm install && npx prisma generate)
 (cd frontend && npm run lint && npm run typecheck && npm test)
 
-# Existing CLI: no runtime or test dependencies to install
-(cd cli && npm test && npm run lint)
-node cli/bin/reliastra.mjs --help
+# CLI (Go, standard library only): format check, vet, tests, then help
+(cd cli && test -z "$(gofmt -l .)" && go vet ./... && go test -race ./...)
+go run ./cli/cmd/reliastra --help
 ```
 
 Backend fixtures use embedded PostgreSQL (`pgserver`), FakeRedis, an in-memory
@@ -156,7 +156,7 @@ source references, and any issue-form YAML.
 ## Licensing scope
 
 Public repository visibility is not a blanket license grant. The root README
-currently declares proprietary terms; `cli/package.json` declares Apache-2.0,
+currently declares proprietary terms; `cli/LICENSE` declares Apache-2.0,
 and research subdirectories contain their own licenses. Check the applicable
 scope and ask maintainers to clarify any ambiguity before reusing or contributing
 material whose terms are unclear. This guide does not change licensing, impose

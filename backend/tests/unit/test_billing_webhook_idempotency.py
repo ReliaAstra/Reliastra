@@ -31,9 +31,9 @@ def _payload(reference: str = "ref-123", event_id: int = 42) -> dict:
 @pytest.mark.asyncio
 async def test_webhook_event_id_derivation():
     service = BillingService(repository=MagicMock())
-    assert service._webhook_event_id(_payload()) == "charge.success:42"
+    assert service._webhooks._webhook_event_id(_payload()) == "charge.success:42"
     assert (
-        service._webhook_event_id({"event": "x", "data": {}}) is None
+        service._webhooks._webhook_event_id({"event": "x", "data": {}}) is None
     )
 
 
@@ -48,21 +48,21 @@ async def test_charge_success_processed_only_once(fake_redis, monkeypatch):
 
     repo = MagicMock()
     service = BillingService(repository=repo)
-    service.verify_transaction = AsyncMock()
+    service._verification.verify_transaction = AsyncMock()
 
     # First delivery: processed.
     resp1 = await service.handle_webhook(
         MagicMock(), payload, signature=signature, raw_body=raw_body
     )
     assert resp1.received is True
-    assert service.verify_transaction.await_count == 1
+    assert service._verification.verify_transaction.await_count == 1
 
     # Retry delivery of the same event: skipped.
     resp2 = await service.handle_webhook(
         MagicMock(), payload, signature=signature, raw_body=raw_body
     )
     assert resp2.received is True
-    assert service.verify_transaction.await_count == 1
+    assert service._verification.verify_transaction.await_count == 1
 
 
 @pytest.mark.asyncio
@@ -71,7 +71,7 @@ async def test_distinct_events_are_all_processed(fake_redis):
 
     repo = MagicMock()
     service = BillingService(repository=repo)
-    service.verify_transaction = AsyncMock()
+    service._verification.verify_transaction = AsyncMock()
 
     for event_id in (1, 2):
         payload = _payload(reference=f"ref-{event_id}", event_id=event_id)
@@ -80,7 +80,7 @@ async def test_distinct_events_are_all_processed(fake_redis):
         await service.handle_webhook(
             MagicMock(), payload, signature=signature, raw_body=raw_body
         )
-    assert service.verify_transaction.await_count == 2
+    assert service._verification.verify_transaction.await_count == 2
 
 
 @pytest.mark.asyncio

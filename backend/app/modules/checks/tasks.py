@@ -2,8 +2,8 @@ import logging
 import uuid
 from typing import Any
 
-from app.infrastructure.async_tasks import async_task_body
-from app.infrastructure.celery_app import celery_app
+from app.platform.messaging.async_tasks import async_task_body
+from app.platform.messaging.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,17 @@ _EXECUTE_CHECK_AUTORETRY = (Exception,)
     time_limit=360,
 )
 def execute_check(
-    dependency_id: str, region: str, request_id: str | None = None
+    dependency_id: str,
+    region: str,
+    request_id: str | None = None,
+    _traceparent: str | None = None,
 ) -> dict[str, Any] | None:
+    # Join the dispatcher's trace first: everything below (probe, detection,
+    # incident, evidence) logs under one trace id. Optional kwargs keep this
+    # backward compatible with messages enqueued before the deploy.
+    from app.platform.observability.tracing import restore_task_context
+
+    restore_task_context(request_id=request_id, traceparent=_traceparent)
     # Capture Celery request context before the async adapter changes threads.
     task_id = execute_check.request.id
     async def _run(session) -> dict[str, Any] | None:
@@ -87,6 +96,11 @@ def schedule_checks(request_id: str | None = None) -> int:
         record_scheduler_cycle,
         record_scheduler_heartbeat,
     )
+    from app.platform.observability.tracing import restore_task_context
+
+    # Beat passes no context, so each cycle starts a fresh trace that every
+    # probe it dispatches joins (see CheckService.schedule_due_checks).
+    restore_task_context(request_id=request_id)
 
     async def _run(session) -> int:
         from app.modules.checks.service import check_service

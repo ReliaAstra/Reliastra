@@ -4,21 +4,26 @@ Command-line access to RELIASTRA: the endpoints being probed, what each probe
 recorded, what the detector concluded, the evidence record that follows, and the
 public verification of that record.
 
-No runtime dependencies. Node 18.17 or newer.
+A single static binary with no runtime dependencies. Go 1.23 or newer to build
+from source.
 
 ```bash
-git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
-npm install -g ./Reliastra/cli      # installs `reliastra`
+go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest   # installs `reliastra`
 reliastra --help
 ```
 
-The package is `cli/` in that repository. It is **not published to the public
-npm registry**, so `npm install -g @reliastra/cli` and `npx @reliastra/cli` have
-nothing to resolve. Without installing anything, run the file directly from a
-checkout:
+Or build from a checkout:
 
 ```bash
-node ./Reliastra/cli/bin/reliastra.mjs deps list
+git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
+go build -o reliastra ./Reliastra/cli/cmd/reliastra
+./reliastra --help
+```
+
+Without installing anything, run from the checkout (from the repository root):
+
+```bash
+go run ./cli/cmd/reliastra deps list
 ```
 
 Every command supports `--help` (`reliastra evidence get --help`), and
@@ -119,7 +124,7 @@ data hash         3f9a…
 document checksum 0c72…
 methodology       2.0
 signed            no — this deployment issues unsigned artifacts and the document says so
-retention         until 2027-09-04T09:12:00Z
+retention         until 2027-09-04 09:12:00Z
 ```
 
 Because the exit codes are meaningful, it works as a gate with no wrapper:
@@ -140,12 +145,14 @@ deliberately, because "we could not check" must not be reported as a pass.
 
 `verify` needs no credential: the record it reads is public, which is the whole
 point of a verification endpoint. So the pipeline step is one line after a
-checkout, with no secret and no install:
+checkout, with no secret:
 
 ```yaml
-# GitHub Actions
+# GitHub Actions (Go is preinstalled on github-hosted runners)
 - uses: actions/checkout@v4
-- run: node ./Reliastra/cli/bin/reliastra.mjs verify "$VERIFICATION_ID" --file incident.pdf
+- uses: actions/setup-go@v5
+  with: { go-version: '1.23' }
+- run: go run ./cli/cmd/reliastra verify "$VERIFICATION_ID" --file incident.pdf
 ```
 
 ## 5. Move between the terminal and the web
@@ -175,9 +182,10 @@ reliastra deps list --json | jq -r '.[] | "\(.name)\t\(.endpoint_url)"'
 reliastra evidence list --json | jq -r '.[].checksum'
 ```
 
-`--quiet` drops the explanatory lines and prints data only; `--json` implies it.
-A field the API did not return is `null` in JSON and `—` in the table. It is
-never rendered as `0` or `unknown`.
+Object keys print in alphabetical order, so the output is stable and diffable;
+the shape is unchanged. `--quiet` drops the explanatory lines and prints data
+only; `--json` implies it. A field the API did not return is `null` in JSON
+and `—` in the table. It is never rendered as `0` or `unknown`.
 
 ## Errors
 
@@ -217,7 +225,7 @@ health.
 ## Tests
 
 ```bash
-npm test
+go test ./...
 ```
 
 The suite runs the real commands against a local HTTP server, so argument

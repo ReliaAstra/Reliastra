@@ -27,6 +27,7 @@ from app.modules.evidence.metrics import (
     compute_window_metrics,
     summarise,
 )
+from app.modules.evidence.context import EvidenceContext
 from app.modules.evidence.service import (
     DEFAULT_METHODOLOGY_VERSION,
     RENDERER_CHROMIUM,
@@ -175,8 +176,8 @@ def _render(
         window_end=metrics.window_end,
         threshold_ms=250.0,
     )
-    detection = EvidenceService._detection_context(incident)
-    topology = EvidenceService._topology_context(metrics.observation_points)
+    detection = EvidenceContext._detection_context(incident)
+    topology = EvidenceContext._topology_context(metrics.observation_points)
     attribution_payload = (
         {
             "id": str(uuid.uuid4()),
@@ -198,10 +199,10 @@ def _render(
     data_hash = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
     verification_id = "T3st-Tok3n_Verification-Id"
     generated_at = datetime(2026, 9, 11, 12, 0, 0, tzinfo=timezone.utc)
-    documented_rows, caption = EvidenceService._documented_observations(rows)
+    documented_rows, caption = EvidenceContext._documented_observations(rows)
     available = total_in_window if total_in_window is not None else len(rows)
     service = EvidenceService()
-    presentation = service._presentation_context(
+    presentation = service._context._presentation_context(
         incident=incident,
         dependency=dependency,
         organization=organization,
@@ -229,7 +230,7 @@ def _render(
             else renderer
         ),
     )
-    html = service._render_html(
+    html = service._renderer._render_html(
         {
             "incident": incident,
             "dependency": dependency,
@@ -296,7 +297,7 @@ class TestDocumentIsAddressable:
         # degraded reads; `getattr(x, "name")` on a mock is not a name.
         from unittest.mock import MagicMock
 
-        name, ref = EvidenceService._addressee(MagicMock(), uuid.uuid4())
+        name, ref = EvidenceContext._addressee(MagicMock(), uuid.uuid4())
         assert name.startswith("Organization ")
         assert "MagicMock" not in name
         assert ref

@@ -7,12 +7,11 @@
  * head while failing in their terminal. The failure is silent and expensive,
  * because the reader concludes the product is broken rather than the snippet.
  *
- * So this test reads the CLI's own source of truth (`cli/bin/reliastra.mjs` for
- * the command table and flag table, `cli/src/help.mjs` for the flags each
- * command documents) and checks every command, subcommand and long flag that
- * appears in a guide against it. It is the same arrangement as
- * `methodology.test.tsx`: one transcription, checked against the thing it
- * describes.
+ * So this test reads the CLI's own source of truth (`cli/cmd/reliastra/main.go`
+ * for the command table and flag tables, `cli/cmd/reliastra/help.go` for the
+ * help entries) and checks every command, subcommand and long flag that appears
+ * in a guide against it. It is the same arrangement as `methodology.test.tsx`:
+ * one transcription, checked against the thing it describes.
  *
  * The reverse direction is deliberately not asserted. A command the docs do not
  * mention yet is a documentation gap, not a falsehood, and failing a build on
@@ -20,15 +19,16 @@
  * them.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { DOCS } from '@/lib/docs/corpus';
 
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..');
-const BIN = readFileSync(join(REPO_ROOT, 'cli', 'bin', 'reliastra.mjs'), 'utf8');
-const HELP = readFileSync(join(REPO_ROOT, 'cli', 'src', 'help.mjs'), 'utf8');
+const MAIN = readFileSync(join(REPO_ROOT, 'cli', 'cmd', 'reliastra', 'main.go'), 'utf8');
+const HELP = readFileSync(join(REPO_ROOT, 'cli', 'cmd', 'reliastra', 'help.go'), 'utf8');
+const GO_MOD = readFileSync(join(REPO_ROOT, 'cli', 'go.mod'), 'utf8');
 const LANDING = readFileSync(
   join(REPO_ROOT, 'frontend', 'src', 'components', 'site', 'home', 'sections.tsx'),
   'utf8'
@@ -54,27 +54,28 @@ const LLMS_FULL = readFileSync(
   join(REPO_ROOT, 'frontend', 'src', 'app', 'llms-full.txt', 'route.ts'),
   'utf8'
 );
-const CLI_PACKAGE = JSON.parse(
-  readFileSync(join(REPO_ROOT, 'cli', 'package.json'), 'utf8')
-) as { name: string; bin: Record<string, string> };
 
 /* ── The CLI's own surface, read from the CLI ───────────────────────────── */
 
-/** `const COMMANDS = { login: …, deps: … }`. */
+/** Slice a Go `var name = …{ … }` block out of a source file. */
+function goBlock(source: string, anchor: string): string {
+  const block = source.slice(source.indexOf(anchor));
+  return block.slice(0, block.indexOf('\n}'));
+}
+
+/** `var commandTable = map[string]commandFunc{ "login": …, … }`. */
 function commandNames(source: string): string[] {
-  const block = source.slice(source.indexOf('const COMMANDS = {'));
-  const body = block.slice(block.indexOf('{') + 1, block.indexOf('\n};'));
-  return [...body.matchAll(/^\s{2}([a-z]+):/gm)].map((m) => m[1]);
+  const body = goBlock(source, 'var commandTable = map[string]commandFunc{');
+  return [...body.matchAll(/^\t"([a-z]+)":/gm)].map((m) => m[1]);
 }
 
-/** Keys of the `HELP` map: `'login'`, `'deps list'`, … */
+/** Keys of the `helpEntries` map: `"login"`, `"deps list"`, … */
 function helpKeys(source: string): string[] {
-  const block = source.slice(source.indexOf('export const HELP = {'));
-  const body = block.slice(0, block.indexOf('\n};'));
-  return [...body.matchAll(/^\s{2}'([a-z]+(?: [a-z-]+)?)':/gm)].map((m) => m[1]);
+  const body = goBlock(source, 'var helpEntries = map[string]helpEntry{');
+  return [...body.matchAll(/^\t"([a-z]+(?: [a-z-]+)?)":\s*\{/gm)].map((m) => m[1]);
 }
 
-const COMMANDS = commandNames(BIN);
+const COMMANDS = commandNames(MAIN);
 const HELP_ENTRIES = helpKeys(HELP);
 const SUBCOMMANDS = new Map<string, Set<string>>();
 for (const entry of HELP_ENTRIES) {
@@ -84,27 +85,36 @@ for (const entry of HELP_ENTRIES) {
   SUBCOMMANDS.get(command)!.add(sub);
 }
 
-/** Long flags: the global table plus every `--flag` documented per command. */
+const dashed = (camel: string) => camel.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
+/** Long flags: the boolean set, the flag tables, and every `--flag` in help. */
 function flagNames(): Set<string> {
   const flags = new Set<string>();
-  const globalBlock = BIN.slice(BIN.indexOf('const BOOLEAN_FLAGS = new Set(['));
-  for (const match of globalBlock.slice(0, globalBlock.indexOf(']')).matchAll(/'([a-z-]+)'/g)) {
+  const booleans = goBlock(MAIN, 'var booleanFlags = map[string]bool{');
+  for (const match of booleans.matchAll(/"([a-z-]+)":\s*true,/g)) {
     flags.add(`--${match[1]}`);
   }
-  // `['--json', …]` and `--check-interval <seconds>` forms in the help entries.
-  for (const match of HELP.matchAll(/\['(--[a-z-]+)/g)) flags.add(match[1]);
+  // `var commandFlags = …{ "deps": {"limit", …}, … }`: camelCase keys that the
+  // parser accepts dashed.
+  const tables = goBlock(MAIN, 'var commandFlags = map[string][]string{');
+  for (const line of tables.matchAll(/^\t"[a-z ]+":\s*\{([^}]*)\}/gm)) {
+    for (const key of line[1].matchAll(/"([a-zA-Z]+)"/g)) {
+      flags.add(`--${dashed(key[1])}`);
+    }
+  }
+  const globals = MAIN.match(/^var globalFlags = \[\]string\{([^}]*)\}/m);
+  for (const key of (globals?.[1] ?? '').matchAll(/"([a-zA-Z]+)"/g)) {
+    flags.add(`--${dashed(key[1])}`);
+  }
+  // `{…"--out <path>", …}` rows and `--check-interval <seconds>` prose forms.
+  for (const match of HELP.matchAll(/\{"(--[a-z-]+)/g)) flags.add(match[1]);
   for (const match of HELP.matchAll(/`?--([a-z][a-z-]+)/g)) flags.add(`--${match[1]}`);
-  // Derived names for camelCase keys documented as `--site-url`, `--api-url`.
-  flags.add('--api-url');
-  flags.add('--site-url');
-  flags.add('--token');
-  flags.add('--version');
-  flags.add('--print-token');
-  flags.add('--no-persist');
   return flags;
 }
 
 const FLAGS = flagNames();
+
+const MODULE = GO_MOD.match(/^module\s+(\S+)/m)?.[1] ?? '';
 
 /* ── Every command-looking string in the documentation ─────────────────── */
 
@@ -191,6 +201,8 @@ describe('documentation against the CLI surface', () => {
     expect(COMMANDS).toContain('open');
     expect(SUBCOMMANDS.get('evidence')).toContain('get');
     expect(FLAGS.has('--json')).toBe(true);
+    expect(FLAGS.has('--api-url')).toBe(true);
+    expect(MODULE).toBe('github.com/ReliaAstra/Reliastra/cli');
   });
 
   it('only ever shows commands the CLI implements', () => {
@@ -252,35 +264,47 @@ describe('documentation against the CLI surface', () => {
     }
   });
 
-  it('installs the package it actually ships', () => {
-    // The command the documentation types has to be the one the package
-    // installs, otherwise every example in the docs fails at step one.
-    expect(Object.keys(CLI_PACKAGE.bin)).toContain('reliastra');
-    expect(CLI_PACKAGE.name).toBe('@reliastra/cli');
-  });
-
-  it('never tells a reader to fetch an unpublished package', () => {
-    // `@reliastra/cli` is not on the public registry, so `npm install -g
-    // @reliastra/cli` and `npx @reliastra/cli` have nothing to resolve. The
-    // docs advertised both for a while, which is a promise the reader only
-    // discovers is false when the command fails. Flip this constant on the day
-    // the package is actually published - not before.
-    const publishedToRegistry = false;
-    if (publishedToRegistry) return;
-
-    const offenders: string[] = [];
+  it('installs the binary it actually ships', () => {
+    // The install the documentation types has to produce the `reliastra`
+    // binary every example invokes. `go install <module>/cmd/reliastra@…`
+    // names the binary after the package directory, so the documented target
+    // must be that package at the module path go.mod declares - otherwise
+    // every example fails at step one.
+    const installs: string[] = [];
     for (const { where, text } of FRAGMENTS) {
-      for (const match of text.matchAll(/\bnpm i(?:nstall)?\s+(?:-g|--global)\s+(\S+)/g)) {
-        const target = match[1];
-        if (!target.startsWith('./') && !target.startsWith('/')) {
-          offenders.push(`${where}: npm install -g ${target}`);
-        }
-      }
-      for (const match of text.matchAll(/\bnpx\s+(?!-)([@\w][\w@/.-]*)/g)) {
-        offenders.push(`${where}: npx ${match[1]}`);
+      for (const match of text.matchAll(/\bgo install\s+(\S+)/g)) {
+        installs.push(`${where}: ${match[1]}`);
+        expect(match[1].startsWith(`${MODULE}/cmd/reliastra@`), where).toBe(true);
       }
     }
-    expect(offenders).toEqual([]);
+    expect(installs.length).toBeGreaterThan(0);
+  });
+
+  it('runs checkout snippets against a package that exists', () => {
+    // `go run ./…` snippets are typed from the repository root, so the target
+    // must resolve to a directory with a main package.
+    const runs: string[] = [];
+    for (const { where, text } of FRAGMENTS) {
+      for (const match of text.matchAll(/\bgo run\s+(\S+)/g)) {
+        const target = match[1];
+        runs.push(`${where}: ${target}`);
+        if (!target.startsWith('./') && !target.startsWith('/')) continue;
+        expect(existsSync(join(REPO_ROOT, target, 'main.go')), where).toBe(true);
+      }
+    }
+    expect(runs.length).toBeGreaterThan(0);
+  });
+
+  it('never references the retired npm package', () => {
+    // The CLI was a Node program before 0.2.0. The package was never on the
+    // public registry, and the files are gone; any surviving reference is a
+    // command that fails at step one.
+    for (const { where, text } of FRAGMENTS) {
+      expect(text, where).not.toMatch(/@reliastra\/cli/);
+      expect(text, where).not.toMatch(/reliastra\.mjs/);
+      expect(text, where).not.toMatch(/npm install/);
+      expect(text, where).not.toMatch(/\bnpx\b/);
+    }
   });
 
   it('does not invent an API key format', () => {

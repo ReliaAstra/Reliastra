@@ -183,7 +183,7 @@ async def test_observation_attribution_snapshot_and_verification(
     assert attribution.methodology_version == "v1.0"
 
     mocker.patch.object(
-        evidence_service,
+        evidence_service._renderer,
         "_html_to_pdf",
         new=AsyncMock(
             return_value=(

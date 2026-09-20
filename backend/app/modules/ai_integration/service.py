@@ -190,11 +190,15 @@ class AIService:
         transport = pinned_transport_for(target)
         headers, payload = self._request(model, prompt)
 
+        from app.platform.integrations.http import build_client
+
         last_exc: Exception | None = None
         for attempt in range(MAX_RETRIES + 1):
             try:
-                async with httpx.AsyncClient(
-                    transport=transport, timeout=model.timeout_seconds
+                async with build_client(
+                    "llm",
+                    transport=transport,
+                    timeout=model.timeout_seconds,
                 ) as client:
                     response = await client.post(
                         model.endpoint_url, headers=headers, json=payload

@@ -14,7 +14,7 @@ from app.modules.billing.service import BillingService
 
 def _stub_fx_rate(monkeypatch, rate):
     """Pin the live exchange rate the checkout converts at (None = unavailable)."""
-    from app.core import fx_reference
+    from app.modules.billing import fx_reference
 
     async def _fetch(*_a, **_k):
         if rate is None:

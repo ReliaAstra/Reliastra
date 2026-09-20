@@ -1,6 +1,6 @@
 """Evaluation lifecycle background tasks.
 
-The 14-day full-access evaluation is enforced by :mod:`app.core.permissions`
+The 14-day full-access evaluation is enforced by :mod:`app.platform.commercial.entitlements`
 from the organization's ``evaluation_expires_at`` (server time). The
 entitlement layer itself correctly evaluates an expired window as Free,
 even if this job never runs. This module adds the *synchronization* layer:
@@ -29,9 +29,9 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, update
 
 from app.core.audit_log import AuditLogService
-from app.core.payment_disclosure import resolve_payment_price_async
-from app.core.payment_pricing import payment_currency
-from app.core.permissions import (
+from app.modules.billing.disclosure import resolve_payment_price_async
+from app.modules.billing.pricing import payment_currency
+from app.platform.commercial.entitlements import (
     PLAN_DEPENDENCY_LIMITS,
     Plan,
     TRIAL_DAYS,

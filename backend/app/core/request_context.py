@@ -1,46 +1,30 @@
-"""Process-wide request context for distributed tracing.
+"""app.core.request_context — backward-compatibility alias.
 
-The HTTP layer stores the incoming ``X-Request-ID`` here so that any
-service-layer code that dispatches background work (Celery tasks, scheduler
-enqueues) can propagate the same identifier without threading it through
-every function signature.
+Canonical home: ``app.platform.observability.context``
+Moved during the platform redesign. New code must import from the canonical
+path; this module re-exports the exact same objects and is covered by the
+import-parity test (``tests/unit/test_import_parity.py``).
 """
 
-from __future__ import annotations
-
-from contextvars import ContextVar
-
-#: Current X-Request-ID, set by ``RequestIdMiddleware`` in ``app.main``.
-request_id_var: ContextVar[str | None] = ContextVar(
-    "request_id", default=None
+from app.platform.observability.context import (  # noqa: F401
+    ContextVar,
+    annotations,
+    get_request_id,
+    get_user_id,
+    request_id_var,
+    set_request_id,
+    set_user_id,
+    user_id_var,
 )
 
-#: Current authenticated principal (user id or "apikey:<id>"), set by
-#: ``get_current_user`` in ``app.dependencies``.
-user_id_var: ContextVar[str | None] = ContextVar("user_id", default=None)
+__all__ = [
+    "ContextVar",
+    "annotations",
+    "get_request_id",
+    "get_user_id",
+    "request_id_var",
+    "set_request_id",
+    "set_user_id",
+    "user_id_var",
 
-
-def get_request_id() -> str | None:
-    """Return the active request id, or ``None`` outside a request."""
-    return request_id_var.get()
-
-
-def set_request_id(request_id: str | None):
-    """Set the active request id for the current context.
-
-    Returns the context token so callers can restore the previous value.
-    """
-    return request_id_var.set(request_id)
-
-
-def get_user_id() -> str | None:
-    """Return the active authenticated principal, or ``None``."""
-    return user_id_var.get()
-
-
-def set_user_id(user_id: str | None):
-    """Set the active authenticated principal for the current context.
-
-    Returns the context token so callers can restore the previous value.
-    """
-    return user_id_var.set(user_id)
+]
