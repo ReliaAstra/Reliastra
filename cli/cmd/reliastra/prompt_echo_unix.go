@@ -3,6 +3,7 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"sync"
 )
@@ -30,6 +31,27 @@ func restoreTerminalEcho() {
 		echoRestoreLast.restore()
 		echoRestoreLast.restore = nil
 	}
+}
+
+// stdinIsATTY reports whether f is the session terminal: /dev/tty is the
+// controlling terminal, so f answers a person exactly when it is the same
+// file. Pipes, files and /dev/null fail the comparison (or /dev/tty refuses
+// to open when there is no controlling terminal at all, as in CI).
+func stdinIsATTY(f *os.File) bool {
+	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
+	if err != nil {
+		return false
+	}
+	defer tty.Close()
+	stdinInfo, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	ttyInfo, err := tty.Stat()
+	if err != nil {
+		return false
+	}
+	return os.SameFile(stdinInfo, ttyInfo)
 }
 
 // echoOffStdin disables echo on the terminal behind stdin and returns the

@@ -33,6 +33,17 @@ func restoreTerminalEcho() {
 	}
 }
 
+// stdinIsATTY reports whether stdin is the console. GetConsoleMode fails
+// for redirected stdin (pipes, files, NUL), which is exactly the question
+// the confirmation guard asks.
+func stdinIsATTY(f *os.File) bool {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	getMode := kernel32.NewProc("GetConsoleMode")
+	var mode uint32
+	ret, _, _ := getMode.Call(uintptr(f.Fd()), uintptr(unsafe.Pointer(&mode)))
+	return ret != 0
+}
+
 // echoOffStdin clears ENABLE_ECHO_INPUT on the console behind stdin and
 // returns the restore function. When the console API is unavailable the
 // prompt still works, but says so.

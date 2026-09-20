@@ -24,15 +24,14 @@ import (
 // so tests can feed it without a terminal.
 var stdinFile = os.Stdin
 
-// stdinIsTerminal reports whether stdin is a terminal. It is a variable so
-// tests can pin it: a test that blocked on a real terminal prompt would hang
-// every interactive `go test` run.
+// stdinIsTerminal reports whether stdin is the session terminal. A character
+// device is not enough: /dev/null is one, and `go test` wires stdin to it.
+// The per-platform check answers "can a person answer here", which is what
+// the confirmation guard needs. It is a variable so the suite can pin it
+// (see TestMain): a test that consulted the real stdin would hang every
+// interactive `go test` run awaiting input.
 var stdinIsTerminal = func() bool {
-	info, err := stdinFile.Stat()
-	if err != nil {
-		return false
-	}
-	return info.Mode()&os.ModeCharDevice != 0
+	return stdinIsATTY(stdinFile)
 }
 
 // promptSecret reads a line without echoing it, when the terminal supports

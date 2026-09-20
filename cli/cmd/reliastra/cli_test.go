@@ -252,6 +252,12 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	// No test consults the real stdin: the refusal tests need "no terminal"
+	// deterministically, and any other prompt path would hang an interactive
+	// `go test` run awaiting input. Terminal behavior itself needs a pty and
+	// is covered by manual testing, not this suite.
+	stdinIsTerminal = func() bool { return false }
+
 	server := httptest.NewServer(testHandler())
 	defer server.Close()
 	apiBaseURL = server.URL
