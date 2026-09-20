@@ -548,8 +548,8 @@ func removeKey(ctx *commandContext) int {
 
 /* ── obs ────────────────────────────────────────────────────────────────── */
 
- // cmdObs serves the public observatory. No credential is read or sent for
- // these calls.
+// cmdObs serves the public observatory. No credential is read or sent for
+// these calls.
 func cmdObs(ctx *commandContext) int {
 	if len(ctx.args) == 0 {
 		return listObs(ctx)

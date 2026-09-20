@@ -517,15 +517,13 @@ func unknownSubcommand(command, sub, form string) int {
 	return exitUsage
 }
 
-/*
- * Turn a thrown error into one actionable message and the right exit code.
- *
- * The taxonomy is the point: authentication, permission, a missing resource, a
- * validation failure, the network and an unexpected API fault are six different
- * situations, and an operator (or a pipeline) needs to be able to tell them
- * apart without reading the prose. No stack traces are printed - a stack from
- * this tool describes our code, not the caller's problem.
- */
+// reportError turns a thrown error into one actionable message and the right exit code.
+//
+// The taxonomy is the point: authentication, permission, a missing resource, a
+// validation failure, the network and an unexpected API fault are six different
+// situations, and an operator (or a pipeline) needs to be able to tell them
+// apart without reading the prose. No stack traces are printed - a stack from
+// this tool describes our code, not the caller's problem.
 func reportError(err error) int {
 	status := apiErrStatus(err)
 
