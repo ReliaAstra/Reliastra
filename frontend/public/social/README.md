@@ -6,7 +6,7 @@
 - `reliastra-og.svg` and `reliastra-social-square.svg`: editable vector artwork.
 - `reliastra-email-avatar.svg`: editable vector source of the email avatar.
 
-The silver wordmark is a vector interpretation of the user-provided visual reference, not the original uploaded file (which was unavailable in the workspace). Replace the glyph paths with official source artwork when available. The favicon and other site branding are unchanged.
+The social cards use the public site's obsidian infrastructure language: an asymmetric typographic lockup, instrument-panel geometry, hairline grid, and a single amber observation signal. They are intentionally not a logo poster; the message and the dependency surface should still read at thumbnail size. The silver wordmark is retained only for the email avatar and is a vector interpretation of the user-provided visual reference, not the original uploaded file (which was unavailable in the workspace). Replace the glyph paths with official source artwork when available. The favicon and other site branding are unchanged.
 
 ## Research paper cards
 

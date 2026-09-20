@@ -1,1 +1,1 @@
-RELIASTRA. External Dependency Intelligence. Independent monitoring, incident attribution, evidence.
+RELIASTRA — Infrastructure you can prove. Independent observation for the external services software depends on, with incident attribution and verifiable evidence.
