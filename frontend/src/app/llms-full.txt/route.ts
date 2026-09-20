@@ -107,11 +107,9 @@ export function GET() {
   // RELIASTRA" needs the verb, the flag and the exit code, not the adjective.
   const programmatic = `## Programmatic access
 
-CLI (\`reliastra\`), shipped in the RELIASTRA repository under \`cli/\` with no
-runtime dependencies beyond Node 18.17. It is not on the public npm registry;
-install it from a checkout - \`git clone --depth 1
-https://github.com/ReliaAstra/Reliastra.git && npm install -g ./Reliastra/cli\` -
-or run \`node ./Reliastra/cli/bin/reliastra.mjs\` directly.
+CLI (\`reliastra\`), shipped in the RELIASTRA repository under \`cli/\` as a
+single static binary with no runtime dependencies. Install it with \`go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest\`,
+or run \`go run ./cli/cmd/reliastra …\` from a checkout.
 
   reliastra login --email you@example.com     # or: login --token rel_... for an API key
   reliastra doctor                            # config, credential, reachability: which one is failing

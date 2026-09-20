@@ -32,18 +32,17 @@ export const DOCS: Doc[] = [
         blocks: [
           {
             kind: 'p',
-            text: 'Everything below is one path, and the fastest way through it is the CLI: a single binary, no dependencies, Node 18.17 or newer.',
+            text: 'Everything below is one path, and the fastest way through it is the CLI: a single static binary with no runtime dependencies (Go 1.23 or newer to build from source).',
           },
           {
             kind: 'code',
             lang: 'bash',
-            code: `git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
-npm install -g ./Reliastra/cli
+            code: `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
 reliastra --version`,
           },
           {
             kind: 'p',
-            text: 'The CLI lives in that repository at `cli/` and installs from the checkout. It is not on the public npm registry, so an install by name does not resolve - `npm install -g ./Reliastra/cli` is the working form. Node 18.17 or newer, no dependencies.',
+            text: 'The CLI lives in that repository at `cli/`, a Go module with no dependencies beyond the standard library. The install above resolves through the Go module proxy straight from the repository, so there is no registry step; from a checkout, `go build -o reliastra ./cli/cmd/reliastra` produces the binary and `go run ./cli/cmd/reliastra …` runs without installing.',
           },
         ],
       },
@@ -184,7 +183,9 @@ reliastra verify <verification-id> --file incident.pdf`,
             lang: 'yaml',
             caption: 'GitHub Actions',
             code: `- uses: actions/checkout@v4
-- run: node ./Reliastra/cli/bin/reliastra.mjs verify "$VERIFICATION_ID" --file incident.pdf`,
+- uses: actions/setup-go@v5
+  with: { go-version: '1.23' }
+- run: go run ./cli/cmd/reliastra verify "$VERIFICATION_ID" --file incident.pdf`,
           },
         ],
       },
@@ -774,8 +775,10 @@ reliastra evidence get 4b2e… --out incident-2026-09-18.pdf`,
             lang: 'yaml',
             caption: '.github/workflows/evidence.yml',
             code: `- uses: actions/checkout@v4
+- uses: actions/setup-go@v5
+  with: { go-version: '1.23' }
 - name: Verify the evidence record
-  run: node ./Reliastra/cli/bin/reliastra.mjs verify "\${{ vars.VERIFICATION_ID }}" --file incident.pdf`,
+  run: go run ./cli/cmd/reliastra verify "\${{ vars.VERIFICATION_ID }}" --file incident.pdf`,
           },
         ],
       },
@@ -984,13 +987,12 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
           {
             kind: 'code',
             lang: 'bash',
-            code: `git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
-npm install -g ./Reliastra/cli
+            code: `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
 reliastra --help`,
           },
           {
             kind: 'p',
-            text: 'Node 18.17 or newer, no dependencies, no build step. The package is `cli/` in the repository and is not published to the public npm registry yet, so `npx` has nothing to resolve; a pipeline runs the file directly after checkout - `node ./Reliastra/cli/bin/reliastra.mjs`. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
+            text: 'Go 1.23 or newer to build, and the module has no dependencies beyond the standard library. The package is `cli/` in the repository and the Go module proxy serves it straight from there, so the install above needs no registry account. From a checkout, `go run ./cli/cmd/reliastra …` runs without installing. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
           },
         ],
       },

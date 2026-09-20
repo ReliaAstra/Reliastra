@@ -83,8 +83,7 @@ infrastructure, nor that every one of the vendor's customers was affected.
   API itself at ${API}/openapi.json. The API origin is ${API} - a self-hosted
   deployment answers at the same paths on its own origin.
 - CLI: the \`reliastra\` binary, shipped in the RELIASTRA repository under \`cli/\`
-  (installed from a checkout with \`npm install -g ./Reliastra/cli\`; it is not on
-  the public npm registry). Commands: login, logout, whoami, doctor, deps
+  (installed with \`go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest\`). Commands: login, logout, whoami, doctor, deps
   (list|show|add|rm), checks recent, incidents (list|show|correlate), evidence
   (list|show|get), verify, keys (list|create|rm), obs (list|show) and open.
   Data commands support \`--json\` with the API's own field names, and

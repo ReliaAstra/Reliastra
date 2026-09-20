@@ -60,7 +60,7 @@ Paths below are under `backend/app/` unless noted.
 | Incidents and attribution | `modules/incidents/`, `modules/attribution/` | Temporal/manual correlation, five weighted signal scores, methodology version and supporting/contradicting entries |
 | Evidence | `modules/evidence/`, `modules/verification/` | Snapshot/hash/signature contracts, provenance, retention and tenant-safe public verification |
 | Operational metrics | `core/metrics.py`, `modules/checks/scheduler_health.py` | Existing `/metrics` and `/health/checks`; process-local versus shared-directory collection |
-| CLI and UI | `cli/src/`, `frontend/src/components/console/`, `frontend/src/lib/dashboard/` (repository-root paths) | Existing API clients and inspectable incident/evidence workflows |
+| CLI and UI | `cli/cmd/reliastra/` (Go), `frontend/src/components/console/`, `frontend/src/lib/dashboard/` (repository-root paths) | Existing API clients and inspectable incident/evidence workflows |
 
 For deployment truth, read the [checks operating model](../checks-operating-model.md)
 and [incident/evidence lifecycle](../operations/incident-evidence-lifecycle.md).
