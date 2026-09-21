@@ -4,13 +4,63 @@ Command-line access to RELIASTRA: the endpoints being probed, what each probe
 recorded, what the detector concluded, the evidence record that follows, and the
 public verification of that record.
 
-A single static binary with no runtime dependencies. Go 1.23 or newer to build
-from source.
+A single static binary with no runtime dependencies. Go 1.23 or newer is
+needed only to build from source — the installers below ship the compiled
+binary.
+
+## Install
+
+Pick one. All four produce the same binary.
+
+**npm** — any platform, no Go toolchain:
+
+```bash
+npm install -g reliastra
+```
+
+**pipx / pip** — any platform, no Go toolchain:
+
+```bash
+pipx install reliastra
+# or: pip install reliastra
+```
+
+**Go** — compiles from source:
 
 ```bash
 go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest   # installs `reliastra`
-reliastra --help
 ```
+
+**Prebuilt binaries** — download the archive for your platform from
+[Releases](https://github.com/ReliaAstra/Reliastra/releases), confirm its
+line in that release's `checksums.txt`, and put `reliastra` on your `PATH`.
+
+The npm and pip packages are thin installers, not ports. Nothing is
+downloaded or executed at install time; on the first `reliastra` invocation
+they download the platform binary attached to the GitHub release matching
+their own version, verify its SHA-256 against that release's
+`checksums.txt`, cache it (one cache shared by npm and pip), and hand off
+with your arguments and exit codes untouched. `RELIASTRA_BIN` points either
+wrapper at a binary you already have. Details:
+[npm](npm/README.md) · [PyPI](python/README.md).
+
+This next part applies to the Go method only — npm and pipx/pip put
+`reliastra` on `PATH` themselves. On Windows, `go install` puts the binary
+in `%USERPROFILE%\go\bin` but does not add that directory to `PATH`, so
+PowerShell will not find `reliastra` on its own. Run it once via its full
+path (`& "$env:USERPROFILE\go\bin\reliastra.exe" --help`), and make it
+permanent by appending the directory to your user `PATH`:
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+  "Path",
+  [Environment]::GetEnvironmentVariable("Path","User") + ";$env:USERPROFILE\go\bin",
+  "User"
+)
+```
+
+Then open a new terminal. If `GOBIN` or `GOPATH` is set, the binary goes to
+`%GOBIN%` or `%GOPATH%\bin` instead — check those with `go env`.
 
 Or build from a checkout:
 

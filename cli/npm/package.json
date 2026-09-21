@@ -1,0 +1,34 @@
+{
+  "name": "reliastra",
+  "version": "0.2.0",
+  "description": "RELIASTRA command-line client: probes, verdicts, evidence records, public verification. Thin installer — downloads the platform binary from GitHub Releases on first run and verifies its SHA-256 before executing it.",
+  "license": "UNLICENSED",
+  "private": false,
+  "bin": {
+    "reliastra": "bin/reliastra.js"
+  },
+  "files": [
+    "bin/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "monitoring",
+    "uptime",
+    "evidence",
+    "verification",
+    "reliastra",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReliaAstra/Reliastra.git",
+    "directory": "cli/npm"
+  },
+  "bugs": {
+    "url": "https://github.com/ReliaAstra/Reliastra/issues"
+  },
+  "homepage": "https://github.com/ReliaAstra/Reliastra#readme"
+}

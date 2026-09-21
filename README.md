@@ -36,7 +36,7 @@ in the repository. Until then, use an issue for technical review.
 Reliastra/
 ├── frontend/     # Next.js app (marketing site, observatory, console UI)
 ├── backend/      # FastAPI app (API, workers, evidence, billing)
-├── cli/          # Node.js CLI for dependencies, incidents, evidence, verification
+├── cli/          # Go CLI for dependencies, incidents, evidence, verification
 ├── docs/         # architecture, operations, research notes
 ├── research/     # reproducible research artifacts and datasets
 ├── .github/      # contributor guidance, issue forms, workflows
@@ -169,8 +169,9 @@ pytest tests/e2e -v
 (cd frontend && npm install && npx prisma generate)
 (cd frontend && npm run lint && npm run typecheck && npm test)
 
-# CLI (no dependencies to install)
-(cd cli && npm test && npm run lint)
+# CLI (tests + release packaging checks)
+(cd cli && go test ./...)
+bash cli/test/wrappers_smoke_test.sh
 ```
 
 Or from the repo root: `make test` (backend pytest) and `make lint`.

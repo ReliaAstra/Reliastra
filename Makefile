@@ -10,6 +10,8 @@ help:
 	@echo "  make lint       Lint frontend and backend"
 	@echo "  make cli        Build the reliastra CLI"
 	@echo "  make cli-test   Format-check, vet and test the CLI"
+	@echo "  make cli-wrappers-test"
+	@echo "                  Smoke-test the npm/PyPI installers (fake release)"
 
 install:
 	cd frontend && npm install
@@ -33,3 +35,6 @@ cli:
 
 cli-test:
 	cd cli && test -z "$$(gofmt -l .)" && go vet ./... && go test -race ./...
+
+cli-wrappers-test:
+	bash cli/test/wrappers_smoke_test.sh
