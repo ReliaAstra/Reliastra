@@ -298,12 +298,16 @@ describe('documentation against the CLI surface', () => {
   it('never references the retired npm package', () => {
     // The CLI was a Node program before 0.2.0. The package was never on the
     // public registry, and the files are gone; any surviving reference is a
-    // command that fails at step one.
+    // command that fails at step one. The current npm package is `reliastra`
+    // (thin installer), so `npm install -g reliastra` is allowed, but
+    // `@reliastra/cli`, `reliastra.mjs`, and `npx` invocations are still forbidden.
     for (const { where, text } of FRAGMENTS) {
       expect(text, where).not.toMatch(/@reliastra\/cli/);
       expect(text, where).not.toMatch(/reliastra\.mjs/);
-      expect(text, where).not.toMatch(/npm install/);
-      expect(text, where).not.toMatch(/\bnpx\b/);
+      expect(text, where).not.toMatch(/\bnpx\b\s+@?reliastra/);
+      // Allow `npm install -g reliastra` and `pipx install reliastra`, but forbid old scoped package
+      // Previously this test forbade any npm install; now it only forbids the old shape.
+      // No generic `npm install` check — the allowed installer is explicitly `npm install -g reliastra`.
     }
   });
 

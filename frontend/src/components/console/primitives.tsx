@@ -4,25 +4,10 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
-/**
- * Console primitives - the whole vocabulary of the operational surface.
- *
- * There are deliberately few of these, and none of them is a card. Structure
- * in this application comes from rules and background steps; anything that
- * looks like a floating tile with a shadow has been removed. If a new screen
- * needs a shape that is not here, the right move is usually to compose two of
- * these rather than to invent a ninth container.
- */
-
 /* ── System state ─────────────────────────────────────────────────────── */
 
 export type SystemState = 'ok' | 'warn' | 'crit' | 'idle';
 
-/**
- * Map every status string the backend can produce onto the four operational
- * states. Anything unrecognised becomes `idle` (unknown) - never `ok`, because
- * defaulting an unknown state to healthy is how a monitoring product lies.
- */
 export function toState(raw: string | null | undefined): SystemState {
   switch ((raw ?? '').toLowerCase()) {
     case 'operational':
@@ -51,14 +36,6 @@ const STATE_WORD: Record<SystemState, string> = {
   idle: 'Unknown',
 };
 
-/**
- * Prefer the backend's own word when it is one we recognise.
- *
- * A dependency that the API reports as `down` should read "Down", not
- * "Critical" - "critical" is incident severity language and using it for a
- * host state made the health table and the incident table disagree about the
- * same event. Only genuinely unrecognised values fall back to the state word.
- */
 const EXACT_WORD: Record<string, string> = {
   operational: 'Operational',
   degraded: 'Degraded',
@@ -72,11 +49,6 @@ const EXACT_WORD: Record<string, string> = {
   false_positive: 'False positive',
 };
 
-/**
- * Status is a dot **and** a word, always. Colour alone fails colour-blind
- * users and fails a printed evidence export, so the word is not optional and
- * is never visually hidden.
- */
 export function State({
   status,
   label,
@@ -84,21 +56,44 @@ export function State({
   className,
 }: {
   status: string | null | undefined;
-  /** Override the word - e.g. an incident's own `investigating`. */
   label?: string;
-  /** Pulse the dot. Reserve for genuinely active incidents. */
   live?: boolean;
   className?: string;
 }) {
   const state = toState(status);
   const key = (status ?? '').toLowerCase();
   const word = label ?? EXACT_WORD[key] ?? STATE_WORD[state];
+
+  const dotClass =
+    state === 'ok'
+      ? 'rs-status-dot-up'
+      : state === 'warn'
+        ? 'rs-status-dot-degraded'
+        : state === 'crit'
+          ? 'rs-status-dot-down'
+          : 'rs-status-dot-unknown';
+
+  const badgeClass =
+    state === 'ok'
+      ? 'rs-badge-up'
+      : state === 'warn'
+        ? 'rs-badge-degraded'
+        : state === 'crit'
+          ? 'rs-badge-down'
+          : 'rs-badge-unknown';
+
+  const pulseClass =
+    live && state !== 'ok'
+      ? state === 'warn'
+        ? 'rs-pulse-degraded'
+        : state === 'crit'
+          ? 'rs-pulse-down'
+          : ''
+      : '';
+
   return (
-    <span
-      className={cn('obc-state', live && state !== 'ok' && 'obc-live', className)}
-      data-state={state}
-    >
-      <span className="obc-dot" aria-hidden />
+    <span className={cn('rs-badge', badgeClass, className)} data-state={state}>
+      <span className={cn('rs-status-dot rs-status-dot-sm', dotClass, pulseClass)} aria-hidden />
       <span>{word}</span>
     </span>
   );
@@ -106,10 +101,6 @@ export function State({
 
 /* ── Page furniture ───────────────────────────────────────────────────── */
 
-/**
- * Page header. `meta` is a row of key/value facts rendered inline rather than
- * as tiles - the header states what this object is, not how it is doing.
- */
 export function PageHead({
   eyebrow,
   title,
@@ -119,18 +110,17 @@ export function PageHead({
 }: {
   eyebrow?: ReactNode;
   title: ReactNode;
-  /** One sentence of context under the title - what this page is for. */
   description?: ReactNode;
   meta?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-4 border-b border-[var(--obc-line)] py-6 md:flex-row md:items-start md:justify-between">
+    <header className="flex flex-col gap-4 border-b border-rs-border-subtle py-6 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="obc-label mb-1.5">{eyebrow}</p>}
-        <h1 className="obc-title">{title}</h1>
+        {eyebrow && <p className="rs-label mb-1.5">{eyebrow}</p>}
+        <h1 className="rs-page-title">{title}</h1>
         {description && (
-          <p className="obc-body mt-1.5 max-w-[68ch]">{description}</p>
+          <p className="rs-secondary-body mt-1.5 max-w-[68ch] !text-rs-text-secondary">{description}</p>
         )}
         {meta && (
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">{meta}</div>
@@ -141,47 +131,45 @@ export function PageHead({
   );
 }
 
-/**
- * Metric card - the console's KPI unit.
- *
- * Label, figure with its unit, one line of plain-language context, and an
- * optional operational state that colours the figure. Four of these in a row
- * give the first screen an anchor without inventing decoration: every value
- * is a measurement the backend already returned.
- */
 export function StatCard({
   label,
   value,
   unit,
   sub,
   state,
+  icon,
 }: {
   label: string;
   value: ReactNode;
   unit?: string;
   sub?: ReactNode;
   state?: SystemState;
+  icon?: ReactNode;
 }) {
+  const tileClass =
+    state === 'crit'
+      ? 'rs-stat-icon-down'
+      : state === 'warn'
+        ? 'rs-stat-icon-degraded'
+        : state === 'ok'
+          ? 'rs-stat-icon-up'
+          : 'rs-stat-icon-brand';
+
   return (
-    <div className="obc-card">
-      <p className="obc-label">{label}</p>
-      <p
-        className={cn(
-          'obc-figure',
-          state === 'crit' && 'text-[#E58C85]',
-          state === 'warn' && 'text-[#E3BE7A]',
-          state === 'ok' && 'text-[var(--obc-text)]'
-        )}
-      >
+    <div className="rs-stat-card">
+      <div className={cn('rs-stat-icon-tile', tileClass)} aria-hidden>
+        {icon ?? <span className="rs-mono text-[14px] font-bold">{String(label).slice(0, 2).toUpperCase()}</span>}
+      </div>
+      <p className="rs-stat-label">{label}</p>
+      <p className="rs-stat-value">
         {value}
-        {unit && <span className="obc-unit">{unit}</span>}
+        {unit && <span className="ml-1 text-[12px] font-normal text-rs-text-tertiary">{unit}</span>}
       </p>
-      {sub && <p className="text-[12px] leading-snug text-[var(--obc-text-3)]">{sub}</p>}
+      {sub && <p className="rs-stat-context">{sub}</p>}
     </div>
   );
 }
 
-/** One labelled fact. The unit lives with the number, never in the label. */
 export function Fact({
   label,
   value,
@@ -195,13 +183,13 @@ export function Fact({
 }) {
   return (
     <div className="flex items-baseline gap-2">
-      <span className="obc-label">{label}</span>
+      <span className="rs-label">{label}</span>
       <span
         className={cn(
-          'text-[13px] text-[var(--obc-text)]',
-          mono && 'font-[family-name:var(--ob-font-mono)] tabular-nums',
-          state === 'crit' && 'text-[#E58C85]',
-          state === 'warn' && 'text-[#E3BE7A]'
+          'text-[13px] text-rs-text',
+          mono && 'rs-mono',
+          state === 'crit' && 'text-rs-down',
+          state === 'warn' && 'text-rs-degraded'
         )}
       >
         {value}
@@ -224,27 +212,26 @@ export function Section({
   id?: string;
 }) {
   return (
-    <section className="obc-section" id={id} aria-labelledby={id ? `${id}-h` : undefined}>
-      <div className="obc-section-head">
+    <section className="rs-section-spacing" id={id} aria-labelledby={id ? `${id}-h` : undefined}>
+      <div className="mb-3 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="obc-h2" id={id ? `${id}-h` : undefined}>
+          <h2 className="rs-section-title" id={id ? `${id}-h` : undefined}>
             {title}
           </h2>
-          {hint && <p className="obc-body mt-1 text-[12px]">{hint}</p>}
+          {hint && <p className="rs-secondary-body mt-1 !text-rs-text-tertiary">{hint}</p>}
         </div>
         {action}
       </div>
-      <div className="obc-panel overflow-hidden">{children}</div>
+      <div className="rs-card overflow-hidden">{children}</div>
     </section>
   );
 }
 
-/** A plain right-aligned text link for section headers. */
 export function SectionLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="shrink-0 text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--obc-text-4)] transition-colors hover:text-[var(--obc-signal)]"
+      className="shrink-0 text-[11px] font-medium uppercase tracking-[0.05em] text-rs-text-tertiary transition-colors hover:text-rs-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
     >
       {children}
     </Link>
@@ -253,11 +240,6 @@ export function SectionLink({ href, children }: { href: string; children: ReactN
 
 /* ── Readouts ─────────────────────────────────────────────────────────── */
 
-/**
- * A single measurement. Renders `no data` rather than a zero when the value
- * is absent: a monitoring product that prints 0 ms for "never checked" is
- * reporting a measurement it does not have.
- */
 export function Readout({
   label,
   value,
@@ -271,28 +253,26 @@ export function Readout({
   sub?: string;
   state?: SystemState;
 }) {
-  const missing = value == null || value === '' || value === '-';
+  const missing = value == null || value === '' || value === '-' || value === '—';
   return (
     <div className="min-w-0">
-      <p className="obc-label">{label}</p>
+      <p className="rs-label">{label}</p>
       <p
         className={cn(
-          'obc-figure mt-2',
-          missing && 'text-[var(--obc-text-4)]',
-          state === 'crit' && 'text-[#E58C85]',
-          state === 'warn' && 'text-[#E3BE7A]',
-          state === 'ok' && 'text-[var(--obc-text)]'
+          'rs-kpi-value-sm mt-2',
+          missing && '!text-[15px] !font-normal !text-rs-text-tertiary',
+          state === 'crit' && 'text-rs-down',
+          state === 'warn' && 'text-rs-degraded'
         )}
       >
-        {missing ? <span className="text-[15px] font-normal">no data</span> : value}
-        {!missing && unit && <span className="obc-unit">{unit}</span>}
+        {missing ? <span>—</span> : value}
+        {!missing && unit && <span className="ml-1 text-[12px] font-normal text-rs-text-tertiary">{unit}</span>}
       </p>
-      {sub && <p className="mt-1.5 text-[11px] text-[var(--obc-text-4)]">{sub}</p>}
+      {sub && <p className="mt-1.5 text-[11px] text-rs-text-tertiary">{sub}</p>}
     </div>
   );
 }
 
-/** Definition row for detail pages: label left, value right, hairline under. */
 export function Row({
   label,
   children,
@@ -303,12 +283,12 @@ export function Row({
   mono?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b border-[var(--obc-line)] py-2.5 last:border-b-0">
-      <dt className="shrink-0 text-[12.5px] text-[var(--obc-text-3)]">{label}</dt>
+    <div className="flex items-start justify-between gap-6 border-b border-rs-border-subtle py-2.5 last:border-b-0">
+      <dt className="shrink-0 text-[12.5px] text-rs-text-tertiary">{label}</dt>
       <dd
         className={cn(
-          'min-w-0 break-words text-right text-[13px] text-[var(--obc-text-2)]',
-          mono && 'font-[family-name:var(--ob-font-mono)] tabular-nums'
+          'min-w-0 break-words text-right text-[13px] text-rs-text-secondary',
+          mono && 'rs-mono'
         )}
       >
         {children}
@@ -319,10 +299,6 @@ export function Row({
 
 /* ── Empty / loading / error ──────────────────────────────────────────── */
 
-/**
- * Empty states say what the surface is for and how to populate it. No
- * illustration, no emoji, no "nothing here yet".
- */
 export function Empty({
   title,
   body,
@@ -334,17 +310,13 @@ export function Empty({
 }) {
   return (
     <div className="px-6 py-10">
-      <p className="text-[15px] font-semibold text-[var(--obc-text)]">{title}</p>
-      <p className="obc-body mt-2 max-w-[62ch]">{body}</p>
+      <p className="text-[15px] font-semibold text-rs-text">{title}</p>
+      <p className="rs-secondary-body mt-2 max-w-[62ch] !text-rs-text-secondary">{body}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
 }
 
-/**
- * Error state. Technical, specific, actionable - and it never relays a raw
- * backend message, which can carry internal detail a customer must not see.
- */
 export function Failure({
   title = 'Observation unavailable',
   body,
@@ -353,24 +325,23 @@ export function Failure({
 }: {
   title?: string;
   body: string;
-  /** Formatted timestamp of the last successful read, if one is known. */
   lastGood?: string | null;
   onRetry?: () => void;
 }) {
   return (
     <div
       role="alert"
-      className="border border-[var(--obc-crit)]/35 bg-[var(--obc-crit-wash)] px-5 py-4 rounded-[8px]"
+      className="rounded-[10px] border border-rs-down/20 bg-rs-down-bg px-5 py-4"
     >
-      <p className="text-[14px] font-semibold text-[#E58C85]">{title}</p>
-      <p className="obc-body mt-2 max-w-[62ch] text-[var(--obc-text-2)]">{body}</p>
+      <p className="text-[14px] font-semibold text-rs-down">{title}</p>
+      <p className="rs-secondary-body mt-2 max-w-[62ch] !text-rs-text-secondary">{body}</p>
       {lastGood && (
-        <p className="obc-mono mt-2 text-[var(--obc-text-3)]">
+        <p className="rs-mono mt-2 text-[12px] text-rs-text-tertiary">
           Last successful observation: {lastGood}
         </p>
       )}
       {onRetry && (
-        <button type="button" onClick={onRetry} className="obc-btn obc-btn-sm mt-4">
+        <button type="button" onClick={onRetry} className="rs-button rs-button-secondary rs-button-sm mt-4">
           Retry
         </button>
       )}
@@ -378,19 +349,18 @@ export function Failure({
   );
 }
 
-/** Row-shaped skeleton: the console is tables, so loading looks like tables. */
 export function RowsSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {
   return (
-    <div aria-busy="true" aria-label="Retrieving telemetry" className="obc-inset border border-[var(--obc-line)]">
+    <div aria-busy="true" aria-label="Retrieving telemetry" className="border border-rs-border-subtle bg-rs-elevated">
       {Array.from({ length: rows }).map((_, r) => (
         <div
           key={r}
-          className="flex h-10 items-center gap-4 border-b border-[var(--obc-line)] px-3 last:border-b-0"
+          className="flex h-10 items-center gap-4 border-b border-rs-border-subtle px-3 last:border-b-0"
         >
           {Array.from({ length: cols }).map((_, c) => (
             <div
               key={c}
-              className="obc-skel h-2"
+              className="rs-skeleton h-2"
               style={{ width: c === 0 ? '28%' : `${8 + ((r + c) % 3) * 4}%`, animationDelay: `${(r * cols + c) * 40}ms` }}
             />
           ))}
@@ -401,5 +371,5 @@ export function RowsSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?: num
 }
 
 export function BlockSkeleton({ height = 120 }: { height?: number }) {
-  return <div className="obc-skel w-full" style={{ height }} aria-busy="true" />;
+  return <div className="rs-skeleton w-full" style={{ height }} aria-busy="true" />;
 }

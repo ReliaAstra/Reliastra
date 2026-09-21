@@ -16,6 +16,18 @@ observatory states exactly what it measures and how many vantage points exist.
 This is the canonical Reliastra monorepo: the Next.js frontend and the FastAPI
 backend live side by side as independent applications.
 
+## Quickstart — CLI
+
+```bash
+npm install -g reliastra
+# or
+pipx install reliastra
+# from source
+go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
+```
+
+See [cli/README.md](cli/README.md) for binary verification, `doctor`, auth, and `verify`.
+
 ## Engineering & Contributing
 
 Technical review and focused implementation contributions are welcome. Challenge
@@ -82,7 +94,7 @@ development session at production by accident.
 
 ## Frontend development
 
-Requires Node.js 20+ (the app also has a `bun.lock`; Bun works if you prefer it).
+Requires Node.js 20+ (npm only — `bun.lock` was removed).
 
 ```bash
 cd frontend

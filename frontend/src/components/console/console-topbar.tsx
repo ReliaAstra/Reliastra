@@ -10,17 +10,6 @@ import { useInbox, useMarkInboxRead } from '@/lib/dashboard/queries';
 import { timeAgo } from '@/lib/dashboard/format';
 import { cn } from '@/lib/utils';
 
-/**
- * Console top bar.
- *
- * Deliberately thin. The previous bar carried two separate bells (an
- * "attention" popover listing open incidents and a notification inbox), a
- * theme toggle, a command-palette hint, a trial pill and an avatar menu - * five competing affordances in a 56px strip. Open incidents now live in the
- * global system status where they belong, the theme toggle is gone because
- * the product is single-theme, and what remains is: where am I, what is new,
- * who am I.
- */
-
 const LABELS: Record<string, string> = {
   dashboard: 'Overview',
   dependencies: 'Dependencies',
@@ -38,14 +27,10 @@ function useTrail() {
   const parts = pathname.split('/').filter(Boolean);
   const out: { label: string; href?: string }[] = [];
   let acc = '';
-  // Anything nested under one of these collections is a record id.
   const COLLECTIONS = new Set(['dependencies', 'incidents', 'evidence', 'clients']);
   parts.forEach((part, i) => {
     acc += '/' + part;
     const last = i === parts.length - 1;
-    // Record identifiers are shown by the page itself, which knows the human
-    // name (INC-2481, the dependency's name). Repeating a raw id in the
-    // breadcrumb tells the user nothing.
     const isId = !LABELS[part] && (COLLECTIONS.has(parts[i - 1] ?? '') || /[0-9]/.test(part));
     out.push({ label: isId ? 'Record' : (LABELS[part] ?? part), href: last ? undefined : acc });
   });
@@ -71,18 +56,13 @@ function Inbox() {
       <button
         type="button"
         aria-expanded={open}
-        aria-label={
-          unread > 0 ? `Notifications, ${unread} unread` : 'Notifications, none unread'
-        }
+        aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications, none unread'}
         onClick={() => setOpen((v) => !v)}
-        className="obc-btn obc-btn-sm"
+        className="rs-button rs-button-secondary rs-button-sm"
       >
         Alerts
         {unread > 0 && (
-          <span
-            className="ml-0.5 font-[family-name:var(--ob-font-mono)] tabular-nums text-[var(--obc-signal)]"
-            aria-hidden
-          >
+          <span className="ml-0.5 rs-mono tabular-nums text-rs-brand" aria-hidden>
             {unread}
           </span>
         )}
@@ -90,49 +70,46 @@ function Inbox() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-9 z-50 w-[min(380px,calc(100vw-32px))] border border-[var(--obc-line-2)] bg-[var(--obc-base)]">
-            <div className="flex items-center justify-between border-b border-[var(--obc-line)] px-3 py-2">
-              <p className="obc-label">Alerts</p>
+          <div className="rs-card absolute right-0 top-9 z-50 w-[min(380px,calc(100vw-32px))] overflow-hidden p-0 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+            <div className="flex items-center justify-between border-b border-rs-border-subtle px-3 py-2.5">
+              <p className="rs-label">Alerts</p>
               {unread > 0 && (
                 <button
                   type="button"
                   onClick={() => markRead.mutate(undefined)}
-                  className="text-[11px] text-[var(--obc-text-4)] hover:text-[var(--obc-signal)]"
+                  className="text-[11px] text-rs-text-tertiary hover:text-rs-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
                 >
                   Mark all read
                 </button>
               )}
             </div>
             {items.length === 0 ? (
-              <p className="px-3 py-5 text-[12px] text-[var(--obc-text-4)]">
-                No alerts. Notifications appear here when a dependency changes
-                state or an evidence record is generated.
+              <p className="px-3 py-5 text-[12px] text-rs-text-tertiary">
+                No alerts. Notifications appear here when a dependency changes state or an evidence record is generated.
               </p>
             ) : (
-              <ul className="obc-scroll max-h-[60vh] overflow-y-auto">
+              <ul className="rs-scrollbar max-h-[60vh] overflow-y-auto">
                 {items.map((n) => (
-                  <li key={n.id} className="border-b border-[var(--obc-line)] last:border-b-0">
+                  <li key={n.id} className="border-b border-rs-border-subtle last:border-b-0">
                     <Link
                       href={n.action_url ?? '/dashboard'}
                       onClick={() => setOpen(false)}
-                      className="block px-3 py-2.5 hover:bg-[var(--obc-raised)]"
+                      className="block px-3 py-2.5 hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rs-focus"
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span
                           className={cn(
                             'text-[12.5px]',
-                            n.is_read
-                              ? 'text-[var(--obc-text-3)]'
-                              : 'font-medium text-[var(--obc-text)]'
+                            n.is_read ? 'text-rs-text-tertiary' : 'font-medium text-rs-text'
                           )}
                         >
                           {n.title}
                         </span>
-                        <span className="obc-mono shrink-0 text-[10px] text-[var(--obc-text-4)]">
+                        <span className="rs-mono shrink-0 text-[10px] text-rs-text-tertiary">
                           {timeAgo(n.created_at)}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--obc-text-4)]">
+                      <p className="mt-0.5 text-[11.5px] leading-snug text-rs-text-tertiary">
                         {n.body}
                       </p>
                     </Link>
@@ -146,7 +123,6 @@ function Inbox() {
     </div>
   );
 }
-
 
 function Account() {
   const [open, setOpen] = useState(false);
@@ -162,21 +138,17 @@ function Account() {
         aria-expanded={open}
         aria-label="Account menu"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-7 w-7 items-center justify-center border border-[var(--obc-line-2)] text-[10.5px] font-medium text-[var(--obc-text-2)] hover:border-[var(--obc-line-3)]"
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-rs-border bg-rs-elevated text-[11px] font-medium text-rs-text-secondary hover:border-rs-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
       >
         {initials(user?.full_name, user?.email)}
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-9 z-50 w-56 border border-[var(--obc-line-2)] bg-[var(--obc-base)]">
-            <div className="border-b border-[var(--obc-line)] px-3 py-2.5">
-              <p className="truncate text-[12.5px] text-[var(--obc-text)]">
-                {org?.name ?? user?.full_name}
-              </p>
-              <p className="obc-mono truncate text-[10.5px] text-[var(--obc-text-4)]">
-                {user?.email}
-              </p>
+          <div className="rs-card absolute right-0 top-9 z-50 w-56 overflow-hidden p-0 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+            <div className="border-b border-rs-border-subtle px-3 py-2.5">
+              <p className="truncate text-[12.5px] text-rs-text">{org?.name ?? user?.full_name}</p>
+              <p className="rs-mono truncate text-[10.5px] text-rs-text-tertiary">{user?.email}</p>
             </div>
             {[
               { label: 'Settings', href: '/settings' },
@@ -186,7 +158,7 @@ function Account() {
                 key={i.href}
                 href={i.href}
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-[12.5px] text-[var(--obc-text-2)] hover:bg-[var(--obc-raised)]"
+                className="block px-3 py-2 text-[12.5px] text-rs-text-secondary hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rs-focus"
               >
                 {i.label}
               </Link>
@@ -198,7 +170,7 @@ function Account() {
                 signOut();
                 router.replace('/login');
               }}
-              className="block w-full border-t border-[var(--obc-line)] px-3 py-2 text-left text-[12.5px] text-[var(--obc-text-2)] hover:bg-[var(--obc-raised)]"
+              className="block w-full border-t border-rs-border-subtle px-3 py-2 text-left text-[12.5px] text-rs-text-secondary hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rs-focus"
             >
               Sign out
             </button>
@@ -214,27 +186,26 @@ export function ConsoleTopBar() {
   const plan = useAppStore((s) => s.plan);
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const current = getPlan(plan?.effective_plan ?? plan?.plan);
-  // Evaluation state is a backend fact; the client never computes eligibility.
   const evaluating = (plan?.is_evaluation_active ?? plan?.is_trial_active) === true;
   const daysLeft = plan?.evaluation_days_remaining ?? plan?.trial_days_remaining ?? 0;
 
   return (
-    <header className="sticky top-0 z-30 hidden h-[var(--obc-bar)] items-center justify-between gap-4 border-b border-[var(--obc-line)] bg-[var(--obc-void)] px-[var(--obc-gutter)] lg:flex">
+    <header className="rs-topbar sticky top-0 z-30 hidden h-[56px] items-center justify-between gap-4 border-b border-rs-border-subtle bg-rs-base px-6 lg:flex">
       <nav aria-label="Breadcrumb" className="min-w-0">
         <ol className="flex items-center gap-1.5 text-[12px]">
           {trail.map((c, i) => (
             <li key={`${c.label}-${i}`} className="flex items-center gap-1.5">
               {i > 0 && (
-                <span aria-hidden className="text-[var(--obc-text-4)]">
+                <span aria-hidden className="text-rs-text-tertiary">
                   /
                 </span>
               )}
               {c.href ? (
-                <Link href={c.href} className="text-[var(--obc-text-4)] hover:text-[var(--obc-text-2)]">
+                <Link href={c.href} className="text-rs-text-tertiary hover:text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
                   {c.label}
                 </Link>
               ) : (
-                <span className="text-[var(--obc-text-2)]" aria-current="page">
+                <span className="text-rs-text-secondary" aria-current="page">
                   {c.label}
                 </span>
               )}
@@ -248,16 +219,14 @@ export function ConsoleTopBar() {
           <button
             type="button"
             onClick={() => openUpgrade('trial')}
-            className="obc-btn obc-btn-sm"
+            className="rs-button rs-button-secondary rs-button-sm"
           >
             Evaluation
-            <span className="font-[family-name:var(--ob-font-mono)] tabular-nums text-[var(--obc-signal)]">
-              {daysLeft}d
-            </span>
+            <span className="rs-mono tabular-nums text-rs-brand">{daysLeft}d</span>
           </button>
         )}
         {!evaluating && current.id === 'free' && (
-          <button type="button" onClick={() => openUpgrade()} className="obc-btn obc-btn-sm">
+          <button type="button" onClick={() => openUpgrade()} className="rs-button rs-button-secondary rs-button-sm">
             Free plan · Upgrade
           </button>
         )}

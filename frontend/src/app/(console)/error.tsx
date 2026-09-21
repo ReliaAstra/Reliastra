@@ -3,13 +3,6 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 
-/**
- * Route-level failure.
- *
- * Technical, specific and actionable - and deliberately free of the backend's
- * own message, which can carry internal detail a customer must never see. The
- * digest is shown because it is the only thing support can correlate against.
- */
 export default function ConsoleError({
   error,
   reset,
@@ -18,33 +11,31 @@ export default function ConsoleError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surfacing the message in the console (not the UI) keeps it available to
-    // an engineer with devtools open without leaking it into the page.
     console.error('[console] route error', error);
   }, [error]);
 
   return (
-    <div className="obc-section">
+    <div className="rs-section-spacing">
       <div
         role="alert"
-        className="max-w-2xl border border-[var(--obc-crit)]/35 bg-[var(--obc-crit-wash)] px-5 py-5"
+        className="rs-card max-w-2xl border-rs-down/20 bg-rs-down-bg px-5 py-5"
       >
-        <p className="obc-label text-[#E58C85]">Console view unavailable</p>
-        <p className="obc-body mt-3">
+        <p className="rs-label text-rs-down">Console view unavailable</p>
+        <p className="rs-body mt-3 text-rs-text-secondary">
           This screen failed to render. Monitoring, incident detection and evidence generation run
           on the backend and are unaffected. No observation was missed.
         </p>
         {error.digest && (
-          <p className="obc-mono mt-3 text-[var(--obc-text-4)]">reference {error.digest}</p>
+          <p className="rs-mono mt-3 text-rs-text-tertiary">reference {error.digest}</p>
         )}
         <div className="mt-5 flex flex-wrap gap-2">
-          <button type="button" className="obc-btn obc-btn-primary" onClick={() => reset()}>
+          <button type="button" className="rs-button rs-button-primary rs-button-sm" onClick={() => reset()}>
             Retry
           </button>
-          <Link href="/dashboard" className="obc-btn">
+          <Link href="/dashboard" className="rs-button rs-button-secondary rs-button-sm">
             Overview
           </Link>
-          <Link href="/support" className="obc-btn">
+          <Link href="/support" className="rs-button rs-button-secondary rs-button-sm">
             Contact support
           </Link>
         </div>

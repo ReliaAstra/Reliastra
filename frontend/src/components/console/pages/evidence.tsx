@@ -8,7 +8,6 @@ import { useEvidence, useIncidents } from '@/lib/dashboard/queries';
 import { formatUtc, incidentCode, reportCode } from '@/lib/dashboard/format';
 import {
   Empty,
-  Fact,
   Failure,
   PageHead,
   RowsSkeleton,
@@ -19,16 +18,6 @@ import type { EvidenceReport, Incident } from '@/lib/dashboard/types';
 
 type Record_ = EvidenceReport & { incident?: Incident };
 
-/**
- * Evidence library.
- *
- * A register of records, not a feed of cards: the fields that matter in a
- * dispute - record id, the incident it covers, the dependency, the window it
- * describes, its checksum and its expiry - are all columns, and the checksum
- * is visible in the list because it is the thing that makes the record worth
- * anything. Confidence is printed only when the backend returns it; the old
- * library defaulted absent values to "MEDIUM".
- */
 export function EvidencePage() {
   const evidence = useEvidence();
   const incidents = useIncidents(undefined, 50);
@@ -65,10 +54,8 @@ export function EvidencePage() {
       sort: (r) => r.generated_at,
       render: (r) => (
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="obc-mono text-[var(--obc-signal)]">{reportCode(r.id)}</span>
-          <span className="truncate text-[12.5px] text-[var(--obc-text)]">
-            {r.title || 'Evidence record'}
-          </span>
+          <span className="rs-mono text-rs-brand">{reportCode(r.id)}</span>
+          <span className="truncate text-[12.5px] text-rs-text">{r.title || 'Evidence record'}</span>
         </span>
       ),
     },
@@ -78,9 +65,7 @@ export function EvidencePage() {
       width: 130,
       sort: (r) => r.incident_id,
       render: (r) => (
-        <span className="obc-mono text-[var(--obc-text-2)]">
-          {incidentCode(r.incident_id, r.incident?.display_id)}
-        </span>
+        <span className="rs-mono text-rs-text-secondary">{incidentCode(r.incident_id, r.incident?.display_id)}</span>
       ),
     },
     {
@@ -89,9 +74,9 @@ export function EvidencePage() {
       sort: (r) => r.vendor ?? '',
       render: (r) =>
         r.vendor ? (
-          <span className="truncate text-[12.5px] text-[var(--obc-text-2)]">{r.vendor}</span>
+          <span className="truncate text-[12.5px] text-rs-text-secondary">{r.vendor}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">not recorded</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
     {
@@ -107,7 +92,7 @@ export function EvidencePage() {
       header: 'Checksum',
       width: 150,
       render: (r) => (
-        <span className="obc-mono truncate text-[11px] text-[var(--obc-text-3)]" title={r.checksum}>
+        <span className="rs-mono truncate text-[11px] text-rs-text-tertiary" title={r.checksum}>
           {r.checksum.replace(/^sha256:/, '').slice(0, 16)}…
         </span>
       ),
@@ -121,7 +106,7 @@ export function EvidencePage() {
       render: (r) => (
         <>
           {(r.file_size_bytes / 1024).toFixed(0)}
-          <span className="ml-1 text-[10px] text-[var(--obc-text-4)]">KB</span>
+          <span className="ml-1 text-[10px] text-rs-text-tertiary">KB</span>
         </>
       ),
     },
@@ -132,53 +117,32 @@ export function EvidencePage() {
       sort: (r) => r.expires_at ?? '',
       render: (r) =>
         r.expires_at ? (
-          <span className="text-[12px] text-[var(--obc-text-3)]">
-            until {formatUtc(r.expires_at, 'yyyy-MM-dd')}
-          </span>
+          <span className="text-[12px] text-rs-text-tertiary">until {formatUtc(r.expires_at, 'yyyy-MM-dd')}</span>
         ) : (
-          <span className="text-[12px] text-[var(--obc-text-3)]">indefinite</span>
+          <span className="text-[12px] text-rs-text-tertiary">indefinite</span>
         ),
     },
   ];
 
   return (
     <>
-      <PageHead
-        title="Evidence records"
-        meta={
-          <>
-            <Fact label="Records" value={evidence.data?.length ?? '0'} />
-            <Fact
-              label="Source"
-              value="confirmed incidents"
-              mono={false}
-            />
-          </>
-        }
-      />
+      <PageHead title="Evidence records" description={`${evidence.data?.length ?? '0'} records · source: confirmed incidents`} />
 
       <Section
         title="Record register"
         hint="Each record is a timestamped, checksummed account of one incident: the observations behind it and the correlation used to attribute the fault."
       >
         {!allowed ? (
-          <div className="bg-[var(--obc-base)] px-6 py-10">
-            <p className="obc-label text-[var(--obc-text-3)]">
-              Evidence records are not included in your plan
-            </p>
-            <p className="obc-body mt-3 max-w-[62ch]">
-              Monitoring and incident detection continue. Evidence generation,
-              the checksummed record used to support an SLA claim, requires a paid plan.
+          <div className="bg-rs-elevated px-6 py-10">
+            <p className="rs-label">Evidence records are not included in your plan</p>
+            <p className="mt-3 max-w-[62ch] text-[13px] leading-relaxed text-rs-text-secondary">
+              Monitoring and incident detection continue. Evidence generation, the checksummed record used to support an SLA claim, requires a paid plan.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="obc-btn obc-btn-primary"
-                onClick={() => openUpgrade('evidence')}
-              >
+              <button type="button" className="rs-button rs-button-primary rs-button-sm" onClick={() => openUpgrade('evidence')}>
                 Compare plans
               </button>
-              <Link href="/incidents" className="obc-btn">
+              <Link href="/incidents" className="rs-button rs-button-secondary rs-button-sm">
                 View incidents
               </Link>
             </div>
@@ -186,41 +150,24 @@ export function EvidencePage() {
         ) : evidence.isLoading ? (
           <RowsSkeleton rows={5} cols={5} />
         ) : evidence.isError ? (
-          <Failure
-            title="Evidence register unavailable"
-            body="The register could not be retrieved. Stored records are unaffected."
-            onRetry={() => evidence.refetch()}
-          />
+          <Failure title="Evidence register unavailable" body="The register could not be retrieved. Stored records are unaffected." onRetry={() => evidence.refetch()} />
         ) : !evidence.data?.length ? (
           <Empty
             title="No evidence records"
             body="A record is generated once an incident is confirmed and its observation window closes. Records appear here automatically; nothing needs to be requested."
             action={
-              <Link href="/incidents" className="obc-btn obc-btn-sm">
+              <Link href="/incidents" className="rs-button rs-button-secondary rs-button-sm">
                 View incidents
               </Link>
             }
           />
         ) : (
           <>
-            <TableFilters
-              query={query}
-              onQuery={setQuery}
-              placeholder="Filter by record, dependency or checksum"
-            />
+            <TableFilters query={query} onQuery={setQuery} placeholder="Filter by record, dependency or checksum" />
             {rows.length ? (
-              <DataTable
-                rows={rows}
-                columns={columns}
-                rowKey={(r) => r.id}
-                rowHref={(r) => `/evidence/${r.id}`}
-                caption="Evidence records, most recent first"
-              />
+              <DataTable rows={rows} columns={columns} rowKey={(r) => r.id} rowHref={(r) => `/evidence/${r.id}`} caption="Evidence records, most recent first" />
             ) : (
-              <Empty
-                title="No records match this filter"
-                body="Clear the filter to see the full register."
-              />
+              <Empty title="No records match this filter" body="Clear the filter to see the full register." />
             )}
           </>
         )}

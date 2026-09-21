@@ -5,18 +5,6 @@ import { cn } from '@/lib/utils';
 
 export type Point = { t: string; v: number };
 
-/**
- * Latency / measurement plot.
- *
- * Hand-rolled SVG rather than a charting library: these are single-series
- * line plots with one threshold rule, and pulling a full chart runtime into
- * the console for that is the kind of weight section 26 rules out. Recharts
- * stays available for anything genuinely interactive.
- *
- * Accessibility: the drawing is `aria-hidden` and the same data is exposed as
- * a real `<table>` in a `<details>` underneath. A screen-reader user gets the
- * numbers, not a description of a picture.
- */
 export function Plot({
   points,
   unit = 'ms',
@@ -29,7 +17,6 @@ export function Plot({
 }: {
   points: Point[];
   unit?: string;
-  /** Draws a dashed rule - e.g. the configured alert threshold. */
   threshold?: number | null;
   height?: number;
   label: string;
@@ -40,11 +27,6 @@ export function Plot({
   const id = useId();
   const [hover, setHover] = useState<number | null>(null);
 
-  /**
-   * Axis labels carry a date once the window is longer than half a day.
-   * Without this a 24-hour series printed the same `18:10 UTC` at both ends,
-   * which reads as a plot of nothing.
-   */
   const fmtTime = useMemo(() => {
     if (formatTime) return formatTime;
     const span =
@@ -77,16 +59,15 @@ export function Plot({
   }, [points, height, threshold]);
 
   const stroke =
-    state === 'crit' ? 'var(--obc-crit)' : state === 'warn' ? 'var(--obc-warn)' : 'var(--obc-ok)';
+    state === 'crit' ? 'var(--rs-down)' : state === 'warn' ? 'var(--rs-degraded)' : 'var(--rs-up)';
 
   if (!geom) {
     return (
       <div
-        className="flex items-center px-4 text-[12px] text-[var(--obc-text-4)]"
+        className="flex items-center px-4 text-[12px] text-rs-text-tertiary"
         style={{ height }}
       >
-        Not enough observations to plot. A series appears once at least two
-        checks have completed.
+        Not enough observations to plot. A series appears once at least two checks have completed.
       </div>
     );
   }
@@ -119,22 +100,26 @@ export function Plot({
           {[0.25, 0.5, 0.75].map((f) => (
             <line
               key={f}
-              className="obc-grid"
               x1={0}
               x2={geom.w}
               y1={geom.y(geom.max * f)}
               y2={geom.y(geom.max * f)}
+              stroke="var(--rs-border-subtle)"
+              strokeWidth={1}
               vectorEffect="non-scaling-stroke"
             />
           ))}
 
           {threshold != null && threshold > 0 && (
             <line
-              className="obc-thresh"
               x1={0}
               x2={geom.w}
               y1={geom.y(threshold)}
               y2={geom.y(threshold)}
+              stroke="var(--rs-degraded)"
+              strokeWidth={1}
+              strokeDasharray="3 3"
+              opacity={0.6}
               vectorEffect="non-scaling-stroke"
             />
           )}
@@ -154,53 +139,52 @@ export function Plot({
               x2={geom.x(hover)}
               y1={0}
               y2={geom.h - geom.padB}
-              stroke="var(--obc-line-3)"
+              stroke="var(--rs-border)"
               vectorEffect="non-scaling-stroke"
             />
           )}
         </svg>
 
-        {/* Readout follows the cursor position in text, not in a floating card. */}
         <div className="mt-1.5 flex items-baseline justify-between gap-3">
-          <span className="obc-mono text-[var(--obc-text-4)]">
+          <span className="rs-mono text-[11px] text-rs-text-tertiary">
             {fmtTime(points[0].t)}
           </span>
           <span
             className={cn(
-              'obc-mono',
-              hoveredPoint ? 'text-[var(--obc-text)]' : 'text-[var(--obc-text-4)]'
+              'rs-mono text-[11px]',
+              hoveredPoint ? 'text-rs-text' : 'text-rs-text-tertiary'
             )}
           >
             {hoveredPoint
               ? `${fmtTime(hoveredPoint.t)} · ${formatValue(hoveredPoint.v)} ${unit}`
               : `peak ${formatValue(Math.max(...points.map((p) => p.v)))} ${unit}`}
           </span>
-          <span className="obc-mono text-[var(--obc-text-4)]">
+          <span className="rs-mono text-[11px] text-rs-text-tertiary">
             {fmtTime(points[points.length - 1].t)}
           </span>
         </div>
       </div>
 
-      <details className="mt-2">
-        <summary className="cursor-pointer text-[11px] text-[var(--obc-text-4)] hover:text-[var(--obc-text-2)]">
+      <details className="mt-3">
+        <summary className="cursor-pointer text-[11px] text-rs-text-tertiary hover:text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
           {label}: view {points.length} observations as a table
         </summary>
-        <div className="obc-scroll mt-2 max-h-56 overflow-y-auto">
-          <table className="obc-table">
+        <div className="rs-scrollbar mt-2 max-h-56 overflow-y-auto">
+          <table className="w-full border-collapse text-left text-[12px]">
             <caption className="sr-only">{label}</caption>
             <thead>
-              <tr>
-                <th scope="col">Observed at (UTC)</th>
-                <th scope="col" className="obc-num">
+              <tr className="border-b border-rs-border-subtle">
+                <th scope="col" className="rs-label px-2 py-2 font-normal">Observed at (UTC)</th>
+                <th scope="col" className="rs-label px-2 py-2 text-right font-normal">
                   Value ({unit})
                 </th>
               </tr>
             </thead>
             <tbody>
               {points.map((p) => (
-                <tr key={p.t}>
-                  <td className="obc-mono">{fmtTime(p.t)}</td>
-                  <td className="obc-num">{formatValue(p.v)}</td>
+                <tr key={p.t} className="border-b border-rs-border-subtle last:border-b-0">
+                  <td className="rs-mono px-2 py-1.5 text-rs-text-secondary">{fmtTime(p.t)}</td>
+                  <td className="rs-mono px-2 py-1.5 text-right text-rs-text">{formatValue(p.v)}</td>
                 </tr>
               ))}
             </tbody>
@@ -211,11 +195,6 @@ export function Plot({
   );
 }
 
-/**
- * Availability strip: one cell per observation window, coloured by outcome.
- * Reads like a status-page bar but is built from real check results, and each
- * cell carries a title so hovering states the window and the verdict.
- */
 export function CheckStrip({
   cells,
   label,
@@ -225,7 +204,7 @@ export function CheckStrip({
 }) {
   if (!cells.length) {
     return (
-      <p className="text-[12px] text-[var(--obc-text-4)]">
+      <p className="text-[12px] text-rs-text-tertiary">
         No observations recorded in this window.
       </p>
     );
@@ -239,9 +218,9 @@ export function CheckStrip({
             title={`${new Date(c.at).toISOString().slice(0, 16).replace('T', ' ')} UTC · ${
               c.up ? 'up' : 'down'
             }${c.latency != null ? ` · ${Math.round(c.latency)} ms` : ''}`}
-            className="h-7 min-w-[3px] flex-1"
+            className="h-7 min-w-[3px] flex-1 rounded-sm"
             style={{
-              background: c.up ? 'var(--obc-ok)' : 'var(--obc-crit)',
+              background: c.up ? 'var(--rs-up)' : 'var(--rs-down)',
               opacity: c.up ? 0.55 : 0.9,
             }}
           />

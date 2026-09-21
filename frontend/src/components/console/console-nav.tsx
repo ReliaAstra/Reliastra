@@ -11,24 +11,6 @@ import { Wordmark } from '@/components/site/wordmark';
 import { toState } from './primitives';
 import { cn } from '@/lib/utils';
 
-/**
- * Console navigation.
- *
- * Grouped by what the user is doing, not by database table: MONITORING is
- * the live surface, EVIDENCE is the record, ACCOUNT is configuration. The
- * destination list comes from `consoleNavGroups` (the one model the mobile
- * sheet, command palette and recent destinations also read), so every
- * surface shows the same entries. Every href is a route that exists - there
- * is no invented section, and the removed B2B destinations are never
- * advertised.
- *
- * One entry is worth explaining:
- *
- * -  `Research` links the public research index and is marked as leaving the
- *    console, because there is no authenticated research capability in the
- *    backend and inventing an in-app one would be a hollow page.
- */
-/** Primary destinations surfaced directly in the mobile bar. */
 const PRIMARY = [
   { href: '/dashboard', label: 'Overview' },
   { href: '/dependencies', label: 'Dependencies' },
@@ -38,31 +20,20 @@ const PRIMARY = [
 
 function useIsActive() {
   const pathname = usePathname();
-  // Exact match, or any route nested under the destination (e.g. the
-  // Evidence entry stays lit on a specific record's page).
   return (href: string) => pathname === href || pathname.startsWith(href + '/');
 }
 
-/**
- * The global operational summary.
- *
- * Section 8: overall state must be immediately legible and must not be a
- * giant colourful KPI card. It is a line of counts with status dots, sitting
- * directly under the wordmark in the rail and inline in the mobile bar.
- * Counts come from the dependency-health list and the open-incident list - * nothing is derived that the backend did not measure.
- */
 export function SystemStatus({ compact = false }: { compact?: boolean }) {
   const { data: health, isLoading, isError } = useHealth();
   const { data: incidents } = useIncidents('open', 50);
 
   if (isLoading) {
-    return <div className="obc-skel h-9 w-full" aria-label="Loading system status" />;
+    return <div className="rs-skeleton h-9 w-full" aria-label="Loading system status" />;
   }
   if (isError || !health) {
     return (
-      <p className="text-[12.5px] leading-snug text-[var(--obc-text-3)]">
-        System status unavailable. The measurement network could not be
-        reached.
+      <p className="text-[12.5px] leading-snug text-rs-text-tertiary">
+        System status unavailable. The measurement network could not be reached.
       </p>
     );
   }
@@ -75,33 +46,31 @@ export function SystemStatus({ compact = false }: { compact?: boolean }) {
   const open = incidents?.length ?? 0;
 
   const items = [
-    { n: ok, word: 'operational', state: 'ok' as const },
-    { n: warn, word: 'degraded', state: 'warn' as const },
-    { n: crit, word: 'down', state: 'crit' as const },
-    { n: idle, word: 'unknown', state: 'idle' as const },
+    { n: ok, word: 'operational', state: 'ok' as const, dot: 'rs-status-dot-up' },
+    { n: warn, word: 'degraded', state: 'warn' as const, dot: 'rs-status-dot-degraded' },
+    { n: crit, word: 'down', state: 'crit' as const, dot: 'rs-status-dot-down' },
+    { n: idle, word: 'unknown', state: 'idle' as const, dot: 'rs-status-dot-unknown' },
   ].filter((i) => i.n > 0);
 
   return (
     <div className={cn(compact ? 'flex items-center gap-4' : 'space-y-2')}>
       {!compact && (
-        <p className="obc-label">
+        <p className="rs-label">
           System status · {total} monitored
         </p>
       )}
       <ul className={cn('flex flex-wrap items-center', compact ? 'gap-3.5' : 'gap-x-3.5 gap-y-1.5')}>
         {items.map((i) => (
-          <li key={i.word} className="obc-state" data-state={i.state}>
-            <span className="obc-dot" aria-hidden />
-            <span className="font-[family-name:var(--ob-font-mono)] tabular-nums text-[var(--obc-text)]">
-              {i.n}
-            </span>
-            <span className="text-[var(--obc-text-3)]">{i.word}</span>
+          <li key={i.word} className="inline-flex items-center gap-1.5 text-[12px] text-rs-text-secondary">
+            <span className={cn('rs-status-dot rs-status-dot-sm', i.dot)} aria-hidden />
+            <span className="rs-mono tabular-nums text-rs-text">{i.n}</span>
+            <span className="text-rs-text-tertiary">{i.word}</span>
           </li>
         ))}
         {open > 0 && (
-          <li className="obc-state obc-live" data-state="crit">
-            <span className="obc-dot" aria-hidden />
-            <span className="font-[family-name:var(--ob-font-mono)] tabular-nums">{open}</span>
+          <li className="inline-flex items-center gap-1.5 text-[12px] text-rs-down">
+            <span className="rs-status-dot rs-status-dot-sm rs-status-dot-down rs-pulse-down" aria-hidden />
+            <span className="rs-mono tabular-nums">{open}</span>
             <span>open incident{open === 1 ? '' : 's'}</span>
           </li>
         )}
@@ -123,7 +92,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         if (!items.length) return null;
         return (
           <div key={group.label || 'root'}>
-            {group.label && <p className="obc-label mb-1.5 px-5">{group.label}</p>}
+            {group.label && <p className="rs-label mb-1.5 px-5">{group.label}</p>}
             <ul>
               {items.map((item) => {
                 const active = isActive(item.href);
@@ -134,16 +103,16 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'relative mx-2 flex h-10 items-center rounded-md px-3 text-[13.5px] transition-colors',
+                        'relative mx-2 flex h-10 items-center rounded-[10px] px-3 text-[13.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2',
                         active
-                          ? 'bg-[var(--obc-elevated)] font-medium text-[var(--obc-text)]'
-                          : 'text-[var(--obc-text-3)] hover:bg-[var(--obc-raised)] hover:text-[var(--obc-text-2)]'
+                          ? 'bg-rs-hover font-medium text-rs-text'
+                          : 'text-rs-text-tertiary hover:bg-rs-hover hover:text-rs-text-secondary'
                       )}
                     >
                       {active && (
                         <span
                           aria-hidden
-                          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-[var(--obc-signal)]"
+                          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-rs-brand"
                         />
                       )}
                       {item.label}
@@ -156,11 +125,8 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         );
       })}
 
-      {/* Reference. The public research index is the real destination; there
-          is no authenticated research capability in the backend, and a link
-          that leaves the console is marked as one rather than faked into it. */}
       <div>
-        <p className="obc-label mb-1.5 px-5">Reference</p>
+        <p className="rs-label mb-1.5 px-5">Reference</p>
         <ul>
           {[
             { href: '/research', label: 'Research' },
@@ -172,10 +138,10 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={onNavigate}
-                className="mx-2 flex h-10 items-center gap-1.5 rounded-md px-3 text-[13.5px] text-[var(--obc-text-3)] transition-colors hover:bg-[var(--obc-raised)] hover:text-[var(--obc-text-2)]"
+                className="mx-2 flex h-10 items-center gap-1.5 rounded-[10px] px-3 text-[13.5px] text-rs-text-tertiary transition-colors hover:bg-rs-hover hover:text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus focus-visible:ring-offset-2"
               >
                 {item.label}
-                <span aria-hidden className="text-[var(--obc-text-4)]">
+                <span aria-hidden className="text-rs-text-tertiary">
                   ↗
                 </span>
                 <span className="sr-only">(opens the public site in a new tab)</span>
@@ -193,17 +159,17 @@ function PlanLine() {
   const openUpgrade = useAppStore((s) => s.openUpgrade);
   const current = getPlan(plan?.effective_plan ?? plan?.plan);
   return (
-    <div className="flex items-center justify-between gap-3 border-t border-[var(--obc-line)] px-3 py-3">
-      <span className="obc-label">{current.name} plan</span>
+    <div className="flex items-center justify-between gap-3 border-t border-rs-border-subtle px-3 py-3">
+      <span className="rs-label">{current.name} plan</span>
       {isPaid(current.id) ? (
         <Link
           href="/settings/billing"
-          className="text-[11px] text-[var(--obc-text-3)] hover:text-[var(--obc-signal)]"
+          className="text-[11px] text-rs-text-tertiary hover:text-rs-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
         >
           Manage
         </Link>
       ) : (
-        <button type="button" onClick={() => openUpgrade()} className="obc-btn obc-btn-sm">
+        <button type="button" onClick={() => openUpgrade()} className="rs-button rs-button-secondary rs-button-sm">
           Upgrade
         </button>
       )}
@@ -211,17 +177,16 @@ function PlanLine() {
   );
 }
 
-/** Desktop rail: wordmark, system status, navigation, plan. */
 export function ConsoleRail() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[var(--obc-rail)] flex-col border-r border-[var(--obc-line)] bg-[var(--obc-base)] lg:flex">
-      <div className="border-b border-[var(--obc-line)] px-3 py-4">
-        <Link href="/dashboard" aria-label="RELIASTRA console" className="mb-4 inline-block">
+    <aside className="rs-sidebar fixed inset-y-0 left-0 z-40 hidden w-[240px] flex-col border-r border-rs-border-subtle bg-rs-base lg:flex">
+      <div className="border-b border-rs-border-subtle px-3 py-4">
+        <Link href="/dashboard" aria-label="RELIASTRA console" className="mb-4 inline-block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
           <Wordmark size="sm" />
         </Link>
         <SystemStatus />
       </div>
-      <div className="obc-scroll flex-1 overflow-y-auto py-4">
+      <div className="rs-scrollbar flex-1 overflow-y-auto py-4">
         <NavList />
       </div>
       <PlanLine />
@@ -229,13 +194,6 @@ export function ConsoleRail() {
   );
 }
 
-/**
- * Mobile bar + sheet.
- *
- * Section 24: mobile is designed, not collapsed. The bar carries the live
- * system state so the most important fact survives on a phone, and the sheet
- * leads with the four primary workflows.
- */
 export function ConsoleMobileBar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -250,28 +208,25 @@ export function ConsoleMobileBar() {
 
   return (
     <>
-      <div className="sticky top-0 z-40 border-b border-[var(--obc-line)] bg-[var(--obc-void)] lg:hidden">
-        <div className="flex h-[var(--obc-bar)] items-center justify-between gap-3 px-[var(--obc-gutter)]">
-          <Link href="/dashboard" aria-label="RELIASTRA console">
+      <div className="sticky top-0 z-40 border-b border-rs-border-subtle bg-rs-base lg:hidden">
+        <div className="flex h-[56px] items-center justify-between gap-3 px-4">
+          <Link href="/dashboard" aria-label="RELIASTRA console" className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
             <Wordmark size="sm" />
           </Link>
           <button
             type="button"
             aria-expanded={open}
-            aria-controls="obc-menu"
+            aria-controls="rs-menu"
             onClick={() => setOpen((v) => !v)}
-            className="obc-btn"
+            className="rs-button rs-button-secondary rs-button-sm"
           >
             Menu
           </button>
         </div>
-        <div className="obc-scroll overflow-x-auto border-t border-[var(--obc-line)] px-[var(--obc-gutter)] py-2">
+        <div className="rs-scrollbar overflow-x-auto border-t border-rs-border-subtle px-4 py-2">
           <SystemStatus compact />
         </div>
-        {/* The four destinations an operator needs on a phone are always one
-            tap away; everything else lives behind Menu. A collapsed desktop
-            sidebar is not a mobile navigation. */}
-        <nav aria-label="Primary" className="obc-scroll flex overflow-x-auto border-t border-[var(--obc-line)]">
+        <nav aria-label="Primary" className="rs-scrollbar flex overflow-x-auto border-t border-rs-border-subtle">
           {PRIMARY.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -281,10 +236,10 @@ export function ConsoleMobileBar() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex min-h-12 shrink-0 items-center border-b-2 px-5 text-[13px] transition-colors',
+                  'flex min-h-12 shrink-0 items-center border-b-2 px-5 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
                   active
-                    ? 'border-[var(--obc-signal)] text-[var(--obc-text)]'
-                    : 'border-transparent text-[var(--obc-text-3)]'
+                    ? 'border-rs-brand text-rs-text'
+                    : 'border-transparent text-rs-text-tertiary'
                 )}
               >
                 {item.label}
@@ -295,17 +250,17 @@ export function ConsoleMobileBar() {
       </div>
 
       <div
-        id="obc-menu"
+        id="rs-menu"
         hidden={!open}
-        className="fixed inset-0 z-50 flex flex-col bg-[var(--obc-void)] lg:hidden"
+        className="fixed inset-0 z-50 flex flex-col bg-rs-base lg:hidden"
       >
-        <div className="flex h-[var(--obc-bar)] shrink-0 items-center justify-between border-b border-[var(--obc-line)] px-[var(--obc-gutter)]">
+        <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-rs-border-subtle px-4">
           <Wordmark size="sm" />
-          <button type="button" onClick={() => setOpen(false)} className="obc-btn">
+          <button type="button" onClick={() => setOpen(false)} className="rs-button rs-button-secondary rs-button-sm">
             Close
           </button>
         </div>
-        <div className="obc-scroll flex-1 overflow-y-auto py-5">
+        <div className="rs-scrollbar flex-1 overflow-y-auto py-5">
           <NavList onNavigate={() => setOpen(false)} />
         </div>
         <PlanLine />
