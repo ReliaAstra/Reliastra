@@ -80,35 +80,40 @@ export function Section({
 /* ── Labels & headers ───────────────────────────────────────────────────── */
 
 /**
- * Small uppercase technical label. `index` renders the section number as a
- * separate token so the eye can use it as a spine down the page.
+ * Section eyebrow: a short sentence-case label with a status dot.
+ *
+ * This used to render a two-digit section index plus a hairline rule
+ * ("01 — The problem"), which made the marketing page read like a numbered
+ * technical document. A product page names its sections in words; the
+ * numbering lived on only in the docs, where it belongs.
  */
 export function Eyebrow({
   children,
-  index,
   signal = false,
+  plain = false,
   className,
 }: {
   children: ReactNode;
-  index?: string;
   signal?: boolean;
+  /** Suppress the leading dot (e.g. inside tight instrument panels). */
+  plain?: boolean;
   className?: string;
 }) {
   return (
-    <p className={cn('ob-label flex items-center gap-3', className)}>
-      {index && (
-        <>
-          <span className="text-[var(--ob-signal)]">{index}</span>
-          <span aria-hidden className="h-px w-6 bg-[var(--ob-line-2)]" />
-        </>
+    <p
+      className={cn(
+        'ob-eyebrow',
+        plain && 'ob-eyebrow-plain',
+        signal && 'text-[var(--ob-signal)]',
+        className
       )}
-      <span className={cn(signal && 'text-[var(--ob-signal)]')}>{children}</span>
+    >
+      {children}
     </p>
   );
 }
 
 export function SectionHeader({
-  index,
   eyebrow,
   title,
   lede,
@@ -118,7 +123,6 @@ export function SectionHeader({
   className,
   children,
 }: {
-  index?: string;
   eyebrow?: string;
   title: ReactNode;
   lede?: ReactNode;
@@ -136,7 +140,7 @@ export function SectionHeader({
         className
       )}
     >
-      {eyebrow && <Eyebrow index={index}>{eyebrow}</Eyebrow>}
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       <Heading id={id} className="ob-h2 max-w-[19ch]">
         {title}
       </Heading>
@@ -209,7 +213,7 @@ export function SceneHead({
       )}
     >
       <div className="flex flex-col gap-6">
-        <Eyebrow index={index}>{eyebrow}</Eyebrow>
+        <Eyebrow>{eyebrow}</Eyebrow>
         <h2 id={id} className="ob-scene-title max-w-[16ch]">
           {title}
         </h2>

@@ -113,25 +113,71 @@ export function State({
 export function PageHead({
   eyebrow,
   title,
+  description,
   meta,
   actions,
 }: {
   eyebrow?: ReactNode;
   title: ReactNode;
+  /** One sentence of context under the title - what this page is for. */
+  description?: ReactNode;
   meta?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-4 border-b border-[var(--obc-line-2)] py-6 md:flex-row md:items-start md:justify-between">
+    <header className="flex flex-col gap-4 border-b border-[var(--obc-line)] py-6 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
-        {eyebrow && <p className="obc-label mb-2">{eyebrow}</p>}
+        {eyebrow && <p className="obc-label mb-1.5">{eyebrow}</p>}
         <h1 className="obc-title">{title}</h1>
+        {description && (
+          <p className="obc-body mt-1.5 max-w-[68ch]">{description}</p>
+        )}
         {meta && (
           <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">{meta}</div>
         )}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>
+  );
+}
+
+/**
+ * Metric card - the console's KPI unit.
+ *
+ * Label, figure with its unit, one line of plain-language context, and an
+ * optional operational state that colours the figure. Four of these in a row
+ * give the first screen an anchor without inventing decoration: every value
+ * is a measurement the backend already returned.
+ */
+export function StatCard({
+  label,
+  value,
+  unit,
+  sub,
+  state,
+}: {
+  label: string;
+  value: ReactNode;
+  unit?: string;
+  sub?: ReactNode;
+  state?: SystemState;
+}) {
+  return (
+    <div className="obc-card">
+      <p className="obc-label">{label}</p>
+      <p
+        className={cn(
+          'obc-figure',
+          state === 'crit' && 'text-[#E58C85]',
+          state === 'warn' && 'text-[#E3BE7A]',
+          state === 'ok' && 'text-[var(--obc-text)]'
+        )}
+      >
+        {value}
+        {unit && <span className="obc-unit">{unit}</span>}
+      </p>
+      {sub && <p className="text-[12px] leading-snug text-[var(--obc-text-3)]">{sub}</p>}
+    </div>
   );
 }
 
@@ -188,7 +234,7 @@ export function Section({
         </div>
         {action}
       </div>
-      {children}
+      <div className="obc-panel overflow-hidden">{children}</div>
     </section>
   );
 }
@@ -258,10 +304,10 @@ export function Row({
 }) {
   return (
     <div className="flex items-start justify-between gap-6 border-b border-[var(--obc-line)] py-2.5 last:border-b-0">
-      <dt className="shrink-0 text-[12px] text-[var(--obc-text-4)]">{label}</dt>
+      <dt className="shrink-0 text-[12.5px] text-[var(--obc-text-3)]">{label}</dt>
       <dd
         className={cn(
-          'min-w-0 break-words text-right text-[12.5px] text-[var(--obc-text-2)]',
+          'min-w-0 break-words text-right text-[13px] text-[var(--obc-text-2)]',
           mono && 'font-[family-name:var(--ob-font-mono)] tabular-nums'
         )}
       >
@@ -287,9 +333,9 @@ export function Empty({
   action?: ReactNode;
 }) {
   return (
-    <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-6 py-10">
-      <p className="obc-label text-[var(--obc-text-3)]">{title}</p>
-      <p className="obc-body mt-3 max-w-[62ch]">{body}</p>
+    <div className="px-6 py-10">
+      <p className="text-[15px] font-semibold text-[var(--obc-text)]">{title}</p>
+      <p className="obc-body mt-2 max-w-[62ch]">{body}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -314,9 +360,9 @@ export function Failure({
   return (
     <div
       role="alert"
-      className="border border-[var(--obc-crit)]/35 bg-[var(--obc-crit-wash)] px-5 py-4"
+      className="border border-[var(--obc-crit)]/35 bg-[var(--obc-crit-wash)] px-5 py-4 rounded-[8px]"
     >
-      <p className="obc-label text-[#E58C85]">{title}</p>
+      <p className="text-[14px] font-semibold text-[#E58C85]">{title}</p>
       <p className="obc-body mt-2 max-w-[62ch] text-[var(--obc-text-2)]">{body}</p>
       {lastGood && (
         <p className="obc-mono mt-2 text-[var(--obc-text-3)]">
@@ -335,7 +381,7 @@ export function Failure({
 /** Row-shaped skeleton: the console is tables, so loading looks like tables. */
 export function RowsSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?: number }) {
   return (
-    <div aria-busy="true" aria-label="Retrieving telemetry" className="border border-[var(--obc-line)]">
+    <div aria-busy="true" aria-label="Retrieving telemetry" className="obc-inset border border-[var(--obc-line)]">
       {Array.from({ length: rows }).map((_, r) => (
         <div
           key={r}

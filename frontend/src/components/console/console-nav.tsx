@@ -60,7 +60,7 @@ export function SystemStatus({ compact = false }: { compact?: boolean }) {
   }
   if (isError || !health) {
     return (
-      <p className="text-[11.5px] leading-snug text-[var(--obc-text-4)]">
+      <p className="text-[12.5px] leading-snug text-[var(--obc-text-3)]">
         System status unavailable. The measurement network could not be
         reached.
       </p>
@@ -123,7 +123,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         if (!items.length) return null;
         return (
           <div key={group.label || 'root'}>
-            {group.label && <p className="obc-label mb-2 px-3">{group.label}</p>}
+            {group.label && <p className="obc-label mb-1.5 px-5">{group.label}</p>}
             <ul>
               {items.map((item) => {
                 const active = isActive(item.href);
@@ -134,7 +134,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                       aria-current={active ? 'page' : undefined}
                       className={cn(
-                        'relative flex h-9 items-center px-3 text-[13px] transition-colors',
+                        'relative mx-2 flex h-10 items-center rounded-md px-3 text-[13.5px] transition-colors',
                         active
                           ? 'bg-[var(--obc-elevated)] font-medium text-[var(--obc-text)]'
                           : 'text-[var(--obc-text-3)] hover:bg-[var(--obc-raised)] hover:text-[var(--obc-text-2)]'
@@ -143,7 +143,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                       {active && (
                         <span
                           aria-hidden
-                          className="absolute left-0 top-0 h-full w-[2px] bg-[var(--obc-signal)]"
+                          className="absolute left-0 top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-[var(--obc-signal)]"
                         />
                       )}
                       {item.label}
@@ -160,7 +160,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
           is no authenticated research capability in the backend, and a link
           that leaves the console is marked as one rather than faked into it. */}
       <div>
-        <p className="obc-label mb-2 px-3">Reference</p>
+        <p className="obc-label mb-1.5 px-5">Reference</p>
         <ul>
           {[
             { href: '/research', label: 'Research' },
@@ -172,7 +172,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={onNavigate}
-                className="flex h-9 items-center gap-1.5 px-3 text-[13px] text-[var(--obc-text-3)] transition-colors hover:bg-[var(--obc-raised)] hover:text-[var(--obc-text-2)]"
+                className="mx-2 flex h-10 items-center gap-1.5 rounded-md px-3 text-[13.5px] text-[var(--obc-text-3)] transition-colors hover:bg-[var(--obc-raised)] hover:text-[var(--obc-text-2)]"
               >
                 {item.label}
                 <span aria-hidden className="text-[var(--obc-text-4)]">
@@ -260,7 +260,7 @@ export function ConsoleMobileBar() {
             aria-expanded={open}
             aria-controls="obc-menu"
             onClick={() => setOpen((v) => !v)}
-            className="obc-btn obc-btn-sm"
+            className="obc-btn"
           >
             Menu
           </button>
@@ -281,10 +281,10 @@ export function ConsoleMobileBar() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'shrink-0 border-b-2 px-[var(--obc-gutter)] py-2.5 text-[12.5px] transition-colors',
+                  'flex min-h-12 shrink-0 items-center border-b-2 px-5 text-[13px] transition-colors',
                   active
                     ? 'border-[var(--obc-signal)] text-[var(--obc-text)]'
-                    : 'border-transparent text-[var(--obc-text-4)]'
+                    : 'border-transparent text-[var(--obc-text-3)]'
                 )}
               >
                 {item.label}
@@ -301,7 +301,7 @@ export function ConsoleMobileBar() {
       >
         <div className="flex h-[var(--obc-bar)] shrink-0 items-center justify-between border-b border-[var(--obc-line)] px-[var(--obc-gutter)]">
           <Wordmark size="sm" />
-          <button type="button" onClick={() => setOpen(false)} className="obc-btn obc-btn-sm">
+          <button type="button" onClick={() => setOpen(false)} className="obc-btn">
             Close
           </button>
         </div>

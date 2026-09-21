@@ -79,7 +79,7 @@ export function SceneLinks({
         <Link
           key={item.href}
           href={item.href}
-          className="group inline-flex items-center gap-2 border-b border-[var(--ob-line-2)] pb-1 text-[13px] font-medium tracking-[0.02em] text-[var(--ob-text)] transition-colors hover:border-[var(--ob-text)]"
+          className="group inline-flex items-center gap-2 border-b border-[var(--ob-line-2)] pb-1 text-[0.875rem] font-medium tracking-[0.005em] text-[var(--ob-text)] transition-colors hover:border-[var(--ob-text)]"
         >
           {item.label}
           <span

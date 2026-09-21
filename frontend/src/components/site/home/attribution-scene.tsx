@@ -56,8 +56,8 @@ export function AttributionScene() {
       <Container className="py-24 md:py-32 lg:py-36">
         <div className="flex flex-col gap-9 pb-14 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-7">
-            <Eyebrow index="04">Attribute</Eyebrow>
-            <h2 id="attribution-title" className="ob-scene-title max-w-[14ch]">
+            <Eyebrow>Attribution</Eyebrow>
+            <h2 id="attribution-title" className="ob-scene-title max-w-[24ch]">
               From incident to named contributor.
             </h2>
           </div>

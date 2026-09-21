@@ -82,7 +82,7 @@ export function Plot({
   if (!geom) {
     return (
       <div
-        className="flex items-center border border-[var(--obc-line)] px-4 text-[12px] text-[var(--obc-text-4)]"
+        className="flex items-center px-4 text-[12px] text-[var(--obc-text-4)]"
         style={{ height }}
       >
         Not enough observations to plot. A series appears once at least two
@@ -185,7 +185,7 @@ export function Plot({
         <summary className="cursor-pointer text-[11px] text-[var(--obc-text-4)] hover:text-[var(--obc-text-2)]">
           {label}: view {points.length} observations as a table
         </summary>
-        <div className="obc-scroll mt-2 max-h-56 overflow-y-auto border border-[var(--obc-line)]">
+        <div className="obc-scroll mt-2 max-h-56 overflow-y-auto">
           <table className="obc-table">
             <caption className="sr-only">{label}</caption>
             <thead>

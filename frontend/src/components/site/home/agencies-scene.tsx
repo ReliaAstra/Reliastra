@@ -26,8 +26,8 @@ export function AgenciesScene() {
       <Container className="py-24 md:py-32 lg:py-36">
         <div className="flex flex-col gap-9 pb-14 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-7">
-            <Eyebrow index="08">Agencies</Eyebrow>
-            <h2 id="agencies-title" className="ob-scene-title max-w-[14ch]">
+            <Eyebrow>For agencies</Eyebrow>
+            <h2 id="agencies-title" className="ob-scene-title max-w-[24ch]">
               Dependencies across every client.
             </h2>
           </div>

@@ -115,7 +115,7 @@ export function BillingPage() {
     {actionError && <p role="alert" className="mt-5 border border-[var(--obc-line)] p-4 text-[13px]">{actionError}</p>}
 
     <Section title="Current subscription">
-      <div className="grid gap-8 border border-[var(--obc-line)] bg-[var(--obc-base)] p-5 sm:p-6 lg:grid-cols-[1fr_1fr]" data-testid="billing-plan">
+      <div className="grid gap-8 bg-[var(--obc-base)] p-5 sm:p-6 lg:grid-cols-[1fr_1fr]" data-testid="billing-plan">
         <div>
           <p className="obc-label">
             {plan.cancel_at_period_end
@@ -171,7 +171,7 @@ export function BillingPage() {
     </Section>
 
     <Section title="Usage">
-      <div className="grid gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] sm:grid-cols-3">
+      <div className="grid gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] sm:grid-cols-3">
         <div className="bg-[var(--obc-base)] p-5">
           <p className="obc-label">Monitors</p>
           <p className="obc-mono mt-3" style={{ fontSize: 22 }}>
@@ -193,7 +193,7 @@ export function BillingPage() {
     </Section>
 
     <Section title="Payment method">
-      <div className="flex flex-wrap items-center justify-between gap-4 border border-[var(--obc-line)] px-5 py-4" data-testid="billing-payment-method">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-4" data-testid="billing-payment-method">
         <div>
           <p className="text-[13px] text-[var(--obc-text)]">
             {plan.payment_method_display
@@ -227,7 +227,7 @@ export function BillingPage() {
       ) : history.length === 0 ? (
         <p className="border border-[var(--obc-line)] p-5 text-[13px] text-[var(--obc-text-3)]">No payments recorded</p>
       ) : (
-        <div className="overflow-x-auto border border-[var(--obc-line)]" data-testid="billing-history">
+        <div className="obc-scroll overflow-x-auto" data-testid="billing-history">
           <table className="w-full text-left text-[12px]">
             <caption className="sr-only">Recorded subscription payments</caption>
             <thead className="obc-label">

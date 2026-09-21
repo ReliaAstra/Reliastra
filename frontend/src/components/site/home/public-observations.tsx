@@ -56,7 +56,7 @@ export function PublicObservations({ initial }: { initial: TrackVendorListItem[]
         return <li key={v.id} className="border-t border-[var(--ob-line)]">
           <Link href={SHARE_ROUTES.observatoryVendor(v.vendor_name)} className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto]">
             <span className="min-w-0">
-              <span className="block truncate text-[clamp(1.25rem,2.6vw,1.875rem)] font-semibold uppercase leading-[1.05] tracking-[-0.015em] text-[var(--ob-text)]">
+              <span className="block truncate text-[1.0625rem] font-semibold leading-[1.3] tracking-[-0.01em] text-[var(--ob-text)]">
                 {v.display_name}
               </span>
               <span className="ob-label mt-2 block">{v.category}</span>

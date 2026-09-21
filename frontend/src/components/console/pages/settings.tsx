@@ -110,7 +110,7 @@ export function SettingsPage() {
       </Section>
 
       <Section title="Account" hint="Managed by your RELIASTRA login.">
-        <div className="max-w-xl border border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-2">
+        <div className="max-w-xl bg-[var(--obc-base)] px-4 py-2">
           <dl>
             <Row label="Name" mono>
               {user?.full_name || <span className="text-[var(--obc-text-4)]">not set</span>}
@@ -136,7 +136,7 @@ export function SettingsPage() {
         title="Alert channels"
         hint="Where incident notifications are delivered. Channels reflect what your plan entitles, not a wish list."
       >
-        <ul className="max-w-xl border border-[var(--obc-line)]">
+        <ul className="max-w-xl">
           {[
             {
               id: 'email',
@@ -193,7 +193,7 @@ export function SettingsPage() {
           </Link>
         }
       >
-        <div className="max-w-xl border border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-2">
+        <div className="max-w-xl bg-[var(--obc-base)] px-4 py-2">
           <dl>
             <Row label="Plan" mono>
               {current.name}

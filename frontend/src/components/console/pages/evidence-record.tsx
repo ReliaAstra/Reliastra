@@ -123,7 +123,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         {incident.isLoading ? (
           <RowsSkeleton rows={3} cols={2} />
         ) : incident.isError || !inc ? (
-          <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-4">
+          <div className="bg-[var(--obc-base)] px-4 py-4">
             <dl>
               <Row label="Incident" mono>
                 {incidentCode(r.incident_id)}
@@ -136,7 +136,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
             </dl>
           </div>
         ) : (
-          <div className="border border-[var(--obc-line)] bg-[var(--obc-base)]">
+          <div className="bg-[var(--obc-base)]">
             <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--obc-line)] px-4 py-3">
               <span className="flex flex-wrap items-baseline gap-4">
                 <Link
@@ -228,7 +228,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         title="Attribution"
         hint="How the fault was attributed to the external dependency."
       >
-        <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-2">
+        <div className="bg-[var(--obc-base)] px-4 py-2">
           <dl>
             <Row label="Method" mono>
               {inc?.correlations?.[0]?.correlation_method ?? (
@@ -261,7 +261,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         title="Integrity"
         hint="What makes this record checkable by a third party."
       >
-        <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-2">
+        <div className="bg-[var(--obc-base)] px-4 py-2">
           <dl>
             <Row label="Checksum" mono>
               <span className="break-all">{r.checksum}</span>
@@ -288,7 +288,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         title="Share and export"
         hint="A share link resolves to the public verification page, which confirms the checksum without exposing the workspace."
       >
-        <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-4">
+        <div className="bg-[var(--obc-base)] px-4 py-4">
           {shareUrl ? (
             <>
               <p className="obc-mono break-all text-[var(--obc-text-2)]">{shareUrl}</p>

@@ -42,14 +42,13 @@ export function HomeHero() {
       {/* Proposition, anchored low-left like a mission overlay. */}
       <div className="ob-container relative z-[1] flex flex-1 flex-col pt-[96px] md:pt-[120px]">
         <div className="flex flex-1 flex-col justify-end pb-10 md:pb-14">
-          <p className="ob-label ob-rise ob-rise-1 flex items-center gap-3">
-            <span aria-hidden className="block h-px w-8 bg-[var(--ob-line-3)]" />
+          <p className="ob-eyebrow ob-rise ob-rise-1">
             External dependency intelligence
           </p>
 
           <h1
             id="hero-title"
-            className="ob-display ob-rise ob-rise-2 mt-6 max-w-[12ch]"
+            className="ob-display ob-rise ob-rise-2 mt-6 max-w-[24ch]"
           >
             Infrastructure you can prove.
           </h1>
@@ -70,7 +69,7 @@ export function HomeHero() {
             </Link>
           </div>
 
-          <p className="ob-rise ob-rise-4 mt-7 max-w-[52ch] text-[13px] leading-[1.6] text-[var(--ob-text-4)]">
+          <p className="ob-rise ob-rise-4 mt-7 max-w-[52ch] text-[0.875rem] leading-[1.6] text-[var(--ob-text-3)]">
             {OBSERVATION_POINTS === 1
               ? 'One observation point today, '
               : `${OBSERVATION_POINTS} observation points today, `}

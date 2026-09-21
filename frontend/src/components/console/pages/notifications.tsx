@@ -45,7 +45,7 @@ function ChannelForm({ type, channel, onClose }: { type: 'email' | 'slack'; chan
     onSuccess: async () => { await client.invalidateQueries({ queryKey: keys.alerts }); onClose(); },
   });
   const id = channel?.id ?? `new-${type}`;
-  return <form className="max-w-2xl space-y-4 border border-[var(--obc-line)] bg-[var(--obc-base)] p-5" onSubmit={e => { e.preventDefault(); save.mutate(); }}>
+  return <form className="max-w-2xl space-y-4 bg-[var(--obc-base)] p-5" onSubmit={e => { e.preventDefault(); save.mutate(); }}>
     {type === 'slack' && <div><label htmlFor={`${id}-label`} className="obc-field-label">Destination label</label><input id={`${id}-label`} className="obc-input" value={label} onChange={e => setLabel(e.target.value)} placeholder="#incidents" maxLength={100} required /></div>}
     <div><label className="obc-field-label" htmlFor={`${id}-destination`}>{type === 'email' ? 'Email address' : 'Slack incoming webhook'}</label>
       <input id={`${id}-destination`} className="obc-input" type={type === 'email' ? 'email' : 'password'} autoComplete={type === 'email' ? 'email' : 'new-password'} value={destination} onChange={e => setDestination(e.target.value)} required={type === 'email' || !channel} placeholder={type === 'slack' && channel ? 'Leave empty to keep the existing connection' : undefined} />
@@ -71,7 +71,7 @@ function Channel({ channel }: { channel: AlertConfig }) {
   const perform = (operation: () => Promise<unknown>) => { setMessage(null); action.mutate(operation); };
   const status = !channel.is_active ? 'Disabled' : channel.verification_required ? 'Verification required' : channel.connection_status === 'verified' ? 'Verified' : channel.connection_status === 'connected' ? 'Connected' : channel.last_test_success === false ? 'Delivery failed' : 'Configured · not tested';
   if (editing) return <ChannelForm type={channel.channel_type as 'email' | 'slack'} channel={channel} onClose={() => setEditing(false)} />;
-  return <article className="border border-[var(--obc-line)] bg-[var(--obc-base)] p-5" aria-label={`${channel.channel_type} ${channel.destination ?? 'channel'}`}>
+  return <article className="bg-[var(--obc-base)] p-5" aria-label={`${channel.channel_type} ${channel.destination ?? 'channel'}`}>
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0"><h3 className="break-all text-[15px] font-medium">{channel.destination ?? 'Slack webhook'}</h3><p className="obc-label mt-2">{status}</p></div>
       <label className="flex min-h-10 items-center gap-2 text-[12px]"><input type="checkbox" checked={pendingValues?.active ?? channel.is_active} disabled={action.isPending} onChange={e => { const active = e.target.checked; setPendingValues({ active }); perform(() => api.updateAlertConfig(channel.id, { is_active: active })); }} className="h-4 w-4 accent-[var(--obc-signal)]" />Enabled</label>

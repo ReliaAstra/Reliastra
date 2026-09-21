@@ -45,8 +45,8 @@ export async function IndexScene() {
       <Container className="py-24 md:py-32 lg:py-36">
         <div className="flex flex-col gap-9 pb-14 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-7">
-            <Eyebrow index="06">Public dependency index</Eyebrow>
-            <h2 id="index-title" className="ob-scene-title max-w-[15ch]">
+            <Eyebrow>Public dependency index</Eyebrow>
+            <h2 id="index-title" className="ob-scene-title max-w-[24ch]">
               The same probes, published.
             </h2>
           </div>
