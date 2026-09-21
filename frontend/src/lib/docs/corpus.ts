@@ -32,17 +32,21 @@ export const DOCS: Doc[] = [
         blocks: [
           {
             kind: 'p',
-            text: 'Everything below is one path, and the fastest way through it is the CLI: a single static binary with no runtime dependencies (Go 1.23 or newer to build from source).',
+            text: 'Everything below is one path, and the fastest way through it is the CLI. The npm and pipx packages are thin installers that download the verified binary on first run; Go builds from source.',
           },
           {
             kind: 'code',
             lang: 'bash',
-            code: `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
+            code: `npm install -g reliastra
+# or
+pipx install reliastra
+# from source
+go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
 reliastra --version`,
           },
           {
             kind: 'p',
-            text: 'The CLI lives in that repository at `cli/`, a Go module with no dependencies beyond the standard library. The install above resolves through the Go module proxy straight from the repository, so there is no registry step; from a checkout, `go build -o reliastra ./cli/cmd/reliastra` produces the binary and `go run ./cli/cmd/reliastra …` runs without installing.',
+            text: 'The CLI lives in that repository at `cli/`, a Go module with no dependencies beyond the standard library. The npm/pip installers share one cache and verify SHA-256 against the release checksums.txt. From a checkout, `go build -o reliastra ./cli/cmd/reliastra` produces the binary and `go run ./cli/cmd/reliastra …` runs without installing. See cli/README.md for verification details.',
           },
         ],
       },
@@ -987,12 +991,16 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
           {
             kind: 'code',
             lang: 'bash',
-            code: `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
+            code: `npm install -g reliastra
+# or
+pipx install reliastra
+# from source
+go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
 reliastra --help`,
           },
           {
             kind: 'p',
-            text: 'Go 1.23 or newer to build, and the module has no dependencies beyond the standard library. The package is `cli/` in the repository and the Go module proxy serves it straight from there, so the install above needs no registry account. From a checkout, `go run ./cli/cmd/reliastra …` runs without installing. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
+            text: 'The npm and pipx packages are thin installers that download the verified binary on first run and verify SHA-256 against the release checksums.txt (see cli/README.md). Go 1.23 or newer to build from source, and the module has no dependencies beyond the standard library. From a checkout, `go run ./cli/cmd/reliastra …` runs without installing. `--version` prints the version, and every command and subcommand answers `--help`, including mid-command (`reliastra evidence get --help`).',
           },
         ],
       },
