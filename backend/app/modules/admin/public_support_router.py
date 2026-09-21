@@ -92,6 +92,27 @@ async def submit_public_ticket(
         priority="normal",
         source="web",
     )
+
+    # Support is answered by email, and the team has to hear about a web-form
+    # message the same way it hears about a console one: an alert email to the
+    # support inbox, plus the browser notification the admin console raises
+    # from GET /v1/admin/support/alerts. Alerting is non-fatal - the ticket is
+    # already persisted, so a mail outage must not fail the visitor's
+    # submission (it is logged instead).
+    try:
+        from app.modules.support.service import support_email_service
+
+        await support_email_service.alert_new_ticket(
+            db,
+            ticket=ticket,
+            requester_name=body.name.strip(),
+            requester_email=email,
+        )
+    except Exception:  # pragma: no cover - never fail an accepted submission
+        logger.exception(
+            "Failed to alert the team about public ticket %s", ticket.ticket_number
+        )
+
     logger.info(
         "Public support ticket %s accepted for %s", ticket.ticket_number, email
     )

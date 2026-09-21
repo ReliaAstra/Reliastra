@@ -26,7 +26,7 @@ language - different density, different posture.
 | `/evidence/[id]` | `console/pages/evidence-record.tsx` | **New route** (backed by the existing `GET /v1/evidence/{id}`) |
 | `/settings` | `console/pages/settings.tsx` | Recomposed |
 | `/settings/billing` | `console/pages/billing.tsx` | Recomposed, money contract preserved verbatim |
-| `/support` | `console/pages/support.tsx` | Recomposed |
+| `/support` | `console/pages/support.tsx` | Recomposed, then rewritten as an email form (email-only support) |
 | `/onboarding` | `components/onboarding/*` | Unchanged (guided flow, out of scope) |
 | `/clients`, `/clients/[id]`, `/clients/onboarding` | `dashboard/pages/*` | Unchanged (agency mode; nav entry only appears when `org.has_agency_mode`) |
 | `(console)/loading.tsx`, `error.tsx`, `not-found.tsx` | rewritten | Recomposed |

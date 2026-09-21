@@ -37,11 +37,6 @@ from app.modules.partners.schemas import (
     PartnerApplyRequest,
     PartnerDashboardResponse,
     PartnerProfileResponse,
-    PartnerTicketCreateRequest,
-    PartnerTicketDetailResponse,
-    PartnerTicketListResponse,
-    PartnerTicketMessageCreateRequest,
-    PartnerTicketMessageItem,
     PayoutItem,
     PayoutListResponse,
     PayoutSettingsUpdateRequest,
@@ -49,19 +44,12 @@ from app.modules.partners.schemas import (
     ReferralListResponse,
 )
 from app.modules.partners.service import partner_service
-from app.modules.partners.support import partner_support_service
 from app.modules.users.models import User
 
 partners_router = APIRouter(prefix="/v1/partners", tags=["Partners"])
 
 _apply_limiter = SlidingWindowRateLimiter(
     limit=5, window_seconds=3600, key_prefix="partner_apply"
-)
-_support_limiter = SlidingWindowRateLimiter(
-    limit=10, window_seconds=3600, key_prefix="partner_support_ticket"
-)
-_support_message_limiter = SlidingWindowRateLimiter(
-    limit=60, window_seconds=3600, key_prefix="partner_support_message"
 )
 
 
@@ -412,79 +400,12 @@ async def update_notification_preferences(
     return NotificationPreferencesResponse.model_validate(prefs, from_attributes=True)
 
 
-# ═══════════════════════════ Support desk ════════════════════════════════
-
-
-@partners_router.get(
-    "/support/tickets",
-    response_model=PartnerTicketListResponse,
-    summary="My support conversations",
-)
-async def list_support_tickets(
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_partner_user),
-) -> PartnerTicketListResponse:
-    return await partner_support_service.list_tickets(
-        db, current_user.id, page=page, page_size=page_size
-    )
-
-
-@partners_router.post(
-    "/support/tickets",
-    response_model=PartnerTicketDetailResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Start a support conversation",
-)
-async def create_support_ticket(
-    request: Request,
-    body: PartnerTicketCreateRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_partner_user),
-) -> PartnerTicketDetailResponse:
-    """Open a ticket that lands directly in the admin support queue.
-
-    The conversation is live in both directions: the admin sees it at
-    ``/admin/support`` and any reply appears in the partner's dashboard.
-    """
-    await enforce_rate_limit(request, _support_limiter)
-    return await partner_support_service.create_ticket(
-        db,
-        current_user,
-        subject=body.subject,
-        message=body.message,
-        priority=body.priority,
-    )
-
-
-@partners_router.get(
-    "/support/tickets/{ticket_id}",
-    response_model=PartnerTicketDetailResponse,
-    summary="Conversation thread",
-)
-async def get_support_thread(
-    ticket_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_partner_user),
-) -> PartnerTicketDetailResponse:
-    return await partner_support_service.get_thread(db, current_user.id, ticket_id)
-
-
-@partners_router.post(
-    "/support/tickets/{ticket_id}/messages",
-    response_model=PartnerTicketMessageItem,
-    status_code=status.HTTP_201_CREATED,
-    summary="Reply in a conversation",
-)
-async def add_support_message(
-    request: Request,
-    ticket_id: uuid.UUID,
-    body: PartnerTicketMessageCreateRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_partner_user),
-) -> PartnerTicketMessageItem:
-    await enforce_rate_limit(request, _support_message_limiter)
-    return await partner_support_service.add_message(
-        db, current_user, ticket_id, body.body
-    )
+# ── Support ──────────────────────────────────────────────────────────────
+#
+# Partner support is email-only, so there is no conversation API here. The
+# live thread that used to live at this address - list, thread, post
+# message, all polled on the partner's side - was removed with the rest of
+# the live conversation surface. A customer writes in from the console
+# (``POST /v1/support/requests``), the team is alerted by email and browser
+# notification, and the answer is emailed back to them. See
+# ``app/modules/support/__init__.py`` for the loop.

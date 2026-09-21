@@ -532,39 +532,44 @@ export interface InboxUnreadCountResponse {
 
 // -- Support desk -----------------------------------------------------------
 //
-// Same `feedback_tickets` rows the admin support workspace works on, so a
-// conversation opened here is the one an admin replies to.
+// Support is email-only. There is no thread to fetch, no message to post and
+// nothing to poll: the customer writes once, the answer arrives at their
+// inbox. The console shows a receipt, which is the whole response contract.
 
-export interface SupportTicketSummary {
-  id: string;
-  ticket_number: string;
+/** Categories the support form offers, mirrored by the backend's validator. */
+export const SUPPORT_CATEGORIES = [
+  'general',
+  'monitoring',
+  'evidence',
+  'billing',
+  'account',
+  'security',
+  'integration',
+] as const;
+
+export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number];
+
+export interface SupportEmailRequest {
   subject: string;
+  message: string;
+  category: SupportCategory;
+}
+
+/**
+ * The receipt for a support email.
+ *
+ * `admin_notified` is deliberately part of the contract: the request is queued
+ * either way, but the writer is told the truth about whether the team was
+ * alerted by email the moment it landed.
+ */
+export interface SupportEmailReceipt {
+  ticket_number: string;
   status: string;
-  priority: string;
-  created_at: string;
-  updated_at: string;
-  last_message_at: string;
-  last_message_preview: string;
-  last_sender_type: 'user' | 'admin' | 'system' | string;
-  unread_admin_messages: number;
-}
-
-export interface SupportMessage {
-  id: string;
-  sender_type: 'user' | 'admin' | 'system' | string;
-  sender_name: string;
-  body: string;
-  created_at: string;
-}
-
-export interface SupportTicketDetail {
-  ticket: SupportTicketSummary;
-  messages: SupportMessage[];
-}
-
-export interface SupportTicketListResponse {
-  items: SupportTicketSummary[];
-  page: number;
-  page_size: number;
-  total: number;
+  subject: string;
+  category: string;
+  support_email: string;
+  received_at: string;
+  confirmation_sent_to: string | null;
+  admin_notified: boolean;
+  reply_in_days: number;
 }

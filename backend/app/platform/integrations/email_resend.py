@@ -74,6 +74,7 @@ def _build_payload(
     category: str,
     tags: list[dict[str, str]] | None,
     correlation_id: str | None,
+    reply_to: str | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
     recipients = [to] if isinstance(to, str) else to
     # sanitize tags - only opaque ids, no PII
@@ -91,9 +92,12 @@ def _build_payload(
     }
     if text:
         payload["text"] = text
-    reply_to = _reply_to_for_category(category)
-    if reply_to:
-        payload["reply_to"] = reply_to
+    # An explicit Reply-To wins over the category default: the support desk
+    # sets it so a customer pressing Reply in their mail client reaches the
+    # monitored alias rather than an unmonitored no-reply sender.
+    resolved_reply_to = reply_to or _reply_to_for_category(category)
+    if resolved_reply_to:
+        payload["reply_to"] = resolved_reply_to
     if safe_tags:
         payload["tags"] = safe_tags
     return payload, recipients
@@ -106,6 +110,7 @@ async def send_via_resend(
     category: str = "transactional",
     tags: list[dict[str, str]] | None = None,
     correlation_id: str | None = None,
+    reply_to: str | None = None,
 ) -> tuple[bool, str | None]:
     """Send via Resend. Returns (ok, resend_id). Never logs secrets."""
     api_key = _api_key()
@@ -120,6 +125,7 @@ async def send_via_resend(
         category=category,
         tags=tags,
         correlation_id=correlation_id,
+        reply_to=reply_to,
     )
 
     try:
@@ -155,6 +161,7 @@ def send_via_resend_sync(
     category: str = "transactional",
     tags: list[dict[str, str]] | None = None,
     correlation_id: str | None = None,
+    reply_to: str | None = None,
     timeout_seconds: float = 10.0,
 ) -> tuple[bool, str | None]:
     """Sync version of :func:`send_via_resend` for sync-only call sites.
@@ -175,6 +182,7 @@ def send_via_resend_sync(
         category=category,
         tags=tags,
         correlation_id=correlation_id,
+        reply_to=reply_to,
     )
 
     try:

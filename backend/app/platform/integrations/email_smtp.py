@@ -30,6 +30,7 @@ class EmailClient:
         html_body: str | None = None,
         *,
         category: str = "transactional",
+        reply_to: str | None = None,
     ) -> bool:
         """SYNC - call via ``asyncio.to_thread`` from async code.
 
@@ -37,6 +38,10 @@ class EmailClient:
         through Resend (the only supported production path - there is no
         local MTA in production). SMTP is strictly a fallback for local
         development (MailHog) and hermetic tests. No caller sends SMTP-only.
+
+        ``reply_to`` is honoured on both transports. The support desk passes
+        the monitored alias so a requester can answer a support email from
+        their own mail client - the whole point of an email-only desk.
         """
         logger.info("Sending email to '%s': Subject='%s'", to_email, subject)
         try:
@@ -48,6 +53,7 @@ class EmailClient:
                 html=html_body or f"<p>{body}</p>",
                 text=body,
                 category=category,
+                reply_to=reply_to,
             )
             if ok:
                 return True
@@ -62,6 +68,8 @@ class EmailClient:
         message["Subject"] = subject
         message["From"] = self.smtp_from
         message["To"] = to_email
+        if reply_to:
+            message["Reply-To"] = reply_to
         message.attach(MIMEText(body, "plain"))
         if html_body:
             message.attach(MIMEText(html_body, "html"))

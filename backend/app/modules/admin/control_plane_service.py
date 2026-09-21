@@ -55,6 +55,7 @@ from app.modules.admin.control_plane_schemas import (
     SupportOverviewResponse,
     SupportTicketWorkspaceResponse,
 )
+from app.modules.support.schemas import SupportAlertsResponse
 from app.modules.admin.control_plane_search import ControlPlaneSearch
 from app.modules.admin.control_plane_support import ControlPlaneSupport
 
@@ -321,6 +322,11 @@ class AdminControlPlaneService:
 
     async def get_support_overview(self, session: AsyncSession) -> SupportOverviewResponse:
         return await self._support.get_support_overview(session)
+
+    async def get_support_alerts(
+        self, session: AsyncSession, *, since: Any | None = None
+    ) -> SupportAlertsResponse:
+        return await self._support.get_support_alerts(session, since=since)
 
     async def get_support_ticket_workspace(
         self, session: AsyncSession, ticket_id: uuid.UUID

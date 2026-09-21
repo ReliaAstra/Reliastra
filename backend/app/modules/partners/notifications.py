@@ -55,6 +55,10 @@ class PartnerEvent:
     PAYOUT_PAID = "partner_payout_paid"
     PAYOUT_FAILED = "partner_payout_failed"
     DESTINATION_CHANGED = "partner_payout_destination_changed"
+    #: Retained for historical rows and the stored ``email_support``
+    #: preference. Nothing emits it any more: a support answer is an email to
+    #: the requester (see ``app/modules/support``), not an in-app event on a
+    #: thread the partner has to be watching.
     SUPPORT_REPLY = "partner_support_reply"
     ANNOUNCEMENT = "partner_announcement"
     MARKETING = "partner_marketing"
@@ -377,25 +381,6 @@ class PartnerNotificationService:
             action_label="Review payout settings",
             priority="high",
             send_email=True,
-        )
-
-    async def support_reply(
-        self,
-        session: AsyncSession,
-        *,
-        partner_user_id: uuid.UUID,
-        ticket_number: str,
-        subject: str,
-        preview: str,
-    ) -> None:
-        await self.notify(
-            session,
-            user_id=partner_user_id,
-            event=PartnerEvent.SUPPORT_REPLY,
-            title=f"Support replied - {subject}",
-            body=f"[{ticket_number}] {preview}",
-            action_url="/?page=support",
-            action_label="Open conversation",
         )
 
     # ── Feed reads ───────────────────────────────────────────────────────

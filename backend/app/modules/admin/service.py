@@ -39,6 +39,7 @@ from app.modules.admin.schemas import (
     FeedbackBulkUpdateRequest,
     FeedbackMessageCreateRequest,
     FeedbackMessageResponse,
+    FeedbackReplyResponse,
     FeedbackStatsResponse,
     FeedbackTicketDetailResponse,
     FeedbackTicketListResponse,
@@ -594,7 +595,19 @@ class AdminFeedbackService:
         *,
         admin_user_id: uuid.UUID,
         admin_name: str,
-    ) -> FeedbackMessageResponse:
+    ) -> FeedbackReplyResponse:
+        """Answer a support email, by email.
+
+        Support is email-only, so a visible reply is *sent*, not published to
+        a thread the requester would have to be watching: the same function
+        writes the message row (the ticket's email history) and hands the
+        answer to the mail provider. The response says whether the provider
+        accepted it, because "we recorded your reply" and "the requester has
+        your reply" are different statements and the admin UI shows the
+        difference.
+
+        Internal notes are staff-only and never emailed.
+        """
         ticket = await self.repository.get_ticket_by_id(session, ticket_id)
         if not ticket:
             raise ResourceNotFoundException("Ticket not found")
@@ -609,51 +622,32 @@ class AdminFeedbackService:
             is_internal_note=request.is_internal_note,
         )
 
-        # A visible reply is pushed to the requester: in-app (so the console's
-        # live thread and notification bell pick it up on their next poll) plus
-        # an email copy when their preferences allow it.  Internal notes are
-        # staff-only and never notify.
-        if not request.is_internal_note and ticket.user_id:
-            try:
-                from app.modules.partners.notifications import (
-                    partner_notification_service,
-                )
+        emailed = False
+        if not request.is_internal_note and ticket.email:
+            from app.modules.support.emails import send_reply
 
-                await partner_notification_service.support_reply(
+            try:
+                emailed = await send_reply(
                     session,
-                    partner_user_id=ticket.user_id,
+                    ticket_id=ticket.id,
                     ticket_number=ticket.ticket_number,
                     subject=ticket.subject,
-                    preview=request.body[:200],
-                )
-            except Exception:  # pragma: no cover - never block a reply
-                logger.exception(
-                    "Failed to notify user %s of support reply", ticket.user_id
-                )
-        elif not request.is_internal_note and ticket.email:
-            # Unlinked ticket (submitted from an address with no account, or
-            # created by an admin on someone's behalf).  There is no in-app
-            # feed to write to, so email is the only way the requester learns
-            # they were answered - without this the reply silently vanished.
-            try:
-                import asyncio
-
-                await asyncio.to_thread(
-                    email_client.send_email,
+                    reply_body=request.body,
+                    admin_name=admin_name,
                     to_email=ticket.email,
-                    subject=f"[{ticket.ticket_number}] Re: {ticket.subject}",
-                    body=(
-                        f"{request.body}\n\n"
-                        f"- RELIASTRA Support\n"
-                        f"Ticket {ticket.ticket_number}"
-                    ),
+                    user_id=ticket.user_id,
                 )
             except Exception:  # pragma: no cover - never block a reply
                 logger.exception(
                     "Failed to email support reply to %s", ticket.email
                 )
 
-        return FeedbackMessageResponse.model_validate(msg)
+        return FeedbackReplyResponse(
+            message=FeedbackMessageResponse.model_validate(msg),
+            emailed=emailed,
+            emailed_to=ticket.email if not request.is_internal_note else None,
+            is_internal_note=request.is_internal_note,
+        )
 
     async def bulk_update_tickets(
         self,

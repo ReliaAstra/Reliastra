@@ -8,8 +8,8 @@ Covers the behaviour added on top of the v1 referral program:
   partner (in-app + email per preference);
 * referral signups and commissions notify the partner;
 * notification preferences are persisted server-side;
-* partner support conversations land in the admin support queue and admin
-  replies flow back to the partner.
+* (the partner support conversation tests moved to
+  ``test_support_email_desk.py`` when the live surface was removed).
 """
 
 import pytest
@@ -504,127 +504,10 @@ async def test_broadcast_requires_system_admin(async_client):
 
 
 # ── Support desk ─────────────────────────────────────────────────────────
-
-
-@pytest.mark.asyncio
-async def test_partner_support_conversation_reaches_admin_and_back(
-    async_client, db_session
-):
-    admin = await _register(async_client, "supadmin@example.com", "Support Admin")
-    await _make_admin(db_session, admin)
-    admin_headers = {"Authorization": f"Bearer {admin['token']}"}
-
-    partner = await _register(async_client, "sup@example.com", "Sup Kof")
-    await _activate_partner(async_client, partner["headers"])
-
-    # 1. Partner opens a conversation from the dashboard.
-    res = await async_client.post(
-        "/v1/partners/support/tickets",
-        json={"subject": "Payout not received", "message": "My USDT payout has not arrived."},
-        headers=partner["headers"],
-    )
-    assert res.status_code == 201, res.text
-    ticket = res.json()["ticket"]
-    assert ticket["ticket_number"].startswith("PN-")
-    assert res.json()["messages"][0]["sender_type"] == "user"
-
-    # 2. It shows up in the admin support queue.
-    res = await async_client.get(
-        "/v1/admin/support/tickets", params={"category": "partner"}, headers=admin_headers
-    )
-    assert res.status_code == 200, res.text
-    assert any(t["id"] == ticket["id"] for t in res.json()["items"])
-
-    # 3. The admin replies …
-    res = await async_client.post(
-        f"/v1/admin/support/tickets/{ticket['id']}/reply",
-        json={"body": "We re-sent it, check again in an hour.", "is_internal_note": False},
-        headers=admin_headers,
-    )
-    assert res.status_code == 200, res.text
-
-    # … and an internal note, which the partner must never see.
-    res = await async_client.post(
-        f"/v1/admin/support/tickets/{ticket['id']}/reply",
-        json={"body": "Escalated to finance internally.", "is_internal_note": True},
-        headers=admin_headers,
-    )
-    assert res.status_code == 200, res.text
-
-    # 4. The partner's thread shows the reply, not the note.
-    res = await async_client.get(
-        f"/v1/partners/support/tickets/{ticket['id']}", headers=partner["headers"]
-    )
-    assert res.status_code == 200, res.text
-    bodies = [m["body"] for m in res.json()["messages"]]
-    assert "We re-sent it, check again in an hour." in bodies
-    assert "Escalated to finance internally." not in bodies
-
-    # 5. The partner is notified of the reply.
-    events = [
-        n["event"]
-        for n in (
-            await async_client.get(
-                "/v1/partners/notifications", headers=partner["headers"]
-            )
-        ).json()["items"]
-    ]
-    assert "partner_support_reply" in events
-
-    # 6. The partner can reply back and it reaches the same thread.
-    res = await async_client.post(
-        f"/v1/partners/support/tickets/{ticket['id']}/messages",
-        json={"body": "Received, thank you."},
-        headers=partner["headers"],
-    )
-    assert res.status_code == 201, res.text
-
-    res = await async_client.get(
-        f"/v1/admin/support/tickets/{ticket['id']}", headers=admin_headers
-    )
-    assert res.status_code == 200, res.text
-    admin_bodies = [m["body"] for m in res.json()["messages"]]
-    assert "Received, thank you." in admin_bodies
-
-
-@pytest.mark.asyncio
-async def test_partner_cannot_read_another_partners_conversation(async_client):
-    one = await _register(async_client, "t1@example.com", "T One")
-    await _activate_partner(async_client, one["headers"])
-    two = await _register(async_client, "t2@example.com", "T Two")
-    await _activate_partner(async_client, two["headers"])
-
-    ticket = (
-        await async_client.post(
-            "/v1/partners/support/tickets",
-            json={"subject": "Private matter", "message": "This is confidential info."},
-            headers=one["headers"],
-        )
-    ).json()["ticket"]
-
-    res = await async_client.get(
-        f"/v1/partners/support/tickets/{ticket['id']}", headers=two["headers"]
-    )
-    assert res.status_code == 404, res.text
-
-    res = await async_client.post(
-        f"/v1/partners/support/tickets/{ticket['id']}/messages",
-        json={"body": "Sneaking in"},
-        headers=two["headers"],
-    )
-    assert res.status_code == 404, res.text
-
-
-@pytest.mark.asyncio
-async def test_support_ticket_validates_message_length(async_client):
-    partner = await _register(async_client, "short@example.com", "Short Kof")
-    await _activate_partner(async_client, partner["headers"])
-    res = await async_client.post(
-        "/v1/partners/support/tickets",
-        json={"subject": "Hi", "message": "too short"},
-        headers=partner["headers"],
-    )
-    assert res.status_code == 422, res.text
+#
+# The partner support conversation tests were deleted with the live
+# conversation surface they described. Support is email-only now, and the
+# loop is covered end to end in ``test_support_email_desk.py``.
 
 
 # ── Admin payout queue ───────────────────────────────────────────────────
