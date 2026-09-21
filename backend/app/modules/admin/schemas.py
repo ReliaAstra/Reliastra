@@ -565,6 +565,22 @@ class FeedbackMessageResponse(BaseModel):
     created_at: datetime
 
 
+class FeedbackReplyResponse(BaseModel):
+    """The result of answering a support email.
+
+    ``emailed`` is the delivery fact - whether the mail provider accepted the
+    message - and it is reported separately from the message row so the admin
+    UI can say "sent to ada@example.com" or "saved, but not sent" instead of
+    implying a delivery that did not happen. Internal notes never email and
+    report ``emailed_to: null``.
+    """
+
+    message: FeedbackMessageResponse
+    emailed: bool = False
+    emailed_to: str | None = None
+    is_internal_note: bool = False
+
+
 class FeedbackTicketDetailResponse(BaseModel):
     ticket: FeedbackTicketResponse
     messages: list[FeedbackMessageResponse] = []

@@ -78,6 +78,7 @@ from app.modules.admin.schemas import (
     OverridePlanRequest,
     PublicAnnouncementsResponse,
 )
+from app.modules.support.schemas import SupportAlertsResponse
 from app.modules.admin.service import (
     admin_analytics_service,
     admin_business_service,
@@ -642,6 +643,30 @@ async def get_support_overview(
     admin_user: User = Depends(require_system_admin),
 ) -> SupportOverviewResponse:
     return await admin_control_plane_service.get_support_overview(db)
+
+
+@support_router.get(
+    "/alerts",
+    response_model=SupportAlertsResponse,
+    summary="New support emails since a cursor",
+    description=(
+        "Cheap new-ticket signal for the admin console. The admin shell polls "
+        "this (20s) and raises a Chrome notification for any request newer "
+        "than the cursor, so an operator looking at another admin page can "
+        "answer inside the minute. It is the only polling left in support: "
+        "queues and tickets are fetched on demand."
+    ),
+)
+async def get_support_alerts(
+    request: Request,
+    since: datetime | None = Query(
+        default=None,
+        description="ISO-8601 cursor: return tickets created after this instant.",
+    ),
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> SupportAlertsResponse:
+    return await admin_control_plane_service.get_support_alerts(db, since=since)
 
 
 @support_router.get("/tickets")

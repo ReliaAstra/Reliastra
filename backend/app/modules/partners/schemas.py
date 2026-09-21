@@ -321,57 +321,6 @@ class NotificationPreferencesUpdateRequest(BaseModel):
     browser_enabled: bool | None = None
 
 
-# ── Partner support desk ──────────────────────────────────────────────────
-
-
-class PartnerTicketCreateRequest(BaseModel):
-    subject: str = Field(min_length=1, max_length=500)
-    message: str = Field(min_length=10)
-    priority: str = Field(default="normal", pattern="^(low|normal|high|urgent)$")
-
-
-class PartnerTicketMessageCreateRequest(BaseModel):
-    body: str = Field(min_length=1)
-
-
-class PartnerTicketMessageItem(BaseModel):
-    id: uuid.UUID
-    #: "user" (the partner), "admin" (RELIASTRA support) or "system".
-    sender_type: str
-    sender_name: str
-    body: str
-    created_at: datetime
-
-
-class PartnerTicketItem(BaseModel):
-    id: uuid.UUID
-    ticket_number: str
-    subject: str
-    status: str
-    priority: str
-    created_at: datetime
-    updated_at: datetime
-    last_message_at: datetime
-    last_message_preview: str
-    last_sender_type: str
-    unread_admin_messages: int = 0
-
-
-class PartnerTicketListResponse(BaseModel):
-    items: list[PartnerTicketItem]
-    page: int
-    page_size: int
-    total: int
-
-
-class PartnerTicketDetailResponse(BaseModel):
-    ticket: PartnerTicketItem
-    messages: list[PartnerTicketMessageItem]
-
-
-# ── Admin → partner messaging ─────────────────────────────────────────────
-
-
 class AdminPayoutDestinationRevealResponse(BaseModel):
     """Full, payable destination - returned only to a system admin, audited."""
 

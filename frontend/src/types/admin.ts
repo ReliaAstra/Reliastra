@@ -380,6 +380,50 @@ export interface FeedbackMessage {
   created_at: string;
 }
 
+/**
+ * The result of answering a support email.
+ *
+ * `emailed` is the delivery fact, reported separately from the stored message
+ * so the inbox can say "Sent to ada@example.com" or "Saved, but not sent"
+ * instead of implying a delivery that did not happen.
+ */
+export interface FeedbackReplyResponse {
+  message: FeedbackMessage;
+  emailed: boolean;
+  emailed_to: string | null;
+  is_internal_note: boolean;
+}
+
+/** One new support email, as the console's browser notification describes it. */
+export interface SupportAlertItem {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  requester_email: string;
+  requester_name?: string | null;
+  category: string;
+  priority: string;
+  source?: string | null;
+  created_at: string;
+  admin_url: string;
+}
+
+/**
+ * New-email signal for the admin console, polled by `SupportAlertWatcher`.
+ *
+ * This is the only polling left in support: it exists so a Chrome
+ * notification can fire while an operator is on a different admin page.
+ * Queues and tickets are fetched on demand, never on a timer.
+ */
+export interface SupportAlertsResponse {
+  server_time: string;
+  since: string;
+  new_count: number;
+  awaiting_reply_count: number;
+  highest_priority: string | null;
+  latest: SupportAlertItem[];
+}
+
 export interface SupportTicketWorkspaceResponse {
   ticket: FeedbackTicket;
   messages: FeedbackMessage[];

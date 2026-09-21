@@ -34,6 +34,7 @@ from app.modules.admin.service import (
     admin_operations_service,
 )
 
+from app.modules.support.schemas import SupportAlertsResponse
 from app.modules.admin.control_plane_shared import (
     count_rows,
     count_rows_where,
@@ -150,6 +151,19 @@ class ControlPlaneSupport:
             recent_customer_activity=recent_activity,
             related_incidents=related_incidents,
         )
+
+    async def get_support_alerts(
+        self, session: AsyncSession, *, since: Any | None = None
+    ) -> "SupportAlertsResponse":
+        """New-email signal for the admin console's browser notifications.
+
+        The logic lives with the rest of the email desk
+        (:mod:`app.modules.support.service`); this is the control-plane's
+        delegating read, exactly like the sibling overviews above.
+        """
+        from app.modules.support.service import support_email_service
+
+        return await support_email_service.alerts_since(session, since=since)
 
     async def get_communications_overview(
         self, session: AsyncSession

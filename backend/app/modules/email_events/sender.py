@@ -26,6 +26,7 @@ async def send_transactional_email(
     user_id: uuid.UUID | None = None,
     template: str | None = None,
     correlation_id: str | None = None,
+    reply_to: str | None = None,
 ) -> tuple[bool, str | None]:
     """Send via Resend (preferred) with SMTP fallback, and persist EmailRecord with Resend ID.
     Never logs secrets or tokens. Returns (ok, resend_id)."""
@@ -53,6 +54,7 @@ async def send_transactional_email(
             category=category,
             tags=tags,
             correlation_id=correlation_id,
+            reply_to=reply_to,
         )
         # Persist record
         try:
@@ -88,6 +90,7 @@ async def send_transactional_email(
             subject=subject,
             body=text or "",
             html_body=html,
+            reply_to=reply_to,
         )
         # Persist with no resend_id
         try:

@@ -442,6 +442,19 @@ class Settings(BaseSettings):
     )
     # ── Human inbound aliases (ImprovMX forwarding) ───────────────────
     SUPPORT_EMAIL: str = Field(default="support@reliastra.com")
+    #: Where a new support email is announced. Support is email-only: a
+    #: customer writes in, this mailbox gets the alert, an admin answers from
+    #: the admin inbox, and the answer goes back out as email. Comma-separated;
+    #: empty falls back to ``SUPPORT_EMAIL`` so an unconfigured deployment
+    #: still alerts the human alias rather than nobody.
+    SUPPORT_NOTIFICATION_EMAILS: str = Field(
+        default="",
+        description=(
+            "Comma-separated addresses that receive a new-support-email alert "
+            "and are the Reply-To of the acknowledgement. Empty uses "
+            "SUPPORT_EMAIL."
+        ),
+    )
     SECURITY_EMAIL: str = Field(default="security@reliastra.com")
     BILLING_EMAIL: str = Field(default="billing@reliastra.com")
     PARTNERS_EMAIL: str = Field(default="partners@reliastra.com")
@@ -786,6 +799,25 @@ class Settings(BaseSettings):
     @property
     def admin_service_email(self) -> str:
         return self.ADMIN_SERVICE_EMAIL.strip().lower()
+
+    @property
+    def support_notification_recipients(self) -> list[str]:
+        """Addresses alerted when a new support email arrives.
+
+        De-duplicated, order preserved. Falls back to the human
+        ``SUPPORT_EMAIL`` alias when nothing is configured, so a new support
+        message is never announced to an empty list.
+        """
+        configured = [
+            address.strip().lower()
+            for address in self.SUPPORT_NOTIFICATION_EMAILS.split(",")
+            if address.strip()
+        ]
+        fallback = (self.SUPPORT_EMAIL or "").strip().lower()
+        if not configured and fallback:
+            configured = [fallback]
+        seen: set[str] = set()
+        return [a for a in configured if not (a in seen or seen.add(a))]
 
     @model_validator(mode="after")
     def _reject_insecure_defaults_in_production(self) -> Settings:

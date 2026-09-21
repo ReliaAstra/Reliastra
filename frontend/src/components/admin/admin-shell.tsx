@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { AdminCommandPalette } from '@/components/admin/admin-command-palette';
+import { SupportAlertWatcher } from '@/components/admin/support-alert-watcher';
 import { DateRangeControl, HealthDot, SectionSkeleton, StatusPill } from '@/components/admin/admin-primitives';
 
 export type AdminShellState = 'loading' | 'ready' | 'expired' | 'denied' | 'unavailable';
@@ -173,6 +174,13 @@ export function AdminShell({
       </div>
       <MobileNavigation open={mobileNavigationOpen} onOpenChange={setMobileNavigationOpen} disabled={!canUseAdmin} />
       {canUseAdmin && <AdminCommandPalette open={commandOpen} onOpenChange={setCommandOpen} />}
+      {/*
+        One watcher for the whole console. It runs on every admin page, so a
+        support email raised while the operator is reading revenue still
+        reaches them as a Chrome notification - and the support queries it
+        refreshes replace the polling the inbox used to do on its own.
+      */}
+      {canUseAdmin && <SupportAlertWatcher />}
     </div>
   );
 }

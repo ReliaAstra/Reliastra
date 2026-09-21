@@ -248,13 +248,20 @@ def otp_test_harness(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
         subject: str,
         body: str,
         html_body: str | None = None,
+        *,
+        reply_to: str | None = None,
+        **kwargs: Any,
     ) -> bool:
+        # ``reply_to`` is part of the EmailClient contract (the support desk
+        # sets the monitored alias so a requester can answer by email); it is
+        # captured here so a test can assert the answer comes back to us.
         sent.append(
             {
                 "to_email": to_email,
                 "subject": subject,
                 "body": body,
                 "html_body": html_body,
+                "reply_to": reply_to,
             }
         )
         return True

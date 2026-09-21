@@ -50,6 +50,8 @@ import type {
   RevenueAttentionResponse,
   RevenueSummaryResponse,
   RevenueTimeseriesResponse,
+  FeedbackReplyResponse,
+  SupportAlertsResponse,
   SupportOverviewResponse,
   SupportTicketWorkspaceResponse,
   SystemMetrics,
@@ -364,7 +366,18 @@ export const adminApi = {
     data: { status?: string; priority?: string; assigned_to?: string; resolution?: string }
   ) => request<FeedbackTicket>(`/support/tickets/${ticketId}`, { method: 'PATCH', body: data }),
   replyToTicket: (ticketId: string, data: { body: string; is_internal_note?: boolean }) =>
-    request(`/support/tickets/${ticketId}/reply`, { method: 'POST', body: data }),
+    request<FeedbackReplyResponse>(`/support/tickets/${ticketId}/reply`, {
+      method: 'POST',
+      body: data,
+    }),
+  /**
+   * New support emails since a cursor - the read behind the browser
+   * notification. Called every 20s from the admin shell; asks for the tickets
+   * created after the last alert the operator saw, and the count of requests
+   * still waiting for a first answer.
+   */
+  supportAlerts: (since?: string | null) =>
+    request<SupportAlertsResponse>('/support/alerts', { params: { since } }),
   bulkUpdateTickets: (data: {
     ticket_ids: string[];
     status?: string;

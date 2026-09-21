@@ -46,6 +46,7 @@ from app.modules.partners.public_router import public_partners_router
 from app.modules.partners.router import partners_router
 from app.modules.referrals.router import referrals_router
 from app.modules.status_pages.router import status_page_router, status_router
+from app.modules.support.router import support_router
 from app.modules.timeline_share.router import router as timeline_share_router
 from app.modules.users.router import router as users_router
 from app.modules.vendor_submissions.router import (
@@ -93,6 +94,12 @@ ROUTER_REGISTRY: tuple[RouterMount, ...] = (
     RouterMount("admin", admin_router, True, "admin control plane"),
     RouterMount("public_announcements", public_announcements_router, True, "public announcements"),
     RouterMount("public_support", public_support_router, True, "public support intake"),
+    RouterMount(
+        "support",
+        support_router,
+        True,
+        "console support email (email-only desk, no live conversation)",
+    ),
     # Creator-link resolution for /r/{code}: validate code, count the click,
     # return a safe destination. The one partner-surface endpoint the
     # lightweight creator program still needs.

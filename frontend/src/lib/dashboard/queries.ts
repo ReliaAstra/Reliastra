@@ -5,7 +5,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from './api';
 import { useAppStore } from '@/stores/app-store';
-import type { DependencyCreate } from './types';
+import type { DependencyCreate, SupportEmailRequest } from './types';
 
 /**
  * Every console query is gated on an authenticated session: firing them
@@ -39,8 +39,6 @@ export const keys = {
   clientApplications: (clientId: string) => ['agency', 'clients', clientId, 'applications'] as const,
   portfolio: ['agency', 'portfolio'] as const,
   inbox: ['notifications', 'inbox'] as const,
-  supportTickets: ['support', 'tickets'] as const,
-  supportThread: (id: string) => ['support', 'tickets', id] as const,
 };
 
 export function useSummary() {
@@ -326,8 +324,6 @@ export function usePortfolio(enabled = true) {
  // the request volume sane.
 
 export const INBOX_POLL_MS = 30_000;
-export const SUPPORT_THREAD_POLL_MS = 5_000;
-export const SUPPORT_LIST_POLL_MS = 20_000;
 
 export function useInbox(enabled = true) {
   return useQuery({
@@ -360,54 +356,17 @@ export function useDismissInboxItem() {
 }
 
 // ── Support desk ───────────────────────────────────────────────────────────
+//
+// No polling, no thread: sending a support email is a one-shot mutation whose
+// answer arrives in the customer's mailbox. Nothing here keeps a request open.
 
-export function useSupportTickets() {
-  return useQuery({
-    queryKey: keys.supportTickets,
-    queryFn: () => api.supportTickets({ page_size: 50 }),
-    refetchInterval: SUPPORT_LIST_POLL_MS,
-  });
-}
-
-export function useSupportThread(ticketId: string | null) {
-  return useQuery({
-    queryKey: keys.supportThread(ticketId ?? ''),
-    queryFn: () => api.supportThread(ticketId as string),
-    enabled: Boolean(ticketId),
-    // Live-chat feel: an admin reply appears without the customer reloading.
-    refetchInterval: SUPPORT_THREAD_POLL_MS,
-    refetchOnWindowFocus: true,
-  });
-}
-
-export function useCreateSupportTicket() {
-  const qc = useQueryClient();
+export function useSendSupportEmail() {
   return useMutation({
-    mutationFn: (body: { subject: string; message: string }) =>
-      api.createSupportTicket(body),
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: keys.supportTickets });
-      toast.success(`Conversation ${data.ticket.ticket_number} opened`);
-    },
+    mutationFn: (body: SupportEmailRequest) => api.sendSupportEmail(body),
     onError: () => {
-      toast.error('Could not open the conversation', {
-        description: 'Please try again or email support@reliastra.com.',
+      toast.error('Your support email was not sent', {
+        description: 'Nothing was delivered. Try again, or write to support@reliastra.com.',
       });
-    },
-  });
-}
-
-export function useAddSupportMessage() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ ticketId, body }: { ticketId: string; body: string }) =>
-      api.addSupportMessage(ticketId, body),
-    onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: keys.supportThread(variables.ticketId) });
-      qc.invalidateQueries({ queryKey: keys.supportTickets });
-    },
-    onError: () => {
-      toast.error('Message not sent', { description: 'Please try again.' });
     },
   });
 }

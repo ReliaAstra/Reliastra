@@ -30,9 +30,8 @@ import type {
   PlanDetails,
   PlanId,
   PricingPlan,
-  SupportMessage,
-  SupportTicketDetail,
-  SupportTicketListResponse,
+  SupportEmailReceipt,
+  SupportEmailRequest,
   UserMe,
   VendorStatus,
   WebhookItem,
@@ -489,34 +488,14 @@ export const api = {
     request<void>(`/notifications/inbox/${notificationId}`, { method: 'DELETE' }),
 
   // ── Support desk ──────────────────────────────────────────────────────────
-  // The same conversation surface the admin support workspace answers.
+  // Email only. One request, one receipt - the answer comes back by email to
+  // the address on the account, so there is no thread to read or poll.
 
-  supportTickets: (params?: { page?: number; page_size?: number }) => {
-    const q = new URLSearchParams();
-    if (params?.page) q.set('page', String(params.page));
-    if (params?.page_size) q.set('page_size', String(params.page_size));
-    const suffix = q.toString() ? `?${q.toString()}` : '';
-    return request<SupportTicketListResponse>(`/partners/support/tickets${suffix}`);
-  },
-
-  supportThread: (ticketId: string) =>
-    request<SupportTicketDetail>(`/partners/support/tickets/${ticketId}`),
-
-  createSupportTicket: (body: {
-    subject: string;
-    message: string;
-    priority?: string;
-  }) =>
-    request<SupportTicketDetail>('/partners/support/tickets', {
+  sendSupportEmail: (body: SupportEmailRequest) =>
+    request<SupportEmailReceipt>('/support/requests', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-
-  addSupportMessage: (ticketId: string, body: string) =>
-    request<SupportMessage>(
-      `/partners/support/tickets/${ticketId}/messages`,
-      { method: 'POST', body: JSON.stringify({ body }) }
-    ),
 
   // ── Organization ─────────────────────────────────────────────────────────
 

@@ -62,17 +62,32 @@ The overview endpoint is the sole aggregate request used for the initial metric,
 
 The canonical growth endpoints above intentionally replace legacy `/v1/admin/analytics/*` and legacy `/v1/admin/growth/{top-vendors,referral-stats,plg-funnel}` routes.
 
-## Support
+## Support (email-only)
+
+Support is a mailbox, not a chat window. A customer writes in (console form or
+public site form), the team is alerted **by email and by browser notification**,
+and an admin answers from the inbox - the answer is emailed to the requester.
+There is no conversation surface: no thread is polled, and nothing is expected
+to be open on the customer's side when the reply lands.
 
 | Capability | Method + endpoint | Parameters / payload | Cache / mutation handling |
 | --- | --- | --- | --- |
-| Triage overview | `GET /v1/admin/support/overview` | counts, queue, SLA / response metrics | 20s stale, 30s refresh |
-| Queue | `GET /v1/admin/support/tickets` | `status`, `category`, `priority`, `assigned_to`, `search`, `page`, `page_size` | URL-backed, 20s |
-| Ticket workspace | `GET /v1/admin/support/tickets/{ticket_id}` | ticket, messages, customer, organization, subscription, activity | On demand, 15s |
-| Create | `POST /v1/admin/support/tickets` | email, full_name?, category, subject, body, priority, source? | Invalidate queue/overview/audit after server confirmation |
+| New-email signal | `GET /v1/admin/support/alerts` | `since` (ISO cursor) → `new_count`, `awaiting_reply_count`, `highest_priority`, `latest[]` (ticket number, subject, requester, `admin_url`) | Polled **20s** by `SupportAlertWatcher` (mounted in the admin shell). Drives the Chrome notification, the toast and a refresh of the support queries. The only timer in support. |
+| Triage overview | `GET /v1/admin/support/overview` | counts, queue, response metrics | 30s stale, on demand |
+| Inbox | `GET /v1/admin/support/tickets` | `status`, `category`, `priority`, `assigned_to`, `search`, `page`, `page_size` | URL-backed, on demand + manual refresh |
+| Ticket workspace | `GET /v1/admin/support/tickets/{ticket_id}` | ticket, email history, customer, organization, subscription, activity | On demand; refreshes on window focus |
+| Create (record a request) | `POST /v1/admin/support/tickets` | email, full_name?, category, subject, body, priority, source? | Invalidate queue/overview/audit after server confirmation. Nothing is emailed until an admin replies. |
 | Update | `PATCH /v1/admin/support/tickets/{ticket_id}` | status?, priority?, assigned_to?, resolution? | No blind optimistic count updates; invalidate server-authoritative queue/workspace |
-| Reply / note | `POST /v1/admin/support/tickets/{ticket_id}/reply` | `{ body, is_internal_note }` | Invalidate workspace/query after confirmation |
+| Reply | `POST /v1/admin/support/tickets/{ticket_id}/reply` | `{ body, is_internal_note }` → `{ message, emailed, emailed_to, is_internal_note }` | Emails the requester immediately and records the reply. `emailed` is the delivery fact the UI reports; internal notes are never emailed (`emailed_to: null`). |
 | Bulk update | `POST /v1/admin/support/tickets/bulk-update` | ticket IDs + status?/priority?/assigned_to? | Server confirmation; invalidate queue/overview/audit |
+
+Customer side: `POST /v1/support/requests` (console, authenticated) and
+`POST /v1/support/tickets` (public site, anonymous) both create a
+`feedback_tickets` row, email the configured team addresses
+(`SUPPORT_NOTIFICATION_EMAILS`, falling back to `SUPPORT_EMAIL`) and send the
+writer a receipt that states what happens next. Every support email carries the
+monitored alias as `Reply-To`, so answering from a normal mail client reaches
+the same team.
 
 ## Communications
 

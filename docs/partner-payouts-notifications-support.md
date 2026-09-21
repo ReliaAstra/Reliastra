@@ -1,7 +1,7 @@
 # Partner payouts, notifications & support - how it works
 
 Covers the partner payout lifecycle, the notification system (in-app, email,
-browser), and the live partner ↔ admin support desk. Supersedes the
+browser), and the email-only support desk that replaced the live one. Supersedes the
 2026-08-22 audit; every gap that audit found is either fixed here or listed
 under [Known limitations](#known-limitations).
 
@@ -156,24 +156,34 @@ preference for the chosen category (`announcement` or `marketing`).
 UI: *Message all partners* on `/admin/partners`, *Notify partner* on the
 partner detail page. Both audited (`admin_audit_logs` + `audit_logs`).
 
-## 5. Live support desk
+## 5. Support is email (no live desk)
 
-Partner conversations are the **same** `feedback_tickets` / `feedback_messages`
-rows the admin support workspace already uses - there is no second inbox to
-keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
-`category="partner"`, numbered `PN-XXXXXXXX`.
+The live partner ↔ admin conversation desk was removed, together with the
+console's chat thread. Support is now a mailbox:
 
-* Partner: `POST/GET /v1/partners/support/tickets`,
-  `GET /v1/partners/support/tickets/{id}`,
-  `POST /v1/partners/support/tickets/{id}/messages`. The dashboard Support page
-  is a chat thread that polls every **5s**.
-* Admin: the existing `/admin/support` workspace, now polling every **8s**.
-  Replying notifies the partner (in-app + email).
-* Internal notes (`is_internal_note=true`) are staff-only - never returned to
-  the partner and never notified.
-* A partner reply re-opens a resolved ticket and bumps it back up the queue.
-* Ownership is enforced server-side: another partner requesting the thread gets
-  a 404, never the content.
+* **Customer writes in.** `POST /v1/support/requests` (console) or
+  `POST /v1/support/tickets` (public site form). Both create the same
+  `feedback_tickets` row the admin inbox reads, alert the team and send the
+  writer a receipt.
+* **The team is alerted twice.** Every new request is emailed to
+  `SUPPORT_NOTIFICATION_EMAILS` (falling back to `SUPPORT_EMAIL`) *and* raised
+  as a Chrome notification from `GET /v1/admin/support/alerts`, which the admin
+  shell polls every **20s**. The alert email carries a deep link straight to
+  the reply box.
+* **An admin answers once.** `POST /v1/admin/support/tickets/{id}/reply` sends
+  the answer by email to the requester, records it on the ticket's email
+  history and reports `emailed` / `emailed_to` so the inbox can say "sent to
+  ada@example.com" rather than implying a delivery that did not happen.
+* **Replies come back as mail.** Every outbound support email sets the
+  monitored alias (`support@`) as `Reply-To`, so a requester pressing Reply
+  reaches the same team - no thread, no polling, no page to keep open.
+* **Internal notes** (`is_internal_note=true`) are staff-only, never emailed
+  and never shown to the requester.
+
+Removed endpoints (deleted, not hidden): `/v1/partners/support/tickets`
+(list/thread/post-message) and the partner `partner_support_reply` in-app
+event. The partner API surface itself remains unmounted by the stage-1 B2B
+removal.
 
 ## Known limitations
 
@@ -183,14 +193,15 @@ keep in sync. Partner tickets are tagged `source="partner_dashboard"`,
   machine.
 * **Browser notifications need an open tab.** They use the Notification API,
   not Web Push with a service worker, so no VAPID keys or push subscriptions
-  are required - but nothing is delivered while the dashboard is closed. Email
-  covers that case.
+  are required - but nothing is delivered while the tab is closed. The
+  new-support-email *email* is what covers that case: the alert lands in the
+  support mailbox and the deep link opens the reply box.
 * **Encryption is only as good as `SECRET_KEY`.** The Fernet key is derived
   from it, so rotating `SECRET_KEY` without re-encrypting makes existing
   destinations unreadable (they fail closed - masked as empty - rather than
   leaking). A rotation routine is not implemented.
-* `PartnerTicketItem.unread_admin_messages` is always `0` - per-message read
-  receipts are not tracked; the notification feed covers "you have a reply".
+* **Support has no read receipts.** Nothing tracks who read what: the ticket
+  status, the email history and `awaiting_reply_count` are the whole contract.
 
 ## Tests
 
