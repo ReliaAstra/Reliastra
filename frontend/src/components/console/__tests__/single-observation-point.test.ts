@@ -65,8 +65,8 @@ describe('single observation point', () => {
   it('scans the console surfaces it claims to cover', () => {
     // A guard that silently matches nothing is worse than no guard.
     expect(files.length).toBeGreaterThan(10);
-    expect(files.some((f) => f.endsWith('console/pages/overview.tsx'))).toBe(true);
-    expect(files.some((f) => f.endsWith('shell/add-dependency.tsx'))).toBe(true);
+    expect(files.some((f) => f.replace(/\\/g, '/').endsWith('console/pages/overview.tsx'))).toBe(true);
+    expect(files.some((f) => f.replace(/\\/g, '/').endsWith('shell/add-dependency.tsx'))).toBe(true);
   });
 
   it('never claims more than one place probes from', () => {

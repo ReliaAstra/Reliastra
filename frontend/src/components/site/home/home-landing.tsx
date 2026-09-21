@@ -7,7 +7,6 @@ import { CorrelateBand, ObserveBand, ProveBand } from './method-bands';
 import { AttributionScene } from './attribution-scene';
 import { IndexScene } from './index-scene';
 import { ResearchTeaser } from './research-teaser';
-import { AgenciesScene } from './agencies-scene';
 import { PricingSummary } from './pricing-summary';
 import { FinalCTASection, MaintainerSection, ReferenceSection } from './sections';
 import { AUTH_ROUTES } from '@/lib/routes';
@@ -27,7 +26,6 @@ import { AUTH_ROUTES } from '@/lib/routes';
  *   evidence     what you can still verify a year later
  *   index        the same probes, published
  *   research     the published method behind the claims
- *   agencies     one account, many client estates
  *   pricing      what it costs
  *   reference    the questions this page raises, answered plainly
  *   maintainer   who is behind it
@@ -63,7 +61,6 @@ export function HomeLanding() {
       <ProveBand />
       <IndexScene />
       <ResearchTeaser />
-      <AgenciesScene />
       <PricingSummary />
       <ReferenceSection />
       <MaintainerSection />

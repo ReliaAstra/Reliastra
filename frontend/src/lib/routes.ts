@@ -469,8 +469,7 @@ export const EXTERNAL_LINKS = {
  * subset check would have kept passing while the anchor stayed dead.
  *
  * Sections with no anchor are deliberately absent: the RELIASTRA statement
- * band and the final CTA are not link targets, and the agencies block is
- * reached by route rather than by anchor.
+ * band and the final CTA are not link targets.
  */
 export const LANDING_SECTIONS = [
   'top',
@@ -481,7 +480,6 @@ export const LANDING_SECTIONS = [
   'evidence',
   'index',
   'research',
-  'agencies',
   'pricing',
   'reference',
   'maintainer',

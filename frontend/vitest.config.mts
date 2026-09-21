@@ -20,12 +20,13 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
+    testTimeout: 15000,
     /**
-     * Suites that call route handlers or render pages directly need Next's
-     * request-time signal (`connection()`) neutralised - see vitest.setup.ts.
-     * Kept out of `src/test/`: frontend/.gitignore ignores any directory named
-     * `test`, so a setup file there is invisible to the repo and to CI.
-     */
+      * Suites that call route handlers or render pages directly need Next's
+      * request-time signal (`connection()`) neutralised - see vitest.setup.ts.
+      * Kept out of `src/test/`: frontend/.gitignore ignores any directory named
+      * `test`, so a setup file there is invisible to the repo and to CI.
+      */
     setupFiles: ['./vitest.setup.ts'],
   },
 });

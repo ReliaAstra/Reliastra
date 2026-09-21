@@ -107,7 +107,6 @@ export const PRIMARY_NAV: NavLink[] = [
   { label: 'Product', href: PUBLIC_ROUTES.product },
   { label: 'Observatory', href: PUBLIC_ROUTES.observatory },
   { label: 'Research', href: PUBLIC_ROUTES.research },
-  { label: 'Agencies', href: PUBLIC_ROUTES.agencies },
   { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
 ];
 
@@ -190,7 +189,6 @@ export const FOOTER_GROUPS: NavGroup[] = [
       { label: 'Overview', href: PUBLIC_ROUTES.product },
       { label: 'Evidence records', href: PUBLIC_ROUTES.productEvidence },
       { label: 'Public observatory', href: PUBLIC_ROUTES.observatory },
-      { label: 'Agencies', href: PUBLIC_ROUTES.agencies },
       { label: 'Pricing', href: PUBLIC_ROUTES.pricing },
     ],
   },
