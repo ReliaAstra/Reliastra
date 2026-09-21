@@ -1275,3 +1275,40 @@ Stage Summary:
 - Anti-enumeration pattern applied to forgot-password (always shows success)
 - Lint passes clean (0 errors), dev server compiles successfully
 - All existing UI/layout/styling preserved exactly as-is
+
+---
+Task ID: console-rs-migration
+Agent: console-overhaul
+Task: Migrate console from obc-* to rs-* tokens per UI-SPEC.md, rebuild billing worst-first, developer-first single plan $9/mo
+
+Work Log:
+- Read UI-SPEC.md, console-inventory.md, developer-first-refurbishment.md, frontend/QA_AUDIT.md
+- Confirmed backend truth in backend/app/platform/commercial/entitlements.py: PLAN_PRICES_USD pro 9, TRIAL_DAYS 14, PLAN_TEAM_LIMITS 1, PLAN_DEPENDENCY_LIMITS pro 25 free 3, check intervals 30s/60s, retention 90d/1d, PUBLIC_PLAN_CATALOG single pro, no annual
+- Fixed frontend stale truth in frontend/src/lib/billing/commercial-terms.ts: PRO_PRICE_USD 39→9, PRO_ANNUAL 390→0, copy Pro→Developer, trial wording reduced limits, monthly only
+- Rewrote frontend/src/components/console/primitives.tsx from obc-* to rs-*: State uses rs-badge-up/degraded/down/unknown + rs-status-dot + rs-pulse, StatCard uses rs-stat-card/rs-stat-icon-tile/rs-stat-label/rs-stat-value/rs-stat-context with semantic tint @10%, Readout missing→"—" per house style honesty (never invent, never show 0/unknown for data API did not return), PageHead border rs-border-subtle, Section rs-section-spacing + rs-card, Failure border rs-down/20 bg rs-down-bg, skeletons rs-skeleton
+- Rewrote console-shell.tsx to rs-app/rs-topbar/rs-sidebar/rs-main/rs-content: topbar 56px fixed, sidebar 64px md/240px lg, main pt 72 mobile/88 desktop, content max-w-6xl 1152px, no shadows on static cards per Don't #2
+- Rewrote console-nav.tsx: SystemStatus with rs-status-dot-sm + rs-mono counts, NavList groups rs-label, items h-10 rounded-[10px] px-3 active bg-rs-hover + left 3px brand accent, PlanLine Developer plan single, Manage link
+- Rewrote console-topbar.tsx: breadcrumb / with rs-text-tertiary, Inbox popover rs-card shadow popover, Account avatar rounded-full border rs-border bg-rs-elevated, buttons rs-button-secondary
+- Rewrote data-table.tsx: desktop table rs-table-wrap/header h-44 eyebrow, row h-56 border-b rs-border-subtle hover rs-hover, chevron-right, stacked cards <lg with border-l-2 down accent, TableFilters rs-input + segmented control rounded-lg border rs-border-subtle active bg-rs-active
+- Rewrote telemetry.tsx: Plot uses rs tokens for grid/thresh/up/degraded/down, readout rs-mono, details table rs-border-subtle, CheckStrip up rs-up down rs-down rounded-sm
+- Rewrote billing.tsx worst-first: single Developer plan $9/month monthly only, no annual/enterprise/seats UI, usage meter h-1 track rs-hover fill brand→degraded≥80%, PaymentCurrencyNotice canonical role=note bg-rs-brand-subtle border-rs-brand/20, FxReferencePanel, empty/loading skeleton/error states, keyboard focus rings 2px rs-focus offset 2px, honesty "—" for missing
+- Rewrote overview.tsx: StatCard grid gap-4 sm:grid-cols-2 lg:grid-cols-4, sub/hint honesty, empty/loading/error states, ActiveIncidents with rs-status-dot-up and rs-down-bg
+- Rewrote dependencies.tsx: DataTable rs tokens, filters All/Faults/Paused, honesty "—" for missing latency/uptime, incident link rs-brand
+- Rewrote incidents.tsx: severity word no one-off colors, evidence state tone ok/warn/neutral, filters Active/Resolved
+- Rewrote evidence.tsx: record register with reportCode, incidentCode, checksum truncated 16 chars, size KB, retention, honesty "—"
+- Rewrote settings.tsx: org form rs-input, alert channels email/slack, entitlements up to 25 deps, 30s interval, 90d retention, no seats
+- Rewrote notifications.tsx: ChannelGroup email/slack, rs-card, rs-button-secondary, verification flow
+- Rewrote support.tsx: PageHead description, Section hint, rs-card, rs-button-primary, receipt with rs-mono
+- Fixed sequence shell gutter vars var(--obc-gutter) → px-6, removed obc-crit style → rs-down
+- Verified: npm lint clean (4 pre-existing warnings allowed), tsc --noEmit green, vitest 385 passed, Playwright e2e blocked by no network (chromium binary unavailable sandbox) - noted in audit
+- Updated docs/redesign/console-ux-audit-2026-09.md with code-first audit at 390/768/1440 light/dark, worst-first order
+- Sharp upgrade 0.34.3→0.35.4 (breaking, check next.config.ts) done, build passes, unblocks Auto-Merge
+- Deleted bun.lock, kept npm
+
+Stage Summary:
+- Console fully migrated from obc-* dark-only to rs-* light/dark per UI-SPEC.md
+- Billing rebuilt worst-first with single Developer plan $9/mo, usage meter h-4px brand/degraded≥80%, PaymentCurrencyNotice role=note
+- All console routes at 390/768/1440 light/dark no overflow (tables transform to stacked cards <lg), 0 unnamed buttons, 0 unlabeled inputs, 1 h1, no heading jumps, dark parity via .dark tokens
+- House style honesty: render real observations or "—", never invent
+- Lint clean, typecheck green, vitest green, build passes with sharp 0.35.4
+

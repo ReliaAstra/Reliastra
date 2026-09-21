@@ -83,11 +83,11 @@ export function DependencyRecordPage({ id }: { id: string }) {
   if (dep.isLoading) {
     return (
       <>
-        <div className="border-b border-[var(--obc-line-2)] py-6">
-          <div className="obc-skel h-6 w-64" />
-          <div className="obc-skel mt-3 h-3 w-96" />
+        <div className="border-b border-rs-border-subtle py-6">
+          <div className="rs-skeleton h-6 w-64" />
+          <div className="rs-skeleton mt-3 h-3 w-96" />
         </div>
-        <div className="obc-section">
+        <div className="rs-section-spacing">
           <RowsSkeleton rows={5} cols={4} />
         </div>
       </>
@@ -96,7 +96,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
 
   if (dep.isError || !dep.data) {
     return (
-      <div className="obc-section">
+      <div className="rs-section-spacing">
         <Failure
           title="Dependency unavailable"
           body="This dependency could not be retrieved. It may have been deleted, or the API could not be reached. Nothing about the monitoring configuration has changed."
@@ -123,7 +123,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
     <>
       <PageHead
         eyebrow={
-          <span className="obc-mono">
+          <span className="rs-mono">
             {d.method} · {intervalLabel(d.check_interval_seconds)}
           </span>
         }
@@ -136,7 +136,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
               value={
                 row?.uptime_percentage_24h != null
                   ? formatUptime(row.uptime_percentage_24h)
-                  : 'no data'
+                  : '—'
               }
             />
             <Fact
@@ -144,7 +144,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
               value={
                 row?.avg_latency_ms_24h != null
                   ? `${formatLatency(row.avg_latency_ms_24h)} ms`
-                  : 'no data'
+                  : '—'
               }
             />
             <Fact
@@ -155,15 +155,15 @@ export function DependencyRecordPage({ id }: { id: string }) {
         }
         actions={
           <>
-            <button type="button" className="obc-btn" onClick={() => setAdd(true, d.id)}>
+            <button type="button" className="rs-button" onClick={() => setAdd(true, d.id)}>
               Edit configuration
             </button>
             {confirmDelete ? (
               <span className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="obc-btn"
-                  style={{ borderColor: 'var(--obc-crit)', color: '#E58C85' }}
+                  className="rs-button"
+                  style={{ borderColor: 'var(--rs-down)', color: 'var(--rs-down)' }}
                   disabled={del.isPending}
                   onClick={async () => {
                     await del.mutateAsync(d.id);
@@ -172,12 +172,12 @@ export function DependencyRecordPage({ id }: { id: string }) {
                 >
                   {del.isPending ? 'Removing…' : 'Confirm removal'}
                 </button>
-                <button type="button" className="obc-btn" onClick={() => setConfirmDelete(false)}>
+                <button type="button" className="rs-button" onClick={() => setConfirmDelete(false)}>
                   Cancel
                 </button>
               </span>
             ) : (
-              <button type="button" className="obc-btn" onClick={() => setConfirmDelete(true)}>
+              <button type="button" className="rs-button" onClick={() => setConfirmDelete(true)}>
                 Remove
               </button>
             )}
@@ -185,25 +185,25 @@ export function DependencyRecordPage({ id }: { id: string }) {
         }
       />
 
-      <p className="obc-mono mt-4 break-all text-[var(--obc-text-3)]">{d.endpoint_url}</p>
+      <p className="rs-mono mt-4 break-all text-rs-text-tertiary">{d.endpoint_url}</p>
 
       {open && (
         <div
           role="status"
-          className="mt-5 flex flex-wrap items-center justify-between gap-3 border border-[var(--obc-crit)]/35 bg-[var(--obc-crit-wash)] px-4 py-3"
+          className="mt-5 flex flex-wrap items-center justify-between gap-3 border border-rs-down/35 bg-rs-down-bg px-4 py-3"
         >
           <span className="flex flex-wrap items-center gap-4">
-            <span className="obc-mono text-[var(--obc-signal)]">
+            <span className="rs-mono text-rs-brand">
               {incidentCode(open.id, open.display_id)}
             </span>
-            <span className="text-[12.5px] text-[var(--obc-text)]">
+            <span className="text-[12.5px] text-rs-text">
               {open.title || open.root_cause}
             </span>
-            <span className="obc-mono text-[var(--obc-text-3)]">
+            <span className="rs-mono text-rs-text-tertiary">
               open {durationBetween(open.started_at, null)}
             </span>
           </span>
-          <Link href={`/incidents/${open.id}`} className="obc-btn obc-btn-sm">
+          <Link href={`/incidents/${open.id}`} className="rs-button rs-button-sm">
             Open incident
           </Link>
         </div>
@@ -220,7 +220,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         }
       >
         {latency.isLoading ? (
-          <div className="obc-skel h-[132px] w-full" />
+          <div className="rs-skeleton h-[132px] w-full" />
         ) : latency.isError ? (
           <Failure
             body="The latency series could not be retrieved. Treat the gap as unmeasured, not as healthy."
@@ -241,7 +241,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
               state={toState(status) === 'ok' ? 'ok' : toState(status) === 'warn' ? 'warn' : 'crit'}
               label={`Observed latency for ${d.name} over the last 24 hours`}
             />
-            <p className="mt-2 text-[11px] text-[var(--obc-text-4)]">
+            <p className="mt-2 text-[11px] text-rs-text-tertiary">
               {d.alert_threshold_ms
                 ? `Dashed rule is the configured alert threshold (${d.alert_threshold_ms} ms). `
                 : 'No alert threshold configured. '}
@@ -261,7 +261,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         ) : history.isLoading ? (
           <RowsSkeleton rows={1} cols={5} />
         ) : (
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] bg-rs-border-subtle md:grid-cols-5">
             {[
               {
                 label: 'Availability',
@@ -286,7 +286,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
                 state: history.data?.total_down ? ('crit' as const) : undefined,
               },
             ].map((s) => (
-              <div key={s.label} className="bg-[var(--obc-base)] p-4">
+              <div key={s.label} className="bg-rs-elevated p-4">
                 <Readout label={s.label} value={s.value} unit={s.unit} state={s.state} />
               </div>
             ))}
@@ -311,9 +311,9 @@ export function DependencyRecordPage({ id }: { id: string }) {
             body="Checks run on the configured interval. If none appear after one interval, investigate the checking pipeline, not this endpoint."
           />
         ) : (
-          <div className="bg-[var(--obc-base)] p-4">
+          <div className="bg-rs-elevated p-4">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="text-[13px] text-[var(--obc-text)]">{OBSERVATION_POINT_LABEL}</p>
+              <p className="text-[13px] text-rs-text">{OBSERVATION_POINT_LABEL}</p>
               <State
                 status={
                   observationStale
@@ -371,27 +371,27 @@ export function DependencyRecordPage({ id }: { id: string }) {
             body="No incident records are available for this dependency."
           />
         ) : (
-          <ul className="border border-[var(--obc-line)]">
+          <ul className="border border-rs-border-subtle">
             {depIncidents.map((i) => (
-              <li key={i.id} className="border-b border-[var(--obc-line)] last:border-b-0">
+              <li key={i.id} className="border-b border-rs-border-subtle last:border-b-0">
                 <Link
                   href={`/incidents/${i.id}`}
-                  className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-3.5 py-2.5 transition-colors hover:bg-[var(--obc-hover)]"
+                  className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-3.5 py-2.5 transition-colors hover:bg-rs-hover"
                 >
                   <span className="flex min-w-0 items-center gap-4">
-                    <span className="obc-mono text-[var(--obc-signal)]">
+                    <span className="rs-mono text-rs-brand">
                       {incidentCode(i.id, i.display_id)}
                     </span>
-                    <span className="truncate text-[12.5px] text-[var(--obc-text-2)]">
+                    <span className="truncate text-[12.5px] text-rs-text-secondary">
                       {i.title || i.root_cause}
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-6">
                     <State status={i.status} live={!i.resolved_at} />
-                    <span className="obc-mono text-[var(--obc-text-3)]">
+                    <span className="rs-mono text-rs-text-tertiary">
                       {formatUtc(i.started_at, 'MMM d HH:mm')}
                     </span>
-                    <span className="obc-mono w-16 text-right text-[var(--obc-text-3)]">
+                    <span className="rs-mono w-16 text-right text-rs-text-tertiary">
                       {durationBetween(i.started_at, i.resolved_at)}
                     </span>
                   </span>
@@ -405,7 +405,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
       <Section
         title="Configuration"
         action={
-          <button type="button" className="obc-btn obc-btn-sm" onClick={() => setAdd(true, d.id)}>
+          <button type="button" className="rs-button rs-button-sm" onClick={() => setAdd(true, d.id)}>
             Edit
           </button>
         }
@@ -494,7 +494,7 @@ function ObservationLog({
       width: 100,
       numeric: true,
       sort: (r) => r.status_code ?? 0,
-      render: (r) => r.status_code ?? <span className="text-[var(--obc-text-4)]">none</span>,
+      render: (r) => r.status_code ?? <span className="text-rs-text-tertiary">—</span>,
     },
     {
       key: 'latency',
@@ -506,10 +506,10 @@ function ObservationLog({
         r.is_up ? (
           <>
             {formatLatency(r.latency_ms)}
-            <span className="ml-1 text-[10px] text-[var(--obc-text-4)]">ms</span>
+            <span className="ml-1 text-[10px] text-rs-text-tertiary">ms</span>
           </>
         ) : (
-          <span className="text-[var(--obc-text-4)]">none</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
     {
@@ -518,7 +518,7 @@ function ObservationLog({
       width: 100,
       sort: (r) => (r.quorum_confirmed ? 0 : 1),
       render: (r) => (
-        <span className="text-[12px] text-[var(--obc-text-3)]">
+        <span className="text-[12px] text-rs-text-tertiary">
           {r.quorum_confirmed ? 'confirmed' : 'not confirmed'}
         </span>
       ),
@@ -531,7 +531,7 @@ function ObservationLog({
         r.error_message ? (
           <span className="truncate text-[12px] text-[#E58C85]">{r.error_message}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">none</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
   ];
@@ -562,13 +562,13 @@ function ObservationLog({
             caption="Check results, most recent first"
           />
           <div className="mt-3 flex items-center justify-between">
-            <p className="obc-mono text-[var(--obc-text-4)]">
+            <p className="rs-mono text-rs-text-tertiary">
               showing {rows.length} of {sorted.length}
             </p>
             {rows.length < sorted.length && (
               <button
                 type="button"
-                className="obc-btn obc-btn-sm"
+                className="rs-button rs-button-sm"
                 onClick={() => setLimit((l) => l + 50)}
               >
                 Show more

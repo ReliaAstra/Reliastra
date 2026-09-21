@@ -54,24 +54,24 @@ export function SequenceShell({
   const progress = stages.length > 1 ? (currentIndex / (stages.length - 1)) * 100 : 100;
 
   return (
-    <div className="obc flex min-h-screen flex-col bg-[var(--obc-void)]">
+    <div className="obc flex min-h-screen flex-col bg-rs-base">
       <a href="#sequence-main" className="ob-skip">
         Skip to configuration
       </a>
 
-      <header className="border-b border-[var(--obc-line)]">
-        <div className="mx-auto flex h-[52px] w-full max-w-[1080px] items-center justify-between gap-4 px-[var(--obc-gutter)]">
+      <header className="border-b border-rs-border-subtle">
+        <div className="mx-auto flex h-[52px] w-full max-w-[1080px] items-center justify-between gap-4 px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Wordmark size="sm" />
-            <span aria-hidden className="h-3.5 w-px bg-[var(--obc-line-2)]" />
-            <p className="obc-label truncate">{eyebrow}</p>
+            <span aria-hidden className="h-3.5 w-px bg-rs-border-subtle" />
+            <p className="rs-label truncate">{eyebrow}</p>
           </div>
           {onExit ? (
-            <button type="button" onClick={onExit} className="obc-label hover:text-[var(--obc-text-2)]">
+            <button type="button" onClick={onExit} className="rs-label hover:text-rs-text-secondary">
               {exitLabel}
             </button>
           ) : exitHref ? (
-            <Link href={exitHref} className="obc-label hover:text-[var(--obc-text-2)]">
+            <Link href={exitHref} className="rs-label hover:text-rs-text-secondary">
               {exitLabel}
             </Link>
           ) : null}
@@ -79,35 +79,35 @@ export function SequenceShell({
       </header>
 
       {/* Mobile stage strip */}
-      <div className="border-b border-[var(--obc-line)] lg:hidden">
-        <div className="mx-auto w-full max-w-[1080px] px-[var(--obc-gutter)] py-3">
+      <div className="border-b border-rs-border-subtle lg:hidden">
+        <div className="mx-auto w-full max-w-[1080px] px-6 py-3">
           <div className="flex items-baseline justify-between gap-4">
-            <p className="text-[12.5px] text-[var(--obc-text)]">
-              <span className="font-[family-name:var(--ob-font-mono)] text-[var(--obc-signal)]">
+            <p className="text-[12.5px] text-rs-text">
+              <span className="font-[family-name:var(--ob-font-mono)] text-rs-brand">
                 {stages[currentIndex]?.index}
               </span>{' '}
               {stages[currentIndex]?.label}
             </p>
-            <p className="obc-label">
+            <p className="rs-label">
               stage {currentIndex + 1} of {stages.length}
             </p>
           </div>
-          <div className="mt-2.5 h-px w-full bg-[var(--obc-line-2)]">
+          <div className="mt-2.5 h-px w-full bg-rs-border-subtle">
             <div
-              className="h-px bg-[var(--obc-signal)] transition-[width] duration-500 ease-out motion-reduce:transition-none"
+              className="h-px bg-rs-brand transition-[width] duration-500 ease-out motion-reduce:transition-none"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-[1080px] flex-1 gap-12 px-[var(--obc-gutter)] py-8 lg:py-14">
+      <div className="mx-auto flex w-full max-w-[1080px] flex-1 gap-12 px-6 py-8 lg:py-14">
         {/* Desktop stage rail */}
         <nav aria-label="Configuration stages" className="hidden w-[210px] shrink-0 lg:block">
-          <ol className="relative flex flex-col gap-6 border-l border-[var(--obc-line-2)] pl-5">
+          <ol className="relative flex flex-col gap-6 border-l border-rs-border-subtle pl-5">
             <span
               aria-hidden
-              className="absolute -left-px top-0 w-px bg-[var(--obc-signal)] transition-[height] duration-500 ease-out motion-reduce:transition-none"
+              className="absolute -left-px top-0 w-px bg-rs-brand transition-[height] duration-500 ease-out motion-reduce:transition-none"
               style={{ height: `${progress}%` }}
             />
             {stages.map((stage) => {
@@ -120,16 +120,16 @@ export function SequenceShell({
                     className={cn(
                       'absolute -left-[23px] top-[6px] h-[5px] w-[5px]',
                       active
-                        ? 'bg-[var(--obc-signal)]'
+                        ? 'bg-rs-brand'
                         : done
-                          ? 'bg-[var(--obc-text-3)]'
-                          : 'bg-[var(--obc-line-3)]'
+                          ? 'bg-rs-text-tertiary'
+                          : 'bg-rs-border'
                     )}
                   />
                   <p
                     className={cn(
                       'font-[family-name:var(--ob-font-mono)] text-[11px] tracking-[0.1em]',
-                      active ? 'text-[var(--obc-signal)]' : 'text-[var(--obc-text-4)]'
+                      active ? 'text-rs-brand' : 'text-rs-text-tertiary'
                     )}
                   >
                     {stage.index}
@@ -138,16 +138,16 @@ export function SequenceShell({
                     className={cn(
                       'mt-1 text-[12.5px] leading-snug',
                       active
-                        ? 'font-medium text-[var(--obc-text)]'
+                        ? 'font-medium text-rs-text'
                         : done
-                          ? 'text-[var(--obc-text-3)]'
-                          : 'text-[var(--obc-text-4)]'
+                          ? 'text-rs-text-tertiary'
+                          : 'text-rs-text-tertiary'
                     )}
                   >
                     {stage.label}
                   </p>
                   {done && !active && (
-                    <p className="obc-label mt-0.5 text-[var(--obc-ok)]">configured</p>
+                    <p className="rs-label mt-0.5 text-rs-up">configured</p>
                   )}
                   {active && <span className="sr-only">(current stage)</span>}
                 </li>
@@ -176,13 +176,13 @@ export function StageHead({
   body?: ReactNode;
 }) {
   return (
-    <header className="border-b border-[var(--obc-line-2)] pb-6">
-      <p className="obc-label text-[var(--obc-signal)]">{index}</p>
-      <h1 className="mt-3 max-w-[24ch] text-[clamp(1.5rem,3.2vw,2.125rem)] font-semibold leading-[1.1] tracking-[-0.025em] text-[var(--obc-text)]">
+    <header className="border-b border-rs-border-subtle pb-6">
+      <p className="rs-label text-rs-brand">{index}</p>
+      <h1 className="mt-3 max-w-[24ch] text-[clamp(1.5rem,3.2vw,2.125rem)] font-semibold leading-[1.1] tracking-[-0.025em] text-rs-text">
         {title}
       </h1>
       {body && (
-        <div className="mt-4 max-w-[68ch] text-[13.5px] leading-[1.7] text-[var(--obc-text-2)]">
+        <div className="mt-4 max-w-[68ch] text-[13.5px] leading-[1.7] text-rs-text-secondary">
           {body}
         </div>
       )}
@@ -205,11 +205,11 @@ export function StageActions({
   children: ReactNode;
 }) {
   return (
-    <div className="mt-10 flex flex-col gap-4 border-t border-[var(--obc-line-2)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-      <p className="max-w-[52ch] text-[12px] leading-[1.6] text-[var(--obc-text-3)]">{note}</p>
+    <div className="mt-10 flex flex-col gap-4 border-t border-rs-border-subtle pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <p className="max-w-[52ch] text-[12px] leading-[1.6] text-rs-text-tertiary">{note}</p>
       <div className="flex shrink-0 items-center gap-2">
         {back && (
-          <button type="button" className="obc-btn" onClick={back.onClick}>
+          <button type="button" className="rs-button" onClick={back.onClick}>
             {back.label}
           </button>
         )}
@@ -232,10 +232,10 @@ export function StageBlock({
   className?: string;
 }) {
   return (
-    <section className={cn('border-t border-[var(--obc-line)] py-6 first:border-t-0', className)}>
-      <h2 className="obc-label">{title}</h2>
+    <section className={cn('border-t border-rs-border-subtle py-6 first:border-t-0', className)}>
+      <h2 className="rs-label">{title}</h2>
       {hint && (
-        <p className="mt-2 max-w-[70ch] text-[12.5px] leading-[1.65] text-[var(--obc-text-3)]">
+        <p className="mt-2 max-w-[70ch] text-[12.5px] leading-[1.65] text-rs-text-tertiary">
           {hint}
         </p>
       )}
@@ -270,21 +270,21 @@ export function OptionButton({
       className={cn(
         'flex min-h-[46px] w-full flex-col items-start justify-center gap-0.5 border px-3 py-2 text-left transition-colors',
         selected
-          ? 'border-[var(--obc-signal)] bg-[var(--obc-signal-wash)]'
-          : 'border-[var(--obc-line-2)] hover:border-[var(--obc-line-3)] hover:bg-[var(--obc-raised)]',
+          ? 'border-rs-brand bg-rs-brand-subtle'
+          : 'border-rs-border-subtle hover:border-rs-border hover:bg-rs-hover',
         disabled && 'cursor-not-allowed opacity-45'
       )}
     >
       <span
         className={cn(
           'text-[13px]',
-          selected ? 'text-[var(--obc-text)]' : 'text-[var(--obc-text-2)]'
+          selected ? 'text-rs-text' : 'text-rs-text-secondary'
         )}
       >
         {title}
       </span>
       {meta && (
-        <span className="truncate font-[family-name:var(--ob-font-mono)] text-[11px] text-[var(--obc-text-4)]">
+        <span className="truncate font-[family-name:var(--ob-font-mono)] text-[11px] text-rs-text-tertiary">
           {meta}
         </span>
       )}
@@ -303,11 +303,11 @@ export function ReviewRow({
   mono?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-1 border-b border-[var(--obc-line)] py-3 last:border-b-0 sm:grid-cols-[minmax(140px,200px)_1fr] sm:gap-6">
-      <dt className="obc-label pt-[3px]">{label}</dt>
+    <div className="grid grid-cols-1 gap-1 border-b border-rs-border-subtle py-3 last:border-b-0 sm:grid-cols-[minmax(140px,200px)_1fr] sm:gap-6">
+      <dt className="rs-label pt-[3px]">{label}</dt>
       <dd
         className={cn(
-          'min-w-0 break-words text-[12.5px] text-[var(--obc-text)]',
+          'min-w-0 break-words text-[12.5px] text-rs-text',
           mono && 'font-[family-name:var(--ob-font-mono)] tabular-nums'
         )}
       >

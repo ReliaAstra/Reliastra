@@ -2,36 +2,15 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-/**
- * The console data table.
- *
- * One implementation serves dependencies, incidents, evidence and check
- * results, because they are the same interaction: scan a dense list, sort it,
- * narrow it, open a record. Behaviour that matters:
- *
- * -  Sorting is a real `<button>` inside the `<th>`, and the `<th>` carries
- *    `aria-sort`, so the sort state is announced rather than implied by a
- *    caret. Only columns that declare a `sort` accessor are sortable.
- * -  A row is navigable by keyboard. The whole `<tr>` is clickable for the
- *    mouse, but the first cell also contains a real link, which is what a
- *    screen reader and a keyboard user actually follow. There is no
- *    `onKeyDown` re-implementation of a link.
- * -  Below `lg` the table does not scroll sideways: it becomes a stack of
- *    records, each showing the same fields as label/value pairs. Section 24
- *    is explicit that tables must transform rather than overflow.
- */
 
 export type Column<T> = {
   key: string;
   header: string;
-  /** Right-align and use mono digits. */
   numeric?: boolean;
-  /** Return a sortable primitive; omit to make the column unsortable. */
   sort?: (row: T) => string | number;
   render: (row: T) => ReactNode;
-  /** Hide on the mobile record stack (e.g. a redundant chevron column). */
   mobileHidden?: boolean;
   width?: number;
 };
@@ -50,17 +29,11 @@ export function DataTable<T>({
   rows: T[];
   columns: Column<T>[];
   rowKey: (row: T) => string;
-  /** Makes the row a navigable record. */
   rowHref?: (row: T) => string;
-  /** `crit` tints the row - used for rows with an active incident. */
   rowState?: (row: T) => 'crit' | undefined;
   caption: string;
   emptyLabel?: string;
   initialSort?: { key: string; dir: 'asc' | 'desc' };
-  /**
-   * Viewport at which the grid appears. Eight columns do not fit a 1024px
-   * tablet, so wide tables stay in record form until `xl`.
-   */
   stackBelow?: 'lg' | 'xl';
 }) {
   const router = useRouter();
@@ -88,7 +61,7 @@ export function DataTable<T>({
 
   if (!rows.length) {
     return (
-      <p className="px-4 py-6 text-[13px] text-[var(--obc-text-3)]">
+      <p className="px-4 py-6 text-[13px] text-rs-text-tertiary">
         {emptyLabel}
       </p>
     );
@@ -97,125 +70,130 @@ export function DataTable<T>({
   return (
     <>
       {/* Dense table: laptop and up */}
-      <div
-        className={cn(
-          'hidden',
-          stackBelow === 'xl' ? 'xl:block' : 'lg:block'
-        )}
-      >
-        <table className="obc-table table-fixed">
-          <caption className="sr-only">{caption}</caption>
-          <thead>
-            <tr>
-              {columns.map((c, i) => {
-                const active = sort?.key === c.key;
-                const ariaSort = active
-                  ? sort!.dir === 'asc'
-                    ? 'ascending'
-                    : 'descending'
-                  : c.sort
-                    ? 'none'
-                    : undefined;
-                return (
-                  <th
-                    key={c.key}
-                    scope="col"
-                    aria-sort={ariaSort}
-                    className={cn(c.numeric && 'obc-num')}
-                    // The title column is fluid: it absorbs whatever the fixed
-                    // columns leave, so `table-fixed` can never push the
-                    // table wider than its container on a narrow laptop.
-                    style={c.width && i > 0 ? { width: c.width } : undefined}
-                  >
-                    {c.sort ? (
-                      <button
-                        type="button"
-                        className="obc-sort"
-                        onClick={() => toggle(c.key)}
-                      >
-                        {c.header}
-                        <span aria-hidden className="text-[8px] leading-none">
-                          {active ? (sort!.dir === 'asc' ? '▲' : '▼') : '↕'}
-                        </span>
-                      </button>
-                    ) : (
-                      c.header
-                    )}
+      <div className={cn('hidden', stackBelow === 'xl' ? 'xl:block' : 'lg:block')}>
+        <div className="rs-table-wrap">
+          <table className="rs-table">
+            <caption className="sr-only">{caption}</caption>
+            <thead>
+              <tr className="rs-table-header">
+                {columns.map((c, i) => {
+                  const active = sort?.key === c.key;
+                  const ariaSort = active
+                    ? sort!.dir === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : c.sort
+                      ? 'none'
+                      : undefined;
+                  return (
+                    <th
+                      key={c.key}
+                      scope="col"
+                      aria-sort={ariaSort}
+                      className={cn(c.numeric && 'rs-numeric-right')}
+                      style={c.width && i > 0 ? { width: c.width } : undefined}
+                    >
+                      {c.sort ? (
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 rounded-md px-1 py-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-rs-text-tertiary hover:text-rs-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+                          onClick={() => toggle(c.key)}
+                        >
+                          {c.header}
+                          <span aria-hidden className="text-[9px] leading-none">
+                            {active ? (sort!.dir === 'asc' ? '▲' : '▼') : '↕'}
+                          </span>
+                        </button>
+                      ) : (
+                        c.header
+                      )}
+                    </th>
+                  );
+                })}
+                {rows.some((r) => rowHref?.(r)) && (
+                  <th scope="col" className="w-8" aria-label="Open record">
+                    <span className="sr-only">Open</span>
                   </th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((row) => {
+                const href = rowHref?.(row);
+                const isCrit = rowState?.(row) === 'crit';
+                return (
+                  <tr
+                    key={rowKey(row)}
+                    data-state={isCrit ? 'crit' : undefined}
+                    onClick={href ? () => router.push(href) : undefined}
+                    className={cn(
+                      'rs-table-row',
+                      href && 'cursor-pointer',
+                      isCrit && 'bg-rs-down-bg/50'
+                    )}
+                  >
+                    {columns.map((c, i) => (
+                      <td key={c.key} className={cn(c.numeric && 'rs-numeric-right')}>
+                        {href && i === 0 ? (
+                          <a
+                            href={href}
+                            className="block rounded-md px-1 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {c.render(row)}
+                          </a>
+                        ) : (
+                          c.render(row)
+                        )}
+                      </td>
+                    ))}
+                    {href && (
+                      <td className="w-8 pr-2">
+                        <ChevronRight className="rs-table-chevron h-4 w-4 text-rs-text-tertiary" aria-hidden />
+                      </td>
+                    )}
+                  </tr>
                 );
               })}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((row) => {
-              const href = rowHref?.(row);
-              return (
-                <tr
-                  key={rowKey(row)}
-                  data-active={rowState?.(row) === 'crit' ? 'true' : undefined}
-                  onClick={href ? () => router.push(href) : undefined}
-                  className={cn(href && 'cursor-pointer')}
-                >
-                  {columns.map((c, i) => (
-                    <td key={c.key} className={cn(c.numeric && 'obc-num')}>
-                      {/* The first cell carries a real link when the row is a
-                          record: the whole `<tr>` is clickable for a mouse,
-                          but a keyboard user needs something focusable, and a
-                          re-implemented onKeyDown is not that. */}
-                      {href && i === 0 ? (
-                        <a
-                          href={href}
-                          className="block focus-visible:outline-none"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {c.render(row)}
-                        </a>
-                      ) : (
-                        c.render(row)
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Record stack: phone and tablet. Same fields, no sideways scroll. */}
+      {/* Record stack: phone and tablet */}
       <ul
         className={cn(
-          'divide-y divide-[var(--obc-line)]',
+          'divide-y divide-rs-border-subtle',
           stackBelow === 'xl' ? 'xl:hidden' : 'lg:hidden'
         )}
       >
         {sorted.map((row) => {
           const href = rowHref?.(row);
           const [first, ...rest] = columns.filter((c) => !c.mobileHidden);
+          const isCrit = rowState?.(row) === 'crit';
           return (
             <li
               key={rowKey(row)}
-              data-active={rowState?.(row) === 'crit' ? 'true' : undefined}
-              className="px-3.5 py-3.5 data-[active=true]:bg-[var(--obc-crit-wash)]"
+              className={cn(
+                'px-4 py-4',
+                isCrit && 'border-l-2 border-l-rs-down bg-rs-down-bg/30'
+              )}
             >
-              {/* Only the title cell is the record link. Detail cells may
-                  carry their own links (an incident code, for instance), and
-                  an <a> inside an <a> is invalid HTML that breaks hydration. */}
               {href ? (
-                <a href={href} className="mb-2.5 block">
+                <a href={href} className="mb-3 block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus">
                   {first.render(row)}
                 </a>
               ) : (
-                <div className="mb-2.5">{first.render(row)}</div>
+                <div className="mb-3">{first.render(row)}</div>
               )}
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {rest.map((c) => (
                   <div key={c.key} className="min-w-0">
-                    <dt className="obc-label">{c.header}</dt>
+                    <dt className="rs-label">{c.header}</dt>
                     <dd
                       className={cn(
-                        'mt-1 truncate text-[12.5px] text-[var(--obc-text-2)]',
-                        c.numeric && 'font-[family-name:var(--ob-font-mono)] tabular-nums'
+                        'mt-1 truncate text-[12.5px] text-rs-text-secondary',
+                        c.numeric && 'rs-mono'
                       )}
                     >
                       {c.render(row)}
@@ -231,11 +209,6 @@ export function DataTable<T>({
   );
 }
 
-/**
- * Table toolbar: free-text filter plus optional segmented state filter.
- * Both are real form controls with labels - the search box is not a
- * placeholder pretending to be one.
- */
 export function TableFilters({
   query,
   onQuery,
@@ -254,40 +227,39 @@ export function TableFilters({
   right?: ReactNode;
 }) {
   return (
-    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border-b border-rs-border-subtle bg-rs-elevated px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-3">
-        <div>
-          <label htmlFor="obc-filter" className="sr-only">
+        <div className="relative">
+          <label htmlFor="rs-filter" className="sr-only">
             {placeholder}
           </label>
           <input
-            id="obc-filter"
+            id="rs-filter"
             type="search"
             value={query}
             onChange={(e) => onQuery(e.target.value)}
             placeholder={placeholder}
-            className="obc-input h-8 w-[200px] text-[12.5px]"
+            className="rs-input h-8 w-[220px] text-[13px]"
           />
         </div>
         {segments && (
-          <div role="group" aria-label="Filter by state" className="flex items-center">
-            {segments.map((s, i) => (
+          <div role="group" aria-label="Filter by state" className="inline-flex rounded-lg border border-rs-border-subtle p-0.5">
+            {segments.map((s) => (
               <button
                 key={s.id}
                 type="button"
                 aria-pressed={active === s.id}
                 onClick={() => onSegment?.(s.id)}
                 className={cn(
-                  'h-8 border border-[var(--obc-line-2)] px-3 text-[11.5px] transition-colors',
-                  i > 0 && '-ml-px',
+                  'rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus',
                   active === s.id
-                    ? 'bg-[var(--obc-elevated)] text-[var(--obc-text)]'
-                    : 'text-[var(--obc-text-4)] hover:text-[var(--obc-text-2)]'
+                    ? 'bg-rs-active text-rs-text'
+                    : 'text-rs-text-tertiary hover:text-rs-text-secondary'
                 )}
               >
                 {s.label}
                 {s.count != null && (
-                  <span className="ml-1.5 font-[family-name:var(--ob-font-mono)] text-[10px] text-[var(--obc-text-4)]">
+                  <span className="ml-1.5 rs-mono text-[11px] text-rs-text-tertiary">
                     {s.count}
                   </span>
                 )}
@@ -296,7 +268,7 @@ export function TableFilters({
           </div>
         )}
       </div>
-      {right}
+      {right && <div className="text-[12px] text-rs-text-tertiary">{right}</div>}
     </div>
   );
 }

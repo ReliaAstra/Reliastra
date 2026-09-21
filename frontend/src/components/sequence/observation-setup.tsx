@@ -246,7 +246,7 @@ export function ObservationSetupSequence() {
           <StageActions note="Nothing is created yet.">
             <button
               type="button"
-              className="obc-btn obc-btn-primary"
+              className="rs-button rs-button-primary"
               onClick={() => {
                 store.markComplete('environment');
                 go('dependency');
@@ -286,12 +286,12 @@ export function ObservationSetupSequence() {
           >
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="obc-field-label" htmlFor="interval">
+                <label className="rs-label mb-1.5 block" htmlFor="interval">
                   Observation interval
                 </label>
                 <select
                   id="interval"
-                  className="obc-input"
+                  className="rs-input"
                   value={draft.checkIntervalSeconds}
                   onChange={(e) =>
                     store.setDraft({ checkIntervalSeconds: Number(e.target.value) })
@@ -305,12 +305,12 @@ export function ObservationSetupSequence() {
                 </select>
               </div>
               <div>
-                <label className="obc-field-label" htmlFor="timeout">
+                <label className="rs-label mb-1.5 block" htmlFor="timeout">
                   Request timeout
                 </label>
                 <select
                   id="timeout"
-                  className="obc-input"
+                  className="rs-input"
                   value={draft.timeoutSeconds}
                   onChange={(e) => store.setDraft({ timeoutSeconds: Number(e.target.value) })}
                 >
@@ -322,12 +322,12 @@ export function ObservationSetupSequence() {
                 </select>
               </div>
               <div>
-                <label className="obc-field-label" htmlFor="threshold">
+                <label className="rs-label mb-1.5 block" htmlFor="threshold">
                   Latency alert threshold
                 </label>
                 <input
                   id="threshold"
-                  className="obc-input"
+                  className="rs-input"
                   inputMode="numeric"
                   placeholder="none"
                   value={draft.alertThresholdMs ?? ''}
@@ -336,7 +336,7 @@ export function ObservationSetupSequence() {
                     store.setDraft({ alertThresholdMs: n > 0 ? n : null });
                   }}
                 />
-                <p className="mt-1.5 text-[11px] text-[var(--obc-text-4)]">
+                <p className="mt-1.5 text-[11px] text-rs-text-tertiary">
                   Milliseconds. Leave empty to record latency without alerting on it.
                 </p>
               </div>
@@ -349,12 +349,12 @@ export function ObservationSetupSequence() {
           >
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <div>
-                <label className="obc-field-label" htmlFor="method">
+                <label className="rs-label mb-1.5 block" htmlFor="method">
                   Method
                 </label>
                 <select
                   id="method"
-                  className="obc-input"
+                  className="rs-input"
                   value={draft.method}
                   onChange={(e) =>
                     store.setDraft({ method: e.target.value as 'GET' | 'HEAD' | 'POST' })
@@ -366,12 +366,12 @@ export function ObservationSetupSequence() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="obc-field-label" htmlFor="codes">
+                <label className="rs-label mb-1.5 block" htmlFor="codes">
                   Expected status codes
                 </label>
                 <input
                   id="codes"
-                  className="obc-input font-[family-name:var(--ob-font-mono)]"
+                  className="rs-input font-[family-name:var(--ob-font-mono)]"
                   value={draft.expectedStatusCodes.join(', ')}
                   onChange={(e) => {
                     const codes = e.target.value
@@ -393,7 +393,7 @@ export function ObservationSetupSequence() {
           >
             <button
               type="button"
-              className="obc-btn obc-btn-primary"
+              className="rs-button rs-button-primary"
               disabled={!draft.regions.length}
               onClick={() => {
                 store.markComplete('observation');
@@ -417,7 +417,7 @@ export function ObservationSetupSequence() {
 
           <dl className="mt-8">
             <ReviewRow label="Dependency" mono={false}>
-              {draft.name || <span className="text-[var(--obc-text-4)]">not set</span>}
+              {draft.name || <span className="text-rs-text-tertiary">not set</span>}
             </ReviewRow>
             <ReviewRow label="Endpoint">{draft.endpointUrl}</ReviewRow>
             <ReviewRow label="Method">{draft.method}</ReviewRow>
@@ -433,14 +433,14 @@ export function ObservationSetupSequence() {
               {draft.alertThresholdMs ? (
                 `${draft.alertThresholdMs} ms`
               ) : (
-                <span className="text-[var(--obc-text-4)]">not configured</span>
+                <span className="text-rs-text-tertiary">not configured</span>
               )}
             </ReviewRow>
             <ReviewRow label="Authentication">
               {headers.length ? (
                 `${headers.length} header${headers.length === 1 ? '' : 's'} configured. Encrypted at rest, never returned by the API`
               ) : (
-                <span className="text-[var(--obc-text-4)]">not configured</span>
+                <span className="text-rs-text-tertiary">not configured</span>
               )}
             </ReviewRow>
             <ReviewRow label="Incident rule" mono={false}>
@@ -450,7 +450,7 @@ export function ObservationSetupSequence() {
           </dl>
 
           {createError && (
-            <p role="alert" className="mt-5 border border-[var(--obc-crit)]/35 bg-[var(--obc-crit-wash)] px-4 py-3 text-[12.5px] text-[#E58C85]">
+            <p role="alert" className="mt-5 border border-rs-down/35 bg-rs-down-bg px-4 py-3 text-[12.5px] text-[#E58C85]">
               {createError}
             </p>
           )}
@@ -461,7 +461,7 @@ export function ObservationSetupSequence() {
           >
             <button
               type="button"
-              className="obc-btn obc-btn-primary"
+              className="rs-button rs-button-primary"
               onClick={activate}
               disabled={creating || !draft.endpointUrl || !draft.name}
             >
@@ -563,7 +563,7 @@ function DependencyStage({
         <StageBlock title="Services RELIASTRA already observes">
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="obc-skel h-[46px]" />
+              <div key={i} className="rs-skeleton h-[46px]" />
             ))}
           </div>
         </StageBlock>
@@ -597,12 +597,12 @@ function DependencyStage({
       >
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
           <div>
-            <label className="obc-field-label" htmlFor="dep-name">
+            <label className="rs-label mb-1.5 block" htmlFor="dep-name">
               Service name
             </label>
             <input
               id="dep-name"
-              className="obc-input"
+              className="rs-input"
               value={draft.name}
               maxLength={150}
               placeholder="Payments provider"
@@ -610,12 +610,12 @@ function DependencyStage({
             />
           </div>
           <div>
-            <label className="obc-field-label" htmlFor="dep-endpoint">
+            <label className="rs-label mb-1.5 block" htmlFor="dep-endpoint">
               Endpoint
             </label>
             <input
               id="dep-endpoint"
-              className="obc-input font-[family-name:var(--ob-font-mono)]"
+              className="rs-input font-[family-name:var(--ob-font-mono)]"
               value={draft.endpointUrl}
               placeholder="https://api.example.com/health"
               onChange={(e) => setDraft({ endpointUrl: e.target.value, sourceVendor: null })}
@@ -641,7 +641,7 @@ function DependencyStage({
       >
         <button
           type="button"
-          className="obc-btn obc-btn-primary"
+          className="rs-button rs-button-primary"
           disabled={!valid}
           onClick={onNext}
         >
@@ -674,7 +674,7 @@ function HeadersBlock({
         title="Authentication"
         hint="Only needed when the endpoint refuses anonymous requests."
       >
-        <button type="button" className="obc-btn obc-btn-sm" onClick={() => setOpen(true)}>
+        <button type="button" className="rs-button rs-button-sm" onClick={() => setOpen(true)}>
           Add request headers
         </button>
       </StageBlock>
@@ -690,7 +690,7 @@ function HeadersBlock({
         {headers.map((h, i) => (
           <div key={i} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_auto]">
             <input
-              className="obc-input font-[family-name:var(--ob-font-mono)]"
+              className="rs-input font-[family-name:var(--ob-font-mono)]"
               placeholder="Authorization"
               aria-label={`Header ${i + 1} name`}
               value={h.key}
@@ -699,7 +699,7 @@ function HeadersBlock({
               }
             />
             <input
-              className="obc-input font-[family-name:var(--ob-font-mono)]"
+              className="rs-input font-[family-name:var(--ob-font-mono)]"
               placeholder="Bearer …"
               aria-label={`Header ${i + 1} value`}
               type="password"
@@ -710,7 +710,7 @@ function HeadersBlock({
             />
             <button
               type="button"
-              className="obc-btn"
+              className="rs-button"
               onClick={() => setHeaders(headers.filter((_, j) => j !== i))}
             >
               Remove
@@ -719,7 +719,7 @@ function HeadersBlock({
         ))}
         <button
           type="button"
-          className="obc-btn obc-btn-sm"
+          className="rs-button rs-button-sm"
           onClick={() => setHeaders([...headers, { key: '', value: '' }])}
         >
           Add header
@@ -803,10 +803,10 @@ function ActivationSurface({
         }
       >
         {first ? (
-          <div className="border border-[var(--obc-line)]">
-            <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_160px] gap-4 border-b border-[var(--obc-line)] px-3 py-2 sm:grid">
+          <div className="border border-rs-border-subtle">
+            <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_160px] gap-4 border-b border-rs-border-subtle px-3 py-2 sm:grid">
               {['Result', 'Latency', 'Status', 'Observed (UTC)'].map((h) => (
-                <span key={h} className="obc-label">
+                <span key={h} className="rs-label">
                   {h}
                 </span>
               ))}
@@ -814,32 +814,32 @@ function ActivationSurface({
             {results!.map((r) => (
               <div
                 key={r.id}
-                className="grid grid-cols-2 gap-2 border-b border-[var(--obc-line)] px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_120px_120px_160px] sm:items-center sm:gap-4"
+                className="grid grid-cols-2 gap-2 border-b border-rs-border-subtle px-3 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_120px_120px_160px] sm:items-center sm:gap-4"
               >
                 <State status={r.is_up ? 'operational' : 'down'} />
-                <span className="font-[family-name:var(--ob-font-mono)] text-[12.5px] tabular-nums text-[var(--obc-text-2)]">
+                <span className="font-[family-name:var(--ob-font-mono)] text-[12.5px] tabular-nums text-rs-text-secondary">
                   {r.latency_ms ? (
                     <>
                       {Math.round(r.latency_ms)}
-                      <span className="obc-unit">ms</span>
+                      <span className="text-[10px] text-rs-text-tertiary">ms</span>
                     </>
                   ) : (
-                    <span className="text-[var(--obc-text-4)]">no data</span>
+                    <span className="text-rs-text-tertiary">no data</span>
                   )}
                 </span>
-                <span className="font-[family-name:var(--ob-font-mono)] text-[12.5px] tabular-nums text-[var(--obc-text-2)]">
-                  {r.status_code ?? <span className="text-[var(--obc-text-4)]">none</span>}
+                <span className="font-[family-name:var(--ob-font-mono)] text-[12.5px] tabular-nums text-rs-text-secondary">
+                  {r.status_code ?? <span className="text-rs-text-tertiary">none</span>}
                 </span>
-                <span className="font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums text-[var(--obc-text-3)]">
+                <span className="font-[family-name:var(--ob-font-mono)] text-[12px] tabular-nums text-rs-text-tertiary">
                   {formatUtc(r.executed_at, 'dd MMM HH:mm:ss')}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="border border-[var(--obc-line)] px-4 py-6">
-            <p className="obc-label text-[var(--obc-signal)]">Observation initialising</p>
-            <p className="mt-2 max-w-[64ch] text-[12.5px] leading-[1.65] text-[var(--obc-text-2)]">
+          <div className="border border-rs-border-subtle px-4 py-6">
+            <p className="rs-label text-rs-brand">Observation initialising</p>
+            <p className="mt-2 max-w-[64ch] text-[12.5px] leading-[1.65] text-rs-text-secondary">
               The first result appears here without a reload. You can leave this page; the
               monitor is already running.
             </p>
@@ -869,11 +869,11 @@ function ActivationSurface({
               body: 'The signed artifact generated from a confirmed incident.',
             },
           ].map((item) => (
-            <li key={item.href} className="border border-[var(--obc-line)] p-3">
-              <Link href={item.href} className="text-[13px] text-[var(--obc-text)] hover:text-[var(--obc-signal)]">
+            <li key={item.href} className="border border-rs-border-subtle p-3">
+              <Link href={item.href} className="text-[13px] text-rs-text hover:text-rs-brand">
                 {item.label}
               </Link>
-              <p className="mt-1.5 text-[11.5px] leading-[1.6] text-[var(--obc-text-4)]">
+              <p className="mt-1.5 text-[11.5px] leading-[1.6] text-rs-text-tertiary">
                 {item.body}
               </p>
             </li>
@@ -884,7 +884,7 @@ function ActivationSurface({
       <AlertBlock hasEmail={Boolean(alerts.data?.some((c) => c.channel_type === 'email'))} onSaved={() => alerts.refetch()} />
 
       <StageActions note="The monitor keeps running whether or not this page is open.">
-        <button type="button" className="obc-btn obc-btn-primary" onClick={onDone}>
+        <button type="button" className="rs-button rs-button-primary" onClick={onDone}>
           Open console
         </button>
       </StageActions>
@@ -901,9 +901,9 @@ function AlertBlock({ hasEmail, onSaved }: { hasEmail: boolean; onSaved: () => v
   if (hasEmail) {
     return (
       <StageBlock title="Notification" hint="Email alerts are already configured for this organization.">
-        <p className="text-[12.5px] text-[var(--obc-text-2)]">
+        <p className="text-[12.5px] text-rs-text-secondary">
           Incident notifications go to your configured channels. Manage them in{' '}
-          <Link href="/settings" className="obc-link">
+          <Link href="/settings" className="text-rs-brand hover:underline">
             settings
           </Link>
           .
@@ -919,12 +919,12 @@ function AlertBlock({ hasEmail, onSaved }: { hasEmail: boolean; onSaved: () => v
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="sm:w-[320px]">
-          <label className="obc-field-label" htmlFor="alert-email">
+          <label className="rs-label mb-1.5 block" htmlFor="alert-email">
             Email for incident alerts
           </label>
           <input
             id="alert-email"
-            className="obc-input"
+            className="rs-input"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -932,7 +932,7 @@ function AlertBlock({ hasEmail, onSaved }: { hasEmail: boolean; onSaved: () => v
         </div>
         <button
           type="button"
-          className="obc-btn"
+          className="rs-button"
           disabled={state === 'saving' || !email}
           onClick={async () => {
             setState('saving');
@@ -969,11 +969,11 @@ function AlertBlock({ hasEmail, onSaved }: { hasEmail: boolean; onSaved: () => v
 function EnvFact({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="min-w-0">
-      <p className="obc-label">{label}</p>
-      <p className="mt-1.5 truncate font-[family-name:var(--ob-font-mono)] text-[13px] tabular-nums text-[var(--obc-text)]">
+      <p className="rs-label">{label}</p>
+      <p className="mt-1.5 truncate font-[family-name:var(--ob-font-mono)] text-[13px] tabular-nums text-rs-text">
         {value}
       </p>
-      {sub && <p className="mt-1 text-[11px] text-[var(--obc-text-4)]">{sub}</p>}
+      {sub && <p className="mt-1 text-[11px] text-rs-text-tertiary">{sub}</p>}
     </div>
   );
 }
@@ -991,7 +991,7 @@ function ChoiceGroup({
 }) {
   return (
     <fieldset className="min-w-0">
-      <legend className="obc-label mb-2.5">{legend}</legend>
+      <legend className="rs-label mb-2.5">{legend}</legend>
       <div className="flex flex-col gap-1.5">
         {options.map(([id, label]) => (
           <button
@@ -1002,8 +1002,8 @@ function ChoiceGroup({
             className={cn(
               'flex h-8 items-center border px-2.5 text-left text-[12.5px] transition-colors',
               value === id
-                ? 'border-[var(--obc-signal)] bg-[var(--obc-signal-wash)] text-[var(--obc-text)]'
-                : 'border-[var(--obc-line-2)] text-[var(--obc-text-2)] hover:border-[var(--obc-line-3)]'
+                ? 'border-rs-brand bg-rs-brand-subtle text-rs-text'
+                : 'border-rs-border-subtle text-rs-text-secondary hover:border-rs-border'
             )}
           >
             {label}

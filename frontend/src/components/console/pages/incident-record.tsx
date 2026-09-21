@@ -64,11 +64,11 @@ export function IncidentRecordPage({ id }: { id: string }) {
   if (isLoading) {
     return (
       <>
-        <div className="border-b border-[var(--obc-line-2)] py-6">
-          <div className="obc-skel h-3 w-24" />
-          <div className="obc-skel mt-3 h-6 w-80" />
+        <div className="border-b border-rs-border-subtle py-6">
+          <div className="rs-skeleton h-3 w-24" />
+          <div className="rs-skeleton mt-3 h-6 w-80" />
         </div>
-        <div className="obc-section">
+        <div className="rs-section-spacing">
           <RowsSkeleton rows={5} cols={4} />
         </div>
       </>
@@ -77,7 +77,7 @@ export function IncidentRecordPage({ id }: { id: string }) {
 
   if (isError || !data) {
     return (
-      <div className="obc-section">
+      <div className="rs-section-spacing">
         <Failure
           title="Incident record unavailable"
           body="This incident could not be retrieved. The record is unaffected."
@@ -93,7 +93,7 @@ export function IncidentRecordPage({ id }: { id: string }) {
   return (
     <>
       <PageHead
-        eyebrow={<span className="obc-mono text-[var(--obc-signal)]">{code}</span>}
+        eyebrow={<span className="rs-mono text-rs-brand">{code}</span>}
         title={data.title || data.root_cause || 'Incident'}
         meta={
           <>
@@ -113,13 +113,13 @@ export function IncidentRecordPage({ id }: { id: string }) {
         }
         actions={
           evidence.data ? (
-            <Link href={`/evidence/${evidence.data.id}`} className="obc-btn obc-btn-primary">
+            <Link href={`/evidence/${evidence.data.id}`} className="rs-button rs-button-primary">
               Open evidence record
             </Link>
           ) : evidenceView.action === 'retry' ? (
             <button
               type="button"
-              className="obc-btn"
+              className="rs-button"
               onClick={() => {
                 setEvidenceRequested(true);
                 void evidence.refetch();
@@ -129,17 +129,17 @@ export function IncidentRecordPage({ id }: { id: string }) {
               {evidence.isFetching ? 'Retrying…' : 'Retry evidence generation'}
             </button>
           ) : evidenceView.action === 'upgrade' ? (
-            <Link href="/billing" className="obc-btn">
+            <Link href="/billing" className="rs-button">
               Upgrade to generate evidence
             </Link>
           ) : evidenceView.key === 'generating' ? (
-            <span className="obc-btn" aria-disabled>
+            <span className="rs-button" aria-disabled>
               Generating…
             </span>
           ) : (
             <button
               type="button"
-              className="obc-btn"
+              className="rs-button"
               onClick={() => setEvidenceRequested(true)}
               disabled={evidence.isFetching}
             >
@@ -172,12 +172,12 @@ export function IncidentRecordPage({ id }: { id: string }) {
         hint="A confirmed incident produces a timestamped, checksummed record."
       >
         {evidence.data ? (
-          <div className="border border-[var(--obc-line)]">
-            <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--obc-line)] px-3.5 py-3">
-              <span className="obc-mono text-[var(--obc-signal)]">
+          <div className="border border-rs-border-subtle">
+            <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rs-border-subtle px-3.5 py-3">
+              <span className="rs-mono text-rs-brand">
                 {reportCode(evidence.data.id)}
               </span>
-              <span className="obc-mono text-[var(--obc-text-4)]">
+              <span className="rs-mono text-rs-text-tertiary">
                 generated {formatUtc(evidence.data.generated_at, 'yyyy-MM-dd HH:mm:ss')}
               </span>
             </div>
@@ -194,8 +194,8 @@ export function IncidentRecordPage({ id }: { id: string }) {
                 </Row>
               )}
             </dl>
-            <div className="border-t border-[var(--obc-line)] px-3.5 py-3">
-              <Link href={`/evidence/${evidence.data.id}`} className="obc-btn obc-btn-sm">
+            <div className="border-t border-rs-border-subtle px-3.5 py-3">
+              <Link href={`/evidence/${evidence.data.id}`} className="rs-button rs-button-sm">
                 Open record
               </Link>
             </div>
@@ -250,27 +250,27 @@ function Attribution({ incident, depName }: { incident: IncidentDetail; depName?
       title="Attribution"
       hint="Which side of the boundary the fault sits on, and what supports that conclusion."
     >
-      <div className="grid gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] md:grid-cols-2">
-        <div className="bg-[var(--obc-base)] p-4">
-          <p className="obc-label">Your service</p>
-          <p className="mt-2 text-[13px] text-[var(--obc-text-2)]">
+      <div className="grid gap-px overflow-hidden rounded-[6px] bg-rs-border-subtle md:grid-cols-2">
+        <div className="bg-rs-elevated p-4">
+          <p className="rs-label">Your service</p>
+          <p className="mt-2 text-[13px] text-rs-text-secondary">
             {depName ?? 'This dependency'} is consumed by your application.
             RELIASTRA observes the dependency, not your internal systems, so
             this record attributes the external side only.
           </p>
         </div>
-        <div className="bg-[var(--obc-base)] p-4">
-          <p className="obc-label">External dependency</p>
-          <p className="mt-2 text-[13px] text-[var(--obc-text)]">
+        <div className="bg-rs-elevated p-4">
+          <p className="rs-label">External dependency</p>
+          <p className="mt-2 text-[13px] text-rs-text">
             {incident.vendor ?? depName ?? 'Unnamed dependency'}
           </p>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-[var(--obc-text-3)]">
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-rs-text-tertiary">
             {incident.root_cause}
           </p>
         </div>
       </div>
 
-      <dl className="mt-px border-x border-b border-[var(--obc-line)] bg-[var(--obc-base)] px-4 py-2">
+      <dl className="mt-px border-x border-b border-rs-border-subtle bg-rs-elevated px-4 py-2">
         <Row label="Correlation method" mono>
           {primary ? primary.correlation_method : <Missing />}
         </Row>
@@ -291,26 +291,26 @@ function Attribution({ incident, depName }: { incident: IncidentDetail; depName?
 
       {incident.other_dependencies && incident.other_dependencies.length > 0 && (
         <div className="mt-4">
-          <p className="obc-label mb-2">
+          <p className="rs-label mb-2">
             Other dependencies during the same window
           </p>
-          <ul className="border border-[var(--obc-line)]">
+          <ul className="border border-rs-border-subtle">
             {incident.other_dependencies.map((d) => (
               <li
                 key={d.name}
-                className="flex items-center justify-between gap-4 border-b border-[var(--obc-line)] px-3.5 py-2 last:border-b-0"
+                className="flex items-center justify-between gap-4 border-b border-rs-border-subtle px-3.5 py-2 last:border-b-0"
               >
-                <span className="truncate text-[12.5px] text-[var(--obc-text-2)]">{d.name}</span>
+                <span className="truncate text-[12.5px] text-rs-text-secondary">{d.name}</span>
                 <span className="flex shrink-0 items-center gap-5">
                   <State status={d.status} />
-                  <span className="obc-mono w-16 text-right text-[var(--obc-text-3)]">
-                    {d.latency_ms ? `${Math.round(d.latency_ms)} ms` : 'no data'}
+                  <span className="rs-mono w-16 text-right text-rs-text-tertiary">
+                    {d.latency_ms ? `${Math.round(d.latency_ms)} ms` : '—'}
                   </span>
                 </span>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11.5px] text-[var(--obc-text-4)]">
+          <p className="mt-2 text-[11.5px] text-rs-text-tertiary">
             Listed for contrast: a fault isolated to one dependency is
             attributable to that dependency, not to shared network conditions.
           </p>
@@ -321,7 +321,7 @@ function Attribution({ incident, depName }: { incident: IncidentDetail; depName?
 }
 
 function Missing({ note = 'not supplied' }: { note?: string }) {
-  return <span className="text-[var(--obc-text-4)]">{note}</span>;
+  return <span className="text-rs-text-tertiary">{note}</span>;
 }
 
 const EVENT_WORD: Record<string, string> = {
@@ -342,23 +342,23 @@ function Timeline({ incident }: { incident: IncidentDetail }) {
     );
   }
   return (
-    <ol className="border border-[var(--obc-line)]">
+    <ol className="border border-rs-border-subtle">
       {events.map((e, i) => (
         <li
           key={e.id}
-          className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 border-b border-[var(--obc-line)] px-3.5 py-2.5 last:border-b-0 sm:grid-cols-[150px_150px_1fr_auto]"
+          className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 border-b border-rs-border-subtle px-3.5 py-2.5 last:border-b-0 sm:grid-cols-[150px_150px_1fr_auto]"
         >
-          <span className="obc-mono text-[var(--obc-text)]">
+          <span className="rs-mono text-rs-text">
             {formatUtc(e.timestamp, 'HH:mm:ss')}
           </span>
-          <span className="obc-label col-start-1 sm:col-start-2">
+          <span className="rs-label col-start-1 sm:col-start-2">
             {EVENT_WORD[e.type] ?? e.type}
           </span>
-          <span className="col-span-2 text-[12.5px] text-[var(--obc-text-2)] sm:col-span-1 sm:col-start-3">
+          <span className="col-span-2 text-[12.5px] text-rs-text-secondary sm:col-span-1 sm:col-start-3">
             {e.description}
           </span>
           {e.metric && (
-            <span className="obc-mono col-start-2 text-right text-[var(--obc-signal)] sm:col-start-4">
+            <span className="rs-mono col-start-2 text-right text-rs-brand sm:col-start-4">
               {e.metric}
             </span>
           )}
@@ -443,7 +443,7 @@ function Observations({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] bg-rs-border-subtle md:grid-cols-4">
             {[
               { label: 'Observations', value: stats.observations },
               { label: 'Failed checks', value: stats.failed, state: stats.failed ? ('crit' as const) : undefined },
@@ -458,20 +458,20 @@ function Observations({
                 unit: 'ms',
               },
             ].map((r) => (
-              <div key={r.label} className="bg-[var(--obc-base)] p-4">
+              <div key={r.label} className="bg-rs-elevated p-4">
                 <Readout label={r.label} value={r.value} unit={r.unit} state={r.state} />
               </div>
             ))}
           </div>
 
-          <p className="mt-2 text-[11px] text-[var(--obc-text-4)]">
+          <p className="mt-2 text-[11px] text-rs-text-tertiary">
             Computed from the {stats.observations} check results recorded inside this window.
             Figures quoted in the timeline come from the detector and may differ in sampling.
           </p>
 
           <div className="mt-5 grid gap-6 lg:grid-cols-2">
             <div>
-              <p className="obc-label mb-2">Observed latency</p>
+              <p className="rs-label mb-2">Observed latency</p>
               <Plot
                 points={inWindow
                   .filter((r) => r.latency_ms > 0)
@@ -482,13 +482,13 @@ function Observations({
                 label="Observed latency during the incident window"
               />
               {threshold != null && (
-                <p className="mt-1.5 text-[11px] text-[var(--obc-text-4)]">
+                <p className="mt-1.5 text-[11px] text-rs-text-tertiary">
                   Dashed rule is the configured alert threshold ({threshold} ms).
                 </p>
               )}
             </div>
             <div>
-              <p className="obc-label mb-2">Check outcomes</p>
+              <p className="rs-label mb-2">Check outcomes</p>
               <CheckStrip
                 cells={inWindow.map((r) => ({
                   at: r.executed_at,

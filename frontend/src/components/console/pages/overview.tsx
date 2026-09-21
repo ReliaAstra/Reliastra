@@ -23,7 +23,6 @@ import {
   Empty,
   Failure,
   PageHead,
-  Readout,
   RowsSkeleton,
   Section,
   SectionLink,
@@ -34,22 +33,7 @@ import {
 import { DataTable, type Column } from '@/components/console/data-table';
 import type { DependencyHealth, Incident } from '@/lib/dashboard/types';
 
-/**
- * Overview - the command centre.
- *
- * Ordered by the questions section 1 says the console exists to answer:
- * what is happening now (active incidents), which dependency is affected
- * (health table), what has been observed recently, and what evidence exists.
- * There is no KPI tile row: four big numbers in four bordered boxes told the
- * operator nothing that the tables below do not state more precisely, and the
- * coloured icon tiles were pure decoration.
- *
- * The one numeric strip that remains is a plain measurement row - no boxes,
- * no icons, no meters - because a count of dependencies and an aggregate
- * availability figure genuinely are the header facts of the workspace.
- */
 export function OverviewPage() {
-  const router = useRouter();
   const org = useAppStore((s) => s.org);
   const setAdd = useAppStore((s) => s.setAddDependencyOpen);
   const plan = useAppStore((s) => s.plan);
@@ -75,28 +59,20 @@ export function OverviewPage() {
 
   return (
     <>
-      <PageHead
-        eyebrow="Workspace"
-        title={org?.name ?? 'Overview'}
+      <PageHead title={org?.name ?? 'Overview'}
         description="What RELIASTRA is observing right now, what is degraded, and the evidence already on file."
         actions={
-          <button type="button" onClick={handleAdd} className="obc-btn obc-btn-primary">
+          <button type="button" onClick={handleAdd} className="rs-button rs-button-primary rs-button-sm">
             Add dependency
           </button>
         }
       />
 
-      {/* First-screen anchor: four measured facts, each with plain-language
-          context. Values come straight from the workspace queries. */}
-      <div className="obc-card-row mt-6">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Monitored"
           value={limit != null ? `${monitored} / ${limit}` : monitored}
-          sub={
-            limit != null
-              ? `of ${limit} dependencies on your plan`
-              : 'dependencies under observation'
-          }
+          sub={limit != null ? `of ${limit} dependencies on your plan` : 'dependencies under observation'}
         />
         <StatCard
           label="Availability 24h"
@@ -117,12 +93,12 @@ export function OverviewPage() {
       </div>
 
       {isEmptyWorkspace ? (
-        <div className="obc-section">
+        <div className="rs-section-spacing">
           <Empty
             title="No dependencies monitored"
             body="Add your first external service. The first observation lands within one check interval."
             action={
-              <button type="button" onClick={handleAdd} className="obc-btn obc-btn-primary">
+              <button type="button" onClick={handleAdd} className="rs-button rs-button-primary rs-button-sm">
                 Add dependency
               </button>
             }
@@ -159,16 +135,13 @@ export function OverviewPage() {
             {allIncidents.isLoading ? (
               <RowsSkeleton rows={4} cols={5} />
             ) : allIncidents.isError ? (
-              <Failure
-                body="The incident list could not be retrieved."
-                onRetry={() => allIncidents.refetch()}
-              />
+              <Failure body="The incident list could not be retrieved." onRetry={() => allIncidents.refetch()} />
             ) : !allIncidents.data?.length ? (
               <Empty
                 title="No incidents recorded"
                 body="Incidents appear when the detector confirms a sustained failure against a dependency."
                 action={
-                  <Link href="/dependencies" className="obc-btn">
+                  <Link href="/dependencies" className="rs-button rs-button-secondary rs-button-sm">
                     Review dependencies
                   </Link>
                 }
@@ -186,34 +159,25 @@ export function OverviewPage() {
             {evidence.isLoading ? (
               <RowsSkeleton rows={3} cols={4} />
             ) : evidence.isError ? (
-              <Failure
-                body="The evidence library could not be retrieved."
-                onRetry={() => evidence.refetch()}
-              />
+              <Failure body="The evidence library could not be retrieved." onRetry={() => evidence.refetch()} />
             ) : !evidence.data?.length ? (
               <Empty
                 title="No evidence records yet"
                 body="An evidence record is generated when an incident is confirmed. Each one carries the observations underneath it and a checksum you can verify."
               />
             ) : (
-              <ul className="divide-y divide-[var(--obc-line)]">
+              <ul className="divide-y divide-rs-border-subtle">
                 {evidence.data.slice(0, 4).map((e) => (
                   <li key={e.id}>
                     <Link
                       href={`/evidence/${e.id}`}
-                      className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-3 py-2.5 hover:bg-[var(--obc-raised)]"
+                      className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-3 hover:bg-rs-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
                     >
                       <span className="flex min-w-0 items-baseline gap-3">
-                        <span className="obc-mono text-[var(--obc-signal)]">
-                          {reportCode(e.id)}
-                        </span>
-                        <span className="truncate text-[12.5px] text-[var(--obc-text-2)]">
-                          {e.title ?? 'Evidence record'}
-                        </span>
+                        <span className="rs-mono text-rs-brand">{reportCode(e.id)}</span>
+                        <span className="truncate text-[12.5px] text-rs-text-secondary">{e.title ?? 'Evidence record'}</span>
                       </span>
-                      <span className="obc-mono shrink-0 text-[var(--obc-text-4)]">
-                        {formatUtc(e.generated_at, 'yyyy-MM-dd HH:mm')}
-                      </span>
+                      <span className="rs-mono shrink-0 text-rs-text-tertiary">{formatUtc(e.generated_at, 'yyyy-MM-dd HH:mm')}</span>
                     </Link>
                   </li>
                 ))}
@@ -226,11 +190,6 @@ export function OverviewPage() {
   );
 }
 
-/**
- * Active incidents are the top of the page and the only element allowed to
- * pulse. When there are none, the section states that positively rather than
- * disappearing - an operator needs to know the check ran.
- */
 function ActiveIncidents({
   incidents,
   loading,
@@ -250,40 +209,29 @@ function ActiveIncidents({
         <Failure body="Open incidents could not be retrieved." onRetry={onRetry} />
       ) : incidents.length === 0 ? (
         <p className="px-4 py-4 text-[13px]">
-          <span className="obc-state" data-state="ok">
-            <span className="obc-dot" aria-hidden />
+          <span className="inline-flex items-center gap-2 text-rs-text">
+            <span className="rs-status-dot rs-status-dot-up" aria-hidden />
             <span>No active incidents</span>
           </span>
-          <span className="ml-3 text-[var(--obc-text-4)]">
-            No open incident records. Check current observations below.
-          </span>
+          <span className="ml-3 text-rs-text-tertiary">No open incident records. Check current observations below.</span>
         </p>
       ) : (
-        <ul className="divide-y divide-[var(--obc-crit)]/25">
+        <ul className="divide-y divide-rs-down/20">
           {incidents.map((inc) => (
-            <li
-              key={inc.id}
-              className="bg-[var(--obc-crit-wash)]"
-            >
+            <li key={inc.id} className="bg-rs-down-bg/40">
               <Link
                 href={`/incidents/${inc.id}`}
-                className="flex flex-col gap-2 px-3.5 py-3 hover:bg-[var(--obc-crit)]/15 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-2 px-4 py-3 hover:bg-rs-down-bg/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus md:flex-row md:items-center md:justify-between"
               >
                 <span className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
                   <State status={inc.status} live />
-                  <span className="obc-mono text-[var(--obc-signal)]">
-                    {incidentCode(inc.id, inc.display_id)}
-                  </span>
-                  <span className="truncate text-[13px] font-medium text-[var(--obc-text)]">
-                    {inc.title || inc.root_cause || 'Incident'}
-                  </span>
+                  <span className="rs-mono text-rs-brand">{incidentCode(inc.id, inc.display_id)}</span>
+                  <span className="truncate text-[13px] font-medium text-rs-text">{inc.title || inc.root_cause || 'Incident'}</span>
                 </span>
-                <span className="flex shrink-0 items-center gap-4 obc-mono text-[var(--obc-text-3)]">
+                <span className="rs-mono flex shrink-0 items-center gap-4 text-rs-text-tertiary">
                   <span>{inc.severity}</span>
                   <span>started {formatUtc(inc.started_at, 'HH:mm')}</span>
-                  <span className="text-[var(--obc-text)]">
-                    {durationBetween(inc.started_at, inc.resolved_at)}
-                  </span>
+                  <span className="text-rs-text">{durationBetween(inc.started_at, inc.resolved_at)}</span>
                 </span>
               </Link>
             </li>
@@ -317,12 +265,7 @@ function HealthTable({
     );
   }
   if (!rows.length) {
-    return (
-      <Empty
-        title="No dependency health yet"
-        body="Health appears once the first check cycle completes for a monitored dependency."
-      />
-    );
+    return <Empty title="No dependency health yet" body="Health appears once the first check cycle completes for a monitored dependency." />;
   }
 
   const incidentByDep = new Map(incidents.map((i) => [i.dependency_id, i]));
@@ -334,12 +277,8 @@ function HealthTable({
       sort: (r) => r.name.toLowerCase(),
       render: (r) => (
         <span className="block min-w-0">
-          <span className="block truncate text-[13px] font-medium text-[var(--obc-text)]">
-            {r.name}
-          </span>
-          <span className="obc-mono block truncate text-[10.5px] text-[var(--obc-text-4)]">
-            {r.endpoint_url}
-          </span>
+          <span className="block truncate text-[13px] font-medium text-rs-text">{r.name}</span>
+          <span className="rs-mono block truncate text-[10.5px] text-rs-text-tertiary">{r.endpoint_url}</span>
         </span>
       ),
     },
@@ -358,7 +297,7 @@ function HealthTable({
       sort: (r) => r.uptime_percentage_24h ?? -1,
       render: (r) =>
         r.uptime_percentage_24h == null ? (
-          <span className="text-[var(--obc-text-4)]">no data</span>
+          <span className="text-rs-text-tertiary">—</span>
         ) : (
           formatUptime(r.uptime_percentage_24h)
         ),
@@ -369,15 +308,13 @@ function HealthTable({
       numeric: true,
       width: 118,
       sort: (r) => r.avg_latency_ms_24h ?? -1,
-      // A dependency that is down reports 0 ms, which is not a measurement.
-      // Print the absence rather than a number nobody observed.
       render: (r) =>
         !(r.avg_latency_ms_24h > 0) ? (
-          <span className="text-[var(--obc-text-4)]">no data</span>
+          <span className="text-rs-text-tertiary">—</span>
         ) : (
           <>
             {formatLatency(r.avg_latency_ms_24h)}
-            <span className="obc-unit">ms</span>
+            <span className="ml-1 text-[10px] text-rs-text-tertiary">ms</span>
           </>
         ),
     },
@@ -387,12 +324,7 @@ function HealthTable({
       numeric: true,
       width: 108,
       sort: (r) => r.total_checks_24h ?? -1,
-      render: (r) =>
-        r.total_checks_24h == null ? (
-          <span className="text-[var(--obc-text-4)]">none</span>
-        ) : (
-          r.total_checks_24h
-        ),
+      render: (r) => (r.total_checks_24h == null ? <span className="text-rs-text-tertiary">—</span> : r.total_checks_24h),
     },
     {
       key: 'last',
@@ -402,11 +334,9 @@ function HealthTable({
       sort: (r) => r.last_check_at ?? '',
       render: (r) =>
         r.last_check_at ? (
-          <span title={formatUtc(r.last_check_at, 'yyyy-MM-dd HH:mm:ss')}>
-            {timeAgo(r.last_check_at)}
-          </span>
+          <span title={formatUtc(r.last_check_at, 'yyyy-MM-dd HH:mm:ss')}>{timeAgo(r.last_check_at)}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">no observation</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
     {
@@ -416,11 +346,9 @@ function HealthTable({
       render: (r) => {
         const inc = incidentByDep.get(r.dependency_id);
         return inc ? (
-          <span className="obc-mono text-[var(--obc-signal)]">
-            {incidentCode(inc.id, inc.display_id)}
-          </span>
+          <span className="rs-mono text-rs-brand">{incidentCode(inc.id, inc.display_id)}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">none</span>
+          <span className="text-rs-text-tertiary">—</span>
         );
       },
     },
@@ -446,21 +374,13 @@ function IncidentTable({ rows }: { rows: Incident[] }) {
       header: 'Incident',
       width: 118,
       sort: (r) => r.started_at,
-      render: (r) => (
-        <span className="obc-mono text-[var(--obc-signal)]">
-          {incidentCode(r.id, r.display_id)}
-        </span>
-      ),
+      render: (r) => <span className="rs-mono text-rs-brand">{incidentCode(r.id, r.display_id)}</span>,
     },
     {
       key: 'title',
       header: 'Summary',
       sort: (r) => (r.title ?? r.root_cause ?? '').toLowerCase(),
-      render: (r) => (
-        <span className="block truncate text-[12.5px] text-[var(--obc-text-2)]">
-          {r.title || r.root_cause || 'Incident'}
-        </span>
-      ),
+      render: (r) => <span className="block truncate text-[12.5px] text-rs-text-secondary">{r.title || r.root_cause || 'Incident'}</span>,
     },
     {
       key: 'status',
@@ -474,7 +394,7 @@ function IncidentTable({ rows }: { rows: Incident[] }) {
       header: 'Severity',
       width: 96,
       sort: (r) => r.severity,
-      render: (r) => <span className="text-[12px]">{r.severity}</span>,
+      render: (r) => <span className="text-[12px] text-rs-text-secondary">{r.severity}</span>,
     },
     {
       key: 'started',

@@ -12,7 +12,6 @@ import {
 import { evidenceRank, evidenceState } from '@/lib/dashboard/evidence-state';
 import {
   Empty,
-  Fact,
   Failure,
   PageHead,
   RowsSkeleton,
@@ -28,16 +27,6 @@ function severityWord(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/**
- * Incidents index.
- *
- * The old version rendered incidents as a column of rounded link cards, each
- * with a coloured left bar and a confidence label that defaulted to `HIGH`
- * whenever the API omitted one - a fabricated verdict on exactly the field a
- * dispute would hinge on. This is a table: one row per incident, scannable
- * top to bottom, with active incidents pulled to the top and tinted, and
- * confidence shown only when the backend supplies it.
- */
 export function IncidentsPage() {
   const { data, isLoading, isError, refetch } = useIncidents(undefined, 50);
   const deps = useDependencies();
@@ -86,12 +75,8 @@ export function IncidentsPage() {
       sort: (r) => r.started_at,
       render: (r) => (
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="obc-mono text-[var(--obc-signal)]">
-            {incidentCode(r.id, r.display_id)}
-          </span>
-          <span className="truncate text-[12.5px] text-[var(--obc-text)]">
-            {r.title || r.root_cause || 'Incident'}
-          </span>
+          <span className="rs-mono text-rs-brand">{incidentCode(r.id, r.display_id)}</span>
+          <span className="truncate text-[12.5px] text-rs-text">{r.title || r.root_cause || 'Incident'}</span>
         </span>
       ),
     },
@@ -100,7 +85,7 @@ export function IncidentsPage() {
       header: 'Dependency',
       sort: (r) => depName.get(r.dependency_id) ?? r.vendor ?? '',
       render: (r) => (
-        <span className="truncate text-[12.5px] text-[var(--obc-text-2)]">
+        <span className="truncate text-[12.5px] text-rs-text-secondary">
           {depName.get(r.dependency_id) ?? r.vendor ?? 'Unnamed dependency'}
         </span>
       ),
@@ -118,19 +103,7 @@ export function IncidentsPage() {
       width: 92,
       sort: (r) => SEVERITY_RANK[r.severity] ?? 9,
       render: (r) => (
-        <span
-          className="text-[12.5px]"
-          style={{
-            color:
-              r.severity === 'critical'
-                ? '#E58C85'
-                : r.severity === 'major'
-                  ? '#E3BE7A'
-                  : 'var(--obc-text-3)',
-          }}
-        >
-          {severityWord(r.severity)}
-        </span>
+        <span className="text-[12.5px] text-rs-text-secondary">{severityWord(r.severity)}</span>
       ),
     },
     {
@@ -139,9 +112,7 @@ export function IncidentsPage() {
       width: 155,
       numeric: true,
       sort: (r) => r.started_at,
-      render: (r) => (
-        <span title={timeAgo(r.started_at)}>{formatUtc(r.started_at, 'MMM d HH:mm')}</span>
-      ),
+      render: (r) => <span title={timeAgo(r.started_at)}>{formatUtc(r.started_at, 'MMM d HH:mm')}</span>,
     },
     {
       key: 'duration',
@@ -158,17 +129,14 @@ export function IncidentsPage() {
       header: 'Evidence',
       width: 110,
       sort: (r) => evidenceRank(r),
-      // The state comes from the API rather than from whether a report id is
-      // present, so "generating", "failed - with the reason" and "not on your
-      // plan" are each distinguishable instead of all reading "none".
       render: (r) => {
         const view = evidenceState(r);
         const toneClass =
           view.tone === 'ok'
-            ? 'text-[var(--obc-text-2)]'
+            ? 'text-rs-text-secondary'
             : view.tone === 'warn'
-              ? 'text-[var(--obc-crit)]'
-              : 'text-[var(--obc-text-4)]';
+              ? 'text-rs-down'
+              : 'text-rs-text-tertiary';
         return (
           <span className={toneClass} title={view.hint}>
             {view.label}
@@ -180,19 +148,8 @@ export function IncidentsPage() {
 
   return (
     <>
-      <PageHead
-        title="Incidents"
-        meta={
-          <>
-            <Fact label="Total" value={all.length} />
-            <Fact
-              label="Active"
-              value={openCount}
-              state={openCount ? 'crit' : undefined}
-            />
-            <Fact label="Window" value="last 50 records" mono={false} />
-          </>
-        }
+      <PageHead title="Incidents"
+        description={`${all.length} total · ${openCount} active · last 50 records`}
       />
 
       <Section
@@ -202,17 +159,13 @@ export function IncidentsPage() {
         {isLoading ? (
           <RowsSkeleton rows={6} cols={5} />
         ) : isError ? (
-          <Failure
-            title="Incident log unavailable"
-            body="The incident log could not be retrieved. Monitoring is unaffected."
-            onRetry={() => refetch()}
-          />
+          <Failure title="Incident log unavailable" body="The incident log could not be retrieved. Monitoring is unaffected." onRetry={() => refetch()} />
         ) : !all.length ? (
           <Empty
             title="No incidents recorded"
             body="No confirmed failure has been recorded on this workspace yet. Incidents appear here as soon as the detector confirms one."
             action={
-              <Link href="/dependencies" className="obc-btn obc-btn-sm">
+              <Link href="/dependencies" className="rs-button rs-button-secondary rs-button-sm">
                 Review monitored dependencies
               </Link>
             }
@@ -241,10 +194,7 @@ export function IncidentsPage() {
                 caption="Incidents, active first"
               />
             ) : (
-              <Empty
-                title="No incidents match this filter"
-                body="Clear the filter or widen the state selection to see the full log."
-              />
+              <Empty title="No incidents match this filter" body="Clear the filter or widen the state selection to see the full log." />
             )}
           </>
         )}

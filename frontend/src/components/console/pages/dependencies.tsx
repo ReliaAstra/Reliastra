@@ -12,7 +12,6 @@ import {
 } from '@/lib/dashboard/format';
 import {
   Empty,
-  Fact,
   Failure,
   PageHead,
   RowsSkeleton,
@@ -31,15 +30,6 @@ type Row = Dependency & {
 
 const STATE_RANK = { crit: 0, warn: 1, idle: 2, ok: 3 } as const;
 
-/**
- * Dependencies index - the central table of the console.
- *
- * Two correctness changes over the version this replaces: a dependency with
- * no uptime reading no longer renders as `100.00%` (it renders "no data"),
- * and a dependency with an open incident is joined to that incident here so
- * the row can name it. Faults sort to the top by default; a monitoring table
- * whose default order is alphabetical makes an engineer hunt for the problem.
- */
 export function DependenciesPage() {
   const deps = useDependencies();
   const health = useHealth();
@@ -102,13 +92,11 @@ export function DependenciesPage() {
     {
       key: 'name',
       header: 'Dependency',
-      // No fixed width: this column absorbs whatever the fixed columns
-      // leave, so the table never exceeds its container.
       sort: (r) => r.name.toLowerCase(),
       render: (r) => (
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-[13px] text-[var(--obc-text)]">{r.name}</span>
-          <span className="obc-mono truncate text-[11px] text-[var(--obc-text-4)]">
+          <span className="truncate text-[13px] text-rs-text">{r.name}</span>
+          <span className="rs-mono truncate text-[11px] text-rs-text-tertiary">
             {r.method} {r.endpoint_url}
           </span>
         </span>
@@ -127,16 +115,14 @@ export function DependenciesPage() {
       width: 110,
       numeric: true,
       sort: (r) => r.health?.avg_latency_ms_24h ?? -1,
-      // 0 ms is what a failed check records; it is an absence of a
-      // measurement, not a fast one.
       render: (r) =>
         (r.health?.avg_latency_ms_24h ?? 0) > 0 ? (
           <>
             {formatLatency(r.health!.avg_latency_ms_24h)}
-            <span className="ml-1 text-[10px] text-[var(--obc-text-4)]">ms</span>
+            <span className="ml-1 text-[10px] text-rs-text-tertiary">ms</span>
           </>
         ) : (
-          <span className="text-[var(--obc-text-4)]">no data</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
     {
@@ -149,7 +135,7 @@ export function DependenciesPage() {
         r.health?.uptime_percentage_24h != null ? (
           formatUptime(r.health.uptime_percentage_24h)
         ) : (
-          <span className="text-[var(--obc-text-4)]">no data</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
     {
@@ -160,11 +146,9 @@ export function DependenciesPage() {
       sort: (r) => r.health?.last_check_at ?? '',
       render: (r) =>
         r.health?.last_check_at ? (
-          <span className="text-[12px] text-[var(--obc-text-3)]">
-            {timeAgo(r.health.last_check_at)}
-          </span>
+          <span className="text-[12px] text-rs-text-tertiary">{timeAgo(r.health.last_check_at)}</span>
         ) : (
-          <span className="text-[var(--obc-text-4)]">no observation</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
     {
@@ -176,13 +160,13 @@ export function DependenciesPage() {
         r.incident ? (
           <Link
             href={`/incidents/${r.incident.id}`}
-            className="obc-mono text-[var(--obc-signal)] hover:underline"
+            className="rs-mono text-rs-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rs-focus"
             onClick={(e) => e.stopPropagation()}
           >
             {incidentCode(r.incident.id, r.incident.display_id)}
           </Link>
         ) : (
-          <span className="text-[var(--obc-text-4)]">none</span>
+          <span className="text-rs-text-tertiary">—</span>
         ),
     },
   ];
@@ -191,47 +175,26 @@ export function DependenciesPage() {
 
   return (
     <>
-      <PageHead
-        title="Dependencies"
-        meta={
-          <>
-            <Fact
-              label="Monitored"
-              value={limit != null ? `${rows.length}/${limit}` : rows.length}
-            />
-            <Fact
-              label="Faults"
-              value={counts.faulty}
-              state={counts.faulty ? 'warn' : undefined}
-            />
-            {counts.paused > 0 && <Fact label="Paused" value={counts.paused} />}
-          </>
-        }
+      <PageHead title="Dependencies"
+        description={`${rows.length}${limit != null ? ` / ${limit}` : ''} monitored · ${counts.faulty} faults${counts.paused ? ` · ${counts.paused} paused` : ''}`}
         actions={
-          <button type="button" className="obc-btn obc-btn-primary" onClick={onAdd}>
+          <button type="button" className="rs-button rs-button-primary rs-button-sm" onClick={onAdd}>
             Add dependency
           </button>
         }
       />
 
-      <Section
-        title="Monitored endpoints"
-        hint="Checked on the configured interval from the RELIASTRA observation point."
-      >
+      <Section title="Monitored endpoints" hint="Checked on the configured interval from the RELIASTRA observation point.">
         {deps.isLoading ? (
           <RowsSkeleton rows={6} cols={6} />
         ) : deps.isError ? (
-          <Failure
-            title="Dependency list unavailable"
-            body="The list could not be retrieved. Checks continue to run."
-            onRetry={() => deps.refetch()}
-          />
+          <Failure title="Dependency list unavailable" body="The list could not be retrieved. Checks continue to run." onRetry={() => deps.refetch()} />
         ) : !rows.length ? (
           <Empty
             title="No dependencies monitored"
             body="Add your first external service. Checks start on the next interval."
             action={
-              <button type="button" className="obc-btn obc-btn-primary" onClick={onAdd}>
+              <button type="button" className="rs-button rs-button-primary rs-button-sm" onClick={onAdd}>
                 Add dependency
               </button>
             }
@@ -251,13 +214,9 @@ export function DependenciesPage() {
               ]}
               right={
                 health.isError ? (
-                  <span className="text-[11.5px] text-[#E58C85]">
-                    Health readings unavailable. Statuses may be stale
-                  </span>
+                  <span className="text-[11.5px] text-rs-down">Health readings unavailable. Statuses may be stale</span>
                 ) : atLimit ? (
-                  <span className="text-[11.5px] text-[var(--obc-text-4)]">
-                    Plan limit reached ({limit})
-                  </span>
+                  <span className="text-[11.5px] text-rs-text-tertiary">Plan limit reached ({limit})</span>
                 ) : null
               }
             />
@@ -271,10 +230,7 @@ export function DependenciesPage() {
                 caption="Monitored dependencies, faults first"
               />
             ) : (
-              <Empty
-                title="No dependencies match this filter"
-                body="Clear the filter to see the full list."
-              />
+              <Empty title="No dependencies match this filter" body="Clear the filter to see the full list." />
             )}
           </>
         )}

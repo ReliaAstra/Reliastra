@@ -46,11 +46,11 @@ function Command({ children }: { children: string }) {
     }
   };
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[var(--obc-line)] py-2.5 last:border-b-0">
-      <code className="min-w-0 break-all font-[family-name:var(--ob-font-mono)] text-[12.5px] text-[var(--obc-text)]">
+    <div className="flex items-start justify-between gap-4 border-b border-rs-border-subtle py-2.5 last:border-b-0">
+      <code className="min-w-0 break-all font-[family-name:var(--ob-font-mono)] text-[12.5px] text-rs-text">
         {children}
       </code>
-      <button type="button" className="obc-btn obc-btn-sm shrink-0" onClick={copy}>
+      <button type="button" className="rs-button rs-button-sm shrink-0" onClick={copy}>
         {copied ? 'Copied' : 'Copy'}
       </button>
     </div>
@@ -60,9 +60,9 @@ function Command({ children }: { children: string }) {
 /** A generated signing secret, shown once with a copy control. */
 function RevealedSecret({ value }: { value: string }) {
   return (
-    <div className="mt-3 border border-[var(--obc-line-2)] bg-[var(--obc-raised)] p-4">
-      <p className="obc-label">Signing secret - shown once</p>
-      <p className="obc-body mt-2 max-w-[70ch] text-[12px]">
+    <div className="mt-3 border border-rs-border-subtle bg-rs-hover p-4">
+      <p className="rs-label">Signing secret - shown once</p>
+      <p className="rs-body mt-2 max-w-[70ch] text-[12px]">
         The backend stores only a hash of this value, so it cannot be shown again.
         Put it in the consumer now; it is what verifies{' '}
         <code className="font-[family-name:var(--ob-font-mono)]">X-Reliastra-Signature</code>.
@@ -141,9 +141,9 @@ function ApiKeys() {
       <div className="grid gap-3">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex min-w-[220px] flex-1 flex-col gap-1.5">
-            <span className="obc-label">Name</span>
+            <span className="rs-label">Name</span>
             <input
-              className="obc-input"
+              className="rs-input"
               value={name}
               placeholder="ci-deploy"
               onChange={(e) => setName(e.target.value)}
@@ -151,7 +151,7 @@ function ApiKeys() {
           </label>
           <button
             type="button"
-            className="obc-btn obc-btn-primary"
+            className="rs-button rs-button-primary"
             disabled={!name.trim() || create.isPending}
             onClick={() => create.mutate()}
           >
@@ -160,9 +160,9 @@ function ApiKeys() {
         </div>
 
         <fieldset className="grid gap-2">
-          <legend className="obc-label mb-1">Scopes</legend>
+          <legend className="rs-label mb-1">Scopes</legend>
           {SCOPES.map(([scope, description]) => (
-            <label key={scope} className="flex items-start gap-3 text-[12.5px] text-[var(--obc-text-2)]">
+            <label key={scope} className="flex items-start gap-3 text-[12.5px] text-rs-text-secondary">
               <input
                 type="checkbox"
                 className="mt-1"
@@ -177,16 +177,16 @@ function ApiKeys() {
               />
               <span>
                 <code className="font-[family-name:var(--ob-font-mono)] text-[12px]">{scope}</code>
-                <span className="block text-[var(--obc-text-4)]">{description}</span>
+                <span className="block text-rs-text-tertiary">{description}</span>
               </span>
             </label>
           ))}
         </fieldset>
 
         {created && (
-          <div className="border border-[var(--obc-line-2)] bg-[var(--obc-raised)] p-4">
-            <p className="obc-label">Key - shown once</p>
-            <p className="obc-body mt-2 max-w-[70ch] text-[12px]">
+          <div className="border border-rs-border-subtle bg-rs-hover p-4">
+            <p className="rs-label">Key - shown once</p>
+            <p className="rs-body mt-2 max-w-[70ch] text-[12px]">
               Only a hash is stored. Put it in a secret store and expose it as{' '}
               <code className="font-[family-name:var(--ob-font-mono)]">RELIASTRA_TOKEN</code>.
             </p>
@@ -199,7 +199,7 @@ function ApiKeys() {
         {keys.isPending && ready ? (
           <RowsSkeleton rows={3} cols={4} />
         ) : keys.data?.length ? (
-          <table className="obc-table">
+          <table className="rs-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -212,18 +212,18 @@ function ApiKeys() {
             <tbody>
               {keys.data.map((key) => (
                 <tr key={key.id}>
-                  <td className="text-[var(--obc-text)]">{key.name}</td>
+                  <td className="text-rs-text">{key.name}</td>
                   <td className="font-[family-name:var(--ob-font-mono)] text-[12px]">
                     {key.prefix}…
                   </td>
-                  <td className="text-[12px] text-[var(--obc-text-3)]">{key.scopes.join(', ')}</td>
-                  <td className="text-[12px] text-[var(--obc-text-3)]">
+                  <td className="text-[12px] text-rs-text-tertiary">{key.scopes.join(', ')}</td>
+                  <td className="text-[12px] text-rs-text-tertiary">
                     {key.last_used_at ? new Date(key.last_used_at).toLocaleString() : 'never'}
                   </td>
                   <td className="text-right">
                     <button
                       type="button"
-                      className="obc-btn obc-btn-sm"
+                      className="rs-button rs-button-sm"
                       disabled={revoke.isPending}
                       onClick={() => revoke.mutate(key.id)}
                     >
@@ -316,18 +316,18 @@ function Webhooks() {
       <div className="grid gap-3">
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex min-w-[180px] flex-col gap-1.5">
-            <span className="obc-label">Name</span>
+            <span className="rs-label">Name</span>
             <input
-              className="obc-input"
+              className="rs-input"
               value={name}
               placeholder="ops-pager"
               onChange={(e) => setName(e.target.value)}
             />
           </label>
           <label className="flex min-w-[280px] flex-1 flex-col gap-1.5">
-            <span className="obc-label">Endpoint URL</span>
+            <span className="rs-label">Endpoint URL</span>
             <input
-              className="obc-input"
+              className="rs-input"
               value={url}
               placeholder="https://ops.example.com/hooks/reliastra"
               onChange={(e) => setUrl(e.target.value)}
@@ -335,7 +335,7 @@ function Webhooks() {
           </label>
           <button
             type="button"
-            className="obc-btn obc-btn-primary"
+            className="rs-button rs-button-primary"
             disabled={!name.trim() || !url.trim() || !events.length || create.isPending}
             onClick={() => create.mutate()}
           >
@@ -344,9 +344,9 @@ function Webhooks() {
         </div>
 
         <fieldset className="flex flex-wrap gap-x-5 gap-y-2">
-          <legend className="obc-label mb-1">Events</legend>
+          <legend className="rs-label mb-1">Events</legend>
           {WEBHOOK_EVENTS.map((event) => (
-            <label key={event} className="flex items-center gap-2 text-[12.5px] text-[var(--obc-text-2)]">
+            <label key={event} className="flex items-center gap-2 text-[12.5px] text-rs-text-secondary">
               <input
                 type="checkbox"
                 checked={events.includes(event)}
@@ -366,7 +366,7 @@ function Webhooks() {
         {hooks.isPending && ready ? (
           <RowsSkeleton rows={3} cols={4} />
         ) : hooks.data?.length ? (
-          <table className="obc-table">
+          <table className="rs-table">
             <thead>
               <tr>
                 <th>Name</th>
@@ -380,21 +380,21 @@ function Webhooks() {
             <tbody>
               {hooks.data.map((hook) => (
                 <tr key={hook.id}>
-                  <td className="text-[var(--obc-text)]">{hook.name}</td>
+                  <td className="text-rs-text">{hook.name}</td>
                   <td className="font-[family-name:var(--ob-font-mono)] text-[12px]">
                     {hook.url_masked}
                   </td>
-                  <td className="text-[12px] text-[var(--obc-text-3)]">{hook.events.join(', ')}</td>
-                  <td className="text-[12px] text-[var(--obc-text-3)]">
+                  <td className="text-[12px] text-rs-text-tertiary">{hook.events.join(', ')}</td>
+                  <td className="text-[12px] text-rs-text-tertiary">
                     {hook.last_delivery_at
                       ? new Date(hook.last_delivery_at).toLocaleString()
                       : 'none yet'}
                   </td>
-                  <td className="text-[12px] text-[var(--obc-text-3)]">{hook.failure_count}</td>
+                  <td className="text-[12px] text-rs-text-tertiary">{hook.failure_count}</td>
                   <td className="flex justify-end gap-2">
                     <button
                       type="button"
-                      className="obc-btn obc-btn-sm"
+                      className="rs-button rs-button-sm"
                       disabled={test.isPending}
                       onClick={() => test.mutate(hook.id)}
                     >
@@ -402,7 +402,7 @@ function Webhooks() {
                     </button>
                     <button
                       type="button"
-                      className="obc-btn obc-btn-sm"
+                      className="rs-button rs-button-sm"
                       disabled={remove.isPending}
                       onClick={() => remove.mutate(hook.id)}
                     >
@@ -431,8 +431,7 @@ function Webhooks() {
 export function DeveloperSettingsPage() {
   return (
     <>
-      <PageHead
-        title="Developer"
+      <PageHead title="Developer"
         meta={
           <>
             <Fact label="CLI" value="github.com/ReliaAstra/Reliastra/cli" mono={false} />
@@ -447,7 +446,7 @@ export function DeveloperSettingsPage() {
         title="From the terminal"
         hint="One binary, no dependencies. Every command answers --help and every record has a page in this console."
         action={
-          <Link className="obc-btn obc-btn-sm" href={DOCS_ROUTES.quickstart}>
+          <Link className="rs-button rs-button-sm" href={DOCS_ROUTES.quickstart}>
             Quickstart
           </Link>
         }
@@ -459,19 +458,19 @@ export function DeveloperSettingsPage() {
         <Command>reliastra incidents show &lt;incident-id&gt; --evidence</Command>
         <Command>reliastra evidence get &lt;report-id&gt; --out incident.pdf</Command>
         <Command>reliastra verify &lt;verification-id&gt; --file incident.pdf</Command>
-        <p className="obc-body mt-4 max-w-[80ch] text-[12px] text-[var(--obc-text-3)]">
+        <p className="rs-body mt-4 max-w-[80ch] text-[12px] text-rs-text-tertiary">
           The CLI is a Go module in the repository under <code>cli/</code>; the Go module
           proxy serves it straight from there, so the install above needs no registry account. Verification exits 4 when a document
           does not match its record, so it works as a pipeline gate with no wrapper.{' '}
-          <Link className="underline decoration-[var(--obc-line-3)]" href={DOCS_ROUTES.cli}>
+          <Link className="underline decoration-rs-border" href={DOCS_ROUTES.cli}>
             CLI reference
           </Link>
           {' · '}
-          <Link className="underline decoration-[var(--obc-line-3)]" href={DOCS_ROUTES.api}>
+          <Link className="underline decoration-rs-border" href={DOCS_ROUTES.api}>
             REST API
           </Link>
           {' · '}
-          <Link className="underline decoration-[var(--obc-line-3)]" href={DOCS_ROUTES.webhooks}>
+          <Link className="underline decoration-rs-border" href={DOCS_ROUTES.webhooks}>
             Webhooks
           </Link>
         </p>
@@ -486,7 +485,7 @@ export function DeveloperSettingsPage() {
           <Fact label="API key" value="Dependencies, observations, incidents, evidence - by scope" mono={false} />
           <Fact label="Public" value="Verification records and the observatory - no credential" mono={false} />
         </dl>
-        <p className="obc-body mt-4 max-w-[80ch] text-[12px] text-[var(--obc-text-3)]">
+        <p className="rs-body mt-4 max-w-[80ch] text-[12px] text-rs-text-tertiary">
           Keys are denied by default: they cannot read accounts, manage keys or configure
           webhooks, so a leaked key cannot redirect your events or mint a new credential.
         </p>

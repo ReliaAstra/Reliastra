@@ -51,11 +51,11 @@ export function EvidenceRecordPage({ id }: { id: string }) {
   if (record.isLoading) {
     return (
       <>
-        <div className="border-b border-[var(--obc-line-2)] py-6">
-          <div className="obc-skel h-3 w-24" />
-          <div className="obc-skel mt-3 h-6 w-80" />
+        <div className="border-b border-rs-border-subtle py-6">
+          <div className="rs-skeleton h-3 w-24" />
+          <div className="rs-skeleton mt-3 h-6 w-80" />
         </div>
-        <div className="obc-section">
+        <div className="rs-section-spacing">
           <RowsSkeleton rows={6} cols={2} />
         </div>
       </>
@@ -64,7 +64,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
 
   if (record.isError || !record.data) {
     return (
-      <div className="obc-section">
+      <div className="rs-section-spacing">
         <Failure
           title="Evidence record unavailable"
           body="This record could not be retrieved. Stored evidence is immutable and unaffected by console read failures."
@@ -80,7 +80,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
   return (
     <>
       <PageHead
-        eyebrow={<span className="obc-mono text-[var(--obc-signal)]">{reportCode(r.id)}</span>}
+        eyebrow={<span className="rs-mono text-rs-brand">{reportCode(r.id)}</span>}
         title={r.title || 'Evidence record'}
         meta={
           <>
@@ -97,7 +97,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
             {r.download_url && (
               <a
                 href={r.download_url}
-                className="obc-btn obc-btn-primary"
+                className="rs-button rs-button-primary"
                 rel="noopener noreferrer"
                 target="_blank"
               >
@@ -106,7 +106,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
             )}
             <button
               type="button"
-              className="obc-btn"
+              className="rs-button"
               disabled={regenerate.isPending}
               onClick={() => regenerate.mutate(r.id)}
             >
@@ -123,29 +123,29 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         {incident.isLoading ? (
           <RowsSkeleton rows={3} cols={2} />
         ) : incident.isError || !inc ? (
-          <div className="bg-[var(--obc-base)] px-4 py-4">
+          <div className="bg-rs-elevated px-4 py-4">
             <dl>
               <Row label="Incident" mono>
                 {incidentCode(r.incident_id)}
               </Row>
               <Row label="Detail" mono>
-                <span className="text-[var(--obc-text-4)]">
+                <span className="text-rs-text-tertiary">
                   incident could not be loaded in this session
                 </span>
               </Row>
             </dl>
           </div>
         ) : (
-          <div className="bg-[var(--obc-base)]">
-            <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--obc-line)] px-4 py-3">
+          <div className="bg-rs-elevated">
+            <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rs-border-subtle px-4 py-3">
               <span className="flex flex-wrap items-baseline gap-4">
                 <Link
                   href={`/incidents/${inc.id}`}
-                  className="obc-mono text-[var(--obc-signal)] hover:underline"
+                  className="rs-mono text-rs-brand hover:underline"
                 >
                   {incidentCode(inc.id, inc.display_id)}
                 </Link>
-                <span className="text-[13px] text-[var(--obc-text)]">
+                <span className="text-[13px] text-rs-text">
                   {inc.title || inc.root_cause}
                 </span>
               </span>
@@ -166,7 +166,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
                   {dep.data ? (
                     <span className="break-all">{dep.data.endpoint_url}</span>
                   ) : (
-                    <span className="text-[var(--obc-text-4)]">not available</span>
+                    <span className="text-rs-text-tertiary">not available</span>
                   )}
                 </Row>
                 <Row label="Severity" mono>
@@ -181,7 +181,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
                   {inc.resolved_at ? (
                     formatUtc(inc.resolved_at, 'yyyy-MM-dd HH:mm:ss')
                   ) : (
-                    <span className="text-[var(--obc-text-4)]">still open</span>
+                    <span className="text-rs-text-tertiary">still open</span>
                   )}
                 </Row>
                 <Row label="Duration" mono>
@@ -198,18 +198,18 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         hint="The recorded events this document is built from. Timestamps are UTC as captured at the RELIASTRA observation point."
       >
         {inc?.timeline?.length ? (
-          <ol className="border border-[var(--obc-line)]">
+          <ol className="border border-rs-border-subtle">
             {inc.timeline.map((e) => (
               <li
                 key={e.id}
-                className="grid grid-cols-[190px_1fr_auto] items-baseline gap-x-4 border-b border-[var(--obc-line)] px-3.5 py-2.5 last:border-b-0"
+                className="grid grid-cols-[190px_1fr_auto] items-baseline gap-x-4 border-b border-rs-border-subtle px-3.5 py-2.5 last:border-b-0"
               >
-                <span className="obc-mono text-[var(--obc-text)]">
+                <span className="rs-mono text-rs-text">
                   {formatUtc(e.timestamp, 'yyyy-MM-dd HH:mm:ss')}
                 </span>
-                <span className="text-[12.5px] text-[var(--obc-text-2)]">{e.description}</span>
+                <span className="text-[12.5px] text-rs-text-secondary">{e.description}</span>
                 {e.metric && (
-                  <span className="obc-mono text-right text-[var(--obc-signal)]">{e.metric}</span>
+                  <span className="rs-mono text-right text-rs-brand">{e.metric}</span>
                 )}
               </li>
             ))}
@@ -228,30 +228,30 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         title="Attribution"
         hint="How the fault was attributed to the external dependency."
       >
-        <div className="bg-[var(--obc-base)] px-4 py-2">
+        <div className="bg-rs-elevated px-4 py-2">
           <dl>
             <Row label="Method" mono>
               {inc?.correlations?.[0]?.correlation_method ?? (
-                <span className="text-[var(--obc-text-4)]">not recorded</span>
+                <span className="text-rs-text-tertiary">not recorded</span>
               )}
             </Row>
             <Row label="Correlation confidence" mono>
               {inc?.correlations?.[0]
                 ? `${(inc.correlations[0].correlation_confidence * 100).toFixed(0)}%`
                 : r.confidence ?? (
-                    <span className="text-[var(--obc-text-4)]">not recorded</span>
+                    <span className="text-rs-text-tertiary">not recorded</span>
                   )}
             </Row>
             <Row label="Correlation window" mono>
               {inc?.correlations?.[0] ? (
                 `${inc.correlations[0].time_window_seconds}s`
               ) : (
-                <span className="text-[var(--obc-text-4)]">not recorded</span>
+                <span className="text-rs-text-tertiary">not recorded</span>
               )}
             </Row>
           </dl>
         </div>
-        <p className="mt-2 text-[11.5px] text-[var(--obc-text-4)]">
+        <p className="mt-2 text-[11.5px] text-rs-text-tertiary">
           Confidence is the detector&apos;s own correlation score for this incident. RELIASTRA does
           not estimate a figure where the detector did not produce one.
         </p>
@@ -261,7 +261,7 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         title="Integrity"
         hint="What makes this record checkable by a third party."
       >
-        <div className="bg-[var(--obc-base)] px-4 py-2">
+        <div className="bg-rs-elevated px-4 py-2">
           <dl>
             <Row label="Checksum" mono>
               <span className="break-all">{r.checksum}</span>
@@ -288,14 +288,14 @@ export function EvidenceRecordPage({ id }: { id: string }) {
         title="Share and export"
         hint="A share link resolves to the public verification page, which confirms the checksum without exposing the workspace."
       >
-        <div className="bg-[var(--obc-base)] px-4 py-4">
+        <div className="bg-rs-elevated px-4 py-4">
           {shareUrl ? (
             <>
-              <p className="obc-mono break-all text-[var(--obc-text-2)]">{shareUrl}</p>
+              <p className="rs-mono break-all text-rs-text-secondary">{shareUrl}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="obc-btn obc-btn-sm"
+                  className="rs-button rs-button-sm"
                   onClick={async () => {
                     await navigator.clipboard.writeText(shareUrl);
                     setCopied(true);
@@ -304,13 +304,13 @@ export function EvidenceRecordPage({ id }: { id: string }) {
                 >
                   {copied ? 'Link copied' : 'Copy verification link'}
                 </button>
-                <Link href={`/reports/${r.share_token}`} className="obc-btn obc-btn-sm">
+                <Link href={`/reports/${r.share_token}`} className="rs-button rs-button-sm">
                   Open verification page
                 </Link>
               </div>
             </>
           ) : (
-            <p className="obc-body">
+            <p className="rs-body">
               No share token has been issued for this record. Download the record to distribute it,
               or regenerate it to request a verification link.
             </p>
