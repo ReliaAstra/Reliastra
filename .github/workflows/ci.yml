@@ -69,6 +69,15 @@ jobs:
         working-directory: frontend
         run: npx tsc --noEmit --skipLibCheck
 
+      # The frontend suite is the only thing that checks the transcriptions
+      # against their sources of truth - CLI flags against cli/, methodology
+      # numbers against the contract, and (docs-namespace-routing) the deployed
+      # Caddyfile's routing of the public documentation namespace. Lint and
+      # tsc pass on a route table that nothing serves; these tests do not.
+      - name: Test (frontend)
+        working-directory: frontend
+        run: npm test
+
       - name: Alembic check (no model drift)
         working-directory: backend
         run: |

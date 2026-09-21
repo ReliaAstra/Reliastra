@@ -10,6 +10,19 @@
  *
  * Blocks are deliberately few. Every one of these renders, and a guide that
  * needs something else should reconsider whether it needs it.
+ *
+ * The corpus feeds four surfaces, and `lib/docs/markdown.ts` is the renderer
+ * for the two machine-readable ones:
+ *   1. `app/docs/[slug]/page.tsx`    - the rendered guide (components/docs/doc-blocks.tsx)
+ *   2. `components/docs/docs-side-nav.tsx` - the navigation
+ *   3. `app/docs-md/[slug]/route.ts` - `/docs/<slug>.md`, plain Markdown
+ *   4. `app/llms-full.txt/route.ts`  - the whole corpus, inlined
+ *
+ * Adding a variant to `DocBlock` therefore has four places to satisfy. The
+ * Markdown renderer ends its switch on a `never` assertion, so a new variant
+ * fails the build there rather than silently vanishing from both
+ * machine-readable surfaces - and `__tests__/docs-markdown.test.ts` asserts
+ * every field of every variant reaches the output.
  */
 
 export type DocBlock =

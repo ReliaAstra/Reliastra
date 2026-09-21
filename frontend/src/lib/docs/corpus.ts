@@ -1386,13 +1386,92 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
         heading: 'Credentials',
         blocks: [
           {
+            kind: 'p',
+            text: 'Each credential class is protected by the mechanism that fits it. Nothing here is a hash of a value RELIASTRA can later read back, except the dependency headers, which are encrypted rather than hashed because the probe has to send them.',
+          },
+          {
+            kind: 'fields',
+            items: [
+              {
+                field: 'Secret request headers',
+                type: 'Fernet',
+                def: 'Encrypted at rest with Fernet (AES-128-CBC authenticated with HMAC-SHA256) under a key held in configuration, not in the database. Stored as an opaque ciphertext column; reads report `has_headers` only. Encryption rather than hashing, because the probe must send the real value on every check.',
+              },
+              {
+                field: 'API keys',
+                type: 'SHA-256 + prefix',
+                def: 'Stored as a display prefix plus a SHA-256 hash, with a scope list, an optional expiry and a last-used timestamp. The full value is returned exactly once, at creation; there is no path that reads it back, so a lost key is replaced, not recovered.',
+              },
+              {
+                field: 'Passwords',
+                type: 'bcrypt',
+                def: 'Hashed, never stored or logged in plaintext.',
+              },
+              {
+                field: 'Session refresh tokens',
+                type: 'rotating',
+                def: 'Short-lived, and rotated on every refresh. Presenting an already-revoked refresh token is treated as theft, not as a retry: the whole token family is revoked, so a stolen token that is replayed after the legitimate client has moved on ends the session rather than extending it.',
+              },
+              {
+                field: 'Verification tokens',
+                type: 'capability',
+                def: 'Carry capability for one artifact. They are unguessable, and regenerating a record supersedes the old one.',
+              },
+              {
+                field: 'Admin surfaces',
+                type: 'separate',
+                def: 'Authenticated on a different path with a different token audience from customer accounts. A customer session cannot be presented to the admin surface.',
+              },
+            ],
+          },
+          {
+            kind: 'note',
+            tone: 'warn',
+            title: 'Scopes are enforced per request',
+            text: 'An API key carries the scopes it was created with, and the API checks them on the request rather than at the door. A key with `read:checks` cannot read incidents, and narrowing a key is the right response to a script that only needs one thing.',
+          },
+        ],
+      },
+      {
+        id: 'transport',
+        heading: 'In transit',
+        blocks: [
+          {
             kind: 'list',
             items: [
-              'API keys are stored as a prefix plus a hash. The full value is returned exactly once, at creation.',
-              'Session tokens are short-lived and rotated on refresh.',
-              'Verification tokens carry capability for one artifact. They are unguessable and revocable by regenerating the record.',
-              'Admin surfaces are on a separate authentication path from customer accounts.',
+              'Every public surface is HTTPS only. HTTP is redirected, and the apex sets `Strict-Transport-Security` with `includeSubDomains` and `preload` at a one-year max-age.',
+              'Credentialed CORS is never paired with a wildcard origin. The browser refuses that combination outright, so the API is configured with an explicit origin list - which also means an unknown origin cannot read an authenticated response.',
+              'Credential values are write-only over the API. A header secret you configure cannot be read back by any response, so it does not travel back out over a connection it did not need to cross.',
             ],
+          },
+        ],
+      },
+      {
+        id: 'retention',
+        heading: 'Retention',
+        blocks: [
+          {
+            kind: 'definitions',
+            items: [
+              {
+                term: 'Evidence artifacts',
+                def: 'Retained 365 days from generation, then expired. The window is a configured value, and the public verification URL for a record stops resolving when the record does.',
+              },
+              {
+                term: 'Observations',
+                def: 'Kept for the retention window your plan carries. Reducing a plan does not delete history already inside the window.',
+              },
+              {
+                term: 'Public incident records',
+                def: 'Published for the evidence-retention window and then removed. The observatory describes these pages as expiring rather than permanent, because they are.',
+              },
+            ],
+          },
+          {
+            kind: 'note',
+            tone: 'info',
+            title: 'A retention figure that disagreed with the code',
+            text: 'Retention was once hard-coded at 90 days while the documentation said 365. The code now reads the configured value and the two are checked against each other, because a retention promise a customer relies on is exactly the kind of number that must not drift.',
           },
         ],
       },

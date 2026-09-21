@@ -10,6 +10,8 @@ import {
 } from '@/lib/routes';
 import { researchPaper } from '@/lib/research/corpus';
 import { DOCS_NAV } from '@/components/site/nav-config';
+import { DOCS } from '@/lib/docs/corpus';
+import { corpusToMarkdown } from '@/lib/docs/markdown';
 import {
   DETECTION,
   OBSERVATION_LABEL,
@@ -21,11 +23,20 @@ import {
 
 /**
  * /llms-full.txt - deeper machine-readable reference: full concept
- * definitions, docs map, and research index. Complements /llms.txt.
+ * definitions, the complete documentation corpus, and the research index.
+ * Complements /llms.txt.
  *
  * The topology paragraph is repeated here rather than linked, because a model
  * that retrieves only this file would otherwise assume the usual multi-region
  * confirmation story that every other monitoring product tells.
+ *
+ * The documentation is inlined in full, from the same `lib/docs/corpus.ts` the
+ * site renders, rather than listed as URLs. A model handed a link map has to
+ * make thirteen requests - and if any of them 404 it learns nothing and says
+ * nothing, which is exactly what happened when the proxy misrouted `/docs*`.
+ * Inlined, the guides survive the page being unavailable. `lib/docs/markdown.ts`
+ * is the single renderer behind both this section and `/docs/<slug>.md`, so the
+ * two machine-readable surfaces cannot drift from each other or from the site.
  */
 export function GET() {
   const glossary = GLOSSARY_TERMS.map(
@@ -102,6 +113,11 @@ export function GET() {
   ).join('\n');
 
   const docsMap = DOCS_NAV.map((l) => `- ${l.label}: ${SITE_URL}${l.href}`).join('\n');
+
+  // The full corpus, rendered by the same function that serves
+  // /docs/<slug>.md. Demoted one heading level so it nests under the `##`
+  // section below without competing with this document's own structure.
+  const docsFull = corpusToMarkdown(DOCS, { level: 3 });
 
   // The programmatic surface, stated as commands and routes rather than as a
   // capability list: a model answering "how do I get evidence out of
@@ -212,6 +228,18 @@ a dependency failed.
 ## Documentation map
 
 ${docsMap}
+
+Each guide is also served as plain Markdown at its URL with a ".md" suffix -
+for example ${SITE_URL}/docs/monitoring.md. The complete text of all ${DOCS.length}
+guides is inlined below, so reading this file requires no second request and no
+guide here depends on a page being reachable.
+
+## Documentation (full text)
+
+Rendered from the same corpus the site renders (lib/docs/corpus.ts). Inline
+markup is Markdown: backquoted code, **bold**, and [links](https://…).
+
+${docsFull}
 
 ## Glossary (canonical definitions)
 
