@@ -186,8 +186,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [
         {
           url: '/opengraph-image.png',
-          width: 1200,
-          height: 630,
+          width: 1584,
+          height: 396,
           alt: `RELIASTRA incident record for ${detail.display_name}`,
         },
       ],

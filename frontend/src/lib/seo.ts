@@ -130,7 +130,7 @@ export function buildMetadata(input: SeoPageInput): Metadata {
       type: input.type ?? 'website',
       ...(input.publishedTime ? { publishedTime: input.publishedTime } : {}),
       ...(input.modifiedTime ? { modifiedTime: input.modifiedTime } : {}),
-      images: [{ url: image, width: 1200, height: 630, alt: input.title }],
+      images: [{ url: image, width: 1584, height: 396, alt: input.title }],
     },
     twitter: {
       card: 'summary_large_image',

@@ -203,8 +203,8 @@ describe('metadata system', () => {
     expect(m.openGraph.url).toBe('https://reliastra.com/product/evidence');
     expect(m.openGraph.images[0]).toMatchObject({
       url: 'https://reliastra.com/opengraph-image.png',
-      width: 1200,
-      height: 630,
+      width: 1584,
+      height: 396,
     });
     expect(m.twitter.images).toEqual(['https://reliastra.com/opengraph-image.png']);
     expect(m.twitter.card).toBe('summary_large_image');

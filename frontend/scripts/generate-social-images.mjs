@@ -3,10 +3,17 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 // The email avatar still uses the supplied silver wordmark interpretation.
-// The social cards use the public site's actual identity: a restrained
+// The social square uses the public site's actual identity: a restrained
 // typographic lockup, an obsidian field, hairline instrumentation, and one
 // amber signal. The composition is deliberately asymmetrical so it reads like
 // an infrastructure system rather than a centred marketing poster.
+//
+// The site-wide share image (src/app/opengraph-image.png, 1584x396) is NOT
+// generated here anymore. Its source of truth is design/linkedin-banner/
+// (banner.svg + generate.cjs, THEME=light). To update it, run
+// `THEME=light node design/linkedin-banner/generate.cjs` and copy
+// banner-1584x396.png over src/app/opengraph-image.png and banner.svg over
+// public/social/reliastra-og.svg.
 const glyphs = {
   R: '<path d="M0 0H76Q100 0 100 22Q100 44 76 44H63L100 70H76L29 32H74Q85 32 85 22Q85 12 74 12H12Z"/>',
   E: '<path d="M0 0H100V13H0ZM0 28H100V41H0ZM0 57H100V70H0Z"/>',
@@ -194,15 +201,12 @@ await mkdir(`${root}public/social`, { recursive: true });
 const only = process.argv.slice(2);
 const wanted = (name) => only.length === 0 || only.includes(name);
 
-for (const square of [false, true]) {
-  const name = square ? 'reliastra-social-square' : 'reliastra-og';
-  if (!wanted(name)) continue;
-  const svg = artwork(square);
-  await writeFile(`${root}public/social/${name}.svg`, svg);
+if (wanted('reliastra-social-square')) {
+  const svg = artwork(true);
+  await writeFile(`${root}public/social/reliastra-social-square.svg`, svg);
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
-  const target = square ? 'public/social/reliastra-social-square.png' : 'src/app/opengraph-image.png';
-  await writeFile(`${root}${target}`, png);
-  console.log(`${target}: ${(png.length / 1024).toFixed(0)} KB`);
+  await writeFile(`${root}public/social/reliastra-social-square.png`, png);
+  console.log(`public/social/reliastra-social-square.png: ${(png.length / 1024).toFixed(0)} KB`);
 }
 
 if (wanted('reliastra-email-avatar')) {

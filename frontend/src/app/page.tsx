@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     url: SITE_URL + '/',
     siteName: 'RELIASTRA',
     type: 'website',
-    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1200, height: 630, alt: 'RELIASTRA - observe external dependencies' }],
+    images: [{ url: `${SITE_URL}/opengraph-image.png`, width: 1584, height: 396, alt: 'AI Infrastructure Security - cloud, Kubernetes, AI systems' }],
   },
   twitter: {
     card: 'summary_large_image',
