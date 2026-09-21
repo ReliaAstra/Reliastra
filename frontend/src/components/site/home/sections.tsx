@@ -60,7 +60,7 @@ export function ReferenceSection() {
       <Container>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] lg:gap-20">
           <div className="flex flex-col gap-5">
-            <Eyebrow index="10">Reference</Eyebrow>
+            <Eyebrow>Questions, answered</Eyebrow>
             <h2 id="reference-title" className="ob-h2 max-w-[16ch]">
               The questions, answered the way the system answers them.
             </h2>
@@ -95,7 +95,7 @@ export function MaintainerSection() {
       <Container>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.68fr)_minmax(0,1.32fr)] lg:gap-20">
           <div className="flex flex-col gap-5">
-            <Eyebrow index="11">Who builds this</Eyebrow>
+            <Eyebrow>Who builds this</Eyebrow>
             <h2 id="maintainer-title" className="ob-h2 max-w-[16ch]">
               One engineer, and a public repository.
             </h2>
@@ -116,19 +116,19 @@ export function MaintainerSection() {
 
             <div className="border-t border-[var(--ob-line)] pt-6">
               <p className="ob-label mb-4">Where the network is going</p>
-              <ol className="grid gap-px sm:grid-cols-2">
-                {NETWORK_DIRECTION.map((step, i) => (
-                  <li
-                    key={step}
-                    className="flex items-baseline gap-3 border-t border-[var(--ob-line)] py-3"
-                  >
-                    <span className="ob-label shrink-0">{String(i + 1).padStart(2, '0')}</span>
-                    <span className="text-[13px] leading-[1.6] text-[var(--ob-text-3)]">
+              <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
+                {NETWORK_DIRECTION.map((step) => (
+                  <li key={step} className="flex items-start gap-3 py-1.5">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ob-line-3)]"
+                    />
+                    <span className="text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
                       {step}
                     </span>
                   </li>
                 ))}
-              </ol>
+              </ul>
               <p className="ob-small mt-4 max-w-[58ch]">
                 The first step is the product. The rest is described as
                 direction, not as capability: nothing above is measured,
@@ -163,7 +163,7 @@ export function FinalCTASection() {
       </div>
       <Container className="relative z-[1] flex min-h-[62vh] flex-col justify-center py-28 md:py-36">
         <p className="ob-label mb-7">Begin</p>
-        <h2 id="final-cta-title" className="ob-scene-title max-w-[15ch]">
+        <h2 id="final-cta-title" className="ob-scene-title max-w-[24ch]">
           Add one dependency you already own.
         </h2>
         <p className="ob-lede mt-7 max-w-[46ch]">

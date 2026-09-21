@@ -250,7 +250,7 @@ function Attribution({ incident, depName }: { incident: IncidentDetail; depName?
       title="Attribution"
       hint="Which side of the boundary the fault sits on, and what supports that conclusion."
     >
-      <div className="grid gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] md:grid-cols-2">
+      <div className="grid gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] md:grid-cols-2">
         <div className="bg-[var(--obc-base)] p-4">
           <p className="obc-label">Your service</p>
           <p className="mt-2 text-[13px] text-[var(--obc-text-2)]">
@@ -443,7 +443,7 @@ function Observations({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] md:grid-cols-4">
             {[
               { label: 'Observations', value: stats.observations },
               { label: 'Failed checks', value: stats.failed, state: stats.failed ? ('crit' as const) : undefined },

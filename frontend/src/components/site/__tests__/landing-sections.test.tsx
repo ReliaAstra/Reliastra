@@ -66,3 +66,23 @@ describe('homepage section anchors', () => {
     }
   });
 });
+
+describe('marketing voice, not document voice', () => {
+  /**
+   * The landing page used to number its sections ("01 - The problem",
+   * "02 - Observe") with a hairline rule between the index and the word,
+   * which made a product page read like a technical manual. These guards
+   * keep the numbering, the poster-scale menu type and the uppercase
+   * section spines out of the marketing surface.
+   */
+  it('renders no two-digit section index spine', async () => {
+    const html = await renderLanding();
+    expect(html).not.toMatch(/<span[^>]*>\s*0[1-9]\s*<\/span>/);
+  });
+
+  it('labels sections with sentence-case eyebrows, not mono caps indices', async () => {
+    const html = await renderLanding();
+    expect(html).toContain('ob-eyebrow');
+    expect(html).not.toContain('text-[28px]');
+  });
+});

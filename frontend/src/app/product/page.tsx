@@ -133,7 +133,7 @@ export default function ProductPage() {
       <Section tone="void" divider={false} aria-labelledby="pipeline-title">
         <Container>
           <div className="flex flex-col gap-6 pb-12">
-            <Eyebrow index="01">The pipeline</Eyebrow>
+            <Eyebrow>The pipeline</Eyebrow>
             <h2 id="pipeline-title" className="ob-scene-title max-w-[14ch]">
               Four steps. No guessing.
             </h2>
@@ -161,7 +161,7 @@ export default function ProductPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="02">Observation</Eyebrow>
+              <Eyebrow>Observation</Eyebrow>
               <h2 id="obs-title" className="ob-h2 max-w-[18ch]">
                 What a probe records, and nothing more.
               </h2>
@@ -223,7 +223,7 @@ export default function ProductPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-20">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="03">Confirmation</Eyebrow>
+              <Eyebrow>Confirmation</Eyebrow>
               <h2 id="confirm-title" className="ob-h2 max-w-[18ch]">
                 Persistence is the honest signal when there is one vantage
                 point.
@@ -288,7 +288,7 @@ export default function ProductPage() {
         <Container>
           <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="04">Attribution</Eyebrow>
+              <Eyebrow>Attribution</Eyebrow>
               <h2 id="attr-title" className="ob-h2 max-w-[18ch]">
                 Arithmetic, printed with its weights.
               </h2>
@@ -361,7 +361,7 @@ export default function ProductPage() {
         <Container>
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-20">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="05">Scope</Eyebrow>
+              <Eyebrow>Scope</Eyebrow>
               <h2 id="limits-title" className="ob-h2 max-w-[16ch]">
                 What this product does not do.
               </h2>
@@ -396,7 +396,7 @@ export default function ProductPage() {
         <Container>
           <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="06">Integrate</Eyebrow>
+              <Eyebrow>Integrate</Eyebrow>
               <h2 id="integrate-title" className="ob-h2 max-w-[18ch]">
                 Reach it from where the work already happens.
               </h2>

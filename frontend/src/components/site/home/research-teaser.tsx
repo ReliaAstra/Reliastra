@@ -31,7 +31,7 @@ export function ResearchTeaser() {
       <Container className="py-24 md:py-32">
         <div className="flex flex-col gap-9 pb-14 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-col gap-7">
-            <Eyebrow index="07">Research</Eyebrow>
+            <Eyebrow>Published research</Eyebrow>
             <h2 id="research-title" className="ob-scene-title max-w-[14ch]">
               The method is published.
             </h2>

@@ -21,13 +21,13 @@ import {
 } from '@/lib/dashboard/format';
 import {
   Empty,
-  Fact,
   Failure,
   PageHead,
   Readout,
   RowsSkeleton,
   Section,
   SectionLink,
+  StatCard,
   State,
   toState,
 } from '@/components/console/primitives';
@@ -78,31 +78,43 @@ export function OverviewPage() {
       <PageHead
         eyebrow="Workspace"
         title={org?.name ?? 'Overview'}
-        meta={
-          <>
-            <Fact
-              label="Monitored"
-              value={
-                limit != null ? `${monitored} / ${limit}` : String(monitored)
-              }
-            />
-            <Fact
-              label="Availability 24h"
-              value={formatUptime(summary.data?.overall_uptime_percentage)}
-            />
-            <Fact
-              label="Open incidents"
-              value={String(active.length)}
-              state={active.length > 0 ? 'crit' : undefined}
-            />
-          </>
-        }
+        description="What RELIASTRA is observing right now, what is degraded, and the evidence already on file."
         actions={
           <button type="button" onClick={handleAdd} className="obc-btn obc-btn-primary">
             Add dependency
           </button>
         }
       />
+
+      {/* First-screen anchor: four measured facts, each with plain-language
+          context. Values come straight from the workspace queries. */}
+      <div className="obc-card-row mt-6">
+        <StatCard
+          label="Monitored"
+          value={limit != null ? `${monitored} / ${limit}` : monitored}
+          sub={
+            limit != null
+              ? `of ${limit} dependencies on your plan`
+              : 'dependencies under observation'
+          }
+        />
+        <StatCard
+          label="Availability 24h"
+          value={formatUptime(summary.data?.overall_uptime_percentage)}
+          sub="measured across all monitored endpoints"
+        />
+        <StatCard
+          label="Open incidents"
+          value={active.length}
+          state={active.length > 0 ? 'crit' : 'ok'}
+          sub={active.length > 0 ? 'need attention now' : 'nothing open right now'}
+        />
+        <StatCard
+          label="Evidence records"
+          value={evidence.data?.length ?? 0}
+          sub="signed reports you can hand over"
+        />
+      </div>
 
       {isEmptyWorkspace ? (
         <div className="obc-section">
@@ -184,9 +196,9 @@ export function OverviewPage() {
                 body="An evidence record is generated when an incident is confirmed. Each one carries the observations underneath it and a checksum you can verify."
               />
             ) : (
-              <ul className="border border-[var(--obc-line)]">
+              <ul className="divide-y divide-[var(--obc-line)]">
                 {evidence.data.slice(0, 4).map((e) => (
-                  <li key={e.id} className="border-b border-[var(--obc-line)] last:border-b-0">
+                  <li key={e.id}>
                     <Link
                       href={`/evidence/${e.id}`}
                       className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-3 py-2.5 hover:bg-[var(--obc-raised)]"
@@ -237,7 +249,7 @@ function ActiveIncidents({
       ) : error ? (
         <Failure body="Open incidents could not be retrieved." onRetry={onRetry} />
       ) : incidents.length === 0 ? (
-        <p className="border border-[var(--obc-line)] px-4 py-4 text-[12.5px]">
+        <p className="px-4 py-4 text-[13px]">
           <span className="obc-state" data-state="ok">
             <span className="obc-dot" aria-hidden />
             <span>No active incidents</span>
@@ -247,11 +259,11 @@ function ActiveIncidents({
           </span>
         </p>
       ) : (
-        <ul className="border border-[var(--obc-crit)]/30">
+        <ul className="divide-y divide-[var(--obc-crit)]/25">
           {incidents.map((inc) => (
             <li
               key={inc.id}
-              className="border-b border-[var(--obc-line)] bg-[var(--obc-crit-wash)] last:border-b-0"
+              className="bg-[var(--obc-crit-wash)]"
             >
               <Link
                 href={`/incidents/${inc.id}`}

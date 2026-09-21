@@ -108,7 +108,7 @@ export default function EvidenceProductPage() {
         <Container>
           <div className="flex flex-col gap-6 border-b border-[var(--ob-line)] pb-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="01">The finding</Eyebrow>
+              <Eyebrow>The finding</Eyebrow>
               <h2 id="figures-title" className="ob-h2 max-w-[18ch]">
                 Four figures before the sections that substantiate them.
               </h2>
@@ -141,7 +141,7 @@ export default function EvidenceProductPage() {
       <Section tone="raised" aria-labelledby="sections-title">
         <Container>
           <div className="flex flex-col gap-5">
-            <Eyebrow index="02">Contents</Eyebrow>
+            <Eyebrow>Contents</Eyebrow>
             <h2 id="sections-title" className="ob-h2 max-w-[20ch]">
               Ten sections, and the fields in each.
             </h2>
@@ -192,7 +192,7 @@ export default function EvidenceProductPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="03">Integrity</Eyebrow>
+              <Eyebrow>Integrity</Eyebrow>
               <h2 id="integrity-title" className="ob-h2 max-w-[18ch]">
                 Three separate things are being proved.
               </h2>
@@ -263,7 +263,7 @@ export default function EvidenceProductPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="04">What it establishes</Eyebrow>
+              <Eyebrow>What it establishes</Eyebrow>
               <ul className="flex flex-col gap-4">
                 {EVIDENCE_CAN.map((line) => (
                   <li key={line} className="flex gap-4 border-t border-[var(--ob-line)] pt-5">
@@ -278,7 +278,7 @@ export default function EvidenceProductPage() {
               </ul>
             </div>
             <div className="flex flex-col gap-6">
-              <Eyebrow index="05">What it does not</Eyebrow>
+              <Eyebrow>What it does not</Eyebrow>
               <ul className="flex flex-col gap-4">
                 {EVIDENCE_CANNOT.map((line) => (
                   <li key={line} className="flex gap-4 border-t border-[var(--ob-line)] pt-5">

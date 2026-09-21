@@ -226,7 +226,7 @@ export default function AboutPage() {
       <Section tone="void" tight aria-labelledby="work-title">
         <Container>
           <div className="flex flex-col gap-5">
-            <Eyebrow index="01">Public work</Eyebrow>
+            <Eyebrow>Public work</Eyebrow>
             <h2 id="work-title" className="ob-h2 max-w-[20ch]">
               The engineering is inspectable, which is the point.
             </h2>
@@ -269,7 +269,7 @@ export default function AboutPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="02">Why it exists</Eyebrow>
+              <Eyebrow>Why it exists</Eyebrow>
               <h2 id="why-title" className="ob-h2 max-w-[16ch]">
                 The argument nobody could settle.
               </h2>
@@ -306,7 +306,7 @@ export default function AboutPage() {
         <Container>
           <div className="grid gap-14 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="03">What it refuses to claim</Eyebrow>
+              <Eyebrow>What it refuses to claim</Eyebrow>
               <h2 id="refuses-title" className="ob-h2 max-w-[16ch]">
                 Written down, so it stays true.
               </h2>
@@ -339,7 +339,7 @@ export default function AboutPage() {
       <Section tone="base" aria-labelledby="direction-title">
         <Container>
           <div className="flex flex-col gap-5">
-            <Eyebrow index="04">Direction</Eyebrow>
+            <Eyebrow>Direction</Eyebrow>
             <h2 id="direction-title" className="ob-h2 max-w-[22ch]">
               What exists today, and what is being built toward.
             </h2>

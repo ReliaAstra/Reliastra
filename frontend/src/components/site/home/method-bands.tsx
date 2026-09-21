@@ -12,16 +12,19 @@ import {
 import { DOCS_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 /**
- * The method, in three large editorial bands. Each band is one verb the
- * product performs, one short explanation, and one technical visual that
- * shows the working. The visuals are the same server-rendered figures the
- * product pages use: illustrative values, real schema, marked as such.
+ * The method, in three bands. Each band is one thing the product does for
+ * you, said in a sentence a buyer repeats in a meeting, plus the technical
+ * visual that proves the sentence. The visuals are the same server-rendered
+ * figures the product pages use: illustrative values, real schema, marked
+ * as such.
+ *
+ * Bands are sized as sections, not as chapters: no numbered spine, no
+ * full-viewport minimum height, no uppercase poster titles.
  */
 
 function Band({
   id,
-  index,
-  verb,
+  eyebrow,
   title,
   copy,
   visual,
@@ -29,8 +32,7 @@ function Band({
   labelledBy,
 }: {
   id: string;
-  index: string;
-  verb: string;
+  eyebrow: string;
   title: string;
   copy: string;
   visual: React.ReactNode;
@@ -43,13 +45,13 @@ function Band({
       aria-labelledby={labelledBy}
       className="relative overflow-hidden border-t border-[var(--ob-line)] bg-[var(--ob-void)]"
     >
-      <Container className="grid min-h-[70vh] content-center gap-14 py-24 md:py-32 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:gap-20">
-        <div className="flex flex-col gap-7">
-          <Eyebrow index={index}>{verb}</Eyebrow>
-          <h2 id={labelledBy} className="ob-scene-title max-w-[12ch]">
+      <Container className="grid content-center gap-12 py-20 md:py-24 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+        <div className="flex flex-col gap-5">
+          <Eyebrow>{eyebrow}</Eyebrow>
+          <h2 id={labelledBy} className="ob-scene-title max-w-[22ch]">
             {title}
           </h2>
-          <p className="ob-body-lg max-w-[48ch]">{copy}</p>
+          <p className="ob-body-lg max-w-[52ch]">{copy}</p>
           {links && <SceneLinks items={links} />}
         </div>
         <div className="ob-band-visual lg:pt-4">{visual}</div>
@@ -63,10 +65,9 @@ export function ObserveBand() {
     <Band
       id="observation"
       labelledBy="observation-title"
-      index="02"
-      verb="Observe"
-      title="Independent checks, outside your network and the vendor's."
-      copy={`Probes run every ${PROBE_INTERVAL_SECONDS} seconds from infrastructure that is neither yours nor the vendor's, and every probe leaves a row: timestamp, status, latency, verdict. ${OBSERVATION_LABEL} is the single observation point today, printed on the records it produces.`}
+      eyebrow="Continuous observation"
+      title="See what your dependencies are actually doing."
+      copy={`Every endpoint you register is checked every ${PROBE_INTERVAL_SECONDS} seconds from infrastructure that is neither yours nor the vendor's. Each check writes a row you keep: timestamp, status, latency, verdict. ${OBSERVATION_LABEL} is the observation point today, and every record says so.`}
       visual={<LatencyChart />}
       links={[
         { href: DOCS_ROUTES.monitoring, label: 'Monitoring docs' },
@@ -81,14 +82,13 @@ export function CorrelateBand() {
     <Band
       id="correlation"
       labelledBy="correlation-title"
-      index="03"
-      verb="Correlate"
-      title="Dependency behaviour, aligned with your incident window."
-      copy={`Failing checks are replayed against the strict clock of the observations: ${DETECTION.failureChecks} consecutive failures open the incident, ${DETECTION.recoveryChecks} consecutive successes resolve it, and the rule identifier travels with the record. One dropped probe is recorded, not declared.`}
+      eyebrow="Incident correlation"
+      title="Their outage and your incident, on one timeline."
+      copy={`Failed checks are replayed against your incident window. ${DETECTION.failureChecks} consecutive failures open an incident, ${DETECTION.recoveryChecks} consecutive successes close it, and the same rule identifier travels on every record, so anyone can see why an incident was called.`}
       visual={<IncidentTimeline />}
       links={[
         { href: DOCS_ROUTES.incidents, label: 'Incident model' },
-        { href: DOCS_ROUTES.methodology, label: 'The detection rule' },
+        { href: DOCS_ROUTES.methodology, label: 'Detection rule' },
       ]}
     />
   );
@@ -99,10 +99,9 @@ export function ProveBand() {
     <Band
       id="evidence"
       labelledBy="evidence-title"
-      index="05"
-      verb="Prove"
-      title="Timestamped evidence that survives the incident."
-      copy={`A resolved incident becomes an artifact: the window, every observation inside it, the arithmetic behind the availability figures, the attribution verdict with its version, and a SHA-256 checksum over the payload. Written once, retained ${EVIDENCE.retentionDays} days, verifiable by a third party with no account.`}
+      eyebrow="Verifiable evidence"
+      title="Evidence that still verifies after the incident closes."
+      copy={`A resolved incident becomes a signed record: the window, every observation inside it, the availability arithmetic, the attribution verdict, and a SHA-256 checksum over the payload. Retained ${EVIDENCE.retentionDays} days, verifiable by anyone, no account required.`}
       visual={<EvidenceArtifact />}
       links={[
         { href: PUBLIC_ROUTES.productEvidence, label: 'Inside a record' },

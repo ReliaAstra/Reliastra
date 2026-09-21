@@ -88,7 +88,7 @@ export function DataTable<T>({
 
   if (!rows.length) {
     return (
-      <p className="border border-[var(--obc-line)] px-4 py-6 text-[12.5px] text-[var(--obc-text-4)]">
+      <p className="px-4 py-6 text-[13px] text-[var(--obc-text-3)]">
         {emptyLabel}
       </p>
     );
@@ -99,7 +99,7 @@ export function DataTable<T>({
       {/* Dense table: laptop and up */}
       <div
         className={cn(
-          'hidden border border-[var(--obc-line)]',
+          'hidden',
           stackBelow === 'xl' ? 'xl:block' : 'lg:block'
         )}
       >
@@ -185,7 +185,7 @@ export function DataTable<T>({
       {/* Record stack: phone and tablet. Same fields, no sideways scroll. */}
       <ul
         className={cn(
-          'divide-y divide-[var(--obc-line)] border border-[var(--obc-line)]',
+          'divide-y divide-[var(--obc-line)]',
           stackBelow === 'xl' ? 'xl:hidden' : 'lg:hidden'
         )}
       >

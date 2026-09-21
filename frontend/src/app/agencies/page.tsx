@@ -131,7 +131,7 @@ export default function AgenciesPage() {
         <Container>
           <div className="flex flex-col gap-9 pb-14 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-col gap-6">
-              <Eyebrow index="01">The estate</Eyebrow>
+              <Eyebrow>The estate</Eyebrow>
               <h2 id="estate-title" className="ob-scene-title max-w-[15ch]">
                 One account. Every client. Their dependencies.
               </h2>
@@ -178,7 +178,7 @@ export default function AgenciesPage() {
       <Section tone="base" aria-labelledby="workflow-title">
         <Container>
           <div className="flex flex-col gap-6 pb-12">
-            <Eyebrow index="02">The work</Eyebrow>
+            <Eyebrow>The work</Eyebrow>
             <h2 id="workflow-title" className="ob-scene-title max-w-[15ch]">
               From estate to deliverable.
             </h2>
@@ -205,7 +205,7 @@ export default function AgenciesPage() {
         <Container>
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-20">
             <div className="flex flex-col gap-5">
-              <Eyebrow index="03">The terms</Eyebrow>
+              <Eyebrow>The terms</Eyebrow>
               <h2 id="agency-terms-title" className="ob-h2 max-w-[16ch]">
                 Same plan, same price, same rules.
               </h2>

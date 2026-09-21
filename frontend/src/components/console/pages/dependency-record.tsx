@@ -261,7 +261,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
         ) : history.isLoading ? (
           <RowsSkeleton rows={1} cols={5} />
         ) : (
-          <div className="grid grid-cols-2 gap-px border border-[var(--obc-line)] bg-[var(--obc-line)] md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[6px] bg-[var(--obc-line)] md:grid-cols-5">
             {[
               {
                 label: 'Availability',
@@ -311,7 +311,7 @@ export function DependencyRecordPage({ id }: { id: string }) {
             body="Checks run on the configured interval. If none appear after one interval, investigate the checking pipeline, not this endpoint."
           />
         ) : (
-          <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] p-4">
+          <div className="bg-[var(--obc-base)] p-4">
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-[13px] text-[var(--obc-text)]">{OBSERVATION_POINT_LABEL}</p>
               <State

@@ -61,8 +61,8 @@ export function ProblemScene() {
     >
       <div className="grid gap-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-20">
         <div className="flex flex-col gap-7">
-          <Eyebrow index="01">The problem</Eyebrow>
-          <h2 id="problem-title" className="ob-scene-title max-w-[13ch]">
+          <Eyebrow>The blind spot</Eyebrow>
+          <h2 id="problem-title" className="ob-scene-title max-w-[24ch]">
             Your monitoring stops at your edge.
           </h2>
           <p className="ob-lede max-w-[44ch]">

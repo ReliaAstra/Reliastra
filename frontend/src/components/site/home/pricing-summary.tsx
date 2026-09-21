@@ -29,8 +29,8 @@ export function PricingSummary() {
       <div className="ob-container py-24 md:py-32 lg:py-36">
         <div className="grid gap-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-20">
           <div className="flex flex-col gap-7">
-            <Eyebrow index="09">Pricing</Eyebrow>
-            <h2 id="pricing-title" className="ob-scene-title max-w-[14ch]">
+            <Eyebrow>Pricing</Eyebrow>
+            <h2 id="pricing-title" className="ob-scene-title max-w-[24ch]">
               One plan. $9 a month.
             </h2>
             <p className="ob-lede max-w-[44ch]">

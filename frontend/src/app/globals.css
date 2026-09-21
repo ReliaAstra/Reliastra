@@ -1326,7 +1326,7 @@
   --ob-text: #F5F5F5;      /* headlines, primary */
   --ob-text-2: #C9CACA;    /* body */
   --ob-text-3: #A0A0A0;    /* secondary, captions */
-  --ob-text-4: #6B6B6B;    /* labels, disabled, metadata */
+  --ob-text-4: #8F8F8F;  /* >=4.6:1 on void: small label text must pass AA */    /* labels, disabled, metadata */
 
   /* Lines */
   --ob-line: rgba(255, 255, 255, 0.09);
@@ -1345,7 +1345,7 @@
   --ob-healthy-wash: rgba(93, 175, 124, 0.12);
   --ob-degraded: #D9A441;
   --ob-degraded-wash: rgba(217, 164, 65, 0.12);
-  --ob-critical: #C8544C;
+  --ob-critical: #DA6A61;
   --ob-critical-wash: rgba(200, 84, 76, 0.12);
   --ob-unknown: #6B6B6B;
 
@@ -1408,6 +1408,16 @@
   background: rgba(255, 255, 255, 0.92);
   color: #000;
 }
+
+/* Keyboard focus is always visible: a 2px offset ring in the interaction
+   accent, on every focusable element in both scopes (WCAG 2.4.7 / 2.4.11). */
+.ob :focus-visible,
+.obc :focus-visible {
+  outline: 2px solid var(--ob-signal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.obc :focus-visible { outline-color: var(--obc-signal); }
 
 /* ── shadcn/radix token bridge ─────────────────────────────────────────────
    Surfaces that still use shadcn primitives (the partner network shell, the
@@ -1498,7 +1508,7 @@
   .ob-section { padding-block: 140px; }
 }
 @media (min-width: 1280px) {
-  .ob-section { padding-block: 172px; }
+  .ob-section { padding-block: 104px; }
 }
 
 .ob-section-tight { padding-block: 64px; }
@@ -1510,50 +1520,50 @@
 
 /* ── Typography ─────────────────────────────────────────────────────────── */
 
-/* The hero voice. Compressed, architectural, set in caps: the headline is
-   treated as a structure, not a sentence. */
+/* The hero voice. A headline is a sentence a person reads, not a structure
+   they decode: sentence case, and a scale that survives a 360px viewport
+   without wrapping into a poster. */
 .ob-display {
-  font-size: clamp(3.25rem, 7vw, 6.875rem);
-  line-height: 0.94;
-  letter-spacing: -0.032em;
+  font-size: clamp(2.25rem, 2.4vw + 1.35rem, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
   font-weight: 650;
-  text-transform: uppercase;
   color: var(--ob-text);
   text-wrap: balance;
 }
 
-/* Scene headline: the second voice, still caps, sized for section scale. */
+/* Scene headline: the second voice, sized for a section rather than a
+   billboard. Sentence case keeps a two-line title readable mid-scroll. */
 .ob-scene-title {
-  font-size: clamp(2.375rem, 5vw, 4.5rem);
-  line-height: 0.97;
-  letter-spacing: -0.028em;
+  font-size: clamp(1.75rem, 1.5vw + 1.05rem, 2.375rem);
+  line-height: 1.16;
+  letter-spacing: -0.02em;
   font-weight: 650;
-  text-transform: uppercase;
   color: var(--ob-text);
   text-wrap: balance;
 }
 
 .ob-h1 {
-  font-size: clamp(2.125rem, 5.5vw, 3.75rem);
-  line-height: 1.04;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.75rem, 1.4vw + 1.1rem, 2.25rem);
+  line-height: 1.15;
+  letter-spacing: -0.022em;
   font-weight: 600;
   color: var(--ob-text);
   text-wrap: balance;
 }
 
 .ob-h2 {
-  font-size: clamp(1.75rem, 3.6vw, 2.875rem);
-  line-height: 1.08;
-  letter-spacing: -0.026em;
+  font-size: clamp(1.375rem, 1vw + 0.95rem, 1.75rem);
+  line-height: 1.22;
+  letter-spacing: -0.018em;
   font-weight: 600;
   color: var(--ob-text);
   text-wrap: balance;
 }
 
 .ob-h3 {
-  font-size: clamp(1.1875rem, 1.9vw, 1.5rem);
-  line-height: 1.24;
+  font-size: clamp(1.0625rem, 0.6vw + 0.85rem, 1.25rem);
+  line-height: 1.3;
   letter-spacing: -0.018em;
   font-weight: 600;
   color: var(--ob-text);
@@ -1568,9 +1578,9 @@
 }
 
 .ob-lede {
-  font-size: clamp(1.0625rem, 1.45vw, 1.3125rem);
-  line-height: 1.55;
-  letter-spacing: -0.011em;
+  font-size: clamp(1rem, 0.5vw + 0.85rem, 1.125rem);
+  line-height: 1.62;
+  letter-spacing: -0.008em;
   color: var(--ob-text-3);
   max-width: 62ch;
 }
@@ -1595,17 +1605,41 @@
   color: var(--ob-text-4);
 }
 
-/* Eyebrow / small uppercase technical label. Used for scene indices, field
-   labels, data captions - never for sentences. */
+/* Small technical label for data captions and field names. Mono and caps
+   are reserved for *data*; section eyebrows use .ob-eyebrow instead. */
 .ob-label {
   font-family: var(--ob-font-mono);
-  font-size: 0.75rem;
-  line-height: 1;
-  letter-spacing: 0.12em;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ob-text-4);
+  color: var(--ob-text-3);
   font-weight: 500;
 }
+
+/* Section eyebrow: a short sentence-case label in the sans face, with a
+   status dot. A product page names its sections the way a person would,
+   not the way a table of contents would. */
+.ob-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ob-font-sans);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+  color: var(--ob-text-3);
+}
+.ob-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ob-signal);
+  flex-shrink: 0;
+}
+.ob-eyebrow-plain::before { display: none; }
 
 .ob-label-signal { color: var(--ob-signal); }
 .ob-label-strong { color: var(--ob-text-2); }
@@ -1649,13 +1683,12 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 44px;
-  padding-inline: 30px;
-  border-radius: 0;
-  font-size: 0.75rem;
+  min-height: 46px;
+  padding-inline: 22px;
+  border-radius: 6px;
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.005em;
   white-space: nowrap;
   border: 1px solid transparent;
   cursor: pointer;
@@ -1696,20 +1729,25 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-.ob-btn-sm { min-height: 38px; padding-inline: 18px; font-size: 0.6875rem; }
+.ob-btn-sm { min-height: 40px; padding-inline: 16px; font-size: 0.8125rem; }
+
+/* Touch: every interactive control clears the 44px WCAG 2.5.5 target on
+   coarse pointers, whatever the desktop density says. */
+@media (pointer: coarse) {
+  .ob-btn, .ob-btn-sm { min-height: 46px; }
+}
 .ob-btn-block { width: 100%; }
 
 /* ── Forms ──────────────────────────────────────────────────────────────── */
 
 .ob-field-label {
   display: block;
-  font-family: var(--ob-font-mono);
-  font-size: 0.6875rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ob-text-3);
+  font-family: var(--ob-font-sans);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  color: var(--ob-text-2);
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 550;
 }
 
 .ob-input {
@@ -1719,9 +1757,10 @@
   padding-inline: 14px;
   background: var(--ob-elevated);
   border: 1px solid var(--ob-line-2);
-  border-radius: 2px;
+  border-radius: 6px;
   color: var(--ob-text);
-  font-size: 0.9375rem;
+  /* 16px: below this iOS Safari zooms the page on focus (WCAG 1.4.4). */
+  font-size: 1rem;
   font-family: inherit;
   transition: border-color 150ms ease, background-color 150ms ease;
 }
@@ -3173,7 +3212,7 @@
   --obc-text: #F2F2EE;
   --obc-text-2: #D5D7D5;
   --obc-text-3: #969B9F;
-  --obc-text-4: #686D71;
+  --obc-text-4: #8B9095; /* >=4.6:1 on base: small label text must pass AA */
 
   --obc-line: rgba(242, 242, 238, 0.08);
   --obc-line-2: rgba(242, 242, 238, 0.14);
@@ -3186,15 +3225,17 @@
   --obc-ok-wash: rgba(87, 167, 115, 0.12);
   --obc-warn: #D9A441;
   --obc-warn-wash: rgba(217, 164, 65, 0.12);
-  --obc-crit: #C8544C;
+  --obc-crit: #DA6A61;
   --obc-crit-wash: rgba(200, 84, 76, 0.12);
   --obc-idle: #686D71;
   --obc-idle-wash: rgba(104, 109, 113, 0.14);
 
-  --obc-row: 40px;
-  --obc-gutter: 20px;
-  --obc-rail: 232px;
-  --obc-bar: 52px;
+  --obc-row: 44px;
+  --obc-gutter: 24px;
+  --obc-rail: 240px;
+  --obc-bar: 56px;
+  --obc-radius: 8px;
+  --obc-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.24);
 
   background: var(--obc-void);
   color: var(--obc-text);
@@ -3204,36 +3245,36 @@
 }
 
 @media (min-width: 768px) {
-  .obc { --obc-gutter: 28px; }
+  .obc { --obc-gutter: 32px; }
 }
 
 /* ── Typography ───────────────────────────────────────────────────────── */
 
 .obc-title {
-  font-size: clamp(1.25rem, 2vw, 1.5rem);
-  font-weight: 600;
-  letter-spacing: -0.022em;
-  line-height: 1.15;
+  font-size: clamp(1.375rem, 1.4vw + 0.8rem, 1.625rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   color: var(--obc-text);
 }
 .obc-h2 {
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
   color: var(--obc-text);
 }
 .obc-label {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--obc-text-4);
+  color: var(--obc-text-3);
   font-family: var(--ob-font-sans);
 }
-.obc-body { font-size: 0.8125rem; line-height: 1.55; color: var(--obc-text-3); }
+.obc-body { font-size: 0.875rem; line-height: 1.6; color: var(--obc-text-3); }
 .obc-mono {
   font-family: var(--ob-font-mono);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
@@ -3241,49 +3282,79 @@
 .obc-figure {
   font-family: var(--ob-font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 1.375rem;
-  font-weight: 500;
+  font-size: 1.5rem;
+  font-weight: 600;
   letter-spacing: -0.02em;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--obc-text);
 }
-.obc-unit { font-size: 0.6875rem; color: var(--obc-text-4); margin-left: 0.2em; }
+.obc-unit { font-size: 0.75rem; color: var(--obc-text-3); margin-left: 0.25em; font-weight: 500; }
 
 .obc-link { color: var(--obc-text-2); text-decoration: none; border-bottom: 1px solid var(--obc-line-3); }
 .obc-link:hover { color: var(--obc-signal); border-bottom-color: var(--obc-signal); }
 
 /* ── Structure ────────────────────────────────────────────────────────── */
 
-.obc-page { padding: 0 var(--obc-gutter) 72px; }
-.obc-section { margin-top: 32px; }
+.obc-page { padding: 8px var(--obc-gutter) 72px; }
+.obc-section { margin-top: 36px; }
 .obc-section-head {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--obc-line-2);
+  gap: 16px; padding-bottom: 12px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--obc-line);
 }
 
-/* A bordered region. Not a card: 2px radius, no shadow, no hover lift. */
-.obc-panel { border: 1px solid var(--obc-line); border-radius: 2px; background: var(--obc-base); }
-.obc-inset { background: var(--obc-raised); border-radius: 2px; }
+/* A panel is a raised surface: one step above the page, an 8px radius and a
+   soft shadow, so related controls visibly belong together. Depth does the
+   grouping work that hairlines alone could not. */
+.obc-panel {
+  border: 1px solid var(--obc-line);
+  border-radius: var(--obc-radius);
+  background: var(--obc-raised);
+  box-shadow: var(--obc-shadow);
+}
+.obc-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 14px 16px;
+  border-bottom: 1px solid var(--obc-line);
+}
+.obc-panel-body { padding: 16px; }
+.obc-inset { background: var(--obc-base); border-radius: 6px; }
+
+/* Metric card: the console's KPI unit. Label, figure, one context line. */
+.obc-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--obc-line);
+  border-radius: var(--obc-radius);
+  background: linear-gradient(180deg, var(--obc-elevated), var(--obc-raised));
+  box-shadow: var(--obc-shadow);
+  min-width: 0;
+}
+.obc-card:hover { border-color: var(--obc-line-2); }
+.obc-card-row {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
 
 /* ── Tables ───────────────────────────────────────────────────────────── */
 
 .obc-table { width: 100%; border-collapse: collapse; }
 .obc-table thead th {
-  height: 30px;
-  padding: 0 12px;
+  height: 38px;
+  padding: 0 14px;
   text-align: left;
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--obc-text-4);
+  color: var(--obc-text-3);
   border-bottom: 1px solid var(--obc-line-2);
   white-space: nowrap;
-  background: var(--obc-void);
+  background: var(--obc-base);
 }
 .obc-table tbody td {
   height: var(--obc-row);
-  padding: 0 12px;
+  padding: 0 14px;
   font-size: 0.8125rem;
   color: var(--obc-text-2);
   border-bottom: 1px solid var(--obc-line);
@@ -3293,7 +3364,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.obc-table tbody tr:hover td { background: var(--obc-raised); }
+.obc-table tbody tr:hover td { background: var(--obc-elevated); }
 .obc-table tbody tr[data-active='true'] td { background: var(--obc-crit-wash); }
 .obc-num { text-align: right; font-family: var(--ob-font-mono); font-variant-numeric: tabular-nums; color: var(--obc-text); }
 .obc-table th.obc-num { text-align: right; }
@@ -3326,10 +3397,10 @@
 
 .obc-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  height: 32px; padding: 0 13px;
-  border: 1px solid var(--obc-line-2); border-radius: 2px;
+  height: 36px; padding: 0 14px;
+  border: 1px solid var(--obc-line-2); border-radius: 6px;
   background: transparent; color: var(--obc-text-2);
-  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.01em;
+  font-size: 0.8125rem; font-weight: 550; letter-spacing: 0.005em;
   cursor: pointer; white-space: nowrap;
   transition: border-color 120ms ease, color 120ms ease, background-color 120ms ease;
 }
@@ -3339,17 +3410,23 @@
   background: var(--obc-signal); border-color: var(--obc-signal); color: #17130A; font-weight: 600;
 }
 .obc-btn-primary:hover { background: #E4B155; border-color: #E4B155; color: #17130A; }
-.obc-btn-sm { height: 26px; padding: 0 9px; font-size: 0.6875rem; }
+.obc-btn-sm { height: 30px; padding: 0 10px; font-size: 0.75rem; }
+
+/* Touch devices get full-size targets regardless of console density. */
+@media (pointer: coarse) {
+  .obc-btn, .obc-btn-sm { height: 44px; padding-inline: 16px; }
+  .obc-input { height: 44px; font-size: 1rem; }
+}
 
 .obc-field-label {
-  display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--obc-text-4); margin-bottom: 6px;
+  display: block; font-size: 0.8125rem; font-weight: 550; letter-spacing: 0;
+  color: var(--obc-text-2); margin-bottom: 6px;
 }
 .obc-input {
-  width: 100%; height: 34px; padding: 0 10px;
-  background: var(--obc-elevated); color: var(--obc-text);
-  border: 1px solid var(--obc-line-2); border-radius: 2px;
-  font-size: 0.8125rem;
+  width: 100%; height: 40px; padding: 0 12px;
+  background: var(--obc-base); color: var(--obc-text);
+  border: 1px solid var(--obc-line-2); border-radius: 6px;
+  font-size: 0.875rem;
 }
 .obc-input::placeholder { color: var(--obc-text-4); }
 .obc-input:focus { outline: none; border-color: var(--obc-signal); }
@@ -3373,7 +3450,7 @@
 
 /* ── Sparkline / chart chrome ─────────────────────────────────────────── */
 
-.obc-axis { font-family: var(--ob-font-mono); font-size: 9px; fill: var(--obc-text-4); }
+.obc-axis { font-family: var(--ob-font-mono); font-size: 10px; fill: var(--obc-text-3); }
 .obc-grid { stroke: var(--obc-line); stroke-width: 1; }
 .obc-thresh { stroke: var(--obc-warn); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.6; }
 

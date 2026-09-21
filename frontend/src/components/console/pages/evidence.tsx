@@ -162,7 +162,7 @@ export function EvidencePage() {
         hint="Each record is a timestamped, checksummed account of one incident: the observations behind it and the correlation used to attribute the fault."
       >
         {!allowed ? (
-          <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] px-6 py-10">
+          <div className="bg-[var(--obc-base)] px-6 py-10">
             <p className="obc-label text-[var(--obc-text-3)]">
               Evidence records are not included in your plan
             </p>

@@ -129,7 +129,7 @@ export function SiteHeader({
                       aria-current={isActive(item.href) ? 'page' : undefined}
                       onClick={() => setPanelOpen(false)}
                       className={cn(
-                        'inline-flex items-center gap-2 px-4 py-2 font-mono text-[12px] font-medium uppercase tracking-[0.1em] transition-colors',
+                        'inline-flex min-h-11 items-center gap-2 px-3 py-2 text-[0.875rem] font-medium transition-colors',
                         isActive(item.href)
                           ? 'text-[var(--ob-text)]'
                           : 'text-[var(--ob-text-3)] hover:text-[var(--ob-text)]'
@@ -152,7 +152,7 @@ export function SiteHeader({
                     aria-current={isActive(item.href) ? 'page' : undefined}
                     onMouseEnter={scheduleClose}
                     className={cn(
-                      'px-4 py-2 font-mono text-[12px] font-medium uppercase tracking-[0.1em] transition-colors',
+                      'inline-flex min-h-11 items-center px-3 py-2 text-[0.875rem] font-medium transition-colors',
                       isActive(item.href)
                         ? 'text-[var(--ob-text)]'
                         : 'text-[var(--ob-text-3)] hover:text-[var(--ob-text)]'
@@ -167,7 +167,7 @@ export function SiteHeader({
             <div className="hidden items-center gap-2 lg:flex">
               <Link
                 href={HEADER_ACTIONS.signIn.href}
-                className="px-4 py-2 font-mono text-[12px] font-medium uppercase tracking-[0.1em] text-[var(--ob-text-3)] transition-colors hover:text-[var(--ob-text)]"
+                className="inline-flex min-h-11 items-center px-3 py-2 text-[0.875rem] font-medium text-[var(--ob-text-3)] transition-colors hover:text-[var(--ob-text)]"
               >
                 {HEADER_ACTIONS.signIn.label}
               </Link>
@@ -185,7 +185,7 @@ export function SiteHeader({
               onClick={() => setMenuOpen(true)}
               aria-expanded={menuOpen}
               aria-controls="ob-mobile-menu"
-              className="-mr-2 inline-flex items-center gap-2.5 p-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--ob-text-2)] lg:hidden"
+              className="-mr-2 inline-flex min-h-11 items-center gap-2.5 px-3 py-2 text-[0.875rem] font-medium text-[var(--ob-text-2)] lg:hidden"
             >
               Menu
               <span aria-hidden className="flex flex-col gap-[5px]">
@@ -251,7 +251,7 @@ export function SiteHeader({
           <button
             type="button"
             onClick={() => setMenuOpen(false)}
-            className="-mr-2 inline-flex items-center gap-2.5 p-2 text-[11px] font-medium uppercase tracking-[0.16em] text-[var(--ob-text-2)]"
+            className="-mr-2 inline-flex min-h-11 items-center gap-2.5 px-3 py-2 text-[0.875rem] font-medium text-[var(--ob-text-2)]"
           >
             Close
             <span aria-hidden className="relative block h-4 w-4">
@@ -270,12 +270,9 @@ export function SiteHeader({
               <li key={item.label} className="border-t border-[var(--ob-line)]">
                 <Link
                   href={item.href}
-                  className="flex items-baseline justify-between py-5 text-[28px] font-semibold uppercase tracking-[-0.015em] text-[var(--ob-text)]"
+                  className="flex min-h-11 items-center justify-between py-3.5 text-[17px] font-semibold tracking-[-0.01em] text-[var(--ob-text)]"
                 >
                   {item.label}
-                  <span aria-hidden className="ob-label">
-                    {String(PRIMARY_NAV.indexOf(item) + 1).padStart(2, '0')}
-                  </span>
                 </Link>
               </li>
             ))}
@@ -331,7 +328,7 @@ function PanelLink({ link }: { link: NavLink }) {
         {link.label}
       </span>
       {link.description && (
-        <span className="text-[12.5px] leading-[1.5] text-[var(--ob-text-4)]">
+        <span className="text-[12.5px] leading-[1.5] text-[var(--ob-text-3)]">
           {link.description}
         </span>
       )}

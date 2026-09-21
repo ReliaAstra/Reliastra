@@ -16,7 +16,7 @@ export function CheckExecution({ id }: { id: string }) {
   const run = useMutation({ mutationFn: () => api.runCheck(id), onSuccess: () => client.invalidateQueries({ queryKey: ['check-state', id] }) });
   const d = query.data;
   return <Section title="Latest check">
-    <div className="border border-[var(--obc-line)] bg-[var(--obc-base)] p-5">
+    <div className="bg-[var(--obc-base)] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[14px] font-medium" role="status">{query.isError ? 'Check state unavailable' : !d ? 'Loading check state…' : !d.is_active ? 'Paused' : d.is_stale ? 'No recent data' : LABELS[d.state] ?? 'Unknown'}</p>
         <button className="obc-btn obc-btn-sm" disabled={!d?.is_active || run.isPending || d.state === 'queued' || d.state === 'executing'} onClick={() => run.mutate()}>{run.isPending ? 'Queuing…' : 'Run check'}</button>

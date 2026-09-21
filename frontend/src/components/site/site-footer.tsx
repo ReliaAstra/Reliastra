@@ -99,7 +99,7 @@ export function SiteFooter() {
             <span
               aria-hidden
               className="block whitespace-nowrap font-semibold uppercase tracking-[-0.015em] text-[var(--ob-text)]"
-              style={{ fontSize: 'clamp(2.6rem, 9.2vw, 8.5rem)', lineHeight: 0.95 }}
+              style={{ fontSize: 'clamp(2rem, 6vw, 4.75rem)', lineHeight: 1.05 }}
             >
               Reliastra
             </span>
