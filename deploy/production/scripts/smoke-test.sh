@@ -54,7 +54,7 @@ echo "smoke: frontend OK"
 # page rather than the API's error envelope. A 200 from the wrong upstream
 # would pass a status-only check.
 for docs_path in /docs /docs/quickstart; do
-  docs_body=$(curl -sS --max-time 10 -w '\n%{http_code}' "http://127.0.0.1:80${docs_path}" || echo "000")
+  docs_body=$(curl -skL --resolve reliastra.com:443:127.0.0.1 --max-time 10 -w '\n%{http_code}' "https://reliastra.com${docs_path}" || echo "000")
   docs_code=$(printf '%s' "$docs_body" | tail -n1)
   docs_html=$(printf '%s' "$docs_body" | head -n -1)
 
@@ -62,12 +62,12 @@ for docs_path in /docs /docs/quickstart; do
     echo "smoke FAIL: ${docs_path} returned ${docs_code} via the proxy" >&2
     exit 1
   fi
-  if printf '%s' "$docs_html" | grep -q 'RESOURCE_NOT_FOUND'; then
+  if grep -q 'RESOURCE_NOT_FOUND' <<< "$docs_html"; then
     echo "smoke FAIL: ${docs_path} was served by the API, not Next.js (RESOURCE_NOT_FOUND in body)" >&2
     echo "  -> /docs* must be claimed for reliastra-api:3000 in Caddyfile" >&2
     exit 1
   fi
-  if ! printf '%s' "$docs_html" | grep -qi '<html'; then
+  if ! grep -qi '<html' <<< "$docs_html"; then
     echo "smoke FAIL: ${docs_path} returned 200 but no HTML document" >&2
     exit 1
   fi
