@@ -1,6 +1,13 @@
 import { SITE_URL } from '@/lib/seo';
-import { EXTERNAL_LINKS, RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
+import {
+  EXTERNAL_LINKS,
+  PUBLIC_ROUTES,
+  RESEARCH_ARTICLES,
+  SHARE_ROUTES,
+  researchRoute,
+} from '@/lib/routes';
 import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
+import { readCatalogForDiscovery } from '@/lib/track-api';
 
 /**
  * /llms.txt - the machine-readable description of RELIASTRA.
@@ -17,6 +24,9 @@ import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECOND
 /** The API origin, interpolated so the file never states a path a caller
  * cannot reach. */
 const API = EXTERNAL_LINKS.api;
+
+/** Placeholder in BODY, replaced per request with the enumerated record list. */
+const RECORDS_MARKER = '<!--records-->';
 
 const BODY = `# RELIASTRA
 
@@ -115,6 +125,10 @@ reconcile the status text published at those URLs, and does not measure a
 vendor's API, models or routes unless an API endpoint is listed as an observed
 target on the record itself.
 
+## Dependency records (enumerated, do not guess slugs)
+
+${RECORDS_MARKER}
+
 ## Pages
 
 - Home: ${SITE_URL}/
@@ -155,8 +169,53 @@ ${RESEARCH_ARTICLES.map((a) => `- ${a.title}: ${SITE_URL}${researchRoute(a.slug)
 - /incident-evidence, /sla-evidence -> /product/evidence (308)
 `;
 
-export function GET() {
-  return new Response(BODY, {
+/**
+ * The published dependency records, enumerated.
+ *
+ * A model told "there is a public observatory" and handed one URL will guess
+ * vendor slugs, and a guessed slug 404s. Enumerated from the same catalog the
+ * sitemap uses, so this file and `sitemap.xml` cannot disagree about which
+ * records exist.
+ *
+ * An unreadable catalog is reported as unreadable rather than rendered as an
+ * empty list: "no records are published" is a false claim about the product,
+ * and it is the kind of false claim a model will repeat verbatim.
+ */
+async function recordsSection(): Promise<string> {
+  const index = `${SITE_URL}${PUBLIC_ROUTES.observatory}`;
+  try {
+    const catalog = await readCatalogForDiscovery({ pageSize: 100, maxPages: 20 });
+    const vendors = catalog.vendors.filter((v) => v.is_public !== false && v.vendor_name);
+    if (!vendors.length) {
+      return `No dependency records are published yet. ${index} is authoritative and will list them when they are.`;
+    }
+    const readAt = catalog.readAt?.toISOString() ?? 'an unrecorded time';
+    const provenance = catalog.stale
+      ? `Enumerated from the last successful catalog read at ${readAt}; the catalog was unreadable when this file was generated, so a record published since then may be missing from this list.`
+      : `Enumerated from the public catalog at ${readAt}. ${vendors.length} record${vendors.length === 1 ? '' : 's'}.`;
+    return [
+      provenance,
+      '',
+      ...vendors.map(
+        (v) =>
+          `- ${v.display_name} (${v.category.replace(/[-_]/g, ' ')}): ${SITE_URL}${SHARE_ROUTES.observatoryVendor(v.vendor_name)}`
+      ),
+    ].join('\n');
+  } catch {
+    return `The record list could not be read when this file was generated. ${index} is authoritative and lists every published record.`;
+  }
+}
+
+/**
+ * Regenerate at most hourly. The file is a discovery document, not a telemetry
+ * feed: a model needs the record list to be right, not to be current to the
+ * minute, and the records themselves revalidate every 60s.
+ */
+export const revalidate = 3600;
+
+export async function GET() {
+  const body = BODY.replace(RECORDS_MARKER, await recordsSection());
+  return new Response(body, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'public, max-age=3600, s-maxage=86400',

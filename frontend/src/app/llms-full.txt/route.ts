@@ -15,6 +15,7 @@ import {
   OBSERVATION_LABEL,
   OBSERVATION_POINTS,
   PROBE_INTERVAL_SECONDS,
+  PUBLIC_INCIDENT_WINDOW_DAYS,
   SCOPE_NOTE,
 } from '@/lib/methodology';
 
@@ -230,8 +231,9 @@ ${research}
 
 - Index: ${SITE_URL}/observatory
 - Detail pattern: ${SITE_URL}/observatory/{vendor} (only for vendors with real telemetry; empty or fabricated vendors are never generated)
-- Incident pattern: ${SITE_URL}/observatory/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist
-- Each vendor page exposes: current state, availability windows with the observation count behind every figure, latency (mean/p95), monitored endpoints with the observation point that probed them, incident history, methodology note, refresh cadence (60s), all timestamps UTC.
+- Incident pattern: ${SITE_URL}/observatory/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist, and a record is published for the evidence-retention window the API documents (${PUBLIC_INCIDENT_WINDOW_DAYS} days), after which the URL 404s. These pages are not described as permanent, because they are not.
+- Each vendor page exposes: current state, availability windows with the observation count behind every figure, latency (mean/p95), monitored endpoints with the observation point that probed them, incident history, methodology note, the observation interval as measured from the record's own telemetry, and all timestamps in UTC. The deployed default probe interval is ${PROBE_INTERVAL_SECONDS} seconds; a record prints the interval it can measure rather than asserting a schedule it cannot see, so a page may report a different number.
+- The enumerated list of published records lives in ${SITE_URL}/llms.txt, which reads the same catalog the sitemap does. This file documents the patterns; it does not repeat the list, so the two cannot drift.
 - A window with no observations reads "insufficient data". It never reads 0% or 100%.
 - IMPORTANT - what the public records measure: scheduled HTTP GETs against the vendor's *listed public endpoint* (currently vendor status sites such as https://status.openai.com), recording HTTP status, latency and transport errors. A page never asserts that the vendor's API or product is up or down beyond the listed endpoint, and RELIASTRA does not read the status text the vendor publishes at those URLs. State word "Responding" = the endpoint answered with the expected response in the last five observations.
 

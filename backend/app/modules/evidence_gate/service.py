@@ -64,8 +64,22 @@ class EvidenceGateService:
         session: AsyncSession,
         vendor_name: str,
     ) -> list[PublicIncidentResponse]:
-        """Return public incidents for a vendor from the last 90 days."""
-        cutoff = datetime.now(timezone.utc) - timedelta(days=90)
+        """Return this vendor's public incidents within the published window.
+
+        The window is ``settings.PUBLIC_INCIDENT_WINDOW_DAYS`` (365 by default,
+        aligned to the evidence retention the public docs claim). It used to be
+        a hard-coded 90 days while the web app described these records as
+        permanent, which took a published, indexed, sitemap-listed URL to a 404
+        on a schedule nobody had decided on.
+
+        The value is a published-URL lifetime, not a query tuning knob: every
+        incident returned here has a page at
+        ``/observatory/{vendor}/incidents/{id}``, so shrinking it withdraws
+        URLs that are already cited elsewhere.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(
+            days=settings.PUBLIC_INCIDENT_WINDOW_DAYS
+        )
 
         # Get all public evidence reports for this vendor
         public_reports = await self.public_report_repo.list_public_for_vendor(

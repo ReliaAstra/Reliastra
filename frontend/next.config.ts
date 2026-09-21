@@ -1,5 +1,40 @@
 import type { NextConfig } from "next";
 
+/**
+ * Whether this deployment may be indexed.
+ *
+ * This MUST stay in step with `isIndexableSite()` in `src/lib/site-url.ts`:
+ * the config file is evaluated outside the app bundle and cannot import it, so
+ * the rule is written out here a second time. `src/lib/__tests__/indexability.test.ts`
+ * is the drift guard - it asserts this file still names the same production
+ * hosts and the same override variable.
+ *
+ * The gate matters because every page publishes a canonical URL pointing at
+ * the production origin: a preview or staging host that serves `index, follow`
+ * asks search engines to index a duplicate of the real dependency records.
+ */
+const SITE_ORIGIN = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://reliastra.com"
+).replace(/\/$/, "");
+
+const INDEXABILITY_OVERRIDE = process.env.NEXT_PUBLIC_SITE_INDEXABLE;
+
+const CONFIGURED_HOST = (() => {
+  try {
+    return new URL(SITE_ORIGIN).hostname.toLowerCase();
+  } catch {
+    // An unparsable site URL is not a licence to index.
+    return null;
+  }
+})();
+
+const INDEXABLE_DEPLOYMENT: boolean =
+  INDEXABILITY_OVERRIDE === "true"
+    ? true
+    : INDEXABILITY_OVERRIDE === "false"
+      ? false
+      : CONFIGURED_HOST === "reliastra.com" || CONFIGURED_HOST === "www.reliastra.com";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   typescript: {
@@ -208,24 +243,36 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         ],
       },
-      // llms.txt family: machine-readable, cacheable, plain text.
-      {
-        source: "/llms.txt",
-        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
-      },
-      {
-        source: "/llms-full.txt",
-        headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
-      },
+      // NOTE: the /llms.txt family used to set Content-Type here as well as in
+      // its route handlers, which put two Content-Type headers on one response.
+      // The route handlers own it (they know the charset they emitted); this
+      // list no longer repeats it.
       {
         source: "/:path*",
         headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
           // Preferred Sources publisher.js - narrowest allow for Google's script
           {
             key: "Content-Security-Policy",
             value: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://news.google.com; connect-src 'self' https://news.google.com; frame-src https://news.google.com;",
           },
+          // NOTE: `X-Frame-Options: ALLOWALL` was removed. ALLOWALL is not a
+          // valid token (the spec allows DENY, SAMEORIGIN and the obsolete
+          // ALLOW-FROM), so browsers ignored it, and in production it collided
+          // with the `X-Frame-Options: SAMEORIGIN` that Caddy sets on every
+          // response - two headers, most restrictive wins. Framing policy is
+          // owned by the edge; nothing here needs to contradict it.
+          //
+          // A deployment that must not be indexed says so at the transport
+          // layer too, so a route that sets its own metadata cannot opt back
+          // in. Mirrors `isIndexableSite()` in src/lib/site-url.ts.
+          ...(INDEXABLE_DEPLOYMENT
+            ? []
+            : [
+                {
+                  key: "X-Robots-Tag",
+                  value: "noindex, nofollow, noarchive",
+                },
+              ]),
         ],
       },
     ];

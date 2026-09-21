@@ -5,9 +5,10 @@ import { notFound } from 'next/navigation';
 
 import {
   DEFAULT_WINDOW,
-  fetchTrackedVendors,
-  fetchVendorDetail,
-  fetchVendorRecord,
+  readCatalog,
+  readVendorDetail,
+  readVendorRecord,
+  RecordUnreadableError,
   isTrackWindow,
   regionsOf,
   TELEMETRY_RANGES,
@@ -22,7 +23,8 @@ import {
   utcStamp,
   windowLabel,
 } from '@/lib/observatory/format';
-import { canonicalUrl, breadcrumbJsonLd } from '@/lib/seo';
+import { canonicalUrl, breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { robotsDirective } from '@/lib/indexability';
 import { JsonLd } from '@/components/seo/json-ld';
 import { PUBLIC_ROUTES, SHARE_ROUTES } from '@/lib/routes';
 import { Breadcrumb } from '@/components/site/primitives';
@@ -37,7 +39,6 @@ import {
   MethodologySection,
   NetworkSection,
   RecordCTA,
-  RecordUnavailable,
   RelatedSection,
   StateSection,
 } from '@/components/observatory/record-sections';
@@ -67,6 +68,17 @@ import {
  *    unknown incident ids under `/incidents/[id]` - into a soft 404 that
  *    search engines index. Removing that file restored correct status codes;
  *    the regression guard asserting it stays absent lives in `seo.test.ts`.
+ *  - Three outcomes, three responses, and they are not interchangeable:
+ *      record read       -> 200, `index, follow`
+ *      API answered 404  -> 404 via `notFound()`, `noindex` (the record does
+ *                           not exist; that is the only thing noindex may say)
+ *      API did not answer -> throw, so the error boundary returns a 5xx and
+ *                           the URL stays indexed for retry. Under ISR the
+ *                           last good render keeps serving while the failure
+ *                           is logged.
+ *    The failure this prevents is specific and was live: one transient API
+ *    error emitted `noindex` on a canonical, sitemap-listed record and served
+ *    it at 200 with no data on it.
  */
 
 export const revalidate = 60;
@@ -83,26 +95,40 @@ const one = (v: string | string[] | undefined): string | undefined =>
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { vendor } = await params;
-  let detail: Awaited<ReturnType<typeof fetchVendorDetail>> = null;
-  try {
-    detail = await fetchVendorDetail(vendor);
-  } catch {
-    detail = null;
-  }
+  const read = await readVendorDetail(vendor);
 
   const path = SHARE_ROUTES.observatoryVendor(vendor);
   const url = canonicalUrl(path);
 
-  if (!detail) {
+  /**
+   * The API did not answer. Whether this record exists is unknown, so the URL
+   * keeps its indexability and the body throws for a 5xx that a crawler
+   * retries. Emitting `noindex` here would assert - on the strength of a
+   * timeout - that a record which is in the sitemap and linked from the index
+   * does not exist.
+   */
+  if (read.kind === 'unreadable') {
     return {
       title: 'Dependency record - RELIASTRA observatory',
       description:
         'Independently measured availability, latency and incident history for third-party APIs.',
-      alternates: { canonical: url },
-      robots: { index: false, follow: true },
+      alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+      robots: robotsDirective({ index: true, follow: true }),
     };
   }
 
+  /** The API answered 404: no such public dependency. The body 404s to match. */
+  if (read.kind === 'missing') {
+    return {
+      title: 'Dependency record - RELIASTRA observatory',
+      description:
+        'Independently measured availability, latency and incident history for third-party APIs.',
+      alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+      robots: robotsDirective({ index: false, follow: true }),
+    };
+  }
+
+  const detail = read.value;
   const name = detail.display_name;
   const regions = regionsOf(detail);
   const endpoints = detail.endpoints ?? [];
@@ -119,8 +145,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    alternates: { canonical: url },
-    robots: { index: true, follow: true },
+    alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+    robots: robotsDirective({ index: true, follow: true }),
     keywords: [
       `${name} status`,
       `${name} outage`,
@@ -164,19 +190,23 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
       ? windowParam
       : DEFAULT_WINDOW;
 
-  let record;
-  try {
-    record = await fetchVendorRecord(vendor);
-  } catch {
-    return (
-      <ObservatoryShell>
-        <RecordUnavailable vendorName={vendor} />
-      </ObservatoryShell>
-    );
+  const read = await readVendorRecord(vendor);
+
+  /**
+   * Existence unknown. Throwing *is* the response: the segment's error
+   * boundary turns it into a 5xx, which is the only status that tells a
+   * crawler to retry this URL, and under ISR the last good render keeps
+   * serving while the failure is logged. Rendering a 200 "unavailable" page
+   * here is what made an outage look like published content.
+   */
+  if (read.kind === 'unreadable') {
+    throw new RecordUnreadableError(read.reason, `/vendors/${vendor}`);
   }
 
-  if (!record) notFound();
+  /** The API answered 404: this dependency is not a public record. */
+  if (read.kind === 'missing') notFound();
 
+  const record = read.value;
   const { detail, regions } = record;
 
   // The API defaults the timeline to us-east-1. If this dependency is not
@@ -218,12 +248,11 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
   const published = (record.publicIncidents ?? []).filter((p) => p.has_evidence_report);
   const categoryWord = detail.category.replace(/[-_]/g, ' ');
 
-  let catalog: TrackVendorListItem[] = [];
-  try {
-    catalog = (await fetchTrackedVendors(24)).items;
-  } catch {
-    catalog = [];
-  }
+  // Related records are a secondary section: an unreadable catalog removes the
+  // links, it does not remove the record itself.
+  const catalogRead = await readCatalog(24);
+  const catalog: TrackVendorListItem[] =
+    catalogRead.kind === 'ok' ? catalogRead.value.items : [];
 
   const m24 = record.metrics?.metrics?.['24h'] ?? null;
   const m30 = record.metrics?.metrics?.['30d'] ?? null;

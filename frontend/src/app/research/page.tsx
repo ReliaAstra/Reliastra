@@ -20,19 +20,20 @@ import {
   researchRoute,
 } from '@/lib/routes';
 import { JsonLd } from '@/components/seo/json-ld';
-import { SITE_URL, breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { isoDate, readingTimeFor } from '@/lib/research-meta';
 import { bylineFor } from '@/lib/research/authors';
 import { RESEARCH_PAPERS, researchPaper } from '@/lib/research/corpus';
 import { EVIDENCE_BASIS_LABEL } from '@/lib/research/types';
 import { ResearchIndex, type ResearchIndexEntry } from '@/components/research/research-index';
+import { robotsDirective } from '@/lib/indexability';
 
 export const metadata: Metadata = {
   title: 'Research - Independent infrastructure intelligence',
   description:
     'RELIASTRA Research investigates how digital systems fail when their dependencies, control planes, APIs and security boundaries interact. Published measurements, methodology, datasets and the claims we refuse to make.',
-  alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.research) },
-  robots: { index: true, follow: true },
+  alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.research), ...DISCOVERY_ALTERNATES },
+  robots: robotsDirective({ index: true, follow: true }),
   openGraph: {
     title: 'RELIASTRA Research - Independent infrastructure intelligence',
     description:

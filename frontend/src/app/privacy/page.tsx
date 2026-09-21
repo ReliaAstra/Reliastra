@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { JsonLd } from '@/components/seo/json-ld';
-import { breadcrumbJsonLd } from '@/lib/seo';
+import { breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { PUBLIC_ROUTES } from '@/lib/routes';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - RELIASTRA',
   description: 'How RELIASTRA collects, uses, and protects customer data across its monitoring, evidence, and billing systems.',
-  alternates: { canonical: '/privacy' },
+  alternates: { canonical: '/privacy', ...DISCOVERY_ALTERNATES },
 };
 
 const SECTIONS = [

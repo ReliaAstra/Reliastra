@@ -14,9 +14,10 @@ import {
   PUBLIC_ROUTES,
 } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
-import { breadcrumbJsonLd, canonicalUrl, SITE_URL } from '@/lib/seo';
+import { breadcrumbJsonLd, canonicalUrl, SITE_URL, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
 import { researchSocialImage } from '@/lib/research/social';
+import { robotsDirective } from '@/lib/indexability';
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -47,8 +48,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${article.title} - RELIASTRA Research`,
     description: article.summary,
     keywords: [...article.tags],
-    alternates: { canonical: url },
-    robots: { index: true, follow: true },
+    alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+    robots: robotsDirective({ index: true, follow: true }),
     openGraph: {
       type: 'article',
       title: article.title,

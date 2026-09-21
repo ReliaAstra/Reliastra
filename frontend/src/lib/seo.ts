@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { SITE_URL } from '@/lib/site-url';
+import { robotsDirective } from '@/lib/indexability';
 import {
   DOCS_ROUTES,
   RESEARCH_ARTICLES,
@@ -39,8 +41,8 @@ import {
  * fixed set of product, docs and legal pages.
  */
 
-export const SITE_URL =
-  (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com').replace(/\/$/, '');
+/** Re-exported so existing callers keep one import path; defined in `lib/site-url.ts`. */
+export { SITE_URL };
 
 export const SITE_NAME = 'RELIASTRA';
 export const SITE_TAGLINE = 'Independent dependency observation';
@@ -80,17 +82,45 @@ export function canonicalUrl(path: string): string {
  * Framework-native metadata builder. Every indexable page uses this so
  * title / description / canonical / OG / Twitter stay consistent and unique.
  */
+/**
+ * The machine-readable discovery files, advertised from the document itself.
+ *
+ * `/llms.txt` and `/llms-full.txt` are written for models, but nothing linked
+ * them: a reader that did not already know the convention had no way to find
+ * them, and a crawler that fetches one page of the site learned nothing about
+ * the two files that exist precisely so it would not have to guess.
+ *
+ * Next.js replaces `alternates` wholesale when a page declares its own, so
+ * this must be spread into every page's `alternates` rather than set once in
+ * the root layout. `src/seo/__tests__/seo.test.ts` fails when a public page
+ * declares a canonical without it.
+ */
+export const DISCOVERY_ALTERNATES = {
+  types: {
+    'text/plain': [
+      { url: `${SITE_URL}/llms.txt`, title: 'RELIASTRA for language models' },
+      {
+        url: `${SITE_URL}/llms-full.txt`,
+        title: 'RELIASTRA full reference for language models',
+      },
+    ],
+  },
+};
+
 export function buildMetadata(input: SeoPageInput): Metadata {
   const url = canonicalUrl(input.path);
   const image = input.image ?? `${SITE_URL}/opengraph-image.png`;
+  // `robotsDirective` is the deployment gate: on a non-production host every
+  // page becomes noindex whatever it asked for, so a preview or self-hosted
+  // build cannot publish itself as a duplicate of the canonical site.
   const robots = input.noindex
     ? { index: false, follow: false, noarchive: true }
-    : { index: true, follow: true };
+    : robotsDirective({ index: true, follow: true });
 
   return {
     title: input.absoluteTitle ? input.title : input.title,
     description: input.description,
-    alternates: { canonical: url },
+    alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
     robots,
     openGraph: {
       title: input.title,

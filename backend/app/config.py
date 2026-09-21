@@ -368,6 +368,18 @@ class Settings(BaseSettings):
                     "the SHA-256 of the public key when unset; set it "
                     "explicitly before a key rotation so citations survive.",
     )
+    PUBLIC_INCIDENT_WINDOW_DAYS: int = Field(
+        default=365,
+        description="How far back /v1/vendors/{name}/incidents/public lists "
+                    "incidents. This is a published-URL lifetime, not a query "
+                    "tuning knob: every incident it returns has a public web "
+                    "page, is linked from the vendor record and is listed in "
+                    "sitemap.xml. An incident that ages out of the window "
+                    "therefore takes a previously published URL to a 404, so "
+                    "this must not be set below the evidence retention the "
+                    "public docs claim (365 days). It was hard-coded at 90 "
+                    "days while the site described these records as permanent.",
+    )
 
     SMTP_USE_TLS: bool = Field(
         default=False,
@@ -515,6 +527,21 @@ class Settings(BaseSettings):
         default=1,
         description="Number of trusted reverse-proxy hops used when parsing "
         "X-Forwarded-For for rate limiting",
+    )
+    INTERNAL_READER_TOKEN: str = Field(
+        default="",
+        description="Shared secret the web app presents in X-Reliastra-Reader "
+                    "when it reads public vendor data server-side. The web app "
+                    "renders every public record itself, so without this all "
+                    "of those reads arrive from one socket address and share a "
+                    "single per-IP rate-limit bucket with every browser call "
+                    "it proxies - one crawler walking the observatory then "
+                    "429s the whole site, including the pages the crawler came "
+                    "for. When set, a matching reader is rate limited on its "
+                    "own budget instead of by IP. When empty the header is "
+                    "ignored and every caller is limited by IP. Must match the "
+                    "web app's RELIASTRA_READER_TOKEN; generate one with "
+                    "`openssl rand -hex 32`.",
     )
     # ── Supabase Authentication ──────────────────────────────────────────
     SUPABASE_URL: str = Field(

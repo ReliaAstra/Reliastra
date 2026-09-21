@@ -1,5 +1,8 @@
 import type { MetadataRoute } from 'next';
 
+import { SITE_INDEXABLE } from '@/lib/indexability';
+import { siteBase } from '@/lib/sitemap-source';
+
 /**
  * Deliberate crawler policy.
  *
@@ -13,9 +16,38 @@ import type { MetadataRoute } from 'next';
  *
  * CSS/JS/image resources are NOT blocked - crawlers need them to render
  * public pages.
+ *
+ * ── Why there is no `Allow: /` ────────────────────────────────────────────
+ *
+ * A blanket allow used to sit in this rule, and Next.js emits `Allow` lines
+ * before `Disallow` lines for a rule. The Robots Exclusion Protocol has two
+ * readings of that ordering: longest-match (Google, and Python's
+ * `urllib.robotparser` from 3.13) where `Allow: /` loses to any more specific
+ * `Disallow`, and first-match (Python `urllib.robotparser` up to 3.12, and
+ * ports of it - which is where a lot of LLM and agent crawlers live) where
+ * `Allow: /` matches everything first and voids every `Disallow` below it.
+ * Under the second reading this file published the console, the admin surface
+ * and the auth pages as crawlable.
+ *
+ * Everything not disallowed is allowed by default, so the blanket `Allow` was
+ * never adding permission - only ambiguity. A non-production deployment gets
+ * an unconditional `Disallow: /` instead; see `lib/indexability.ts`.
  */
 export default function robots(): MetadataRoute.Robots {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com').replace(/\/$/, '');
+  const base = siteBase();
+
+  /**
+   * A deployment that is not the production site must not be indexed, and the
+   * only reliable way to say that to every crawler is an unconditional
+   * disallow. Note there is deliberately no `sitemap` line here: advertising a
+   * sitemap from a preview host is how preview URLs end up in an index.
+   */
+  if (!SITE_INDEXABLE) {
+    return {
+      rules: [{ userAgent: '*', disallow: '/' }],
+    };
+  }
+
   const disallow = [
     '/admin/',
     '/admin',
@@ -46,7 +78,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        // No blanket `allow`: see the note at the top of this file. Everything
+        // not listed below is crawlable by default, and the omission is what
+        // keeps the disallow list meaningful to a first-match interpreter.
         disallow,
       },
     ],

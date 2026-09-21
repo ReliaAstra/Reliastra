@@ -78,6 +78,32 @@ export async function proxyToBackend(
   }
   if (orgHeader) headers['X-Organization-ID'] = orgHeader;
 
+  /**
+   * The client's own address, as the trusted edge reported it.
+   *
+   * Caddy terminates TLS and sets `X-Forwarded-For` to the connecting client
+   * on the way in (deploy/production/Caddyfile), and the backend keys its rate
+   * limits off the last trusted hop of that header
+   * (`settings.TRUSTED_PROXY_HOPS`, default 1). This proxy used to drop it, so
+   * every browser call reached the API from the web app's own socket address -
+   * `127.0.0.1` in the all-in-one image - and all of them shared one per-IP
+   * bucket with every server-rendered read. One busy page, or one crawler,
+   * then 429'd the site for everybody.
+   *
+   * Trust boundary: the header is forwarded verbatim, which is safe because
+   * the edge *sets* it rather than appending to whatever the client sent, and
+   * because the app is not reachable except through that edge. Do not expose
+   * the Next.js port publicly without putting a proxy in front that overwrites
+   * this header, or a client can mint itself a fresh rate-limit bucket per
+   * request.
+   */
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) headers['X-Forwarded-For'] = forwardedFor;
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) headers['X-Real-IP'] = realIp;
+  const forwardedProto = req.headers.get('x-forwarded-proto');
+  if (forwardedProto) headers['X-Forwarded-Proto'] = forwardedProto;
+
   // Forward content-type for requests with body
   if (!options?.noBody && method !== 'GET' && method !== 'HEAD') {
     headers['Content-Type'] = 'application/json';

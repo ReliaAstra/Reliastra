@@ -9,6 +9,15 @@ status code recorded; every navigation and footer destination was traced back to
 The authenticated customer console (`(console)/*`) and the authenticated partner
 dashboard are explicitly **out of scope** and were not restyled.
 
+> **Status (2026-09).** This is a snapshot of the surface as it stood on the
+> branch above, and two sections have since moved. **§1.3** describes routes that
+> were renamed and consolidated by the developer-first refurbishment: the public
+> dependency index is `/observatory`, and every `/track*` URL is a 308 to it -
+> §1.3 is corrected below. **§1.4** describes the B2B partner network, which was
+> unmounted entirely; those routes are 308s to `/creators` or 404s, and the
+> disposition is in `backend/docs/API_CHANGELOG.md`. The rows are kept as the
+> record of what was audited.
+
 ---
 
 ## 1. Route map
@@ -60,11 +69,23 @@ actually carries (`Research`, `Methodology`) plus the real per-article `tags`.
 
 | Route | Purpose | Status | Auth | SEO value | Redesign |
 |---|---|---|---|---|---|
-| `/track` | Tracked-vendor index. Live, `revalidate = 60`, server-fetched from the Track API. | 200 | public | **high** | yes |
-| `/track/[vendor]` | Per-vendor intelligence page: current state, 7d/30d availability, latency, regions, incident timeline, methodology. | 200 (404 for unknown vendor) | public | **high** | yes |
+| `/observatory` | Public dependency index. One paginated catalog walk plus a bounded detail prefix, `revalidate = 60`, served from ISR. | 200 | public | **high** | yes |
+| `/observatory/[vendor]` | Per-vendor record: current state, 7d/30d availability, latency, observation region, incident timeline, methodology. | 200 (404 for a vendor that publishes no record) | public | **high** | yes |
+| `/observatory/[vendor]/incidents/[id]` | Published incident record, live for `PUBLIC_INCIDENT_WINDOW_DAYS` (365). | 200 (404 when unknown or aged out) | public | **high** | yes |
+| `/track`, `/track/[vendor]`, `/track/[vendor]/incidents/[id]` | Retired names for the three routes above. | 308 | public | none | - |
 
-Real backend data via `src/lib/track-api.ts`. When the API is unreachable the pages
-render an explicit "measurement network unreachable" state - never fabricated numbers.
+Real backend data via `src/lib/track-api.ts`. When a read cannot be completed the
+page **throws**: the error boundary returns a 5xx and ISR keeps serving the last
+good render. That replaced an earlier "measurement network unreachable" state
+rendered at HTTP 200, which was indexable and told a crawler the record had no
+data rather than that it could not be read. Nothing is ever fabricated, and
+`sitemap.xml` refuses to publish a partial list for the same reason.
+
+The crawler-facing contract for these routes - sitemap contents, robots.txt rule
+order, the llms.txt discovery files, record status under load - is checked by
+`frontend/scripts/audit-live-dependency-index.sh`; the route-level expectations
+by `frontend/scripts/verify-public-routes.mjs`, which reads its indexable
+inventory from the sitemap instead of maintaining one here.
 
 ### 1.4 Partner network
 
@@ -83,6 +104,16 @@ render an explicit "measurement network unreachable" state - never fabricated nu
 | `/partner/login` | **Partner** sign-in. | 200 | public | noindex | yes |
 | `/partner/forgot-password` | Partner password reset request. | 200 | public | noindex | yes |
 | `/partner/privacy` `/partner/terms` | Program-specific legal (referral cookies, attribution windows, commission tracking). | 200 | public | low | yes (chrome) |
+
+**All of the above is retired.** The B2B partner network was unmounted by the
+developer-first refurbishment: `/partner`, `/partners` and every `/partner/*`
+subpath are 308s to `/creators` (the redirect flattens the path - a bookmarked
+`/partner/commission` lands on the creator home, not on a commission page), the
+`/v1/partners/*` API is gone, and the creator programme that replaced it lives at
+`/creators` and `/r/{code}`. See
+`backend/docs/API_CHANGELOG.md` §"Removed endpoints" for the disposition and
+`docs/redesign/developer-first-refurbishment.md` for the reasoning. The rows stay
+as the record of what this audit measured.
 
 Partner *dashboard* pages (`dashboard`, `referrals`, `earnings`, `payouts`,
 `notifications`, `settings`) intentionally have **no file routes** - they are

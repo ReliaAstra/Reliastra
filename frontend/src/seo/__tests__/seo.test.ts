@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GLOSSARY_TERMS,
   PUBLIC_PAGES,
@@ -29,6 +29,7 @@ import {
 } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
+import { resetDiscoveryCatalog } from '@/lib/track-api';
 import { PAPER_OG_IMAGES, researchSocialImage } from '@/lib/research/social';
 
 const PRIVATE_FRAGMENTS = [
@@ -281,11 +282,10 @@ describe('research paper social artwork', () => {
 });
 
 describe('robots.txt policy', () => {
-  it('allows public, disallows private, references the sitemap', () => {
+  it('disallows private surfaces, references the sitemap', () => {
     const r: any = robots();
     expect(r.sitemap).toBe('https://reliastra.com/sitemap.xml');
     const rule = r.rules[0];
-    expect(rule.allow).toBe('/');
     const dis: string[] = rule.disallow;
     for (const p of ['/admin', '/dashboard', '/portal/', '/reports/', '/api/', '/login']) {
       expect(dis).toContain(p);
@@ -293,9 +293,127 @@ describe('robots.txt policy', () => {
     // Crawler resources must stay reachable: no blanket static-asset blocks.
     expect(dis.some((d) => d.includes('_next') || d.includes('.css') || d.includes('.js'))).toBe(false);
   });
+
+  it('emits no blanket Allow, so the disallow list means something', () => {
+    /**
+     * Next.js writes `Allow` lines before `Disallow` lines. Longest-match
+     * interpreters (Google, Python 3.13+) resolve that correctly, but
+     * first-match interpreters - Python's `urllib.robotparser` up to 3.12 and
+     * the ports of it that a lot of LLM and agent crawlers use - stop at the
+     * first matching rule. With `Allow: /` present, every disallow below it was
+     * void for those crawlers: the console, the admin surface and the auth
+     * pages were published as crawlable.
+     *
+     * Everything not disallowed is allowed by default, so the blanket rule was
+     * never granting access - only ambiguity.
+     */
+    const rule: any = robots().rules[0];
+    expect(rule.allow).toBeUndefined();
+
+    // The same property, checked the way a first-match interpreter reads it:
+    // for every private path, the first rule that matches must be a disallow.
+    const dis: string[] = rule.disallow;
+    const allows: string[] = rule.allow ? [rule.allow].flat() : [];
+    for (const path of ['/admin/users', '/dashboard', '/incidents', '/api/v1/vendors', '/login']) {
+      const firstAllow = allows.find((a) => path.startsWith(a));
+      const firstDisallow = dis.find((d) => path.startsWith(d));
+      expect(firstDisallow, `${path} is not disallowed`).toBeDefined();
+      if (firstAllow) {
+        expect(firstAllow.length).toBeGreaterThan((firstDisallow ?? '').length);
+      }
+    }
+  });
+
+  it('disallows everything on a deployment that must not be indexed', async () => {
+    vi.resetModules();
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://staging.reliastra.example');
+    const stagingRobots = (await import('@/app/robots')).default;
+
+    const r: any = stagingRobots();
+
+    expect(r.rules[0].disallow).toBe('/');
+    // No sitemap line: advertising the production sitemap from a preview host
+    // is how preview URLs get indexed.
+    expect(r.sitemap).toBeUndefined();
+
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
 });
 
 describe('machine-readable discovery', () => {
+  /**
+   * `/llms.txt` enumerates the published dependency records, so generating it
+   * reads the catalog. Stubbed here on purpose: what matters is that the file
+   * lists the records the API says exist, and that it says so honestly when the
+   * API does not answer. Neither is observable against a live API, and a model
+   * that is handed one index URL will guess vendor slugs - a guessed slug 404s.
+   */
+  const CATALOG = {
+    items: [
+      {
+        id: 'b1f0a5c2-0000-4000-8000-000000000001',
+        vendor_name: 'openai',
+        display_name: 'OpenAI',
+        category: 'ai',
+        is_public: true,
+        recent_status: 'operational',
+        last_check_at: '2026-09-20T12:00:00Z',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-09-20T12:00:00Z',
+      },
+    ],
+    next_cursor: null,
+    has_more: false,
+  };
+  let catalogFails = false;
+
+  beforeEach(() => {
+    catalogFails = false;
+    resetDiscoveryCatalog();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        catalogFails
+          ? new Response(JSON.stringify({ detail: 'unavailable' }), { status: 503 })
+          : new Response(JSON.stringify(CATALOG), {
+              status: 200,
+              headers: { 'content-type': 'application/json' },
+            })
+      )
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetDiscoveryCatalog();
+  });
+
+  it('enumerates the published dependency records in llms.txt', async () => {
+    const { GET } = await import('@/app/llms.txt/route');
+    const body = await (await GET()).text();
+
+    expect(body).toContain('https://reliastra.com/observatory/openai');
+    expect(body).toContain('Enumerated from the public catalog at');
+    // The reader is told not to invent slugs, which is the failure the
+    // enumeration exists to prevent.
+    expect(body).toContain('do not guess slugs');
+  });
+
+  it('reports an unreadable catalog instead of listing no records', async () => {
+    catalogFails = true;
+    const { GET } = await import('@/app/llms.txt/route');
+
+    const body = await (await GET()).text();
+
+    // "No records are published" is a false claim about the product, and it is
+    // exactly the kind of false claim a model repeats verbatim.
+    expect(body).toContain('could not be read');
+    expect(body).not.toContain('https://reliastra.com/observatory/openai');
+    // Nor may it claim the opposite: that RELIASTRA publishes no records.
+    expect(body).not.toContain('No dependency records are published yet');
+  });
+
   it('serves llms.txt and llms-full.txt as plain text with absolute URLs', async () => {
     const llms = await import('@/app/llms.txt/route');
     const full = await import('@/app/llms-full.txt/route');
