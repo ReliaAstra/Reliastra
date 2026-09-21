@@ -226,10 +226,12 @@ describe('the transport is cacheable and bounded', () => {
   it('presents the reader token when one is configured', async () => {
     vi.resetModules();
     vi.stubEnv('RELIASTRA_READER_TOKEN', 'reader-secret');
-    const module = await import('@/lib/track-api');
+    // Not named `module`: Next's ESLint bans assigning to that identifier
+    // (`no-assign-module-variable`) because it shadows the CommonJS binding.
+    const trackApi = await import('@/lib/track-api');
     stubFetch(() => jsonResponse(VENDOR_DETAIL));
 
-    await module.readVendorDetail('openai');
+    await trackApi.readVendorDetail('openai');
 
     const headers = (calls[0].init as RequestInit).headers as Record<string, string>;
     expect(headers['x-reliastra-reader']).toBe('reader-secret');
