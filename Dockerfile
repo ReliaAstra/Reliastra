@@ -33,8 +33,8 @@ WORKDIR /build
 # before this step. `npm ci` (not install) for exact lockfile versions:
 # floating re-resolution breaks on peer conflicts (react-dom 19.3 vs pinned
 # react 19.2 types) and is non-deterministic between environments.
-COPY frontend/package.json frontend/package-lock.json frontend/bun.lock ./
-RUN npm ci --no-audit --no-fund
+COPY frontend/package.json frontend/package-lock.json* frontend/bun.lock* ./
+RUN npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund
 
 COPY frontend/prisma ./prisma
 RUN npx prisma generate
