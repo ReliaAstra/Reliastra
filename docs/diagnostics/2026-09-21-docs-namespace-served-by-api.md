@@ -187,16 +187,12 @@ curl -s https://reliastra.com/docs/monitoring | head -c 200   # expect HTML, not
 The new smoke test step will confirm this on the next deploy; until it is run manually, the
 production `/docs` namespace remains down.
 
-### One change could not be pushed
+### The CI change landed separately
 
-The GitHub App used by this session has no `workflows` permission, so GitHub
-rejected the push that touched `.github/workflows/ci.yml`. The change is
-preserved as `docs/diagnostics/2026-09-21-ci-frontend-tests.patch`; apply it with:
-
-```bash
-git apply docs/diagnostics/2026-09-21-ci-frontend-tests.patch
-rm docs/diagnostics/2026-09-21-ci-frontend-tests.patch
-```
+The GitHub App behind the first push had no `workflows` permission, so GitHub
+rejected the commit that touched `.github/workflows/ci.yml`. The change was
+carried as a patch file until that permission was granted, then applied and
+merged as `39e9a72` ("ci: run the frontend suite in the validate job").
 
 It adds one step to the `validate` job, after the TypeScript check:
 
@@ -206,6 +202,7 @@ It adds one step to the `validate` job, after the TypeScript check:
         run: npm test
 ```
 
-Until it lands, the 373 frontend tests — including both guards added here — do
-not run in CI. That is the single most important follow-up in this change: the
-routing guard only protects the site if something executes it.
+Confirmed running on `main` post-merge: step 10 of the `validate` job,
+`Test (frontend): success`, in run 35624131011. The 373 frontend tests -
+including both guards added here - now execute on every push. Before this they
+did not run anywhere.
