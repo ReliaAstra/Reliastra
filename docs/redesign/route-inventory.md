@@ -9,6 +9,15 @@ status code recorded; every navigation and footer destination was traced back to
 The authenticated customer console (`(console)/*`) and the authenticated partner
 dashboard are explicitly **out of scope** and were not restyled.
 
+> **Status (2026-09).** This is a snapshot of the surface as it stood on the
+> branch above, and two sections have since moved. **§1.3** describes routes that
+> were renamed and consolidated by the developer-first refurbishment: the public
+> dependency index is `/observatory`, and every `/track*` URL is a 308 to it -
+> §1.3 is corrected below. **§1.4** describes the B2B partner network, which was
+> unmounted entirely; those routes are 308s to `/creators` or 404s, and the
+> disposition is in `backend/docs/API_CHANGELOG.md`. The rows are kept as the
+> record of what was audited.
+
 ---
 
 ## 1. Route map
@@ -60,11 +69,43 @@ actually carries (`Research`, `Methodology`) plus the real per-article `tags`.
 
 | Route | Purpose | Status | Auth | SEO value | Redesign |
 |---|---|---|---|---|---|
-| `/track` | Tracked-vendor index. Live, `revalidate = 60`, server-fetched from the Track API. | 200 | public | **high** | yes |
-| `/track/[vendor]` | Per-vendor intelligence page: current state, 7d/30d availability, latency, regions, incident timeline, methodology. | 200 (404 for unknown vendor) | public | **high** | yes |
+| `/observatory` | Public dependency index. One paginated catalog walk (cached 60s at the read layer) plus a bounded detail prefix. Rendered per request - see the note below. | 200 | public | **high** | yes |
+| `/observatory/[vendor]` | Per-vendor record: current state, 7d/30d availability, latency, observation region, incident timeline, methodology. | 200 (404 for a vendor that publishes no record) | public | **high** | yes |
+| `/observatory/[vendor]/incidents/[id]` | Published incident record, live for `PUBLIC_INCIDENT_WINDOW_DAYS` (365). | 200 (404 when unknown or aged out) | public | **high** | yes |
+| `/track`, `/track/[vendor]`, `/track/[vendor]/incidents/[id]` | Retired names for the three routes above. | 308 | public | none | - |
 
-Real backend data via `src/lib/track-api.ts`. When the API is unreachable the pages
-render an explicit "measurement network unreachable" state - never fabricated numbers.
+Real backend data via `src/lib/track-api.ts`, where every read carries
+`next.revalidate` - that is the only caching layer these routes have, and it is
+deliberate. When a read cannot be completed the page **throws**: the error
+boundary returns a 5xx. That replaced an earlier "measurement network
+unreachable" state rendered at HTTP 200, which was indexable and told a crawler
+the record had no data rather than that it could not be read. Nothing is ever
+fabricated, and `sitemap.xml` refuses to publish a partial list for the same
+reason.
+
+Two rendering models follow from that, and they differ on purpose:
+
+- **Per path, revalidated (ISR).** `/observatory/[vendor]` and its incident pages
+  have no `generateStaticParams`, so Next renders each path on first request and
+  revalidates it on the interval the route declares (60s / 300s). A failed
+  revalidation leaves the last good render serving while the failure is logged, so
+  an outage degrades freshness, not availability.
+- **Per request.** `/observatory`, `sitemap.xml`, `/llms.txt`, the research hub and
+  the homepage index section call `renderAtRequestTime()`
+  (`src/lib/render-at-request-time.ts`) before their first read. These are the
+  surfaces a build would otherwise prerender - and a build has no measurement API,
+  so a prerender either fails the build (where the read throws) or bakes the
+  failure state into the deployment artifact and serves it as fact until the next
+  deploy (where the read is caught). The reads stay cached, so a request does not
+  re-walk the API; what is not cached is the HTML. During an outage the index
+  therefore returns a 5xx rather than a stale or empty page, while the record
+  pages beneath it keep serving their last good render.
+
+The crawler-facing contract for these routes - sitemap contents, robots.txt rule
+order, the llms.txt discovery files, record status under load - is checked by
+`frontend/scripts/audit-live-dependency-index.sh`; the route-level expectations
+by `frontend/scripts/verify-public-routes.mjs`, which reads its indexable
+inventory from the sitemap instead of maintaining one here.
 
 ### 1.4 Partner network
 
@@ -83,6 +124,16 @@ render an explicit "measurement network unreachable" state - never fabricated nu
 | `/partner/login` | **Partner** sign-in. | 200 | public | noindex | yes |
 | `/partner/forgot-password` | Partner password reset request. | 200 | public | noindex | yes |
 | `/partner/privacy` `/partner/terms` | Program-specific legal (referral cookies, attribution windows, commission tracking). | 200 | public | low | yes (chrome) |
+
+**All of the above is retired.** The B2B partner network was unmounted by the
+developer-first refurbishment: `/partner`, `/partners` and every `/partner/*`
+subpath are 308s to `/creators` (the redirect flattens the path - a bookmarked
+`/partner/commission` lands on the creator home, not on a commission page), the
+`/v1/partners/*` API is gone, and the creator programme that replaced it lives at
+`/creators` and `/r/{code}`. See
+`backend/docs/API_CHANGELOG.md` §"Removed endpoints" for the disposition and
+`docs/redesign/developer-first-refurbishment.md` for the reasoning. The rows stay
+as the record of what this audit measured.
 
 Partner *dashboard* pages (`dashboard`, `referrals`, `earnings`, `payouts`,
 `notifications`, `settings`) intentionally have **no file routes** - they are
@@ -123,8 +174,9 @@ Behaviour that must not change and was preserved verbatim:
 | Route | Purpose |
 |---|---|
 | `/robots.ts` → `/robots.txt` | Crawl policy. |
-| `/sitemap.ts` → `/sitemap.xml` | Derived from `lib/routes` constants. |
-| `/llms.txt`, `/llms-full.txt` | Machine-readable site summaries. |
+| `/sitemap.ts` → `/sitemap.xml` | `lib/routes` constants plus every published dependency record, its incidents and the research hub. Rendered per request; refuses to publish a partial list. |
+| `/llms.txt` | Discovery document for models: methodology plus the enumerated record list. Rendered per request, `Cache-Control: public, max-age=3600, s-maxage=86400`. |
+| `/llms-full.txt` | The same document with the reference material inlined. Static content, no live read. |
 | `/opengraph-image` | Generated OG card. |
 | `/api/*` | Proxy + auth handlers. `X-Robots-Tag: noindex`. |
 

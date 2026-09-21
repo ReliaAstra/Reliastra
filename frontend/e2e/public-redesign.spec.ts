@@ -312,16 +312,23 @@ test.describe('error states', () => {
     request,
   }) => {
     const res = await request.get('/observatory/not-a-real-vendor-zzz');
-    expect([404, 200]).toContain(res.status());
-    if (res.status() === 200) {
-      // The only acceptable 200 is the explicit "unreachable" state, which
-      // must not display fabricated metrics.
-      const body = await res.text();
-      expect(body).toMatch(
-        /unreachable|Record unavailable|does not publish a record/i
-      );
-      expect(body).not.toMatch(/99\.9\d%/);
-    }
+    /**
+     * A 200 used to be tolerated here when the body said the measurement
+     * network was unreachable. That tolerance is what let an upstream failure
+     * publish an indexable page for a dependency that has no record, and it made
+     * "no such vendor" indistinguishable from "could not read it" - the two
+     * facts a crawler, and a reader, most need told apart.
+     *
+     * The record page now calls `notFound()` only when the API answers that the
+     * vendor publishes no record, and throws when a read fails, so the failure
+     * reaches the error boundary as a 5xx and ISR keeps serving the last good
+     * render. Anything but a 404 here is the regression.
+     */
+    expect(res.status()).toBe(404);
+    const body = await res.text();
+    expect(body).not.toMatch(/99\.9\d%/);
+    expect(body.toLowerCase()).not.toContain('unreachable');
+    expect(body.toLowerCase()).toContain('does not publish a record');
   });
 });
 

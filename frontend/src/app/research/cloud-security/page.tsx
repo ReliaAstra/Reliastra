@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { SiteShell } from '@/components/site/site-shell';
 import { ResearchCategoryPage } from '@/components/research/category-index';
-import { canonicalUrl } from '@/lib/seo';
+import { canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { researchCategoryRoute } from '@/lib/routes';
+import { robotsDirective } from '@/lib/indexability';
 
 const SLUG = 'cloud-security';
 const PATH = researchCategoryRoute(SLUG);
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
   title: 'Cloud & AI infrastructure security research - RELIASTRA',
   description:
     'Trust boundaries, failure domains and attack surface in architectures that depend on cloud control planes and hosted model APIs. Architecture analysis for cloud security and AI infrastructure engineers.',
-  alternates: { canonical: canonicalUrl(PATH) },
-  robots: { index: true, follow: true },
+  alternates: { canonical: canonicalUrl(PATH), ...DISCOVERY_ALTERNATES },
+  robots: robotsDirective({ index: true, follow: true }),
   openGraph: {
     title: 'Cloud & AI infrastructure security - RELIASTRA Research',
     description:

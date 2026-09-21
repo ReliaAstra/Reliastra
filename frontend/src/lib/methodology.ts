@@ -38,6 +38,7 @@ import {
   OBSERVATION_POINT_COUNT,
   OBSERVATION_POINT_LABEL,
   PRIMARY_OBSERVATION_REGION,
+  PUBLIC_INCIDENT_WINDOW_DAYS,
 } from './product-contract';
 
 /* ── Observation ────────────────────────────────────────────────────────── */
@@ -141,9 +142,22 @@ export const EVIDENCE = {
   schemaVersion: EVIDENCE_SCHEMA_VERSION,
   /** Retained and re-verifiable for this long after issue. */
   retentionDays: EVIDENCE_EXPIRY_DAYS,
+  /**
+   * How far back the public incident channel lists incidents, and therefore
+   * how long a published incident URL stays live before it 404s. Aligned to
+   * `retentionDays` on purpose: a record must not outlive the artifact it
+   * indexes, and must not be withdrawn while the docs still claim it.
+   */
+  publicIncidentWindowDays: PUBLIC_INCIDENT_WINDOW_DAYS,
   /** Verification is unauthenticated: the token in the document is the proof. */
   verificationPath: '/reports',
 } as const;
+
+/**
+ * Re-exported as a scalar for the surfaces that state the number in prose
+ * (`/llms-full.txt`). Same value, same source of truth.
+ */
+export { PUBLIC_INCIDENT_WINDOW_DAYS };
 
 /** What an evidence record can be used for, and what it cannot. */
 export const EVIDENCE_CAN = [

@@ -25,16 +25,30 @@
 
 const BASE = (process.argv[2] ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
 
-/** Routes seeded into the crawl. Everything else is discovered from links. */
+/**
+ * Routes seeded into the crawl. Everything else is discovered from links.
+ *
+ * This list used to seed the surfaces retired in the developer-first
+ * refurbishment (`/track`, `/partner`, `/external-dependency-intelligence`,
+ * `/dependency-monitoring`, `/sla-evidence`, `/incident-evidence`), all of
+ * which are 308s now, and it never seeded `/observatory` - the public
+ * dependency record, and the surface this script most needs to crawl. The
+ * retired URLs are still covered: they are linked from the pages that absorbed
+ * them, so the transitive crawl reaches them and records the redirect.
+ *
+ * The crawler-facing contract of the observatory specifically - sitemap
+ * contents, robots.txt rule order, the llms.txt discovery files, and what a
+ * record URL does when the measurement API is down - is checked by
+ * `scripts/audit-live-dependency-index.sh`, which is the gate that runs in CI.
+ */
 const SEEDS = [
   '/',
   '/product',
-  '/external-dependency-intelligence',
-  '/dependency-monitoring',
-  '/sla-evidence',
-  '/incident-evidence',
-  '/track',
+  '/product/evidence',
+  '/observatory',
   '/pricing',
+  '/agencies',
+  '/creators',
   '/research',
   '/glossary',
   '/docs',
@@ -44,7 +58,7 @@ const SEEDS = [
   '/security',
   '/privacy',
   '/terms',
-  '/partner',
+  '/refund-policy',
   '/login',
   '/signup',
   '/verify-email',

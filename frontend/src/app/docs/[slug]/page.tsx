@@ -8,7 +8,8 @@ import { DocsSideNav } from '@/components/docs/docs-side-nav';
 import { DocBlocks } from '@/components/docs/doc-blocks';
 import { DOCS, docFor } from '@/lib/docs/corpus';
 import { AUTH_ROUTES, DOCS_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
-import { SITE_URL, breadcrumbJsonLd, canonicalUrl } from '@/lib/seo';
+import { SITE_URL, breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { robotsDirective } from '@/lib/indexability';
 
 /**
  * One documentation guide.
@@ -34,8 +35,8 @@ export async function generateMetadata({
   return {
     title: `${doc.title} - RELIASTRA docs`,
     description: doc.summary,
-    alternates: { canonical: canonicalUrl(path) },
-    robots: { index: true, follow: true },
+    alternates: { canonical: canonicalUrl(path), ...DISCOVERY_ALTERNATES },
+    robots: robotsDirective({ index: true, follow: true }),
     openGraph: {
       title: `${doc.title} - RELIASTRA docs`,
       description: doc.summary,

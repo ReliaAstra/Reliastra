@@ -119,7 +119,20 @@ export const QUORUM_WINDOW_SECONDS = 60;
  * probes; region stays a result label."
  */
 export const ALLOWED_REGIONS = ['us-east', 'eu-west', 'ap-south', 'sa-east'] as const;
-export const DEFAULT_REGIONS = ['us-east', 'eu-west'] as const;
+
+/**
+ * The regions a new `vendor_endpoints` row is created with - one, because one
+ * observation point is deployed.
+ *
+ * This used to transcribe the seeded pair `['us-east', 'eu-west']`, which no
+ * probe ever ran under: 0004 wrote both labels into every endpoint it seeded,
+ * and a record page dutifully printed a second origin for measurements taken
+ * from a single host. Migration `0038_public_endpoint_regions` corrects the
+ * column default and the rows that still carry the seed, keeping any label a
+ * probe genuinely observed under. `product-contract.test.ts` pins this array to
+ * that migration's `NEW_DEFAULT` so the two cannot drift apart again.
+ */
+export const DEFAULT_REGIONS = ['us-east'] as const;
 
 /* ── Observation topology ───────────────────────────────────────────────── */
 
@@ -336,6 +349,20 @@ export const EVIDENCE_FOOTER_FIELDS = [
 ] as const;
 
 export const EVIDENCE_EXPIRY_DAYS = 365;
+
+/**
+ * How far back the public incident channel lists incidents, in days.
+ * Transcribed from `PUBLIC_INCIDENT_WINDOW_DAYS` in `backend/app/config.py`.
+ *
+ * This is a published-URL lifetime rather than a retention detail: every
+ * incident the public endpoint returns has a page at
+ * `/observatory/{vendor}/incidents/{id}`, is linked from the record and is
+ * listed in the sitemap. An incident that ages out of the window takes a URL
+ * that is already indexed and cited to a 404, which is why it is aligned to
+ * the evidence retention above and why `product-contract.test.ts` fails if the
+ * backend value moves.
+ */
+export const PUBLIC_INCIDENT_WINDOW_DAYS = 365;
 
 /**
  * Schema version stamped on the compiled artifact. Mirrors

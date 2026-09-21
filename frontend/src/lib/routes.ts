@@ -137,10 +137,18 @@ export const SHARE_ROUTES = {
   /** The public record for one measured vendor. */
   observatoryVendor: (vendor: string) => `/observatory/${encodeURIComponent(vendor)}`,
   /**
-   * Permanent public incident record for one measured vendor. The URL is
-   * derived from the incident id exactly as the measurement API returns it,
-   * so an incident record is stable forever: the list page is where freshness
-   * lives, the incident page is a historical artifact and never re-truthed.
+   * Public incident record for one measured vendor. The URL is derived from
+   * the incident id exactly as the measurement API returns it, so a published
+   * record keeps one stable address: the list page is where freshness lives,
+   * and the incident page is a historical artifact that is never re-truthed.
+   *
+   * Not permanent, and nothing may describe it that way. The public channel
+   * lists incidents for `PUBLIC_INCIDENT_WINDOW_DAYS` (see
+   * `lib/product-contract.ts`, mirroring the backend setting), and an incident
+   * that leaves that window takes this URL to a 404. The window is aligned to
+   * the evidence retention the docs publish, so a record does not outlive the
+   * artifact it indexes - but "stable while published" and "stable forever"
+   * are different claims, and only the first one is true.
    */
   observatoryIncident: (vendor: string, incidentId: string) =>
     `/observatory/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,

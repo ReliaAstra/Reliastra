@@ -604,3 +604,73 @@ documented observations, the verification URL as text and QR, the signature
 block, and stated retention. Its field labels are pinned by
 `frontend/src/lib/__tests__/product-contract.test.ts`, so a visual that claims to
 show the report has to show the real one.
+
+## Public dependency index: what a published record guarantees (2026-09)
+
+Additive, plus one widening. No endpoint was removed, no field renamed and no
+status code changed, so an existing client keeps working. What changed is what a
+successful response promises, and how the site's own reads are metered.
+
+### `GET /v1/vendors/{name}/incidents/public` - window widened from 90 to 365 days
+
+The endpoint returns incidents from the last `PUBLIC_INCIDENT_WINDOW_DAYS`
+(default **365**; it was hard-coded at 90). Clients see more rows, not different
+ones.
+
+Treat this as a published-URL lifetime, not a query knob. Every incident in the
+response has its own public page
+(`https://reliastra.com/observatory/{vendor}/incidents/{id}`), is linked from the
+vendor record, and is listed in `sitemap.xml`. An incident that ages out of the
+window therefore takes a URL that used to resolve to a 404, so the setting is
+held at the retention the published documents promise
+(`DEFAULT_EVIDENCE_EXPIRY_DAYS`, 365 days). A staging deployment may set it
+lower; `frontend/src/lib/__tests__/product-contract.test.ts` asserts the two
+never drift apart, and that the gate service reads the setting rather than a
+literal.
+
+### Reader identity for the site's own reads: `X-Reliastra-Reader`
+
+The web app renders every public record server-side, so from this API's socket
+those reads all arrive from one address and were metered against a single per-IP
+bucket (300 req/min) shared with every browser call it proxies. One crawler
+walking the observatory exhausted it, and the public index started answering 429
+for exactly the pages the crawler came for.
+
+A caller may now present a shared secret:
+
+```http
+X-Reliastra-Reader: <INTERNAL_READER_TOKEN>
+```
+
+When it matches `settings.INTERNAL_READER_TOKEN` the caller is metered on the
+reader budget (3000 req/min) instead of by IP. The comparison is constant time
+and the token is never logged. Every other case - no header, wrong token, no
+token configured - falls back to IP metering exactly as before, so a deployment
+that has not set it is unaffected. This is a rate-limiting identity only: it
+grants no data access, and each endpoint it applies to is already public and
+unauthenticated.
+
+The 429 body is unchanged (`RATE_LIMIT_EXCEEDED`); its message now states which
+budget was exceeded. There is still no `Retry-After` header.
+
+### `GET /v1/vendors/{name}` - `endpoints[].regions` reflects the deployed probe
+
+Migration `0038_public_endpoint_regions` moves the `vendor_endpoints.regions`
+default from the seeded `["us-east", "eu-west"]` to `["us-east"]`, and rewrites
+rows that still carry the seed pair but were never observed from the second
+region. A region label a probe genuinely ran under is kept - the migration
+consults `observations.region` before touching a row, and logs what it
+normalized.
+
+One observation point is deployed, so a two-region array printed an origin no
+probe ever used on the page whose purpose is to refuse that implication. A
+deployment that really runs a fleet sets `regions` per endpoint and keeps both.
+
+### How a client should read a failure
+
+A 429 or 5xx from these endpoints means *the record could not be read*, never
+*the record does not exist*; only a 404 means the vendor publishes no record.
+The web app now holds that distinction on every public surface: an unreadable
+read throws and the page fails loudly instead of publishing an empty index, and
+`sitemap.xml` refuses to serve a partial list rather than telling a crawler that
+the missing records were withdrawn.

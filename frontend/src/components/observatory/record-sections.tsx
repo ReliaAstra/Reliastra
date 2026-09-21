@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import {
-  DEFAULT_REGION,
   TRACK_WINDOWS,
   type TrackCurrent,
   type TrackIncident,
@@ -597,7 +596,7 @@ export function IncidentsSection({
   incidents: MergedIncident[];
   unavailable: boolean;
   vendorName: string;
-  /** Vendor record path; incident rows link to their permanent records. */
+  /** Vendor record path; incident rows link to their published records. */
   basePath: string;
   /** Regions declared on the record - decides the corroboration sentence. */
   regionCount: number;
@@ -716,7 +715,7 @@ export function IncidentsSection({
           rows={incidents}
           rowKey={(i) => i.incident_id}
           from="xl"
-          caption="Times are UTC. An open incident has no resolution time because RELIASTRA has not yet observed a qualifying recovery. Every row is a permanent record at its own address."
+          caption="Times are UTC. An open incident has no resolution time because RELIASTRA has not yet observed a qualifying recovery. Every row links to a published record at its own address."
         />
       ) : (
         <Notice title="No public incident records">
@@ -1200,35 +1199,15 @@ export function RecordCTA({ vendorName }: { vendorName: string }) {
 /* ── Failure state ──────────────────────────────────────────────────────── */
 
 /**
- * Rendered when the vendor's own identity cannot be read. It must never
- * resemble a healthy record: no figures, no state word, no chart frame.
+ * There is deliberately no "record unavailable" component here.
+ *
+ * One used to exist, and the vendor record rendered it at HTTP 200 when the
+ * measurement API could not be read: an indexable page with a headline, a
+ * canonical URL and no data on it. A failure to read is not content.
+ *
+ * The contract now lives in the pages and the segment error boundaries:
+ * an unreadable record throws (`RecordUnreadableError`) and becomes a 5xx that
+ * a crawler retries, and only an API 404 becomes a 404. If you need a failure
+ * state for a *secondary section* of a record that did render, use `Notice`
+ * and say what could not be read - never for the record itself.
  */
-export function RecordUnavailable({ vendorName }: { vendorName: string }) {
-  return (
-    <div className="ob-container py-20 md:py-28">
-      <p className="ob-label obs-label-crit">Observation unavailable</p>
-      <h1 className="ob-h1 mt-5 max-w-[20ch]">
-        This record could not be read from the measurement network.
-      </h1>
-      <p className="ob-lede mt-6 max-w-[62ch]">
-        The measurement API is unreachable. No cached or approximate figure is shown for{' '}
-        {vendorName}.
-      </p>
-      <div className="mt-10 flex flex-wrap gap-3">
-        <Link href={SHARE_ROUTES.observatoryVendor(vendorName)} className="ob-btn ob-btn-outline">
-          Retry this record
-        </Link>
-        <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">
-          All tracked dependencies
-        </Link>
-        <Link href={PUBLIC_ROUTES.status} className="ob-btn ob-btn-outline">
-          RELIASTRA platform status
-        </Link>
-      </div>
-      <p className="ob-small mt-10 max-w-[62ch]">
-        If this persists, the platform status page reports whether the measurement network itself
-        is degraded. The deployed observation point is {DEFAULT_REGION}.
-      </p>
-    </div>
-  );
-}

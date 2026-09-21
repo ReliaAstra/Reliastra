@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import CursorPagination
-from app.core.rate_limit import SlidingWindowRateLimiter, enforce_rate_limit, public_vendor_limiter
+from app.platform.web.rate_limit import (
+    SlidingWindowRateLimiter,
+    enforce_public_read_limit,
+    enforce_rate_limit,
+)
 from app.db.session import get_db
 from app.modules.vendors.schemas import (
     VendorDeveloperResponse,
@@ -29,7 +33,17 @@ def get_vnd_service() -> VendorService:
 
 
 async def _rate_limit(request: Request) -> None:
-    await enforce_rate_limit(request, public_vendor_limiter)
+    """Public-read budget: per client IP, except for the web app's own reader.
+
+    Every public observatory page is rendered server-side by the web app, so
+    without a reader identity all of those reads arrive from one socket address
+    and share a single per-IP bucket with the browser calls the web app
+    proxies. One crawler walking the observatory then exhausts it for the whole
+    site - including the record pages the crawler came to read.
+    ``enforce_public_read_limit`` gives an authenticated reader its own budget
+    and leaves every other caller limited by IP.
+    """
+    await enforce_public_read_limit(request)
 
 
 _PUBLIC_VENDORS_CACHE_TTL = 60

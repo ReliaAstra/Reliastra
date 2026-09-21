@@ -7,7 +7,11 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.rate_limit import SlidingWindowRateLimiter, enforce_rate_limit
+from app.platform.web.rate_limit import (
+    SlidingWindowRateLimiter,
+    enforce_public_read_limit,
+    enforce_rate_limit,
+)
 from app.db.session import get_db
 from app.dependencies import get_current_org, get_current_user, require_admin
 from app.modules.evidence_gate.schemas import (
@@ -49,11 +53,24 @@ def get_evidence_gate_service() -> EvidenceGateService:
     response_model=list[PublicIncidentResponse],
 )
 async def list_public_incidents(
+    request: Request,
     vendor_name: str,
     db: AsyncSession = Depends(get_db),
     service: EvidenceGateService = Depends(get_evidence_gate_service),
 ) -> list[PublicIncidentResponse]:
-    """List public incidents with evidence reports for a vendor."""
+    """List public incidents with evidence reports for a vendor.
+
+    Throttled on the public-read budget like the rest of the public vendor
+    surface. It was the one unthrottled public read here, and it is the
+    endpoint the web app's sitemap walks once per vendor - an unbounded fan-out
+    on an unbounded endpoint.
+
+    Publication is decided per report (``PublicEvidenceReport.is_public``), not
+    per vendor: an organization publishing an evidence report is a stronger
+    statement than the vendor's catalog flag, so this endpoint does not require
+    the vendor itself to be flagged public.
+    """
+    await enforce_public_read_limit(request)
     return await service.list_public_incidents(db, vendor_name)
 
 

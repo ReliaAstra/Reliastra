@@ -2,11 +2,24 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { TrackVendorListItem } from '@/lib/track-api';
+import { SHARE_ROUTES } from '@/lib/routes';
 
 /**
  * The index rows on the homepage: primarily typographic, one hairline
  * between records, never a card. SSR supplies first paint; visible-page
  * polling prevents frozen "just now" labels.
+ *
+ * Record links go through `SHARE_ROUTES.observatoryVendor`, which percent-
+ * encodes the vendor name. This component used to interpolate the name into
+ * the path itself, so a dependency whose name carried a space, a slash or a
+ * non-ASCII character produced a URL that was not the canonical one - a second
+ * address for the same record, and a 404 whenever the raw name was not a valid
+ * path segment. Every other link to this route already encoded it.
+ *
+ * The poll costs one catalog read per visible tab per minute. It is keyed per
+ * client IP at the API because `backend-proxy.ts` forwards `X-Forwarded-For`,
+ * so open tabs no longer share a rate-limit bucket with the server's own
+ * reads.
  */
 export function PublicObservations({ initial }: { initial: TrackVendorListItem[] }) {
   const [vendors, setVendors] = useState(initial);
@@ -41,7 +54,7 @@ export function PublicObservations({ initial }: { initial: TrackVendorListItem[]
         const status = stale ? 'No recent data' : ({ operational: 'Operational', down: 'Check failed', degraded: 'Degraded', stale: 'No recent data' }[v.recent_status ?? ''] ?? 'No observations');
         const state = stale ? 'unknown' : ({ operational: 'healthy', down: 'critical', degraded: 'degraded', stale: 'unknown' }[v.recent_status ?? ''] ?? 'unknown');
         return <li key={v.id} className="border-t border-[var(--ob-line)]">
-          <Link href={`/observatory/${v.vendor_name}`} className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto]">
+          <Link href={SHARE_ROUTES.observatoryVendor(v.vendor_name)} className="group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 py-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto_auto]">
             <span className="min-w-0">
               <span className="block truncate text-[clamp(1.25rem,2.6vw,1.875rem)] font-semibold uppercase leading-[1.05] tracking-[-0.015em] text-[var(--ob-text)]">
                 {v.display_name}

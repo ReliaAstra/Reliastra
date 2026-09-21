@@ -5,11 +5,12 @@ import { ThemeProvider } from "next-themes";
 import { VisitBeacon } from "@/components/analytics/visit-beacon";
 import { AttributionCapture } from "@/components/analytics/attribution-capture";
 import { ReferralCapture } from "@/components/analytics/referral-capture";
+import { SITE_INDEXABLE } from "@/lib/indexability";
+import { SITE_URL } from "@/lib/site-url";
+import { DISCOVERY_ALTERNATES } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://reliastra.com'
-  ),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "RELIASTRA - External Dependency Intelligence",
     template: "%s | RELIASTRA",
@@ -33,17 +34,34 @@ export const metadata: Metadata = {
   publisher: "Reliastra, Inc.",
   alternates: {
     canonical: "https://reliastra.com",
+    ...DISCOVERY_ALTERNATES,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  /**
+   * Deployment gate. On any host that is not the canonical production site -
+   * a preview, a staging build, a self-hosted instance without an explicit
+   * opt-in - the whole site is noindex. Every page here publishes a canonical
+   * URL pointing at reliastra.com, so indexing a second origin publishes
+   * duplicates of the same dependency records and splits the signal the real
+   * records need. `next.config.ts` sends the matching `X-Robots-Tag` header so
+   * the gate holds even on a route that sets its own metadata.
+   */
+  robots: SITE_INDEXABLE
+    ? {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      }
+    : {
+        index: false,
+        follow: false,
+        noarchive: true,
+        googleBot: { index: false, follow: false },
+      },
   icons: {
     icon: "/logo.svg",
   },

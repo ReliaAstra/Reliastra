@@ -9,15 +9,17 @@ import {
   organizationJsonLd,
   softwareAppJsonLd,
   websiteJsonLd,
+  DISCOVERY_ALTERNATES,
 } from '@/lib/seo';
+import { robotsDirective } from '@/lib/indexability';
 
 
 export const metadata: Metadata = {
   title: 'RELIASTRA - Observe external dependencies',
   description:
     'RELIASTRA probes the external services your software depends on, records every observation, confirms faults deterministically, and keeps a verifiable record of what happened.',
-  alternates: { canonical: canonicalUrl('/') },
-  robots: { index: true, follow: true },
+  alternates: { canonical: canonicalUrl('/'), ...DISCOVERY_ALTERNATES },
+  robots: robotsDirective({ index: true, follow: true }),
   openGraph: {
     title: 'RELIASTRA - Observe external dependencies',
     description:

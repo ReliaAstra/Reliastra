@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
-  fetchVendorDetail,
-  fetchVendorIncidents,
-  fetchVendorPublicIncidents,
+  readVendorDetail,
+  readVendorPublicIncidents,
+  RecordUnreadableError,
   regionsOf,
   type TrackPublicIncident,
+  type TrackVendorDetail,
+  type UnreadableReason,
 } from '@/lib/track-api';
 import {
   duration as fmtDuration,
@@ -19,8 +21,10 @@ import {
   utcStamp,
   type ObservedState,
 } from '@/lib/observatory/format';
-import { mergeIncidents } from '@/lib/observatory/incidents';
-import { canonicalUrl, breadcrumbJsonLd } from '@/lib/seo';
+import { mergeIncidents, type MergedIncident } from '@/lib/observatory/incidents';
+import { breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { robotsDirective } from '@/lib/indexability';
+import { PUBLIC_INCIDENT_WINDOW_DAYS } from '@/lib/methodology';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
   PUBLIC_ROUTES,
@@ -39,15 +43,29 @@ import {
 import { EvidenceRequest } from '@/components/observatory/evidence-request';
 
 /**
- * A permanent public incident record.
+ * A published public incident record.
  *
- * This page renders if and only if the incident exists in one of the two
- * public incident endpoints of the measurement API for this vendor. There is
- * no seeded example, no placeholder incident, and no incident inferred from an
- * outside report: an incident RELIASTRA did not measure has no page here, full
- * stop. The route is live so that when the first measured incident is
- * published it lands on a stable URL immediately, linked from the vendor
- * record, the vendor index, and the sitemap.
+ * This page renders if and only if the incident appears in the measurement
+ * API's published-incident set for this dependency
+ * (`GET /v1/vendors/{name}/incidents/public`). There is no seeded example, no
+ * placeholder incident, and no incident inferred from an outside report: an
+ * incident RELIASTRA did not measure has no page here, full stop. The route is
+ * live so that when the first measured incident is published it lands on a
+ * stable URL immediately, linked from the vendor record, the vendor index, and
+ * the sitemap.
+ *
+ * How long it stays published is a backend property, not a claim this page
+ * gets to make: the published set covers
+ * `settings.PUBLIC_INCIDENT_WINDOW_DAYS` of incident history, aligned to the
+ * evidence-retention period the API documents. Once a record leaves that
+ * window this URL 404s, so nothing here or in `llms.txt` describes these pages
+ * as permanent.
+ *
+ * Response contract (the reason this page has four outcomes instead of two):
+ * published incident -> 200 `index`; dependency or incident absent -> 404
+ * `noindex`; measurement API did not answer -> throw, so the vendor segment's
+ * error boundary returns a 5xx and the URL stays indexed for retry. A timeout
+ * must never be able to withdraw a published record from the index.
  *
  * What is rendered: the incident's own stored fields, the observation scope of
  * the vendor record it belongs to, and - as on every observatory page - the
@@ -60,26 +78,59 @@ interface PageProps {
 
 export const revalidate = 300;
 
-async function load(vendor: string, id: string) {
-  let detail: Awaited<ReturnType<typeof fetchVendorDetail>> = null;
-  try {
-    detail = await fetchVendorDetail(vendor);
-  } catch {
-    detail = null;
+/**
+ * Four outcomes, because they are not the same statement:
+ *
+ *  - `ok`              the incident is in the published set. Render it.
+ *  - `vendor-missing`  the API answered 404 for the dependency itself, so no
+ *                      incident of its can have a page. 404, `noindex`.
+ *  - `incident-missing` the dependency is readable and this incident is not in
+ *                      its published set. 404, `noindex`.
+ *  - `unreadable`      the API did not answer. Existence is unknown: 5xx so a
+ *                      crawler retries, and never `noindex`.
+ *
+ * The previous shape collapsed the last case into the second and third: a
+ * timeout returned `null`, which rendered a 200 "record unavailable" page and
+ * emitted `noindex` on a URL that is in the sitemap and described as a
+ * permanent public record.
+ */
+type IncidentLoad =
+  | {
+      kind: 'ok';
+      detail: TrackVendorDetail;
+      incident: MergedIncident;
+      publicRecord: TrackPublicIncident | null;
+      merged: MergedIncident[];
+    }
+  | { kind: 'vendor-missing' }
+  | { kind: 'incident-missing' }
+  | { kind: 'unreadable'; reason: UnreadableReason };
+
+async function load(vendor: string, id: string): Promise<IncidentLoad> {
+  const detailRead = await readVendorDetail(vendor);
+  if (detailRead.kind === 'missing') return { kind: 'vendor-missing' };
+  if (detailRead.kind === 'unreadable') {
+    return { kind: 'unreadable', reason: detailRead.reason };
   }
-  if (!detail) return null;
+  const detail = detailRead.value;
 
-  const [all, published] = await Promise.all([
-    fetchVendorIncidents(vendor).catch(() => null),
-    fetchVendorPublicIncidents(vendor).catch(() => null),
-  ]);
+  // The published-incident set is the only populated public source; the
+  // `/incidents` endpoint returns an empty list by design, so it is not read.
+  const publishedRead = await readVendorPublicIncidents(vendor);
+  if (publishedRead.kind === 'missing') return { kind: 'incident-missing' };
+  if (publishedRead.kind === 'unreadable') {
+    return { kind: 'unreadable', reason: publishedRead.reason };
+  }
 
-  const merged = mergeIncidents(all, published);
+  const published = publishedRead.value;
+  const merged = mergeIncidents(null, published);
   const incident = merged.find((m) => m.incident_id === id) ?? null;
-  const publicRecord: TrackPublicIncident | null =
-    (published ?? []).find((p) => p.incident_id === id) ?? null;
+  if (!incident) return { kind: 'incident-missing' };
 
-  return { detail, incident, publicRecord, merged };
+  const publicRecord: TrackPublicIncident | null =
+    published.find((p) => p.incident_id === id) ?? null;
+
+  return { kind: 'ok', detail, incident, publicRecord, merged };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -87,17 +138,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const path = SHARE_ROUTES.observatoryIncident(vendor, id);
   const url = canonicalUrl(path);
 
-  let loaded: Awaited<ReturnType<typeof load>> = null;
-  try {
-    loaded = await load(vendor, id);
-  } catch {
-    loaded = null;
-  }
-  if (!loaded || !loaded.incident) {
+  const loaded = await load(vendor, id);
+
+  /**
+   * The API did not answer, so whether this incident exists is unknown. The
+   * URL keeps its indexability and the body throws for a 5xx. `noindex` here
+   * would withdraw a published, sitemap-listed record on the strength of a
+   * timeout - and a withdrawn URL that later returns is a re-crawl the site
+   * has to earn back.
+   */
+  if (loaded.kind === 'unreadable') {
     return {
       title: 'Incident record - RELIASTRA observatory',
-      alternates: { canonical: url },
-      robots: { index: false, follow: true },
+      alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+      robots: robotsDirective({ index: true, follow: true }),
+    };
+  }
+
+  /** Either the dependency or the incident is absent. The body 404s to match. */
+  if (loaded.kind !== 'ok') {
+    return {
+      title: 'Incident record - RELIASTRA observatory',
+      alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+      robots: robotsDirective({ index: false, follow: true }),
     };
   }
 
@@ -112,8 +175,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    alternates: { canonical: url },
-    robots: { index: true, follow: true },
+    alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+    robots: robotsDirective({ index: true, follow: true }),
     openGraph: {
       title,
       description,
@@ -141,28 +204,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function IncidentRecordPage({ params }: PageProps) {
   const { vendor, id } = await params;
   const loaded = await load(vendor, id);
-  if (!loaded) {
-    // The vendor's identity could not be read: say "unavailable", never "not found".
-    return (
-      <ObservatoryShell>
-        <div className="ob-container py-20 md:py-28">
-          <p className="ob-label obs-label-crit">Record unavailable</p>
-          <h1 className="ob-h1 mt-5 max-w-[24ch]">The measurement API could not be read.</h1>
-          <p className="ob-lede mt-6 max-w-[62ch]">
-            RELIASTRA may hold this incident record; the API did not answer, and a page about
-            reliability must not guess its own data. Try again shortly, or open the vendor record.
-          </p>
-          <p className="mt-8">
-            <Link href={SHARE_ROUTES.observatoryVendor(vendor)} className="ob-link">
-              Back to the {vendor} record
-            </Link>
-          </p>
-        </div>
-      </ObservatoryShell>
+
+  /**
+   * Existence unknown. Throwing is the response: the nearest error boundary
+   * (`observatory/[vendor]/error.tsx`) renders it as a 5xx, which is what tells
+   * a crawler to retry, and under ISR the last good render keeps serving.
+   */
+  if (loaded.kind === 'unreadable') {
+    throw new RecordUnreadableError(
+      loaded.reason,
+      `/vendors/${vendor}/incidents/public`
     );
   }
+
+  /** The dependency or the incident is absent: a real 404, not a soft one. */
+  if (loaded.kind !== 'ok') notFound();
+
   const { detail, incident, publicRecord } = loaded;
-  if (!incident) notFound();
 
   const path = SHARE_ROUTES.observatoryIncident(detail.vendor_name, incident.incident_id);
   const regions = regionsOf(detail);
@@ -332,7 +390,7 @@ export default async function IncidentRecordPage({ params }: PageProps) {
         id="not-established"
         tone="base"
         title="What this record does not establish"
-        note="A permanent record includes the boundaries of its own claims."
+        note={`A published record includes the boundaries of its own claims. This page is published for ${PUBLIC_INCIDENT_WINDOW_DAYS} days after the incident opened - the window the public evidence channel retains - after which this URL stops resolving.`}
       >
         <dl className="flex flex-col">
           <SpecRow term="Causation" wide>

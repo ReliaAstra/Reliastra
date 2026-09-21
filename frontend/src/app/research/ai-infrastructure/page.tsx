@@ -19,7 +19,7 @@ import {
   utcStamp,
 } from '@/lib/observatory/format';
 import { buildIsDownAnswer } from '@/lib/observatory/answer';
-import { canonicalUrl, breadcrumbJsonLd } from '@/lib/seo';
+import { canonicalUrl, breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
   AUTH_ROUTES,
@@ -40,6 +40,9 @@ import {
   Value,
   type RecordColumn,
 } from '@/components/observatory/primitives';
+import { robotsDirective } from '@/lib/indexability';
+import { PUBLIC_INCIDENT_WINDOW_DAYS } from '@/lib/methodology';
+import { renderAtRequestTime } from '@/lib/render-at-request-time';
 
 /**
  * The AI infrastructure hub: RELIASTRA's public reference layer for how AI
@@ -61,8 +64,8 @@ export const metadata: Metadata = {
   title: 'AI infrastructure status & reliability - the independent observatory',
   description:
     'Is OpenAI down? How would anyone know? RELIASTRA’s public record for AI providers: independently measured endpoint availability, latency windows, incident records, methodology and limits - not vendor status reporting.',
-  alternates: { canonical: canonicalUrl(researchHubRoute('ai-infrastructure')) },
-  robots: { index: true, follow: true },
+  alternates: { canonical: canonicalUrl(researchHubRoute('ai-infrastructure')), ...DISCOVERY_ALTERNATES },
+  robots: robotsDirective({ index: true, follow: true }),
   openGraph: {
     title: 'AI infrastructure status & reliability - RELIASTRA observatory',
     description:
@@ -88,7 +91,11 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60;
+/**
+ * No route-level `revalidate`: this hub reads the live catalog, so it renders
+ * per request (`connection()` below) and its reads are cached by
+ * `lib/track-api.ts`. The interval declared here was inert.
+ */
 
 const HUB_PATH = researchHubRoute('ai-infrastructure');
 
@@ -124,6 +131,11 @@ interface HubRow {
 }
 
 export default async function AiInfrastructureHubPage() {
+  // Rendered per request, never baked at build time: the build has no
+  // measurement API to read, so a prerender here would either fail the build or
+  // cache a failure state and serve it as fact. `lib/render-at-request-time.ts`
+  // carries the reasoning, including why this is not `force-dynamic`.
+  await renderAtRequestTime();
   let catalog: TrackVendorListItem[] = [];
   let networkFailed = false;
   try {
@@ -448,7 +460,7 @@ export default async function AiInfrastructureHubPage() {
         id="incidents"
         tone="base"
         title="Incident record"
-        note="Permanent public incident pages exist for incidents RELIASTRA has measured and whose evidence a monitoring organisation has published. The catalog is generated from that channel only."
+        note="Public incident pages exist for incidents RELIASTRA has measured and whose evidence a monitoring organisation has published, and each stays published for the evidence-retention window stated on the record. The catalog is generated from that channel only."
       >
         {!incidentsReadable && rows.length ? (
           <Notice kind="error" title="Incident channel unavailable">
@@ -482,10 +494,10 @@ export default async function AiInfrastructureHubPage() {
             As of {freshest ? utcStamp(freshest) : 'the latest read'}, RELIASTRA holds no published
             public incident record for the AI providers above. Read precisely, that means: no
             organisation has released an evidence report for an incident touching these endpoints
-            in the rolling 90-day window. It does not mean no outage occurred - endpoint
-            observations are stored whether or not any incident channel records them. When a public
-            incident record is created it gets a permanent page linked from the vendor record and
-            listed here.
+            in the rolling {PUBLIC_INCIDENT_WINDOW_DAYS}-day window the public channel retains. It
+            does not mean no outage occurred - endpoint observations are stored whether or not any
+            incident channel records them. When a public incident record is created it gets a page
+            of its own, linked from the vendor record and listed here.
           </Notice>
         )}
       </RecordSection>

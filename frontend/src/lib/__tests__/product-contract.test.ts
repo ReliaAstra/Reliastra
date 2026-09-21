@@ -10,6 +10,7 @@ import {
   CHECK_RESULT_FIELDS,
   CLASSIFICATION_THRESHOLDS,
   CORRELATION_WINDOW_SECONDS,
+  DEFAULT_REGIONS,
   EVIDENCE_EXPIRY_DAYS,
   EVIDENCE_FOOTER_FIELDS,
   EVIDENCE_FORBIDDEN_CLAIMS,
@@ -17,6 +18,8 @@ import {
   EVIDENCE_REPORT_SECTIONS,
   INCIDENT_SEVERITIES,
   INCIDENT_STATUSES,
+  PRIMARY_OBSERVATION_REGION,
+  PUBLIC_INCIDENT_WINDOW_DAYS,
   QUORUM_MIN_REGIONS,
   QUORUM_WINDOW_SECONDS,
   ROOT_CAUSES,
@@ -230,5 +233,82 @@ describe('the generated artifact makes no fabricated claims', () => {
   it('labels the rolling 24h figure as context, separate from the incident', () => {
     expect(template).toContain('Rolling 24-Hour Health (Context)');
     expect(template).toContain('Incident Window Measurements');
+  });
+});
+
+describe('the public observatory contract', () => {
+  const config = read('config.py');
+  const vendorService = read('modules/vendors/service.py');
+
+  it('publishes the real public-incident window', () => {
+    /**
+     * Every incident the public channel returns has a web page, is linked from
+     * the record and is listed in the sitemap, so this number is a
+     * published-URL lifetime. It was a hard-coded 90 days in the service while
+     * the site described these records as permanent: a cited URL started
+     * returning 404 three months after publication.
+     */
+    const declared = config.match(
+      /PUBLIC_INCIDENT_WINDOW_DAYS: int = Field\(\s*default=(\d+)/
+    );
+    expect(declared, 'PUBLIC_INCIDENT_WINDOW_DAYS is not declared in config.py').not.toBeNull();
+    expect(Number(declared![1])).toBe(PUBLIC_INCIDENT_WINDOW_DAYS);
+  });
+
+  it('does not withdraw a record while its artifact is still retained', () => {
+    const expiry = evidenceConstants.match(/DEFAULT_EVIDENCE_EXPIRY_DAYS: int = (\d+)/);
+    expect(expiry).not.toBeNull();
+    expect(PUBLIC_INCIDENT_WINDOW_DAYS).toBeGreaterThanOrEqual(Number(expiry![1]));
+    expect(PUBLIC_INCIDENT_WINDOW_DAYS).toBe(EVIDENCE_EXPIRY_DAYS);
+  });
+
+  it('reads the window from configuration, not from a literal', () => {
+    const gateService = read('modules/evidence_gate/service.py');
+    expect(gateService).toContain('settings.PUBLIC_INCIDENT_WINDOW_DAYS');
+    expect(gateService).not.toContain('timedelta(days=90)');
+  });
+
+  it('names the region the API actually defaults to', () => {
+    /**
+     * The public record prefers "the API's own default region" when choosing
+     * which observation to lead with. This value was transcribed as
+     * `us-east-1` while the backend - and every seeded endpoint's region label
+     * - says `us-east`, so the preference never matched and silently fell
+     * through to whatever came first.
+     */
+    const backendDefault = vendorService.match(/_DEFAULT_REGION = "([^"]+)"/);
+    expect(backendDefault).not.toBeNull();
+    expect(PRIMARY_OBSERVATION_REGION).toBe(backendDefault![1]);
+  });
+
+  it('seeds public endpoints with the region that is deployed', () => {
+    /**
+     * One observation point is deployed (`OBSERVATION_POINT_COUNT`), so a
+     * seeded endpoint advertising two region labels prints a second origin no
+     * probe ever used - on the page whose whole purpose is to refuse that
+     * implication. Migration 0038 normalizes the seed and the column default.
+     */
+    const migration = readFileSync(
+      resolve(__dirname, '../../../../backend/app/db/migrations/versions/0038_public_endpoint_regions.py'),
+      'utf8'
+    );
+    expect(migration).toContain(`DEPLOYED_REGION = "${PRIMARY_OBSERVATION_REGION}"`);
+    expect(migration).toContain('server_default=NEW_DEFAULT');
+
+    /**
+     * The column default a new endpoint inherits, parsed out of the migration
+     * instead of matched as a literal: `DEFAULT_REGIONS` transcribes the same
+     * value on the frontend, and a literal regex would keep passing after
+     * either side changed on its own. Both must name the one deployed region,
+     * and that region must be one the backend accepts.
+     */
+    const newDefault = migration.match(/NEW_DEFAULT = '(\[[^\]]*\])'/);
+    expect(newDefault).not.toBeNull();
+    // The capture is already JSON: the migration writes a Python string
+    // literal whose contents are the JSON array the column default holds.
+    const seeded = JSON.parse(newDefault![1]) as string[];
+    expect(seeded).toEqual([...DEFAULT_REGIONS]);
+    expect(seeded).toEqual([PRIMARY_OBSERVATION_REGION]);
+    expect(ALLOWED_REGIONS).toContain(PRIMARY_OBSERVATION_REGION);
   });
 });

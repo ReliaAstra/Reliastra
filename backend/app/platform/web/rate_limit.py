@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 import logging
+import secrets
 import time
 
 from fastapi import Request
@@ -134,6 +135,88 @@ public_vendor_limiter = SlidingWindowRateLimiter(
 check_trigger_limiter = SlidingWindowRateLimiter(
     limit=30, window_seconds=60, key_prefix="rl_checkrun"
 )
+
+
+# Header the web app presents when it reads public vendor data server-side.
+_READER_HEADER = "x-reliastra-reader"
+
+#: Rate-limit identity of the site's own reader. One bucket by design: it is a
+#: single server process, and its budget is sized for rendering the public site
+#: rather than for one human client.
+INTERNAL_READER_IDENTITY = "internal_reader"
+
+# A mismatched token is a misconfiguration worth surfacing, but it is presented
+# on every server-side read - dozens per rendered page - so it is reported once
+# per process rather than once per request.
+_reader_token_mismatch_reported = False
+
+
+def internal_reader_identity(request: Request) -> str | None:
+    """Return the rate-limit identity of the site's own reader, or None.
+
+    The web app renders every public observatory record server-side, so from
+    the API's socket all of those reads arrive from one address - in the
+    all-in-one image, ``127.0.0.1``. Keyed by IP they share a bucket with every
+    browser call the web app proxies, and a single crawler walking the
+    observatory exhausts it for the whole site. The failure then surfaces as
+    records that cannot be read: exactly the pages the crawler came for, and
+    exactly the ones that must stay indexable.
+
+    The reader authenticates with a shared secret in ``X-Reliastra-Reader``
+    (``settings.INTERNAL_READER_TOKEN``, compared in constant time). When it
+    matches, the caller is identified as the site's reader and gets its own
+    budget. Anything else - no header, wrong token, no token configured -
+    returns None and the caller is limited by IP as before. This is a
+    rate-limiting identity only: it grants no data access, and every endpoint
+    it applies to is already public and unauthenticated.
+    """
+    global _reader_token_mismatch_reported
+
+    configured = settings.INTERNAL_READER_TOKEN
+    if not configured:
+        return None
+
+    presented = request.headers.get(_READER_HEADER)
+    if not presented:
+        return None
+
+    if secrets.compare_digest(presented, configured):
+        return INTERNAL_READER_IDENTITY
+
+    if not _reader_token_mismatch_reported:
+        _reader_token_mismatch_reported = True
+        # The token itself is never logged: a secret in a log is a secret in
+        # every log aggregation pipeline downstream.
+        logger.warning(
+            "Rejected an X-Reliastra-Reader token that does not match "
+            "INTERNAL_READER_TOKEN; falling back to IP rate limiting "
+            "(further mismatches are not logged)"
+        )
+    return None
+
+
+# The web app's own server-side reads. Sized for rendering the public site: one
+# record page is a handful of upstream reads and every visitor shares this one
+# process, so 3000/min (~50 rps) is an order of magnitude above what the
+# public surface costs while still bounding a runaway render loop.
+internal_reader_limiter = SlidingWindowRateLimiter(
+    limit=3000, window_seconds=60, key_prefix="rl_reader"
+)
+
+
+async def enforce_public_read_limit(request: Request) -> None:
+    """Rate-limit a public read, on the reader's own budget when it is the site.
+
+    Public vendor endpoints are read by two very different callers: individual
+    clients, who should be limited per client, and the web app rendering a page
+    on their behalf, whose reads all arrive from one address. Using one IP-keyed
+    bucket for both is what made the public observatory 429 itself.
+    """
+    reader = internal_reader_identity(request)
+    if reader is not None:
+        await enforce_rate_limit(request, internal_reader_limiter, identifier=reader)
+        return
+    await enforce_rate_limit(request, public_vendor_limiter)
 
 
 async def enforce_rate_limit(

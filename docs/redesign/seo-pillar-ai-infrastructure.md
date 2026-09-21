@@ -12,6 +12,17 @@ The governing rule for every page below is the rule the observatory already
 lives by: **a page exists when the data exists**. A route, a sitemap entry, a
 title, or a sentence that the measurement API cannot support is not shipped.
 
+> **Status (2026-09).** This document is the record of that change set, and parts
+> of it have since moved. The surface it calls `/track` is now `/observatory` -
+> the developer-first refurbishment renamed and consolidated it, and `/track` is
+> a 308. Known production risks 1, 2 and 5 at the end were fixed afterwards;
+> `docs/public-dependency-index-seo-llm-audit.md` is the audit that found what
+> remained and `docs/engineering/prompt-fix-public-dependency-index.md` is the
+> remediation spec. The governing rule above is unchanged, and is now enforced
+> rather than stated: an unreadable catalog read throws, the page fails loudly
+> instead of publishing an empty index, and `sitemap.xml` refuses to serve a
+> partial list.
+
 ---
 
 ## 1 · Integrity audit findings (and what was fixed)
@@ -105,9 +116,14 @@ the historic footer-404 class of defect.
    discovered through the published-evidence endpoint - capped at the first 24
    vendors, with graceful fallback when the API is unreachable at generation
    time. lastmod follows article `updatedAt` where present.
-6. **robots.txt.** Unchanged: `/track/**` (including `/incidents/**`) stays
-   crawlable; console/admin/auth/token routes stay disallowed; `/sitemap.xml`
-   advertised.
+6. **robots.txt.** `/observatory/**` (including `/incidents/**`) stays crawlable
+   by the absence of any rule against it, and there is deliberately no blanket
+   `Allow: /`: Next.js writes Allow lines before Disallow lines, and a
+   first-match reader - Python's `urllib.robotparser` through 3.12 and the ports
+   of it many agent crawlers use - stops at the Allow and voids every disallow
+   below it. Console/admin/auth/token routes stay disallowed; `/sitemap.xml` is
+   advertised. A deployment that is not the canonical host disallows everything
+   and advertises no sitemap.
 7. **llms.txt / llms-full.txt** refreshed with the hub, the incident-URL
    pattern, and an explicit "what the public observatory actually probes"
    section (status-site semantics, single origin, empty-incident caveat). Kept
@@ -160,18 +176,20 @@ semantics, the 15-minute staleness rule, and endpoint-not-company scope.
 From `frontend/`:
 
 ```bash
-npm run test          # 231 unit tests incl. answer-builder, deriveState,
-                      # hub-routing, sitemap-source, nav-integrity, soft-404 guard
+npm run test          # unit tests incl. answer-builder, deriveState,
+                      # hub-routing, sitemap-source, nav-integrity, soft-404 guard,
+                      # indexability and the record-status contract
 npm run typecheck
 npm run lint
 npm run build
 node scripts/qa-backend.mjs 8787 &
 RELIASTRA_API_URL=http://127.0.0.1:8787 npm run start
 # then:
-curl -s localhost:3000/sitemap.xml | grep -c "/track/.*/incidents/"   # real incidents only
-curl -s -o /dev/null -w "%{http_code}\n" localhost:3000/track/nosuchvendor      # 404
-curl -s -o /dev/null -w "%{http_code}\n" localhost:3000/research/is-openai-down  # 308 -> hub child
-curl -s localhost:3000/robots.txt
+curl -s localhost:3000/sitemap.xml | grep -c "/observatory/.*/incidents/"  # real incidents only
+curl -s -o /dev/null -w "%{http_code}\n" localhost:3000/observatory/nosuchvendor  # 404
+curl -s -o /dev/null -w "%{http_code}\n" localhost:3000/research/is-openai-down   # 308 -> hub child
+curl -s localhost:3000/robots.txt | grep -c "^Allow:"                             # 0
+bash scripts/audit-live-dependency-index.sh   # the whole contract, against a live site
 ```
 
 The Playwright suites (`e2e/observatory.spec.ts`,
@@ -185,15 +203,44 @@ heading-order and alt-text checks pass).
 
 1. Single origin (`us-east`) until probe workers are deployed elsewhere - the
    copy now matches this, but multi-region incidents still cannot exist.
+   **Remediated (2026-09):** `vendor_endpoints.regions` no longer carries a
+   seeded `eu-west` label no probe ever used (migration
+   `0038_public_endpoint_regions`), and the record page, the sitemap and the
+   llms.txt files all state one observation region from the same constant. The
+   underlying constraint stands: one point means no quorum, and the topology
+   label stays `single`.
 2. `fetchVendorDetail` on `/track` fans out one detail call per row (cap 24)
    against the shared 300/min bucket; unchanged from before, still the main
    crawl-load amplifier if the catalog grows.
+   **Remediated (2026-09):** the fan-out is bounded at `REGION_RESOLVE_LIMIT`
+   (24) and marked as a prefix rather than a complete read, the rows it skips
+   say so instead of implying "zero regions", and the site's own server-side
+   reads now authenticate as a reader (`X-Reliastra-Reader` /
+   `INTERNAL_READER_TOKEN`) with their own 3000/min budget instead of sharing
+   the 300/min IP bucket with the browser traffic the app proxies. It remains
+   the largest read multiplier on the public surface.
 3. `newrelic`-style registered-but-unobserved vendors are in the sitemap and
    indexable with "insufficient data" content - thin but honest; consider
    noindex-ing records with zero observations once the catalog grows.
+   **Still open.** The record page does distinguish "no observations yet" from
+   "could not be read", which was the part that mattered for correctness; the
+   thin-content question is an editorial one.
 4. The hub counts incidents via per-vendor public-incident calls on every
    revalidation; if the catalog grows past a handful of AI vendors, move the
    hub to the same batch endpoint the record pages should eventually get.
+   **Resolved differently (2026-09):** the hub no longer calls the incident
+   endpoint at all - observed state comes from the catalog row's own
+   `recent_status`, so the hub is one paginated catalog walk plus the bounded
+   detail prefix above.
 5. Sitemap/incident discovery only enumerates incidents within the evidence
    channel's rolling 90-day window (API constraint), so a permanent incident
    page stays live at its URL but ages out of the sitemap.
+   **Remediated (2026-09), and the original claim was wrong in a way that
+   cost published URLs.** The window was never an evidence-channel constraint:
+   it was a literal `timedelta(days=90)` in the gate service, now
+   `PUBLIC_INCIDENT_WINDOW_DAYS` (365, held at the retention the documents
+   promise). And the incident page was never permanent - once an incident aged
+   out, its published, sitemap-listed URL started returning 404. The page now
+   states the window it is published for, the sitemap and the page are
+   enumerated from the same read, and neither silently drops entries: an
+   unreadable catalog throws instead of publishing a shorter list.

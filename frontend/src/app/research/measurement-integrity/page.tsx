@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { SiteShell } from '@/components/site/site-shell';
 import { ResearchCategoryPage } from '@/components/research/category-index';
-import { canonicalUrl } from '@/lib/seo';
+import { canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { researchCategoryRoute } from '@/lib/routes';
+import { robotsDirective } from '@/lib/indexability';
 
 const SLUG = 'measurement-integrity';
 const PATH = researchCategoryRoute(SLUG);
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
   title: 'Measurement integrity research - RELIASTRA',
   description:
     'What a reliability record actually measures and what it silently omits. Audits of published availability records, telemetry estimation defects, and the checks that expose a thin denominator - including RELIASTRA’s own public record.',
-  alternates: { canonical: canonicalUrl(PATH) },
-  robots: { index: true, follow: true },
+  alternates: { canonical: canonicalUrl(PATH), ...DISCOVERY_ALTERNATES },
+  robots: robotsDirective({ index: true, follow: true }),
   openGraph: {
     title: 'Measurement integrity - RELIASTRA Research',
     description:

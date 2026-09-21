@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { ResearchCategoryArticlePage } from '@/components/research/category-article';
 import { RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
-import { canonicalUrl, SITE_URL } from '@/lib/seo';
+import { canonicalUrl, SITE_URL, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { isoDate } from '@/lib/research-meta';
 import { researchPaper } from '@/lib/research/corpus';
 import { researchSocialImage } from '@/lib/research/social';
+import { robotsDirective } from '@/lib/indexability';
 
 const CATEGORY = 'measurement-integrity';
 const CATEGORY_TITLE = 'Measurement integrity';
@@ -36,8 +37,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${article.title} - RELIASTRA Research`,
     description: article.summary,
     keywords: [...article.tags],
-    alternates: { canonical: url },
-    robots: { index: true, follow: true },
+    alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+    robots: robotsDirective({ index: true, follow: true }),
     openGraph: {
       type: 'article',
       title: article.title,
