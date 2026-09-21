@@ -56,14 +56,41 @@
 	handle /openapi.json* {
 		reverse_proxy reliastra-api:8000
 	}
-	# Interactive API consoles. NOTE: `/docs/*` is intentionally NOT proxied
-	# here - that namespace belongs to the public product documentation
-	# (Next.js, served by the catch-all above and indexed by search engines).
+	# Interactive API consoles. FastAPI is configured with docs_url="/api-docs"
+	# and redoc_url="/api-redoc" (see backend/app/bootstrap/app_factory.py), so
+	# these two prefixes - and ONLY these two - belong to the backend.
 	handle /api-docs* {
 		reverse_proxy reliastra-api:8000
 	}
 	handle /api-redoc* {
 		reverse_proxy reliastra-api:8000
+	}
+
+	# ── The public documentation namespace, claimed positively ──────────────
+	# `/docs` and `/docs/*` are the product documentation: thirteen indexable
+	# pages built from frontend/src/lib/docs/corpus.ts and published in
+	# sitemap.xml. They must be rendered by Next.js.
+	#
+	# This block exists so the claim is an executable rule rather than a
+	# comment. Leaving `/docs` to fall through to the catch-all below is
+	# correct but silent: a stale or hand-edited Caddyfile that proxies
+	# `/docs*` to :8000 reclaims the whole namespace for FastAPI, which serves
+	# no `/docs` route at all and answers every one of the thirteen pages with
+	# `404 {"code":"RESOURCE_NOT_FOUND"}`. That reads as a working site (the
+	# landing, console and API all stay up) while every documentation URL - and
+	# every "Docs" link in the nav - dead-ends into raw JSON.
+	#
+	# Do NOT merge this into the /api-docs block above, and do not delete it in
+	# favour of the catch-all. `deploy/production/scripts/smoke-test.sh` and
+	# `frontend/src/lib/__tests__/docs-namespace-routing.test.ts` both fail if
+	# this namespace stops rendering.
+	handle /docs* {
+		reverse_proxy reliastra-api:3000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+			header_up X-Forwarded-Proto {scheme}
+		}
 	}
 
 	log {

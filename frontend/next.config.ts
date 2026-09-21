@@ -191,6 +191,25 @@ const nextConfig: NextConfig = {
       ]),
     ];
   },
+  // `/docs/<slug>.md` serves the plain-Markdown form of a guide - the
+  // "append .md" convention an agent already knows, and the way to read one
+  // guide without fetching `/llms-full.txt` in its entirety.
+  //
+  // The handler cannot live at `app/docs/[slug]/route.ts`: the App Router
+  // refuses a `route.ts` and a `page.tsx` in the same dynamic segment, and
+  // `app/docs/[file]/route.ts` would collide with `app/docs/[slug]/page.tsx`
+  // as a differently-named match on the same path. So the handler sits at
+  // `/docs-md/<slug>` and is rewritten here. Rewrites run before the
+  // filesystem, so `/docs/monitoring.md` never reaches the page router and
+  // never 404s against `docFor("monitoring.md")`.
+  async rewrites() {
+    return [
+      {
+        source: "/docs/:slug.md",
+        destination: "/docs-md/:slug",
+      },
+    ];
+  },
   async headers() {
     return [
       {

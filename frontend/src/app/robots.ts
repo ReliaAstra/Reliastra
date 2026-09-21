@@ -73,6 +73,11 @@ export default function robots(): MetadataRoute.Robots {
     '/r/',
     '/r',
     '/referral-unavailable',
+    // The plain-Markdown guides are published at /docs/<slug>.md, which stays
+    // crawlable. /docs-md/ is only the internal destination of that rewrite
+    // (see next.config.ts) - the same words at a second URL, so crawlers get
+    // one canonical path and the handler adds X-Robots-Tag: noindex as well.
+    '/docs-md/',
   ];
   return {
     rules: [
