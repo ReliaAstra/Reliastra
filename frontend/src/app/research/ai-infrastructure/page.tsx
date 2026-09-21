@@ -42,6 +42,7 @@ import {
 } from '@/components/observatory/primitives';
 import { robotsDirective } from '@/lib/indexability';
 import { PUBLIC_INCIDENT_WINDOW_DAYS } from '@/lib/methodology';
+import { renderAtRequestTime } from '@/lib/render-at-request-time';
 
 /**
  * The AI infrastructure hub: RELIASTRA's public reference layer for how AI
@@ -90,7 +91,11 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60;
+/**
+ * No route-level `revalidate`: this hub reads the live catalog, so it renders
+ * per request (`connection()` below) and its reads are cached by
+ * `lib/track-api.ts`. The interval declared here was inert.
+ */
 
 const HUB_PATH = researchHubRoute('ai-infrastructure');
 
@@ -126,6 +131,11 @@ interface HubRow {
 }
 
 export default async function AiInfrastructureHubPage() {
+  // Rendered per request, never baked at build time: the build has no
+  // measurement API to read, so a prerender here would either fail the build or
+  // cache a failure state and serve it as fact. `lib/render-at-request-time.ts`
+  // carries the reasoning, including why this is not `force-dynamic`.
+  await renderAtRequestTime();
   let catalog: TrackVendorListItem[] = [];
   let networkFailed = false;
   try {

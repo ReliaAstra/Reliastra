@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { PublicObservations } from './public-observations';
 import { ArrowLink, Container, Eyebrow } from '@/components/site/primitives';
 import { fetchTrackedVendors, type TrackVendorListItem } from '@/lib/track-api';
+import { renderAtRequestTime } from '@/lib/render-at-request-time';
 import { PUBLIC_ROUTES } from '@/lib/routes';
 
 /**
@@ -15,6 +16,16 @@ import { PUBLIC_ROUTES } from '@/lib/routes';
  * is the same discipline the product sells.
  */
 export async function IndexScene() {
+  /**
+   * Rendered per request, never baked at build time. This section *catches* a
+   * failed catalog read and says so plainly, which is the right behaviour at
+   * request time and the wrong one at build time: the build has no API, so it
+   * would bake "the measurement API cannot be reached" onto the homepage for
+   * every visitor until the next deploy. Reads stay cached - see
+   * `lib/render-at-request-time.ts`.
+   */
+  await renderAtRequestTime();
+
   let vendors: TrackVendorListItem[] | null = null;
   let unreachable = false;
 

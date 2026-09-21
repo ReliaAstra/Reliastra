@@ -69,17 +69,37 @@ actually carries (`Research`, `Methodology`) plus the real per-article `tags`.
 
 | Route | Purpose | Status | Auth | SEO value | Redesign |
 |---|---|---|---|---|---|
-| `/observatory` | Public dependency index. One paginated catalog walk plus a bounded detail prefix, `revalidate = 60`, served from ISR. | 200 | public | **high** | yes |
+| `/observatory` | Public dependency index. One paginated catalog walk (cached 60s at the read layer) plus a bounded detail prefix. Rendered per request - see the note below. | 200 | public | **high** | yes |
 | `/observatory/[vendor]` | Per-vendor record: current state, 7d/30d availability, latency, observation region, incident timeline, methodology. | 200 (404 for a vendor that publishes no record) | public | **high** | yes |
 | `/observatory/[vendor]/incidents/[id]` | Published incident record, live for `PUBLIC_INCIDENT_WINDOW_DAYS` (365). | 200 (404 when unknown or aged out) | public | **high** | yes |
 | `/track`, `/track/[vendor]`, `/track/[vendor]/incidents/[id]` | Retired names for the three routes above. | 308 | public | none | - |
 
-Real backend data via `src/lib/track-api.ts`. When a read cannot be completed the
-page **throws**: the error boundary returns a 5xx and ISR keeps serving the last
-good render. That replaced an earlier "measurement network unreachable" state
-rendered at HTTP 200, which was indexable and told a crawler the record had no
-data rather than that it could not be read. Nothing is ever fabricated, and
-`sitemap.xml` refuses to publish a partial list for the same reason.
+Real backend data via `src/lib/track-api.ts`, where every read carries
+`next.revalidate` - that is the only caching layer these routes have, and it is
+deliberate. When a read cannot be completed the page **throws**: the error
+boundary returns a 5xx. That replaced an earlier "measurement network
+unreachable" state rendered at HTTP 200, which was indexable and told a crawler
+the record had no data rather than that it could not be read. Nothing is ever
+fabricated, and `sitemap.xml` refuses to publish a partial list for the same
+reason.
+
+Two rendering models follow from that, and they differ on purpose:
+
+- **Per path, revalidated (ISR).** `/observatory/[vendor]` and its incident pages
+  have no `generateStaticParams`, so Next renders each path on first request and
+  revalidates it on the interval the route declares (60s / 300s). A failed
+  revalidation leaves the last good render serving while the failure is logged, so
+  an outage degrades freshness, not availability.
+- **Per request.** `/observatory`, `sitemap.xml`, `/llms.txt`, the research hub and
+  the homepage index section call `renderAtRequestTime()`
+  (`src/lib/render-at-request-time.ts`) before their first read. These are the
+  surfaces a build would otherwise prerender - and a build has no measurement API,
+  so a prerender either fails the build (where the read throws) or bakes the
+  failure state into the deployment artifact and serves it as fact until the next
+  deploy (where the read is caught). The reads stay cached, so a request does not
+  re-walk the API; what is not cached is the HTML. During an outage the index
+  therefore returns a 5xx rather than a stale or empty page, while the record
+  pages beneath it keep serving their last good render.
 
 The crawler-facing contract for these routes - sitemap contents, robots.txt rule
 order, the llms.txt discovery files, record status under load - is checked by
@@ -154,8 +174,9 @@ Behaviour that must not change and was preserved verbatim:
 | Route | Purpose |
 |---|---|
 | `/robots.ts` → `/robots.txt` | Crawl policy. |
-| `/sitemap.ts` → `/sitemap.xml` | Derived from `lib/routes` constants. |
-| `/llms.txt`, `/llms-full.txt` | Machine-readable site summaries. |
+| `/sitemap.ts` → `/sitemap.xml` | `lib/routes` constants plus every published dependency record, its incidents and the research hub. Rendered per request; refuses to publish a partial list. |
+| `/llms.txt` | Discovery document for models: methodology plus the enumerated record list. Rendered per request, `Cache-Control: public, max-age=3600, s-maxage=86400`. |
+| `/llms-full.txt` | The same document with the reference material inlined. Static content, no live read. |
 | `/opengraph-image` | Generated OG card. |
 | `/api/*` | Proxy + auth handlers. `X-Robots-Tag: noindex`. |
 

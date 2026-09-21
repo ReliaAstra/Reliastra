@@ -32,6 +32,7 @@ import {
   Value,
   type RecordColumn,
 } from '@/components/observatory/primitives';
+import { renderAtRequestTime } from '@/lib/render-at-request-time';
 
 /**
  * The observatory index.
@@ -52,9 +53,16 @@ import {
  *    "not read" rather than implying zero regions.
  *
  * Failure behaviour: the catalog is this page's subject. When it cannot be
- * read the page throws, so the segment error boundary returns a 5xx and - under
- * ISR - the last good render keeps serving. It does not render an empty index
- * at 200, which a crawler would read as "the observatory has no dependencies".
+ * read the page throws, so the segment error boundary returns a 5xx. It does not
+ * render an empty index at 200, which a crawler would read as "the observatory
+ * has no dependencies".
+ *
+ * This page renders per request (see `renderAtRequestTime()` below), so there is
+ * no stored render to fall back on: an outage means a 5xx until the reads
+ * recover, typically within their 60s window. The record pages under it are
+ * different - they are prerendered per path and revalidated on an interval, so a
+ * failed revalidation leaves the last good render serving while the failure is
+ * logged. An outage therefore degrades the index, not the records.
  */
 
 export const metadata: Metadata = {
@@ -86,7 +94,13 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 60;
+/**
+ * No route-level `revalidate`: this page renders per request (see `connection()`
+ * below) and its reads are cached for 60s by `lib/track-api.ts`, which is where
+ * the interval is actually enforced. Declaring it here as well was inert - the
+ * audit that prompted this change found `export const revalidate = 60` on a
+ * route that could never be statically rendered.
+ */
 
 /** How many catalog entries get their region labels resolved on this page. */
 const REGION_RESOLVE_LIMIT = 24;
@@ -105,13 +119,19 @@ interface CatalogRow {
 }
 
 export default async function ObservatoryIndexPage() {
+  // Rendered per request, never baked at build time: the build has no
+  // measurement API to read, so a prerender here would either fail the build or
+  // cache a failure state and serve it as fact. `lib/render-at-request-time.ts`
+  // carries the reasoning, including why this is not `force-dynamic`.
+  await renderAtRequestTime();
   /**
    * The whole catalog, walked cursor by cursor.
    *
    * This throws when the catalog cannot be read, which is the intended
-   * behaviour: the error boundary returns a 5xx and ISR keeps serving the last
-   * good render. A 200 page saying "no public dependency records yet" during an
-   * API outage is a false statement about the observatory, and it is indexable.
+   * behaviour: the error boundary turns it into a 5xx, the one response that
+   * tells a crawler to come back. A 200 page saying "no public dependency
+   * records yet" during an API outage is a false statement about the
+   * observatory, and it is indexable.
    */
   const items = await fetchTrackedVendorsAll({
     pageSize: 100,

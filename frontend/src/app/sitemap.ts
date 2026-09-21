@@ -15,6 +15,7 @@ import {
   type Sitemap,
   type SitemapEntry,
 } from '@/lib/sitemap-source';
+import { renderAtRequestTime } from '@/lib/render-at-request-time';
 
 /**
  * Production sitemap: canonical indexable URLs only.
@@ -49,8 +50,14 @@ import {
  *     ignore the field everywhere, including where it means something.
  */
 
-/** Regenerate at most hourly; the records themselves revalidate every 60s. */
-export const revalidate = 3600;
+/**
+ * No route-level `revalidate`: this route renders per request (see
+ * `renderAtRequestTime()` below), so an ISR interval would be inert - and an
+ * inert export is how this file came to look cached when it was not.
+ * Caching lives in the reads
+ * (`lib/track-api.ts` carries `next.revalidate`) and in the last-good fallback
+ * that `readCatalogForDiscovery` keeps for six hours.
+ */
 
 /**
  * How many records get their published incidents enumerated, and how many of
@@ -85,6 +92,11 @@ function vendorEntries(base: string, vendors: TrackVendorListItem[]): SitemapEnt
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Rendered per request, never baked at build time: the build has no
+  // measurement API to read, so a prerender here would either fail the build or
+  // cache a failure state and serve it as fact. `lib/render-at-request-time.ts`
+  // carries the reasoning, including why this is not `force-dynamic`.
+  await renderAtRequestTime();
   /**
    * A deployment that must not be indexed publishes no URLs at all. Emitting
    * the production record set from a preview or self-hosted origin is how a

@@ -225,14 +225,36 @@ if [ "$hub_st" != 200 ]; then
   crit "GET /observatory → $hub_st"
 else
   ok "GET /observatory → 200 (${ttfb}ms)"
+  # C1 was "the hub re-walks its whole upstream fan-out on every crawler hit".
+  # The fix is deliberately NOT an edge cache on the HTML: the hub renders per
+  # request (renderAtRequestTime, src/lib/render-at-request-time.ts), because
+  # prerendering it at build time would bake a catalog-failure state into the
+  # deployment artifact and serve it to every visitor. This response therefore
+  # carries no-cache and that is correct - asserting an edge cache here would
+  # flag the fix as a defect. What C1 means now is that repeated hits must be
+  # absorbed by the Data Cache on the reads (lib/track-api.ts carries
+  # next.revalidate) instead of being re-issued upstream.
   cc=$(hdr "cache-control" "$TMP/hub.hdr")
-  case "$cc" in
-    *no-store*|*no-cache*|"")
-      crit "C1: /observatory is served '$cc' — the route is dynamically rendered, so
-       'export const revalidate = 60' is inert and every crawler hit re-renders + re-fetches
-       the whole catalog fan-out (1 + up to 24 upstream calls)." ;;
-    *) ok "/observatory is cached at the edge: $cc" ;;
-  esac
+  note "C1: /observatory Cache-Control: ${cc:-<none>} - HTML rendered per request by design; caching lives on the reads"
+  warm_max=0; warm_codes=""
+  for i in 1 2 3; do
+    pace
+    w0=$(date +%s%N 2>/dev/null || echo 0)
+    fetch "$TMP/hub$i" "$BASE/observatory" >/dev/null
+    w1=$(date +%s%N 2>/dev/null || echo 0)
+    w=$(( (w1 - w0) / 1000000 ))
+    warm_codes="$warm_codes $(status_of "$TMP/hub$i")/${w}ms"
+    if [ "$w" -gt "$warm_max" ]; then warm_max=$w; fi
+  done
+  echo "       repeat hits:$warm_codes"
+  echo "$warm_codes" | grep -qE " (429|5[0-9][0-9])/" \
+    && crit "C1: a repeat hit of /observatory returned 429/5xx - the hub is re-issuing its upstream
+       fan-out per request instead of serving it from the Data Cache."
+  if [ "$warm_max" -gt 4000 ]; then
+    med "C1: a repeat hit took ${warm_max}ms - a cached-read render should be well inside that"
+  else
+    ok "C1: repeat hub hits served from cached reads (worst ${warm_max}ms)"
+  fi
   robots=$(body "$TMP/hub" | grep -oiE '<meta name="robots" content="[^"]*"' | head -1)
   case "$robots" in
     *noindex*) crit "C2: /observatory serves noindex: $robots" ;;
@@ -244,13 +266,15 @@ else
   h1=$(body "$TMP/hub" | grep -oiE '<h1[ >]' | wc -l | tr -d ' ')
   [ "$h1" = 1 ] && ok "exactly one <h1>" || high "/observatory has $h1 <h1> elements (expected 1)"
   # The hub no longer renders a failure state at 200 - it throws, so an
-  # unreadable catalog is a 5xx and ISR keeps serving the last good render.
+  # unreadable catalog is a 5xx. It renders per request, so there is no stored
+  # render behind that 5xx; the record pages under it are the ones that keep
+  # serving their last good render through a failed revalidation.
   # Matching the boundary copy here catches the regression in either direction:
   # a 200 that shows it, or a 5xx that reached this branch at all.
   grep -q "Measurement network unreachable\|The dependency index could not be read\|Catalog unavailable" "$TMP/hub" \
-    && crit "C3/C4: the hub is showing its catalog-failure boundary — the catalog read is
-       failing on the live site. Under ISR this should be a 5xx with the last good
-       render still being served; if this is a 200, the throw was caught again."
+    && crit "C3/C4: the hub is showing its catalog-failure boundary - the catalog read is failing
+       on the live site. That should be a 5xx from the error boundary; if this is a 200,
+       the throw was caught again."
   grep -q "No public dependency records yet" "$TMP/hub" \
     && high "The live catalog is EMPTY ('No public dependency records yet'): no records exist to
        index, so the sitemap and every record URL are moot until vendors are seeded/probed."

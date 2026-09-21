@@ -8,6 +8,7 @@ import {
 } from '@/lib/routes';
 import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
 import { readCatalogForDiscovery } from '@/lib/track-api';
+import { renderAtRequestTime } from '@/lib/render-at-request-time';
 
 /**
  * /llms.txt - the machine-readable description of RELIASTRA.
@@ -207,13 +208,23 @@ async function recordsSection(): Promise<string> {
 }
 
 /**
- * Regenerate at most hourly. The file is a discovery document, not a telemetry
- * feed: a model needs the record list to be right, not to be current to the
- * minute, and the records themselves revalidate every 60s.
+ * Caching for this file lives on the response, not on a route-level
+ * `revalidate`: the handler renders per request (see `renderAtRequestTime()`
+ * below) and declares an hour in the browser and a day at the edge, which is
+ * what actually serves it. The interval this file used to declare was inert
+ * once the route became dynamic, and an inert export reads like a guarantee.
+ *
+ * An hour is right for a discovery document. It is not a telemetry feed: a
+ * model needs the record list to be correct, not current to the minute, and the
+ * records it links to revalidate every 60s on their own.
  */
-export const revalidate = 3600;
 
 export async function GET() {
+  // Rendered per request, never baked at build time: the build has no
+  // measurement API to read, so a prerender here would either fail the build or
+  // cache a failure state and serve it as fact. `lib/render-at-request-time.ts`
+  // carries the reasoning, including why this is not `force-dynamic`.
+  await renderAtRequestTime();
   const body = BODY.replace(RECORDS_MARKER, await recordsSection());
   return new Response(body, {
     headers: {

@@ -7,13 +7,16 @@ import { PUBLIC_ROUTES } from '@/lib/routes';
 /**
  * Index-level error boundary for `/observatory`.
  *
- * It exists because the index now throws when the catalog cannot be read, and
- * throwing is deliberate: this boundary turns that into a 5xx, which is the
- * only response that tells a crawler "come back later", and under ISR the last
- * good render keeps serving while the failure is logged. The alternative -
- * rendering an empty index at 200 - publishes the false statement that the
- * observatory has no dependencies, on a page that is canonical, sitemap-listed
- * and `index, follow`.
+ * It exists because the index throws when the catalog cannot be read, and
+ * throwing is deliberate: this boundary turns that into a 5xx, the only response
+ * that tells a crawler "come back later". The alternative - rendering an empty
+ * index at 200 - publishes the false statement that the observatory has no
+ * dependencies, on a page that is canonical, sitemap-listed and `index, follow`.
+ *
+ * The index renders per request, so nothing stale is served behind this
+ * boundary: an outage is a 5xx until the reads recover. The record pages under
+ * it are prerendered per path and keep their last good render through a failed
+ * revalidation, which is why the copy below points at them.
  *
  * The one thing this must never do is look like a populated index. No counts,
  * no rows, no state words: nothing here may be read as a measurement.

@@ -29,7 +29,6 @@ import {
 } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
-import { resetDiscoveryCatalog } from '@/lib/track-api';
 import { PAPER_OG_IMAGES, researchSocialImage } from '@/lib/research/social';
 
 const PRIVATE_FRAGMENTS = [
@@ -368,9 +367,25 @@ describe('machine-readable discovery', () => {
   };
   let catalogFails = false;
 
-  beforeEach(() => {
+  /**
+   * Clear the last-good catalog through the module registry these tests
+   * actually run against.
+   *
+   * A statically imported `resetDiscoveryCatalog` is bound to the
+   * `lib/track-api` instance created before the `vi.resetModules()` in the
+   * describe above, while a dynamically imported route uses the newer one - so
+   * resetting it that way clears a cache the route never reads, and the previous
+   * test's last-good list leaks into the next one. That leak is invisible when
+   * every test expects a successful read, and it silently rewrites the answer
+   * for the tests that expect a failure.
+   */
+  const resetDiscoveryCatalog = async () => {
+    (await import('@/lib/track-api')).resetDiscoveryCatalog();
+  };
+
+  beforeEach(async () => {
     catalogFails = false;
-    resetDiscoveryCatalog();
+    await resetDiscoveryCatalog();
     vi.stubGlobal(
       'fetch',
       vi.fn(async () =>
@@ -384,9 +399,9 @@ describe('machine-readable discovery', () => {
     );
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.unstubAllGlobals();
-    resetDiscoveryCatalog();
+    await resetDiscoveryCatalog();
   });
 
   it('enumerates the published dependency records in llms.txt', async () => {
@@ -398,6 +413,25 @@ describe('machine-readable discovery', () => {
     // The reader is told not to invent slugs, which is the failure the
     // enumeration exists to prevent.
     expect(body).toContain('do not guess slugs');
+  });
+
+  it('serves the last good record list, labelled stale, when the catalog goes unreadable', async () => {
+    // One module instance for both reads: the last-good catalog is process-local
+    // state on `lib/track-api`, so a fresh import would start with nothing to
+    // fall back to and would not exercise the path this test exists for.
+    const { GET } = await import('@/app/llms.txt/route');
+    expect(await (await GET()).text()).toContain('Enumerated from the public catalog at');
+
+    catalogFails = true;
+    const body = await (await GET()).text();
+
+    // The records stay listed - withdrawing every record URL from a discovery
+    // document because one read failed is how a model concludes the observatory
+    // is empty. What changes is that the file says the list is not current.
+    expect(body).toContain('https://reliastra.com/observatory/openai');
+    expect(body).toContain('Enumerated from the last successful catalog read at');
+    expect(body).toContain('may be missing from this list');
+    expect(body).not.toContain('could not be read when this file was generated');
   });
 
   it('reports an unreadable catalog instead of listing no records', async () => {
