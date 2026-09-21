@@ -115,6 +115,30 @@ jobs:
         # exercises it against the mock server.
         run: go test -race ./...
 
+      # ── Release packaging: keep .goreleaser.yaml from rotting between
+      #    tags. check validates the config schema; the wrapper smoke test
+      #    runs the npm/PyPI installers end-to-end against a fake release
+      #    served on loopback (cli/test/wrappers_smoke_test.sh).
+      - name: GoReleaser check
+        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+        with:
+          distribution: goreleaser
+          version: latest
+          args: check
+
+      - name: Setup Node (wrapper smoke test)
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Python (wrapper smoke test)
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Wrappers smoke test (npm + PyPI installers)
+        run: bash cli/test/wrappers_smoke_test.sh
+
   # ─────────────────────────────────────────────────────────
   # 2. TEST — unit, integration, e2e (embedded PG + fakeredis)
   # ─────────────────────────────────────────────────────────

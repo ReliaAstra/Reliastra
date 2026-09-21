@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Thin installer for the reliastra CLI: the wheel is pure Python on every
+# platform and downloads the Go binary from GitHub Releases on first run.
+# The version line is rewritten by the release workflow to match the tag.
+name = "reliastra"
+version = "0.2.0"
+description = "RELIASTRA command-line client: probes, verdicts, evidence records, public verification. Thin installer — downloads the platform binary from GitHub Releases on first run and verifies its SHA-256 before executing it."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Proprietary" }
+authors = [{ name = "ReliaAstra" }]
+keywords = ["monitoring", "uptime", "evidence", "verification", "reliastra", "cli"]
+classifiers = [
+    "Environment :: Console",
+    "License :: Other/Proprietary",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Go",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Networking :: Monitoring",
+]
+
+[project.scripts]
+reliastra = "reliastra:main"
+
+[project.urls]
+Homepage = "https://reliastra.com"
+Repository = "https://github.com/ReliaAstra/Reliastra"
+Issues = "https://github.com/ReliaAstra/Reliastra/issues"
+Changelog = "https://github.com/ReliaAstra/Reliastra/blob/main/cli/CHANGELOG.md"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["reliastra"]

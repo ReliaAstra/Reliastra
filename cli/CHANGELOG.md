@@ -1,5 +1,29 @@
 # CLI changelog
 
+## Unreleased — distribution
+
+The CLI can now be installed without Go. Alongside `go install`, one tag
+push now publishes prebuilt binaries plus two thin installer packages
+(see cli/RELEASING.md):
+
+- `npm install -g reliastra`
+- `pipx install reliastra` (or `pip install reliastra`)
+- binaries and archives on the GitHub release
+
+The npm and PyPI packages are launchers, not ports: no CLI logic was
+rewritten. On first run they download the platform binary published by
+GoReleaser, verify its SHA-256 against the release's `checksums.txt`,
+cache it (one cache, shared between the two wrappers, relocated with
+`RELIASTRA_CACHE`), and hand off with arguments and exit codes untouched.
+Nothing runs or downloads at install time (no postinstall scripts), and
+`RELIASTRA_BIN` points a wrapper at an existing binary to skip the
+download entirely.
+
+Release packaging is checked in CI: `goreleaser check` validates
+`.goreleaser.yaml`, and `cli/test/wrappers_smoke_test.sh` exercises both
+wrappers end-to-end (download, verify, exec, cache reuse, `RELIASTRA_BIN`
+override, tampered-checksum refusal) against a fake release on loopback.
+
 ## 0.2.0 — Go rewrite
 
 The CLI is now a single static Go binary (`cli/`, standard library only). The

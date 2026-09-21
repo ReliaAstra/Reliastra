@@ -1,0 +1,107 @@
+# GoReleaser — reliastra CLI release packaging.
+#
+# Pushing a tag of the form `v*` runs .github/workflows/release-cli.yml,
+# which executes `goreleaser release --clean` with this file. One tag
+# produces everything the install channels need (see cli/RELEASING.md):
+#
+#   - static binaries: linux/darwin/windows × amd64/arm64
+#   - tar.gz archives (zip on Windows) for humans
+#   - the same binaries unarchived, for the npm/PyPI installer wrappers
+#     to download and checksum-verify (format: binary below)
+#   - checksums.txt, which the wrappers verify before executing anything
+#
+# `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`
+# keeps working unchanged: goreleaser builds the same module from a tag.
+version: 2
+
+project_name: reliastra
+
+builds:
+  - id: reliastra
+    # The CLI is its own Go module (github.com/ReliaAstra/Reliastra/cli,
+    # standard library only — see cli/go.mod), so build from cli/.
+    dir: cli
+    main: ./cmd/reliastra
+    binary: reliastra
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # `reliastra --version` reports this. Keep the shim in sync with the
+    # tag when cutting a release (cli/RELEASING.md, step 1).
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  # For humans: tar.gz everywhere, zip on Windows, wrapped in a directory
+  # with the LICENSE alongside the binary.
+  - id: archives
+    formats: ["tar.gz"]
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: true
+
+  # For the npm/PyPI wrappers: the binaries uploaded raw, no archive, so a
+  # wrapper downloads exactly one file and verifies it against
+  # checksums.txt. The wrappers resolve the same name template:
+  # reliastra_{version}_{os}_{arch}(.exe on windows).
+  - id: raw-binaries
+    formats: ["binary"]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  # The contract the wrappers verify against. Changing the algorithm or
+  # the name means changing both wrappers in the same release.
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^ci:"
+      - "^test:"
+      - "^build:"
+
+release:
+  # Point readers at the install docs rather than raw assets.
+  header: |
+    ## Install
+
+    See [cli/README.md](https://github.com/ReliaAstra/Reliastra/blob/main/cli/README.md) for all channels:
+
+    ```
+    npm install -g reliastra        # npm
+    pipx install reliastra          # PyPI (or: pip install reliastra)
+    go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
+    ```
+    ... or download an archive below and verify it against `checksums.txt`.
+
+# Homebrew and Scoop are deliberately not configured yet: both need a
+# dedicated tap/bucket repository plus first-run secrets. To add them,
+# uncomment, create the tap repo, and document it in cli/RELEASING.md.
+#
+# brews:
+#   - repository:
+#       owner: ReliaAstra
+#       name: homebrew-tap
+#     directory: Formula
+#     homepage: "https://reliastra.com"
+#     description: "RELIASTRA command-line client"
+#
+# scoop:
+#   bucket:
+#     owner: ReliaAstra
+#     name: scoop-bucket
+#     branch: main
+#   homepage: "https://reliastra.com"
+#   description: "RELIASTRA command-line client"
