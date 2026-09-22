@@ -116,8 +116,8 @@ ROUTER_REGISTRY: tuple[RouterMount, ...] = (
     RouterMount("status", status_router, False, "B2B: org status pages"),
     RouterMount("status_page", status_page_router, False, "B2B: org status pages"),
     RouterMount("public_analytics", public_analytics_router, False, "B2B: public marketing metrics"),
-    RouterMount("email_admin", email_admin_router, False, "B2B: email campaign admin"),
-    RouterMount("email_center", email_center_router, False, "B2B: email campaigns"),
+    RouterMount("email_admin", email_admin_router, True, "admin: email campaign inspection (read-only)"),
+    RouterMount("email_center", email_center_router, True, "admin: operational email via Resend"),
     RouterMount("outreach_admin", outreach_admin_router, False, "B2B: outreach sequences"),
 )
 
