@@ -20,7 +20,7 @@ PERIOD_DAYS = {
 }
 
 
-async def utc_now() -> datetime:
+def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
