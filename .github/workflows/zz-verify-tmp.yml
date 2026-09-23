@@ -27,6 +27,9 @@ jobs:
       - uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
           go-version: ${{ env.GO_VERSION }}
+          # The CLI module has no dependencies, so there is no go.sum; point
+          # the cache at go.mod or setup-go fails looking for one.
+          cache-dependency-path: cli/go.mod
 
       - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
