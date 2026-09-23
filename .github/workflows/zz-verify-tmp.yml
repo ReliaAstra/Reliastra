@@ -63,7 +63,7 @@ jobs:
         id: snapshot
         run: |
           set -uo pipefail
-          version="$(sed -n 's/^var version = "\(.*\)"$//p' cli/cmd/reliastra/main.go)"
+          version="$(sed -n 's/^var version = "\(.*\)"$/\1/p' cli/cmd/reliastra/main.go)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f "v$version"
@@ -75,7 +75,7 @@ jobs:
       - name: Artifact check
         continue-on-error: true
         run: |
-          bash cli/test/artifacts_check.sh "$(sed -n 's/^var version = "\(.*\)"$//p' cli/cmd/reliastra/main.go)" dist > /tmp/artifacts.log 2>&1
+          bash cli/test/artifacts_check.sh "$(sed -n 's/^var version = "\(.*\)"$/\1/p' cli/cmd/reliastra/main.go)" dist > /tmp/artifacts.log 2>&1
           echo "exit=$?" >> /tmp/artifacts.log
           cat /tmp/artifacts.log
 
