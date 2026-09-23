@@ -26,7 +26,11 @@ Deliberate design choices, in order of importance:
 Environment:
 
     RELIASTRA_BIN          run this existing binary instead of downloading
-    RELIASTRA_RELEASE_URL  release asset base URL (default: GitHub)
+                           (absolute path to a regular file; never searched
+                           on PATH)
+    RELIASTRA_RELEASE_URL  release asset base URL (default: GitHub). Must
+                           be https://; plain http is accepted for loopback
+                           only, so the test suite can serve a fake release.
     RELIASTRA_CACHE        cache directory (default: see _cache_dir()
                            below; shared with the npm wrapper of the same
                            version)
@@ -40,6 +44,7 @@ import platform
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -98,6 +103,27 @@ def _fail(message: str) -> "NoReturn":  # type: ignore[valid-type]
     sys.exit(1)
 
 
+def _release_base_url() -> str:
+    """The base URL a mirror override may point at.
+
+    Anything that is not TLS is refused unless it is this machine's loopback
+    interface: an installer that will fetch and execute a binary over
+    plaintext from an arbitrary host is a downgrade path, however the
+    variable got set.
+    """
+    raw = os.environ.get("RELIASTRA_RELEASE_URL")
+    if not raw:
+        return DEFAULT_RELEASE_URL
+    parsed = urllib.parse.urlsplit(raw)
+    loopback = parsed.hostname in ("127.0.0.1", "localhost", "::1")
+    if parsed.scheme != "https" and not (parsed.scheme == "http" and loopback):
+        _fail(
+            f"RELIASTRA_RELEASE_URL must use https:// (got {parsed.scheme}://{parsed.netloc}); "
+            f"plain http is allowed for loopback only"
+        )
+    return raw.rstrip("/")
+
+
 def _fetch(url: str) -> bytes:
     request = urllib.request.Request(url, headers={"User-Agent": f"reliastra-installer/{_version()}"})
     try:
@@ -119,8 +145,7 @@ def _parse_checksums(blob: bytes) -> dict[str, str]:
 
 def _download_binary() -> Path:
     goos, goarch = _platform_pair()
-    base = os.environ.get("RELIASTRA_RELEASE_URL", DEFAULT_RELEASE_URL).rstrip("/")
-    release_dir = f"{base}/v{_version()}"
+    release_dir = f"{_release_base_url()}/v{_version()}"
 
     print(
         f"reliastra: first run — downloading reliastra {_version()} ({goos}/{goarch})",
@@ -189,7 +214,17 @@ def _run(binary: Path, args: list[str]) -> None:
 def main() -> None:
     override = os.environ.get("RELIASTRA_BIN")
     if override:
-        _run(Path(override), sys.argv[1:])
+        # An absolute path to an existing regular file, and nothing else: a
+        # bare name would be resolved against PATH by the exec, which is
+        # exactly the ambiguity this variable exists to remove.
+        candidate = Path(override)
+        if not candidate.is_absolute():
+            _fail(f"RELIASTRA_BIN must be an absolute path (got {override})")
+        if not candidate.exists():
+            _fail(f"RELIASTRA_BIN points at {override}, which does not exist")
+        if not candidate.is_file():
+            _fail(f"RELIASTRA_BIN points at {override}, which is not a regular file")
+        _run(candidate, sys.argv[1:])
         return
     binary = _binary_path()
     if not binary.exists():

@@ -1,115 +1,201 @@
 # Releasing the CLI
 
-One tag publishes every distribution channel. Push `v0.2.1` and
-[release-cli.yml](../.github/workflows/release-cli.yml) runs three stages,
-each dependent on the last:
+There is one CLI: the Go program in `cli/cmd/reliastra`. A release is one
+git tag, `vX.Y.Z`, and [release-cli.yml](../.github/workflows/release-cli.yml)
+turns that tag into every way of installing the same binary:
+
+```
+                   git tag vX.Y.Z  (on main)
+                          │
+                          ▼
+                     validate ── tag is semver; main.go / package.json /
+                          │       pyproject.toml / __init__.py all == X.Y.Z
+                          ▼
+                       test ───── gofmt, vet, go test -race, 6-target
+                          │       cross-compile, wrapper smoke test,
+                          │       npm pack / python -m build / twine check
+                          ▼
+                     binaries ─── goreleaser: build, archive, checksums.txt,
+                          │       GitHub Release; run a built binary and
+                          │       assert --version == X.Y.Z; attest provenance
+                 ┌────────┴────────┐
+                 ▼                 ▼
+               npm               pypi ──── each re-checks version == tag and
+     (trusted publishing)  (trusted publishing)  that the release assets exist,
+                 │                 │       publishes, then verifies the registry
+                 └────────┬────────┘
+                          ▼
+                  same reliastra binary
+```
 
 | Stage | Produces | Consumed by |
 | --- | --- | --- |
-| `binaries` (goreleaser) | GitHub release with binaries (linux/darwin/windows × amd64/arm64), tar.gz/zip archives, raw binaries, `checksums.txt` | humans; the wrappers |
-| `npm` | package [`reliastra`](https://www.npmjs.com/package/reliastra) — thin installer that downloads the raw binary from that release | `npm i -g reliastra` |
-| `pypi` | package [`reliastra`](https://pypi.org/project/reliastra/) — same installer shape | `pipx install reliastra`, `pip install reliastra` |
+| `binaries` (goreleaser) | GitHub release: `reliastra_X.Y.Z_{os}_{arch}[.exe]` raw binaries, `reliastra_X.Y.Z_{os}_{arch}.tar.gz`/`.zip` archives, `checksums.txt`, SLSA provenance attestations | humans; the wrappers |
+| `npm` | package [`reliastra`](https://www.npmjs.com/package/reliastra) `X.Y.Z` — thin installer that downloads the raw binary from that release | `npm install -g reliastra` |
+| `pypi` | package [`reliastra`](https://pypi.org/project/reliastra/) `X.Y.Z` — same installer shape | `pipx install reliastra`, `pip install reliastra` |
 
-`go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest` picks
-the same tag up automatically through the module proxy; nothing extra to do.
+`go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest` needs
+no stage at all: the module proxy serves the source at the tagged commit,
+and `main.go` already carries the version (see §2), so `--version` is right
+without ldflags.
 
-The npm/PyPI packages are launchers, not ports: their first run downloads
-the release's raw binary and verifies its SHA-256 against that release's
-`checksums.txt` before executing anything. Their committed versions are
-placeholders — the workflow rewrites them from the tag, so a wrapper's
-version always equals the binary version it downloads.
+Platform matrix: linux, darwin, windows × amd64, arm64 — six binaries. The
+CLI is standard-library only with `CGO_ENABLED=0`, so nothing else is
+needed to build them; the `test` stage cross-compiles all six before
+anything is released.
 
-## 1. One-time setup (per package registry)
+## 1. One-time setup (per registry, once ever)
 
-Both registries use **trusted publishing** (OIDC) — no API tokens in
-GitHub secrets, and provenance is attached to each publish.
+Both registries use **trusted publishing** (OpenID Connect): the workflow
+proves its identity to the registry with a short-lived GitHub token, and no
+registry credential is stored anywhere. Provenance is attached to each
+publish. The pieces that have to agree, exactly and case-sensitively:
 
-**npm** — on npmjs.com → package `reliastra` → Settings → Publishing:
-link the trusted publisher `ReliaAstra/Reliastra`, workflow file
-`release-cli.yml`. The workflow needs `id-token: write` (it has it) and
-npm ≥ 11.5 (Node 24 — the workflow pins it). Before the package exists,
-`npm publish` needs a human: run it once from `cli/npm` after the first
-GitHub release, or add a `NPM_TOKEN` secret (automation type) as a
-fallback — the publish step uses it automatically when present.
+| | value |
+| --- | --- |
+| repository | `ReliaAstra/Reliastra` |
+| workflow filename | `release-cli.yml` |
+| GitHub environment (npm job) | `npm` |
+| GitHub environment (pypi job) | `pypi` |
 
-**PyPI** — on pypi.org → project `reliastra` → Publishing → add a pending
-trusted publisher: `ReliaAstra/Reliastra`, workflow `release-cli.yml`,
-environment `pypi` (the job declares that environment). Fallback: a
-`PYPI_API_TOKEN` secret works without any other change. A pending
-publisher is enough for the very first release; no manual first publish
-needed.
+Renaming the workflow file or either environment means updating the
+registry side too.
 
-Note the workflow filename matters: trusted publishers are keyed to
-`release-cli.yml`. If the file is renamed, update both registries.
+**GitHub** — Settings → Environments: create `npm` and `pypi`. Optionally add
+required reviewers to each; that makes every publish a human-approved step
+without touching the workflow. No secrets are needed in either environment.
+
+**PyPI** — https://pypi.org/manage/account/publishing/ → "Add a new pending
+publisher": project `reliastra`, owner `ReliaAstra`, repository
+`Reliastra`, workflow `release-cli.yml`, environment `pypi`. A *pending*
+publisher creates the project on first publish, so PyPI needs no manual
+first upload and no token, ever.
+
+**npm** — npm can configure a trusted publisher only on a package that
+already exists, so the very first `reliastra` publish is a bootstrap:
+
+1. Create a granular access token on npmjs.com (Packages and scopes:
+   read/write, bypass 2FA for automation) with the shortest expiry offered.
+2. Add it as the `NPM_TOKEN` secret **on the `npm` environment** (not the
+   repository), so only that job can read it.
+3. Cut the first release (§2). The npm job uses the token because OIDC has
+   no package to bind to yet.
+4. On npmjs.com → package `reliastra` → Settings → Publishing access: add
+   trusted publisher GitHub Actions, `ReliaAstra/Reliastra`,
+   `release-cli.yml`, environment `npm`; then select **"Require two-factor
+   authentication and disallow tokens"**.
+5. Delete the `NPM_TOKEN` secret and revoke the token on npmjs.com. From
+   the second release on, the job authenticates with OIDC only; `npm
+   publish` (npm ≥ 11.5.1, which Node 24 ships) does the exchange itself
+   when `NODE_AUTH_TOKEN` is empty.
+
+Before any of this, confirm the names are still free: `npm view reliastra`
+and `pip index versions reliastra` must both report not found (they did on
+2026-09-23). If either name is taken, stop — do not publish under a
+different name without a decision on record.
 
 ## 2. Cut a release
+
+The version lives in four files, kept identical by
+`cli/scripts/version.sh`, and the tag must equal them. CI (`ci.yml`) fails
+a PR where they disagree; the release workflow fails a tag they do not
+match. Neither CI nor the workflow ever rewrites them.
 
 From a clean checkout of `main`:
 
 ```bash
-# a. Bump the CLI's own version (reliastra --version reports it)
-sed -i 's/var version = "0.2.0"/var version = "0.2.1"/' cli/cmd/reliastra/main.go
+# a. Set the version everywhere (main.go, package.json, pyproject.toml, __init__.py)
+cli/scripts/version.sh set 0.2.1
 
-# b. Keep the wrappers' placeholder versions in sync (the workflow
-#    overwrites these from the tag, but keep the tree honest)
-sed -i 's/"version": "0.2.0"/"version": "0.2.1"/' cli/npm/package.json
-sed -i 's/^version = "0.2.0"/version = "0.2.1"/' cli/python/pyproject.toml
-sed -i 's/^__version__ = "0.2.0"/__version__ = "0.2.1"/' cli/python/src/reliastra/__init__.py
+# b. Document the release in cli/CHANGELOG.md (top section, newest first)
 
-# c. Document the release in cli/CHANGELOG.md (top section, newest first)
+# c. Everything the workflow's validate+test stages will check, locally
+make cli-release-check VERSION=v0.2.1
 
-# d. Commit, tag, push
+# d. Commit and land it on main (PR, or push if you have rights)
 git add -A && git commit -m "release: reliastra 0.2.1"
-git tag v0.2.1 && git push origin main v0.2.1
+git push origin main            # or merge the PR, then: git pull
+
+# e. Tag the commit that is now on main, and push the tag
+git tag -a v0.2.1 -m "reliastra 0.2.1"
+git push origin v0.2.1
 ```
 
-The workflow then: builds 6 binaries, attaches archives + raw binaries +
-`checksums.txt` to the GitHub release, publishes npm, publishes PyPI.
+Then watch https://github.com/ReliaAstra/Reliastra/actions/workflows/release-cli.yml.
+Pre-releases work the same way with a suffix (`0.3.0-rc.1`, tag
+`v0.3.0-rc.1`): GitHub marks the release as a pre-release, npm and PyPI
+accept the version string, and the wrappers download it by exact version.
+
+Rules the workflow enforces, so you do not have to remember them:
+
+- the tag is `vMAJOR.MINOR.PATCH[-pre]`, and its commit is on `main`;
+- all four version files equal the tag, or nothing is built;
+- tests, cross-compiles and wrapper checks pass, or nothing is released;
+- the built binary's `--version` equals the tag, or nothing is published;
+- `checksums.txt` lists all six raw binaries and verifies, or nothing is
+  published;
+- npm and PyPI each confirm the release assets exist, publish, and then
+  confirm the registry serves the new version — a failure names the
+  channel that failed.
 
 ## 3. Dry-run locally (before tagging)
 
 ```bash
-# Config schema (catches .goreleaser.yaml rot; also runs in CI)
-goreleaser check
+make cli-release-check VERSION=v0.2.1       # the validate + test stages
 
-# Full build + packaging, no publish — inspect dist/ by hand
+goreleaser check                              # config schema (also in CI)
 goreleaser release --snapshot --clean --skip=publish
+ls dist/                                      # six binaries, archives, checksums.txt
+dist/reliastra_*_linux_amd64 --version        # "<next>-snapshot+<sha>": never a tag version
 
-# Wrapper behavior end-to-end (fake release on loopback; no network)
-bash cli/test/wrappers_smoke_test.sh
-
-# Packaging checks for both wrappers
-(cd cli/npm && npm pack --dry-run)
-(cd cli/python && python -m build && twine check dist/*)
+bash cli/test/wrappers_smoke_test.sh          # wrappers vs a fake release on loopback
 ```
 
-`goreleaser release --snapshot` needs Go ≥ 1.23 and builds all six
-platform targets; CGO is off, so no platform SDKs are required.
+To exercise the *real* wrappers against *real* binaries without a GitHub
+release, serve a directory shaped like a release
+(`v0.2.1/reliastra_0.2.1_<os>_<arch>` + `checksums.txt`) on loopback and
+point them at it with `RELIASTRA_RELEASE_URL=http://127.0.0.1:<port>`
+(plain http is accepted for loopback only) and a scratch
+`RELIASTRA_CACHE`. `npm install -g --prefix <dir> <tgz from npm pack>` and
+`pip install cli/python/dist/*.whl` into a venv give you the installed
+shape users get.
 
 ## 4. Verify a release
 
-After the workflow finishes:
+After the workflow is green:
 
 ```bash
-reliastra --version                    # matches the tag
-npm view reliastra version             # matches the tag
-pip index versions reliastra           # matches the tag
+gh release view v0.2.1 -R ReliaAstra/Reliastra   # 6 raw binaries, 6 archives, checksums.txt
+npm view reliastra version                        # 0.2.1
+pip index versions reliastra                      # 0.2.1
+GOFLAGS=-mod=mod go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@v0.2.1 && reliastra --version
+gh attestation verify reliastra_0.2.1_linux_amd64 -R ReliaAstra/Reliastra
 ```
 
-Then on a clean machine (or cleared `RELIASTRA_CACHE`), install through
-each channel and run one command — this exercises the real download and
+Then on a clean machine (or with `RELIASTRA_CACHE` pointed at an empty
+directory), install through each channel and run `reliastra --version`,
+`reliastra --help` and one real command — this exercises the download and
 checksum path the wrappers exist for.
 
 ## 5. When something goes wrong
 
-- **Wrappers fail checksum** — the release assets and `checksums.txt`
-  disagree, or a proxy mangles the download. Check the release page;
-  do not re-tag over a broken release, cut a new version.
-- **npm publish rejected (version exists)** — the tag was re-pushed over
-  a published version. Never re-push tags; cut `0.2.2`.
-- **PyPI publish rejected** — trusted publisher misconfigured, or the
-  version was already uploaded (PyPI never allows re-upload; new version).
-- **Bad release, need it gone** — npm: `npm dist-tag` / deprecate, publish
-  fixed version. PyPI: yank the file. GitHub: delete the release but keep
-  the tag immutable. Users with a cached good binary are unaffected; the
-  wrappers only download a version matching themselves.
+- **`validate` fails: versions disagree** — run
+  `cli/scripts/version.sh set X.Y.Z`, commit, and tag *that* commit with a
+  new version. Never move or re-push a tag.
+- **`test` or `binaries` fails** — nothing was published; fix on `main`
+  and cut the next patch version. If a GitHub release was half-created,
+  delete the release (keep the tag; tags are immutable history).
+- **`npm` fails** — the GitHub release and PyPI are unaffected. Fix the
+  cause (usually trusted-publisher configuration or a taken version) and
+  re-run *only* the failed job from the Actions UI; the job re-checks
+  version and assets before publishing.
+- **`pypi` fails** — same as npm: fix and re-run the job. PyPI never
+  accepts a re-upload of an existing version; a bad upload means a new
+  version.
+- **Wrappers fail checksum in the wild** — the assets and `checksums.txt`
+  disagree, or a proxy is mangling downloads. Do not edit assets on an
+  existing release; cut a new version.
+- **Bad release, need it gone** — npm: `npm deprecate reliastra@X.Y.Z
+  "<reason>"`. PyPI: yank the release. GitHub: delete the release. Cached
+  binaries on user machines are unaffected; the wrappers download only the
+  version that matches their own.

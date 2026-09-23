@@ -98,6 +98,12 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: cli/go.mod
 
+      - name: Version files agree (main.go, package.json, pyproject, __init__)
+        # The release workflow refuses a tag whose version these files do
+        # not carry; catching drift here keeps that refusal from being a
+        # surprise at release time. See cli/scripts/version.sh.
+        run: cli/scripts/version.sh check
+
       - name: gofmt check
         working-directory: cli
         run: test -z "$(gofmt -l .)"
@@ -147,6 +153,13 @@ jobs:
 
       - name: Wrappers smoke test (npm + PyPI installers)
         run: bash cli/test/wrappers_smoke_test.sh
+
+      - name: Wrapper packaging checks (npm pack, python build, twine check)
+        run: |
+          set -euo pipefail
+          (cd cli/npm && npm pack --dry-run 2>&1 | grep -q 'bin/reliastra.js')
+          python -m pip install --quiet --upgrade pip build twine
+          (cd cli/python && python -m build --quiet && twine check --strict dist/*)
 
   # ─────────────────────────────────────────────────────────
   # 2. TEST — unit, integration, e2e (embedded PG + fakeredis)

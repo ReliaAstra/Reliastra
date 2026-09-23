@@ -26,7 +26,11 @@
 // Environment:
 //
 //   RELIASTRA_BIN          run this existing binary instead of downloading
-//   RELIASTRA_RELEASE_URL  release asset base URL (default: GitHub)
+//                          (absolute path to a regular file; never searched
+//                          on PATH)
+//   RELIASTRA_RELEASE_URL  release asset base URL (default: GitHub). Must be
+//                          https://; plain http is accepted for loopback
+//                          only, so the test suite can serve a fake release.
 //   RELIASTRA_CACHE        cache directory (default: see cacheDir() below;
 //                          shared with the PyPI wrapper of the same version)
 
@@ -96,10 +100,46 @@ function assetCandidates(goos, goarch) {
   return goos === "windows" ? [`${base}.exe`, base] : [base];
 }
 
-async function fetchText(url) {
-  const res = await fetch(url, { headers: { "User-Agent": `reliastra-installer/${VERSION}` } });
+// The base URL a mirror override may point at. Anything that is not TLS
+// is refused unless it is this machine's loopback interface: an installer
+// that will fetch and execute a binary over plaintext from an arbitrary
+// host is a downgrade path, however the variable got set.
+function releaseBaseUrl() {
+  const raw = process.env.RELIASTRA_RELEASE_URL;
+  if (!raw) return DEFAULT_RELEASE_URL;
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    fail(`RELIASTRA_RELEASE_URL is not a valid URL: ${raw}`);
+  }
+  const loopback = url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "[::1]";
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
+    fail(`RELIASTRA_RELEASE_URL must use https:// (got ${url.protocol}//${url.host}); plain http is allowed for loopback only`);
+  }
+  return url.toString().replace(/\/+$/, "");
+}
+
+// Node's fetch reports every network failure as a bare "fetch failed" with
+// the real reason on err.cause; surface that, plus the URL, so a proxy or
+// DNS problem reads as one rather than as a mystery.
+async function fetchOrFail(url) {
+  let res;
+  try {
+    res = await fetch(url, { headers: { "User-Agent": `reliastra-installer/${VERSION}` } });
+  } catch (err) {
+    const cause = err && err.cause ? `${err.cause.code || ""} ${err.cause.message || ""}`.trim() : "";
+    fail(
+      `could not fetch ${url}: ${cause || (err && err.message) || err}\n` +
+        `Check the network and any proxy, then retry. Offline? Set RELIASTRA_BIN to a binary you already have.`
+    );
+  }
   if (!res.ok) fail(`could not fetch ${url}: HTTP ${res.status}`);
-  return res.text();
+  return res;
+}
+
+async function fetchText(url) {
+  return (await fetchOrFail(url)).text();
 }
 
 // Parse `sha256sum`-style lines: "<64 hex chars>␣␣<filename>".
@@ -114,8 +154,7 @@ function parseChecksums(text) {
 
 async function downloadBinary() {
   const [goos, goarch] = platformPair();
-  const base = (process.env.RELIASTRA_RELEASE_URL || DEFAULT_RELEASE_URL).replace(/\/+$/, "");
-  const releaseDir = `${base}/v${VERSION}`;
+  const releaseDir = `${releaseBaseUrl()}/v${VERSION}`;
 
   process.stderr.write(`reliastra: first run — downloading reliastra ${VERSION} (${goos}/${goarch})\n`);
   const checksums = parseChecksums(await fetchText(`${releaseDir}/checksums.txt`));
@@ -136,10 +175,8 @@ async function downloadBinary() {
     );
   }
 
-  const res = await fetch(`${releaseDir}/${asset}`, {
-    headers: { "User-Agent": `reliastra-installer/${VERSION}` },
-  });
-  if (!res.ok || !res.body) fail(`could not download ${releaseDir}/${asset}: HTTP ${res.status}`);
+  const res = await fetchOrFail(`${releaseDir}/${asset}`);
+  if (!res.body) fail(`could not download ${releaseDir}/${asset}: empty response`);
 
   const dir = path.join(cacheDir(), `v${VERSION}`);
   fs.mkdirSync(dir, { recursive: true });
@@ -217,6 +254,17 @@ function runBinary(bin, args) {
 async function main() {
   const override = process.env.RELIASTRA_BIN;
   if (override) {
+    // An absolute path to an existing regular file, and nothing else:
+    // a bare name would be resolved against PATH by the spawn, which is
+    // exactly the ambiguity this variable exists to remove.
+    if (!path.isAbsolute(override)) fail(`RELIASTRA_BIN must be an absolute path (got ${override})`);
+    let stat;
+    try {
+      stat = fs.statSync(override);
+    } catch {
+      fail(`RELIASTRA_BIN points at ${override}, which does not exist`);
+    }
+    if (!stat.isFile()) fail(`RELIASTRA_BIN points at ${override}, which is not a regular file`);
     runBinary(override, process.argv.slice(2));
     return;
   }
