@@ -88,65 +88,50 @@ jobs:
   # ─────────────────────────────────────────────────────────
   cli:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: cli/go.mod
 
-      - name: gofmt check
-        working-directory: cli
-        run: test -z "$(gofmt -l .)"
-
-      - name: go vet
-        working-directory: cli
-        run: go vet ./...
-
-      - name: Build
-        working-directory: cli
-        run: go build ./...
-
-      - name: Cross-compile (windows, darwin)
-        working-directory: cli
-        # The terminal echo control is build-tagged per platform; a file
-        # that only breaks on another OS would otherwise ship unnoticed.
-        run: |
-          GOOS=windows GOARCH=amd64 go build ./...
-          GOOS=darwin GOARCH=arm64 go build ./...
-
-      - name: Test
-        working-directory: cli
-        # -race: `deps show` fans out to concurrent requests, and the suite
-        # exercises it against the mock server.
-        run: go test -race ./...
-
-      # ── Release packaging: keep .goreleaser.yaml from rotting between
-      #    tags. check validates the config schema; the wrapper smoke test
-      #    runs the npm/PyPI installers end-to-end against a fake release
-      #    served on loopback (cli/test/wrappers_smoke_test.sh).
-      - name: GoReleaser check
-        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
-        with:
-          distribution: goreleaser
-          version: latest
-          args: check
-
-      - name: Setup Node (wrapper smoke test)
+      - name: Setup Node
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup Python (wrapper smoke test)
+      - name: Setup Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Wrappers smoke test (npm + PyPI installers)
-        run: bash cli/test/wrappers_smoke_test.sh
+      - name: Install packaging tools
+        run: python -m pip install --upgrade pip build twine
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
+        with:
+          distribution: goreleaser
+          version: latest
+          install-only: true
+
+      # The whole release gate, in one script that the release pipeline runs
+      # too (cli/test/release_check.sh): gofmt, vet, build, the full
+      # cross-compile matrix, `go test -race`, `goreleaser check`, the npm
+      # and PyPI packaging checks, and the installer smoke test. Running it
+      # on every push is what stops release packaging from rotting between
+      # tags — a `skip` here means a tool is missing on the runner.
+      - name: CLI and release packaging gate
+        run: |
+          set -euo pipefail
+          bash cli/test/release_check.sh 2>&1 | tee /tmp/release-check.log
+          if grep -q '^skip:' /tmp/release-check.log; then
+            echo "::error::a release check was skipped on the runner; see the log above"
+            exit 1
+          fi
 
   # ─────────────────────────────────────────────────────────
   # 2. TEST — unit, integration, e2e (embedded PG + fakeredis)

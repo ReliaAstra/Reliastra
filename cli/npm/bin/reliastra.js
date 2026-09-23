@@ -51,6 +51,32 @@ function fail(message) {
 // enforced by the release workflow. The shim downloads that exact version.
 const VERSION = require("../package.json").version;
 
+// The release base URL, validated before anything is fetched from it.
+//
+// The override exists for mirrors and airgapped networks, so it has to stay
+// configurable — but it is also the one environment variable that decides
+// where a binary is downloaded from, so it is restricted to https (or http
+// on loopback, which is how cli/test/wrappers_smoke_test.sh serves a fake
+// release). Anything else — `file:`, `ftp:`, a bare path — is refused rather
+// than silently resolved: a wrapper that fetches from an attacker-chosen
+// scheme is worse than one that asks for a mirror over TLS.
+function releaseBase() {
+  const raw = (process.env.RELIASTRA_RELEASE_URL || DEFAULT_RELEASE_URL).replace(/\/+$/, "");
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    fail(`RELIASTRA_RELEASE_URL is not a valid URL: ${raw}`);
+  }
+  const loopback = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(url.hostname);
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
+    fail(
+      `RELIASTRA_RELEASE_URL must be an https URL (http is allowed only on localhost): ${raw}`
+    );
+  }
+  return raw;
+}
+
 // npm platform keys → Go toolchain GOOS/GOARCH keys (the release asset names).
 function platformPair() {
   const goos = { linux: "linux", darwin: "darwin", win32: "windows" }[process.platform];
@@ -114,7 +140,7 @@ function parseChecksums(text) {
 
 async function downloadBinary() {
   const [goos, goarch] = platformPair();
-  const base = (process.env.RELIASTRA_RELEASE_URL || DEFAULT_RELEASE_URL).replace(/\/+$/, "");
+  const base = releaseBase();
   const releaseDir = `${base}/v${VERSION}`;
 
   process.stderr.write(`reliastra: first run — downloading reliastra ${VERSION} (${goos}/${goarch})\n`);
@@ -214,14 +240,37 @@ function runBinary(bin, args) {
   process.exit(128 + sig);
 }
 
+// A cached binary that lost its executable bit — copied between machines,
+// unpacked by a tool that dropped modes — would otherwise fail as a
+// permission error from spawn. POSIX only: Windows has no exec bit.
+function ensureExecutable(bin) {
+  if (process.platform === "win32") return;
+  try {
+    fs.accessSync(bin, fs.constants.X_OK);
+  } catch {
+    try {
+      fs.chmodSync(bin, 0o755);
+    } catch {
+      // Not ours to fix (another user's cache, read-only mount); runBinary
+      // reports the failure with the path in it.
+    }
+  }
+}
+
 async function main() {
   const override = process.env.RELIASTRA_BIN;
   if (override) {
+    if (!fs.existsSync(override)) fail(`RELIASTRA_BIN points at ${override}, which does not exist`);
+    ensureExecutable(override);
     runBinary(override, process.argv.slice(2));
     return;
   }
   let bin = binaryPath();
-  if (!fs.existsSync(bin)) bin = await downloadBinary();
+  if (!fs.existsSync(bin)) {
+    bin = await downloadBinary();
+  } else {
+    ensureExecutable(bin);
+  }
   runBinary(bin, process.argv.slice(2));
 }
 

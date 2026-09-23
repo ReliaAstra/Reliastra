@@ -16,6 +16,15 @@ version: 2
 
 project_name: reliastra
 
+snapshot:
+  # A dry run (`goreleaser release --snapshot`, which the release workflow
+  # does on a workflow_dispatch) produces artifacts named exactly as the
+  # release would name them, so the artifact and installer checks can be
+  # exercised against the real thing. The default — `{{ incpatch .Version
+  # }}-devel` — would rename every file and hide naming bugs until release
+  # day. Snapshots are never published.
+  version_template: "{{ .Version }}"
+
 builds:
   - id: reliastra
     # The CLI is its own Go module (github.com/ReliaAstra/Reliastra/cli,
