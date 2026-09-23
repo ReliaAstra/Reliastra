@@ -162,12 +162,29 @@ jobs:
           } > "$out"
           cat "$out"
 
-      - name: Post the report on the pull request
+      - name: Publish the report
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          pr="$(gh pr list --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number' || true)"
-          if [ -z "$pr" ]; then echo "no open PR for ${GITHUB_REF_NAME}"; exit 0; fi
-          gh pr comment "$pr" --body-file /tmp/report/verification.md
+          set -uo pipefail
+          pr="$(gh pr list --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number' 2>/dev/null || true)"
+          echo "pr=${pr:-none}"
+          if [ -n "$pr" ]; then
+            gh pr comment "$pr" --body-file /tmp/report/verification.md 2>&1 | head -5 || true
+          fi
+
+      - name: Commit the report to this branch
+        if: always()
+        # The runner's logs cannot be read from the environment this work is
+        # done in, so the report travels as a file. Removed before the branch
+        # is finished.
+        run: |
+          set -uo pipefail
+          mkdir -p .arena
+          cp /tmp/report/verification.md .arena/verification.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .arena/verification.md
+          git diff --cached --quiet && echo "report unchanged" || git commit -q -m "ci: verification report"
+          git push origin "HEAD:${GITHUB_REF_NAME}" 2>&1 | tail -2
