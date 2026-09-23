@@ -162,29 +162,34 @@ jobs:
           } > "$out"
           cat "$out"
 
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verification-report
+          path: /tmp/report/verification.md
+
       - name: Publish the report
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -uo pipefail
-          pr="$(gh pr list --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number' 2>/dev/null || true)"
-          echo "pr=${pr:-none}"
-          if [ -n "$pr" ]; then
-            gh pr comment "$pr" --body-file /tmp/report/verification.md 2>&1 | head -5 || true
-          fi
+          set -euo pipefail
+          pr="$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number')"
+          echo "pr=${pr}"
+          gh pr comment "$pr" --repo "${GITHUB_REPOSITORY}" --body-file /tmp/report/verification.md
 
-      - name: Commit the report to this branch
+      - name: Can this token write to the repository?
         if: always()
-        # The runner's logs cannot be read from the environment this work is
-        # done in, so the report travels as a file. Removed before the branch
-        # is finished.
+        # The release workflow pushes the Go module tag with the built-in
+        # token. If that is not possible here, the Go channel needs a
+        # different mechanism — so find out now, visibly.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
-          mkdir -p .arena
-          cp /tmp/report/verification.md .arena/verification.md
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .arena/verification.md
-          git diff --cached --quiet && echo "report unchanged" || git commit -q -m "ci: verification report"
-          git push origin "HEAD:${GITHUB_REF_NAME}" 2>&1 | tail -2
+          echo "permissions of GITHUB_TOKEN on ${GITHUB_REPOSITORY}:"
+          gh api "repos/${GITHUB_REPOSITORY}" --jq '.permissions' 2>&1 | head -5 || true
+          echo "push test:"
+          git push origin "HEAD:refs/heads/arena/tmp-push-test" 2>&1 | tail -3 | sed 's/^/  /' || true
+          echo "push conclusion: $?" 
