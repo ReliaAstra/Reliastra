@@ -10,7 +10,8 @@ on:
     branches: [arena/01a0cdf8-reliastra]
 
 permissions:
-  contents: write # push the verification report to the scratch branch
+  contents: read
+  pull-requests: write # post the verification report where it can be read
 
 env:
   GO_VERSION: "1.23"
@@ -49,13 +50,28 @@ jobs:
           version: latest
           install-only: true
 
+      - name: Diagnostics
+        run: |
+          {
+            echo "goreleaser on PATH: $(command -v goreleaser || echo NO)"
+            echo "goreleaser --version: $(goreleaser --version 2>&1 | head -3)"
+            echo "go: $(command -v go || echo NO)"
+            echo "node: $(command -v node || echo NO)"
+            echo "python3: $(command -v python3 || echo NO)"
+            echo "twine: $(python3 -m twine --version 2>&1 | head -1)"
+            echo "build: $(python3 -m build --version 2>&1 | head -1)"
+          } > /tmp/diagnostics.log 2>&1
+          cat /tmp/diagnostics.log
+
       - name: Release gate
         continue-on-error: true
         id: gate
         run: |
           set -uo pipefail
           bash cli/test/release_check.sh > /tmp/gate.log 2>&1
-          echo "exit=$?" >> /tmp/gate.log
+          echo "gate-exit=$?" >> /tmp/gate.log
+          echo "--- skip lines ---" >> /tmp/gate.log
+          grep '^skip:' /tmp/gate.log >> /tmp/gate.log 2>/dev/null || true
           cat /tmp/gate.log
 
       - name: GoReleaser snapshot (real binaries)
@@ -136,7 +152,7 @@ jobs:
             echo "commit: ${{ github.sha }}"
             echo "date:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo
-            for f in tools gate snapshot artifacts install-smoke goinstall; do
+            for f in diagnostics tools gate snapshot artifacts install-smoke goinstall; do
               echo "## $f"
               echo '```'
               cat "/tmp/$f.log" 2>/dev/null || echo "(no output)"
@@ -146,31 +162,12 @@ jobs:
           } > "$out"
           cat "$out"
 
-      - name: Push the report
+      - name: Post the report on the pull request
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan "arena/tmp-report"
-          git rm -rf --cached . >/dev/null 2>&1 || true
-          rm -rf ./* ./.github 2>/dev/null || true
-          cp /tmp/report/verification.md verification.md
-          git add verification.md
-          git commit -q -m "verification report (temporary)"
-          git push --force origin "arena/tmp-report"
-
-      - name: Push dist for local inspection
-        if: always()
-        run: |
-          set -euo pipefail
-          [ -d dist ] || exit 0
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan "arena/tmp-dist"
-          git rm -rf --cached . >/dev/null 2>&1 || true
-          rm -rf ./* ./.github 2>/dev/null || true
-          cp -r dist/. .
-          git add -A
-          git commit -q -m "dist snapshot (temporary)"
-          git push --force origin "arena/tmp-dist"
+          pr="$(gh pr list --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number' || true)"
+          if [ -z "$pr" ]; then echo "no open PR for ${GITHUB_REF_NAME}"; exit 0; fi
+          gh pr comment "$pr" --body-file /tmp/report/verification.md
