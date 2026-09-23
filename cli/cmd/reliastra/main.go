@@ -400,6 +400,28 @@ func moduleVersion() (string, bool) {
 	return trimVersionPrefix(info.Main.Version), isSemver(info.Main.Version)
 }
 
+// isPseudoVersion reports whether prerelease is Go's pseudo-version
+// stamp: a UTC timestamp (`YYYYMMDDHHMMSS`) and a commit prefix, as in
+// `v0.0.0-20260921153000-66736774abcd`.
+func isPseudoVersion(prerelease string) bool {
+	stamp, commit, ok := strings.Cut(prerelease, "-")
+	if !ok || len(stamp) != 14 || commit == "" {
+		return false
+	}
+	for _, r := range stamp {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	for _, r := range commit {
+		isHex := (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f')
+		if !isHex {
+			return false
+		}
+	}
+	return true
+}
+
 // trimVersionPrefix drops the leading `v` of a Go-style version tag.
 func trimVersionPrefix(v string) string {
 	return strings.TrimPrefix(strings.TrimSpace(v), "v")
@@ -422,8 +444,17 @@ func isSemver(s string) bool {
 	if i := strings.IndexByte(core, '+'); i >= 0 {
 		core = core[:i]
 	}
+	prerelease := ""
 	if i := strings.IndexByte(core, '-'); i >= 0 {
+		prerelease = core[i+1:]
 		core = core[:i]
+	}
+	// A pseudo-version is what Go stamps for a commit that carries no
+	// release tag: v0.0.0-20260921153000-66736774abcd. Its release part is
+	// a real version, so it has to be recognised by shape — an untagged
+	// build reporting itself as 0.0.0 would be a lie either way.
+	if isPseudoVersion(prerelease) {
+		return false
 	}
 	if core == "" {
 		return false

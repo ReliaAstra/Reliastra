@@ -21,6 +21,37 @@ DIST="${2:-dist}"
 VERSION="${VERSION#v}"
 [ -d "$DIST" ] || { echo "FAIL: $DIST is not a directory"; exit 1; }
 
+# GoReleaser writes dist/artifacts.json: the authoritative list of what it
+# produced, with the path each artifact actually lives at. Asking it beats
+# guessing, because the layout under dist/ has changed between GoReleaser
+# versions (binary-format archives used to sit at the root).
+manifest_path() { # <artifact-name> -> its path in $DIST
+  local name="$1"
+  if [ -f "$DIST/artifacts.json" ]; then
+    python3 -c "
+import json, os, sys
+name = sys.argv[1]
+for artifact in json.load(open(os.path.join('$DIST', 'artifacts.json'))):
+    if artifact.get('name') == name:
+        print(artifact['path'])
+        break
+" "$name" 2>/dev/null
+  fi
+}
+
+# Where an artifact lives: the manifest if it says so, else the flat layout.
+resolve_path() { # <artifact-name>
+  local name="$1" path
+  path="$(manifest_path "$name")"
+  if [ -n "$path" ] && [ -f "$path" ]; then
+    printf '%s' "$path"
+  elif [ -f "$DIST/$name" ]; then
+    printf '%s' "$DIST/$name"
+  else
+    printf ''
+  fi
+}
+
 shasum_of() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
   else shasum -a 256 "$1" | cut -d' ' -f1; fi
@@ -42,12 +73,14 @@ CHECKSUMS="$DIST/checksums.txt"
 
 # `sha256sum -c` — the same verification a user runs, not a reimplementation
 # of it. Reports once, on success; failures are reported by the caller.
-verify_against_checksums() { # <file-relative-to-dist>
-  local name="$1"
+# checksums.txt lists artifacts by name, from the release root.
+verify_against_checksums() { # <artifact-name> <path>
+  local name="$1" path="$2"
   grep -qF "  $name" "$CHECKSUMS" || { echo "FAIL: $name is not listed in checksums.txt"; return 1; }
-  (cd "$DIST" && grep -F "  $name" checksums.txt | sha256sum -c - >/dev/null 2>&1) ||
+  dir="$(dirname "$path")"
+  (cd "$dir" && grep -F "  $name" "$CHECKSUMS" | sha256sum -c - >/dev/null 2>&1) ||
     { echo "FAIL: $name does not match its checksums.txt entry"; return 1; }
-  printf "   %-40s %10s bytes  sha256 verified\n" "$name" "$(wc -c <"$DIST/$name" | tr -d ' ')"
+  printf "   %-40s %10s bytes  sha256 verified\n" "$name" "$(wc -c <"$path" | tr -d ' ')"
   return 0
 }
 
@@ -70,26 +103,28 @@ while read -r goos goarch; do
   binary="reliastra_${VERSION}_${goos}_${goarch}${exe}"
   archive="reliastra_${VERSION}_${goos}_${goarch}.${archive_ext}"
 
-  if [ ! -f "$DIST/$binary" ]; then
+  binary_path="$(resolve_path "$binary")"
+  archive_path="$(resolve_path "$archive")"
+  if [ -z "$binary_path" ]; then
     echo "FAIL: $binary is missing from $DIST"
     MISSING=1
     continue
   fi
-  if [ ! -f "$DIST/$archive" ]; then
+  if [ -z "$archive_path" ]; then
     echo "FAIL: $archive is missing from $DIST"
     MISSING=1
     continue
   fi
-  verify_against_checksums "$binary" || MISSING=1
-  verify_against_checksums "$archive" || MISSING=1
+  verify_against_checksums "$binary" "$binary_path" || MISSING=1
+  verify_against_checksums "$archive" "$archive_path" || MISSING=1
 done <<<"$TARGETS"
 [ "$MISSING" = "0" ] || { echo "FAIL: release artifacts incomplete"; exit 1; }
 
 # The host binary has to run, and has to report the version it was released
 # as. This is the check that ties the artifact to the tag.
 if [ -n "$HOST_OS" ] && [ -n "$HOST_ARCH" ]; then
-  HOST_BINARY="$DIST/reliastra_${VERSION}_${HOST_OS}_${HOST_ARCH}"
-  if [ -x "$HOST_BINARY" ] || [ -f "$HOST_BINARY" ]; then
+  HOST_BINARY="$(resolve_path "reliastra_${VERSION}_${HOST_OS}_${HOST_ARCH}")"
+  if [ -n "$HOST_BINARY" ]; then
     chmod +x "$HOST_BINARY" 2>/dev/null || true
     GOT="$("$HOST_BINARY" --version | head -1 | tr -d '[:space:]')"
     [ "$GOT" = "$VERSION" ] || {

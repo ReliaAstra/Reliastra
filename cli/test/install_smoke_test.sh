@@ -64,8 +64,19 @@ ok() { echo "ok: $1"; }
 
 echo "── build the installers ($VERSION)"
 
+# Build from a copy of the sources with the version under test written in,
+# so the checkout is never modified and the installers download exactly the
+# version this script is checking.
+SRC="$WORK/src"
+mkdir -p "$SRC"
+cp -r cli/npm cli/python "$SRC"/
+(cd "$SRC/npm" && npm version "$VERSION" --no-git-tag-version --allow-same-version >/dev/null) ||
+  fail "npm version $VERSION (cli/npm)"
+sed -i "s/^version = \".*\"/version = \"$VERSION\"/" "$SRC/python/pyproject.toml"
+sed -i "s/^__version__ = \".*\"/__version__ = \"$VERSION\"/" "$SRC/python/src/reliastra/__init__.py"
+
 NPM_TARBALL="$WORK/reliastra-$VERSION.tgz"
-(cd cli/npm && npm pack --pack-destination "$WORK" --silent >/dev/null) ||
+(cd "$SRC/npm" && npm pack --pack-destination "$WORK" --silent >/dev/null) ||
   fail "npm pack (cli/npm)"
 [ -f "$NPM_TARBALL" ] || fail "npm pack produced $NPM_TARBALL"
 NPM_PREFIX="$WORK/npm-prefix"
@@ -78,7 +89,7 @@ npm install -g --prefix "$NPM_PREFIX" --no-audit --no-fund --silent "$NPM_TARBAL
 ok "npm: global install puts reliastra on PATH"
 
 if [ -z "$WHEEL" ]; then
-  python3 -m build --outdir "$WORK/pydist" cli/python >/dev/null 2>&1 ||
+  python3 -m build --outdir "$WORK/pydist" "$SRC/python" >/dev/null 2>&1 ||
     fail "python -m build (pip install build)"
   WHEEL="$(ls "$WORK"/pydist/*.whl | head -1)"
 fi
@@ -92,14 +103,47 @@ ok "pip: wheel install creates the reliastra console script"
 NPM_BIN="$NPM_PREFIX/bin/reliastra"
 PIP_BIN="$WORK/venv/bin/reliastra"
 
+# Where GoReleaser put a given artifact, according to its own manifest
+# (dist/artifacts.json). The layout under dist/ is not ours to guess.
+dist_artifact() { # <dist-dir> <artifact-name> -> path, or empty
+  local dist="$1" name="$2" path=""
+  if [ -f "$dist/artifacts.json" ]; then
+    path="$(python3 -c "
+import json, os, sys
+for artifact in json.load(open(os.path.join(sys.argv[1], 'artifacts.json'))):
+    if artifact.get('name') == sys.argv[2]:
+        print(artifact['path'])
+        break
+" "$dist" "$name" 2>/dev/null)"
+  fi
+  if [ -n "$path" ] && [ -f "$path" ]; then
+    printf '%s' "$path"
+  elif [ -f "$dist/$name" ]; then
+    printf '%s' "$dist/$name"
+  fi
+}
+
 # Serve a dist/ directory the way GitHub Releases serves assets:
 # <base>/v<version>/<asset>. The wrappers are pointed at it with
 # RELIASTRA_RELEASE_URL, never at GitHub.
 serve_dist() { # <dist-dir> -> echoes URL
-  local dist="$1"
+  local dist="$1" name path
   mkdir -p "$WORK/serve/v$VERSION"
-  cp "$dist"/reliastra_* "$dist/checksums.txt" "$WORK/serve/v$VERSION/" ||
-    fail "copying $dist into the fake release"
+  cp "$dist/checksums.txt" "$WORK/serve/v$VERSION/" || fail "copying checksums.txt"
+  for name in $(cd "$dist" && ls | grep -E "^reliastra_${VERSION//./\.}_.*(tar\.gz|zip)$" || true); do
+    cp "$(dist_artifact "$dist" "$name")" "$WORK/serve/v$VERSION/$name" ||
+      fail "copying $name into the fake release"
+  done
+  for goos in linux darwin windows; do
+    for goarch in amd64 arm64; do
+      exe=""
+      [ "$goos" = windows ] && exe=".exe"
+      name="reliastra_${VERSION}_${goos}_${goarch}${exe}"
+      path="$(dist_artifact "$dist" "$name")"
+      [ -n "$path" ] || fail "$name is missing from $dist"
+      cp "$path" "$WORK/serve/v$VERSION/$name" || fail "copying $name into the fake release"
+    done
+  done
   local port=$(( (RANDOM % 20000) + 30000 ))
   python3 -m http.server "$port" --bind 127.0.0.1 --directory "$WORK/serve" >/dev/null 2>&1 &
   SERVER_PID=$!

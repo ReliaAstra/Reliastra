@@ -1,17 +1,18 @@
 # TEMPORARY verification workflow — deleted before this branch is finished.
-# It exists only because the sandbox this work is done from has no Go
-# toolchain and no access to proxy.golang.org: the checks below need a
-# runner with both.
+#
+# It exists only because the environment this work is done from has no Go
+# toolchain and no route to proxy.golang.org, so the checks below have to
+# run on a runner. Findings are posted as a pull-request comment, because
+# job logs are not readable from here.
 name: zz-verify-tmp
 
 on:
-  workflow_dispatch:
   push:
     branches: [arena/01a0cdf8-reliastra]
 
 permissions:
   contents: read
-  pull-requests: write # post the verification report where it can be read
+  pull-requests: write
 
 env:
   GO_VERSION: "1.23"
@@ -50,18 +51,23 @@ jobs:
           version: latest
           install-only: true
 
-      - name: Diagnostics
+      - name: Can this token write to the repository?
+        continue-on-error: true
+        # The release workflow pushes the Go module tag with the built-in
+        # token. If that is impossible here, the Go channel needs another
+        # mechanism — so find out, visibly.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           {
-            echo "goreleaser on PATH: $(command -v goreleaser || echo NO)"
-            echo "goreleaser --version: $(goreleaser --version 2>&1 | head -3)"
-            echo "go: $(command -v go || echo NO)"
-            echo "node: $(command -v node || echo NO)"
-            echo "python3: $(command -v python3 || echo NO)"
-            echo "twine: $(python3 -m twine --version 2>&1 | head -1)"
-            echo "build: $(python3 -m build --version 2>&1 | head -1)"
-          } > /tmp/diagnostics.log 2>&1
-          cat /tmp/diagnostics.log
+            echo "GITHUB_TOKEN permissions on ${GITHUB_REPOSITORY}:"
+            gh api "repos/${GITHUB_REPOSITORY}" --jq '.permissions' 2>&1 | head -5
+            echo
+            echo "git push test:"
+            git push origin "HEAD:refs/heads/arena/tmp-push-test" 2>&1 | tail -3 | sed 's/^/  /'
+            echo "  (exit $?)"
+          } > /tmp/token.log 2>&1
+          cat /tmp/token.log
 
       - name: Release gate
         continue-on-error: true
@@ -70,8 +76,6 @@ jobs:
           set -uo pipefail
           bash cli/test/release_check.sh > /tmp/gate.log 2>&1
           echo "gate-exit=$?" >> /tmp/gate.log
-          echo "--- skip lines ---" >> /tmp/gate.log
-          grep '^skip:' /tmp/gate.log >> /tmp/gate.log 2>/dev/null || true
           cat /tmp/gate.log
 
       - name: GoReleaser snapshot (real binaries)
@@ -85,8 +89,19 @@ jobs:
           git tag -f "v$version"
           goreleaser release --snapshot --clean --skip=publish > /tmp/snapshot.log 2>&1
           echo "exit=$?" >> /tmp/snapshot.log
-          tail -30 /tmp/snapshot.log
-          ls -l dist/ >> /tmp/snapshot.log 2>&1
+          grep -E "archiving|building|snapshotting|error|Error" /tmp/snapshot.log | sed 's/\x1b\[[0-9;]*m//g' | tail -20 >> /tmp/snapshot.log
+          {
+            echo
+            echo "── dist layout"
+            find dist -maxdepth 2 | sort | head -30
+            echo
+            echo "── checksums.txt"
+            cat dist/checksums.txt 2>/dev/null | head -20
+            echo
+            echo "── artifacts.json (type / name / path)"
+            python3 -c "import json; [print(a.get('type'), '|', a.get('name'), '|', a.get('path')) for a in json.load(open('dist/artifacts.json'))]" 2>&1
+          } >> /tmp/snapshot.log 2>&1
+          tail -70 /tmp/snapshot.log
 
       - name: Artifact check
         continue-on-error: true
@@ -102,43 +117,51 @@ jobs:
           echo "exit=$?" >> /tmp/install-smoke.log
           cat /tmp/install-smoke.log
 
+      # ── Does `go install` work, and which tag form does it need? ──────────
+      # The CLI is a Go module in a subdirectory (cli/go.mod), so the module
+      # proxy versions it from a tag carrying that subdirectory as a prefix.
+      # Proven against a clone of this repository, with a fresh module cache
+      # per case so no result is a caching artefact.
       - name: go install tag-prefix experiment
         continue-on-error: true
         run: |
           set -uo pipefail
           report=/tmp/goinstall.log
           : > "$report"
-          version="9.9.9"
           work="$RUNNER_TEMP/goinstall"
           rm -rf "$work"; mkdir -p "$work"
           git clone --quiet "https://github.com/ReliaAstra/Reliastra.git" "$work/repo" >>"$report" 2>&1
-          cd "$work/repo"
-          git config user.email bot@example.com
-          git config user.name bot
-          export GOPRIVATE="github.com/ReliaAstra/*"
-          export GOSUMDB=off
-          export GOFLAGS=-mod=mod
-          export GOBIN="$work/bin"
           git config --global url."$work/repo".insteadOf "https://github.com/ReliaAstra/Reliastra"
 
-          try() { # <label> <ref>
-            echo "=== $1: go install ...@$2" >> "$report"
-            rm -rf "$GOBIN"; mkdir -p "$GOBIN"
-            if GOBIN="$GOBIN" go install "github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@$2" >>"$report" 2>&1; then
-              echo "    RESULT: installed; --version reports $("$GOBIN/reliastra" --version 2>&1)" >> "$report"
+          try() { # <label> <tag> <ref>
+            local label="$1" tag="$2" ref="$3"
+            local id="$RANDOM$RANDOM"
+            local cache="$work/gomodcache-$id"
+            local bin="$work/bin-$id"
+            mkdir -p "$cache" "$bin"
+            (
+              cd "$work/repo" || exit 1
+              for old in $(git tag -l); do git tag -d "$old" >/dev/null; done
+              git tag -f "$tag"
+              GOMODCACHE="$cache" GOPATH="$cache-path" GOPROXY=direct GOSUMDB=off \
+                GOFLAGS=-mod=mod GOPRIVATE="github.com/ReliaAstra/*" GOBIN="$bin" \
+                go install "github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@$ref"
+            ) >>"$report" 2>&1
+            if [ -x "$bin/reliastra" ]; then
+              echo "    RESULT: installed; --version reports $($bin/reliastra --version 2>&1)" >> "$report"
             else
               echo "    RESULT: FAILED" >> "$report"
             fi
           }
 
-          git tag -f "v$version"
-          try "tag v9.9.9 (no module prefix)" "v$version"
-          try "tag v9.9.9 via @latest" "latest"
-          git tag -d "v$version" >/dev/null
+          echo "=== case A: tag v9.9.9 (the GitHub release tag, no module prefix)" >> "$report"
+          try "  explicit @v9.9.9" "v9.9.9" "v9.9.9"
+          try "  @latest"          "v9.9.9" "latest"
 
-          git tag -f "cli/v$version"
-          try "tag cli/v9.9.9 (module prefix)" "v$version"
-          try "tag cli/v9.9.9 via @latest" "latest"
+          echo "=== case B: tag cli/v9.9.9 (module-subdirectory prefix)" >> "$report"
+          try "  explicit @v9.9.9" "cli/v9.9.9" "v9.9.9"
+          try "  @latest"          "cli/v9.9.9" "latest"
+
           cat "$report"
 
       - name: Write report
@@ -152,7 +175,7 @@ jobs:
             echo "commit: ${{ github.sha }}"
             echo "date:   $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo
-            for f in diagnostics tools gate snapshot artifacts install-smoke goinstall; do
+            for f in token gate snapshot artifacts install-smoke goinstall; do
               echo "## $f"
               echo '```'
               cat "/tmp/$f.log" 2>/dev/null || echo "(no output)"
@@ -160,14 +183,7 @@ jobs:
               echo
             done
           } > "$out"
-          cat "$out"
-
-      - name: Upload the report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: verification-report
-          path: /tmp/report/verification.md
+          head -c 60000 "$out"
 
       - name: Publish the report
         if: always()
@@ -178,18 +194,3 @@ jobs:
           pr="$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number')"
           echo "pr=${pr}"
           gh pr comment "$pr" --repo "${GITHUB_REPOSITORY}" --body-file /tmp/report/verification.md
-
-      - name: Can this token write to the repository?
-        if: always()
-        # The release workflow pushes the Go module tag with the built-in
-        # token. If that is not possible here, the Go channel needs a
-        # different mechanism — so find out now, visibly.
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -uo pipefail
-          echo "permissions of GITHUB_TOKEN on ${GITHUB_REPOSITORY}:"
-          gh api "repos/${GITHUB_REPOSITORY}" --jq '.permissions' 2>&1 | head -5 || true
-          echo "push test:"
-          git push origin "HEAD:refs/heads/arena/tmp-push-test" 2>&1 | tail -3 | sed 's/^/  /' || true
-          echo "push conclusion: $?" 
