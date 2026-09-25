@@ -1,4 +1,4 @@
-.PHONY: help frontend backend test lint install cli cli-test cli-wrappers-test cli-version-check cli-release-check
+.PHONY: help frontend backend test lint install cli cli-test cli-wrappers-test cli-version-check cli-release-check cli-artifacts cli-install-smoke cli-dry-run
 
 help:
 	@echo "Reliastra monorepo"
@@ -16,6 +16,12 @@ help:
 	@echo "                  The four version-bearing CLI files agree"
 	@echo "  make cli-release-check"
 	@echo "                  Everything release-cli.yml checks before tagging"
+	@echo "  make cli-artifacts VERSION=v0.2.1 [DIST=dist]"
+	@echo "                  Every platform's binary + archive, checksums verified"
+	@echo "  make cli-install-smoke [DIST=dist]"
+	@echo "                  npm + pip install from a dist/, then run the CLI"
+	@echo "  make cli-dry-run"
+	@echo "                  goreleaser --snapshot: build a release, publish nothing"
 
 install:
 	cd frontend && npm install
@@ -55,3 +61,19 @@ cli-release-check: cli-version-check cli-test cli-wrappers-test
 	  GOOS=$${t%/*} GOARCH=$${t##*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/reliastra && echo "ok $$t"; done
 	cd cli/npm && npm pack --dry-run
 	cd cli/python && rm -rf dist && python3 -m build --quiet && python3 -m twine check --strict dist/*
+
+# Release artifacts: every platform a user can install on, present and
+# matching checksums.txt. Resolves GoReleaser's real dist/ layout from
+# dist/artifacts.json, so it works whether raw binaries sit at the root
+# (older GoReleaser) or in per-target directories (2.x).
+cli-artifacts:
+	bash cli/test/artifacts_check.sh "$(VERSION)" "$(DIST)"
+
+# Install the way a user does and run it: npm install -g, pip install,
+# --version, --help, a real command, a real exit code. With DIST set, the
+# download comes from a loopback copy of that dist/ instead of GitHub.
+cli-install-smoke:
+	bash cli/test/install_smoke_test.sh $(if $(VERSION),--version $(VERSION),) $(if $(DIST),--dist $(DIST),) --skip-release-url
+
+cli-dry-run:
+	goreleaser release --snapshot --clean --skip=publish

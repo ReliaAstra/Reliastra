@@ -42,12 +42,16 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"sort"
 	"strings"
 )
 
 // version is the CLI version. Release builds override it with
-// `go build -ldflags "-X main.version=1.2.3"`.
+// `go build -ldflags "-X main.version=1.2.3"` (GoReleaser does this from the
+// release tag), and `cli/RELEASING.md` keeps it equal to the next release.
+// It is the fallback for a plain `go build`/`go run` from a checkout, which
+// carries no module version; see versionString for the full order.
 var version = "0.2.0"
 
 // Exit codes. The numbers are the contract: pipelines branch on them.
@@ -363,8 +367,109 @@ func suggest(input string, candidates []string) string {
 
 /* ── Entry point ────────────────────────────────────────────────────────── */
 
+// versionString is what `--version` prints: bare semver, no `v` prefix, so
+// the same string comes out of every distribution channel and matches the
+// npm/PyPI package version and the GitHub release version.
+//
+// There is one release version, but the CLI is built three ways, so the
+// binary resolves it at run time in this order:
+//
+//  1. the module version the Go toolchain stamped into the binary. This is
+//     what makes `go install …@latest` honest: the module proxy builds from
+//     tag `cli/v0.2.1`, so the installed binary reports 0.2.1 whether or not
+//     anyone remembered to edit a constant.
+//  2. the value injected with `-ldflags -X main.version=…`, which is how
+//     GoReleaser stamps release binaries from the tag.
+//  3. `version` above: a build from a checkout, which has neither.
 func versionString() string {
-	return version
+	if v, ok := moduleVersion(); ok {
+		return v
+	}
+	return trimVersionPrefix(version)
+}
+
+// moduleVersion reads the version the Go toolchain embedded in this binary.
+// It reports false for the cases where no usable version was stamped: a
+// plain `go build` in a checkout ("(devel)"), a test binary, or a build with
+// build info stripped.
+func moduleVersion() (string, bool) {
+	info, ok := debug.ReadBuildInfo()
+	if !ok || info == nil || info.Main.Version == "" {
+		return "", false
+	}
+	return trimVersionPrefix(info.Main.Version), isSemver(info.Main.Version)
+}
+
+// isPseudoVersion reports whether prerelease is Go's pseudo-version
+// stamp: a UTC timestamp (`YYYYMMDDHHMMSS`) and a commit prefix, as in
+// `v0.0.0-20260921153000-66736774abcd`.
+func isPseudoVersion(prerelease string) bool {
+	stamp, commit, ok := strings.Cut(prerelease, "-")
+	if !ok || len(stamp) != 14 || commit == "" {
+		return false
+	}
+	for _, r := range stamp {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	for _, r := range commit {
+		isHex := (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f')
+		if !isHex {
+			return false
+		}
+	}
+	return true
+}
+
+// trimVersionPrefix drops the leading `v` of a Go-style version tag.
+func trimVersionPrefix(v string) string {
+	return strings.TrimPrefix(strings.TrimSpace(v), "v")
+}
+
+// isSemver reports whether s is a `v`-prefixed semantic version: `v1`,
+// `v1.2`, `v1.2.3`, optionally with a `-prerelease` and/or `+build`.
+// "(devel)", "" and the pseudo-versions Go makes for untagged commits are
+// rejected, which is what keeps a source build from claiming a release.
+func isSemver(s string) bool {
+	if !strings.HasPrefix(s, "v") {
+		return false
+	}
+	core := s[1:]
+	if core == "" {
+		return false
+	}
+	core = strings.TrimSpace(core)
+	// Split off build metadata, then the prerelease, leaving the release.
+	if i := strings.IndexByte(core, '+'); i >= 0 {
+		core = core[:i]
+	}
+	prerelease := ""
+	if i := strings.IndexByte(core, '-'); i >= 0 {
+		prerelease = core[i+1:]
+		core = core[:i]
+	}
+	// A pseudo-version is what Go stamps for a commit that carries no
+	// release tag: v0.0.0-20260921153000-66736774abcd. Its release part is
+	// a real version, so it has to be recognised by shape — an untagged
+	// build reporting itself as 0.0.0 would be a lie either way.
+	if isPseudoVersion(prerelease) {
+		return false
+	}
+	if core == "" {
+		return false
+	}
+	for _, part := range strings.Split(core, ".") {
+		if part == "" {
+			return false
+		}
+		for _, r := range part {
+			if r < '0' || r > '9' {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // runCLI is the testable entry point: it runs argv against env and returns

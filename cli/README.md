@@ -28,6 +28,21 @@ port or a wrapper with logic of its own.
                      the same `reliastra`
 ```
 
+> **Release status.** Every channel below is published by the release
+> pipeline (`.github/workflows/release-cli.yml`) when a version tag is
+> pushed. Until the first tag exists there is no GitHub release, no npm
+> package and no PyPI package, so the download-based commands have nothing
+> to fetch yet. Build from a checkout in the meantime:
+>
+> ```bash
+> git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
+> cd Reliastra && go build -o reliastra ./cli/cmd/reliastra
+> ```
+>
+> The registry configuration the pipeline needs is in
+> [RELEASING.md](RELEASING.md#1-one-time-setup-per-registry-once-ever);
+> cutting the first release is [§2](RELEASING.md#2-cut-a-release).
+
 Supported platforms for the prebuilt binary — the ones the release
 pipeline builds, runs, and checks on every tag:
 

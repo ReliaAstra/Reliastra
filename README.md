@@ -26,7 +26,10 @@ pipx install reliastra
 go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
 ```
 
-See [cli/README.md](cli/README.md) for binary verification, `doctor`, auth, and `verify`.
+One Go CLI, four channels: npm and PyPI install the same compiled binary
+the Go route builds. See [cli/README.md](cli/README.md#install) for
+channel status, supported platforms, upgrading and troubleshooting, and
+for binary verification, `doctor`, auth and `verify`.
 
 ## Engineering & Contributing
 

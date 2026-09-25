@@ -65,6 +65,14 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 
+# ── CLI distribution (built by GoReleaser / npm pack / python -m build) ──
+# Release artifacts are produced by CI and attached to the GitHub release;
+# only the source that produces them is committed.
+cli/npm/*.tgz
+cli/python/build/
+cli/python/dist/
+cli/python/src/*.egg-info/
+
 # ── Backend runtime ───────────────────────────────────────────────────
 backend/*.db
 backend/*.sqlite3

@@ -168,6 +168,31 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: cli/go.mod
 
+      - name: Publish the Go module tag (cli/vX.Y.Z)
+        # `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`
+        # resolves through the module proxy, and a module in a subdirectory
+        # is versioned by a tag carrying that subdirectory as a prefix. The
+        # plain release tag v0.2.1 resolves the repository instead, which
+        # does not contain cli/cmd/reliastra — so without this, `go install`
+        # cannot resolve at all. Same commit, one release, two tags.
+        #
+        # Pushed before the release is published: if this token cannot
+        # push, nothing has been published yet and the failure says so.
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          module_tag="cli/v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$module_tag" >/dev/null 2>&1; then
+            echo "$module_tag already exists — leaving it alone (tags are immutable)"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$module_tag" HEAD
+          git push origin "refs/tags/$module_tag"
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
         with:
@@ -179,29 +204,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Built binary reports the tag version
-        # The ldflags in .goreleaser.yaml set main.version from the tag;
-        # a mismatch here means the release page and `--version` disagree.
-        run: |
-          set -euo pipefail
-          BIN="dist/reliastra_${{ needs.validate.outputs.version }}_linux_amd64"
-          test -x "$BIN" || { echo "::error::expected raw binary $BIN not built"; ls -R dist | head -50; exit 1; }
-          GOT="$("$BIN" --version)"
-          test "$GOT" = "${{ needs.validate.outputs.version }}" \
-            || { echo "::error::binary reports '$GOT', tag is '${{ needs.validate.outputs.version }}'"; exit 1; }
-          "$BIN" --help > /dev/null
-          echo "reliastra $GOT --version/--help ok"
-
-      - name: checksums.txt covers every raw binary
-        # The wrappers only ever download names listed in checksums.txt.
-        run: |
-          set -euo pipefail
-          V="${{ needs.validate.outputs.version }}"
-          for os in linux darwin windows; do for arch in amd64 arm64; do
-            name="reliastra_${V}_${os}_${arch}"; [ "$os" = windows ] && name="$name.exe"
-            grep -q "  $name\$" dist/checksums.txt || { echo "::error::checksums.txt lacks $name"; exit 1; }
-          done; done
-          (cd dist && sha256sum --check --ignore-missing --strict checksums.txt)
+      - name: Every release artifact, verified
+        # GoReleaser 2.x writes raw binaries into per-target directories
+        # (dist/reliastra_linux_amd64_v1/reliastra) and archives at the
+        # root, so a hardcoded dist/<name>.<os>.<arch> path silently checks
+        # nothing. cli/test/artifacts_check.sh resolves each artifact from
+        # GoReleaser's own dist/artifacts.json, verifies it against
+        # checksums.txt with sha256sum -c, and runs the host binary to
+        # compare --version with the tag.
+        run: bash cli/test/artifacts_check.sh "${{ needs.validate.outputs.version }}" dist
 
       - name: Attest build provenance
         # SLSA provenance for every release asset, signed by this workflow's

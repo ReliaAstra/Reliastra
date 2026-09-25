@@ -35,9 +35,18 @@ turns that tag into every way of installing the same binary:
 | `pypi` | package [`reliastra`](https://pypi.org/project/reliastra/) `X.Y.Z` — same installer shape | `pipx install reliastra`, `pip install reliastra` |
 
 `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest` needs
-no stage at all: the module proxy serves the source at the tagged commit,
-and `main.go` already carries the version (see §2), so `--version` is right
+no registry: the module proxy serves the source at a tagged commit, and
+`main.go` already carries the version (see §2), so `--version` is right
 without ldflags.
+
+It does need a second tag, though. The CLI is a Go module in a
+subdirectory (`cli/go.mod`), and the proxy versions subdirectory modules
+from tags that carry the subdirectory as a prefix — so the `binaries`
+stage pushes **`cli/vX.Y.Z`** at the same commit as `vX.Y.Z`. Without it,
+the plain tag resolves to the repository root, which does not contain
+`cli/cmd/reliastra`, and `go install` fails with *"found, but does not
+contain package"*. One release, one commit, two tags — both immutable,
+both written by the pipeline.
 
 Platform matrix: linux, darwin, windows × amd64, arm64 — six binaries. The
 CLI is standard-library only with `CGO_ENABLED=0`, so nothing else is
@@ -151,14 +160,29 @@ dist/reliastra_*_linux_amd64 --version        # "<next>-snapshot+<sha>": never a
 bash cli/test/wrappers_smoke_test.sh          # wrappers vs a fake release on loopback
 ```
 
-To exercise the *real* wrappers against *real* binaries without a GitHub
-release, serve a directory shaped like a release
-(`v0.2.1/reliastra_0.2.1_<os>_<arch>` + `checksums.txt`) on loopback and
-point them at it with `RELIASTRA_RELEASE_URL=http://127.0.0.1:<port>`
-(plain http is accepted for loopback only) and a scratch
-`RELIASTRA_CACHE`. `npm install -g --prefix <dir> <tgz from npm pack>` and
-`pip install cli/python/dist/*.whl` into a venv give you the installed
-shape users get.
+Two scripts automate the checks below. `cli-artifacts` is what the
+`binaries` stage runs in CI, and it accepts the snapshot version too — pass
+the one GoReleaser prints (`<next>-snapshot+<sha>`), not the tag:
+
+```bash
+make cli-artifacts VERSION=0.2.1-snapshot+abc1234 DIST=dist
+make cli-install-smoke DIST=dist   # npm + pip install of a *tagged* build
+```
+
+`cli-install-smoke` installs the version the packages declare, so it wants a
+`dist/` built at that same version — a tagged build, not a `--snapshot` one
+(whose artifacts are deliberately labelled `-snapshot+<sha>` so they can
+never be mistaken for a release).
+
+`cli-install-smoke` does the loopback recipe by hand: it packs the npm
+tarball, builds the wheel, installs both into throwaway prefixes, points
+them at a loopback copy of `dist/`
+(`RELIASTRA_RELEASE_URL=http://127.0.0.1:<port>` — plain http is accepted
+for loopback only) with a scratch `RELIASTRA_CACHE`, and then runs
+`--version`, `--help`, a real command and a real exit code through each.
+It finishes by opening the cached binary with `go version -m` when Go is
+installed, which prints the module the binary was built from — the direct
+proof that npm and pip installed the Go CLI and not something else.
 
 ## 4. Verify a release
 
