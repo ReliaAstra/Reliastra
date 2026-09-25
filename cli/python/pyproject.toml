@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,12 +11,12 @@ version = "0.2.0"
 description = "RELIASTRA command-line client: probes, verdicts, evidence records, public verification. Thin installer — downloads the platform binary from GitHub Releases on first run and verifies its SHA-256 before executing it."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "Proprietary" }
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
 authors = [{ name = "ReliaAstra" }]
 keywords = ["monitoring", "uptime", "evidence", "verification", "reliastra", "cli"]
 classifiers = [
     "Environment :: Console",
-    "License :: Other/Proprietary",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",

@@ -1,4 +1,4 @@
-.PHONY: help frontend backend test lint install cli cli-test
+.PHONY: help frontend backend test lint install cli cli-test cli-wrappers-test cli-version-check cli-release-check
 
 help:
 	@echo "Reliastra monorepo"
@@ -12,6 +12,10 @@ help:
 	@echo "  make cli-test   Format-check, vet and test the CLI"
 	@echo "  make cli-wrappers-test"
 	@echo "                  Smoke-test the npm/PyPI installers (fake release)"
+	@echo "  make cli-version-check"
+	@echo "                  The four version-bearing CLI files agree"
+	@echo "  make cli-release-check"
+	@echo "                  Everything release-cli.yml checks before tagging"
 
 install:
 	cd frontend && npm install
@@ -38,3 +42,16 @@ cli-test:
 
 cli-wrappers-test:
 	bash cli/test/wrappers_smoke_test.sh
+
+cli-version-check:
+	cli/scripts/version.sh check
+
+# Local equivalent of the validate + test stages of release-cli.yml:
+# run before `git tag`. Add VERSION=vX.Y.Z to also assert the tree is at
+# the version about to be tagged.
+cli-release-check: cli-version-check cli-test cli-wrappers-test
+	@if [ -n "$(VERSION)" ]; then cli/scripts/version.sh check "$(VERSION)"; fi
+	cd cli && for t in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do \
+	  GOOS=$${t%/*} GOARCH=$${t##*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/reliastra && echo "ok $$t"; done
+	cd cli/npm && npm pack --dry-run
+	cd cli/python && rm -rf dist && python3 -m build --quiet && python3 -m twine check --strict dist/*

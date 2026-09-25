@@ -7,8 +7,11 @@
 #   2. the cache is shared between the two wrappers (one binary, not two)
 #   3. a second run reuses the cache with the server already down, and
 #      exit codes pass through untouched
-#   4. RELIASTRA_BIN bypasses download and cache entirely
+#   4. RELIASTRA_BIN bypasses download and cache entirely, but only as an
+#      absolute path to a regular file
 #   5. a tampered checksums.txt refuses to execute anything
+#   6. RELIASTRA_RELEASE_URL refuses plaintext http to anything but loopback
+#   7. a network failure fails clearly and leaves nothing in the cache
 #
 # Run from anywhere: cli/test/wrappers_smoke_test.sh
 # Used locally and by the `cli` job in .github/workflows/ci.yml.
@@ -139,6 +142,36 @@ expect_output "reliastra-fake deps list" "npm shim: RELIASTRA_BIN override" \
 expect_output "reliastra-fake deps list" "pip shim: RELIASTRA_BIN override" \
   env RELIASTRA_BIN="$FAKE_BIN" RELIASTRA_CACHE="$WORK/unused" PYTHONPATH="$PY_SRC" python3 -m reliastra deps list
 
+# 4b. RELIASTRA_BIN is an escape hatch, not a search: a bare name (which
+#     the spawn would resolve on PATH) and a directory are both refused.
+expect_failure_containing() { # <expected-substring> <label> <cmd...>
+  local want="$1" label="$2"; shift 2
+  if "$@" >"$WORK/stdout" 2>"$WORK/stderr"; then
+    echo "FAIL: $label — expected non-zero exit, got success"; exit 1
+  fi
+  grep -qi -- "$want" "$WORK/stderr" || {
+    echo "FAIL: $label — expected stderr containing \"$want\", got: $(cat "$WORK/stderr")"; exit 1
+  }
+  echo "ok: $label"
+}
+expect_failure_containing "absolute path" "npm shim: relative RELIASTRA_BIN refused" \
+  env RELIASTRA_BIN=sh node "$NODE_SHIM" --version
+expect_failure_containing "absolute path" "pip shim: relative RELIASTRA_BIN refused" \
+  env RELIASTRA_BIN=sh PYTHONPATH="$PY_SRC" python3 -m reliastra --version
+expect_failure_containing "not a regular file" "npm shim: directory RELIASTRA_BIN refused" \
+  env RELIASTRA_BIN="$WORK" node "$NODE_SHIM" --version
+expect_failure_containing "not a regular file" "pip shim: directory RELIASTRA_BIN refused" \
+  env RELIASTRA_BIN="$WORK" PYTHONPATH="$PY_SRC" python3 -m reliastra --version
+
+# 6. A mirror override must be https unless it is loopback. The loopback
+#    exception is what this very test relies on; anything else is a
+#    downgrade path and is refused before any request is made.
+expect_failure_containing "must use https" "npm shim: plaintext non-loopback mirror refused" \
+  env RELIASTRA_RELEASE_URL="http://example.invalid/releases" RELIASTRA_CACHE="$WORK/plain" node "$NODE_SHIM" --version
+expect_failure_containing "must use https" "pip shim: plaintext non-loopback mirror refused" \
+  env RELIASTRA_RELEASE_URL="http://example.invalid/releases" RELIASTRA_CACHE="$WORK/plain" PYTHONPATH="$PY_SRC" python3 -m reliastra --version
+[ ! -e "$WORK/plain" ] || { echo "FAIL: refused mirror still created a cache dir"; exit 1; }
+
 # 5. Cache reuse: with the release server gone, the cached copy still
 #    works, and the CLI's exit codes pass through untouched (7 must be 7).
 kill "$SERVER_PID" 2>/dev/null || true
@@ -155,5 +188,13 @@ env RELIASTRA_CACHE="$WORK/cache" FAKE_EXIT=7 PYTHONPATH="$PY_SRC" python3 -m re
   echo "FAIL: exit codes not passed through (npm=$NPM_RC pip=$PY_RC, want 7)"; exit 1;
 }
 echo "ok: exit codes pass through"
+
+# 7. Network failure (server is down, cache empty): a clear error that
+#    names the URL, exit 1, and nothing half-written in the cache.
+expect_failure_containing "could not fetch" "npm shim: network failure is explicit" \
+  env RELIASTRA_RELEASE_URL="$GOOD_URL" RELIASTRA_CACHE="$WORK/offline" node "$NODE_SHIM" --version
+expect_failure_containing "could not fetch" "pip shim: network failure is explicit" \
+  env RELIASTRA_RELEASE_URL="$GOOD_URL" RELIASTRA_CACHE="$WORK/offline" PYTHONPATH="$PY_SRC" python3 -m reliastra --version
+[ -z "$(find "$WORK/offline" -type f 2>/dev/null)" ] || { echo "FAIL: failed download left files in the cache"; exit 1; }
 
 echo "wrappers: all checks passed"
