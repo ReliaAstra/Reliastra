@@ -13,6 +13,14 @@ class VendorEndpointResponse(BaseModel):
     health_status: str
     is_active: bool
     last_check_at: datetime | None = None
+    # Target identity (additive, migration 0039+). Older rows may still
+    # carry null slug/name; the URL remains the stable fallback identity.
+    slug: str | None = None
+    name: str | None = None
+    kind: str = "status_page"
+    product_name: str | None = None
+    display_order: int = 100
+    methodology_version: str = "v1.0"
 
 
 class VendorResponse(BaseModel):
@@ -29,11 +37,45 @@ class VendorResponse(BaseModel):
     last_check_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    # Entity identity (additive, migration 0039+).
+    official_name: str | None = None
+    description: str | None = None
+    website_url: str | None = None
+    documentation_url: str | None = None
+    status_page_url: str | None = None
+    logo_url: str | None = None
+    country: str | None = None
+    tags: list[str] | None = None
 
 
 class VendorDetailResponse(VendorResponse):
     recent_status: str = "unknown"
     endpoints: list[VendorEndpointResponse] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Category taxonomy schemas
+# ---------------------------------------------------------------------------
+
+
+class VendorCategorySummary(BaseModel):
+    """One taxonomy entry plus how many public vendors it contains."""
+
+    slug: str
+    name: str
+    description: str | None = None
+    display_order: int
+    vendor_count: int = 0
+
+
+class VendorCategoryListResponse(BaseModel):
+    categories: list[VendorCategorySummary] = Field(default_factory=list)
+
+
+class VendorCategoryDetailResponse(VendorCategorySummary):
+    """Full category view: taxonomy metadata plus its public vendors."""
+
+    vendors: list[VendorResponse] = Field(default_factory=list)
 
 
 class VendorHistoryResponse(BaseModel):

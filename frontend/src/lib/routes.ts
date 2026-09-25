@@ -157,6 +157,13 @@ export const SHARE_ROUTES = {
   /** The public record for one measured vendor. */
   observatoryVendor: (vendor: string) => `/observatory/${encodeURIComponent(vendor)}`,
   /**
+   * The public record for one catalog category. Shares the single
+   * `/observatory/{slug}` segment with vendor records; the page resolves
+   * vendor first, then category, then 404. A slug in `CATEGORY_SLUGS` is a
+   * category, everything else is a vendor lookup.
+   */
+  observatoryCategory: (slug: string) => `/observatory/${encodeURIComponent(slug)}`,
+  /**
    * Public incident record for one measured vendor. The URL is derived from
    * the incident id exactly as the measurement API returns it, so a published
    * record keeps one stable address: the list page is where freshness lives,

@@ -4,6 +4,7 @@ import { SHARE_ROUTES } from '@/lib/routes';
 import { SITE_INDEXABLE } from '@/lib/indexability';
 import {
   readCatalogForDiscovery,
+  readCategories,
   readVendorPublicIncidents,
   type TrackVendorListItem,
 } from '@/lib/track-api';
@@ -122,6 +123,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const vendors = catalog.vendors.filter((v) => v.is_public !== false && v.vendor_name);
   entries.push(...vendorEntries(base, vendors));
+
+  /**
+   * Category pages. Same rule as every other URL in this file: a category is
+   * listed only when the taxonomy endpoint returned it (the data behind the
+   * URL exists), and an unreadable taxonomy removes category URLs for this
+   * cycle without taking the catalog URLs with it. Categories carry no
+   * lastmod - no real date is known for a taxonomy position.
+   */
+  const categoriesRead = await readCategories();
+  if (categoriesRead.kind === 'ok') {
+    entries.push(
+      ...categoriesRead.value.categories.map((category) => ({
+        url: `${base}${SHARE_ROUTES.observatoryCategory(category.slug)}`,
+        changeFrequency: 'hourly' as const,
+        priority: 0.7,
+      }))
+    );
+  } else {
+    console.warn(
+      `[sitemap] categories unreadable (${categoriesRead.kind}); emitted vendor URLs without category URLs for this cycle`
+    );
+  }
 
   const discovered = await mapWithConcurrency(
     vendors.slice(0, INCIDENT_DISCOVERY_LIMIT),

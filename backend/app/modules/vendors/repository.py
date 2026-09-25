@@ -1,13 +1,17 @@
-from datetime import datetime, timezone
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
-from app.config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.modules.dependencies.models import Dependency
 from app.modules.incidents.models import Incident
-from app.modules.vendors.models import VendorEndpoint, VendorTracking
+from app.modules.vendors.models import (
+    VendorCategory,
+    VendorEndpoint,
+    VendorTracking,
+)
 
 
 class VendorRepository:
@@ -87,6 +91,13 @@ class VendorRepository:
         session: AsyncSession,
         vendor_id,
         endpoint_url: str,
+        *,
+        slug: str | None = None,
+        name: str | None = None,
+        kind: str = "status_page",
+        product_name: str | None = None,
+        display_order: int = 100,
+        methodology_version: str = "v1.0",
     ) -> VendorEndpoint:
         endpoint = VendorEndpoint(
             vendor_id=vendor_id,
@@ -95,10 +106,98 @@ class VendorRepository:
             regions=[settings.CHECK_WORKER_REGION],
             is_active=True,
             health_status="unknown",
+            slug=slug,
+            name=name,
+            kind=kind,
+            product_name=product_name,
+            display_order=display_order,
+            methodology_version=methodology_version,
         )
         session.add(endpoint)
         await session.flush()
         return endpoint
+
+    @staticmethod
+    async def get_vendor_endpoint_by_url(
+        session: AsyncSession, vendor_id, endpoint_url: str
+    ) -> VendorEndpoint | None:
+        result = await session.execute(
+            select(VendorEndpoint).where(
+                VendorEndpoint.vendor_id == vendor_id,
+                VendorEndpoint.endpoint_url == endpoint_url,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    # ------------------------------------------------------------------
+    # Categories
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    async def list_categories(
+        session: AsyncSession, *, public_only: bool = True
+    ) -> list[VendorCategory]:
+        query = select(VendorCategory).order_by(
+            VendorCategory.display_order.asc(), VendorCategory.slug.asc()
+        )
+        if public_only:
+            query = query.where(VendorCategory.is_public.is_(True))
+        result = await session.execute(query)
+        return list(result.scalars().all())
+
+    @staticmethod
+    async def get_category_by_slug(
+        session: AsyncSession, slug: str
+    ) -> VendorCategory | None:
+        result = await session.execute(
+            select(VendorCategory).where(VendorCategory.slug == slug.lower())
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def create_category(
+        session: AsyncSession,
+        *,
+        slug: str,
+        name: str,
+        description: str | None,
+        display_order: int,
+    ) -> VendorCategory:
+        category = VendorCategory(
+            slug=slug.lower(),
+            name=name,
+            description=description,
+            display_order=display_order,
+            is_public=True,
+        )
+        session.add(category)
+        await session.flush()
+        return category
+
+    @staticmethod
+    async def count_public_vendors_by_category(
+        session: AsyncSession,
+    ) -> dict[str, int]:
+        result = await session.execute(
+            select(VendorTracking.category, func.count(VendorTracking.id))
+            .where(VendorTracking.is_public.is_(True))
+            .group_by(VendorTracking.category)
+        )
+        return {row[0]: int(row[1] or 0) for row in result.all()}
+
+    @staticmethod
+    async def list_public_by_category(
+        session: AsyncSession, category_slug: str
+    ) -> list[VendorTracking]:
+        result = await session.execute(
+            select(VendorTracking)
+            .where(
+                VendorTracking.is_public.is_(True),
+                VendorTracking.category == category_slug.lower(),
+            )
+            .order_by(VendorTracking.display_name.asc(), VendorTracking.id.asc())
+        )
+        return list(result.scalars().all())
 
     @staticmethod
     async def list_vendor_endpoints(

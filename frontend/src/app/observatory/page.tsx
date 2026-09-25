@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import {
   fetchTrackedVendorsAll,
+  readCategories,
   readVendorDetail,
   regionsOf,
   type TrackVendorDetail,
@@ -138,6 +139,16 @@ export default async function ObservatoryIndexPage() {
     maxPages: CATALOG_MAX_PAGES,
   });
 
+  /**
+   * The taxonomy, in registry order, for the category directory. Categories
+   * are discovery, not the subject of this page: if the taxonomy cannot be
+   * read the catalog still renders honestly and the directory section is
+   * simply absent, rather than the page pretending categories do not exist.
+   */
+  const categoriesRead = await readCategories();
+  const taxonomy =
+    categoriesRead.kind === 'ok' ? categoriesRead.value.categories : null;
+
   const rows: CatalogRow[] = await Promise.all(
     items.map(async (item, i) => {
       if (i >= REGION_RESOLVE_LIMIT) return { item, detail: null };
@@ -170,6 +181,9 @@ export default async function ObservatoryIndexPage() {
     {
       key: 'category',
       head: 'Category',
+      // Rows link to the vendor record; the category directory further down is
+      // where the category itself is a destination. A nested link inside a
+      // linked row is invalid HTML, so this cell stays plain text.
       width: 'minmax(0,150px)',
       cell: (r) => (
         <span className="text-[13px] text-[var(--ob-text-3)]">
@@ -315,8 +329,45 @@ export default async function ObservatoryIndexPage() {
         )}
       </RecordSection>
 
+      {taxonomy && taxonomy.length ? (
+        <RecordSection
+          index="02"
+          id="categories"
+          tone="base"
+          title="Categories"
+          note={
+            <>
+              The taxonomy groups records by the kind of infrastructure the
+              dependency is. A category page enumerates its records with their
+              observed states; it never merges unlike endpoints into a single
+              figure.
+            </>
+          }
+          aside={<span className="ob-label md:text-right">In taxonomy order</span>}
+        >
+          <ul className="flex flex-col divide-y divide-[var(--ob-line)]">
+            {taxonomy.map((category) => (
+              <li key={category.slug}>
+                <Link
+                  href={SHARE_ROUTES.observatoryCategory(category.slug)}
+                  className="group flex flex-wrap items-baseline gap-x-4 gap-y-1 py-4"
+                >
+                  <span className="text-[15px] font-medium tracking-[-0.01em] text-[var(--ob-text)] group-hover:underline">
+                    {category.name}
+                  </span>
+                  <span className="ob-small mr-2">{category.slug}</span>
+                  <span className="ml-auto text-[13px] tabular-nums text-[var(--ob-text-3)]">
+                    {category.vendor_count} record{category.vendor_count === 1 ? '' : 's'}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </RecordSection>
+      ) : null}
+
       <RecordSection
-        index="02"
+        index="03"
         id="reading"
         title="How to read this index"
         note="What each column means."
@@ -368,7 +419,7 @@ export default async function ObservatoryIndexPage() {
       </RecordSection>
 
       <RecordSection
-        index="03"
+        index="04"
         id="preferred-source"
         tone="base"
         title="Follow the record"

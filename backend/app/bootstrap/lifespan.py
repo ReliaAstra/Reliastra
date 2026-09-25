@@ -32,8 +32,8 @@ async def _report_check_pipeline_requirements() -> None:
     """
     import asyncio
 
-    from app.platform.messaging.celery_app import beat_task_names, probe_broker
     from app.modules.checks.scheduler_health import sanitize_broker_url
+    from app.platform.messaging.celery_app import beat_task_names, probe_broker
 
     logger.info(
         "Check scheduling is provided by Celery Beat. A healthy deployment "
@@ -66,12 +66,40 @@ async def _report_check_pipeline_requirements() -> None:
         )
 
 
+async def _sync_vendor_registry() -> None:
+    """Reconcile the vendor registry at boot so onboarding is deploy complete.
+
+    The daily beat sync keeps the registry converged afterwards; doing it
+    once at startup means a newly deployed registry takes effect on first
+    boot rather than at the next 04:50 tick. The sync is an idempotent
+    identity upsert (no probes, no broker, no deletions), so parallel
+    replicas racing it converge on the same rows. A failure is loud but
+    never blocks boot: the last successful registry keeps serving.
+    """
+    try:
+        from app.db.session import get_session_maker
+        from app.modules.vendors.service import vendor_service
+
+        session_maker = get_session_maker()
+        async with session_maker() as session:
+            created = await vendor_service.seed_vendors(session)
+            await session.commit()
+        logger.info("Vendor registry sync at startup complete (created=%s)", created)
+    except Exception:  # pragma: no cover - startup must never raise
+        logger.error(
+            "Vendor registry sync at startup FAILED; the catalog serves the "
+            "last synced registry until the daily beat reconciliation.",
+            exc_info=True,
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Reliastra backend starting up...")
     get_engine()
     await _report_check_pipeline_requirements()
     await ensure_admin_service_account()
+    await _sync_vendor_registry()
     yield
     logger.info("Reliastra backend shutting down...")
     try:

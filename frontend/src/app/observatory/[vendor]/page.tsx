@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import {
   DEFAULT_WINDOW,
   readCatalog,
+  readCategory,
   readVendorDetail,
   readVendorRecord,
   RecordUnreadableError,
@@ -29,6 +30,7 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { PUBLIC_ROUTES, SHARE_ROUTES } from '@/lib/routes';
 import { Breadcrumb } from '@/components/site/primitives';
 import { ObservatoryShell, RecordSection } from '@/components/observatory/primitives';
+import { CategoryRecord } from '@/components/observatory/category-page';
 import {
   CurrentObservationSection,
   DependencyInfoSection,
@@ -117,8 +119,64 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  /** The API answered 404: no such public dependency. The body 404s to match. */
+  /** The API answered 404 for a vendor: the segment may still be a category. */
   if (read.kind === 'missing') {
+    /**
+     * Single segment, two entity types: `/observatory/payments` is a
+     * category exactly as canonical as `/observatory/stripe` is a vendor.
+     * The three-way contract is unchanged - existence unknown keeps the URL
+     * indexable for retry, definite absence on both lookups is the only
+     * state that emits noindex.
+     */
+    const categoryRead = await readCategory(vendor);
+
+    if (categoryRead.kind === 'ok') {
+      const category = categoryRead.value;
+      const categoryUrl = canonicalUrl(SHARE_ROUTES.observatoryCategory(category.slug));
+      const categoryDescription =
+        category.description ??
+        `Independently measured reliability records for ${category.name} dependencies.`;
+      return {
+        title: `${category.name} dependencies - independently measured reliability records`,
+        description: categoryDescription,
+        alternates: { canonical: categoryUrl, ...DISCOVERY_ALTERNATES },
+        robots: robotsDirective({ index: true, follow: true }),
+        openGraph: {
+          title: `${category.name} dependency records - RELIASTRA observatory`,
+          description: categoryDescription,
+          url: categoryUrl,
+          type: 'website',
+          images: [
+            {
+              url: '/opengraph-image.png',
+              width: 1584,
+              height: 396,
+              alt: `RELIASTRA ${category.name} dependency records`,
+            },
+          ],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: `${category.name} dependency records - RELIASTRA observatory`,
+          description: categoryDescription,
+          images: ['/opengraph-image.png'],
+        },
+      };
+    }
+
+    /** Category existence unknown: keep the URL indexable for a retrying
+     * crawler; the body throws for a 5xx to match. */
+    if (categoryRead.kind === 'unreadable') {
+      return {
+        title: 'Dependency record - RELIASTRA observatory',
+        description:
+          'Independently measured availability, latency and incident history for third-party APIs.',
+        alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+        robots: robotsDirective({ index: true, follow: true }),
+      };
+    }
+
+    /** Neither a vendor nor a category: the URL asserts nothing. */
     return {
       title: 'Dependency record - RELIASTRA observatory',
       description:
@@ -203,8 +261,22 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
     throw new RecordUnreadableError(read.reason, `/vendors/${vendor}`);
   }
 
-  /** The API answered 404: this dependency is not a public record. */
-  if (read.kind === 'missing') notFound();
+  /**
+   * The API answered 404 for a vendor: this segment may still name a
+   * category. Same contract as the vendor record itself - unreadable
+   * throws for a 5xx, missing on both lookups is the only 404.
+   */
+  if (read.kind === 'missing') {
+    const categoryRead = await readCategory(vendor);
+    if (categoryRead.kind === 'unreadable') {
+      throw new RecordUnreadableError(
+        categoryRead.reason,
+        `/vendors/categories/${vendor}`,
+      );
+    }
+    if (categoryRead.kind === 'missing') notFound();
+    return <CategoryRecord category={categoryRead.value} />;
+  }
 
   const record = read.value;
   const { detail, regions } = record;

@@ -111,6 +111,15 @@ celery_app.conf.update(
             'schedule': float(settings.CHECK_SCHEDULE_SECONDS),
             'options': {'expires': 60},
         },
+        # Deterministic vendor onboarding: the registry
+        # (app/modules/vendors/registry.py) is reconciled into the database
+        # daily. The sync is an idempotent upsert, so rerunning it is always
+        # safe; operators can also invoke the task immediately after deploy.
+        'vendor-registry-sync': {
+            'task': 'app.modules.vendors.tasks.seed_vendors',
+            'schedule': crontab(minute=50, hour=4),
+            'options': {'expires': 3600},
+        },
         # Interval is env-configurable (CHECK_SCHEDULE_SECONDS).
         "schedule-checks-periodic": {
             "task": "app.modules.checks.tasks.schedule_checks",

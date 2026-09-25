@@ -58,6 +58,33 @@ export interface TrackVendorListItem {
   last_check_at: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  /* Entity identity (additive, backend migration 0039+). Older rows read null. */
+  official_name?: string | null;
+  description?: string | null;
+  website_url?: string | null;
+  documentation_url?: string | null;
+  status_page_url?: string | null;
+  logo_url?: string | null;
+  country?: string | null;
+  tags?: string[] | null;
+}
+
+/** One taxonomy entry (mirrors VendorCategorySummary). */
+export interface TrackCategorySummary {
+  slug: string;
+  name: string;
+  description: string | null;
+  display_order: number;
+  vendor_count: number;
+}
+
+export interface TrackCategoriesResponse {
+  categories: TrackCategorySummary[];
+}
+
+/** A category with its public vendors (mirrors VendorCategoryDetailResponse). */
+export interface TrackCategoryDetail extends TrackCategorySummary {
+  vendors: TrackVendorListItem[];
 }
 
 export interface TrackVendorsPage {
@@ -371,6 +398,33 @@ export function fetchTrackedVendors(limit = 60): Promise<TrackVendorsPage> {
 /** The catalog as a three-way read, for callers that must not guess. */
 export function readCatalog(limit = 60): Promise<RecordRead<TrackVendorsPage>> {
   return readJson<TrackVendorsPage>(`/vendors?limit=${limit}`, CATALOG_POLICY);
+}
+
+/* ── Categories ─────────────────────────────────────────────────────────── */
+
+const CATEGORIES_POLICY: CachePolicy = {
+  revalidate: AGGREGATE_POLICY,
+  tags: ['observatory', 'vendors:categories'],
+};
+
+/**
+ * The taxonomy as a three-way read. Categories move at registry pace, not
+ * probe pace, so they share the aggregate lifetime (300s), not the live one.
+ */
+export function readCategories(): Promise<RecordRead<TrackCategoriesResponse>> {
+  return readJson<TrackCategoriesResponse>(`/vendors/categories`, CATEGORIES_POLICY);
+}
+
+/**
+ * One category with its public vendors. Same three-way discipline as
+ * `readVendorDetail`: a URL segment resolver turns `missing` into a 404
+ * candidate and `unreadable` into a 5xx, never into a fabricated page.
+ */
+export function readCategory(slug: string): Promise<RecordRead<TrackCategoryDetail>> {
+  return readJson<TrackCategoryDetail>(
+    `/vendors/categories/${enc(slug.toLowerCase())}`,
+    CATEGORIES_POLICY,
+  );
 }
 
 /**

@@ -11,11 +11,14 @@ from app.modules.observations.models import Observation
 from app.core.exceptions import ResourceNotFoundException, ValidationException, ServiceUnavailableException
 from app.modules.checks.repository import CheckRepository
 from app.modules.observations.repository import ObservationRepository
-from app.modules.vendors.constants import SEED_VENDORS
+from app.modules.vendors.registry import REGISTRY, validate_registry
 from app.modules.vendors.repository import VendorRepository
 from app.modules.vendors.schemas import (
     TimelineBucket,
     TimelineCurrent,
+    VendorCategoryDetailResponse,
+    VendorCategoryListResponse,
+    VendorCategorySummary,
     VendorDeveloperResponse,
     VendorDetailResponse,
     VendorEndpointResponse,
@@ -27,6 +30,7 @@ from app.modules.vendors.schemas import (
     VendorTimelineResponse,
     VendorWindowMetrics,
 )
+from app.modules.vendors.taxonomy import CATEGORIES, validate_taxonomy
 
 logger = logging.getLogger(__name__)
 
@@ -69,32 +73,169 @@ class VendorService:
     ) -> None:
         self.repository = repository
 
+    # ------------------------------------------------------------------
+    # Registry sync (deterministic onboarding)
+    # ------------------------------------------------------------------
+
     async def seed_vendors(self, session: AsyncSession) -> int:
-        seeded_count = 0
-        for item in SEED_VENDORS:
-            existing = await self.repository.get_by_name(
-                session, item["vendor_name"]
+        """Idempotently sync the taxonomy and vendor registry into the DB.
+
+        The registry (app/modules/vendors/registry.py) is the single source
+        for public catalog membership; this method reconciles the database
+        with it. It only ever inserts missing rows and updates identity
+        metadata:
+
+        - categories are upserted from the taxonomy (slug keyed)
+        - vendors are inserted when the slug is new, otherwise their
+          identity fields are refreshed in place
+        - observation targets are inserted when (vendor_id, url) is new,
+          otherwise their identity fields are refreshed in place
+
+        It never deactivates endpoints, deletes rows, or touches
+        observations, health state, region labels or schedules. Returning
+        early on registry validation problems is deliberate: a broken
+        registry must fail loudly instead of partially applying.
+        """
+        problems = validate_taxonomy() + validate_registry()
+        if problems:
+            raise ValidationException(
+                "vendor registry/taxonomy invalid; refusing to sync: "
+                + "; ".join(problems)
             )
-            if not existing:
-                existing = await self.repository.create(
+
+        category_rows = {}
+        for definition in CATEGORIES:
+            row = await self.repository.get_category_by_slug(session, definition.slug)
+            if row is None:
+                row = await self.repository.create_category(
+                    session,
+                    slug=definition.slug,
+                    name=definition.name,
+                    description=definition.description,
+                    display_order=definition.display_order,
+                )
+            else:
+                row.name = definition.name
+                row.description = definition.description
+                row.display_order = definition.display_order
+                row.is_public = True
+            category_rows[definition.slug] = row
+        await session.flush()
+
+        seeded_count = 0
+        for vendor_def in REGISTRY:
+            category_row = category_rows[vendor_def.category]
+            primary_url = vendor_def.targets[0].url
+            vendor = await self.repository.get_by_name(session, vendor_def.vendor_name)
+            if vendor is None:
+                vendor = await self.repository.create(
                     session=session,
-                    vendor_name=item["vendor_name"],
-                    display_name=item["display_name"],
-                    endpoint_url=item["endpoint_url"],
-                    category=item["category"],
+                    vendor_name=vendor_def.vendor_name,
+                    display_name=vendor_def.display_name,
+                    endpoint_url=primary_url,
+                    category=vendor_def.category,
                 )
                 seeded_count += 1
-            endpoints = await self.repository.list_vendor_endpoints(session, existing.vendor_name)
-            if not endpoints:
-                await self.repository.create_vendor_endpoint(session, existing.id, existing.endpoint_url)
+            # Identity refresh, in place. Operational fields (last_check_at,
+            # is_public) are managed by the probe loop and operators, so they
+            # are deliberately left alone on existing rows.
+            vendor.display_name = vendor_def.display_name
+            vendor.endpoint_url = primary_url
+            vendor.category = vendor_def.category
+            vendor.category_id = category_row.id
+            vendor.official_name = vendor_def.official_name
+            vendor.description = vendor_def.description
+            vendor.website_url = vendor_def.website_url
+            vendor.documentation_url = vendor_def.documentation_url
+            vendor.status_page_url = vendor_def.status_page_url
+            vendor.country = vendor_def.country
+            vendor.tags = list(vendor_def.tags) if vendor_def.tags else None
+
+            for target in vendor_def.targets:
+                endpoint = await self.repository.get_vendor_endpoint_by_url(
+                    session, vendor.id, target.url
+                )
+                if endpoint is None:
+                    await self.repository.create_vendor_endpoint(
+                        session,
+                        vendor.id,
+                        target.url,
+                        slug=target.slug,
+                        name=target.name,
+                        kind=target.kind,
+                        product_name=target.product,
+                        display_order=target.display_order,
+                    )
+                else:
+                    endpoint.slug = target.slug
+                    endpoint.name = target.name
+                    endpoint.kind = target.kind
+                    endpoint.product_name = target.product
+                    endpoint.display_order = target.display_order
+        await session.flush()
+        logger.info(
+            "Vendor registry sync complete: %d categories, %d vendors, %d created",
+            len(category_rows), len(REGISTRY), seeded_count,
+        )
         return seeded_count
+
+    # ------------------------------------------------------------------
+    # Catalog reads
+    # ------------------------------------------------------------------
 
     async def list_public_vendors(
         self, session: AsyncSession, limit: int = 50, cursor: uuid.UUID | None = None
     ) -> list[VendorResponse]:
         vendors = await self.repository.list_public(
-            session, limit=limit, cursor=cursor
+            session=session, limit=limit, cursor=cursor
         )
+        return await self._with_recent_status(session, vendors)
+
+    async def list_categories(
+        self, session: AsyncSession
+    ) -> VendorCategoryListResponse:
+        categories = await self.repository.list_categories(session)
+        counts = await self.repository.count_public_vendors_by_category(session)
+        return VendorCategoryListResponse(
+            categories=[
+                VendorCategorySummary(
+                    slug=category.slug,
+                    name=category.name,
+                    description=category.description,
+                    display_order=category.display_order,
+                    vendor_count=counts.get(category.slug, 0),
+                )
+                for category in categories
+            ]
+        )
+
+    async def get_category_detail(
+        self, session: AsyncSession, slug: str
+    ) -> VendorCategoryDetailResponse:
+        category = await self.repository.get_category_by_slug(session, slug)
+        if category is None or not category.is_public:
+            raise ResourceNotFoundException(f"Category '{slug}' not found")
+        vendors = await self.repository.list_public_by_category(session, category.slug)
+        return VendorCategoryDetailResponse(
+            slug=category.slug,
+            name=category.name,
+            description=category.description,
+            display_order=category.display_order,
+            vendor_count=len(vendors),
+            vendors=await self._with_recent_status(session, vendors),
+        )
+
+    async def _with_recent_status(
+        self, session: AsyncSession, vendors: list
+    ) -> list[VendorResponse]:
+        """Attach the catalog's observed state to each vendor row.
+
+        One observation query for the whole page of vendors (not N+1), keyed
+        by the vendor's primary observed surface. This is the catalog's own
+        verdict definition and must stay identical wherever it is rendered:
+        `stale` past the 15 minute freshness threshold, `down` on a transport
+        error or missing status code, otherwise `operational`.
+        """
         urls = [vendor.endpoint_url for vendor in vendors]
         latest = (await session.scalars(select(Observation).where(
             Observation.endpoint_url.in_(urls), Observation.source_type == 'vendor_probe', Observation.org_id.is_(None),

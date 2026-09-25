@@ -4,15 +4,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import CursorPagination
-from app.platform.web.rate_limit import (
-    SlidingWindowRateLimiter,
-    enforce_public_read_limit,
-    enforce_rate_limit,
-)
 from app.db.session import get_db
 from app.modules.vendors.schemas import (
-    VendorDeveloperResponse,
+    VendorCategoryDetailResponse,
+    VendorCategoryListResponse,
     VendorDetailResponse,
+    VendorDeveloperResponse,
     VendorHistoryResponse,
     VendorIncidentsResponse,
     VendorMetricsResponse,
@@ -20,6 +17,11 @@ from app.modules.vendors.schemas import (
     VendorTimelineResponse,
 )
 from app.modules.vendors.service import VendorService, vendor_service
+from app.platform.web.rate_limit import (
+    SlidingWindowRateLimiter,
+    enforce_public_read_limit,
+    enforce_rate_limit,
+)
 
 router = APIRouter(prefix="/v1/vendors", tags=["Vendors"])
 
@@ -47,6 +49,56 @@ async def _rate_limit(request: Request) -> None:
 
 
 _PUBLIC_VENDORS_CACHE_TTL = 60
+
+
+# Category routes must be declared before ``/{vendor_name}`` so the literal
+# ``categories`` segment is not captured as a vendor slug.
+_CATEGORIES_CACHE_TTL = 60
+
+
+@router.get("/categories", response_model=VendorCategoryListResponse)
+async def list_categories(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    service: VendorService = Depends(get_vnd_service),
+) -> VendorCategoryListResponse:
+    """The category taxonomy with per category public vendor counts."""
+    await _rate_limit(request)
+    from app.infrastructure.redis_client import safe_redis_get, safe_redis_setex
+
+    cache_key = "public_vendor_categories"
+    cached = await safe_redis_get(cache_key)
+    if cached:
+        try:
+            return VendorCategoryListResponse.model_validate_json(cached)
+        except Exception:
+            pass
+    response = await service.list_categories(db)
+    await safe_redis_setex(cache_key, _CATEGORIES_CACHE_TTL, response.model_dump_json())
+    return response
+
+
+@router.get("/categories/{slug}", response_model=VendorCategoryDetailResponse)
+async def get_category(
+    request: Request,
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+    service: VendorService = Depends(get_vnd_service),
+) -> VendorCategoryDetailResponse:
+    """One category with its public vendors and their observed states."""
+    await _rate_limit(request)
+    from app.infrastructure.redis_client import safe_redis_get, safe_redis_setex
+
+    cache_key = f"public_vendor_category:{slug.lower()}"
+    cached = await safe_redis_get(cache_key)
+    if cached:
+        try:
+            return VendorCategoryDetailResponse.model_validate_json(cached)
+        except Exception:
+            pass
+    response = await service.get_category_detail(db, slug)
+    await safe_redis_setex(cache_key, _CATEGORIES_CACHE_TTL, response.model_dump_json())
+    return response
 
 
 @router.get("", response_model=CursorPagination[VendorResponse])
