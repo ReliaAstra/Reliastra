@@ -17,12 +17,11 @@ version: 2
 project_name: reliastra
 
 snapshot:
-  # A dry run (`goreleaser release --snapshot`, which the release workflow
-  # does on a workflow_dispatch) produces artifacts named exactly as the
-  # release would name them, so the artifact and installer checks can be
-  # exercised against the real thing. The default — `{{ incpatch .Version
-  # }}-devel` — would rename every file and hide naming bugs until release
-  # day. Snapshots are never published.
+  # A dry run (`goreleaser release --snapshot`, i.e. `make cli-dry-run`)
+  # produces artifacts named exactly as a release would name them, so the
+  # artifact and installer checks (cli/test/) are exercised against the real
+  # thing. The default — `{{ incpatch .Version }}-devel` — renames every file
+  # and hides naming bugs until release day. Snapshots are never published.
   version_template: "{{ .Version }}"
 
 builds:
@@ -41,10 +40,16 @@ builds:
     goarch:
       - amd64
       - arm64
-    # `reliastra --version` reports this. Keep the shim in sync with the
-    # tag when cutting a release (cli/RELEASING.md, step 1).
+    # `reliastra --version` reports this. {{ .Version }} is the tag minus
+    # its v. The committed `var version` in main.go must already equal it
+    # (release-cli.yml refuses to build otherwise; cli/scripts/version.sh
+    # keeps the four version-bearing files in step), so the ldflag is a
+    # belt over braces, not the only thing holding the version up.
     ldflags:
       - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
 
 archives:
   # For humans: tar.gz everywhere, zip on Windows, wrapped in a directory
@@ -81,7 +86,15 @@ changelog:
       - "^test:"
       - "^build:"
 
+snapshot:
+  # `goreleaser release --snapshot` (local dry run, cli/RELEASING.md §3)
+  # labels its artifacts so they can never be mistaken for a tagged build.
+  version_template: "{{ incpatch .Version }}-snapshot+{{ .ShortCommit }}"
+
 release:
+  # v1.2.3-rc.1 → pre-release on GitHub; the wrappers still download it by
+  # exact version, and npm/PyPI accept the same string.
+  prerelease: auto
   # Point readers at the install docs rather than raw assets.
   header: |
     ## Install

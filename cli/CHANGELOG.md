@@ -64,6 +64,27 @@ points a wrapper at a binary you already have.
 - CI's `cli` job runs the same gate script as the release pipeline, so
   release packaging cannot rot between tags.
 
+Release pipeline hardening (`release-cli.yml`, `cli/scripts/version.sh`):
+
+- One version, enforced. The tag `vX.Y.Z` must equal the version in
+  `main.go`, `package.json`, `pyproject.toml` and `__init__.py`; the
+  workflow refuses to build otherwise, and CI fails a PR where the four
+  disagree. `cli/scripts/version.sh set X.Y.Z` bumps them together. CI no
+  longer rewrites versions from the tag, so a `go install …@vX.Y.Z` build
+  (which never sees ldflags) reports the same version as the release.
+- Ordered stages: validate → test → binaries → npm ∥ pypi. Tests, all six
+  cross-compiles and the wrapper checks run before any release is created;
+  the built binary's `--version` is executed and compared to the tag; the
+  publish jobs re-check version and release assets before publishing and
+  confirm the registry afterwards.
+- Trusted publishing (OIDC) for both npm and PyPI via dedicated GitHub
+  environments `npm` and `pypi`; no long-lived registry tokens. SLSA
+  provenance is attested for every release asset.
+- Wrapper hardening: `RELIASTRA_RELEASE_URL` must be `https://` (plain
+  http only for loopback, which the smoke test uses); `RELIASTRA_BIN` must
+  be an absolute path to a regular file (never resolved on `PATH`); network
+  failures name the URL and cause instead of `fetch failed`.
+
 ## 0.2.0 — Go rewrite
 
 The CLI is now a single static Go binary (`cli/`, standard library only). The

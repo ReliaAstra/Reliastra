@@ -1,4 +1,4 @@
-.PHONY: help frontend backend test lint install cli cli-test cli-check cli-wrappers-test cli-artifacts cli-install-smoke cli-dry-run cli-release-prep
+.PHONY: help frontend backend test lint install cli cli-test cli-wrappers-test cli-version-check cli-release-check cli-artifacts cli-install-smoke cli-dry-run
 
 help:
 	@echo "Reliastra monorepo"
@@ -10,17 +10,18 @@ help:
 	@echo "  make lint       Lint frontend and backend"
 	@echo "  make cli        Build the reliastra CLI"
 	@echo "  make cli-test   Format-check, vet and test the CLI"
-	@echo "  make cli-check  The whole release gate: CLI + npm/PyPI packaging"
 	@echo "  make cli-wrappers-test"
 	@echo "                  Smoke-test the npm/PyPI installers (fake release)"
-	@echo "  make cli-artifacts VERSION=0.2.1 [DIST=dist]"
-	@echo "                  Verify built release artifacts and checksums"
-	@echo "  make cli-install-smoke [VERSION=0.2.1] [DIST=dist]"
-	@echo "                  Install through npm and pip, then run the CLI"
+	@echo "  make cli-version-check"
+	@echo "                  The four version-bearing CLI files agree"
+	@echo "  make cli-release-check"
+	@echo "                  Everything release-cli.yml checks before tagging"
+	@echo "  make cli-artifacts VERSION=v0.2.1 [DIST=dist]"
+	@echo "                  Every platform's binary + archive, checksums verified"
+	@echo "  make cli-install-smoke [DIST=dist]"
+	@echo "                  npm + pip install from a dist/, then run the CLI"
 	@echo "  make cli-dry-run"
 	@echo "                  goreleaser --snapshot: build a release, publish nothing"
-	@echo "  make cli-release-prep VERSION=0.2.1"
-	@echo "                  Set the CLI version everywhere it must appear"
 
 install:
 	cd frontend && npm install
@@ -48,44 +49,31 @@ cli-test:
 cli-wrappers-test:
 	bash cli/test/wrappers_smoke_test.sh
 
-# The gate the release pipeline runs (cli/test/release_check.sh), locally:
-# one version everywhere, gofmt/vet/test, the full cross-compile matrix,
-# goreleaser check, npm and PyPI packaging checks, installer smoke test.
-# RELIASTRA_CHECK_SKIP_GO=1 skips only the Go checks, for a machine with no
-# Go toolchain.
-cli-check:
-	bash cli/test/release_check.sh
+cli-version-check:
+	cli/scripts/version.sh check
 
-# Verify what would be uploaded: every platform's binary and archive,
-# present and matching checksums.txt.
+# Local equivalent of the validate + test stages of release-cli.yml:
+# run before `git tag`. Add VERSION=vX.Y.Z to also assert the tree is at
+# the version about to be tagged.
+cli-release-check: cli-version-check cli-test cli-wrappers-test
+	@if [ -n "$(VERSION)" ]; then cli/scripts/version.sh check "$(VERSION)"; fi
+	cd cli && for t in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do \
+	  GOOS=$${t%/*} GOARCH=$${t##*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/reliastra && echo "ok $$t"; done
+	cd cli/npm && npm pack --dry-run
+	cd cli/python && rm -rf dist && python3 -m build --quiet && python3 -m twine check --strict dist/*
+
+# Release artifacts: every platform a user can install on, present and
+# matching checksums.txt. Resolves GoReleaser's real dist/ layout from
+# dist/artifacts.json, so it works whether raw binaries sit at the root
+# (older GoReleaser) or in per-target directories (2.x).
 cli-artifacts:
 	bash cli/test/artifacts_check.sh "$(VERSION)" "$(DIST)"
 
 # Install the way a user does and run it: npm install -g, pip install,
-# --version, --help, a real command, a real exit code.
+# --version, --help, a real command, a real exit code. With DIST set, the
+# download comes from a loopback copy of that dist/ instead of GitHub.
 cli-install-smoke:
 	bash cli/test/install_smoke_test.sh $(if $(VERSION),--version $(VERSION),) $(if $(DIST),--dist $(DIST),) --skip-release-url
 
-# A release, built but not published. Inspect dist/ by hand.
 cli-dry-run:
 	goreleaser release --snapshot --clean --skip=publish
-
-# Cutting a release starts here: one version, in all five places it has to
-# appear. See cli/RELEASING.md.
-cli-release-prep:
-	@test -n "$(VERSION)" || { echo "usage: make cli-release-prep VERSION=0.2.1"; exit 1; }
-	@case "$(VERSION)" in \
-		[0-9]*.[0-9]*.[0-9]*) ;; \
-		*) echo "VERSION must be <major>.<minor>.<patch>[-prerelease]"; exit 1 ;; \
-	esac
-	sed -i 's/^var version = "[^"]*"/var version = "$(VERSION)"/' cli/cmd/reliastra/main.go
-	sed -i 's/^  "version": "[^"]*"/  "version": "$(VERSION)"/' cli/npm/package.json
-	sed -i 's/^version = "[^"]*"/version = "$(VERSION)"/' cli/python/pyproject.toml
-	sed -i 's/^__version__ = "[^"]*"/__version__ = "$(VERSION)"/' cli/python/src/reliastra/__init__.py
-	@echo "version set to $(VERSION) in:"
-	@echo "  cli/cmd/reliastra/main.go"
-	@echo "  cli/npm/package.json"
-	@echo "  cli/python/pyproject.toml"
-	@echo "  cli/python/src/reliastra/__init__.py"
-	@echo ""
-	@echo "next: update cli/CHANGELOG.md, run 'make cli-check', commit, then 'git tag v$(VERSION)'"

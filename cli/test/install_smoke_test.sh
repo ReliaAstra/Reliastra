@@ -59,7 +59,8 @@ WORK="$(mktemp -d)"
 SERVER_PID=""
 trap 'kill "${SERVER_PID:-}" 2>/dev/null || true; rm -rf "$WORK"' EXIT
 
-fail() { echo "FAIL: $1"; exit 1; }
+# To stderr: serve_dist runs inside $(…), where stdout is captured.
+fail() { echo "FAIL: $1" >&2; exit 1; }
 ok() { echo "ok: $1"; }
 
 echo "── build the installers ($VERSION)"
@@ -116,11 +117,16 @@ for artifact in json.load(open(os.path.join(sys.argv[1], 'artifacts.json'))):
         break
 " "$dist" "$name" 2>/dev/null)"
   fi
-  if [ -n "$path" ] && [ -f "$path" ]; then
-    printf '%s' "$path"
-  elif [ -f "$dist/$name" ]; then
-    printf '%s' "$dist/$name"
-  fi
+  # GoReleaser writes manifest paths relative to the repository root, so a
+  # dist/ directory anywhere else has to be tried too.
+  for candidate in "$path" "$(dirname "$dist")/$path" "$dist/$name" "$dist/$(basename "$path")"; do
+    [ -n "$candidate" ] || continue
+    if [ -f "$candidate" ]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  printf ''
 }
 
 # Serve a dist/ directory the way GitHub Releases serves assets:

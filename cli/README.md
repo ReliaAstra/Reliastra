@@ -10,126 +10,180 @@ binary.
 
 ## Install
 
-RELIASTRA has **one CLI implementation**: the Go program in this directory.
-npm and PyPI distribute *that binary* — neither reimplements a command, and
-neither needs a Go toolchain. Pick one channel; all four give you the same
-executable.
+One CLI, written in Go, compiled once per platform and shipped through
+three channels. Every channel hands you the same binary; none of them is a
+port or a wrapper with logic of its own.
 
-**npm** — any supported platform:
-
-```bash
-npm install -g reliastra
+```
+                     cli/cmd/reliastra (Go)
+                              │
+                     compiled per platform
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        ▼                     ▼                     ▼
+  go install            npm install -g          pip / pipx install
+  (builds the source)   (downloads the binary)  (downloads the binary)
+        └─────────────────────┼─────────────────────┘
+                              ▼
+                     the same `reliastra`
 ```
 
-**pipx / pip** — any supported platform:
-
-```bash
-pipx install reliastra
-# or: pip install reliastra
-```
-
-**Go** — compiles from source:
-
-```bash
-go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest   # installs `reliastra`
-```
-
-**Prebuilt binaries** — download the archive for your platform from
-[Releases](https://github.com/ReliaAstra/Reliastra/releases), confirm its
-line in that release's `checksums.txt`, and put `reliastra` on your `PATH`.
-
-The npm and pip packages are thin installers, not ports. Nothing is
-downloaded or executed at install time; on the first `reliastra` invocation
-they download the platform binary attached to the GitHub release matching
-their own version, verify its SHA-256 against that release's
-`checksums.txt`, cache it (one cache shared by npm and pip), and hand off
-with your arguments and exit codes untouched. `RELIASTRA_BIN` points either
-wrapper at a binary you already have. Details:
-[npm](npm/README.md) · [PyPI](python/README.md).
-
-> **Release status — read before sharing these commands.** Every
-> download-based channel above is published by the release pipeline
-> (`.github/workflows/release-cli.yml`) when a version tag is pushed. Until
-> the first tag is pushed there is no GitHub release, no npm package and no
-> PyPI package, so `npm install -g reliastra`, `pip install reliastra` and
-> `go install …@latest` have nothing to fetch. Build from a checkout
-> instead:
+> **Release status.** Every channel below is published by the release
+> pipeline (`.github/workflows/release-cli.yml`) when a version tag is
+> pushed. Until the first tag exists there is no GitHub release, no npm
+> package and no PyPI package, so the download-based commands have nothing
+> to fetch yet. Build from a checkout in the meantime:
 >
 > ```bash
 > git clone --depth 1 https://github.com/ReliaAstra/Reliastra.git
 > cd Reliastra && go build -o reliastra ./cli/cmd/reliastra
 > ```
 >
-> The registry configuration the pipeline needs to publish is listed in
-> [RELEASING.md](RELEASING.md#1-one-time-setup-per-registry); cutting the
-> first release is [step 2](RELEASING.md#2-cut-a-release).
+> The registry configuration the pipeline needs is in
+> [RELEASING.md](RELEASING.md#1-one-time-setup-per-registry-once-ever);
+> cutting the first release is [§2](RELEASING.md#2-cut-a-release).
 
-### Supported platforms
+Supported platforms for the prebuilt binary — the ones the release
+pipeline builds, runs, and checks on every tag:
 
-| OS | amd64 (x86-64) | arm64 (Apple Silicon, ARM servers) |
+| OS | amd64 (x86_64) | arm64 (aarch64 / Apple silicon) |
 | --- | --- | --- |
-| Linux | ✅ | ✅ |
-| macOS | ✅ | ✅ |
-| Windows | ✅ | ✅ |
+| Linux | ✓ | ✓ |
+| macOS | ✓ | ✓ |
+| Windows | ✓ | ✓ |
 
-Those six are what every release builds and tests. Anything else — 32-bit,
-`armv7`, BSD, `riscv64` — has no prebuilt binary: the installers say so and
-exit rather than guessing, and the Go route works wherever Go compiles
-(`go install …@latest` needs no release asset).
+Anything else (FreeBSD, 32-bit, etc.) is not shipped prebuilt: the npm and
+pip packages say so and exit rather than guess, and `go install` builds it
+for you where Go supports the target.
+
+**npm** (Node ≥ 18, no Go toolchain):
+
+```bash
+npm install -g reliastra
+```
+
+**PyPI** (Python ≥ 3.9, no Go toolchain) — `pipx` keeps it isolated and on
+`PATH`; plain `pip` works the same:
+
+```bash
+pipx install reliastra
+# or: pip install reliastra
+```
+
+**Go** (Go ≥ 1.23) — compiles from source at the latest tagged release:
+
+```bash
+go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest   # installs `reliastra`
+```
+
+**Prebuilt binaries** — download `reliastra_<version>_<os>_<arch>.tar.gz`
+(`.zip` on Windows) from
+[Releases](https://github.com/ReliaAstra/Reliastra/releases), check its
+line in that release's `checksums.txt` (`sha256sum -c --ignore-missing
+checksums.txt`), and put `reliastra` on your `PATH`. Every asset also has a
+provenance attestation: `gh attestation verify <file> -R ReliaAstra/Reliastra`.
+
+Then, whichever you picked:
+
+```bash
+reliastra --version     # the release version, e.g. 0.2.0
+reliastra --help
+```
+
+### How the npm and pip packages work
+
+They are thin installers — a single dependency-free script each — not
+reimplementations. Nothing is downloaded or executed at install time (no
+`postinstall`, no build hooks). On the first `reliastra` invocation the
+package:
+
+1. picks the release asset for your OS and CPU
+   (`reliastra_<version>_<os>_<arch>`, with `<version>` equal to the
+   package's own version, so a package can only ever run its own release);
+2. downloads it over HTTPS from that GitHub release, together with the
+   release's `checksums.txt`, and refuses to run anything whose SHA-256
+   does not match;
+3. caches it (`~/.cache/reliastra` on Linux, `~/Library/Caches/reliastra`
+   on macOS, `%LOCALAPPDATA%\reliastra\Cache` on Windows — one cache
+   shared by npm and pip, one directory per version), marks it executable;
+4. executes it with your arguments untouched and returns its exit code.
+
+From then on, `reliastra` is the cached Go binary; the script only finds
+and runs it. Details: [npm](npm/README.md) · [PyPI](python/README.md).
+
+### Versioning
+
+One release, one version, everywhere: the git tag `vX.Y.Z` is the GitHub
+release, the npm version, the PyPI version, the Go module version, and
+what `reliastra --version` prints. The release pipeline refuses to publish
+if any of those would disagree (see [RELEASING.md](RELEASING.md)).
 
 ### Upgrading
 
-Each channel upgrades in place; the binary cache is keyed by version, so
-every version downloads once and an older version's install keeps working
-until you remove it.
-
 ```bash
-npm update -g reliastra         # npm
-pipx upgrade reliastra          # pipx; `pip install --upgrade reliastra` for pip
-go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest   # Go
-reliastra --version             # what you ended up with
+npm update -g reliastra            # or: npm install -g reliastra@latest
+pipx upgrade reliastra             # or: pip install --upgrade reliastra
+go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
 ```
+
+An upgraded npm/pip package downloads its new binary on the next run;
+older versions stay in the cache and can be deleted freely. To pin:
+`npm install -g reliastra@0.2.0`, `pip install reliastra==0.2.0`,
+`go install …/cmd/reliastra@v0.2.0`.
 
 ### Uninstalling
 
 ```bash
-npm uninstall -g reliastra      # npm
-pipx uninstall reliastra        # pipx; `pip uninstall reliastra` for pip
-rm -f "$(go env GOPATH)/bin/reliastra"   # Go
+npm uninstall -g reliastra
+pipx uninstall reliastra           # or: pip uninstall reliastra
+rm "$(go env GOPATH)/bin/reliastra"   # Go: it is just the binary
 ```
 
-Then, to reclaim the downloaded binaries: `rm -rf ~/.cache/reliastra`
-(Linux), `~/Library/Caches/reliastra` (macOS), or
-`%LOCALAPPDATA%\reliastra` (Windows).
+Then, optionally, the binary cache and your session:
 
-### Troubleshooting
-
-| Symptom | Cause and fix |
-| --- | --- |
-| `reliastra: command not found` after installing | The installer's bin directory is not on `PATH`. npm: `npm root -g` / `npm bin -g`; pipx: `pipx ensurepath`; Go: `$(go env GOPATH)/bin` (see the Windows note below). |
-| `checksum mismatch for …` and nothing runs | The download did not match the release's `checksums.txt`. The binary was **not** executed. Retry; if it persists, do not use this machine's copy and report the release. |
-| `no prebuilt reliastra binary for …` | Unsupported OS/architecture. Use `go install …@latest`, or build from a checkout. |
-| `could not fetch …: HTTP 404` | The release for the installed package version does not exist yet (or was withdrawn). Upgrade the package, or point `RELIASTRA_RELEASE_URL` at a mirror you trust. |
-| Everything is behind a proxy or offline | `RELIASTRA_RELEASE_URL` sets the release base (https only, or http on localhost); `RELIASTRA_BIN` runs an existing binary and skips the download entirely. |
-| Two versions report different `--version` values | Expected: each install is pinned to its own version. Upgrade all of them. |
-
-This next part applies to the Go method only — npm and pipx/pip put
-`reliastra` on `PATH` themselves. On Windows, `go install` puts the binary
-in `%USERPROFILE%\go\bin` but does not add that directory to `PATH`, so
-PowerShell will not find `reliastra` on its own. Run it once via its full
-path (`& "$env:USERPROFILE\go\bin\reliastra.exe" --help`), and make it
-permanent by appending the directory to your user `PATH`:
-
-```powershell
-[Environment]::SetEnvironmentVariable(
-  "Path",
-  [Environment]::GetEnvironmentVariable("Path","User") + ";$env:USERPROFILE\go\bin",
-  "User"
-)
+```bash
+rm -rf ~/.cache/reliastra            # Linux   (macOS: ~/Library/Caches/reliastra)
+reliastra logout                     # before uninstalling, to revoke the session
+rm -rf ~/.config/reliastra           # config file, if you skipped logout
 ```
 
-Then open a new terminal. If `GOBIN` or `GOPATH` is set, the binary goes to
-`%GOBIN%` or `%GOPATH%\bin` instead — check those with `go env`.
+### Troubleshooting installation
+
+- **`reliastra: command not found` after `npm install -g`** — npm's global
+  bin directory is not on `PATH`. `npm prefix -g` prints the prefix; add
+  `<prefix>/bin` (Windows: the prefix itself) to `PATH`.
+- **… after `pip install`** — use `pipx`, or add the user scripts directory
+  (`python -m site --user-base` + `/bin`, Windows: `\Scripts`) to `PATH`.
+- **… after `go install`** — the binary is in `$(go env GOPATH)/bin`
+  (Windows: `%USERPROFILE%\go\bin`), which Go does not add to `PATH`. On
+  Windows, make it permanent with:
+
+  ```powershell
+  [Environment]::SetEnvironmentVariable(
+    "Path",
+    [Environment]::GetEnvironmentVariable("Path","User") + ";$env:USERPROFILE\go\bin",
+    "User"
+  )
+  ```
+
+  and open a new terminal. If `GOBIN` or `GOPATH` is set, check `go env`.
+- **`could not fetch … checksums.txt`** on first run — no route to
+  `github.com`. Check the network and proxy, then retry; in an air-gapped
+  environment, fetch the release binary another way and point the wrapper
+  at it with `RELIASTRA_BIN=/absolute/path/to/reliastra`, or mirror the
+  release directory and set `RELIASTRA_RELEASE_URL=https://mirror/...`
+  (HTTPS required).
+- **`checksum mismatch`** — the download did not match the release's
+  `checksums.txt` and was discarded. Retry once; if it persists, something
+  between you and GitHub is altering downloads — do not work around it.
+- **`no prebuilt reliastra binary for <os>/<arch>`** — not in the matrix
+  above. Use `go install`.
+- **Which binary is running?** `reliastra --version` is answered by the
+  Go binary, never by the wrapper; on Linux/macOS the wrapper's cached
+  copy is at `~/.cache/reliastra/v<version>/reliastra`.
+- **Two `reliastra`s on `PATH`** (say, npm and pip both installed) — they
+  run the same cached binary, so it does not matter which wins; uninstall
+  one to keep things tidy.
 
 Or build from a checkout:
 

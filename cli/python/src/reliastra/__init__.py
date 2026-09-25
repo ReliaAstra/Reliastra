@@ -26,7 +26,11 @@ Deliberate design choices, in order of importance:
 Environment:
 
     RELIASTRA_BIN          run this existing binary instead of downloading
-    RELIASTRA_RELEASE_URL  release asset base URL (default: GitHub)
+                           (absolute path to a regular file; never searched
+                           on PATH)
+    RELIASTRA_RELEASE_URL  release asset base URL (default: GitHub). Must
+                           be https://; plain http is accepted for loopback
+                           only, so the test suite can serve a fake release.
     RELIASTRA_CACHE        cache directory (default: see _cache_dir()
                            below; shared with the npm wrapper of the same
                            version)
@@ -37,7 +41,6 @@ from __future__ import annotations
 import hashlib
 import os
 import platform
-import stat
 import subprocess
 import sys
 import tempfile
@@ -47,11 +50,6 @@ from pathlib import Path
 
 REPO = "ReliaAstra/Reliastra"
 DEFAULT_RELEASE_URL = f"https://github.com/{REPO}/releases/download"
-
-# Hosts http (rather than https) is tolerated on: the smoke test serves a
-# fake release from loopback, and a loopback mirror is a legitimate
-# airgapped setup. See _release_base().
-_LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
 # Fallback for running from a source checkout, where importlib.metadata
 # cannot see an installed distribution. The release workflow rewrites this
@@ -105,46 +103,25 @@ def _fail(message: str) -> "NoReturn":  # type: ignore[valid-type]
     sys.exit(1)
 
 
-def _release_base() -> str:
-    """The validated release asset base URL.
+def _release_base_url() -> str:
+    """The base URL a mirror override may point at.
 
-    RELIASTRA_RELEASE_URL exists for mirrors and airgapped networks, so it
-    has to stay configurable — but it is also the one environment variable
-    that decides where a binary is downloaded from, so it is restricted to
-    https (or http on loopback, which is how
-    cli/test/wrappers_smoke_test.sh serves a fake release). Anything else —
-    `file:`, `ftp:`, a bare path — is refused instead of being resolved: a
-    wrapper that fetches from an attacker-chosen scheme is worse than one
-    that asks for a mirror over TLS.
+    Anything that is not TLS is refused unless it is this machine's loopback
+    interface: an installer that will fetch and execute a binary over
+    plaintext from an arbitrary host is a downgrade path, however the
+    variable got set.
     """
-    raw = os.environ.get("RELIASTRA_RELEASE_URL", DEFAULT_RELEASE_URL).rstrip("/")
-    parsed = urllib.parse.urlparse(raw)
-    if parsed.scheme != "https":
-        loopback = (parsed.hostname or "") in _LOOPBACK_HOSTS
-        if not (parsed.scheme == "http" and loopback):
-            _fail(
-                "RELIASTRA_RELEASE_URL must be an https URL "
-                f"(http is allowed only on localhost): {raw}"
-            )
-    return raw
-
-
-def _ensure_executable(binary: Path) -> None:
-    """Restore the executable bit on a cached binary that lost it.
-
-    A cache copied between machines or unpacked by a tool that dropped
-    modes would otherwise fail with a bare PermissionError from exec.
-    Windows has no exec bit, so this is a no-op there.
-    """
-    if sys.platform == "win32" or not binary.exists():
-        return
-    try:
-        if not os.access(str(binary), os.X_OK):
-            binary.chmod(binary.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-    except OSError:
-        # Not ours to fix (another user's cache, read-only mount); the exec
-        # attempt below reports the failure with the path in it.
-        pass
+    raw = os.environ.get("RELIASTRA_RELEASE_URL")
+    if not raw:
+        return DEFAULT_RELEASE_URL
+    parsed = urllib.parse.urlsplit(raw)
+    loopback = parsed.hostname in ("127.0.0.1", "localhost", "::1")
+    if parsed.scheme != "https" and not (parsed.scheme == "http" and loopback):
+        _fail(
+            f"RELIASTRA_RELEASE_URL must use https:// (got {parsed.scheme}://{parsed.netloc}); "
+            f"plain http is allowed for loopback only"
+        )
+    return raw.rstrip("/")
 
 
 def _fetch(url: str) -> bytes:
@@ -168,8 +145,7 @@ def _parse_checksums(blob: bytes) -> dict[str, str]:
 
 def _download_binary() -> Path:
     goos, goarch = _platform_pair()
-    base = _release_base()
-    release_dir = f"{base}/v{_version()}"
+    release_dir = f"{_release_base_url()}/v{_version()}"
 
     print(
         f"reliastra: first run — downloading reliastra {_version()} ({goos}/{goarch})",
@@ -238,17 +214,21 @@ def _run(binary: Path, args: list[str]) -> None:
 def main() -> None:
     override = os.environ.get("RELIASTRA_BIN")
     if override:
-        binary = Path(override)
-        if not binary.exists():
+        # An absolute path to an existing regular file, and nothing else: a
+        # bare name would be resolved against PATH by the exec, which is
+        # exactly the ambiguity this variable exists to remove.
+        candidate = Path(override)
+        if not candidate.is_absolute():
+            _fail(f"RELIASTRA_BIN must be an absolute path (got {override})")
+        if not candidate.exists():
             _fail(f"RELIASTRA_BIN points at {override}, which does not exist")
-        _ensure_executable(binary)
-        _run(binary, sys.argv[1:])
+        if not candidate.is_file():
+            _fail(f"RELIASTRA_BIN points at {override}, which is not a regular file")
+        _run(candidate, sys.argv[1:])
         return
     binary = _binary_path()
     if not binary.exists():
         binary = _download_binary()
-    else:
-        _ensure_executable(binary)
     _run(binary, sys.argv[1:])
 
 

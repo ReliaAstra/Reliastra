@@ -1,79 +1,104 @@
-# Release CLI — one tag, four distribution channels.
+# Release CLI — one tag, three distribution channels, one version.
 #
-# Cutting a release is documented in cli/RELEASING.md. Pushing a tag of the
-# form v0.2.1 runs this workflow:
+# Cutting a release is documented in cli/RELEASING.md. Summary: push a tag
+# of the form v0.2.1 and this workflow runs, in order:
 #
-#   1. verify   — one version everywhere, gofmt/vet/test, the full
-#                 cross-compile matrix, goreleaser check, npm and PyPI
-#                 packaging checks, installer smoke test. Nothing below runs
-#                 unless all of it passes.
-#   2. binaries — pushes the Go module tag (cli/v0.2.1) that makes `go
-#                 install …@latest` resolve, then goreleaser builds
-#                 linux/darwin/windows × amd64/arm64, archives them,
-#                 uploads the raw binaries the installers download, writes
-#                 checksums.txt and creates the GitHub release. The module
-#                 tag goes first on purpose: if the token cannot push,
-#                 nothing has been published yet.
-#   3. npm      — publishes the thin installer `reliastra`.
-#   4. pypi     — publishes the same installer shape as `reliastra`.
-#   5. install-smoke — installs through npm and pip and runs the CLI, so a
-#                 release that publishes a broken download is caught here.
+#   validate   the tag is semver, and main.go / package.json / pyproject.toml
+#              / __init__.py all already carry exactly that version (so
+#              `go install …@v0.2.1` reports 0.2.1 without any ldflags)
+#   test       gofmt, go vet, go test -race, cross-compile, wrapper smoke test
+#   binaries   goreleaser: linux/darwin/windows × amd64/arm64, archives, raw
+#              binaries, checksums.txt, the GitHub release; then a built
+#              binary is executed and its --version compared to the tag
+#   npm        publishes `reliastra` — a thin installer whose first run
+#              downloads the raw binary from that same release
+#   pypi       publishes `reliastra` — same installer shape
 #
-# Stages 3 and 4 wait for 2 because they download from its release.
+# Each stage needs the previous one; nothing publishes if anything before it
+# failed. npm and pypi run in parallel after the release exists, and each
+# re-checks that the version it is about to publish equals the tag. The
+# single source of truth for the version is the tag; the four files are
+# checked against it, never rewritten by CI.
 #
-# Authentication: npm and PyPI use trusted publishing (OIDC) — no tokens in
-# this repository. One-time setup is documented in cli/RELEASING.md; the
-# publish steps fall back to the NPM_TOKEN / PYPI_API_TOKEN secrets if a
-# maintainer has configured them instead.
-#
-# Every third-party action is pinned to a full commit SHA. Tags on this
-# repository were hijacked in Mar 2026 (infostealer), so a mutable tag is
-# not an acceptable reference.
+# Authentication: npm and PyPI both use trusted publishing (OIDC): no
+# long-lived tokens in secrets. One-time registry setup is documented in
+# cli/RELEASING.md. NPM_TOKEN is an optional fallback for the very first
+# npm publish only (npm cannot create a package through OIDC); PyPI needs
+# no token at all thanks to pending publishers.
 
 name: Release CLI
 
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Tag to release (e.g. v0.2.1). Leave empty for a dry run of the selected ref."
-        type: string
-        required: false
-      dry_run:
-        description: "Build and package everything, publish nothing"
-        type: boolean
-        default: true
 
-# Least privilege: each job adds only what it needs.
-permissions:
-  contents: read
+# Deny by default; each job asks for exactly what it needs.
+permissions: {}
 
 env:
   GO_VERSION: "1.23"
-  NODE_VERSION: "24" # npm >= 11.5 for OIDC trusted publishing
+  NODE_VERSION: "24" # npm >= 11.5.1 ships with Node 24; needed for OIDC
   PYTHON_VERSION: "3.12"
 
 jobs:
   # ─────────────────────────────────────────────────────────
-  # 1. VERIFY — the gate. A failed check here means nothing is
-  #    built, released or published.
+  # 1. VALIDATE — tag shape and version agreement, before any build
   # ─────────────────────────────────────────────────────────
-  verify:
-    name: Verify
+  validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
-      version: ${{ steps.resolve.outputs.version }}
-      mode: ${{ steps.resolve.outputs.mode }}
-      tag: ${{ steps.resolve.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Checkout
+        # Pinned to full SHA (zero-trust): tags on this repo were hijacked
+        # in Mar 2026 (infostealer). See the trivy pin in ci.yml.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Tag is semver; tree files match it
+        id: version
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          case "$TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::tag '$TAG' is not vMAJOR.MINOR.PATCH"; exit 1 ;;
+          esac
+          # Fails, with a table of the four files, if any of them disagrees
+          # with the tag. Fix by running `cli/scripts/version.sh set X.Y.Z`,
+          # committing, and tagging that commit — never by re-pushing a tag.
+          cli/scripts/version.sh check "$TAG"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          case "$VERSION" in
+            *-*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Tag is on a commit reachable from main
+        # A tag on a stray branch would still build and publish; a release
+        # is a statement about main.
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=200 origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::tag commit $GITHUB_SHA is not on main"; exit 1; }
+
+  # ─────────────────────────────────────────────────────────
+  # 2. TEST — the CLI suite plus the installer wrappers
+  # ─────────────────────────────────────────────────────────
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: validate
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
@@ -81,88 +106,61 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: cli/go.mod
 
-      - name: Setup Node
+      - name: gofmt, vet, test (-race)
+        working-directory: cli
+        run: |
+          test -z "$(gofmt -l .)"
+          go vet ./...
+          go test -race ./...
+
+      - name: Cross-compile every release target
+        working-directory: cli
+        # The same matrix goreleaser builds; a platform-tagged file that only
+        # breaks elsewhere fails here, before a release is half-created.
+        run: |
+          set -euo pipefail
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            GOOS="${target%/*}" GOARCH="${target#*/}" CGO_ENABLED=0 go build -o /dev/null ./cmd/reliastra
+            echo "ok $target"
+          done
+
+      - name: Setup Node (wrapper smoke test)
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
-          registry-url: https://registry.npmjs.org
 
-      - name: Setup Python
+      - name: Setup Python (wrapper smoke test)
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install packaging tools
-        run: python -m pip install --upgrade pip build twine
+      - name: Wrappers smoke test (npm + PyPI installers, fake release)
+        run: bash cli/test/wrappers_smoke_test.sh
 
-      - name: Install GoReleaser
-        # install-only: the gate runs `goreleaser check` itself, alongside
-        # every other check, so the checks live in one script that
-        # maintainers can also run locally (cli/test/release_check.sh).
-        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
-        with:
-          distribution: goreleaser
-          version: latest
-          install-only: true
-
-      - name: Resolve the release version
-        id: resolve
-        env:
-          INPUT_TAG: ${{ inputs.tag }}
-          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+      - name: Wrapper packaging checks
+        # Both packages must build cleanly and contain only what they claim.
         run: |
           set -euo pipefail
-          tag="${INPUT_TAG:-}"
-          if [ -z "$tag" ] && [ "${GITHUB_REF_TYPE:-}" = "tag" ]; then
-            tag="$GITHUB_REF_NAME"
-          fi
-          if [ -n "$tag" ]; then
-            mode="release"
-            version="${tag#v}"
-          else
-            # Dry run from a branch: the tree's own version is the subject.
-            mode="dry-run"
-            version="$(sed -n 's/^var version = "\(.*\)"$/\1/p' cli/cmd/reliastra/main.go)"
-          fi
-          if [ "${INPUT_DRY_RUN:-false}" = "true" ]; then
-            mode="dry-run"
-          fi
-          {
-            echo "version=$version"
-            echo "mode=$mode"
-            echo "tag=$tag"
-          } >> "$GITHUB_OUTPUT"
-          echo "mode=$mode version=$version tag=${tag:-<none>}"
-
-      - name: Release gate
-        # One script (cli/test/release_check.sh) is the whole gate, and it is
-        # the same script CI runs on every push, so the release pipeline
-        # cannot drift from the checks that run between releases. A "skip"
-        # means a tool was missing on the runner; in CI that is a failure.
-        run: |
-          set -euo pipefail
-          bash cli/test/release_check.sh "${{ steps.resolve.outputs.version }}" 2>&1 | tee /tmp/release-check.log
-          if grep -q '^skip:' /tmp/release-check.log; then
-            echo "::error::a release check was skipped on the runner; see the log above"
-            exit 1
-          fi
+          (cd cli/npm && npm pack --dry-run 2>&1 | tee /dev/stderr | grep -q 'bin/reliastra.js')
+          python -m pip install --quiet --upgrade pip build twine
+          (cd cli/python && python -m build --quiet && twine check --strict dist/*)
 
   # ─────────────────────────────────────────────────────────
-  # 2. BINARIES — goreleaser: build, archive, checksum, release
+  # 3. BINARIES — goreleaser builds, archives, checksums, GitHub release
   # ─────────────────────────────────────────────────────────
   binaries:
-    name: Binaries
-    needs: verify
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    needs: [validate, test]
     permissions:
-      contents: write # create the release and upload the assets
+      contents: write # create the release, upload artifacts
+      id-token: write # attest-build-provenance: sign with the workflow identity
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ needs.verify.outputs.tag || github.ref }}
-          fetch-depth: 0 # goreleaser: full history and tags for the changelog
+          fetch-depth: 0 # goreleaser: full history + tags for the changelog
 
       - name: Setup Go
         uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
@@ -170,33 +168,18 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: cli/go.mod
 
-      - name: Tag the dry-run version locally
-        if: needs.verify.outputs.mode == 'dry-run'
-        # A dry run produces release-shaped artifacts without publishing
-        # them. GoReleaser reads the version from a tag, so the version the
-        # tree declares is tagged here — locally, in the checkout, never
-        # pushed.
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f "v$VERSION"
-
-      - name: Publish the Go module tag
-        if: needs.verify.outputs.mode == 'release'
+      - name: Publish the Go module tag (cli/vX.Y.Z)
         # `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`
         # resolves through the module proxy, and a module in a subdirectory
-        # is versioned by a tag carrying that subdirectory as a prefix:
-        # cli/v0.2.1. Same commit as the release tag, pushed by this
-        # workflow — one release, one version, two tags.
+        # is versioned by a tag carrying that subdirectory as a prefix. The
+        # plain release tag v0.2.1 resolves the repository instead, which
+        # does not contain cli/cmd/reliastra — so without this, `go install`
+        # cannot resolve at all. Same commit, one release, two tags.
         #
-        # Deliberately before the release is published: if this token
-        # cannot push, nothing has been published yet, and the failure
-        # says so. (The reverse — a published release whose `go install`
-        # cannot resolve — is the one that is hard to notice.)
+        # Pushed before the release is published: if this token cannot
+        # push, nothing has been published yet and the failure says so.
         env:
-          VERSION: ${{ needs.verify.outputs.version }}
+          VERSION: ${{ needs.validate.outputs.version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
@@ -210,54 +193,51 @@ jobs:
           git tag "$module_tag" HEAD
           git push origin "refs/tags/$module_tag"
 
-      - name: "Build (snapshot: no release, no publish)"
-        if: needs.verify.outputs.mode == 'dry-run'
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
         with:
           distribution: goreleaser
-          version: latest
-          args: release --snapshot --clean --skip=publish
-
-      - name: Create the GitHub release
-        if: needs.verify.outputs.mode == 'release'
-        uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
-        with:
-          distribution: goreleaser
-          version: latest
+          # Pinned: a floating `latest` could change archive layout or
+          # checksum format under the wrappers between two releases.
+          version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check the release artifacts
-        # Every platform a user can install on, present, complete and
-        # matching checksums.txt — recomputed here, not trusted from the
-        # build.
-        run: bash cli/test/artifacts_check.sh "${{ needs.verify.outputs.version }}" dist
+      - name: Every release artifact, verified
+        # GoReleaser 2.x writes raw binaries into per-target directories
+        # (dist/reliastra_linux_amd64_v1/reliastra) and archives at the
+        # root, so a hardcoded dist/<name>.<os>.<arch> path silently checks
+        # nothing. cli/test/artifacts_check.sh resolves each artifact from
+        # GoReleaser's own dist/artifacts.json, verifies it against
+        # checksums.txt with sha256sum -c, and runs the host binary to
+        # compare --version with the tag.
+        run: bash cli/test/artifacts_check.sh "${{ needs.validate.outputs.version }}" dist
 
-      - name: Upload the build (dry-run inspection)
-        if: needs.verify.outputs.mode == 'dry-run'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - name: Attest build provenance
+        # SLSA provenance for every release asset, signed by this workflow's
+        # OIDC identity. Verify with: gh attestation verify <file> -R ReliaAstra/Reliastra
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
-          name: reliastra-dist-${{ needs.verify.outputs.version }}
-          path: dist/
-          retention-days: 7
+          subject-path: |
+            dist/reliastra_*
+            dist/checksums.txt
 
   # ─────────────────────────────────────────────────────────
-  # 3. NPM — thin installer package `reliastra`
+  # 4a. NPM — thin installer package `reliastra`
   # ─────────────────────────────────────────────────────────
   npm:
     name: Publish npm (reliastra)
-    needs: [verify, binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    needs: [validate, binaries]
+    environment: npm # trusted publisher on npmjs.com is keyed to this name
     permissions:
       contents: read
-      id-token: write # npm trusted publishing / provenance
+      id-token: write # npm trusted publishing + provenance
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ needs.verify.outputs.tag || github.ref }}
 
       - name: Setup Node
         uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
@@ -265,160 +245,123 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org
 
-      - name: npm must support trusted publishing
-        # Trusted publishing needs npm >= 11.5. Node 24 ships it; if the
-        # runner is older, upgrade in place rather than publish unattended.
+      - name: npm supports trusted publishing
+        run: |
+          npm --version
+          node -e 'const [maj,min,pat]=require("child_process").execSync("npm --version").toString().trim().split(".").map(Number); if (maj<11||(maj===11&&(min<5||(min===5&&pat<1)))) {console.error("npm >= 11.5.1 required for OIDC"); process.exit(1)}'
+
+      - name: Package version equals the tag
+        working-directory: cli/npm
         run: |
           set -euo pipefail
-          current="$(npm --version)"
-          major="${current%%.*}"
-          minor="$(echo "$current" | cut -d. -f2)"
-          if [ "$major" -lt 11 ] || { [ "$major" -eq 11 ] && [ "$minor" -lt 5 ]; }; then
-            echo "npm $current is older than 11.5; upgrading for trusted publishing"
-            npm install -g npm@latest
-          fi
-          npm --version
+          PKG="$(node -p 'require("./package.json").version')"
+          test "$PKG" = "${{ needs.validate.outputs.version }}" \
+            || { echo "::error::package.json is $PKG, tag is ${{ needs.validate.outputs.version }}"; exit 1; }
 
-      - name: Sync the package version to the release
-        working-directory: cli/npm
-        # The gate already proved the committed version equals the tag. This
-        # makes the published version equal the tag even if it did not, so
-        # the wrapper can never download a binary of a different version.
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
-
-      - name: Publish (dry run)
-        if: needs.verify.outputs.mode != 'release'
-        working-directory: cli/npm
-        # No --provenance: a dry run uploads nothing, and a provenance
-        # attestation is only meaningful for a real publish.
-        run: npm publish --access public --dry-run
+      - name: Release assets the wrapper will download are live
+        # The package is useless — and harmful, since it downloads by its own
+        # version — if the release this version points at is missing.
+        run: |
+          set -euo pipefail
+          V="${{ needs.validate.outputs.version }}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${V}/checksums.txt"
+          for i in 1 2 3 4 5 6; do
+            curl -fsSL --retry 3 -o /tmp/checksums.txt "$URL" && break
+            echo "release assets not visible yet (attempt $i)"; sleep 10
+          done
+          grep -q "reliastra_${V}_linux_amd64" /tmp/checksums.txt
 
       - name: Publish
-        if: needs.verify.outputs.mode == 'release'
         working-directory: cli/npm
-        # Trusted publishing (preferred): with id-token: write and npm
-        # >= 11.5 this needs no secret once the trusted publisher is
-        # configured on npmjs.com (cli/RELEASING.md). Falls back to
-        # NODE_AUTH_TOKEN when a maintainer has set NPM_TOKEN.
-        run: npm publish --access public --provenance
+        # With id-token: write and npm >= 11.5.1, npm exchanges the GitHub
+        # OIDC token for a short-lived publish token; no secret is read.
+        # NODE_AUTH_TOKEN is consulted only when set: it is the bootstrap
+        # for the very first publish (npm cannot create a package via OIDC)
+        # and should be removed once the trusted publisher is configured.
+        run: |
+          npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Verify on the registry
+        run: |
+          set -euo pipefail
+          V="${{ needs.validate.outputs.version }}"
+          for i in $(seq 1 12); do
+            GOT="$(npm view "reliastra@${V}" version 2>/dev/null || true)"
+            [ "$GOT" = "$V" ] && { echo "npm: reliastra@$V is live"; exit 0; }
+            sleep 10
+          done
+          echo "::error::npm registry does not show reliastra@$V after publish"; exit 1
+
   # ─────────────────────────────────────────────────────────
-  # 4. PYPI — thin installer package `reliastra` (pip / pipx)
+  # 4b. PYPI — thin installer package `reliastra` (pip / pipx)
   # ─────────────────────────────────────────────────────────
   pypi:
     name: Publish PyPI (reliastra)
-    needs: [verify, binaries]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    environment: pypi # the trusted publisher is registered against this name
+    needs: [validate, binaries]
+    environment: pypi # trusted publisher on pypi.org is keyed to this name
     permissions:
       contents: read
       id-token: write # PyPI trusted publishing
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ needs.verify.outputs.tag || github.ref }}
 
       - name: Setup Python
         uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Sync the package version to the release
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-        working-directory: cli/python
+      - name: Package version equals the tag
         run: |
           set -euo pipefail
-          sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
-          sed -i "s/^__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/reliastra/__init__.py
+          V="${{ needs.validate.outputs.version }}"
+          grep -qx "version = \"$V\"" cli/python/pyproject.toml \
+            || { echo "::error::pyproject.toml version is not $V"; exit 1; }
+          grep -qx "__version__ = \"$V\"" cli/python/src/reliastra/__init__.py \
+            || { echo "::error::__init__.py __version__ is not $V"; exit 1; }
+
+      - name: Release assets the wrapper will download are live
+        run: |
+          set -euo pipefail
+          V="${{ needs.validate.outputs.version }}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${V}/checksums.txt"
+          for i in 1 2 3 4 5 6; do
+            curl -fsSL --retry 3 -o /tmp/checksums.txt "$URL" && break
+            echo "release assets not visible yet (attempt $i)"; sleep 10
+          done
+          grep -q "reliastra_${V}_linux_amd64" /tmp/checksums.txt
 
       - name: Build sdist and wheel
         working-directory: cli/python
         run: |
-          python -m pip install --upgrade pip build twine
+          python -m pip install --quiet --upgrade pip build twine
           python -m build
-
-      - name: Check the distributions
-        working-directory: cli/python
-        run: python -m twine check dist/*
-
-      - name: Publish (dry run)
-        if: needs.verify.outputs.mode != 'release'
-        working-directory: cli/python
-        # Nothing leaves the runner: the built distributions are the ones a
-        # release would upload, checked and listed.
-        run: |
+          twine check --strict dist/*
           ls -l dist/
-          echo "dry run: not uploading to PyPI"
 
       - name: Publish
-        if: needs.verify.outputs.mode == 'release'
-        # Trusted publishing (preferred): needs the trusted publisher
-        # configured on pypi.org (project reliastra, workflow
-        # release-cli.yml, environment pypi — cli/RELEASING.md). Falls back
-        # to the PYPI_API_TOKEN secret when one is set.
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        # Trusted publishing: the action exchanges the GitHub OIDC token for
+        # a short-lived PyPI token. Needs the trusted publisher configured
+        # on pypi.org (project reliastra, repo ReliaAstra/Reliastra,
+        # workflow release-cli.yml, environment pypi — cli/RELEASING.md).
+        # No password input: a token fallback is deliberately not wired.
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: cli/python/dist/
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          print-hash: true
 
-  # ─────────────────────────────────────────────────────────
-  # 5. INSTALL SMOKE — install through npm and pip, then run it
-  # ─────────────────────────────────────────────────────────
-  install-smoke:
-    name: Install smoke test
-    needs: [verify, binaries]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          ref: ${{ needs.verify.outputs.tag || github.ref }}
-
-      - name: Setup Go
-        uses: actions/setup-go@3041bf56c941b39c61721a86cd11f3bb1338122a # v5.2.0
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Setup Node
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install packaging tools
-        run: python -m pip install --upgrade pip build
-
-      - name: Download the built release
-        if: needs.verify.outputs.mode == 'dry-run'
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          name: reliastra-dist-${{ needs.verify.outputs.version }}
-          path: dist
-
-      - name: Install through npm and pip, then run the CLI
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-          MODE: ${{ needs.verify.outputs.mode }}
+      - name: Verify on the registry
         run: |
           set -euo pipefail
-          args=(--version "$VERSION")
-          if [ "$MODE" = "dry-run" ]; then
-            # The GitHub release does not exist in a dry run; install from
-            # the binaries that were just built, served over loopback.
-            args+=(--dist dist --skip-release-url)
-          fi
-          bash cli/test/install_smoke_test.sh "${args[@]}"
+          V="${{ needs.validate.outputs.version }}"
+          for i in $(seq 1 12); do
+            if curl -fsSL "https://pypi.org/pypi/reliastra/${V}/json" -o /dev/null; then
+              echo "PyPI: reliastra $V is live"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::PyPI does not show reliastra $V after publish"; exit 1
