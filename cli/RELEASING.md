@@ -160,13 +160,19 @@ dist/reliastra_*_linux_amd64 --version        # "<next>-snapshot+<sha>": never a
 bash cli/test/wrappers_smoke_test.sh          # wrappers vs a fake release on loopback
 ```
 
-Two scripts automate the checks below — they are what `binaries` runs in
-CI, and they run the same way on your machine:
+Two scripts automate the checks below. `cli-artifacts` is what the
+`binaries` stage runs in CI, and it accepts the snapshot version too — pass
+the one GoReleaser prints (`<next>-snapshot+<sha>`), not the tag:
 
 ```bash
-make cli-artifacts VERSION=v0.2.1 DIST=dist   # every platform present, checksums verified
-make cli-install-smoke DIST=dist              # npm + pip install, then run the CLI
+make cli-artifacts VERSION=0.2.1-snapshot+abc1234 DIST=dist
+make cli-install-smoke DIST=dist   # npm + pip install of a *tagged* build
 ```
+
+`cli-install-smoke` installs the version the packages declare, so it wants a
+`dist/` built at that same version — a tagged build, not a `--snapshot` one
+(whose artifacts are deliberately labelled `-snapshot+<sha>` so they can
+never be mistaken for a release).
 
 `cli-install-smoke` does the loopback recipe by hand: it packs the npm
 tarball, builds the wheel, installs both into throwaway prefixes, points
