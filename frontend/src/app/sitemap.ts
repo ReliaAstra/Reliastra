@@ -24,7 +24,8 @@ import { renderAtRequestTime } from '@/lib/render-at-request-time';
  * pages (/login, /signup, /verify-email, /reset-password), token-scoped
  * shares (/reports/*), /checkout, /api/*, and the removed B2B surfaces
  * (partner portal, client portals) - none of which must create index bloat.
- * The `/agencies` marketing page is a first-class route again and is listed.
+ * The retired `/agencies` page (old agency/MSP positioning) returns 410 and is
+ * deliberately NOT listed.
  *
  * Includes: every canonical page in `PUBLIC_PAGES` (marketing, docs, glossary,
  * research hubs, categories and papers), the public dependency records

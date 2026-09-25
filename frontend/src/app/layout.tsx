@@ -12,22 +12,20 @@ import { DISCOVERY_ALTERNATES } from "@/lib/seo";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "RELIASTRA - External Dependency Intelligence",
+    default: "RELIASTRA — Independent Evidence for External Dependencies",
     template: "%s | RELIASTRA",
   },
   description:
-    "Know when your dependencies fail. Prove what happened. RELIASTRA monitors third-party APIs independently, attributes incidents to the responsible vendor, and generates timestamped SLA evidence.",
+    "RELIASTRA independently observes the APIs and external services your software depends on, confirms persistent failures, correlates incidents, and produces verifiable evidence records.",
   keywords: [
-    "external dependency intelligence",
+    "external dependency",
     "third-party dependency monitoring",
-    "vendor outage detection",
-    "incident attribution",
-    "SLA evidence",
-    "SLA credits",
+    "dependency observation",
+    "incident correlation",
+    "evidence record",
     "API dependency monitoring",
     "vendor reliability",
-    "outage evidence",
-    "infrastructure evidence",
+    "independent observation",
   ],
   authors: [{ name: "Reliastra, Inc.", url: "https://reliastra.com" }],
   creator: "Reliastra, Inc.",
@@ -66,9 +64,9 @@ export const metadata: Metadata = {
     icon: "/logo.svg",
   },
   openGraph: {
-    title: "RELIASTRA - External Dependency Intelligence",
+    title: "RELIASTRA — Independent Evidence for External Dependencies",
     description:
-      "Independent monitoring of third-party APIs. Incident attribution. Timestamped, checksummed evidence.",
+      "Independent observation of the third-party APIs your software depends on. Deterministic fault confirmation. Verifiable evidence records.",
     url: "https://reliastra.com",
     siteName: "RELIASTRA",
     locale: "en_US",
@@ -78,15 +76,15 @@ export const metadata: Metadata = {
         url: "/opengraph-image.png",
         width: 1584,
         height: 396,
-        alt: "AI Infrastructure Security - cloud, Kubernetes, AI systems",
+        alt: "RELIASTRA — independent evidence for the external dependencies your software depends on",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "RELIASTRA - External Dependency Intelligence",
+    title: "RELIASTRA — Independent Evidence for External Dependencies",
     description:
-      "Monitor third-party APIs. Attribute incidents. Export evidence.",
+      "Observe third-party APIs. Confirm faults. Produce verifiable evidence records.",
     images: ["/opengraph-image.png"],
   },
 };

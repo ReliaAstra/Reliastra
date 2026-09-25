@@ -15,6 +15,7 @@ import {
 import {
   DOCS_ROUTES,
   PUBLIC_ROUTES,
+  GONE_ROUTES,
   RESEARCH_ARTICLES,
   RESEARCH_CATEGORIES,
   RESEARCH_HUBS,
@@ -139,13 +140,12 @@ describe('canonical URL architecture', () => {
       expect(paths).toContain(researchHubRoute(hub.slug));
     }
     // Removed B2B surfaces are NOT in the sitemap source: they are gone,
-    // not redirected - index bloat or soft-404 signals are both wrong. The
-    // agencies marketing page has been restored as a real route and page,
-    // so it IS expected in the source list.
-    for (const removed of ['/partner', '/partner/commission']) {
+    // not redirected - index bloat or soft-404 signals are both wrong.
+    // `/agencies` (old agency/MSP positioning) is permanently retired with a
+    // 410, so it must not be advertised either.
+    for (const removed of ['/partner', '/partner/commission', ...Object.values(GONE_ROUTES)]) {
       expect(paths).not.toContain(removed);
     }
-    expect(paths).toContain(PUBLIC_ROUTES.agencies);
     // The lightweight creator page is indexable.
     expect(paths).toContain(PUBLIC_ROUTES.creators);
   });
@@ -321,6 +321,28 @@ describe('robots.txt policy', () => {
         expect(firstAllow.length).toBeGreaterThan((firstDisallow ?? '').length);
       }
     }
+  });
+
+  it('grants OAI-SearchBot explicit access to public content, but not private routes', () => {
+    /**
+     * The OpenAI search crawler gets a dedicated, explicit allowlist for the
+     * public site. The blanket `Allow: /` is safe *only* because it targets one
+     * known, longest-match crawler; the private-route disallows still win on
+     * every protected path. The `*` group above stays allow-free so it remains
+     * correct for the first-match interpreters in the long tail of agent
+     * crawlers.
+     */
+    const r: any = robots();
+    const bot = r.rules.find((rule: any) => rule.userAgent === 'OAI-SearchBot');
+    expect(bot, 'OAI-SearchBot must have an explicit rule').toBeDefined();
+    expect([bot.allow].flat()).toContain('/');
+    for (const p of ['/admin', '/dashboard', '/api/', '/login', '/reports/']) {
+      expect(bot.disallow, `OAI-SearchBot must still be barred from ${p}`).toContain(p);
+    }
+    // Googlebot is not blocked: it is covered by the permissive `*` group.
+    expect(r.rules.some((rule: any) => /googlebot/i.test(rule.userAgent ?? ''))).toBe(false);
+    // GPTBot is a separate, unapproved decision and must not appear.
+    expect(r.rules.some((rule: any) => rule.userAgent === 'GPTBot')).toBe(false);
   });
 
   it('disallows everything on a deployment that must not be indexed', async () => {

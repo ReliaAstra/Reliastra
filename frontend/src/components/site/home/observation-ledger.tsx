@@ -68,7 +68,7 @@ function Row({ probe, index }: { probe: Probe; index: number }) {
 
 export function ObservationLedger({ className }: { className?: string }) {
   return (
-    <figure className={cn('ob-ledger', className)}>
+    <figure className={cn('ob-ledger', className)} data-illustrative="true">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-[var(--ob-line)] px-5 py-3.5">
         <div className="flex min-w-0 items-center gap-3">
           <span aria-hidden className="ob-dot ob-ledger-pulse" data-state="critical" />
@@ -125,7 +125,13 @@ export function ObservationLedger({ className }: { className?: string }) {
 
       <figcaption className="border-t border-[var(--ob-line)] px-5 py-3">
         <span className="ob-label">
-          Illustrative record · values are an example, not live measurements
+          <span className="font-semibold text-[var(--ob-text-2)]">
+            Example only — not a RELIASTRA observation.
+          </span>{' '}
+          Illustrative record · the timestamps, HTTP status codes, latency
+          values and evidence IDs shown here are synthetic demonstration data,
+          not measurements collected from a real dependency, and must not be
+          read as a recorded incident.
         </span>
       </figcaption>
     </figure>

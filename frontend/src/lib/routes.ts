@@ -19,7 +19,6 @@ export const PUBLIC_ROUTES = {
   productEvidence: '/product/evidence',
   observatory: '/observatory',
   pricing: '/pricing',
-  agencies: '/agencies',
   creators: '/creators',
   research: '/research',
   about: '/about',
@@ -62,6 +61,27 @@ export const RETIRED_ROUTES = {
   slaEvidence: '/sla-evidence',
   track: '/track',
   vendorTracking: '/vendor-tracking',
+} as const;
+
+/**
+ * URLs permanently retired with HTTP 410 Gone - no replacement exists.
+ *
+ * Distinct from `RETIRED_ROUTES` (308): those moved content to a page that
+ * absorbed it, so a redirect preserves the address. These are gone for good.
+ *
+ * `/agencies` described an agency/MSP product line (client estates,
+ * white-label delivery, a per-client console). RELIASTRA does not build that,
+ * and the current product is developer-first, so no current page legitimately
+ * replaces an agency pitch. It returns 410 from `app/agencies/route.ts` and is
+ * absent from the sitemap and `PUBLIC_ROUTES`. Redirecting it to the homepage
+ * or to pricing would misrepresent the product, which is why it is a 410 and
+ * not a redirect.
+ *
+ * `src/lib/__tests__/gone-routes.test.ts` asserts each entry actually resolves
+ * to a 410 handler, so the table cannot drift from the served behavior.
+ */
+export const GONE_ROUTES = {
+  agencies: '/agencies',
 } as const;
 
 /**

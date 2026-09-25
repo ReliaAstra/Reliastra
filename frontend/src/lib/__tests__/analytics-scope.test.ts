@@ -42,7 +42,7 @@ describe('isInternalSurfacePath', () => {
       '/research/availability-record-audit',
       '/observatory',
       '/observatory/openai',
-      '/agencies',
+      '/about',
       '/partner',
       '/signup',
       '/login',
@@ -55,7 +55,8 @@ describe('isInternalSurfacePath', () => {
   });
 
   it('matches on segments, not on string prefixes', () => {
-    // '/agency' is internal; '/agencies' is the public marketing page.
+    // '/agency' is internal; '/agencies' is a separate, retired URL (410),
+    // not a console surface, so it must not be swallowed by the '/agency' rule.
     expect(isInternalSurfacePath('/agency')).toBe(true);
     expect(isInternalSurfacePath('/agencies')).toBe(false);
     expect(isInternalSurfacePath('/agencyx')).toBe(false);
