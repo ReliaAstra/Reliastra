@@ -30,11 +30,20 @@ npx reliastra --help    # try without installing
 | Variable                | Purpose                                            |
 | ----------------------- | -------------------------------------------------- |
 | `RELIASTRA_BIN`         | Use this existing binary; skip the download        |
-| `RELIASTRA_RELEASE_URL` | Alternate release asset base URL (mirrors/airgap)  |
+| `RELIASTRA_RELEASE_URL` | Alternate release asset base URL: https, or http on localhost (mirrors/airgap) |
 | `RELIASTRA_CACHE`       | Move the binary cache                              |
 
+`RELIASTRA_RELEASE_URL` is the one variable that decides where a binary is
+fetched from, so it is restricted to https (http is allowed on `localhost`
+for a mirror or a test). Anything else is refused rather than resolved.
+
 Supported platforms: Linux, macOS, Windows on amd64/arm64 (Node >= 18).
-Anything else: `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`.
+Anything else fails with that message instead of guessing:
+`go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`.
+
+Upgrading is `npm update -g reliastra`; each version caches its own binary,
+so an upgrade downloads once. Uninstalling is `npm uninstall -g reliastra`
+plus `rm -rf ~/.cache/reliastra` (Linux) if you want the binaries gone.
 
 See [the CLI README](../README.md) for usage, or
 [RELEASING.md](../RELEASING.md) for how releases reach this package.

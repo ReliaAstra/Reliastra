@@ -21,6 +21,14 @@ DIST="${2:-dist}"
 VERSION="${VERSION#v}"
 [ -d "$DIST" ] || { echo "FAIL: $DIST is not a directory"; exit 1; }
 
+# The checksums.txt line for exactly this artifact. Anchored, because a
+# plain substring search also matches the archive of the same name
+# (reliastra_0.2.0_linux_amd64.tar.gz) and would then be verified against
+# the wrong bytes.
+checksum_line() { # <artifact-name>
+  grep -E "^[0-9a-f]{64}  \\*?${1//./\\.}$" "$CHECKSUMS"
+}
+
 # GoReleaser writes dist/artifacts.json: the authoritative list of what it
 # produced, with the path each artifact actually lives at. Asking it beats
 # guessing, because the layout under dist/ has changed between GoReleaser
@@ -40,16 +48,20 @@ for artifact in json.load(open(os.path.join('$DIST', 'artifacts.json'))):
 }
 
 # Where an artifact lives: the manifest if it says so, else the flat layout.
+# GoReleaser writes manifest paths relative to the repository root, so a
+# dist/ directory that is not at the root has to be tried too. Whatever is
+# found is then checked against checksums.txt, which is the real guard.
 resolve_path() { # <artifact-name>
-  local name="$1" path
+  local name="$1" path candidate
   path="$(manifest_path "$name")"
-  if [ -n "$path" ] && [ -f "$path" ]; then
-    printf '%s' "$path"
-  elif [ -f "$DIST/$name" ]; then
-    printf '%s' "$DIST/$name"
-  else
-    printf ''
-  fi
+  for candidate in "$path" "$(dirname "$DIST")/$path" "$DIST/$name" "$DIST/$(basename "$path")"; do
+    [ -n "$candidate" ] || continue
+    if [ -f "$candidate" ]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  printf ''
 }
 
 shasum_of() {
@@ -68,18 +80,27 @@ case "$(uname -m)" in
   *) HOST_ARCH="" ;;
 esac
 
-CHECKSUMS="$DIST/checksums.txt"
+# Absolute: the verification below runs from the directory an artifact
+# lives in, which is not necessarily the release root.
+CHECKSUMS="$(cd "$DIST" && pwd)/checksums.txt"
 [ -f "$CHECKSUMS" ] || { echo "FAIL: $CHECKSUMS is missing"; exit 1; }
 
 # `sha256sum -c` — the same verification a user runs, not a reimplementation
 # of it. Reports once, on success; failures are reported by the caller.
-# checksums.txt lists artifacts by name, from the release root.
+#
+# The check happens in a scratch directory under the artifact's release
+# name, because that is the name checksums.txt lists, and the file in
+# dist/ is usually still called `reliastra`. Renaming on the way in also
+# proves the name a wrapper will ask for is the one that was hashed.
 verify_against_checksums() { # <artifact-name> <path>
-  local name="$1" path="$2"
-  grep -qF "  $name" "$CHECKSUMS" || { echo "FAIL: $name is not listed in checksums.txt"; return 1; }
-  dir="$(dirname "$path")"
-  (cd "$dir" && grep -F "  $name" "$CHECKSUMS" | sha256sum -c - >/dev/null 2>&1) ||
-    { echo "FAIL: $name does not match its checksums.txt entry"; return 1; }
+  local name="$1" path="$2" stage
+  [ -n "$(checksum_line "$name")" ] || { echo "FAIL: $name is not listed in checksums.txt"; return 1; }
+  stage="$(mktemp -d)"
+  cp "$path" "$stage/$name" || { rm -rf "$stage"; echo "FAIL: could not stage $name"; return 1; }
+  (cd "$stage" && checksum_line "$name" | sha256sum -c - >/dev/null 2>&1)
+  local verified=$?
+  rm -rf "$stage"
+  [ "$verified" = 0 ] || { echo "FAIL: $name does not match its checksums.txt entry"; return 1; }
   printf "   %-40s %10s bytes  sha256 verified\n" "$name" "$(wc -c <"$path" | tr -d ' ')"
   return 0
 }
@@ -147,7 +168,7 @@ for goos in linux darwin windows; do
     exe=""
     [ "$goos" = "windows" ] && exe=".exe"
     name="reliastra_${VERSION}_${goos}_${goarch}${exe}"
-    grep -qF "  $name" "$CHECKSUMS" || {
+    [ -n "$(checksum_line "$name")" ] || {
       echo "FAIL: checksums.txt is missing an entry the installers will ask for: $name"
       exit 1
     }

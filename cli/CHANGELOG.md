@@ -2,27 +2,67 @@
 
 ## Unreleased — distribution
 
-The CLI can now be installed without Go. Alongside `go install`, one tag
-push now publishes prebuilt binaries plus two thin installer packages
-(see cli/RELEASING.md):
+The CLI can now be installed through npm and PyPI as well as Go. It is
+still one CLI: the Go program in `cli/`, built by GoReleaser and published
+to a GitHub release. The npm and PyPI packages are launchers, not ports —
+no CLI logic was rewritten, and neither needs a Go toolchain.
 
 - `npm install -g reliastra`
 - `pipx install reliastra` (or `pip install reliastra`)
+- `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`
 - binaries and archives on the GitHub release
 
-The npm and PyPI packages are launchers, not ports: no CLI logic was
-rewritten. On first run they download the platform binary published by
-GoReleaser, verify its SHA-256 against the release's `checksums.txt`,
-cache it (one cache, shared between the two wrappers, relocated with
-`RELIASTRA_CACHE`), and hand off with arguments and exit codes untouched.
-Nothing runs or downloads at install time (no postinstall scripts), and
-`RELIASTRA_BIN` points a wrapper at an existing binary to skip the
-download entirely.
+On the first `reliastra` invocation a launcher downloads the platform
+binary attached to the release of its own version, verifies its SHA-256
+against that release's `checksums.txt`, caches it (one cache shared by both
+wrappers, relocated with `RELIASTRA_CACHE`), and hands off with arguments
+and exit codes untouched. Nothing runs or downloads at install time — no
+postinstall scripts, no build hooks, no dependencies. `RELIASTRA_BIN`
+points a wrapper at a binary you already have.
 
-Release packaging is checked in CI: `goreleaser check` validates
-`.goreleaser.yaml`, and `cli/test/wrappers_smoke_test.sh` exercises both
-wrappers end-to-end (download, verify, exec, cache reuse, `RELIASTRA_BIN`
-override, tampered-checksum refusal) against a fake release on loopback.
+### Added
+
+- **One release version.** The tag is the source of truth. The CLI reports
+  the version the toolchain stamped into it (`go install …@v0.2.1` reports
+  `0.2.1`), GoReleaser stamps release binaries from the tag, and the
+  workflow writes the tag into both package manifests before publishing. A
+  package can only ever download the binary of its own version.
+- **A `cli/vX.Y.Z` module tag**, pushed by the release pipeline alongside
+  `vX.Y.Z`. The CLI is a Go module in a subdirectory, and the module proxy
+  versions subdirectory modules from prefix-carrying tags — without it,
+  `go install …@latest` cannot resolve at all.
+- **A release gate** (`cli/test/release_check.sh`, run by CI on every push
+  and by the release pipeline before anything is published): one version
+  across tag, Go, npm and PyPI; `gofmt`, `go vet`, `go build`, the full
+  six-target cross-compile matrix, `go test -race`, `goreleaser check`,
+  npm and PyPI packaging checks (no dependencies, no install-time
+  scripts), and the installer smoke test. A skipped check fails the run.
+- **An artifact gate** (`cli/test/artifacts_check.sh`): every platform's
+  binary and archive present in `dist/`, and matching `checksums.txt` by
+  `sha256sum -c`, before anything is published.
+- **An install smoke test** (`cli/test/install_smoke_test.sh`): packs the
+  npm tarball, builds the wheel, installs both, and runs the CLI through
+  each — `--version`, `--help`, a real command, and a real exit code —
+  then opens the cached binary with `go version -m` to prove it is the Go
+  binary. Runs in the release pipeline against the published release.
+- **A dry run mode** for the release pipeline (`workflow_dispatch`), which
+  builds, packages, verifies and installs everything and publishes
+  nothing. `make cli-check`, `make cli-dry-run`, `make cli-artifacts`,
+  `make cli-install-smoke` and `make cli-release-prep VERSION=…` do the
+  same locally.
+- **Hardened the launchers**: `RELIASTRA_RELEASE_URL` is now restricted to
+  https (http is allowed on `localhost`, for a mirror or a test) instead
+  of being resolved for any scheme; a cached binary that lost its
+  executable bit is repaired instead of failing with a permission error;
+  `RELIASTRA_BIN` pointing at a missing file is reported as such.
+
+### Changed
+
+- The PyPI package metadata uses PEP 639 (`license =
+  "LicenseRef-Proprietary"`, `license-files`) and ships `cli/LICENSE`, so
+  the build is warning-free on current setuptools.
+- CI's `cli` job runs the same gate script as the release pipeline, so
+  release packaging cannot rot between tags.
 
 ## 0.2.0 — Go rewrite
 

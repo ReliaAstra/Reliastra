@@ -82,6 +82,10 @@ npm version 0.2.0 --no-git-tag-version       # the release version
 npm publish --access public --provenance     # 2FA prompt
 ```
 
+Consequence for the first release: the pipeline's `npm` job fails for
+v0.2.0 (nothing is registered yet). Publish 0.2.0 by hand as above, then
+register the publisher — from the release after that, the job is automatic.
+
 Then, once on npmjs.com → package `reliastra` → **Settings** → **Trusted
 Publisher** → *GitHub Actions*:
 
@@ -201,8 +205,20 @@ Then on a clean machine (or with `RELIASTRA_CACHE` cleared), install
 through each channel and run one command — that is the path the wrappers
 exist for, and the one install-smoke exercises on every release.
 
-## 5. When something goes wrong
+## 5. After the first release
 
+Delete the **Release status** note at the top of the Install section in
+`cli/README.md` — the channels it describes are live from then on.
+
+## 6. When something goes wrong
+
+- **"Permission to ReliaAstra/Reliastra.git denied to github-actions[bot]"**
+  from the `binaries` job — the built-in token cannot push, which is what
+  both the Go module tag and the release need. Enable *Settings → Actions →
+  General → Workflow permissions → Read and write permissions*, or set a
+  PAT with `contents: write` and use it in the two steps that push. The
+  module tag is pushed before anything is published, so a failure here
+  leaves nothing behind.
 - **A publish failed after the GitHub release was created** — the release is
   real and the binaries are fine. Fix the registry configuration and re-run
   the failed job (*Actions → Release CLI → Re-run failed jobs*). Publishing

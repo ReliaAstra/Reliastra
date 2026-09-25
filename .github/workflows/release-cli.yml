@@ -7,11 +7,13 @@
 #                 cross-compile matrix, goreleaser check, npm and PyPI
 #                 packaging checks, installer smoke test. Nothing below runs
 #                 unless all of it passes.
-#   2. binaries — goreleaser builds linux/darwin/windows × amd64/arm64,
-#                 archives them, uploads the raw binaries the installers
-#                 download, writes checksums.txt and creates the GitHub
-#                 release. Then it pushes the Go module tag (cli/v0.2.1)
-#                 that makes `go install …@latest` resolve.
+#   2. binaries — pushes the Go module tag (cli/v0.2.1) that makes `go
+#                 install …@latest` resolve, then goreleaser builds
+#                 linux/darwin/windows × amd64/arm64, archives them,
+#                 uploads the raw binaries the installers download, writes
+#                 checksums.txt and creates the GitHub release. The module
+#                 tag goes first on purpose: if the token cannot push,
+#                 nothing has been published yet.
 #   3. npm      — publishes the thin installer `reliastra`.
 #   4. pypi     — publishes the same installer shape as `reliastra`.
 #   5. install-smoke — installs through npm and pip and runs the CLI, so a
@@ -181,6 +183,33 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f "v$VERSION"
 
+      - name: Publish the Go module tag
+        if: needs.verify.outputs.mode == 'release'
+        # `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`
+        # resolves through the module proxy, and a module in a subdirectory
+        # is versioned by a tag carrying that subdirectory as a prefix:
+        # cli/v0.2.1. Same commit as the release tag, pushed by this
+        # workflow — one release, one version, two tags.
+        #
+        # Deliberately before the release is published: if this token
+        # cannot push, nothing has been published yet, and the failure
+        # says so. (The reverse — a published release whose `go install`
+        # cannot resolve — is the one that is hard to notice.)
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          module_tag="cli/v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$module_tag" >/dev/null 2>&1; then
+            echo "$module_tag already exists — leaving it alone (tags are immutable)"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "$module_tag" HEAD
+          git push origin "refs/tags/$module_tag"
+
       - name: "Build (snapshot: no release, no publish)"
         if: needs.verify.outputs.mode == 'dry-run'
         uses: goreleaser/goreleaser-action@9c156ee8a17a598857849441385a2041ef570552 # v6.3.0
@@ -212,28 +241,6 @@ jobs:
           name: reliastra-dist-${{ needs.verify.outputs.version }}
           path: dist/
           retention-days: 7
-
-      - name: Publish the Go module tag
-        if: needs.verify.outputs.mode == 'release'
-        # `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`
-        # resolves through the module proxy, and a module in a subdirectory
-        # is versioned by a tag carrying that subdirectory as a prefix:
-        # cli/v0.2.1. Same commit as the release tag, pushed by this
-        # workflow — one release, one version, two tags.
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          module_tag="cli/v$VERSION"
-          if git ls-remote --exit-code --tags origin "refs/tags/$module_tag" >/dev/null 2>&1; then
-            echo "$module_tag already exists — leaving it alone (tags are immutable)"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "$module_tag" HEAD
-          git push origin "refs/tags/$module_tag"
 
   # ─────────────────────────────────────────────────────────
   # 3. NPM — thin installer package `reliastra`
@@ -284,7 +291,9 @@ jobs:
       - name: Publish (dry run)
         if: needs.verify.outputs.mode != 'release'
         working-directory: cli/npm
-        run: npm publish --access public --provenance --dry-run
+        # No --provenance: a dry run uploads nothing, and a provenance
+        # attestation is only meaningful for a real publish.
+        run: npm publish --access public --dry-run
 
       - name: Publish
         if: needs.verify.outputs.mode == 'release'
