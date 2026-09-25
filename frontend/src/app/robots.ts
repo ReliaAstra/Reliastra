@@ -88,6 +88,24 @@ export default function robots(): MetadataRoute.Robots {
         // keeps the disallow list meaningful to a first-match interpreter.
         disallow,
       },
+      {
+        // OAI-SearchBot (OpenAI's search crawler) is granted explicit access to
+        // the public site. `Allow: /` is safe here in a way it is not on the
+        // `*` group: it targets one known, standards-compliant crawler that
+        // resolves Allow/Disallow by longest match, so the private-route
+        // disallows below still win on every protected path. The `*` group
+        // deliberately omits a blanket allow because it must stay correct for
+        // the first-match interpreters that live among the long tail of agent
+        // crawlers - see the note at the top of this file.
+        //
+        // This is an allowlist for one crawler, not a security control: the
+        // protected routes are authenticated server-side regardless of what
+        // robots.txt says. GPTBot is intentionally NOT listed - adding it is a
+        // separate decision that has not been approved.
+        userAgent: 'OAI-SearchBot',
+        allow: ['/'],
+        disallow,
+      },
     ],
     sitemap: `${base}/sitemap.xml`,
   };

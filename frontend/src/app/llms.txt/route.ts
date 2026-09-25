@@ -136,7 +136,6 @@ ${RECORDS_MARKER}
 - Product: ${SITE_URL}/product
 - Evidence records: ${SITE_URL}/product/evidence
 - Public observatory: ${SITE_URL}/observatory
-- Agencies: ${SITE_URL}/agencies
 - Pricing: ${SITE_URL}/pricing
 - Documentation: ${SITE_URL}/docs
 - Quickstart: ${SITE_URL}/docs/quickstart
