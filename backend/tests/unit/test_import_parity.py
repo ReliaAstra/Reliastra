@@ -2,7 +2,7 @@
 
 1. Every legacy import path (``app.core.*``, ``app.infrastructure.*``,
    ``app.db.*``, ``app.dependencies``) re-exports the *same objects* as the
-   canonical home — shims are aliases, never forks.
+   canonical home - shims are aliases, never forks.
 2. Layering: ``app.platform`` never imports domain logic (``app.modules``);
    the only exception is the model registry in
    ``app.platform.persistence.base``. ``app.platform`` also never imports
@@ -144,7 +144,7 @@ def _imports_of(path: pathlib.Path) -> set[str]:
 def test_platform_never_imports_domain_logic():
     """The dependency rule juniors can rely on: platform is bottom-layer.
 
-    ``app.platform`` may not import ``app.modules`` — except the model
+    ``app.platform`` may not import ``app.modules`` - except the model
     registry (``persistence/base.import_all_models``), which exists precisely
     so workers boot with a complete mapper graph.
     """
@@ -172,7 +172,7 @@ def test_platform_never_imports_composition_layers():
 
 
 def test_main_entrypoint_stays_thin_and_stable():
-    import app.main as main
+    from app import main
 
     for name in ("app", "create_app", "lifespan", "IdempotencyMiddleware", "RequestIdMiddleware"):
         assert hasattr(main, name), f"app.main.{name} is part of the import contract"
@@ -201,8 +201,6 @@ def test_router_registry_pins_the_unmounted_set():
             "status",
             "status_page",
             "public_analytics",
-            "email_admin",
-            "email_center",
             "outreach_admin",
         ]
     )

@@ -430,6 +430,12 @@ class PublicIncidentEvidenceService:
             artifact.observation_count,
             artifact.data_hash,
         )
+        # The dataset mirror's inputs changed: request a refresh on the same
+        # durable pattern. Content-hash idempotency makes this cheap for the
+        # publisher even when several freezes land in one drain cycle.
+        from app.modules.dataset.service import enqueue_dataset_refresh
+
+        enqueue_dataset_refresh(session)
         return "created"
 
     async def _window_observations(

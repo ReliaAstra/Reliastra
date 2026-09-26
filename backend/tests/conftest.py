@@ -1,11 +1,11 @@
-import asyncio
 import logging
 import os
 import tempfile
-import uuid
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
+
 import fakeredis.aioredis
+
 try:
     import pgserver  # type: ignore
 except ImportError:  # pragma: no cover - missing in CI python 3.13 win
@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.config import settings
-from app.db.session import get_db, set_test_engine
+from app.db.session import set_test_engine
 from app.infrastructure.redis_client import set_test_redis
 from app.main import app
 from tests.helpers import TEST_OTP_CODE, register_and_verify
@@ -106,6 +106,11 @@ async def test_engine(setup_test_db_server: str) -> AsyncGenerator[AsyncEngine, 
             "partner_payouts",
             "partner_referrals",
             "partner_profiles",
+            # Public intelligence surfaces (children first: evidence and the
+            # dataset ledger reference public_incidents / nothing).
+            "dataset_publications",
+            "public_incident_evidence",
+            "public_incidents",
             "audit_logs",
             "observation_outbox",
             "email_verification_codes",

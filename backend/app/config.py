@@ -386,6 +386,26 @@ class Settings(BaseSettings):
         description="Whether to negotiate SMTP TLS when supported",
     )
     # ── Resend - transactional outbound ────────────────────────────────
+    DATASET_GITHUB_TOKEN: SecretStr | None = Field(
+        default=None,
+        description=(
+            "GitHub token (fine-grained, contents:write on the dataset repo) for the "
+            "public intelligence dataset publisher. Unset is a legitimate deployment "
+            "state: the publisher reports disabled and publishes nothing."
+        ),
+    )
+    DATASET_GITHUB_REPO: str | None = Field(
+        default=None,
+        description="Dataset repository as owner/name. Both repo and token must be set for publishing.",
+    )
+    DATASET_GITHUB_BRANCH: str = Field(
+        default="main",
+        description="Branch the dataset publisher commits to.",
+    )
+    DATASET_GITHUB_API_URL: str = Field(
+        default="https://api.github.com",
+        description="GitHub API root (overridable for tests and enterprise instances).",
+    )
     RESEND_API_KEY: SecretStr | None = Field(
         default=None,
         description="Resend API key (re_...). When set, transactional email uses Resend; otherwise falls back to SMTP.",

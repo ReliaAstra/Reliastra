@@ -1,13 +1,15 @@
 import logging
+
 from celery import Celery
-from kombu import Queue
 from celery.schedules import crontab
 from celery.signals import (
+    task_failure,
     task_postrun,
     task_prerun,
-    task_failure,
     worker_process_init,
 )
+from kombu import Queue
+
 from app.config import settings
 from app.platform.observability.logging import configure_logging
 
@@ -40,6 +42,7 @@ celery_app = Celery(
         "app.modules.webhooks.tasks",
         "app.modules.notifications.tasks",
         "app.modules.observations.tasks",
+        "app.modules.dataset.tasks",
         "app.modules.api_keys.tasks",
         "app.modules.billing.tasks",
         "app.modules.partners.tasks",
@@ -127,6 +130,15 @@ celery_app.conf.update(
         "public-incident-evidence-reconcile": {
             "task": "app.modules.incidents.tasks.reconcile_public_incident_evidence",
             "schedule": crontab(minute=10, hour=5),
+            "options": {"expires": 3600},
+        },
+        # Public dataset publisher: the daily reconciliation path behind the
+        # outbox fast path (a freeze enqueues a dataset refresh). Idempotent
+        # by dataset content hash - an unchanged dataset is a no-op, so the
+        # schedule cannot produce duplicate commits.
+        "public-dataset-publish": {
+            "task": "app.modules.dataset.tasks.publish_public_dataset",
+            "schedule": crontab(minute=30, hour=5),
             "options": {"expires": 3600},
         },
         # Interval is env-configurable (CHECK_SCHEDULE_SECONDS).

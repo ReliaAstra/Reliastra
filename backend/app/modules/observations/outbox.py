@@ -71,9 +71,18 @@ async def _handle_public_incident_evidence(
     await handle_evidence_requested(session, payload)
 
 
+async def _handle_public_dataset_refresh(
+    session: AsyncSession, payload: str
+) -> None:
+    from app.modules.dataset.service import handle_dataset_refresh
+
+    await handle_dataset_refresh(session, payload)
+
+
 HANDLERS: dict[str, Handler] = {
     "observation_created": _handle_observation_created,
     "public_incident_evidence_requested": _handle_public_incident_evidence,
+    "public_dataset_refresh_requested": _handle_public_dataset_refresh,
 }
 
 

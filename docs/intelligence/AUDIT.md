@@ -1,6 +1,6 @@
 # RELIASTRA Public Intelligence Architecture - Audit, Target Design and Rollout Plan
 
-Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-7 landed). Baseline: commit 4055ba5.
+Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-8 landed). Baseline: commit 4055ba5.
 Scope: what exists (audited, tested, in production semantics), what to build, in
 what order, and why each piece respects the constraints that govern this project.
 
@@ -257,7 +257,43 @@ the two surfaces can never tell two different stories about the same window.
     escaping, valid empty documents) and 12 source-contract tests (shared
     builder as single composition point, degrade rules, 404 semantics,
     no-fabricated-dates, feeds absent from the sitemap).
-- Phase 8 GitHub dataset publisher (outbox pattern). PLANNED.
+- Phase 8 GitHub dataset publisher (outbox pattern). DONE.
+  - `dataset_publications` table (migration 0042): an append-only ledger of
+    what was committed, keyed by GitHub target + branch. No FKs by design
+    (the ledger outlives incidents and evidence); unique on
+    (target, branch, content_hash) and on (target, branch, commit_sha).
+  - The dataset is derived, never accumulated: `build_dataset_tree` turns
+    canonical rows (public incidents gated on vendor.is_public, the six
+    vendor identity fields, frozen evidence bytes) into a complete file
+    tree - README.md (provenance + methodology, no wall-clock values),
+    catalog.json, incidents/index.jsonl (oldest first), one canonical JSON
+    detail per incident, evidence files stored verbatim. Same canonical
+    objects as the HTML pages and the RSS feeds; the dataset is a third
+    renderer, not a second source of truth. DATASET_SCHEMA_VERSION "1.0".
+  - Idempotency: dataset_content_hash is a SHA-256 Merkle-style digest over
+    per-file hashes in path order. If it matches the newest publication row
+    for the target, publish is a no-op ("current"): no commit, no row.
+  - Delivery through the Git Data API (ref -> commit -> tree -> commit ->
+    ref, force=false): one atomic sequence per dataset version; a raced ref
+    fails the batch and the retry re-reads. Failures record nothing - the
+    next attempt re-derives and re-decides.
+  - Triggers, both idempotent into the same publish: the evidence freeze
+    success path enqueues a `public_dataset_refresh_requested` outbox event
+    (consumed by the processor like any other event, disabled publishers
+    consume as "disabled" and the measurement is untouched), and a daily
+    05:30 beat task is the guaranteed reconciliation path. Celery task
+    retries with backoff + jitter (max 5); GitHub outages never touch
+    probes.
+  - Configuration: DATASET_GITHUB_TOKEN/REPO/BRANCH/API_URL. Unconfigured
+    is a valid steady state: events are consumed as disabled, nothing
+    fails.
+  - Tests: 23 unit (builder determinism and hashing, config gating, publish
+    outcomes incl. the IntegrityError race as "current", outbox disabled
+    consumption) and 3 integration on real Postgres - the full pipeline
+    interleaved record/detect -> drain (freeze + refresh in one queue) ->
+    commit -> ledger row -> republish no-op; the scheduled path recovering
+    a processor outage; the unconfigured publisher consuming events without
+    publishing. Test teardown now truncates the public intelligence tables.
 - Phase 9 newsletter/social draft generation. PLANNED.
 - Phase 10 ops views, data quality (dead target detection, broken identity
   links, stale registries), load tests at 250+ vendors. PLANNED.
