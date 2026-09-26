@@ -119,7 +119,7 @@ export function buildIsDownAnswer(input: AnswerInput): BuiltAnswer {
       case 'degraded':
         return `Signs of degradation: at least one of the five most recent RELIASTRA observations of ${host} did not receive the expected response.`;
       case 'critical':
-        return `The endpoint ${name} is observed at is not responding: the latest RELIASTRA check of ${host} did not receive the expected response. Whether ${name}’s services are affected is a separate question this record does not answer alone.`;
+        return `The endpoint ${name} is observed at did not meet its response contract: the latest RELIASTRA check of ${host} did not receive the expected response. Whether ${name}’s services are affected is a separate question this record does not answer alone.`;
       case 'unknown':
         if (verdict.word === 'Not observed recently') {
           return `Unknown - RELIASTRA’s ${observed} has gone stale, so no current state is reported rather than an old one.`;

@@ -121,7 +121,7 @@ describe('answerInputFromRecord', () => {
       })
     );
     expect(input.verdict.state).toBe('critical');
-    expect(input.verdict.word).toBe('Not responding');
+    expect(input.verdict.word).toBe('Expectation not met');
   });
 
   it('refuses to assert a current state when the record is stale', () => {

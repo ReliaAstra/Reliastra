@@ -11153,6 +11153,28 @@
             "type": "integer",
             "title": "Observation Count"
           },
+          "response_received_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Received Count"
+          },
+          "expected_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Count"
+          },
           "incident_id": {
             "anyOf": [
               {
@@ -11179,6 +11201,42 @@
       },
       "TimelineCurrent": {
         "properties": {
+          "reachable": {
+            "type": "boolean",
+            "title": "Reachable",
+            "default": false
+          },
+          "response_received": {
+            "type": "boolean",
+            "title": "Response Received",
+            "default": false
+          },
+          "transport_status": {
+            "type": "string",
+            "title": "Transport Status",
+            "default": "unknown"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "response_class": {
+            "type": "string",
+            "title": "Response Class",
+            "default": "no_http_response"
+          },
+          "evaluation": {
+            "type": "string",
+            "title": "Evaluation",
+            "default": "unknown"
+          },
           "timestamp": {
             "anyOf": [
               {
@@ -11532,6 +11590,81 @@
       },
       "VendorDetailResponse": {
         "properties": {
+          "reachable": {
+            "type": "boolean",
+            "title": "Reachable",
+            "default": false
+          },
+          "response_received": {
+            "type": "boolean",
+            "title": "Response Received",
+            "default": false
+          },
+          "transport_status": {
+            "type": "string",
+            "title": "Transport Status",
+            "default": "unknown"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "response_class": {
+            "type": "string",
+            "title": "Response Class",
+            "default": "no_http_response"
+          },
+          "evaluation": {
+            "type": "string",
+            "title": "Evaluation",
+            "default": "unknown"
+          },
+          "regions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Regions"
+          },
+          "region_state": {
+            "type": "string",
+            "title": "Region State",
+            "default": "unconfigured"
+          },
+          "recent_status": {
+            "type": "string",
+            "title": "Recent Status",
+            "default": "unknown"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "status_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Code"
+          },
           "id": {
             "type": "string",
             "format": "uuid",
@@ -11575,10 +11708,96 @@
             "format": "date-time",
             "title": "Updated At"
           },
-          "recent_status": {
-            "type": "string",
-            "title": "Recent Status",
-            "default": "unknown"
+          "official_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "website_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Url"
+          },
+          "documentation_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentation Url"
+          },
+          "status_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Page Url"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
           },
           "endpoints": {
             "items": {
@@ -11715,6 +11934,61 @@
               }
             ],
             "title": "Last Check At"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "status_page"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "display_order": {
+            "type": "integer",
+            "title": "Display Order",
+            "default": 100
+          },
+          "methodology_version": {
+            "type": "string",
+            "title": "Methodology Version",
+            "default": "v1.0"
+          },
+          "expected_status_codes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Expected Status Codes"
           }
         },
         "type": "object",
@@ -11859,6 +12133,54 @@
       },
       "VendorResponse": {
         "properties": {
+          "reachable": {
+            "type": "boolean",
+            "title": "Reachable",
+            "default": false
+          },
+          "response_received": {
+            "type": "boolean",
+            "title": "Response Received",
+            "default": false
+          },
+          "transport_status": {
+            "type": "string",
+            "title": "Transport Status",
+            "default": "unknown"
+          },
+          "http_status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Http Status"
+          },
+          "response_class": {
+            "type": "string",
+            "title": "Response Class",
+            "default": "no_http_response"
+          },
+          "evaluation": {
+            "type": "string",
+            "title": "Evaluation",
+            "default": "unknown"
+          },
+          "regions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Regions"
+          },
+          "region_state": {
+            "type": "string",
+            "title": "Region State",
+            "default": "unconfigured"
+          },
           "recent_status": {
             "type": "string",
             "title": "Recent Status",
@@ -11928,6 +12250,97 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "official_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "website_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Website Url"
+          },
+          "documentation_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentation Url"
+          },
+          "status_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Page Url"
+          },
+          "logo_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logo Url"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Country"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
           }
         },
         "type": "object",

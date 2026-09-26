@@ -4,9 +4,6 @@ import Link from 'next/link';
 import {
   fetchTrackedVendorsAll,
   readCategories,
-  readVendorDetail,
-  regionsOf,
-  type TrackVendorDetail,
   type TrackVendorListItem,
 } from '@/lib/track-api';
 import { deriveState, NO_OBSERVATION, utcStamp, elapsed } from '@/lib/observatory/format';
@@ -48,10 +45,7 @@ import { renderAtRequestTime } from '@/lib/render-at-request-time';
  *    `operational`). It used to come from 24 extra per-vendor detail calls
  *    per render, which was both slow and self-inflicted rate-limit pressure -
  *    and it left every row past the 24th without a state at all.
- *  - Region labels are endpoint *configuration*, which only the detail
- *    endpoint carries. They are resolved for a bounded prefix of the catalog,
- *    in order, through the Data Cache; a row that was not resolved says
- *    "not read" rather than implying zero regions.
+ *  - Region labels are batch-loaded by the paginated catalog API for every row.
  *
  * Failure behaviour: the catalog is this page's subject. When it cannot be
  * read the page throws, so the segment error boundary returns a 5xx. It does not
@@ -103,21 +97,11 @@ export const metadata: Metadata = {
  * route that could never be statically rendered.
  */
 
-/** How many catalog entries get their region labels resolved on this page. */
-const REGION_RESOLVE_LIMIT = 24;
 
 /** Hard bound on the catalog walk: a cursor that never advances must not loop. */
 const CATALOG_MAX_PAGES = 10;
 
-interface CatalogRow {
-  item: TrackVendorListItem;
-  /**
-   * Endpoint configuration, resolved for the first `REGION_RESOLVE_LIMIT` rows
-   * only. `null` means "not read" - either outside the prefix, or the detail
-   * endpoint did not answer. It never means "zero regions".
-   */
-  detail: TrackVendorDetail | null;
-}
+interface CatalogRow { item: TrackVendorListItem; }
 
 export default async function ObservatoryIndexPage() {
   // Rendered per request, never baked at build time: the build has no
@@ -149,13 +133,7 @@ export default async function ObservatoryIndexPage() {
   const taxonomy =
     categoriesRead.kind === 'ok' ? categoriesRead.value.categories : null;
 
-  const rows: CatalogRow[] = await Promise.all(
-    items.map(async (item, i) => {
-      if (i >= REGION_RESOLVE_LIMIT) return { item, detail: null };
-      const read = await readVendorDetail(item.vendor_name);
-      return { item, detail: read.kind === 'ok' ? read.value : null };
-    })
-  );
+  const rows: CatalogRow[] = items.map(item => ({ item }));
 
   const observedTimes = items
     .map((v) => v.last_check_at)
@@ -164,7 +142,7 @@ export default async function ObservatoryIndexPage() {
   const freshest = observedTimes[0] ?? null;
   const categories = new Set(items.map((v) => v.category)).size;
   const regionSet = new Set<string>();
-  for (const r of rows) if (r.detail) for (const g of regionsOf(r.detail)) regionSet.add(g);
+  for (const r of rows) for (const g of r.item.regions ?? []) regionSet.add(g);
 
   const columns: RecordColumn<CatalogRow>[] = [
     {
@@ -200,7 +178,7 @@ export default async function ObservatoryIndexPage() {
         // From the catalog row's own `recent_status`: the most recent
         // observation of the dependency's primary listed endpoint. Every row
         // carries it, so no row is printed without a state.
-        const v = deriveState(r.item.recent_status, null);
+        const v = deriveState(r.item.recent_status, { timestamp: r.item.last_check_at, is_up: r.item.evaluation === 'expected' ? true : r.item.evaluation === 'unexpected' ? false : null, response_received: r.item.response_received, transport_status: r.item.transport_status, status_code: r.item.status_code });
         return <StateWord size="sm" state={v.state} word={v.word} />;
       },
     },
@@ -210,13 +188,7 @@ export default async function ObservatoryIndexPage() {
       width: 'minmax(0,110px)',
       align: 'right',
       cell: (r) =>
-        r.detail ? (
-          <Value>{String(regionsOf(r.detail).length)}</Value>
-        ) : (
-          // Not attempted, or the detail endpoint did not answer. Printing "0"
-          // here would state a measurement that was never made.
-          <span className="obs-void text-[13px]">not read</span>
-        ),
+        <Value>{r.item.region_state === 'configured' ? (r.item.regions ?? []).join(' · ') : r.item.region_state === 'unconfigured' ? 'unconfigured' : 'unknown'}</Value>,
     },
     {
       key: 'observed',
@@ -290,7 +262,7 @@ export default async function ObservatoryIndexPage() {
             </IndexFact>
             <IndexFact term="Categories">{categories ? String(categories) : '0'}</IndexFact>
             <IndexFact term="Region labels in use">
-              {regionSet.size ? [...regionSet].sort().join(' · ') : 'not read'}
+              {regionSet.size ? [...regionSet].sort().join(' · ') : rows.every(r => r.item.region_state === 'unconfigured') ? 'unconfigured' : 'unknown'}
             </IndexFact>
             <IndexFact term="Most recent observation">
               {freshest ? utcStamp(freshest) : NO_OBSERVATION}
@@ -315,8 +287,7 @@ export default async function ObservatoryIndexPage() {
           <>
             State is the catalog's own verdict per dependency, derived from the most recent
             observation of its primary listed endpoint. Region labels are endpoint configuration
-            and are resolved for the first {REGION_RESOLVE_LIMIT} records; the rest read “not
-            read” rather than zero.
+            and are supplied for every displayed record by the catalog API.
           </>
         }
         aside={<span className="ob-label md:text-right">Revalidated every 60 seconds</span>}
@@ -382,8 +353,7 @@ export default async function ObservatoryIndexPage() {
         <dl className="flex flex-col">
           <SpecRow term="Observed state" wide>
             From the most recent observation of the dependency’s primary listed endpoint:
-            responding when it received the expected response, not responding when it recorded a
-            transport error or no status code, and “not observed recently” when that observation is
+            responding when it received the expected response, an explicit HTTP status when the response was unexpected, no response for a transport failure, and “not observed recently” when that observation is
             older than the measurement API’s fifteen-minute staleness threshold. The record page
             reports the finer verdict - a roll-up over the five most recent observations across
             every endpoint on the record - so the two can disagree at the margin, and the record
@@ -395,9 +365,7 @@ export default async function ObservatoryIndexPage() {
           </SpecRow>
           <SpecRow term="Region labels" wide>
             The region labels scheduled for the dependency, read from the record’s endpoint
-            configuration. Resolved for the first {REGION_RESOLVE_LIMIT} records in the catalog;
-            beyond that the column reads “not read”, which is an absent read and not a count of
-            zero. A label names the worker that ran the probe, and RELIASTRA operates one
+            configuration, supplied for every catalog row in one batched read. A label names the worker that ran the probe, and RELIASTRA operates one
             observation point today, so two labels are not two independent origins and nothing
             here is corroboration. Confirmation across genuinely separate sites is a property of
             deployments that have more than one.

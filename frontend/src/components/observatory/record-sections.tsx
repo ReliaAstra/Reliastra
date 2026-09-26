@@ -342,7 +342,7 @@ export function CurrentObservationSection({ record }: { record: VendorRecord }) 
         ) : r.current?.is_up === true ? (
           <StateWord size="sm" state="healthy" word="Responded" />
         ) : r.current?.is_up === false ? (
-          <StateWord size="sm" state="critical" word="No response" />
+          <StateWord size="sm" state="critical" word={r.current?.response_received === true ? `Responded — HTTP ${r.current.status_code}` : r.current?.response_received === false ? "No HTTP response" : "Expectation not met"} />
         ) : (
           <span className="obs-void text-[13px]">{NO_OBSERVATION}</span>
         ),
@@ -474,7 +474,7 @@ export function StateSection({
       note={
         <>
           An observation counts as successful when the probe received the response its target
-          expects - for these public records, HTTP 200 within a 15-second deadline. Timeouts,
+          expects within a 15-second deadline (HTTP 200 by default). Timeouts,
           transport errors and other status codes count as failures. No observations reads as
           insufficient data, never 100%.
         </>
@@ -892,7 +892,7 @@ export function MethodologySection({
         </SpecRow>
         <SpecRow term="Success" wide>
           The probe records a success when the endpoint returns the response it is configured to
-          expect - HTTP 200 for every public record, within a 15-second deadline, following at
+          expect (HTTP 200 by default), within a 15-second deadline, following at
           most five redirect hops. A slow but correct response is latency, not downtime.
         </SpecRow>
         <SpecRow term="Failure" wide>
@@ -913,7 +913,7 @@ export function MethodologySection({
           record repeatedly.
         </SpecRow>
         <SpecRow term="Availability" wide>
-          Successful observations divided by all observations in the window. A window with no
+          Observations matching the endpoint’s expected HTTP status policy divided by all observations in the window. An unexpected HTTP response lowers this measure, but is not a transport outage. A window with no
           observations is insufficient data, never 100%.
         </SpecRow>
         <SpecRow term="Latency" wide>

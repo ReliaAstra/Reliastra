@@ -92,6 +92,10 @@ async def test_get_vendor_detail(mocker):
     fake_vendor.category = "payments"
     fake_vendor.is_public = True
     fake_vendor.last_check_at = None
+    fake_vendor.transport_status = 'unknown'
+    fake_vendor.response_class = 'no_http_response'
+    fake_vendor.evaluation = 'unknown'
+    fake_vendor.region_state = 'unconfigured'
     fake_vendor.recent_status = 'unknown'
     fake_vendor.created_at = now
     fake_vendor.updated_at = now

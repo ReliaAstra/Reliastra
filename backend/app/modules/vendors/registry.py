@@ -10,7 +10,7 @@ Design rules:
 * The vendor_name IS the canonical public slug. It is part of deployed URLs
   (/observatory/{vendor_name}) and never changes once public.
 * Every target is a publicly documented status/health surface observed over
-  HTTPS GET expecting 200. That is the existing methodology
+  HTTPS GET with an explicit expected-status contract (200 by default). That is the existing methodology
   (status_page, v1.0); new target kinds require a new methodology version,
   not a silent reinterpretation.
 * The FIRST target of a vendor is its primary observed surface. The primary
@@ -47,6 +47,7 @@ class TargetDefinition:
     kind: str = "status_page"
     product: str | None = None
     display_order: int = 100
+    expected_status_codes: tuple[int, ...] = (200,)
 
 
 @dataclass(frozen=True)
@@ -913,6 +914,8 @@ def validate_registry() -> list[str]:
         seen_urls: set[str] = set()
         for target in vendor.targets:
             t_label = f"{label} target {target.slug}"
+            if not target.expected_status_codes or any(type(code) is not int or not 100 <= code <= 599 for code in target.expected_status_codes):
+                problems.append(f"{t_label}: expected_status_codes must contain HTTP status codes")
             if not target.slug.islower() or not target.slug.replace("-", "").isalnum():
                 problems.append(f"{t_label}: slug not url safe")
             if target.slug in seen_slugs:

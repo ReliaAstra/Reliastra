@@ -202,7 +202,7 @@ export interface StateVerdict {
  */
 export function deriveState(
   recentStatus: string | null | undefined,
-  current: { is_up: boolean | null; timestamp: string | null } | null | undefined
+  current: { is_up: boolean | null; timestamp: string | null; response_received?: boolean; transport_status?: string; status_code?: number | null } | null | undefined
 ): StateVerdict {
   const rolled = (recentStatus ?? '').toLowerCase();
   const hasCurrent = !!current && current.timestamp !== null && current.is_up !== null;
@@ -221,7 +221,7 @@ export function deriveState(
   if (hasCurrent && current!.is_up === false) {
     return {
       state: 'critical',
-      word: 'Not responding',
+      word: current?.response_received === true ? `Responded — HTTP ${current.status_code}` : current?.response_received === false ? `No response — ${current.transport_status ?? 'unknown'}` : 'Expectation not met',
       qualifier:
         'The most recent observation did not receive the expected response from this endpoint.',
     };
@@ -234,7 +234,7 @@ export function deriveState(
   if (['down', 'outage', 'critical', 'unavailable', 'offline'].includes(rolled)) {
     return {
       state: 'critical',
-      word: 'Not responding',
+      word: 'Expectation not met',
       qualifier:
         'The most recent observations recorded no expected response from this endpoint.',
     };

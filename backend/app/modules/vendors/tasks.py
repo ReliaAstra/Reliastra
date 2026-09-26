@@ -56,13 +56,13 @@ def execute_vendor_check(endpoint_id: str, scheduled_at: str, region: str):
         # the single-host worker executes every region's probes.
         if endpoint.last_check_at and endpoint.last_check_at >= datetime.fromisoformat(scheduled_at):
             return None
-        result = await observe_http(endpoint.endpoint_url, timeout=15.0, probe_id=endpoint_id)
+        result = await observe_http(endpoint.endpoint_url, timeout=15.0, expected_codes=endpoint.expected_status_codes, probe_id=endpoint_id)
         observed_at = datetime.now(timezone.utc)
         observation = await observation_service.record_observation(session, ObservationCreateDTO(
             timestamp=observed_at, source_type='vendor_probe', source_id=endpoint.id,
             region=region, endpoint_url=endpoint.endpoint_url, latency_ms=result.latency_ms,
-            status_code=result.status_code, error_type=None if result.is_up else 'probe_failed',
-            error_message=result.error_message, metadata={'is_up': result.is_up},
+            status_code=result.status_code, error_type=result.error_type,
+            error_message=result.error_message, metadata={'is_up': result.is_up, 'observation': result.semantics, 'expected_status_codes': endpoint.expected_status_codes},
         ))
         # Public incident intelligence: feed the just-recorded observation
         # into the shared deterministic detector. Runs in the same

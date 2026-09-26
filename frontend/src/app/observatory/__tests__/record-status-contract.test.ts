@@ -157,8 +157,14 @@ describe('the observatory index', () => {
     expect(hub).not.toContain('r.detail.recent_status');
   });
 
-  it('never prints an unread region as a count of zero', () => {
-    expect(hub).toContain('not read');
+  it('renders explicit catalog region states without per-row reads or a prefix cutoff', () => {
+    expect(hub).toContain("r.item.region_state === 'configured'");
+    expect(hub).toContain("r.item.region_state === 'unconfigured'");
+    expect(hub).toContain("'unknown'");
+    expect(hub).toContain('r.item.regions');
+    expect(hub).not.toContain('REGION_RESOLVE_LIMIT');
+    expect(hub).not.toContain('readVendorDetail');
+    expect(hub).not.toContain('not read');
     expect(hub).not.toMatch(/>\s*none\s*</);
   });
 });

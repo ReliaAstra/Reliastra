@@ -47,6 +47,11 @@ const BACKEND_URL =
 /* ── Response shapes (mirrors app/modules/vendors/schemas.py) ───────────── */
 
 export interface TrackVendorListItem {
+  regions?: string[];
+  region_state?: string;
+  response_received?: boolean;
+  transport_status?: string;
+  evaluation?: string;
   recent_status?: string;
   latency_ms?: number | null;
   status_code?: number | null;
@@ -115,6 +120,9 @@ export interface TrackVendorDetail extends TrackVendorListItem {
 }
 
 export interface TrackCurrent {
+  response_received?: boolean;
+  transport_status?: string;
+  evaluation?: string;
   timestamp: string | null;
   latency_ms: number | null;
   status_code: number | null;
@@ -135,6 +143,8 @@ export interface TrackMetrics {
 }
 
 export interface TrackTimelinePoint {
+  response_received_count?: number | null;
+  expected_count?: number | null;
   timestamp: string;
   avg_latency_ms: number;
   status_code: number | null;

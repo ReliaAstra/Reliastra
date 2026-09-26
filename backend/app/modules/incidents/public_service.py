@@ -82,11 +82,13 @@ FAILURE_KINDS = (
 
 
 def _observation_is_up(row: ObservationLike) -> bool:
-    """The same success predicate the public catalog and the probe task use:
-    no transport error and a status code was received. Anything else -
-    timeout, DNS failure, unexpected status for the target's methodology -
-    counts as a failed observation."""
-    return row.error_type is None and row.status_code is not None
+    """Consume the recorded contract evaluation, never infer reachability.
+
+    An unexpected HTTP response may confirm an incident but its failure kind
+    and raw status remain HTTP evidence, not a transport outage.
+    """
+    from app.modules.observations.semantics import observation_semantics
+    return observation_semantics(row)['evaluation'] == 'expected'
 
 
 def _classify_failure_kind(failing: list[ObservationLike]) -> str:
