@@ -6,11 +6,17 @@ from sqlalchemy import Integer, case, delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.observations.models import Observation
+from app.modules.observations.semantics import normalize, expected_sql
 
 
 class ObservationRepository:
     @staticmethod
     async def create(session: AsyncSession, dto: Any) -> Observation:
+        facts = normalize(dto.status_code, dto.error_type, dto.error_message, dto.metadata)
+        # Preserve a SQL-friendly projection of the evaluation, not transport.
+        error_type = None if facts['evaluation'] == 'expected' else (
+            'unexpected_http_response' if facts['response_received'] else facts['transport_status']
+        )
         observation = Observation(
             id=uuid.uuid4(),
             timestamp=dto.timestamp or datetime.now(timezone.utc),
@@ -25,9 +31,9 @@ class ObservationRepository:
             tls_version=dto.tls_version,
             tls_certificate_issuer=dto.tls_certificate_issuer,
             tls_certificate_expiry=dto.tls_certificate_expiry,
-            error_type=dto.error_type,
+            error_type=error_type,
             error_message=dto.error_message,
-            observation_metadata=dto.metadata,
+            observation_metadata={**(dto.metadata or {}), 'observation': facts},
         )
         session.add(observation)
         await session.flush()
@@ -111,8 +117,7 @@ class ObservationRepository:
         since = datetime.now(timezone.utc) - timedelta(hours=window_hours)
         failure = case(
             (
-                (Observation.status_code.is_(None))
-                | (Observation.error_type.is_not(None)),
+                ~expected_sql(Observation),
                 1,
             ),
             else_=0,
@@ -168,8 +173,7 @@ class ObservationRepository:
         since = datetime.now(timezone.utc) - timedelta(hours=window_hours)
         failure = case(
             (
-                (Observation.status_code.is_(None))
-                | (Observation.error_type.is_not(None)),
+                ~expected_sql(Observation),
                 1,
             ),
             else_=0,
@@ -212,8 +216,7 @@ class ObservationRepository:
         since = datetime.now(timezone.utc) - timedelta(days=period_days)
         failure = case(
             (
-                (Observation.status_code.is_(None))
-                | (Observation.error_type.is_not(None)),
+                ~expected_sql(Observation),
                 1,
             ),
             else_=0,
@@ -315,8 +318,7 @@ class ObservationRepository:
         # and no error type.
         is_up_col = case(
             (
-                (Observation.status_code.is_not(None))
-                & (Observation.error_type.is_(None)),
+                expected_sql(Observation),
                 1,
             ),
             else_=0,
@@ -339,6 +341,8 @@ class ObservationRepository:
                 # If all obs in the bucket are "up" → 1, else 0
                 func.min(is_up_col).label("all_up"),
                 func.count(Observation.id).label("obs_count"),
+                func.count(Observation.status_code).label("response_count"),
+                func.sum(is_up_col).label("expected_count"),
             )
             .where(*conditions)
             .group_by(bucket)
@@ -356,6 +360,8 @@ class ObservationRepository:
                 else None,
                 "is_up": bool(row.all_up) if row.all_up is not None else True,
                 "obs_count": int(row.obs_count),
+                "response_count": int(row.response_count),
+                "expected_count": int(row.expected_count or 0),
             }
             for row in rows
         ]

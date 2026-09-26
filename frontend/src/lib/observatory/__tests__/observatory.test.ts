@@ -172,7 +172,7 @@ describe('deriveState', () => {
   it('leads with the most recent observation when it failed', () => {
     const v = deriveState('operational', { is_up: false, timestamp: '2026-09-07T18:51:08Z' });
     expect(v.state).toBe('critical');
-    expect(v.word).toBe('Not responding');
+    expect(v.word).toBe('Expectation not met');
   });
 
   it('reports degraded from the rolled-up status', () => {
@@ -322,5 +322,19 @@ describe('mergeIncidents', () => {
     const merged = mergeIncidents(opened, published);
     expect(merged[0].durationSeconds).toBeNull();
     expect(merged[1].durationSeconds).toBe(1320);
+  });
+});
+
+
+describe('HTTP response is not no response', () => {
+  it.each([403, 404, 429, 500, 502])('renders HTTP %s as received', (code) => {
+    const verdict = deriveState('down', {timestamp: '2026-09-26T12:00:00Z', is_up: false,
+      status_code: code, response_received: true, transport_status: 'http_response'});
+    expect(verdict.word).toBe(`Responded — HTTP ${code}`);
+    expect(verdict.word).not.toMatch(/no response|not responding/i);
+  });
+  it('renders an explicit timeout as no response', () => {
+    expect(deriveState('down', {timestamp: '2026-09-26T12:00:00Z', is_up: false,
+      response_received: false, transport_status: 'timeout'}).word).toBe('No response — timeout');
   });
 });

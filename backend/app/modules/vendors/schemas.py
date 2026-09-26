@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
+from app.modules.observations.semantics import ObservationFacts
 
 
 class VendorEndpointResponse(BaseModel):
@@ -21,9 +22,12 @@ class VendorEndpointResponse(BaseModel):
     product_name: str | None = None
     display_order: int = 100
     methodology_version: str = "v1.0"
+    expected_status_codes: list[int] = Field(default_factory=lambda: [200])
 
 
-class VendorResponse(BaseModel):
+class VendorResponse(ObservationFacts):
+    regions: list[str] = Field(default_factory=list)
+    region_state: str = "unconfigured"
     recent_status: str = "unknown"
     latency_ms: float | None = None
     status_code: int | None = None
@@ -126,10 +130,13 @@ class TimelineBucket(BaseModel):
     status_code: int | None
     is_up: bool
     observation_count: int
+    # Counts, not a synthesized transport verdict for a mixed bucket.
+    response_received_count: int | None = None
+    expected_count: int | None = None
     incident_id: uuid.UUID | None = None
 
 
-class TimelineCurrent(BaseModel):
+class TimelineCurrent(ObservationFacts):
     """The most recent observation for a vendor, independent of the window."""
 
     timestamp: datetime | None = None

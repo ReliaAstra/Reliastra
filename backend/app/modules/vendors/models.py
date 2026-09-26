@@ -90,6 +90,7 @@ class VendorEndpoint(UUIDMixin, TimestampMixin, Base):
         index=True,
     )
     endpoint_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    expected_status_codes: Mapped[list[int]] = mapped_column(JSON, default=lambda: [200], server_default="[200]", nullable=False)
     check_interval_seconds: Mapped[int] = mapped_column(
         Integer, default=300, nullable=False
     )

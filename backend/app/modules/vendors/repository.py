@@ -98,6 +98,7 @@ class VendorRepository:
         product_name: str | None = None,
         display_order: int = 100,
         methodology_version: str = "v1.0",
+        expected_status_codes: list[int] | None = None,
     ) -> VendorEndpoint:
         endpoint = VendorEndpoint(
             vendor_id=vendor_id,
@@ -112,6 +113,7 @@ class VendorRepository:
             product_name=product_name,
             display_order=display_order,
             methodology_version=methodology_version,
+            expected_status_codes=expected_status_codes if expected_status_codes is not None else [200],
         )
         session.add(endpoint)
         await session.flush()

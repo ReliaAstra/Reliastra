@@ -342,9 +342,9 @@ export function DependencyRecordPage({ id }: { id: string }) {
                 {lastObservation ? formatUtc(lastObservation.executed_at, 'HH:mm:ss') : 'none'}
               </Row>
               <Row label="Last latency" mono>
-                {lastObservation?.is_up
+                {lastObservation?.status_code != null
                   ? `${formatLatency(lastObservation.latency_ms)} ms`
-                  : 'no response'}
+                  : lastObservation ? 'no HTTP status recorded' : 'no observation'}
               </Row>
             </dl>
           </div>

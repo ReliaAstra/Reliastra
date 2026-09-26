@@ -10,6 +10,8 @@ from app.modules.observations.models import Observation
 
 from app.core.exceptions import ResourceNotFoundException, ValidationException, ServiceUnavailableException
 from app.modules.checks.repository import CheckRepository
+from app.modules.observations.semantics import observation_semantics
+from app.modules.vendors.models import VendorEndpoint
 from app.modules.observations.repository import ObservationRepository
 from app.modules.vendors.registry import REGISTRY, validate_registry
 from app.modules.vendors.repository import VendorRepository
@@ -165,6 +167,7 @@ class VendorService:
                         kind=target.kind,
                         product_name=target.product,
                         display_order=target.display_order,
+                        expected_status_codes=list(target.expected_status_codes),
                     )
                 else:
                     endpoint.slug = target.slug
@@ -172,6 +175,7 @@ class VendorService:
                     endpoint.kind = target.kind
                     endpoint.product_name = target.product
                     endpoint.display_order = target.display_order
+                    endpoint.expected_status_codes = list(target.expected_status_codes)
         await session.flush()
         logger.info(
             "Vendor registry sync complete: %d categories, %d vendors, %d created",
@@ -233,19 +237,30 @@ class VendorService:
         One observation query for the whole page of vendors (not N+1), keyed
         by the vendor's primary observed surface. This is the catalog's own
         verdict definition and must stay identical wherever it is rendered:
-        `stale` past the 15 minute freshness threshold, `down` on a transport
-        error or missing status code, otherwise `operational`.
+        `stale` past the 15 minute freshness threshold, `down` when the observation contract was not met (including HTTP
+        responses), otherwise `operational`. This is NOT reachability.
         """
         urls = [vendor.endpoint_url for vendor in vendors]
         latest = (await session.scalars(select(Observation).where(
             Observation.endpoint_url.in_(urls), Observation.source_type == 'vendor_probe', Observation.org_id.is_(None),
         ).distinct(Observation.endpoint_url).order_by(Observation.endpoint_url, Observation.timestamp.desc()))).all() if urls else []
         by_url = {row.endpoint_url: row for row in latest}
+        # Page-bounded batch: required metadata for every row, never per-vendor reads.
+        endpoints = (await session.scalars(select(VendorEndpoint).where(
+            VendorEndpoint.vendor_id.in_([v.id for v in vendors]),
+            VendorEndpoint.is_active.is_(True),
+        ))).all() if vendors else []
+        regions_by_vendor = {}
+        for endpoint in endpoints:
+            regions_by_vendor.setdefault(endpoint.vendor_id, set()).update(endpoint.regions or [])
         result = []
         for vendor in vendors:
             data = VendorResponse.model_validate(vendor).model_dump()
+            data['regions'] = sorted(regions_by_vendor.get(vendor.id, set()))
+            data['region_state'] = 'configured' if data['regions'] else 'unconfigured'
             observation = by_url.get(vendor.endpoint_url)
             if observation:
+                data.update(observation_semantics(observation))
                 stale = (datetime.now(timezone.utc) - observation.timestamp).total_seconds() > 900
                 data.update(last_check_at=observation.timestamp, recent_status='stale' if stale else 'down' if observation.error_type or observation.status_code is None else 'operational', latency_ms=observation.latency_ms, status_code=observation.status_code)
             result.append(VendorResponse(**data))
@@ -346,7 +361,11 @@ class VendorService:
         observations = await ObservationRepository.list_for_endpoints(
             session, urls, limit=5
         )
+        data['regions'] = sorted({r for endpoint in endpoints if endpoint.is_active for r in endpoint.regions})
+        data['region_state'] = 'configured' if data['regions'] else 'unconfigured'
         if observations:
+            data.update(observation_semantics(observations[0]))
+            data['status_code'] = observations[0].status_code
             data["recent_status"] = (
                 "degraded"
                 if any(item.error_type or item.status_code is None for item in observations)
@@ -462,6 +481,7 @@ class VendorService:
         # Current status (latest observation)
         latest = await ObservationRepository.get_latest_observation(session, urls)
         current_status = TimelineCurrent(
+            **(observation_semantics(latest) if latest else {}),
             timestamp=latest.timestamp if latest else None,
             latency_ms=round(latest.latency_ms, 2) if latest else None,
             status_code=latest.status_code if latest else None,
@@ -618,6 +638,7 @@ class VendorService:
             session, urls, region=resolved_region
         )
         current = TimelineCurrent(
+            **(observation_semantics(latest) if latest else {}),
             timestamp=latest.timestamp if latest else None,
             latency_ms=round(latest.latency_ms, 2) if latest else None,
             status_code=latest.status_code if latest else None,
@@ -680,6 +701,8 @@ class VendorService:
                     status_code=b["rep_status_code"],
                     is_up=b["is_up"],
                     observation_count=b["obs_count"],
+                    response_received_count=b.get("response_count"),
+                    expected_count=b.get("expected_count"),
                     incident_id=None,
                 )
                 for b in buckets
@@ -705,6 +728,8 @@ class VendorService:
                     status_code=b["rep_status_code"],
                     is_up=b["is_up"],
                     observation_count=b["obs_count"],
+                    response_received_count=b.get("response_count"),
+                    expected_count=b.get("expected_count"),
                     incident_id=incident_id,
                 )
             )

@@ -2,10 +2,17 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from app.modules.observations.semantics import ObservationFacts, normalize
 
 
-class ObservationResponse(BaseModel):
+class ObservationResponse(ObservationFacts):
+    @model_validator(mode='after')
+    def expose_facts(self):
+        for key, value in normalize(self.status_code, self.error_type, self.error_message, self.metadata).items():
+            setattr(self, key, value)
+        return self
+
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID

@@ -46,6 +46,18 @@ class ProbeObservation:
     is_up: bool
     error_message: str | None
 
+    @property
+    def semantics(self) -> dict:
+        from app.modules.observations.semantics import normalize
+        return normalize(self.status_code, None if self.is_up else 'probe_failed', self.error_message,
+                         {'observation': {'evaluation': 'expected' if self.is_up else 'unexpected'}})
+
+    @property
+    def error_type(self) -> str | None:
+        if self.is_up:
+            return None
+        return 'unexpected_http_response' if self.status_code is not None else self.semantics['transport_status']
+
 
 async def observe_http(
     url: str,
@@ -65,9 +77,13 @@ async def observe_http(
     cross-host requests to the wrong IP.
     """
     headers = headers or {}
-    expected_codes = expected_codes or [200]
+    expected_codes = [200] if expected_codes is None else expected_codes
+    if not expected_codes or any(not isinstance(code, int) or not 100 <= code <= 599 for code in expected_codes):
+        raise ValueError('expected_codes must be a nonempty list of HTTP statuses')
+    last_status: int | None = None
 
     async def run() -> ProbeObservation:
+        nonlocal last_status
         start_time = time.perf_counter()
         try:
             try:
@@ -95,6 +111,7 @@ async def observe_http(
                         url=current_url,
                         headers=current_headers,
                     )
+                last_status = response.status_code
                 if (
                     response.status_code in _REDIRECT_STATUSES
                     and response.headers.get("location")
@@ -161,7 +178,7 @@ async def observe_http(
             )
             return ProbeObservation(
                 latency_ms,
-                None,
+                last_status,
                 False,
                 f"{type(exc).__name__}: {str(exc) or 'Request failed'}",
             )
@@ -172,7 +189,7 @@ async def observe_http(
     except asyncio.TimeoutError:
         return ProbeObservation(
             (time.perf_counter() - started) * 1000,
-            None,
+            last_status,
             False,
             "Timeout: check exceeded its deadline",
         )

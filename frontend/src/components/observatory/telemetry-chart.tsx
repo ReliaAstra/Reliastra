@@ -123,7 +123,7 @@ export function TelemetryChart({
         <ReadoutCell label="Mean latency" value={fmtLatency(active.avg_latency_ms)} unit="ms" />
         <ReadoutCell
           label="Response"
-          value={active.is_up ? (active.status_code ? String(active.status_code) : 'responded') : 'no response'}
+          value={active.status_code != null ? `HTTP ${active.status_code}` : active.response_received_count === 0 ? 'no HTTP response' : 'response unknown'}
           tone={active.is_up ? undefined : 'critical'}
         />
         <ReadoutCell label="Observations" value={String(active.observation_count)} />
