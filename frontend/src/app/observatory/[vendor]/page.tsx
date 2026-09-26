@@ -18,7 +18,6 @@ import {
 } from '@/lib/track-api';
 import {
   availability,
-  deriveState,
   latency,
   NO_OBSERVATION,
   utcStamp,
@@ -45,7 +44,7 @@ import {
   StateSection,
 } from '@/components/observatory/record-sections';
 import { mergeIncidents } from '@/lib/observatory/incidents';
-import { articleFor, buildIsDownAnswer } from '@/lib/observatory/answer';
+import { answerInputFromRecord, articleFor, buildIsDownAnswer } from '@/lib/observatory/answer';
 import {
   TelemetryControls,
   TelemetryPanel,
@@ -305,16 +304,16 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
       ? observationTimes.reduce((a, b) => (Date.parse(a) >= Date.parse(b) ? a : b))
       : null;
 
-  const freshest =
-    record.regionObservations
-      .map((r) => r.current)
-      .filter((c): c is NonNullable<typeof c> => !!c && !!c.timestamp)
-      .sort((a, b) => Date.parse(b.timestamp!) - Date.parse(a.timestamp!))[0] ?? null;
-
-  const verdict = deriveState(detail.recent_status, freshest);
-
-  const cadenceSeconds =
-    record.regionObservations.map((r) => r.cadenceSeconds).find((c) => !!c) ?? null;
+  /**
+   * The answer input is composed by the shared function in
+   * `lib/observatory/answer` - the question page (`/down/{vendor}`) composes
+   * its answer from the same record through the same function, so the two
+   * surfaces cannot disagree. The verdict and cadence it derived are the
+   * ones the sections below render.
+   */
+  const answerInput = answerInputFromRecord(record);
+  const verdict = answerInput.verdict;
+  const cadenceSeconds = answerInput.cadenceSeconds;
 
   const incidents = mergeIncidents(record.incidents, record.publicIncidents);
   const published = (record.publicIncidents ?? []).filter((p) => p.has_evidence_report);
@@ -330,25 +329,7 @@ export default async function VendorRecordPage({ params, searchParams }: PagePro
   const m30 = record.metrics?.metrics?.['30d'] ?? null;
   const basePath = SHARE_ROUTES.observatoryVendor(detail.vendor_name);
 
-  const primaryHost = (() => {
-    const url = detail.endpoints?.[0]?.endpoint_url;
-    if (!url) return null;
-    try {
-      return new URL(url).host;
-    } catch {
-      return null;
-    }
-  })();
-
-  const answer = buildIsDownAnswer({
-    name: detail.display_name,
-    endpointHost: primaryHost,
-    regions,
-    verdict,
-    current: freshest,
-    window24h: m24,
-    cadenceSeconds,
-  });
+  const answer = buildIsDownAnswer(answerInput);
 
   return (
     <ObservatoryShell>

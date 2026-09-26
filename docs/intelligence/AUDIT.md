@@ -1,6 +1,6 @@
 # RELIASTRA Public Intelligence Architecture - Audit, Target Design and Rollout Plan
 
-Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-5 landed; the RSS incidents feed
+Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-6 landed; the RSS incidents feed
 landed ahead of its phase 7 slot with phase 4). Baseline: commit 4055ba5.
 Scope: what exists (audited, tested, in production semantics), what to build, in
 what order, and why each piece respects the constraints that govern this project.
@@ -209,7 +209,32 @@ the two surfaces can never tell two different stories about the same window.
     record page gained an evidence-artifact section (link, hash, freeze
     status, verification recipe, explicit absence when not yet frozen).
   - Verification doc: `docs/intelligence/public-evidence.md`.
-- Phase 6 question engine. PLANNED.
+- Phase 6 question engine. DONE.
+  - `lib/observatory/questions.ts`: the typed question engine. One question
+    kind today (`is-down`), registered with its slug grammar, loader and
+    sidecar mapper, so a second kind joins additively without forking the
+    read contract, sidecar shape or indexability rules. Subjects are vendor
+    slugs: a URL exists exactly when the vendor record exists; a category
+    slug or unknown name is a 404, never an approximation.
+  - `lib/observatory/answer.ts` gained `answerInputFromRecord`: the answer
+    composition extracted from the record page, so the record's masthead and
+    the question page derive ONE answer from the SAME record through the
+    same `deriveState` + `buildIsDownAnswer` path. "We do not know" (stale
+    or absent observation) composes and publishes like any other state.
+  - `/down/{vendor}` (revalidate 60): direct answer page. Three-way contract
+    identical to every observatory surface; FAQPage JSON-LD published only
+    for resolved records, carrying exactly the rendered question and answer
+    text; scope and region statements rendered from stored fields.
+  - `/down/{vendor}/index.json`: the JSON twin (noindex, 404 JSON, 5xx on
+    unreadable), same loader, pure mapper, `observed_as_of` = the freshest
+    observation's own timestamp or null - never a serve-time clock.
+  - Sitemap: one question URL per measured vendor from the same catalog read
+    (`questionEntries` in sitemap-source, tested); no lastmod claimed.
+  - The record page's answer section links the shareable answer; llms.txt
+    and llms-full.txt document the pattern and its JSON twin.
+  - Tests: 14 engine table tests (slug grammar, composition, sidecar,
+    unreadable-throw), 11 source-contract tests (three-way outcomes,
+    noindex decisions, one-source-of-truth assertions), 3 sitemap tests.
 - Phase 7 RSS/Atom feeds remaining (catalog feed, per-vendor feeds if the
   catalog size warrants it). PARTIALLY DONE via the incidents feed above.
 - Phase 8 GitHub dataset publisher (outbox pattern). PLANNED.

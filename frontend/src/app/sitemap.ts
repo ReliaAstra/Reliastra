@@ -12,6 +12,7 @@ import {
 import {
   dedupeByUrl,
   mapWithConcurrency,
+  questionEntries,
   siteBase,
   staticSitemapEntries,
   type Sitemap,
@@ -124,6 +125,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const vendors = catalog.vendors.filter((v) => v.is_public !== false && v.vendor_name);
   entries.push(...vendorEntries(base, vendors));
+
+  /**
+   * Direct-answer question pages (`/down/{vendor}`), one per measured
+   * vendor, derived from the same catalog read as the record URLs - the two
+   * URL families cannot disagree about which vendors exist.
+   */
+  entries.push(...questionEntries(base, vendors));
 
   /**
    * Category pages. Same rule as every other URL in this file: a category is

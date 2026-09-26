@@ -134,6 +134,12 @@ has a frozen evidence document at /api/v1/public/incidents/{incident-id}/evidenc
 SHA-256 hashed, immutable per version, with the verification recipe inside the
 document. See llms-full.txt for the exact contracts.
 
+Direct answers: /down/{vendor} answers "is {vendor} down?" from the same
+measurements as the record page, for every enumerated vendor, endpoint scoped,
+with "we do not know" as a first-class state. Its JSON twin is at
+/down/{vendor}/index.json. A slug the catalog does not name 404s; the answer
+is never published from a failed read.
+
 ## Dependency records (enumerated, do not guess slugs)
 
 ${RECORDS_MARKER}
