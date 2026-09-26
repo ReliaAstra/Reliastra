@@ -27,6 +27,7 @@ import {
   researchHubRoute,
   researchRoute,
   researchStandaloneArticles,
+  SHARE_ROUTES,
 } from '@/lib/routes';
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
@@ -179,6 +180,9 @@ describe('canonical URL architecture', () => {
     // sitemap entry is otherwise invisible until Search Console reports it.
     const declared = new Set<string>([
       ...Object.values(PUBLIC_ROUTES),
+      // The observed incident search lives in SHARE_ROUTES (the observatory
+      // surface is addressable records, including this index of them).
+      SHARE_ROUTES.observatoryIncidents,
       ...Object.values(DOCS_ROUTES),
       ...GLOSSARY_TERMS.map((g) => `/glossary/${g.slug}`),
       ...RESEARCH_ARTICLES.map((a) => researchRoute(a.slug)),

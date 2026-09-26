@@ -4,6 +4,8 @@ import { SHARE_ROUTES } from '@/lib/routes';
 import { SITE_INDEXABLE } from '@/lib/indexability';
 import {
   readCatalogForDiscovery,
+  readCategories,
+  readVendorIncidents,
   readVendorPublicIncidents,
   type TrackVendorListItem,
 } from '@/lib/track-api';
@@ -123,30 +125,79 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const vendors = catalog.vendors.filter((v) => v.is_public !== false && v.vendor_name);
   entries.push(...vendorEntries(base, vendors));
 
+  /**
+   * Category pages. Same rule as every other URL in this file: a category is
+   * listed only when the taxonomy endpoint returned it (the data behind the
+   * URL exists), and an unreadable taxonomy removes category URLs for this
+   * cycle without taking the catalog URLs with it. Categories carry no
+   * lastmod - no real date is known for a taxonomy position.
+   */
+  const categoriesRead = await readCategories();
+  if (categoriesRead.kind === 'ok') {
+    entries.push(
+      ...categoriesRead.value.categories.map((category) => ({
+        url: `${base}${SHARE_ROUTES.observatoryCategory(category.slug)}`,
+        changeFrequency: 'hourly' as const,
+        priority: 0.7,
+      }))
+    );
+  } else {
+    console.warn(
+      `[sitemap] categories unreadable (${categoriesRead.kind}); emitted vendor URLs without category URLs for this cycle`
+    );
+  }
+
   const discovered = await mapWithConcurrency(
     vendors.slice(0, INCIDENT_DISCOVERY_LIMIT),
     INCIDENT_DISCOVERY_CONCURRENCY,
     async (vendor): Promise<SitemapEntry[]> => {
-      const read = await readVendorPublicIncidents(vendor.vendor_name);
+      /**
+       * Two populated sources per record, merged on the incident id:
+       * the detector stream (RELIASTRA's own consecutive-failure windows)
+       * and the evidence-published stream. Both land on the same record
+       * URL - the observed branch resolves if the published set does not.
+       */
+      const [detectedRead, publishedRead] = await Promise.all([
+        readVendorIncidents(vendor.vendor_name),
+        readVendorPublicIncidents(vendor.vendor_name),
+      ]);
       // An unreadable incident list contributes no URLs this cycle. It does not
       // remove the record's own URL, and it must not throw: one vendor's
       // failure should not take the whole sitemap down with it.
-      if (read.kind !== 'ok') return [];
+      const incidents: { incident_id: string; modified: string | null }[] = [];
+      if (detectedRead.kind === 'ok') {
+        incidents.push(
+          ...detectedRead.value
+            .filter((incident) => incident.incident_id)
+            .map((incident) => ({
+              incident_id: incident.incident_id,
+              modified: incident.resolved_at ?? incident.started_at ?? null,
+            }))
+        );
+      }
+      if (publishedRead.kind === 'ok') {
+        incidents.push(
+          ...publishedRead.value
+            .filter((incident) => incident.incident_id)
+            .map((incident) => ({
+              incident_id: incident.incident_id,
+              modified: incident.resolved_at ?? incident.started_at ?? null,
+            }))
+        );
+      }
 
-      return read.value
-        .filter((incident) => incident.incident_id)
-        .map((incident) => {
-          const lastModified = dateOrUndefined(incident.resolved_at ?? incident.started_at);
-          return {
-            url: `${base}${SHARE_ROUTES.observatoryIncident(
-              vendor.vendor_name,
-              incident.incident_id
-            )}`,
-            changeFrequency: 'monthly' as const,
-            priority: 0.7,
-            ...(lastModified ? { lastModified } : {}),
-          };
-        });
+      return incidents.map((incident) => {
+        const lastModified = dateOrUndefined(incident.modified);
+        return {
+          url: `${base}${SHARE_ROUTES.observatoryIncident(
+            vendor.vendor_name,
+            incident.incident_id
+          )}`,
+          changeFrequency: 'monthly' as const,
+          priority: 0.7,
+          ...(lastModified ? { lastModified } : {}),
+        };
+      });
     }
   );
 

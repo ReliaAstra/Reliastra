@@ -247,12 +247,26 @@ describe('the transport is cacheable and bounded', () => {
   });
 });
 
-describe('the record composition does not spend calls it cannot use', () => {
-  it('never requests the public /incidents endpoint, which is empty by design', async () => {
+describe('the record composition spends its calls honestly', () => {
+  it('reads detected incidents from the tracker endpoint and keeps them soft', async () => {
     stubFetch((url) => {
       if (url.endsWith('/vendors/openai')) return jsonResponse(VENDOR_DETAIL);
       if (url.includes('/metrics')) return jsonResponse({ vendor_name: 'openai', metrics: {} });
       if (url.includes('/incidents/public')) return jsonResponse([]);
+      if (/\/vendors\/openai\/incidents\?/.test(url)) {
+        return jsonResponse({
+          vendor_name: 'openai',
+          incidents: [
+            {
+              incident_id: 'inc-1',
+              dependency_name: 'Official status page',
+              started_at: '2026-09-20T10:00:00Z',
+              resolved_at: '2026-09-20T10:30:00Z',
+              status: 'resolved',
+            },
+          ],
+        });
+      }
       if (url.includes('/timeline')) {
         return jsonResponse({
           vendor_name: 'openai',
@@ -268,13 +282,37 @@ describe('the record composition does not spend calls it cannot use', () => {
       return jsonResponse({}, 404);
     });
 
-    const read: RecordRead<unknown> = await readVendorRecord('openai');
+    const read = await readVendorRecord('openai');
 
     expect(read.kind).toBe('ok');
-    // `/vendors/{name}/incidents` returns `[]` unconditionally in the backend,
-    // so requesting it only consumed budget from a limiter every reader shares.
-    expect(calls.some((c) => /\/vendors\/openai\/incidents(\?|$)/.test(c.url))).toBe(false);
+    // The tracker endpoint now returns RELIASTRA's real detected incidents;
+    // the composition requests it and lands the data on the record.
+    const incidentsCall = calls.find((c) => /\/vendors\/openai\/incidents(\?|$)/.test(c.url));
+    expect(incidentsCall).toBeDefined();
     expect(calls.some((c) => c.url.includes('/incidents/public'))).toBe(true);
+    if (read.kind === 'ok') {
+      expect(read.value.incidents).toHaveLength(1);
+      expect(read.value.incidents?.[0].incident_id).toBe('inc-1');
+    }
+  });
+
+  it('treats an unreadable incidents endpoint as a hole in the record, not a death', async () => {
+    stubFetch((url) => {
+      if (url.endsWith('/vendors/openai')) return jsonResponse(VENDOR_DETAIL);
+      if (url.includes('/metrics')) return jsonResponse({ vendor_name: 'openai', metrics: {} });
+      if (url.includes('/incidents/public')) return jsonResponse([]);
+      if (url.includes('/timeline') || url.includes('/incidents')) {
+        return jsonResponse({ detail: 'limiter' }, 502);
+      }
+      return jsonResponse({}, 404);
+    });
+
+    const read = await readVendorRecord('openai');
+    expect(read.kind).toBe('ok');
+    if (read.kind === 'ok') {
+      // Soft read: the page can still render and says the section is unmeasured.
+      expect(read.value.incidents).toBeNull();
+    }
   });
 });
 

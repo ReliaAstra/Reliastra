@@ -37,6 +37,7 @@ from app.modules.evidence.router import router as evidence_router
 from app.modules.evidence_gate.router import router as evidence_gate_router
 from app.modules.feed.router import feed_router
 from app.modules.growth.router import growth_router
+from app.modules.incidents.public_router import router as public_incidents_router
 from app.modules.incidents.router import router as incidents_router
 from app.modules.notifications.router import router as notifications_router
 from app.modules.organizations.router import router as organizations_router
@@ -75,6 +76,12 @@ ROUTER_REGISTRY: tuple[RouterMount, ...] = (
     RouterMount("dependencies", dependencies_router, True, "monitored endpoints"),
     RouterMount("checks", checks_router, True, "probe observations + pipeline health"),
     RouterMount("incidents", incidents_router, True, "detected degradations"),
+    RouterMount(
+        "public_incidents",
+        public_incidents_router,
+        True,
+        "incident intelligence: public search + records",
+    ),
     RouterMount("evidence", evidence_router, True, "SLA evidence artifacts"),
     RouterMount("evidence_gate", evidence_gate_router, True, "evidence eligibility gate"),
     RouterMount("vendors", vendors_router, True, "vendor directory + public observatory data"),

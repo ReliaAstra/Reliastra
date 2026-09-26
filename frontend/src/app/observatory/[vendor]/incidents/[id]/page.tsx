@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
+  readPublicIncident,
   readVendorDetail,
   readVendorPublicIncidents,
   RecordUnreadableError,
   regionsOf,
+  type TrackObservedIncidentDetail,
   type TrackPublicIncident,
   type TrackVendorDetail,
   type UnreadableReason,
@@ -33,6 +35,7 @@ import {
   researchRoute,
 } from '@/lib/routes';
 import { Breadcrumb } from '@/components/site/primitives';
+import { ObservedIncidentRecord } from '@/components/observatory/observed-incident-record';
 import {
   Notice,
   ObservatoryShell,
@@ -102,6 +105,12 @@ type IncidentLoad =
       publicRecord: TrackPublicIncident | null;
       merged: MergedIncident[];
     }
+  /**
+   * A detector-derived public incident: confirmed by RELIASTRA's own probes
+   * but carrying no evidence publication. It gets the same stable URL terms
+   * as an evidence-published record, rendered from the measurement claim.
+   */
+  | { kind: 'observed'; detail: TrackVendorDetail; incident: TrackObservedIncidentDetail }
   | { kind: 'vendor-missing' }
   | { kind: 'incident-missing' }
   | { kind: 'unreadable'; reason: UnreadableReason };
@@ -114,8 +123,6 @@ async function load(vendor: string, id: string): Promise<IncidentLoad> {
   }
   const detail = detailRead.value;
 
-  // The published-incident set is the only populated public source; the
-  // `/incidents` endpoint returns an empty list by design, so it is not read.
   const publishedRead = await readVendorPublicIncidents(vendor);
   if (publishedRead.kind === 'missing') return { kind: 'incident-missing' };
   if (publishedRead.kind === 'unreadable') {
@@ -125,7 +132,31 @@ async function load(vendor: string, id: string): Promise<IncidentLoad> {
   const published = publishedRead.value;
   const merged = mergeIncidents(null, published);
   const incident = merged.find((m) => m.incident_id === id) ?? null;
-  if (!incident) return { kind: 'incident-missing' };
+
+  if (!incident) {
+    /**
+     * Not an evidence-published incident - it may still be an incident
+     * RELIASTRA's public detector confirmed (the newer canonical source).
+     * Read it by id from the public incident API; the read is throttled the
+     * same way, so a probe of unknown ids costs what a published one costs.
+     */
+    const observedRead = await readPublicIncident(id);
+    if (observedRead.kind === 'missing') return { kind: 'incident-missing' };
+    if (observedRead.kind === 'unreadable') {
+      return { kind: 'unreadable', reason: observedRead.reason };
+    }
+    const observed = observedRead.value;
+    /**
+     * The vendor slug is part of the URL identity. An incident id that
+     * resolves to a different vendor on this path is a 404, not a redirect
+     * (the path simply does not name that record). The slug comparison is
+     * case-insensitive only because URLs can arrive in any casing.
+     */
+    if (observed.vendor_name.toLowerCase() !== vendor.toLowerCase()) {
+      return { kind: 'incident-missing' };
+    }
+    return { kind: 'observed', detail, incident: observed };
+  }
 
   const publicRecord: TrackPublicIncident | null =
     published.find((p) => p.incident_id === id) ?? null;
@@ -156,11 +187,36 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   /** Either the dependency or the incident is absent. The body 404s to match. */
-  if (loaded.kind !== 'ok') {
+  if (loaded.kind !== 'ok' && loaded.kind !== 'observed') {
     return {
       title: 'Incident record - RELIASTRA observatory',
       alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
       robots: robotsDirective({ index: false, follow: true }),
+    };
+  }
+
+  if (loaded.kind === 'observed') {
+    const { detail: observedDetail, incident: observedIncident } = loaded;
+    const target = observedIncident.target_name ?? observedIncident.endpoint_url;
+    const title = `${target} failure window - ${observedDetail.display_name} observed incident (RELIASTRA)`;
+    const description =
+      `RELIASTRA observed a failure window against ${target} for ` +
+      `${observedDetail.display_name}: opened ${utcStamp(observedIncident.started_at) ?? 'not recorded'}, ` +
+      `${observedIncident.resolved_at ? `resolved ${utcStamp(observedIncident.resolved_at)}` : 'open at last read'}, ` +
+      `measured from ${observedIncident.region}. The published detection rule, the observed ` +
+      `status codes and the exact claim - with what it does not establish.`;
+    return {
+      title,
+      description,
+      alternates: { canonical: url, ...DISCOVERY_ALTERNATES },
+      robots: robotsDirective({ index: true, follow: true }),
+      openGraph: {
+        title,
+        description,
+        url,
+        type: 'article',
+        siteName: 'RELIASTRA',
+      },
     };
   }
 
@@ -218,7 +274,16 @@ export default async function IncidentRecordPage({ params }: PageProps) {
   }
 
   /** The dependency or the incident is absent: a real 404, not a soft one. */
-  if (loaded.kind !== 'ok') notFound();
+  if (loaded.kind !== 'ok' && loaded.kind !== 'observed') notFound();
+
+  /**
+   * Detector-derived record: the same stable URL, rendered from the
+   * measurement claim itself. Distinct component so an observed record can
+   * never accidentally wear evidence-published language.
+   */
+  if (loaded.kind === 'observed') {
+    return <ObservedIncidentRecord detail={loaded.detail} incident={loaded.incident} />;
+  }
 
   const { detail, incident, publicRecord } = loaded;
 

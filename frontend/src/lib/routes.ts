@@ -157,6 +157,13 @@ export const SHARE_ROUTES = {
   /** The public record for one measured vendor. */
   observatoryVendor: (vendor: string) => `/observatory/${encodeURIComponent(vendor)}`,
   /**
+   * The public record for one catalog category. Shares the single
+   * `/observatory/{slug}` segment with vendor records; the page resolves
+   * vendor first, then category, then 404. A slug in `CATEGORY_SLUGS` is a
+   * category, everything else is a vendor lookup.
+   */
+  observatoryCategory: (slug: string) => `/observatory/${encodeURIComponent(slug)}`,
+  /**
    * Public incident record for one measured vendor. The URL is derived from
    * the incident id exactly as the measurement API returns it, so a published
    * record keeps one stable address: the list page is where freshness lives,
@@ -173,6 +180,17 @@ export const SHARE_ROUTES = {
   observatoryIncident: (vendor: string, incidentId: string) =>
     `/observatory/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,
   /**
+   * The cross-vendor observed incident search - the public product surface
+   * for RELIASTRA's incident detection. Static segment, so it wins over the
+   * `[vendor]` catch-all at the same level.
+   *
+   * Curated indexability lives in the page, not here: the bare URL and
+   * single-dimension filter URLs are indexable, anything else is
+   * `noindex, follow`, and cursor-paginated continuations are never
+   * canonical. See `app/observatory/incidents/page.tsx`.
+   */
+  observatoryIncidents: '/observatory/incidents',
+  /**
    * Canonical creator referral URL. Technical creators share this;
    * `/r/{code}` records the click, sets the attribution cookie, and
    * redirects into the public signup/landing flow.
@@ -180,6 +198,24 @@ export const SHARE_ROUTES = {
   creatorReferral: (code: string) => `/r/${code}`,
   referralUnavailable: '/referral-unavailable',
 } as const;
+
+/**
+ * Build an incident search URL from filter values. Only defined, non-empty
+ * values land in the query, and `cursor` is kept out of canonical
+ * destinations by convention (the page canonicalizes it away). The allowed
+ * keys are the ones the backend accepts; anything else callers pass is
+ * silently ignored by the API, not by this builder, so keep keys honest.
+ */
+export function incidentSearchQuery(
+  filters: Readonly<Record<string, string | undefined>>
+): string {
+  const q = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) q.set(key, value);
+  }
+  const query = q.toString();
+  return `${SHARE_ROUTES.observatoryIncidents}${query ? `?${query}` : ''}`;
+}
 
 // ── Research ────────────────────────────────────────────────────────────────
 

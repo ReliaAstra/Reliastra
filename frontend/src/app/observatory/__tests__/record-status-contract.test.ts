@@ -79,8 +79,10 @@ describe('the dependency record', () => {
 });
 
 describe('the incident record', () => {
-  it('distinguishes all four outcomes', () => {
-    for (const kind of ['ok', 'vendor-missing', 'incident-missing', 'unreadable']) {
+  it('distinguishes all five outcomes', () => {
+    // `observed` is the detector-only record: same stable URL, measurement
+    // wording, no evidence publication - a real 200, not a hidden 404.
+    for (const kind of ['ok', 'observed', 'vendor-missing', 'incident-missing', 'unreadable']) {
       expect(incident, `outcome ${kind}`).toContain(`'${kind}'`);
     }
   });
@@ -90,7 +92,7 @@ describe('the incident record', () => {
   });
 
   it('404s only when the dependency or the incident is absent', () => {
-    expect(incident).toMatch(/loaded\.kind !== 'ok'\) notFound\(\)/);
+    expect(incident).toMatch(/loaded\.kind !== 'ok' && loaded\.kind !== 'observed'\) notFound\(\)/);
   });
 
   it('marks an unreadable incident indexable', () => {
@@ -107,7 +109,11 @@ describe('the incident record', () => {
     expect(unreadable).not.toContain('index: false');
   });
 
-  it('does not spend a call on the endpoint that is empty by design', () => {
+  it('resolves a detector record by id, not by scraping a list', () => {
+    // The page must not need the vendor incident list to answer "does this
+    // id exist" - the single-incident read is one throttled call either way,
+    // and a wrong-vendor id on this path is a 404, not a redirect.
+    expect(incident).toContain('readPublicIncident(');
     expect(incident).not.toContain('fetchVendorIncidents');
   });
 

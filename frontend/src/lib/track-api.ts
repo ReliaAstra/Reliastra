@@ -58,6 +58,33 @@ export interface TrackVendorListItem {
   last_check_at: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  /* Entity identity (additive, backend migration 0039+). Older rows read null. */
+  official_name?: string | null;
+  description?: string | null;
+  website_url?: string | null;
+  documentation_url?: string | null;
+  status_page_url?: string | null;
+  logo_url?: string | null;
+  country?: string | null;
+  tags?: string[] | null;
+}
+
+/** One taxonomy entry (mirrors VendorCategorySummary). */
+export interface TrackCategorySummary {
+  slug: string;
+  name: string;
+  description: string | null;
+  display_order: number;
+  vendor_count: number;
+}
+
+export interface TrackCategoriesResponse {
+  categories: TrackCategorySummary[];
+}
+
+/** A category with its public vendors (mirrors VendorCategoryDetailResponse). */
+export interface TrackCategoryDetail extends TrackCategorySummary {
+  vendors: TrackVendorListItem[];
 }
 
 export interface TrackVendorsPage {
@@ -373,6 +400,33 @@ export function readCatalog(limit = 60): Promise<RecordRead<TrackVendorsPage>> {
   return readJson<TrackVendorsPage>(`/vendors?limit=${limit}`, CATALOG_POLICY);
 }
 
+/* ── Categories ─────────────────────────────────────────────────────────── */
+
+const CATEGORIES_POLICY: CachePolicy = {
+  revalidate: AGGREGATE_POLICY,
+  tags: ['observatory', 'vendors:categories'],
+};
+
+/**
+ * The taxonomy as a three-way read. Categories move at registry pace, not
+ * probe pace, so they share the aggregate lifetime (300s), not the live one.
+ */
+export function readCategories(): Promise<RecordRead<TrackCategoriesResponse>> {
+  return readJson<TrackCategoriesResponse>(`/vendors/categories`, CATEGORIES_POLICY);
+}
+
+/**
+ * One category with its public vendors. Same three-way discipline as
+ * `readVendorDetail`: a URL segment resolver turns `missing` into a 404
+ * candidate and `unreadable` into a 5xx, never into a fabricated page.
+ */
+export function readCategory(slug: string): Promise<RecordRead<TrackCategoryDetail>> {
+  return readJson<TrackCategoryDetail>(
+    `/vendors/categories/${enc(slug.toLowerCase())}`,
+    CATEGORIES_POLICY,
+  );
+}
+
 /**
  * Every public vendor in the catalog, walked cursor by cursor.
  *
@@ -457,14 +511,16 @@ export function fetchVendorTimeline(
 }
 
 /**
- * All incidents RELIASTRA opened against this vendor's endpoints.
+ * All incidents RELIASTRA's public incident detector opened against this
+ * vendor's endpoints, newest first.
  *
- * NOTE: the backend returns an empty list here by design - public probes
- * persist observations, and customer incident records stay tenant-private even
- * for a public URL (`app/modules/vendors/service.py`, `get_vendor_incidents`).
- * The public incident list below is the only populated source, so the record
- * composition no longer spends a rate-limited call on this endpoint. It is
- * kept exported for the API surface and for tests that assert the emptiness.
+ * These are measurement-derived records: consecutive probe failures against
+ * one observed endpoint confirm a failure window, consecutive recoveries
+ * close it. The detector is deliberately conservative (two consecutive
+ * failures minimum), so what surfaces here carries a real observation basis.
+ * Evidence-published incidents live on the `incidents/public` endpoint below;
+ * where both exist for the same window, the public detail carries the richer,
+ * attributed record and this remains the live measurement view.
  */
 export async function fetchVendorIncidents(
   vendor: string,
@@ -475,6 +531,23 @@ export async function fetchVendorIncidents(
     { revalidate: AGGREGATE_POLICY, tags: vendorTags(vendor, 'incidents') }
   );
   return res ? (res.incidents ?? []) : null;
+}
+
+/**
+ * Detected incidents as a three-way read. `missing` means the vendor does not
+ * exist publicly, mirroring `readVendorDetail`; readers merge on that basis.
+ * Used by incident discovery (sitemap) where a 404 has to stay a 404.
+ */
+export async function readVendorIncidents(
+  vendor: string,
+  limit = 50
+): Promise<RecordRead<TrackIncident[]>> {
+  const read = await readJson<{ vendor_name: string; incidents: TrackIncident[] }>(
+    `/vendors/${enc(vendor)}/incidents?limit=${limit}`,
+    { revalidate: LIVE_POLICY, tags: vendorTags(vendor, 'incidents') }
+  );
+  if (read.kind !== 'ok') return read;
+  return { kind: 'ok', value: read.value.incidents ?? [] };
 }
 
 /**
@@ -527,12 +600,11 @@ export interface VendorRecord {
     cadenceSeconds: number | null;
   }>;
   /**
-   * Always `null` today: the public `/vendors/{name}/incidents` endpoint
-   * returns an empty list by design (customer incident records stay
-   * tenant-private even for a public URL), so the composition does not spend a
-   * rate-limited call on it. `publicIncidents` is the populated source. The
-   * field is retained because `mergeIncidents` and the incidents section take
-   * both sides, and so that a future backend change has somewhere to land.
+   * Incidents the public detector opened against this vendor's endpoints
+   * (measurement-derived). `null` when the endpoint could not be read, so the
+   * incidents section can say so instead of presenting an empty record as a
+   * quiet statement of reliability. Merged with `publicIncidents` by incident
+   * id at render time.
    */
   incidents: TrackIncident[] | null;
   publicIncidents: TrackPublicIncident[] | null;
@@ -578,15 +650,11 @@ export async function readVendorRecord(vendor: string): Promise<RecordRead<Vendo
   const detail = detailRead.value;
   const regions = regionsOf(detail);
 
-  const [metrics, publicIncidents] = await Promise.all([
+  const [metrics, incidents, publicIncidents] = await Promise.all([
     soft(fetchVendorMetrics(vendor)),
+    soft(fetchVendorIncidents(vendor)),
     soft(fetchVendorPublicIncidents(vendor)),
   ]);
-
-  // The public `/incidents` endpoint is empty by design (see the note on
-  // `fetchVendorIncidents`); requesting it only consumed rate-limit budget
-  // that every other reader of the site shares.
-  const incidents: TrackIncident[] | null = null;
 
   // The current observation is region-scoped, so the per-region grid needs one
   // short-window timeline per region. Capped at six regions: beyond that the
@@ -793,4 +861,112 @@ export function observedCadenceSeconds(timeline: TrackTimeline | null): number |
   // Not derivable. Printing the bucket length here is exactly the error this
   // function was rewritten to stop making.
   return null;
+}
+
+/* ── Public incident intelligence (cross-vendor search) ────────────────── */
+
+/**
+ * One incident RELIASTRA's public detector opened against a measured vendor.
+ *
+ * This is the canonical public incident record: derived from RELIASTRA's own
+ * probes (not from status-page scraping), confirmed by the consecutive-
+ * failure rule, and explicitly scoped - it describes what probes in `region`
+ * measured against `endpoint_url`, never a claim about the whole vendor. The
+ * list and detail payloads are the same object at two read depths, so the
+ * search page and the record page cannot disagree about identity fields.
+ */
+export interface TrackObservedIncident {
+  incident_id: string;
+  vendor_name: string;
+  vendor_display_name: string;
+  category: string;
+  target_name: string | null;
+  endpoint_url: string;
+  region: string;
+  status: string;
+  severity: string;
+  failure_kind: string;
+  started_at: string;
+  detected_at: string;
+  resolved_at: string | null;
+  duration_seconds: number | null;
+  observation_count: number;
+  failure_count: number;
+  methodology_version: string;
+  attribution_status: string;
+}
+
+/** The detail read - summary fields plus the full provenance. */
+export interface TrackObservedIncidentDetail extends TrackObservedIncident {
+  status_codes: number[] | null;
+  first_observation_id: string | null;
+  last_observation_id: string | null;
+  detection_rule: string | null;
+  detection_metadata: Record<string, unknown> | null;
+  description: string | null;
+}
+
+/** One cursor page of the cross-vendor incident search. */
+export interface TrackObservedIncidentsPage {
+  items: TrackObservedIncident[];
+  next_cursor: string | null;
+  has_more: boolean;
+}
+
+/** Filters accepted by the public incident search API. */
+export interface PublicIncidentFilters {
+  vendor?: string;
+  category?: string;
+  region?: string;
+  status?: 'open' | 'resolved';
+  failureKind?: string;
+  /** ISO 8601 bounds on the incident's started_at. */
+  since?: string;
+  until?: string;
+  /** Opaque server cursor (started_at|id), not a page number. */
+  cursor?: string;
+  limit?: number;
+}
+
+const INCIDENTS_POLICY: CachePolicy = {
+  revalidate: LIVE_POLICY,
+  tags: ['observatory', 'observed-incidents'],
+};
+
+/** One page of the cross-vendor observed incident search. */
+export function readPublicIncidents(
+  filters: PublicIncidentFilters = {}
+): Promise<RecordRead<TrackObservedIncidentsPage>> {
+  const q = new URLSearchParams();
+  if (filters.vendor) q.set('vendor', filters.vendor);
+  if (filters.category) q.set('category', filters.category);
+  if (filters.region) q.set('region', filters.region);
+  if (filters.status) q.set('status', filters.status);
+  if (filters.failureKind) q.set('failure_kind', filters.failureKind);
+  if (filters.since) q.set('since', filters.since);
+  if (filters.until) q.set('until', filters.until);
+  if (filters.cursor) q.set('cursor', filters.cursor);
+  if (typeof filters.limit === 'number') q.set('limit', String(filters.limit));
+  const query = q.toString();
+  return readJson<TrackObservedIncidentsPage>(
+    `/public/incidents${query ? `?${query}` : ''}`,
+    INCIDENTS_POLICY
+  );
+}
+
+/**
+ * One observed incident by id - the record behind its stable record URL.
+ *
+ * `missing` means the id is not a public incident (the URL must 404);
+ * `unreadable` means existence is unknown (the URL must 5xx and stay
+ * indexed). The two are separate for the same reason as the vendor identity
+ * read: a withdrawn index entry on a timeout is expensive to earn back.
+ */
+export function readPublicIncident(
+  incidentId: string
+): Promise<RecordRead<TrackObservedIncidentDetail>> {
+  return readJson<TrackObservedIncidentDetail>(
+    `/public/incidents/${enc(incidentId)}`,
+    INCIDENTS_POLICY
+  );
 }
