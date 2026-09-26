@@ -1,23 +1,18 @@
+import { ApertureMark } from '@/components/site/wordmark';
+
+/**
+ * BrandMark — the RELIASTRA aperture at console scale, with the name.
+ *
+ * Was a tick inside a rounded square, which is the most common tell of a
+ * generated product identity. The aperture replaces it: the same mark the
+ * public site, the favicon and the evidence records carry, so an operator
+ * looking at a checkout or an admin screen sees the same instrument the
+ * customer sees.
+ */
 export function BrandMark({ size = 24 }: { size?: number }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden
-        className="text-rs-brand"
-      >
-        <rect x="1.5" y="1.5" width="21" height="21" rx="6" stroke="currentColor" strokeWidth="1.8" />
-        <path
-          d="M7.5 12.2l3.2 3.2 6-6.4"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <ApertureMark size={size} className="text-rs-text" core="var(--rs-brand)" />
       <span className="font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-rs-text">
         Reliastra
       </span>

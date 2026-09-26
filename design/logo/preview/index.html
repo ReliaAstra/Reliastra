@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RELIASTRA — Identity System / The Aperture</title>
+    <meta name="description" content="The RELIASTRA mark: construction, lockups, sizes and surfaces." />
+    <link rel="icon" href="./assets/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./assets/icon-192.png" />
+    <style>
+      :root {
+        --void: #08090a;
+        --base: #0d0f10;
+        --raised: #111416;
+        --elevated: #151819;
+        --text: #f2f2ee;
+        --text-2: #d5d7d5;
+        --text-3: #969b9f;
+        --text-4: #8b9095;
+        --signal: #d9a441;
+        --ok: #57a773;
+        --line: rgba(242, 242, 238, 0.08);
+        --line-2: rgba(242, 242, 238, 0.14);
+        --line-3: rgba(242, 242, 238, 0.24);
+        --font-sans: Inter, "Inter var", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+        --font-mono: "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+        --gutter: 32px;
+        --max: 1160px;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--void);
+        color: var(--text);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        font-variant-numeric: tabular-nums;
+      }
+      ::selection { background: rgba(217, 164, 65, 0.28); }
+      a { color: inherit; }
+      .wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 var(--gutter); }
+      .mono {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-4);
+      }
+      .rule { height: 1px; background: var(--line); border: 0; margin: 0; }
+
+      /* ── header ─────────────────────────────────────────────── */
+      header.top {
+        position: sticky; top: 0; z-index: 40;
+        background: rgba(8, 9, 10, 0.88);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+      .top-in {
+        display: flex; align-items: center; justify-content: space-between; gap: 24px;
+        height: 64px;
+      }
+      .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+      .brand .name {
+        font-size: 13px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase;
+      }
+      .top nav { display: flex; gap: 22px; }
+      .top nav a {
+        font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.16em;
+        text-transform: uppercase; color: var(--text-3); text-decoration: none;
+        padding: 6px 0; border-bottom: 1px solid transparent; transition: color 0.2s, border-color 0.2s;
+      }
+      .top nav a:hover { color: var(--text); border-color: var(--signal); }
+      @media (max-width: 760px) { .top nav { display: none; } }
+
+      /* ── hero ───────────────────────────────────────────────── */
+      .hero { padding: 104px 0 88px; position: relative; overflow: hidden; }
+      .hero::before {
+        content: ""; position: absolute; inset: -20% -10% auto -10%; height: 70%;
+        background: radial-gradient(60% 60% at 50% 0%, rgba(217, 164, 65, 0.07), transparent 70%);
+        pointer-events: none;
+      }
+      .hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 72px; align-items: center; }
+      @media (max-width: 940px) { .hero-grid { grid-template-columns: 1fr; gap: 48px; } }
+      h1 {
+        font-size: clamp(38px, 5.6vw, 68px); line-height: 1.02; letter-spacing: -0.03em;
+        font-weight: 600; margin: 18px 0 22px;
+      }
+      h1 em { font-style: normal; color: var(--signal); }
+      .lede { font-size: 18px; color: var(--text-2); max-width: 34ch; margin: 0 0 30px; }
+      .meta-row { display: flex; flex-wrap: wrap; gap: 32px; margin-top: 34px; }
+      .meta-row div { border-left: 1px solid var(--line-2); padding-left: 14px; }
+      .meta-row .v { font-size: 14px; color: var(--text-2); margin-top: 4px; }
+
+      .hero-mark { display: flex; flex-direction: column; align-items: center; gap: 26px; }
+      .hero-mark .slot { width: 260px; height: 260px; position: relative; }
+      .hero-mark .slot svg, .hero-mark .slot img { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .hero-mark .sig-line {
+        display: flex; align-items: center; gap: 12px; color: var(--text-3);
+      }
+      .hero-mark .sig-line::before, .hero-mark .sig-line::after {
+        content: ""; height: 1px; width: 46px; background: var(--line-2);
+      }
+
+      /* mark assembly animation: segments travel in from the diagonals */
+      .mark-anim path.seg { transform-box: fill-box; }
+      .mark-anim.play path.seg { animation: seg-in 0.72s cubic-bezier(0.2, 0.7, 0, 1) both; }
+      .mark-anim.play path.seg:nth-child(2) { animation-delay: 0.04s; }
+      .mark-anim.play path.seg:nth-child(3) { animation-delay: 0.08s; }
+      .mark-anim.play path.seg:nth-child(4) { animation-delay: 0.12s; }
+      .mark-anim.play path.core { animation: core-in 0.5s 0.28s cubic-bezier(0.2, 0.7, 0, 1) both; }
+      @keyframes seg-in {
+        from { opacity: 0; transform: translate(-8px, -8px) scale(0.94); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes core-in { from { opacity: 0; transform: scale(0.55); } to { opacity: 1; transform: none; } }
+      .mark-anim path.core { transform-box: fill-box; transform-origin: center; }
+      @media (prefers-reduced-motion: reduce) {
+        .mark-anim.play path.seg, .mark-anim.play path.core { animation: none; }
+      }
+
+      /* ── sections ───────────────────────────────────────────── */
+      section.band { padding: 88px 0; border-top: 1px solid var(--line); }
+      section.band.light { background: #f2f2ee; color: #0b1220; }
+      section.band.light .mono { color: #5d6570; }
+      section.band.light .rule { background: rgba(11, 18, 32, 0.12); }
+      .fig-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 40px; }
+      .fig-head .num { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.16em; color: var(--signal); }
+      h2 { font-size: clamp(26px, 3vw, 36px); line-height: 1.12; letter-spacing: -0.02em; font-weight: 600; margin: 0 0 14px; }
+      h3 { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; margin: 0 0 8px; }
+      .sub { color: var(--text-3); max-width: 62ch; margin: 0; }
+      .light .sub { color: #4a5162; }
+      .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 34px 40px; }
+      .plates { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+      .plate { border: 1px solid var(--line-2); background: var(--base); }
+      .plate .canvas {
+        display: flex; align-items: center; justify-content: center; padding: 46px 28px;
+        background: var(--void); min-height: 240px;
+      }
+      .plate .cap {
+        display: flex; justify-content: space-between; gap: 12px;
+        padding: 11px 14px; border-top: 1px solid var(--line);
+      }
+      .plate.lightplate .canvas { background: #f2f2ee; }
+      .plate.lightplate { border-color: rgba(11, 18, 32, 0.14); background: #fff; }
+      .plate.lightplate .cap { border-color: rgba(11, 18, 32, 0.12); }
+      .plate.lightplate .cap .mono { color: #5d6570; }
+      .fit-lock { width: 100%; max-width: 420px; height: auto; display: block; }
+
+      /* ── size ladder ────────────────────────────────────────── */
+      .ladder { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 40px; }
+      .ladder figure { margin: 0; text-align: center; }
+      .ladder figcaption { margin-top: 14px; }
+      .ladder img { display: block; image-rendering: auto; }
+
+      /* ── surface mockups ───────────────────────────────────── */
+      .surfaces { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px; }
+      .mock { border: 1px solid var(--line-2); background: var(--base); overflow: hidden; }
+      .mock .body { padding: 0; }
+      .mock .cap { display: flex; justify-content: space-between; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--line); }
+      /* browser tab */
+      .tabbar { display: flex; align-items: flex-end; gap: 4px; padding: 10px 10px 0; background: var(--raised); }
+      .tab {
+        display: flex; align-items: center; gap: 8px; padding: 9px 40px 9px 12px;
+        background: var(--elevated); border: 1px solid var(--line); border-bottom: 0;
+        color: var(--text-2); font-size: 12px; max-width: 260px; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+      }
+      .tab.dim { background: transparent; color: var(--text-3); }
+      .chrome-body { height: 96px; background: var(--elevated); border-top: 1px solid var(--line); }
+      /* product nav */
+      .appbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 14px 18px; background: var(--void); border-bottom: 1px solid var(--line);
+      }
+      .appbar .links { display: flex; gap: 20px; font-size: 13px; color: var(--text-3); }
+      .appbar .links b { color: var(--text); font-weight: 500; }
+      .appbar .cta { font-size: 12px; padding: 7px 12px; background: var(--signal); color: #10120f; font-weight: 600; }
+      .app-body { display: grid; grid-template-columns: 132px 1fr; min-height: 210px; }
+      .app-rail { border-right: 1px solid var(--line); padding: 16px 14px; }
+      .app-rail .row { height: 9px; background: rgba(242, 242, 238, 0.09); margin-bottom: 13px; }
+      .app-rail .row.on { background: rgba(217, 164, 65, 0.55); }
+      .app-main { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+      .stat { border: 1px solid var(--line); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+      .stat .k { font-size: 12.5px; color: var(--text-2); }
+      .stat .v { font-family: var(--font-mono); font-size: 12px; color: var(--ok); }
+      .stat .v.warn { color: var(--signal); }
+      /* social card */
+      .card {
+        aspect-ratio: 1200 / 630; background: var(--void); padding: 40px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+      }
+      .card .big { font-size: 34px; letter-spacing: -0.02em; font-weight: 600; line-height: 1.15; }
+      .card .big span { color: var(--signal); }
+      .card .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+      /* avatar */
+      .avatars { display: flex; align-items: center; gap: 30px; padding: 34px; flex-wrap: wrap; }
+      .avatar { border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 1px var(--line-2); }
+      .avatar img { display: block; width: 100%; height: 100%; }
+      /* terminal */
+      .term {
+        font-family: var(--font-mono); font-size: 12px; line-height: 1.85; color: var(--text-2);
+        padding: 18px 20px; background: var(--void); min-height: 208px;
+      }
+      .term .c { color: var(--signal); }
+      .term .d { color: var(--text-4); }
+      .term .g { color: var(--ok); }
+      .caret { display: inline-block; width: 7px; height: 14px; background: var(--signal); vertical-align: -2px; animation: blink 1.1s steps(1) infinite; }
+      @keyframes blink { 50% { opacity: 0; } }
+
+      /* ── palette ────────────────────────────────────────────── */
+      .swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line-2); border: 1px solid var(--line-2); }
+      .sw { background: #ffffff; padding: 0; }
+      .sw .chip { height: 92px; }
+      .sw .info { padding: 12px 14px; border-top: 1px solid rgba(11, 18, 32, 0.1); }
+      .sw .info .h { font-family: var(--font-mono); font-size: 11px; color: #0b1220; }
+      .sw .info .r { font-size: 12px; color: #5d6570; margin-top: 3px; }
+
+      /* ── rules / do-dont ───────────────────────────────────── */
+      .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
+      .rulebox { border: 1px solid var(--line-2); }
+      .rulebox .canvas { height: 168px; display: flex; align-items: center; justify-content: center; background: var(--void); position: relative; }
+      .rulebox .cap { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
+      .tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; padding: 2px 6px; }
+      .tag.do { color: #7fc79b; border: 1px solid rgba(87, 167, 115, 0.45); }
+      .tag.dont { color: #e08a80; border: 1px solid rgba(224, 138, 128, 0.4); }
+      /* clear space diagram */
+      .clearspace { position: relative; padding: 60px; display: flex; align-items: center; justify-content: center; background: var(--void); }
+      .clearspace .frame { position: relative; padding: 40px; outline: 1px dashed rgba(217, 164, 65, 0.5); }
+      .clearspace .x { position: absolute; font-family: var(--font-mono); font-size: 10px; color: var(--signal); }
+
+      /* ── files ─────────────────────────────────────────────── */
+      table.files { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+      table.files th, table.files td { text-align: left; padding: 11px 14px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+      table.files th { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-4); font-weight: 400; }
+      table.files td.f { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+      table.files td.f a { text-decoration: none; border-bottom: 1px solid rgba(217, 164, 65, 0.4); }
+      table.files td.f a:hover { border-color: var(--signal); color: var(--signal); }
+      .light table.files th, .light table.files td { border-color: rgba(11, 18, 32, 0.12); }
+      .light table.files th { color: #5d6570; }
+      .light table.files td.f a { border-color: rgba(37, 99, 235, 0.4); }
+      .light table.files td.f a:hover { border-color: #2563eb; color: #2563eb; }
+
+      footer { padding: 56px 0 80px; border-top: 1px solid var(--line); }
+      .foot-grid { display: flex; flex-wrap: wrap; gap: 24px; justify-content: space-between; align-items: center; }
+      .kbd { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); border: 1px solid var(--line-2); padding: 3px 7px; }
+
+      .reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0, 1); }
+      .reveal.in { opacity: 1; transform: none; }
+      @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+    </style>
+  </head>
+  <body>
+    <!-- ═══════════════════════════════ header — the lockup in situ ═══ -->
+    <header class="top">
+      <div class="wrap top-in">
+        <a class="brand" href="#top">
+          <img src="./assets/mark.svg" width="22" height="22" alt="" />
+          <span class="name">Reliastra</span>
+        </a>
+        <nav>
+          <a href="#mark">01 Mark</a>
+          <a href="#lockups">02 Lockups</a>
+          <a href="#scale">03 Scale</a>
+          <a href="#surfaces">04 Surfaces</a>
+          <a href="#palette">05 Colour</a>
+          <a href="#rules">06 Rules</a>
+          <a href="#files">07 Files</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ══════════════════════════════════════════════════════ hero ═══ -->
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div>
+            <p class="mono">Reliastra identity system — v1.0 / 2026</p>
+            <h1>The aperture.<br />Four segments,<br /><em>one observation point.</em></h1>
+            <p class="lede">
+              A mark built from parts: two vantage points, two readings, and a single amber
+              point in the opening. Not a shape with a story added afterwards — a figure that
+              is only correct when the geometry is.
+            </p>
+            <div class="meta-row">
+              <div>
+                <p class="mono">Construction</p>
+                <p class="v">100 × 100 grid, 4 segments @ 13u</p>
+              </div>
+              <div>
+                <p class="mono">Palette</p>
+                <p class="v">Instrument light · Signal amber</p>
+              </div>
+              <div>
+                <p class="mono">Minimum size</p>
+                <p class="v">16 px (favicon)</p>
+              </div>
+            </div>
+          </div>
+          <div class="hero-mark">
+            <div class="slot mark-anim" id="heroMark" aria-hidden="true">
+              <svg viewBox="0 0 100 100" fill="none">
+                <g stroke="#F2F2EE" stroke-width="13">
+                  <path class="seg" d="M45.05 5.05L94.95 54.95" />
+                  <path class="seg" d="M94.95 45.05L45.05 94.95" />
+                  <path class="seg" d="M54.95 94.95L5.05 45.05" />
+                  <path class="seg" d="M5.05 54.95L54.95 5.05" />
+                </g>
+                <path class="core" d="M50 28L72 50L50 72L28 50Z" fill="#D9A441" />
+              </svg>
+            </div>
+            <p class="mono sig-line">The aperture</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════ mark ═══ -->
+      <section class="band" id="mark">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 01</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Construction</span>
+          </div>
+          <h2>Every dimension is a decision you can check.</h2>
+          <p class="sub" style="margin-bottom: 44px">
+            Drawn on a 100-unit grid. The four segments are identical: 13 units wide, running
+            between the vertices of a square rotated 45°, each overrunning the vertex it meets
+            by 7 units. The core is a 22-unit diamond on the centre. No curve, no gradient, no
+            optical correction — the figure must be exact in one colour, at any size, on any
+            surface.
+          </p>
+
+          <div class="plates">
+            <figure class="plate reveal">
+              <div class="canvas"><img class="fit-lock" src="./assets/construction.svg" alt="Construction plate: the mark over a 100-unit grid with its circumscribed diamond" style="max-width:340px" /></div>
+              <figcaption class="cap">
+                <span class="mono">Plate A — Grid &amp; field</span><span class="mono">100 × 100</span>
+              </figcaption>
+            </figure>
+            <figure class="plate reveal">
+              <div class="canvas"><img class="fit-lock" src="./assets/parts.svg" alt="Parts plate: the four segments separated in value" style="max-width:340px" /></div>
+              <figcaption class="cap">
+                <span class="mono">Plate B — Four equal parts</span><span class="mono">Assembly</span>
+              </figcaption>
+            </figure>
+          </div>
+
+          <div class="cols" style="margin-top: 64px">
+            <div>
+              <h3>01 — A frame with no front</h3>
+              <p class="sub">
+                A rotated square is a boundary, not an object. It has no top, no face and no
+                direction, which is what lets it sit beside a wordmark, inside a tab and on a
+                record without ever reading as a mascot.
+              </p>
+            </div>
+            <div>
+              <h3>02 — Four parts, two of each</h3>
+              <p class="sub">
+                Four equal segments answer to four equal quadrants: two independent vantage
+                points, two readings. The method — observe, correlate, attribute — is in the
+                geometry rather than in a caption.
+              </p>
+            </div>
+            <div>
+              <h3>03 — The overrun is the mark</h3>
+              <p class="sub">
+                Each segment passes its vertex and stops. That one irregular move in an
+                otherwise exact figure is what separates the mark from a diamond with a dot
+                inside it — and it survives to 16 px as a flare at the diagonals.
+              </p>
+            </div>
+            <div>
+              <h3>04 — Amber is the reading</h3>
+              <p class="sub">
+                The core is the signal square the interface already uses for an observation
+                point. Amber is the product's single accent and also its degraded state: the
+                accent colour of this product is the colour of something needing attention.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════════ lockups ═══ -->
+      <section class="band" id="lockups">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 02</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Lockups</span>
+          </div>
+          <h2>Mark, then name.</h2>
+          <p class="sub" style="margin-bottom: 44px">
+            The wordmark is RELIASTRA set in Inter SemiBold, letterspaced 0.21em and outlined as
+            vector paths — the lockup carries no font dependency, so it renders identically in a
+            README, an email client, a print pipeline and a browser tab. The gap between mark and
+            name is 30 units against a 100-unit mark.
+          </p>
+
+          <div class="plates">
+            <figure class="plate reveal">
+              <div class="canvas"><img class="fit-lock" src="./assets/lockup-horizontal.svg" alt="RELIASTRA horizontal lockup, light on void" /></div>
+              <figcaption class="cap">
+                <span class="mono">Primary — void</span><span class="mono">#F2F2EE · #D9A441</span>
+              </figcaption>
+            </figure>
+            <figure class="plate lightplate reveal">
+              <div class="canvas"><img class="fit-lock" src="./assets/lockup-horizontal-ink.svg" alt="RELIASTRA horizontal lockup, ink on paper" /></div>
+              <figcaption class="cap">
+                <span class="mono">Ink — paper</span><span class="mono">#0B1220 · #2563EB</span>
+              </figcaption>
+            </figure>
+            <figure class="plate reveal">
+              <div class="canvas"><img src="./assets/lockup-stacked.svg" alt="RELIASTRA stacked lockup with descriptor" style="max-width: 260px" /></div>
+              <figcaption class="cap">
+                <span class="mono">Stacked + descriptor</span><span class="mono">Covers, plates</span>
+              </figcaption>
+            </figure>
+            <figure class="plate reveal">
+              <div class="canvas"><img src="./assets/mark-mono.svg" alt="RELIASTRA mark in one colour" style="width: 132px" /></div>
+              <figcaption class="cap">
+                <span class="mono">One colour</span><span class="mono">Stamps, engraving, fax</span>
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════ scale ═══ -->
+      <section class="band" id="scale">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 03</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Scale</span>
+          </div>
+          <h2>It has to work at 16 px, or it does not work.</h2>
+          <p class="sub" style="margin-bottom: 52px">
+            Shown at true size. The overrun is what keeps the mark legible as it shrinks: at
+            favicon scale the segments are still distinguishable at the diagonals, so the figure
+            never collapses into a solid diamond.
+          </p>
+          <div class="ladder">
+            <figure><img src="./assets/icon-512.png" width="128" height="128" alt="Mark at 128 px" /><figcaption class="mono">128</figcaption></figure>
+            <figure><img src="./assets/icon-512.png" width="64" height="64" alt="Mark at 64 px" /><figcaption class="mono">64</figcaption></figure>
+            <figure><img src="./assets/icon-512.png" width="48" height="48" alt="Mark at 48 px" /><figcaption class="mono">48</figcaption></figure>
+            <figure><img src="./assets/icon-512.png" width="32" height="32" alt="Mark at 32 px" /><figcaption class="mono">32</figcaption></figure>
+            <figure><img src="./assets/icon-512.png" width="24" height="24" alt="Mark at 24 px" /><figcaption class="mono">24</figcaption></figure>
+            <figure><img src="./assets/favicon-32.png" width="16" height="16" alt="Mark at 16 px" /><figcaption class="mono">16</figcaption></figure>
+            <figure>
+              <img src="./assets/avatar-512.png" width="72" height="72" alt="Avatar tile" style="border-radius: 50%" />
+              <figcaption class="mono">Avatar</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════ surfaces ═══ -->
+      <section class="band" id="surfaces">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 04</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Surfaces</span>
+          </div>
+          <h2>Where it is actually going to live.</h2>
+          <p class="sub" style="margin-bottom: 44px">
+            Drawn at interface size, not zoomed. A mark is only real in the places it is small:
+            a tab, a header, a sidebar, a link preview, an avatar, a terminal.
+          </p>
+
+          <div class="surfaces">
+            <!-- browser tab -->
+            <figure class="mock reveal">
+              <div class="body">
+                <div class="tabbar">
+                  <div class="tab">
+                    <img src="./assets/favicon-32.png" width="16" height="16" alt="" />
+                    <span style="overflow: hidden; text-overflow: ellipsis">RELIASTRA — Independent Evidence for External Dependencies</span>
+                  </div>
+                  <div class="tab dim"><span>Console</span></div>
+                </div>
+                <div class="chrome-body"></div>
+              </div>
+              <figcaption class="cap"><span class="mono">Browser tab</span><span class="mono">16 px</span></figcaption>
+            </figure>
+
+            <!-- product header -->
+            <figure class="mock reveal">
+              <div class="body">
+                <div class="appbar">
+                  <span style="display: flex; align-items: center; gap: 11px">
+                    <img src="./assets/mark.svg" width="19" height="19" alt="" />
+                    <span class="mono" style="color: var(--text); letter-spacing: 0.22em; font-size: 11px">RELIASTRA</span>
+                  </span>
+                  <span class="links"><b>Observatory</b><span>Pricing</span><span>Docs</span></span>
+                  <span class="cta">Start trial</span>
+                </div>
+                <div class="app-body">
+                  <div class="app-rail">
+                    <div class="row on"></div><div class="row"></div><div class="row"></div><div class="row" style="width: 70%"></div>
+                  </div>
+                  <div class="app-main">
+                    <div class="stat"><span class="k">payments.api</span><span class="v">responding</span></div>
+                    <div class="stat"><span class="k">identity.api</span><span class="v warn">observing</span></div>
+                    <div class="stat"><span class="k">evidence records</span><span class="v">1,204</span></div>
+                  </div>
+                </div>
+              </div>
+              <figcaption class="cap"><span class="mono">Application header &amp; rail</span><span class="mono">19 px</span></figcaption>
+            </figure>
+
+            <!-- link preview -->
+            <figure class="mock reveal">
+              <div class="body">
+                <div class="card">
+                  <div style="display: flex; align-items: center; gap: 14px">
+                    <img src="./assets/mark.svg" width="30" height="30" alt="" />
+                    <span class="mono" style="color: var(--text-2)">RELIASTRA — OBSERVATORY</span>
+                  </div>
+                  <div class="big">Infrastructure you<br />can <span>prove.</span></div>
+                  <div class="foot">
+                    <span class="mono">reliastra.com</span>
+                    <span class="mono">01 / EVIDENCE</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption class="cap"><span class="mono">Link preview</span><span class="mono">1200 × 630</span></figcaption>
+            </figure>
+
+            <!-- avatar -->
+            <figure class="mock reveal">
+              <div class="body">
+                <div class="avatars">
+                  <span class="avatar" style="width: 96px; height: 96px"><img src="./assets/avatar-512.png" alt="Avatar at 96 px" /></span>
+                  <span class="avatar" style="width: 44px; height: 44px"><img src="./assets/avatar-512.png" alt="Avatar at 44 px" /></span>
+                  <span class="avatar" style="width: 28px; height: 28px"><img src="./assets/avatar-512.png" alt="Avatar at 28 px" /></span>
+                  <span style="display: grid; gap: 6px; flex: 1; min-width: 150px">
+                    <span style="font-size: 13px; color: var(--text-2)">Reliastra, Inc.</span>
+                    <span class="mono">Independent evidence</span>
+                    <span class="mono" style="color: var(--signal)">Active now</span>
+                  </span>
+                </div>
+              </div>
+              <figcaption class="cap"><span class="mono">Avatar, cropped round</span><span class="mono">Square master</span></figcaption>
+            </figure>
+
+            <!-- terminal -->
+            <figure class="mock reveal" style="grid-column: 1 / -1">
+              <div class="body">
+                <div class="term">
+                  <div class="d"># one engineer, one command</div>
+                  <div><span class="c">$</span> reliastra observe --dependencies ./services.yaml</div>
+                  <div class="d">&nbsp;&nbsp;▚ RELIASTRA · observation window 00:08:14</div>
+                  <div>&nbsp;&nbsp;<span class="g">●</span> payments.api&nbsp;&nbsp;&nbsp;&nbsp;responding&nbsp;&nbsp;&nbsp;&nbsp;latency p99 214 ms</div>
+                  <div>&nbsp;&nbsp;<span style="color: var(--signal)">●</span> identity.api&nbsp;&nbsp;&nbsp;&nbsp;observing&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2 consecutive windows</div>
+                  <div>&nbsp;&nbsp;<span class="g">✓</span> evidence record 04f1…9ab2 written <span class="d">signed, chain intact</span></div>
+                  <div><span class="c">$</span> <span class="caret"></span></div>
+                </div>
+              </div>
+              <figcaption class="cap"><span class="mono">CLI — mark as a two-cell block glyph</span><span class="mono">TERM 256</span></figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════ palette ═══ -->
+      <section class="band light" id="palette">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 05</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Colour</span>
+          </div>
+          <h2>Two colours and a signal.</h2>
+          <p class="sub" style="margin-bottom: 40px">
+            The mark is not the place to introduce a palette. It draws from tokens the product
+            already publishes — the observatory foundation, the instrument light, the single
+            accent — so the identity cannot drift away from the product it belongs to.
+          </p>
+          <div class="swatches">
+            <div class="sw">
+              <div class="chip" style="background: #08090a"></div>
+              <div class="info" style="border-color: rgba(11, 18, 32, 0.12)">
+                <div class="h" style="color: #0b1220">#08090A</div>
+                <div class="r" style="color: #5d6570">Observatory void — field</div>
+              </div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: #f2f2ee"></div>
+              <div class="info" style="border-color: rgba(11, 18, 32, 0.12)">
+                <div class="h" style="color: #0b1220">#F2F2EE</div>
+                <div class="r" style="color: #5d6570">Instrument light — the mark</div>
+              </div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: #d9a441"></div>
+              <div class="info" style="border-color: rgba(11, 18, 32, 0.12)">
+                <div class="h" style="color: #0b1220">#D9A441</div>
+                <div class="r" style="color: #5d6570">Signal amber — the observation point</div>
+              </div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: #0b1220"></div>
+              <div class="info" style="border-color: rgba(11, 18, 32, 0.12)">
+                <div class="h" style="color: #0b1220">#0B1220</div>
+                <div class="r" style="color: #5d6570">Product ink — paper reverse</div>
+              </div>
+            </div>
+            <div class="sw">
+              <div class="chip" style="background: #2563eb"></div>
+              <div class="info" style="border-color: rgba(11, 18, 32, 0.12)">
+                <div class="h" style="color: #0b1220">#2563EB</div>
+                <div class="r" style="color: #5d6570">Brand blue — the core on paper</div>
+              </div>
+            </div>
+          </div>
+          <p class="mono" style="margin-top: 18px; color: #5d6570">
+            On light surfaces the core switches to brand blue. It never switches to amber: amber
+            is a state, not a decoration.
+          </p>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════ rules ═══ -->
+      <section class="band" id="rules">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 06</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Application rules</span>
+          </div>
+          <h2>Six rules, and the reason for each.</h2>
+          <p class="sub" style="margin-bottom: 44px">
+            An identity fails in the small decisions that nobody wrote down. These are the ones
+            that matter here.
+          </p>
+
+          <div class="rules">
+            <div class="rulebox reveal">
+              <div class="canvas">
+                <div class="clearspace">
+                  <div class="frame">
+                    <img src="./assets/mark.svg" width="112" height="112" alt="Mark with clear space" />
+                    <span class="x" style="top: 6px; left: 50%; transform: translateX(-50%)">X</span>
+                    <span class="x" style="bottom: 6px; left: 50%; transform: translateX(-50%)">X</span>
+                    <span class="x" style="left: 6px; top: 50%; transform: translateY(-50%)">X</span>
+                    <span class="x" style="right: 6px; top: 50%; transform: translateY(-50%)">X</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cap"><span class="tag do">RULE 01</span><span class="mono">Clear space = one segment width</span></div>
+            </div>
+
+            <div class="rulebox reveal">
+              <div class="canvas" style="gap: 34px">
+                <img src="./assets/mark.svg" width="112" height="112" alt="Correct: light mark on void" />
+                <img src="./assets/icon-512.png" width="112" height="112" alt="Correct: mark on its own tile" />
+              </div>
+              <div class="cap"><span class="tag do">RULE 02</span><span class="mono">Mark on void, or its own tile</span></div>
+            </div>
+
+            <div class="rulebox reveal">
+              <div class="canvas" style="background: #d9a441">
+                <img src="./assets/mark.svg" width="112" height="112" alt="" style="filter: none" />
+              </div>
+              <div class="cap"><span class="tag dont">AVOID</span><span class="mono">Never on amber — the signal must stay distinct</span></div>
+            </div>
+
+            <div class="rulebox reveal">
+              <div class="canvas">
+                <img src="./assets/mark.svg" width="112" height="112" alt="" style="transform: rotate(12deg)" />
+                <img src="./assets/mark.svg" width="112" height="112" alt="" style="transform: scaleX(1.35); margin-left: -96px; opacity: 0.85" />
+              </div>
+              <div class="cap"><span class="tag dont">AVOID</span><span class="mono">No rotation, stretch or skew</span></div>
+            </div>
+
+            <div class="rulebox reveal">
+              <div class="canvas">
+                <img src="./assets/mark.svg" width="112" height="112" alt="" style="filter: drop-shadow(0 10px 22px rgba(0,0,0,0.7))" />
+                <img src="./assets/mark.svg" width="112" height="112" alt="" style="filter: blur(1.4px); margin-left: 28px" />
+              </div>
+              <div class="cap"><span class="tag dont">AVOID</span><span class="mono">No shadow, glow, blur or gradient</span></div>
+            </div>
+
+            <div class="rulebox reveal">
+              <div class="canvas" style="gap: 26px; color: #f2f2ee">
+                <img src="./assets/mark.svg" width="112" height="112" alt="Mark with amber core only" />
+                <img src="./assets/mark-mono-512.png" width="112" height="112" alt="One-colour mark" />
+              </div>
+              <div class="cap"><span class="tag do">RULE 06</span><span class="mono">Two-colour, or one colour. Nothing between</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ════════════════════════════════════════════════════ files ═══ -->
+      <section class="band" id="files">
+        <div class="wrap">
+          <div class="fig-head">
+            <span class="num">FIG. 07</span>
+            <span class="rule" style="flex: 1"></span>
+            <span class="mono">Assets</span>
+          </div>
+          <h2>Everything below is generated by one script.</h2>
+          <p class="sub" style="margin-bottom: 32px">
+            <code class="kbd">design/logo/generate.cjs</code> writes every file in this section,
+            including the copies the frontend serves. Change a variable, re-run, review.
+          </p>
+          <figure class="plate reveal" style="margin: 0 0 40px">
+            <div class="canvas" style="padding: 0; display: block; background: var(--void)">
+              <img src="../brand-sheet.svg" alt="RELIASTRA identity sheet: primary mark, paper and one-colour forms, size ladder, lockups and colour tokens" style="display: block; width: 100%; height: auto" />
+            </div>
+            <figcaption class="cap">
+              <span class="mono">Brand sheet — one image, the whole identity</span>
+              <span class="mono"><a href="../brand-sheet-1600.png" style="color: var(--signal); text-decoration: none">download PNG 1600 × 1180</a></span>
+            </figcaption>
+          </figure>
+          <table class="files">
+            <thead>
+              <tr><th>File</th><th>Use</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="f"><a href="../mark.svg">mark.svg</a></td><td>Primary mark</td><td>Light on void · 100 × 100 · no font</td></tr>
+              <tr><td class="f"><a href="../mark-ink.svg">mark-ink.svg</a></td><td>Mark on paper</td><td>Ink + brand blue</td></tr>
+              <tr><td class="f"><a href="../mark-mono.svg">mark-mono.svg</a></td><td>One colour</td><td>Stamps, engraving, low-colour print</td></tr>
+              <tr><td class="f"><a href="../lockup-horizontal.svg">lockup-horizontal.svg</a></td><td>Lockup — void</td><td>Wordmark outlined as paths</td></tr>
+              <tr><td class="f"><a href="../lockup-horizontal-ink.svg">lockup-horizontal-ink.svg</a></td><td>Lockup — paper</td><td>Ink wordmark, brand core</td></tr>
+              <tr><td class="f"><a href="../lockup-horizontal-mono.svg">lockup-horizontal-mono.svg</a></td><td>Lockup — one colour</td><td>Single-value reproduction</td></tr>
+              <tr><td class="f"><a href="../lockup-stacked.svg">lockup-stacked.svg</a></td><td>Covers &amp; plates</td><td>Mark over name over descriptor</td></tr>
+              <tr><td class="f"><a href="../app-icon.svg">app-icon.svg</a> · <a href="../favicon-32.png">favicon-32.png</a> · <a href="../favicon-16.png">favicon-16.png</a></td><td>Icons</td><td>Void tile, optical inset</td></tr>
+              <tr><td class="f"><a href="../app-icon-512.png">app-icon-512.png</a> · <a href="../app-icon-1024.png">1024</a> · <a href="../apple-touch-icon-180.png">apple-180</a></td><td>App icons</td><td>Sharp corners, tile inset 17%</td></tr>
+              <tr><td class="f"><a href="../avatar.svg">avatar.svg</a> · <a href="../avatar-512.png">avatar-512.png</a></td><td>Email &amp; social avatar</td><td>Larger inset — survives round crop</td></tr>
+              <tr><td class="f"><a href="../mark-1024.png">mark-1024.png</a> · <a href="../lockup-horizontal-1600.png">lockup-horizontal-1600.png</a></td><td>Raster masters</td><td>Transparent background</td></tr>
+              <tr><td class="f"><a href="../brand-sheet.svg">brand-sheet.svg</a> · <a href="../brand-sheet-1600.png">1600</a> · <a href="../brand-sheet-3200.png">3200</a></td><td>One-image brand sheet</td><td>PRs, decks, social — no font dependency</td></tr>
+              <tr><td class="f"><a href="../construction.svg">construction.svg</a> · <a href="../parts.svg">parts.svg</a></td><td>Specification plates</td><td>Grid and assembly reference</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap foot-grid">
+        <span style="display: flex; align-items: center; gap: 14px">
+          <img src="./assets/mark.svg" width="26" height="26" alt="" />
+          <span class="mono">The aperture — reliastra identity system v1.0</span>
+        </span>
+        <span class="mono">Reliastra, Inc. · reliastra.com</span>
+      </div>
+    </footer>
+
+    <script>
+      // Mark assembly: plays once, on load, and again as the page is scrolled
+      // back to the top. Nothing loops - a mark that never stops moving is
+      // decoration, and this identity is an instrument.
+      var hero = document.getElementById('heroMark');
+      requestAnimationFrame(function () { hero.classList.add('play'); });
+
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+      // Replay the assembly whenever the hero mark re-enters the viewport.
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting && !hero.classList.contains('play')) {
+            hero.classList.add('play');
+          }
+        });
+      }).observe(hero);
+    </script>
+  </body>
+</html>

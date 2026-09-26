@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="RELIASTRA">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="RELIASTRA">
   <title>RELIASTRA</title>
-  <rect width="32" height="32" fill="#08090A"/>
-  <g transform="translate(5.44 5.44) scale(0.21)">
+  <rect width="512" height="512" fill="#08090A"/>
+  <g transform="translate(87.04 87.04) scale(3.38)">
     <g stroke="#F2F2EE" stroke-width="13" fill="none">
       <path d="M45.05 5.05L94.95 54.95"/>
       <path d="M94.95 45.05L45.05 94.95"/>
