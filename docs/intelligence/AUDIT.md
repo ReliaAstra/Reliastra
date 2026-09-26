@@ -1,7 +1,6 @@
 # RELIASTRA Public Intelligence Architecture - Audit, Target Design and Rollout Plan
 
-Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-6 landed; the RSS incidents feed
-landed ahead of its phase 7 slot with phase 4). Baseline: commit 4055ba5.
+Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-7 landed). Baseline: commit 4055ba5.
 Scope: what exists (audited, tested, in production semantics), what to build, in
 what order, and why each piece respects the constraints that govern this project.
 
@@ -235,8 +234,29 @@ the two surfaces can never tell two different stories about the same window.
   - Tests: 14 engine table tests (slug grammar, composition, sidecar,
     unreadable-throw), 11 source-contract tests (three-way outcomes,
     noindex decisions, one-source-of-truth assertions), 3 sitemap tests.
-- Phase 7 RSS/Atom feeds remaining (catalog feed, per-vendor feeds if the
-  catalog size warrants it). PARTIALLY DONE via the incidents feed above.
+- Phase 7 RSS/Atom feeds remaining. DONE (beyond the phase 4 incidents feed).
+  - `lib/observatory/feed.ts`: the one RSS 2.0 builder every feed emits
+    through - guid identity rules, measurement-exact descriptions, XML
+    escaping, channel wrapper, shared cache headers, and the degrade rule
+    (an unreadable API yields a valid, intentionally empty document, never a
+    5xx feed: feed readers hammer infrastructure hardest during storms).
+  - Per-vendor incident feeds at `/observatory/{vendor}/incidents/feed.xml`:
+    same public search read as the global feed with the vendor filter, so a
+    subscriber sees exactly the entries the cross-vendor feed carries.
+    Untracked name -> 404 (the URL was never valid); unreadable -> empty
+    channel.
+  - Catalog feed at `/observatory/catalog.xml`: tracked-dependency
+    announcements, guid = vendor slug, pubDate = the catalog row's own
+    created_at or none. Reads the discovery catalog (the sitemap's read,
+    with the six-hour last-good fallback), never invents dates, never lists
+    non-public vendors, quiet unless the catalog changes.
+  - The global incidents feed was refactored onto the shared builder
+    (identical output); feeds are not sitemap entries; llms.txt and
+    llms-full.txt document all three.
+  - Tests: 11 builder table tests (titles, exact measurement descriptions,
+    escaping, valid empty documents) and 12 source-contract tests (shared
+    builder as single composition point, degrade rules, 404 semantics,
+    no-fabricated-dates, feeds absent from the sitemap).
 - Phase 8 GitHub dataset publisher (outbox pattern). PLANNED.
 - Phase 9 newsletter/social draft generation. PLANNED.
 - Phase 10 ops views, data quality (dead target detection, broken identity

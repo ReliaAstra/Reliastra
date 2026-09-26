@@ -140,6 +140,11 @@ with "we do not know" as a first-class state. Its JSON twin is at
 /down/{vendor}/index.json. A slug the catalog does not name 404s; the answer
 is never published from a failed read.
 
+Feeds (RSS 2.0): /observatory/incidents/feed.xml for cross-vendor incident
+detections, /observatory/{vendor}/incidents/feed.xml for one vendor (404 for
+untracked names), /observatory/catalog.xml for newly tracked dependencies.
+An unreadable API degrades every feed to a valid empty document.
+
 ## Dependency records (enumerated, do not guess slugs)
 
 ${RECORDS_MARKER}
