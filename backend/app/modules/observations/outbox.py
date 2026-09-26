@@ -3,6 +3,8 @@
 The outbox guarantees at-least-once delivery of observations to the immutable
 evidence stream: events are committed atomically with the check result that
 produced them, and this module drains them into ``observations`` afterwards.
+The publication surfaces ride the same queue as fast paths: evidence
+freezes, dataset refreshes, and digest social drafts.
 
 Draining is a dispatch over event types, not an if-chain: each producer
 registers a handler that does its work and lets the caller delete the event
@@ -79,10 +81,19 @@ async def _handle_public_dataset_refresh(
     await handle_dataset_refresh(session, payload)
 
 
+async def _handle_digest_social_draft(
+    session: AsyncSession, payload: str
+) -> None:
+    from app.modules.digest.service import handle_social_draft_requested
+
+    await handle_social_draft_requested(session, payload)
+
+
 HANDLERS: dict[str, Handler] = {
     "observation_created": _handle_observation_created,
     "public_incident_evidence_requested": _handle_public_incident_evidence,
     "public_dataset_refresh_requested": _handle_public_dataset_refresh,
+    "digest_social_draft_requested": _handle_digest_social_draft,
 }
 
 

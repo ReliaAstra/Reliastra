@@ -106,8 +106,10 @@ async def test_engine(setup_test_db_server: str) -> AsyncGenerator[AsyncEngine, 
             "partner_payouts",
             "partner_referrals",
             "partner_profiles",
-            # Public intelligence surfaces (children first: evidence and the
-            # dataset ledger reference public_incidents / nothing).
+            # Public intelligence surfaces (children first: the dataset
+            # ledger, digest drafts, and evidence reference public_incidents
+            # / nothing).
+            "digest_drafts",
             "dataset_publications",
             "public_incident_evidence",
             "public_incidents",

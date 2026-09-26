@@ -436,6 +436,12 @@ class PublicIncidentEvidenceService:
         from app.modules.dataset.service import enqueue_dataset_refresh
 
         enqueue_dataset_refresh(session)
+        # The per-incident social draft rides the same durable pattern: a
+        # lifecycle change may need a new draft version, and content-hash
+        # idempotency makes redelivery a no-op.
+        from app.modules.digest.service import enqueue_social_draft
+
+        enqueue_social_draft(session, incident.id)
         return "created"
 
     async def _window_observations(

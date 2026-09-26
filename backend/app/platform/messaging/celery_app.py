@@ -43,6 +43,7 @@ celery_app = Celery(
         "app.modules.notifications.tasks",
         "app.modules.observations.tasks",
         "app.modules.dataset.tasks",
+        "app.modules.digest.tasks",
         "app.modules.api_keys.tasks",
         "app.modules.billing.tasks",
         "app.modules.partners.tasks",
@@ -139,6 +140,15 @@ celery_app.conf.update(
         "public-dataset-publish": {
             "task": "app.modules.dataset.tasks.publish_public_dataset",
             "schedule": crontab(minute=30, hour=5),
+            "options": {"expires": 3600},
+        },
+        # Digest drafts: weekly newsletter + per-incident social drafts for
+        # the previous ISO week. Idempotent per content hash - a quiet week
+        # or an unchanged week drafts nothing new. Drafts only: a human
+        # reviews; nothing auto-posts.
+        "digest-drafts": {
+            "task": "app.modules.digest.tasks.generate_digest_drafts",
+            "schedule": crontab(minute=0, hour=6, day_of_week=1),
             "options": {"expires": 3600},
         },
         # Interval is env-configurable (CHECK_SCHEDULE_SECONDS).

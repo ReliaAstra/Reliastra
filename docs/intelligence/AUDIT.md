@@ -1,6 +1,6 @@
 # RELIASTRA Public Intelligence Architecture - Audit, Target Design and Rollout Plan
 
-Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-8 landed). Baseline: commit 4055ba5.
+Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-9 landed). Baseline: commit 4055ba5.
 Scope: what exists (audited, tested, in production semantics), what to build, in
 what order, and why each piece respects the constraints that govern this project.
 
@@ -294,7 +294,40 @@ the two surfaces can never tell two different stories about the same window.
     commit -> ledger row -> republish no-op; the scheduled path recovering
     a processor outage; the unconfigured publisher consuming events without
     publishing. Test teardown now truncates the public intelligence tables.
-- Phase 9 newsletter/social draft generation. PLANNED.
+- Phase 9 newsletter/social draft generation. DONE.
+  - `digest_drafts` table (migration 0043): an append-only ledger of
+    generated DRAFT content. The pipeline ends at these rows: status is
+    constrained to ``draft`` and only a human moves content onward (on the
+    admin surface or outside it). No auto-posting exists anywhere in the
+    pipeline, and the admin surface deliberately exposes no send endpoint.
+  - One canonical source, a fourth renderer: the newsletter and the social
+    post render the same canonical incident detail objects as the public
+    API, the HTML pages, the RSS feeds, and the GitHub dataset. The
+    measurement statement is word-for-word the feed's sentence - one claim
+    phrasing everywhere. Deterministic: no wall-clock values in content
+    (the window is an argument); an empty week produces an explicit "no
+    confirmed incidents" issue, because absence in our records is a fact.
+  - Idempotency and append-only versioning: content hash over the draft
+    tuple, unique per (kind, period_key, content_hash). Unchanged content
+    regenerates as a no-op; changed content (an incident resolved after
+    its draft was reviewed) becomes a NEW row - reviewed drafts are never
+    mutated behind the reviewer's back.
+  - Triggers: the evidence freeze enqueues a
+    `digest_social_draft_requested` outbox event (fast path, at-least-once,
+    redelivery is a no-op); a Monday 06:00 beat task is the guaranteed
+    weekly reconciliation, drafting the newsletter and any missing or stale
+    social drafts for the previous ISO week; an admin POST /generate runs
+    the beat's exact code path by hand. Failure retries with backoff; the
+    probes are never involved.
+  - Admin surface `/v1/admin/digest` (system-admin gated): list drafts,
+    read one verbatim (the reviewer reads exactly what was generated), and
+    the manual generate trigger. Mounted via the router registry.
+  - Tests: builder table tests pinning every claim sentence, escaping, URL
+    shapes, determinism, and the empty-window issue; service tests for
+    idempotency, append-only versioning, window collection, and outbox
+    handler redelivery; three integration tests on real Postgres covering
+    the freeze-to-draft pipeline, resolution versioning, and the admin API
+    (including that the surface has no send endpoint).
 - Phase 10 ops views, data quality (dead target detection, broken identity
   links, stale registries), load tests at 250+ vendors. PLANNED.
 
