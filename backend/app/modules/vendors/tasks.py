@@ -2,7 +2,9 @@
 import logging
 import uuid
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import select
+
 from app.config import settings
 from app.infrastructure.async_tasks import async_task_body
 from app.infrastructure.celery_app import celery_app
@@ -56,12 +58,33 @@ def execute_vendor_check(endpoint_id: str, scheduled_at: str, region: str):
             return None
         result = await observe_http(endpoint.endpoint_url, timeout=15.0, probe_id=endpoint_id)
         observed_at = datetime.now(timezone.utc)
-        await observation_service.record_observation(session, ObservationCreateDTO(
+        observation = await observation_service.record_observation(session, ObservationCreateDTO(
             timestamp=observed_at, source_type='vendor_probe', source_id=endpoint.id,
             region=region, endpoint_url=endpoint.endpoint_url, latency_ms=result.latency_ms,
             status_code=result.status_code, error_type=None if result.is_up else 'probe_failed',
             error_message=result.error_message, metadata={'is_up': result.is_up},
         ))
+        # Public incident intelligence: feed the just-recorded observation
+        # into the shared deterministic detector. Runs in the same
+        # transaction, with the endpoint row already locked FOR UPDATE, so
+        # the observation and any incident transition commit or roll back
+        # together. A detection failure must not lose the measurement, so it
+        # is isolated and logged; the incident then simply appears on the
+        # next probe's evaluation.
+        try:
+            from app.modules.incidents.public_service import public_incident_service
+            await public_incident_service.apply_vendor_observation(
+                session,
+                endpoint=endpoint,
+                vendor=vendor,
+                observation=observation,
+                region=region,
+            )
+        except Exception:
+            logger.exception(
+                'Public incident evaluation failed for endpoint=%s; observation is preserved',
+                endpoint_id,
+            )
         endpoint.regions = [region]
         endpoint.last_check_at = observed_at
         endpoint.health_status = 'operational' if result.is_up else 'down'

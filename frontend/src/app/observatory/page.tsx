@@ -296,6 +296,13 @@ export default async function ObservatoryIndexPage() {
               {freshest ? utcStamp(freshest) : NO_OBSERVATION}
             </IndexFact>
           </dl>
+          <p className="mt-8 border-t border-[var(--ob-line-2)] pt-5 text-[13.5px] text-[var(--ob-text-3)]">
+            Failure windows these probes confirmed are published as{' '}
+            <Link href={SHARE_ROUTES.observatoryIncidents} className="ob-link">
+              observed incident records
+            </Link>{' '}
+            - searchable across every dependency above.
+          </p>
         </div>
       </header>
 

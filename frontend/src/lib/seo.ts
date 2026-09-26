@@ -893,6 +893,13 @@ const CORE_PUBLIC_PAGES: PublicPage[] = [
   { path: '/product', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/product/evidence', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/observatory', changeFrequency: 'hourly', priority: 0.9 },
+  {
+    // The cross-vendor observed incident search - the public product surface
+    // of the public incident detector, hourly like the observatory itself.
+    path: '/observatory/incidents',
+    changeFrequency: 'hourly',
+    priority: 0.8,
+  },
   { path: '/pricing', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/docs', changeFrequency: 'weekly', priority: 0.8 },
   { path: DOCS_ROUTES.quickstart, changeFrequency: 'monthly', priority: 0.7 },

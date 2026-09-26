@@ -410,10 +410,41 @@ class VendorService:
         vendor_name: str,
         limit: int = 50,
     ) -> VendorIncidentsResponse:
-        vendor, _, urls = await self._vendor_and_urls(session, vendor_name)
-        # Public probes currently persist observations, not customer incidents.
-        # Customer incident records are tenant-private even for a public URL.
-        return VendorIncidentsResponse(vendor_name=vendor.vendor_name, incidents=[])
+        """Incidents RELIASTRA's public detector opened on this vendor.
+
+        These come exclusively from public probe observations (see
+        app/modules/incidents/public_service.py). Customer incident records
+        are tenant-private even for a public URL and never appear here; the
+        evidence-published counterpart lives at
+        ``/v1/vendors/{name}/incidents/public`` (evidence gate).
+        """
+        from app.modules.incidents.public_service import public_incident_service
+
+        vendor = await self.repository.get_by_name(session, vendor_name)
+        if vendor is None:
+            raise ResourceNotFoundException(f"Vendor '{vendor_name}' not found")
+        incidents = await public_incident_service.list_vendor_incidents(
+            session, vendor, limit=limit
+        )
+        return VendorIncidentsResponse(
+            vendor_name=vendor.vendor_name,
+            incidents=[
+                VendorIncidentResponse(
+                    incident_id=incident.id,
+                    dependency_name=incident.target_name or vendor.display_name,
+                    started_at=incident.started_at,
+                    resolved_at=incident.resolved_at,
+                    severity=incident.severity,
+                    status=incident.status,
+                    duration_seconds=(
+                        (incident.resolved_at - incident.started_at).total_seconds()
+                        if incident.resolved_at is not None
+                        else None
+                    ),
+                )
+                for incident in incidents
+            ],
+        )
 
     async def get_developer_info(
         self,
