@@ -29,6 +29,7 @@ from app.modules.badges.router import router as badges_router
 from app.modules.billing.router import router as billing_router
 from app.modules.checks.router import router as checks_router
 from app.modules.dashboard.router import router as dashboard_router
+from app.modules.data_quality.admin_router import router as data_quality_admin_router
 from app.modules.dependencies.router import router as dependencies_router
 from app.modules.digest.admin_router import router as digest_admin_router
 from app.modules.email_center.router import router as email_center_router
@@ -131,6 +132,12 @@ ROUTER_REGISTRY: tuple[RouterMount, ...] = (
         digest_admin_router,
         True,
         "admin: newsletter/social drafts for human review (generation + read, never send)",
+    ),
+    RouterMount(
+        "data_quality_admin",
+        data_quality_admin_router,
+        True,
+        "admin: derived data-quality report over the measurement registry (read-only)",
     ),
     RouterMount("outreach_admin", outreach_admin_router, False, "B2B: outreach sequences"),
 )

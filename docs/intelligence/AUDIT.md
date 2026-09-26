@@ -1,6 +1,6 @@
 # RELIASTRA Public Intelligence Architecture - Audit, Target Design and Rollout Plan
 
-Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-9 landed). Baseline: commit 4055ba5.
+Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-10 landed). Baseline: commit 4055ba5.
 Scope: what exists (audited, tested, in production semantics), what to build, in
 what order, and why each piece respects the constraints that govern this project.
 
@@ -328,8 +328,36 @@ the two surfaces can never tell two different stories about the same window.
     handler redelivery; three integration tests on real Postgres covering
     the freeze-to-draft pipeline, resolution versioning, and the admin API
     (including that the surface has no send endpoint).
-- Phase 10 ops views, data quality (dead target detection, broken identity
-  links, stale registries), load tests at 250+ vendors. PLANNED.
+- Phase 10 ops views, data quality, scale proof. DONE.
+  - `data_quality` module (no tables, by design): the report is DERIVED
+    from current rows on every read, so a finding can never disagree with
+    the data it describes. Three families, from the risk table's "targets
+    that fail first-contact probing":
+    - dead targets: active endpoints whose probe attempts in the window
+      all failed (zero successes over at least N attempts, N configurable
+      per request). Measuring a dead target silently poisons "no
+      incidents" with "we never reached it", so it must be visible.
+    - stale registry: active endpoints never checked past a 24h grace
+      window, checkpoints overdue beyond 3x their own interval, and public
+      vendors left with no active endpoints.
+    - broken identity: malformed identity links (scheme/host), a
+      plain-HTTP probe target, an empty display name, a category outside
+      the canonical taxonomy. Deliberately conservative - no domain-suffix
+      matching, which would flag legitimate dedicated status domains.
+  - Report-only: the scan never mutates vendor or endpoint rows.
+    Deactivating a dead target suppresses measurement, so that decision
+    stays human, taken from the report.
+  - Admin surface `/v1/admin/data-quality/report` (system-admin gated,
+    read-only), mounted via the router registry; success predicate in SQL
+    mirrors the detector's `_observation_is_up` and the scale suite
+    exercises both on the same rows.
+  - Scale proof (the modularity bar, at 5x): an integration suite writes a
+    synthetic 260-vendor registry the way production writes it - probe
+    observations on the vendor-probe stream, detection interleaved
+    chronologically - then exercises the data-quality scan, public
+    incident search, dataset tree derivation, and weekly digest generation
+    against it, asserting exact findings (10 planted dead targets, stale
+    rows, broken identity) under generous architectural time guards.
 
 Each phase leaves the system deployable; no destructive changes in this set.
 
