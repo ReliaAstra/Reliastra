@@ -1,6 +1,7 @@
 import logging
 import uuid
 from typing import Any
+
 from app.infrastructure.async_tasks import async_task_body
 from app.infrastructure.celery_app import celery_app
 
@@ -79,5 +80,35 @@ def resolve_incident(
                 request_id,
             )
             raise
+
+    return async_task_body(_run)
+
+
+@celery_app.task(
+    name="app.modules.incidents.tasks.reconcile_public_incident_evidence",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=3,
+)
+def reconcile_public_incident_evidence(
+    limit: int = 200, request_id: str | None = None
+) -> int:
+    """Guaranteed freeze path for public incident evidence.
+
+    The outbox event enqueued with each incident transition is the fast
+    path; this daily sweep is the recovery path for anything an outage
+    skipped (or incidents frozen before evidence existed). Freezing is
+    idempotent - an incident whose latest artifact already reflects its
+    live state is a no-op - so the sweep can run as often as the schedule
+    likes without producing duplicate versions.
+    """
+
+    async def _run(session) -> int:
+        from app.modules.incidents.public_evidence import (
+            public_incident_evidence_service,
+        )
+
+        return await public_incident_evidence_service.reconcile(session, limit)
 
     return async_task_body(_run)

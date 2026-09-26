@@ -904,6 +904,50 @@ export interface TrackObservedIncidentDetail extends TrackObservedIncident {
   detection_rule: string | null;
   detection_metadata: Record<string, unknown> | null;
   description: string | null;
+  /**
+   * The newest frozen evidence artifact, when one has been generated. Null
+   * until the backend freeze processor has run for this record's current
+   * state - absence is "not generated yet", never "unverifiable by design".
+   */
+  evidence: TrackIncidentEvidence | null;
+}
+
+/**
+ * Metadata for one frozen public evidence artifact. The artifact bytes live
+ * at `publicIncidentEvidencePath(id)`; this descriptor is what a page needs
+ * to link and describe them without fetching them.
+ */
+export interface TrackIncidentEvidence {
+  version: number;
+  incident_status: string;
+  artifact_schema_version: string;
+  methodology_version: string;
+  /** SHA-256 of the artifact's canonical bytes, hex encoded. */
+  data_hash: string;
+  byte_size: number;
+  observation_count: number;
+  observations_truncated: boolean;
+  generated_at: string;
+}
+
+/**
+ * The site-relative path of one incident's frozen evidence document. Served
+ * byte-for-byte by the backend through the site's own v1 proxy, so a browser
+ * fetch stays same-origin and a verifier hashes exactly the stored bytes.
+ */
+export function publicIncidentEvidencePath(incidentId: string): string {
+  return `/api/v1/public/incidents/${enc(incidentId)}/evidence`;
+}
+
+/**
+ * One pinned evidence version. Frozen artifacts never change, so this URL
+ * is what a citation pins when the record may gain a newer freeze later.
+ */
+export function publicIncidentEvidenceVersionPath(
+  incidentId: string,
+  version: number
+): string {
+  return `/api/v1/public/incidents/${enc(incidentId)}/evidence/versions/${version}`;
 }
 
 /** One cursor page of the cross-vendor incident search. */

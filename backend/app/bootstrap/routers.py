@@ -2,12 +2,12 @@
 
 Each entry records whether the router is mounted and why. Unmounted routers
 are still imported (an import-time check that the preserved code is intact)
-but never exposed — to restore one, flip ``mounted`` to True and restore the
+but never exposed - to restore one, flip ``mounted`` to True and restore the
 frontend routes recorded in ``docs/redesign/``.
 
 The developer-first product mounts only the surfaces below. The B2B surfaces
 (agencies, partner portal, growth funnel, badges, status pages, campaign
-tooling, outreach) are unmounted — stage 1 of a two-stage removal; module
+tooling, outreach) are unmounted - stage 1 of a two-stage removal; module
 code and tables are preserved deliberately and deletion is a separate,
 reviewed change.
 """
@@ -29,7 +29,9 @@ from app.modules.badges.router import router as badges_router
 from app.modules.billing.router import router as billing_router
 from app.modules.checks.router import router as checks_router
 from app.modules.dashboard.router import router as dashboard_router
+from app.modules.data_quality.admin_router import router as data_quality_admin_router
 from app.modules.dependencies.router import router as dependencies_router
+from app.modules.digest.admin_router import router as digest_admin_router
 from app.modules.email_center.router import router as email_center_router
 from app.modules.email_events.admin_router import router as email_admin_router
 from app.modules.email_events.router import router as email_webhook_router
@@ -125,6 +127,18 @@ ROUTER_REGISTRY: tuple[RouterMount, ...] = (
     RouterMount("public_analytics", public_analytics_router, False, "B2B: public marketing metrics"),
     RouterMount("email_admin", email_admin_router, True, "admin: email campaign inspection (read-only)"),
     RouterMount("email_center", email_center_router, True, "admin: operational email via Resend"),
+    RouterMount(
+        "digest_admin",
+        digest_admin_router,
+        True,
+        "admin: newsletter/social drafts for human review (generation + read, never send)",
+    ),
+    RouterMount(
+        "data_quality_admin",
+        data_quality_admin_router,
+        True,
+        "admin: derived data-quality report over the measurement registry (read-only)",
+    ),
     RouterMount("outreach_admin", outreach_admin_router, False, "B2B: outreach sequences"),
 )
 

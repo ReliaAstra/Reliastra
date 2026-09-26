@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 import { PUBLIC_PAGES } from '@/lib/seo';
-import { RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
+import { RESEARCH_ARTICLES, SHARE_ROUTES, researchRoute } from '@/lib/routes';
 import { SITE_URL } from '@/lib/site-url';
 
 /**
@@ -81,6 +81,29 @@ export function staticSitemapEntries(base: string = siteBase()): Sitemap {
       ...(lastModified ? { lastModified } : {}),
     };
   });
+}
+
+/**
+ * One entry per measured vendor: its direct-answer question page
+ * (`/down/{vendor}`, "Is {vendor} down?").
+ *
+ * The URL set is exactly the vendor set passed in - the same catalog read
+ * that produced the record URLs, so the two lists cannot disagree about
+ * which vendors exist. No lastmod: the answer re-composes on every
+ * revalidation from observations that carry their own timestamps in the
+ * facts, so the sitemap has no separate date to claim.
+ */
+export function questionEntries(
+  base: string,
+  vendors: ReadonlyArray<{ vendor_name: string | null | undefined }>
+): Sitemap {
+  return vendors
+    .filter((vendor) => !!vendor.vendor_name)
+    .map((vendor) => ({
+      url: absoluteUrl(base, SHARE_ROUTES.vendorQuestion(vendor.vendor_name as string)),
+      changeFrequency: 'hourly' as const,
+      priority: 0.7,
+    }));
 }
 
 /**

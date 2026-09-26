@@ -239,6 +239,13 @@ export function Masthead({
               </>
             )}
             <Link
+              href={SHARE_ROUTES.vendorQuestion(detail.vendor_name)}
+              className="ob-link"
+            >
+              shareable direct answer to this question
+            </Link>{' '}
+            ·{' '}
+            <Link
               href={researchRoute('how-reliastra-measures-vendor-reliability')}
               className="ob-link"
             >

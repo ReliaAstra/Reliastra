@@ -1,6 +1,7 @@
-import type { TrackCurrent, TrackWindowMetrics } from '@/lib/track-api';
+import type { TrackCurrent, TrackWindowMetrics, VendorRecord } from '@/lib/track-api';
 import {
   availability,
+  deriveState,
   latency,
   NO_OBSERVATION,
   statusCode,
@@ -58,6 +59,52 @@ const regionPhrase = (regions: string[]): string =>
 /** `an OpenAI` vs `a Stripe` - a grammar detail worth getting right in prose. */
 export function articleFor(word: string): string {
   return /^[aeiou]/i.test(word.trim()) ? 'an' : 'a';
+}
+
+/**
+ * Compose the answer input from a vendor record.
+ *
+ * Extracted from the dependency record page so the record's masthead answer
+ * and the standalone question page (`/down/{vendor}`) derive the SAME answer
+ * from the SAME record through ONE function - two surfaces, one source of
+ * truth, no drift. Pure over the record: every field below is either a
+ * stored value the API returned or a derivation from such values.
+ *
+ * "Freshest" means the newest completed observation across every declared
+ * region (a record with more than one region shows the most recent of them,
+ * which is what "last observation" means for the vendor as probed); the
+ * 24h window comes from the metrics aggregate exactly as the API returns
+ * it, and the cadence is the first derivable per-region interval.
+ */
+export function answerInputFromRecord(record: VendorRecord): AnswerInput {
+  const { detail, regions, regionObservations, metrics } = record;
+
+  const freshest =
+    regionObservations
+      .map((r) => r.current)
+      .filter((c): c is NonNullable<typeof c> => !!c && !!c.timestamp)
+      .sort((a, b) => Date.parse(b.timestamp!) - Date.parse(a.timestamp!))[0] ?? null;
+
+  let endpointHost: string | null = null;
+  const firstEndpoint = detail.endpoints?.[0]?.endpoint_url;
+  if (firstEndpoint) {
+    try {
+      endpointHost = new URL(firstEndpoint).host;
+    } catch {
+      endpointHost = null;
+    }
+  }
+
+  return {
+    name: detail.display_name,
+    endpointHost,
+    regions,
+    verdict: deriveState(detail.recent_status, freshest),
+    current: freshest,
+    window24h: metrics?.metrics?.['24h'] ?? null,
+    cadenceSeconds:
+      regionObservations.map((r) => r.cadenceSeconds).find((c) => !!c) ?? null,
+  };
 }
 
 export function buildIsDownAnswer(input: AnswerInput): BuiltAnswer {

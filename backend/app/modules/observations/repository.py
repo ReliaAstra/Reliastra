@@ -76,7 +76,15 @@ class ObservationRepository:
         source_type: str = "vendor_probe",
         limit: int = 100,
         since: datetime | None = None,
+        until: datetime | None = None,
     ) -> list[Observation]:
+        """The trailing observation slice for endpoint URLs, newest first.
+
+        The shared read port for everything that replays history against a
+        URL (detection, public evidence windows). Ordering ties break on id
+        so a slice is stable across reads - a replayed window must select
+        exactly the rows the original decision saw.
+        """
         if not endpoint_urls:
             return []
         query = select(Observation).where(
@@ -85,8 +93,12 @@ class ObservationRepository:
         )
         if since:
             query = query.where(Observation.timestamp >= since)
+        if until:
+            query = query.where(Observation.timestamp <= until)
         result = await session.execute(
-            query.order_by(Observation.timestamp.desc()).limit(limit)
+            query.order_by(Observation.timestamp.desc(), Observation.id.desc()).limit(
+                limit
+            )
         )
         return list(result.scalars().all())
 

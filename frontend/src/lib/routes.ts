@@ -180,6 +180,18 @@ export const SHARE_ROUTES = {
   observatoryIncident: (vendor: string, incidentId: string) =>
     `/observatory/${encodeURIComponent(vendor)}/incidents/${encodeURIComponent(incidentId)}`,
   /**
+   * The direct-answer page for one measured vendor: "Is {vendor} down?",
+   * answered from the same measurements as the record (see
+   * `lib/observatory/questions.ts`, the question engine).
+   *
+   * The URL set is as finite as the catalog: a subject exists exactly when
+   * the vendor record exists. A category slug is not a subject - "is
+   * payments down?" is not a question the engine answers - and a slug the
+   * catalog does not name 404s rather than approximating. The JSON twin of
+   * the page sits at `/down/{vendor}/index.json`.
+   */
+  vendorQuestion: (vendor: string) => `/down/${encodeURIComponent(vendor)}`,
+  /**
    * The cross-vendor observed incident search - the public product surface
    * for RELIASTRA's incident detection. Static segment, so it wins over the
    * `[vendor]` catch-all at the same level.

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { PUBLIC_PAGES } from '@/lib/seo';
 import { RESEARCH_ARTICLES, researchRoute } from '@/lib/routes';
 import {
+  questionEntries,
   absoluteUrl,
   articleLastModified,
   dedupeByUrl,
@@ -163,5 +164,42 @@ describe('mapWithConcurrency', () => {
 
   it('treats a ceiling below one as one', async () => {
     expect(await mapWithConcurrency([1, 2, 3], 0, async (n) => n)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('questionEntries', () => {
+  const base = 'https://reliastra.com';
+
+  it('emits one direct-answer URL per named vendor, at hourly cadence', () => {
+    const entries = questionEntries(base, [
+      { vendor_name: 'stripe' },
+      { vendor_name: 'openai' },
+    ]);
+    expect(entries).toEqual([
+      {
+        url: 'https://reliastra.com/down/stripe',
+        changeFrequency: 'hourly',
+        priority: 0.7,
+      },
+      {
+        url: 'https://reliastra.com/down/openai',
+        changeFrequency: 'hourly',
+        priority: 0.7,
+      },
+    ]);
+  });
+
+  it('skips unnamed vendors instead of emitting /down/ with an empty slug', () => {
+    const entries = questionEntries(base, [
+      { vendor_name: 'stripe' },
+      { vendor_name: null },
+      { vendor_name: '' },
+    ]);
+    expect(entries.map((e) => e.url)).toEqual(['https://reliastra.com/down/stripe']);
+  });
+
+  it('claims no lastmod - the answer re-composes from observations that carry their own stamps', () => {
+    const entries = questionEntries(base, [{ vendor_name: 'stripe' }]);
+    expect(entries[0].lastModified).toBeUndefined();
   });
 });
