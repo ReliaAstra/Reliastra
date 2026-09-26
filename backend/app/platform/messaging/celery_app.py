@@ -120,6 +120,15 @@ celery_app.conf.update(
             'schedule': crontab(minute=50, hour=4),
             'options': {'expires': 3600},
         },
+        # Public incident evidence reconciliation: the daily, guaranteed
+        # freeze path behind the outbox fast path. Idempotent by freeze
+        # rule (an artifact matching the incident's state is a no-op), so
+        # the sweep only ever fills genuine gaps.
+        "public-incident-evidence-reconcile": {
+            "task": "app.modules.incidents.tasks.reconcile_public_incident_evidence",
+            "schedule": crontab(minute=10, hour=5),
+            "options": {"expires": 3600},
+        },
         # Interval is env-configurable (CHECK_SCHEDULE_SECONDS).
         "schedule-checks-periodic": {
             "task": "app.modules.checks.tasks.schedule_checks",

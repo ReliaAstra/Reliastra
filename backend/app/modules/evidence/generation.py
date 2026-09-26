@@ -8,7 +8,6 @@ land on the incident as retryable state, never as half-written rows.
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import secrets
 import uuid
@@ -72,21 +71,12 @@ MAX_DOCUMENTED_OBSERVATIONS = 5000
 TARGET_UPTIME_PCT = 100.0
 
 
-def canonical_json_bytes(payload: dict[str, Any]) -> bytes:
-    """Serialise the evidence payload deterministically.
-
-    Sorted keys, compact separators and ``ensure_ascii=False`` so the same
-    facts always produce the same bytes - and therefore the same
-    ``data_hash`` - regardless of insertion order or platform locale. This is
-    the only serialisation that may be hashed.
-    """
-    return json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
-
+# The canonical serialisation moved to ``evidence.canonical`` so the public
+# incident evidence artifacts hash their documents with the exact same
+# function (one definition of "the bytes" for both artifact planes). The name
+# stays importable from here - existing readers (and the service re-export)
+# keep working unchanged.
+from app.modules.evidence.canonical import canonical_json_bytes
 
 
 class EvidenceGeneration:

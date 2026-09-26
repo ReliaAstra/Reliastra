@@ -41,6 +41,25 @@ class PublicIncidentListResponse(BaseModel):
     has_more: bool = False
 
 
+class PublicIncidentEvidenceDescriptor(BaseModel):
+    """Pointer to the incident's published evidence artifact.
+
+    Deliberately metadata only: the artifact itself is served, byte-for-byte,
+    at ``/v1/public/incidents/{id}/evidence`` so a verifier hashes exactly
+    what was stored, never a re-serialisation of it.
+    """
+
+    version: int
+    incident_status: str
+    artifact_schema_version: str
+    methodology_version: str
+    data_hash: str
+    byte_size: int
+    observation_count: int
+    observations_truncated: bool
+    generated_at: datetime
+
+
 class PublicIncidentDetailResponse(PublicIncidentSummary):
     """The full record stored for one incident, including provenance a
     reader can verify the claim from."""
@@ -51,3 +70,7 @@ class PublicIncidentDetailResponse(PublicIncidentSummary):
     detection_rule: str | None = None
     detection_metadata: dict | None = None
     description: str | None = None
+    #: The newest evidence freeze, when one exists. Null until the freeze
+    #: processor has run: absence here is "artifact not generated yet", never
+    #: "this record is unverifiable by design".
+    evidence: PublicIncidentEvidenceDescriptor | None = None

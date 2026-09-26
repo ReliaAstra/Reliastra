@@ -26,6 +26,7 @@ import type {
   TrackObservedIncidentDetail,
   TrackVendorDetail,
 } from '@/lib/track-api';
+import { publicIncidentEvidencePath } from '@/lib/track-api';
 
 /**
  * The public record of a detector-confirmed incident - an incident
@@ -39,6 +40,74 @@ import type {
  * consecutive failed observations against {endpoint}"), never "the vendor
  * was down".
  */
+
+/**
+ * The frozen evidence artifact of this record, when one exists.
+ *
+ * The descriptor comes on the incident detail (the same read that rendered
+ * this page), and the link serves the backend's exact stored bytes through
+ * the site's v1 proxy - a verifier hashes what was frozen, never a
+ * re-serialisation. Absence is printed as what it is: the artifact has not
+ * been generated yet, and this section says so instead of implying the
+ * record is unverifiable.
+ */
+function EvidenceArtifactSection({ incident }: { incident: TrackObservedIncidentDetail }) {
+  const evidence = incident.evidence;
+
+  return (
+    <RecordSection
+      index="04"
+      id="evidence"
+      tone="base"
+      title="Evidence artifact"
+      note="A frozen, hashed document of this record's window: the claim, the detection rule, and every observation row it rests on. Deterministic, reproducible from stored data, immutable once written."
+    >
+      {evidence ? (
+        <dl className="flex flex-col">
+          <SpecRow term="Artifact" wide>
+            <a
+              href={publicIncidentEvidencePath(incident.incident_id)}
+              className="ob-link break-all"
+            >
+              {publicIncidentEvidencePath(incident.incident_id)}
+            </a>{' '}
+            - JSON, served byte-for-byte as stored
+          </SpecRow>
+          <SpecRow term="Content hash" wide>
+            sha256: <span className="break-all">{evidence.data_hash}</span>
+          </SpecRow>
+          <SpecRow term="Freeze" wide>
+            version {evidence.version}, taken while the incident was{' '}
+            {evidence.incident_status === 'resolved' ? 'resolved' : 'open'} (
+            {utcStamp(evidence.generated_at) ?? NOT_RECORDED}); later freezes
+            supersede, never edit, and each stays at its own versioned URL
+          </SpecRow>
+          <SpecRow term="Coverage" wide>
+            {evidence.observation_count} observation
+            {evidence.observation_count === 1 ? '' : 's'} in the window
+            {evidence.observations_truncated
+              ? ' - the artifact discloses that rows beyond the cap were dropped'
+              : ''}
+          </SpecRow>
+          <SpecRow term="Verification" wide>
+            Remove the &quot;verification&quot; key from the document,
+            re-serialise with sorted keys and compact separators, and SHA-256
+            the UTF-8 bytes: the digest must equal the hash above. The recipe
+            ships inside every artifact.
+          </SpecRow>
+        </dl>
+      ) : (
+        <p className="max-w-[78ch] text-[14.5px] leading-relaxed text-[var(--ob-text-2)]">
+          No frozen artifact yet for this record&apos;s current state - the
+          freeze runs shortly after a record opens or resolves, so one may
+          appear here within minutes. The record&apos;s fields above are the
+          claim meanwhile, exactly as the detector wrote them; nothing on this
+          page depends on the artifact existing.
+        </p>
+      )}
+    </RecordSection>
+  );
+}
 
 function failureStateText(kind: string): string {
   switch (kind) {
@@ -236,8 +305,10 @@ export function ObservedIncidentRecord({
         </p>
       </RecordSection>
 
+      <EvidenceArtifactSection incident={incident} />
+
       <RecordSection
-        index="04"
+        index="05"
         id="not-established"
         tone="base"
         title="What this record does not establish"
@@ -264,7 +335,7 @@ export function ObservedIncidentRecord({
         </dl>
       </RecordSection>
 
-      <RecordSection index="05" id="context" title="Where this fits">
+      <RecordSection index="06" id="context" title="Where this fits">
         <ul className="flex flex-col">
           {[
             {

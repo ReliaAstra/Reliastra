@@ -34,6 +34,11 @@ from app.modules.checks.detection import (
     evaluate_detection,
     policy_from_settings,
 )
+from app.modules.incidents.public_evidence import (
+    enqueue_evidence_freeze,
+    public_incident_evidence_service,
+)
+from app.modules.incidents.public_evidence_models import PublicIncidentEvidence
 from app.modules.incidents.public_models import (
     ATTRIBUTION_OBSERVED,
     PublicIncident,
@@ -41,6 +46,7 @@ from app.modules.incidents.public_models import (
 from app.modules.incidents.public_repository import PublicIncidentRepository
 from app.modules.incidents.public_schemas import (
     PublicIncidentDetailResponse,
+    PublicIncidentEvidenceDescriptor,
     PublicIncidentListResponse,
     PublicIncidentSummary,
 )
@@ -204,7 +210,7 @@ class PublicIncidentService:
                 if row.status_code is not None and row.status_code not in codes:
                     codes.append(row.status_code)
             kind = _classify_failure_kind(run)
-            return await self.repository.create(
+            opened = await self.repository.create(
                 session,
                 PublicIncident(
                     vendor_id=vendor.id,
@@ -238,6 +244,11 @@ class PublicIncidentService:
                     ),
                 ),
             )
+            # Evidence fan-out rides the same transaction (outbox): the
+            # freeze job can never lose a transition that committed, and a
+            # failed generation can never lose a measurement.
+            enqueue_evidence_freeze(session, opened.id)
+            return opened
 
         if decision.resolve_incident and open_incident is not None:
             # Resolution is idempotent (the post-remove path checks the row
@@ -262,6 +273,11 @@ class PublicIncidentService:
                 recovery_started_at = observation.timestamp
             open_incident.resolved_at = recovery_started_at
             open_incident.status = "resolved"
+            # The confirming probe, stamped as the evidence window's upper
+            # bound: a fact of the record, so a freeze regenerated at any
+            # later time selects exactly the rows this decision saw.
+            open_incident.resolution_observation_id = str(observation.id)
+            enqueue_evidence_freeze(session, open_incident.id)
             return open_incident
 
         return None
@@ -342,7 +358,10 @@ class PublicIncidentService:
         vendor = await session.get(VendorTracking, incident.vendor_id)
         if vendor is None or not vendor.is_public:
             raise ResourceNotFoundException("Public incident not found")
-        return self._to_detail(incident, vendor)
+        evidence = await public_incident_evidence_service.get_latest(
+            session, incident_id
+        )
+        return self._to_detail(incident, vendor, evidence=evidence)
 
     # ------------------------------------------------------------------
     # Mapping
@@ -379,7 +398,11 @@ class PublicIncidentService:
         )
 
     def _to_detail(
-        self, incident: PublicIncident, vendor: VendorTracking
+        self,
+        incident: PublicIncident,
+        vendor: VendorTracking,
+        *,
+        evidence: PublicIncidentEvidence | None = None,
     ) -> PublicIncidentDetailResponse:
         summary = self._to_summary(incident, vendor)
         return PublicIncidentDetailResponse(
@@ -390,6 +413,21 @@ class PublicIncidentService:
             detection_rule=incident.detection_rule,
             detection_metadata=incident.detection_metadata,
             description=incident.description,
+            evidence=(
+                PublicIncidentEvidenceDescriptor(
+                    version=evidence.version,
+                    incident_status=evidence.incident_status,
+                    artifact_schema_version=evidence.artifact_schema_version,
+                    methodology_version=evidence.methodology_version,
+                    data_hash=evidence.data_hash,
+                    byte_size=evidence.byte_size,
+                    observation_count=evidence.observation_count,
+                    observations_truncated=evidence.observations_truncated,
+                    generated_at=evidence.created_at,
+                )
+                if evidence is not None
+                else None
+            ),
         )
 
 

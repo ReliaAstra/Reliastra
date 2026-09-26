@@ -126,6 +126,14 @@ reconcile the status text published at those URLs, and does not measure a
 vendor's API, models or routes unless an API endpoint is listed as an observed
 target on the record itself.
 
+Machine-readable incident surfaces: each incident record page has a JSON
+sidecar at /observatory/{vendor}/incidents/{incident-id}/index.json (the same
+record, not a second copy of the truth), and each detector-confirmed incident
+has a frozen evidence document at /api/v1/public/incidents/{incident-id}/evidence
+- the claim, the detection rule and every raw observation of the window,
+SHA-256 hashed, immutable per version, with the verification recipe inside the
+document. See llms-full.txt for the exact contracts.
+
 ## Dependency records (enumerated, do not guess slugs)
 
 ${RECORDS_MARKER}

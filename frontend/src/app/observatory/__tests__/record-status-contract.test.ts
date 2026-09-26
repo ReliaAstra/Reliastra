@@ -82,9 +82,14 @@ describe('the incident record', () => {
   it('distinguishes all five outcomes', () => {
     // `observed` is the detector-only record: same stable URL, measurement
     // wording, no evidence publication - a real 200, not a hidden 404.
+    // The union lives on the shared loader (page + sidecar resolve one
+    // record through one code path), so it is asserted there.
+    const loader = read('../../lib/observatory/incident-record.ts');
     for (const kind of ['ok', 'observed', 'vendor-missing', 'incident-missing', 'unreadable']) {
-      expect(incident, `outcome ${kind}`).toContain(`'${kind}'`);
+      expect(loader, `outcome ${kind}`).toContain(`'${kind}'`);
     }
+    // ...and the page must consume the loader, not its own copy.
+    expect(incident).toContain('loadIncidentRecord');
   });
 
   it('throws when the incident list could not be read', () => {
@@ -112,8 +117,12 @@ describe('the incident record', () => {
   it('resolves a detector record by id, not by scraping a list', () => {
     // The page must not need the vendor incident list to answer "does this
     // id exist" - the single-incident read is one throttled call either way,
-    // and a wrong-vendor id on this path is a 404, not a redirect.
-    expect(incident).toContain('readPublicIncident(');
+    // and a wrong-vendor id on this path is a 404, not a redirect. The read
+    // lives on the shared loader; the page (and its sidecar) must not
+    // re-implement it.
+    const loader = read('../../lib/observatory/incident-record.ts');
+    expect(loader).toContain('readPublicIncident(');
+    expect(loader).not.toContain('fetchVendorIncidents');
     expect(incident).not.toContain('fetchVendorIncidents');
   });
 
@@ -174,5 +183,34 @@ describe('every observatory route goes through the deployment gate', () => {
     ] as const) {
       expect(source, `${name} page`).toContain('DISCOVERY_ALTERNATES');
     }
+  });
+});
+
+describe('the incident record JSON sidecar', () => {
+  const sidecar = read('[vendor]/incidents/[id]/index.json/route.ts');
+
+  it('resolves the same record as the page, through the shared loader', () => {
+    // One source of truth, two renderers: the sidecar must not re-read or
+    // scrape the HTML page.
+    expect(sidecar).toContain('loadIncidentRecord(');
+    expect(sidecar).not.toContain('readVendorDetail(');
+    expect(sidecar).not.toContain('readPublicIncident(');
+  });
+
+  it('serves noindex - the HTML record is the indexable unit', () => {
+    expect(sidecar).toContain("'X-Robots-Tag': 'noindex'");
+  });
+
+  it('404s for absent records', () => {
+    expect(sidecar).toContain('status: 404');
+  });
+
+  it('throws on an unreadable API rather than answering 404', () => {
+    // The mapping layer throws RecordUnreadableError for `unreadable`; the
+    // route must not catch it into a 404.
+    expect(sidecar).not.toMatch(/catch/);
+    expect(
+      read('../../lib/observatory/incident-record.ts')
+    ).toMatch(/throw new RecordUnreadableError/);
   });
 });

@@ -65,13 +65,22 @@ def service(repo):
     return PublicIncidentService(repository=repo)
 
 
-async def _apply(service, monkeypatch, stored_newest_first, observation, endpoint, vendor):
+async def _apply(
+    service,
+    monkeypatch,
+    stored_newest_first,
+    observation,
+    endpoint,
+    vendor,
+    session=None,
+):
     monkeypatch.setattr(
         ObservationRepository,
         "list_for_endpoints",
         AsyncMock(return_value=list(stored_newest_first)),
     )
-    session = AsyncMock()
+    if session is None:
+        session = AsyncMock()
     return await service.apply_vendor_observation(
         session,
         endpoint=endpoint,
@@ -120,7 +129,11 @@ async def test_two_consecutive_failures_open_confirmed_incident(service, repo, e
 
 @pytest.mark.asyncio
 async def test_open_incident_is_not_reopened_by_more_failures(service, repo, endpoint, vendor, monkeypatch):
-    open_incident = SimpleNamespace(status="open", resolved_at=None)
+    # Fully specified record: the resolution path now also stamps the
+    # confirming observation id and enqueues an evidence freeze for it.
+    open_incident = SimpleNamespace(
+        id=uuid.uuid4(), status="open", resolved_at=None
+    )
     repo.get_open_for_endpoint = AsyncMock(return_value=open_incident)
     fail1 = _obs_fail(0, 503, "HTTP 503")
     fail2 = _obs_fail(5, 503, "HTTP 503")
@@ -133,7 +146,11 @@ async def test_open_incident_is_not_reopened_by_more_failures(service, repo, end
 
 @pytest.mark.asyncio
 async def test_recovery_requires_consecutive_successes(service, repo, endpoint, vendor, monkeypatch):
-    open_incident = SimpleNamespace(status="open", resolved_at=None)
+    # Fully specified record: the resolution path now also stamps the
+    # confirming observation id and enqueues an evidence freeze for it.
+    open_incident = SimpleNamespace(
+        id=uuid.uuid4(), status="open", resolved_at=None
+    )
     repo.get_open_for_endpoint = AsyncMock(return_value=open_incident)
     fail1 = _obs_fail(0, 503, "HTTP 503")
     fail2 = _obs_fail(5, 503, "HTTP 503")
@@ -180,3 +197,85 @@ def test_failure_kind_classification():
         == "mixed"
     )
     assert _classify_failure_kind([]) == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Evidence freeze fan-out (phase 5): the transition transaction also leaves a
+# durable outbox event behind, so evidence generation can never lose a
+# transition that committed.
+# ---------------------------------------------------------------------------
+
+
+def _outbox_events(mock_session):
+    from app.modules.observations.models import OutboxEvent
+
+    return [
+        call.args[0]
+        for call in mock_session.add.call_args_list
+        if isinstance(call.args[0], OutboxEvent)
+    ]
+
+
+@pytest.mark.asyncio
+async def test_opening_incident_enqueues_evidence_freeze(service, repo, endpoint, vendor, monkeypatch):
+    ok1 = _obs(0, ok=True)
+    fail1 = _obs_fail(5, 503, "HTTP 503")
+    fail2 = _obs_fail(10, 503, "HTTP 503")
+    session = AsyncMock()
+    monkeypatch.setattr(
+        ObservationRepository,
+        "list_for_endpoints",
+        AsyncMock(return_value=[fail1, ok1]),
+    )
+
+    opened = await service.apply_vendor_observation(
+        session,
+        endpoint=endpoint,
+        vendor=vendor,
+        observation=fail2,
+        region="us-east",
+    )
+
+    assert opened is not None
+    events = _outbox_events(session)
+    assert len(events) == 1
+    assert events[0].event_type == "public_incident_evidence_requested"
+    import json as _json
+
+    assert _json.loads(events[0].payload) == {"incident_id": str(opened.id)}
+
+
+@pytest.mark.asyncio
+async def test_resolution_enqueues_evidence_freeze_and_stamps_confirming_probe(
+    service, repo, endpoint, vendor, monkeypatch
+):
+    open_incident = SimpleNamespace(
+        id=uuid.uuid4(), status="open", resolved_at=None
+    )
+    repo.get_open_for_endpoint = AsyncMock(return_value=open_incident)
+    ok1 = _obs(10, ok=True)
+    ok2 = _obs(15, ok=True)
+    session = AsyncMock()
+
+    result = await _apply(
+        service, monkeypatch, [ok1], ok2, endpoint, vendor, session=session
+    )
+
+    assert result is open_incident
+    # The recovery run's confirming probe is stamped as the evidence
+    # window's upper bound: a fact of the record, not of generation time.
+    assert open_incident.resolution_observation_id == str(ok2.id)
+    events = _outbox_events(session)
+    assert len(events) == 1
+    assert events[0].event_type == "public_incident_evidence_requested"
+
+
+@pytest.mark.asyncio
+async def test_non_transitioning_observation_enqueues_nothing(service, repo, endpoint, vendor, monkeypatch):
+    ok1 = _obs(0, ok=True)
+    ok2 = _obs(5, ok=True)
+    session = AsyncMock()
+
+    await _apply(service, monkeypatch, [ok1], ok2, endpoint, vendor, session=session)
+
+    assert _outbox_events(session) == []

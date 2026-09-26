@@ -2,17 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { RecordUnreadableError, regionsOf } from '@/lib/track-api';
 import {
-  readPublicIncident,
-  readVendorDetail,
-  readVendorPublicIncidents,
-  RecordUnreadableError,
-  regionsOf,
-  type TrackObservedIncidentDetail,
-  type TrackPublicIncident,
-  type TrackVendorDetail,
-  type UnreadableReason,
-} from '@/lib/track-api';
+  loadIncidentRecord,
+  type IncidentRecordLoad,
+} from '@/lib/observatory/incident-record';
 import {
   duration as fmtDuration,
   INCIDENT_STATUS_LABEL,
@@ -23,7 +17,6 @@ import {
   utcStamp,
   type ObservedState,
 } from '@/lib/observatory/format';
-import { mergeIncidents, type MergedIncident } from '@/lib/observatory/incidents';
 import { breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { robotsDirective } from '@/lib/indexability';
 import { PUBLIC_INCIDENT_WINDOW_DAYS } from '@/lib/methodology';
@@ -82,87 +75,13 @@ interface PageProps {
 export const revalidate = 300;
 
 /**
- * Four outcomes, because they are not the same statement:
- *
- *  - `ok`              the incident is in the published set. Render it.
- *  - `vendor-missing`  the API answered 404 for the dependency itself, so no
- *                      incident of its can have a page. 404, `noindex`.
- *  - `incident-missing` the dependency is readable and this incident is not in
- *                      its published set. 404, `noindex`.
- *  - `unreadable`      the API did not answer. Existence is unknown: 5xx so a
- *                      crawler retries, and never `noindex`.
- *
- * The previous shape collapsed the last case into the second and third: a
- * timeout returned `null`, which rendered a 200 "record unavailable" page and
- * emitted `noindex` on a URL that is in the sitemap and described as a
- * permanent public record.
+ * The load lives in `lib/observatory/incident-record.ts` so this page and
+ * its `.json` sidecar resolve one record through one code path. The five
+ * outcomes (`ok` / `observed` / `vendor-missing` / `incident-missing` /
+ * `unreadable`), why they are distinct statements, and the case-insensitive
+ * vendor-slug identity rule are documented there.
  */
-type IncidentLoad =
-  | {
-      kind: 'ok';
-      detail: TrackVendorDetail;
-      incident: MergedIncident;
-      publicRecord: TrackPublicIncident | null;
-      merged: MergedIncident[];
-    }
-  /**
-   * A detector-derived public incident: confirmed by RELIASTRA's own probes
-   * but carrying no evidence publication. It gets the same stable URL terms
-   * as an evidence-published record, rendered from the measurement claim.
-   */
-  | { kind: 'observed'; detail: TrackVendorDetail; incident: TrackObservedIncidentDetail }
-  | { kind: 'vendor-missing' }
-  | { kind: 'incident-missing' }
-  | { kind: 'unreadable'; reason: UnreadableReason };
-
-async function load(vendor: string, id: string): Promise<IncidentLoad> {
-  const detailRead = await readVendorDetail(vendor);
-  if (detailRead.kind === 'missing') return { kind: 'vendor-missing' };
-  if (detailRead.kind === 'unreadable') {
-    return { kind: 'unreadable', reason: detailRead.reason };
-  }
-  const detail = detailRead.value;
-
-  const publishedRead = await readVendorPublicIncidents(vendor);
-  if (publishedRead.kind === 'missing') return { kind: 'incident-missing' };
-  if (publishedRead.kind === 'unreadable') {
-    return { kind: 'unreadable', reason: publishedRead.reason };
-  }
-
-  const published = publishedRead.value;
-  const merged = mergeIncidents(null, published);
-  const incident = merged.find((m) => m.incident_id === id) ?? null;
-
-  if (!incident) {
-    /**
-     * Not an evidence-published incident - it may still be an incident
-     * RELIASTRA's public detector confirmed (the newer canonical source).
-     * Read it by id from the public incident API; the read is throttled the
-     * same way, so a probe of unknown ids costs what a published one costs.
-     */
-    const observedRead = await readPublicIncident(id);
-    if (observedRead.kind === 'missing') return { kind: 'incident-missing' };
-    if (observedRead.kind === 'unreadable') {
-      return { kind: 'unreadable', reason: observedRead.reason };
-    }
-    const observed = observedRead.value;
-    /**
-     * The vendor slug is part of the URL identity. An incident id that
-     * resolves to a different vendor on this path is a 404, not a redirect
-     * (the path simply does not name that record). The slug comparison is
-     * case-insensitive only because URLs can arrive in any casing.
-     */
-    if (observed.vendor_name.toLowerCase() !== vendor.toLowerCase()) {
-      return { kind: 'incident-missing' };
-    }
-    return { kind: 'observed', detail, incident: observed };
-  }
-
-  const publicRecord: TrackPublicIncident | null =
-    published.find((p) => p.incident_id === id) ?? null;
-
-  return { kind: 'ok', detail, incident, publicRecord, merged };
-}
+const load = loadIncidentRecord;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { vendor, id } = await params;

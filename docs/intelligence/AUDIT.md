@@ -1,8 +1,7 @@
 # RELIASTRA Public Intelligence Architecture - Audit, Target Design and Rollout Plan
 
-Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-4 landed; RSS incidents feed
-
-landed ahead of its phase 7 slot once incidents existed). Baseline: commit 4055ba5.
+Authored: 2026-09-24. Revised: 2026-09-26 (phases 0-5 landed; the RSS incidents feed
+landed ahead of its phase 7 slot with phase 4). Baseline: commit 4055ba5.
 Scope: what exists (audited, tested, in production semantics), what to build, in
 what order, and why each piece respects the constraints that govern this project.
 
@@ -176,7 +175,40 @@ the two surfaces can never tell two different stories about the same window.
 - Phase 7 head start (landed with phase 4): RSS 2.0 feed of public incidents
   at `/observatory/incidents/feed.xml`, items keyed by incident id (guid),
   description = the exact measurement statement, served with sane caching.
-- Phase 5 public evidence + JSON sidecars. PLANNED.
+- Phase 5 public evidence + JSON sidecars. DONE.
+  - `public_incident_evidence` table (migration 0041): an append-only
+    per-incident ledger of frozen artifacts - version, freeze status,
+    artifact schema version, generator, methodology version, SHA-256
+    `data_hash`, byte size, observation provenance - and the exact canonical
+    JSON bytes stored as text (not JSONB, so nothing reparses what was
+    hashed). Update and delete raise at the model level.
+  - The document is a pure function of stored facts: no wall-clock field,
+    window bounded by `started_at` minus a fixed 900s context margin and by
+    the stamped resolution observation (or `resolved_at`) on the late side,
+    so a freeze regenerated at any later time reproduces the same bytes and
+    hash. Long windows truncate oldest-first with explicit disclosure.
+  - `public_incidents.resolution_observation_id` stamps the confirming
+    recovery probe, symmetric to the failing run's `last_observation_id`.
+  - Generation is a publishing job: the probe transaction enqueues a
+    `public_incident_evidence_requested` outbox event in the same
+    transaction as the incident transition; the outbox processor (refactored
+    to an event-type handler registry) freezes idempotently; a daily beat
+    task (`reconcile_public_incident_evidence`, 05:10) is the guaranteed
+    recovery path. Reads never generate.
+  - API: `GET /v1/public/incidents/{id}/evidence` (latest, ETag = content
+    hash, methodology/schema/version headers) and
+    `.../evidence/versions/{n}` (pinned, long cache); the detail response
+    carries an `evidence` descriptor. 404 until frozen, and "not generated
+    yet" is the only absence story told.
+  - Canonical serialisation extracted to `evidence/canonical.py`; tenant
+    evidence and public evidence hash with the same function.
+  - Frontend: the record page and its JSON sidecar
+    (`/observatory/{vendor}/incidents/{id}/index.json`, noindex) resolve one
+    record through the shared loader `lib/observatory/incident-record.ts`
+    (same reads, same five-outcome contract, two renderers); the observed
+    record page gained an evidence-artifact section (link, hash, freeze
+    status, verification recipe, explicit absence when not yet frozen).
+  - Verification doc: `docs/intelligence/public-evidence.md`.
 - Phase 6 question engine. PLANNED.
 - Phase 7 RSS/Atom feeds remaining (catalog feed, per-vendor feeds if the
   catalog size warrants it). PARTIALLY DONE via the incidents feed above.

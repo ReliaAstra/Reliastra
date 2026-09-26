@@ -99,6 +99,13 @@ class PublicIncident(UUIDMixin, TimestampMixin, Base):
     last_observation_id: Mapped[str | None] = mapped_column(
         String(36), nullable=True
     )
+    #: The probe that confirmed recovery (the run's second consecutive
+    #: success). Symmetric to ``last_observation_id`` for the failing run:
+    #: the evidence window needs an upper bound that is a fact of the record,
+    #: not a function of when generation happened. Null for open incidents.
+    resolution_observation_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True
+    )
 
     detection_rule: Mapped[str] = mapped_column(String(64), nullable=False)
     detection_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
