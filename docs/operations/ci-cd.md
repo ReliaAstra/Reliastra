@@ -19,7 +19,7 @@ All jobs `timeout-minutes`, `concurrency: cancel-in-progress`, pinned actions `v
 - `concurrency: production-deploy` (no cancel, queue).
 - `environment: production` - GitHub Environment protection (required reviewers, branch protection). Secrets scoped to this env.
 - **resolve**: determine `commit_sha` + `image_ref` (`:sha-<sha>`), create GH deployment (audit).
-- **deploy**: `tailscale/github-action` (oauth `tag:ci`) → `tailscale ping` → `ssh reliastra-deploy@100.x` (least-privilege key, `known_hosts` pinned) → `preflight.sh` → `deploy.sh --commit --image --timeout 600` → `smoke-test.sh`.
+- **deploy**: `tailscale/github-action` (oauth `tag:ci`) → `tailscale ping` → `ssh reliastra@100.x` (dedicated CI keypair, `known_hosts` pinned) → `preflight.sh` → `deploy.sh --commit --image --timeout 600` → `smoke-test.sh`.
 - Artifacts: `deploy.log` uploaded, deployment status `success/failure` via `chrnorm/deployment-status`.
 
 ## Promotion

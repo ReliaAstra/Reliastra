@@ -2,7 +2,7 @@
 
 ## Triage (Tailscale)
 ```bash
-ssh reliastra-admin@100.x
+ssh reliastra@100.x
 sudo /opt/reliastra/scripts/healthcheck.sh --timeout 60
 docker ps --format "table {{.Names}}\t{{.Status}}"
 docker logs --tail 100 reliastra-api

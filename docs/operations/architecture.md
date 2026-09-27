@@ -8,9 +8,9 @@ Single VPS today, extensible to multi-host, managed DB/Redis, external storage, 
 
 ## Trust boundaries
 - **Workstation untrusted** for prod admin - no public SSH.
-- **GitHub** - control plane, may deploy via least-privilege `reliastra-deploy` over Tailscale only.
+- **GitHub** - control plane, deploys as `reliastra` over Tailscale only (dedicated CI keypair; full passwordless sudo — least-privilege split into `reliastra-admin`/`reliastra-deploy` is a hardening TODO).
 - **GHCR** - distribution plane, immutable `ghcr.io/reliaastra/reliastra@sha256:...`.
-- **Tailscale** - admin network (`tailscale0` 100.64/10), ACL `tag:prod:22` only for `autogroup:admin` and `tag:ci`.
+- **Tailscale** - admin network (`tailscale0` 100.64/10). Planned ACL: `tag:prod:22` only for `autogroup:admin` and `tag:ci` — actual policy as of 2026-09-27 is default allow-all (`tag:ci` exists, `tag:prod` not yet defined).
 - **VPS** - execution env, assumed exposed to app threats, host firewall + container hardening.
 - **Containers** - workloads, receive only required secrets, `read_only`, `no-new-privileges`, `cap_drop: ALL`, `user: 10001`, no `privileged`, no `host` net, no `docker.sock`.
 
@@ -20,7 +20,7 @@ Single VPS today, extensible to multi-host, managed DB/Redis, external storage, 
 ## Network
 - Public: `80/443` → Caddy → `api:8000` (frontend) + `/api/*` → `api`. UFW `allow 80,443`, `deny 22` public, `allow 22 on tailscale0`.
 - Internal: `api, worker, scheduler, redis` on `reliastra-internal` (`internal: true`), `redis:6379` not exposed to host.
-- SSH: `sshd ListenAddress 127.0.0.1 + 100.x`, `PasswordAuthentication no`, `PermitRootLogin no`, `AllowUsers reliastra-admin`.
+- SSH: `sshd ListenAddress 127.0.0.1 + 100.x`, `PasswordAuthentication no`, `PermitRootLogin no` (actual `AllowUsers`, if set, must include `reliastra`).
 
 ## Deployment abstraction
 `artifact (digest) → release (commit+env) → target (prod-vps-01) → runtime (compose)` → future `target=prod-cluster, runtime=k8s`.
