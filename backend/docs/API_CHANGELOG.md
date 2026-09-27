@@ -57,6 +57,23 @@ A default organization is created automatically. Do **not** call `POST /v1/orgs`
 
 Login / refresh still return the token object only.
 
+### GitHub OAuth (new)
+
+- `GET /v1/auth/github/config` - public feature flag. Returns
+  `{ enabled, client_id, redirect_uri }` (all null when the provider is
+  off); the frontend hides the button on `enabled: false` instead of
+  erroring. The client ID is public by design.
+- `POST /v1/auth/github/exchange` with `{ code }` - swaps a
+  frontend-obtained GitHub code for the standard session pair, plus
+  `is_new_user`, `user_id`, `email`, `full_name`. The code travels in the
+  POST body, never in a URL.
+- Account rules: a verified GitHub email is required (403 otherwise);
+  an existing `github_id` signs in, an existing email links (password
+  kept), a new address creates a verified account with a free org, owner
+  membership and default application. Bad codes are one 401 for all
+  cases; a disabled provider is 404. New users carry `is_new_user: true`
+  so clients can route them to onboarding.
+
 ## Tenant context
 
 `{org_id}` is no longer a path parameter.

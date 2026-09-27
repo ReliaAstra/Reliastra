@@ -9,6 +9,7 @@ import {
   AuthSubmit,
   Field,
 } from '@/components/site/auth/auth-shell';
+import { GitHubButton } from '@/components/site/auth/github-button';
 import { useAppStore } from '@/stores/app-store';
 import { storeSessionTokens } from '@/lib/session-storage';
 import { readApiError, isEmailNotVerified } from '@/lib/api-error';
@@ -151,6 +152,15 @@ function CustomerLoginPageContent() {
     >
       {notice && <AuthAlert tone="ok">{notice}</AuthAlert>}
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+      <div className={notice || error ? 'mt-6' : ''}>
+        <GitHubButton next={next} />
+        <div aria-hidden className="my-6 flex items-center gap-4">
+          <span className="h-px flex-1 bg-[var(--ob-line)]" />
+          <span className="ob-label">or with email</span>
+          <span className="h-px flex-1 bg-[var(--ob-line)]" />
+        </div>
+      </div>
 
       <form
         onSubmit={handleSubmit}

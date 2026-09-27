@@ -15,6 +15,7 @@ import { readApiError } from '@/lib/api-error';
 import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 import { getSignupAttribution } from '@/lib/attribution';
 import { getStoredReferralCode } from '@/lib/partner-referral';
+import { GitHubButton } from '@/components/site/auth/github-button';
 
 interface RegisterResponse {
   user?: { id: string; email: string };
@@ -132,6 +133,15 @@ export default function CustomerSignupPage() {
         </AuthAlert>
       )}
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
+
+      <div className={error || referralCode ? 'mt-6' : ''}>
+        <GitHubButton />
+        <div aria-hidden className="my-6 flex items-center gap-4">
+          <span className="h-px flex-1 bg-[var(--ob-line)]" />
+          <span className="ob-label">or with email</span>
+          <span className="h-px flex-1 bg-[var(--ob-line)]" />
+        </div>
+      </div>
 
       <form
         onSubmit={handleSubmit}

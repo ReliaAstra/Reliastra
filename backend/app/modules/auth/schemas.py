@@ -94,6 +94,17 @@ class GitHubAuthRequest(BaseModel):
     state: str | None = None
 
 
+class GitHubConfigResponse(BaseModel):
+    """What the frontend needs to start the flow. The client ID is public
+    by design (it travels in the authorize URL); the secret never leaves
+    the backend. When the feature is off, everything is null and the
+    frontend hides the button instead of erroring."""
+
+    enabled: bool = False
+    client_id: str | None = None
+    redirect_uri: str | None = None
+
+
 class OAuthAuthResponse(TokenResponse):
     """Shared response for both Google and GitHub OAuth."""
 

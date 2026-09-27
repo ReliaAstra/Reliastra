@@ -5,6 +5,9 @@ from app.core.rate_limit import ip_limiter, enforce_rate_limit
 from app.db.session import get_db
 from app.modules.auth.schemas import (
     ForgotPasswordRequest,
+    GitHubAuthRequest,
+    GitHubAuthResponse,
+    GitHubConfigResponse,
     LoginRequest,
     LogoutRequest,
     OrganizationLite,
@@ -24,6 +27,7 @@ from app.modules.auth.schemas import (
     VerifyOtpResponse,
 )
 from app.modules.auth.service import AuthService, auth_service
+from app.modules.auth.oauth import github_oauth_service
 from app.modules.auth.email_service import (
     EmailAuthService,
     email_auth_service,
@@ -91,6 +95,38 @@ async def logout(
     service: AuthService = Depends(get_auth_service),
 ) -> None:
     await service.logout(db, body.refresh_token)
+
+
+# ── GitHub OAuth ────────────────────────────────────────────────
+
+
+@router.get("/github/config", response_model=GitHubConfigResponse)
+async def github_config(request: Request) -> GitHubConfigResponse:
+    """Public feature flag for the sign-in button.
+
+    Returns the client ID and redirect URI the frontend needs to build the
+    GitHub authorize URL itself. The CSRF ``state`` is generated and
+    verified by the frontend callback page against ``sessionStorage``.
+    """
+    await enforce_rate_limit(request, ip_limiter)
+    return GitHubConfigResponse(**github_oauth_service.public_config())
+
+
+@router.post("/github/exchange", response_model=GitHubAuthResponse)
+async def github_exchange(
+    request: Request,
+    body: GitHubAuthRequest,
+    db: AsyncSession = Depends(get_db),
+) -> GitHubAuthResponse:
+    """Swap a frontend-obtained GitHub code for a Reliastra session.
+
+    The code travels in the POST body, never in a URL: URLs are logged by
+    servers and kept by browsers, bodies are not. Expired, replayed and
+    forged codes all receive the same 401 so the endpoint cannot be used
+    as a code oracle.
+    """
+    await enforce_rate_limit(request, ip_limiter)
+    return await github_oauth_service.authenticate(db, body.code)
 
 
 # ── Email Verification (OTP - signup hard gate) ───────────────────

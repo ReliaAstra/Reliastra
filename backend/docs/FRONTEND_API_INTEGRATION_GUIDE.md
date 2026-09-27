@@ -149,24 +149,25 @@ Exchange the Google authorization code for Reliastra JWT tokens.
 
 ### 2.4 GitHub OAuth 2.0 Flow
 
-#### **GET /v1/auth/github/url**
-Returns the GitHub OAuth authorization URL and a CSRF `state` token.
+#### **GET /v1/auth/github/config**
+Public feature flag. Returns the client ID and redirect URI the frontend
+needs to build the authorize URL itself.
 ```json
 // Response (200 OK)
 {
-  "authorization_url": "https://github.com/login/oauth/authorize?client_id=...&scope=read:user+user:email&...",
-  "state": "random_csrf_state_token_32_bytes"
+  "enabled": true,
+  "client_id": "Ov23...",
+  "redirect_uri": "https://reliastra.com/auth/github/callback"
 }
 ```
 
 **Frontend implementation:**
-1. Call this endpoint to get the URL and state.
-2. Store the `state` in session storage (for CSRF validation).
-3. Redirect `window.location.href` to the `authorization_url`.
-4. GitHub redirects back to your `GITHUB_REDIRECT_URI` with `?code=...&state=...`.
-5. Verify the `state` matches, then call `/v1/auth/github` with the code.
+1. Call this endpoint. When `enabled` is false (or the read fails), hide the GitHub button; the email form keeps working.
+2. Mint a CSRF `state`, store it in session storage, and redirect `window.location` to `https://github.com/login/oauth/authorize` with `client_id`, `redirect_uri`, `scope=read:user user:email` and `state`.
+3. GitHub redirects back to `GITHUB_REDIRECT_URI` with `?code=...&state=...`.
+4. Verify the `state` matches, then POST the code (in the body, never in a URL) to `/v1/auth/github/exchange`.
 
-#### **POST /v1/auth/github**
+#### **POST /v1/auth/github/exchange**
 Exchange the GitHub authorization code for Reliastra JWT tokens.
 ```json
 // Request Body
@@ -182,14 +183,15 @@ Exchange the GitHub authorization code for Reliastra JWT tokens.
   "expires_in": 900,
   "is_new_user": true,
   "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "email": "user@users.noreply.github.com",
+  "email": "user@example.com",
   "full_name": "octocat"
 }
 ```
 
 **GitHub-specific notes:**
-- GitHub users can keep their email private. The backend uses a multi-tier resolution: public profile email > primary verified email > any verified email > `login@users.noreply.github.com`.
-- If the response email is a `noreply.github.com` address, prompt the user to update their email in account settings.
+- A verified GitHub email is required. The backend reads `/user/emails` and takes the primary verified address (else the first verified one). A `users.noreply.github.com` address or an unverified-only account is rejected with 403: OAuth proves control of the GitHub account, not of an unverified address.
+- Account resolution: existing `github_id` signs in; an existing email links (password kept, both methods keep working); a new address creates a verified account with a free org, owner membership and default application.
+- Bad codes are one 401 for all cases; a disabled provider is 404.
 - The `full_name` field uses the GitHub `name` if available, otherwise falls back to the GitHub `login` (username).
 
 ### 2.5 Email Verification Flow

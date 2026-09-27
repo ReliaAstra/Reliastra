@@ -118,6 +118,8 @@ export const AUTH_ROUTES = {
   verifyEmail: '/verify-email',
   resetPassword: '/reset-password',
   adminLogin: '/admin/login',
+  /** GitHub OAuth landing page (receives ?code= from github.com). */
+  githubCallback: '/auth/github/callback',
 } as const;
 
 // ── Customer console (route group `(console)`, so no group in the URL) ──────
