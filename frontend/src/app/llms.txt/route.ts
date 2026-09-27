@@ -117,10 +117,11 @@ billing. 14-day trial on every new account, no payment method required.
 
 ## Public observatory
 
-Independently measured status for endpoints RELIASTRA probes as its own public
-record. Customer dependencies are never included. Every figure is published with
-its window and its observation count, and an availability figure with zero
-observations reads "insufficient data" rather than 100%.
+Public records cover listed third-party endpoints probed by RELIASTRA; customer
+dependencies are not included. Each record describes endpoint behavior from
+${OBSERVATION_POINTS} observation point${OBSERVATION_POINTS === 1 ? '' : 's'}, not
+provider-wide service health. Every figure includes its window and observation
+count; zero observations are reported as "insufficient data," not 100%.
 
 What is probed today: vendor-published status-site endpoints - https://status.openai.com
 for OpenAI, and equivalents listed on each vendor record - recording HTTP status,

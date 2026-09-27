@@ -63,16 +63,18 @@ import { OBSERVATION_POINTS } from '@/lib/methodology';
  * logged. An outage therefore degrades the index, not the records.
  */
 
+const OBSERVATION_POINT_COUNT_LABEL = `${OBSERVATION_POINTS} observation ${OBSERVATION_POINTS === 1 ? 'point' : 'points'}`;
+const OBSERVATORY_DESCRIPTION =
+  `Public records for listed third-party endpoints show HTTP status, latency and incidents observed from ${OBSERVATION_POINT_COUNT_LABEL}; they do not establish provider-wide service health.`;
+
 export const metadata: Metadata = {
-  title: 'Public infrastructure observatory - independently measured dependency records',
-  description:
-    'Independent HTTP observation of the public endpoints behind third-party services - availability, latency and incident history measured by RELIASTRA probes, never copied from a vendor status page.',
+  title: 'Public observatory: endpoint measurements',
+  description: OBSERVATORY_DESCRIPTION,
   alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.observatory), ...DISCOVERY_ALTERNATES },
   robots: robotsDirective({ index: true, follow: true }),
   openGraph: {
-    title: 'Public infrastructure observatory - RELIASTRA',
-    description:
-      'Independent records for third-party APIs. Measured, not self-reported.',
+    title: 'Public endpoint observations - RELIASTRA',
+    description: OBSERVATORY_DESCRIPTION,
     url: canonicalUrl(PUBLIC_ROUTES.observatory),
     type: 'website',
     images: [
@@ -80,14 +82,14 @@ export const metadata: Metadata = {
         url: '/opengraph-image.png',
         width: 1584,
         height: 396,
-        alt: 'RELIASTRA public infrastructure observatory',
+        alt: 'RELIASTRA public endpoint observation records',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Public infrastructure observatory - RELIASTRA',
-    description: 'Independent availability, latency and incident history for third-party APIs.',
+    title: 'Public endpoint observations - RELIASTRA',
+    description: OBSERVATORY_DESCRIPTION,
     images: ['/opengraph-image.png'],
   },
 };
@@ -237,9 +239,8 @@ export default async function ObservatoryIndexPage() {
             '@type': 'CollectionPage',
             '@id': canonicalUrl(PUBLIC_ROUTES.observatory),
             url: canonicalUrl(PUBLIC_ROUTES.observatory),
-            name: 'Public infrastructure observatory',
-            description:
-              'Independent HTTP observation of public third-party endpoints: availability, latency and incident history measured by RELIASTRA probes.',
+            name: 'Public endpoint observations',
+            description: OBSERVATORY_DESCRIPTION,
             isPartOf: { '@id': canonicalUrl('/#website') },
             inLanguage: 'en',
             hasPart: items.slice(0, 20).map((v) => ({

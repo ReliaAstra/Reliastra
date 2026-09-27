@@ -261,6 +261,7 @@ ${research}
 ## Public observatory
 
 - Index: ${SITE_URL}/observatory
+- Scope: listed public endpoints only, observed from ${OBSERVATION_POINTS} observation point${OBSERVATION_POINTS === 1 ? '' : 's'}. Records do not establish provider-wide service or API status; customer dependencies are not included.
 - Detail pattern: ${SITE_URL}/observatory/{vendor} (only for vendors with real telemetry; empty or fabricated vendors are never generated)
 - Incident search: ${SITE_URL}/observatory/incidents - the cross-vendor public incident search. Filters: vendor, category, region, status (open|resolved); an RSS feed of recent detections is at /observatory/incidents/feed.xml. Records are endpoint scoped single-region measurements with the detection rule attached, never vendor-wide outage claims.
 - Incident pattern: ${SITE_URL}/observatory/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist, and a record is published for the evidence-retention window the API documents (${PUBLIC_INCIDENT_WINDOW_DAYS} days), after which the URL 404s. These pages are not described as permanent, because they are not.

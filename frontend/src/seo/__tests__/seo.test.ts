@@ -522,6 +522,7 @@ describe('machine-readable discovery', () => {
       expect(body).toContain('cloud-identity-security-engineering');
       expect(body).toContain('https://reliastra.com/about');
       expect(body).toContain('region labels identify the worker');
+      expect(body).toContain('provider-wide');
       expect(body).not.toContain('multi-region confirmation is claimed');
     }
     const body = await (await llms.GET()).text();
