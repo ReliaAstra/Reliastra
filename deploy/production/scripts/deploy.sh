@@ -25,23 +25,8 @@ if [[ -z "$COMMIT" || -z "$IMAGE" ]]; then echo "usage: $0 --commit <sha> --imag
 log() { echo "{\"ts\":\"$(date -u +%FT%TZ)\",\"level\":\"$1\",\"msg\":\"$2\",\"commit\":\"$COMMIT\",\"image\":\"$IMAGE\"}"; }
 final_state="FAILED"
 
-# Lock must be held for entire deploy
-exec 9>"$LOCK_FILE"
-if ! flock -n 9; then
-  if [[ $(find "$LOCK_FILE" -mmin +10 2>/dev/null) ]]; then
-    log "WARN" "stale lock >10m, breaking"
-    rm -f "$LOCK_FILE"
-    exec 9>"$LOCK_FILE"
-    flock -n 9 || { log "ERROR" "still locked"; exit 1; }
-  else
-    log "ERROR" "BLOCKED: concurrent deploy"
-    echo '{"final_state":"BLOCKED","commit":"'"$COMMIT"'"}' | tee "$STATE_DIR/last.json"
-    exit 1
-  fi
-fi
-# Ensure lock file contains owner
-echo "$$ $(date -u +%FT%TZ) $COMMIT" > "$LOCK_FILE"
-trap 'log "INFO" "releasing lock"; flock --unlock 9; rm -f /run/reliastra-preflight-ok' EXIT
+# Lock is acquired AFTER precheck (preflight.sh takes the same lock;
+# holding it across the preflight call would self-deadlock).
 
 mkdir -p "$STATE_DIR" /opt/reliastra/releases /opt/reliastra/logs
 START_TS=$(date -u +%FT%TZ)
@@ -70,6 +55,25 @@ if ! timeout 120 /opt/reliastra/scripts/preflight.sh --commit "$COMMIT" --image 
   record_state "FAILED"
   exit 1
 fi
+
+# 1b. ACQUIRE LOCK (after precheck: preflight.sh uses the same lock file,
+# so acquiring before the precheck call self-deadlocks).
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  if [[ $(find "$LOCK_FILE" -mmin +10 2>/dev/null) ]]; then
+    log "WARN" "stale lock >10m, breaking"
+    rm -f "$LOCK_FILE"
+    exec 9>"$LOCK_FILE"
+    flock -n 9 || { log "ERROR" "still locked"; exit 1; }
+  else
+    log "ERROR" "BLOCKED: concurrent deploy"
+    echo '{"final_state":"BLOCKED","commit":"'"$COMMIT"'"}' | tee "$STATE_DIR/last.json"
+    exit 1
+  fi
+fi
+# Ensure lock file contains owner
+echo "$$ $(date -u +%FT%TZ) $COMMIT" > "$LOCK_FILE"
+trap 'log "INFO" "releasing lock"; flock --unlock 9; rm -f /run/reliastra-preflight-ok' EXIT
 
 # 2. FETCH ARTIFACT (pull with timeout)
 log "INFO" "FETCH"
