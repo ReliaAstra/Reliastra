@@ -170,8 +170,8 @@ jobs:
             "sudo /opt/reliastra/scripts/deploy.sh --commit $COMMIT_SHA --image $IMAGE_REF --timeout 600" \
             | tee deploy.log
 
-          # Extract final state
-          STATE=$(grep -o '"final_state":"[^"]*"' deploy.log | tail -1 | cut -d'"' -f4 || echo "UNKNOWN")
+          # Extract final state (host logs it as "msg":"final_state=SUCCESS")
+          STATE=$(grep -o 'final_state=[A-Z_]*' deploy.log | tail -1 | cut -d= -f2 || echo "UNKNOWN")
           echo "final_state=$STATE" >> "$GITHUB_OUTPUT"
           echo "Deploy final_state=$STATE"
           if [ "$STATE" != "SUCCESS" ]; then
