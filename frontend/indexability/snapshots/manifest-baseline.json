@@ -1,0 +1,4644 @@
+{
+  "generated_at": "2026-09-27T18:04:59.953Z",
+  "base": "https://reliastra.com",
+  "robots_status": 200,
+  "sitemap_status": 200,
+  "sitemap_url_count": 185,
+  "pages_capped": false,
+  "pages": [
+    {
+      "url": "https://reliastra.com/",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com",
+      "og_url": "https://reliastra.com",
+      "title": "RELIASTRA — Independent Evidence for External Dependencies",
+      "description": "RELIASTRA independently observes the APIs and external services your software depends on, confirms persistent failures, correlates incidents, and produces verifiable evidence records.",
+      "robots": "index, follow",
+      "h1": "Reliastra observes the world&#x27;s external infrastructure and turns distributed observations into evidence.",
+      "jsonld_types": [
+        "Answer",
+        "FAQPage",
+        "ImageObject",
+        "Offer",
+        "Organization",
+        "Person",
+        "Question",
+        "SoftwareApplication",
+        "WebPage",
+        "WebSite"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#person",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/about",
+        "https://reliastra.com/logo.svg"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 721,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/product",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/product",
+      "og_url": "https://reliastra.com/product",
+      "title": "Product | RELIASTRA",
+      "description": "What RELIASTRA observes, how a fault is confirmed, what the evidence record contains, and how to reach all of it from your own systems.",
+      "robots": "index, follow",
+      "h1": "Observe. Correlate. Prove.",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "SoftwareApplication"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/product"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 657,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/product/evidence",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/product/evidence",
+      "og_url": "https://reliastra.com/product/evidence",
+      "title": "Evidence records | RELIASTRA",
+      "description": "What a RELIASTRA evidence record contains: the incident window, every observation in it, the attribution verdict, the checksums, and how a third party verifies it without an account.",
+      "robots": "index, follow",
+      "h1": "The part of the incident that survives the conversation.",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/product/evidence"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 448,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory",
+      "og_url": "https://reliastra.com/observatory",
+      "title": "Public observatory: endpoint measurements | RELIASTRA",
+      "description": "Public records for listed third-party endpoints show HTTP status, latency and incidents observed from 1 observation point; they do not establish provider-wide service health.",
+      "robots": "index, follow",
+      "h1": "Reliastra observes the world&#x27;s external infrastructure and turns distributed observations into evidence.",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ListItem",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory",
+        "https://reliastra.com/observatory/adyen",
+        "https://reliastra.com/observatory/anthropic",
+        "https://reliastra.com/observatory/auth0",
+        "https://reliastra.com/observatory/aws",
+        "https://reliastra.com/observatory/backblaze",
+        "https://reliastra.com/observatory/braintree",
+        "https://reliastra.com/observatory/circleci",
+        "https://reliastra.com/observatory/clerk",
+        "https://reliastra.com/observatory/cloudflare",
+        "https://reliastra.com/observatory/cohere",
+        "https://reliastra.com/observatory/datadog",
+        "https://reliastra.com/observatory/digitalocean",
+        "https://reliastra.com/observatory/discord",
+        "https://reliastra.com/observatory/docker",
+        "https://reliastra.com/observatory/flyio",
+        "https://reliastra.com/observatory/github",
+        "https://reliastra.com/observatory/gitlab",
+        "https://reliastra.com/observatory/grafana",
+        "https://reliastra.com/observatory/groq",
+        "https://reliastra.com/observatory/huggingface"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 826,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/incidents",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/incidents",
+      "og_url": "https://reliastra.com",
+      "title": "Observed incident search - public incident intelligence (RELIASTRA) | RELIASTRA",
+      "description": "Search every incident RELIASTRA independently detected across the public dependency catalog: consecutive failed observations, measured from named regions, endpoint scoped, with the exact window each detection rule fired ",
+      "robots": "index, follow",
+      "h1": "Observed incident records",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/observatory",
+        "https://reliastra.com/observatory/incidents"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 66,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/pricing",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/pricing",
+      "og_url": "https://reliastra.com/pricing",
+      "title": "Pricing - one plan, $9/month | RELIASTRA",
+      "description": "RELIASTRA is $9/month. 25 dependencies, checks as fast as every 30 seconds, 90-day retention, deterministic attribution, verifiable evidence and API access. 14-day trial, no payment method required. Every limit is enforc",
+      "robots": "index, follow",
+      "h1": "One plan. $9 a month.",
+      "jsonld_types": [
+        "Brand",
+        "BreadcrumbList",
+        "ListItem",
+        "Offer",
+        "Product"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/signup"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 391,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs",
+      "og_url": "https://reliastra.com/docs",
+      "title": "Documentation | RELIASTRA",
+      "description": "RELIASTRA documentation: quickstart, configuration, monitoring, incidents, evidence, verification, the REST API, the CLI, webhooks and the measurement methodology.",
+      "robots": "index, follow",
+      "h1": "Everything, stated once.",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 227,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research",
+      "og_url": "https://reliastra.com/research",
+      "title": "Research - Independent infrastructure intelligence | RELIASTRA",
+      "description": "RELIASTRA Research investigates how digital systems fail when their dependencies, control planes, APIs and security boundaries interact. Published measurements, methodology, datasets and the claims we refuse to make.",
+      "robots": "index, follow",
+      "h1": "The gap between what operators think is happening and what the evidence shows.",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ItemList",
+        "ListItem",
+        "Organization",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/research",
+        "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence",
+        "https://reliastra.com/research/ai-infrastructure/is-openai-down",
+        "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy",
+        "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+        "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order",
+        "https://reliastra.com/research/how-reliastra-measures-vendor-reliability",
+        "https://reliastra.com/research/measurement-integrity/availability-record-audit",
+        "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry",
+        "https://reliastra.com/research/reliastra-research-agenda",
+        "https://reliastra.com/research/the-dependency-gap"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 369,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary",
+      "og_url": "https://reliastra.com/glossary",
+      "title": "Glossary - Dependency intelligence concepts | RELIASTRA",
+      "description": "Precise definitions: External Dependency Intelligence, incident attribution, SLA evidence, vendor reliability, dependency telemetry, infrastructure evidence.",
+      "robots": "index, follow",
+      "h1": "Glossary",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "DefinedTermSet",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary",
+        "https://reliastra.com/glossary/ai-api-dependency",
+        "https://reliastra.com/glossary/availability",
+        "https://reliastra.com/glossary/control-plane",
+        "https://reliastra.com/glossary/data-plane",
+        "https://reliastra.com/glossary/dependency-blast-radius",
+        "https://reliastra.com/glossary/dependency-monitoring",
+        "https://reliastra.com/glossary/dependency-telemetry",
+        "https://reliastra.com/glossary/explicit-deny",
+        "https://reliastra.com/glossary/external-dependency-fault-report",
+        "https://reliastra.com/glossary/external-dependency-intelligence",
+        "https://reliastra.com/glossary/external-trust-boundary",
+        "https://reliastra.com/glossary/failure-domain",
+        "https://reliastra.com/glossary/identity-based-policy",
+        "https://reliastra.com/glossary/implicit-deny",
+        "https://reliastra.com/glossary/incident-attribution",
+        "https://reliastra.com/glossary/independent-measurement",
+        "https://reliastra.com/glossary/infrastructure-evidence",
+        "https://reliastra.com/glossary/latency",
+        "https://reliastra.com/glossary/model-routing",
+        "https://reliastra.com/glossary/non-human-identity",
+        "https://reliastra.com/glossary/observability-blind-spot",
+        "https://reliastra.com/glossary/observation-density",
+        "https://reliastra.com/glossary/partial-outage",
+        "https://reliastra.com/glossary/permissions-boundary",
+        "https://reliastra.com/glossary/quorum-detection",
+        "https://reliastra.com/glossary/resource-based-policy",
+        "https://reliastra.com/glossary/sla-evidence",
+        "https://reliastra.com/glossary/telemetry-integrity",
+        "https://reliastra.com/glossary/transport-error",
+        "https://reliastra.com/glossary/vendor-reliability",
+        "https://reliastra.com/glossary/vendor-reported-status"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 266,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/creators",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/creators",
+      "og_url": "https://reliastra.com/creators",
+      "title": "Technical creators - RELIASTRA | RELIASTRA",
+      "description": "RELIASTRA works with technical creators and publishers whose audiences care about software infrastructure: SRE, platform engineering, cloud, AI infrastructure, security.",
+      "robots": "index, follow",
+      "h1": "For people who publish about infrastructure.",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/creators"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 183,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/about",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/about",
+      "og_url": "https://reliastra.com/about",
+      "title": "About Adeshina Emmanuel | RELIASTRA",
+      "description": "Adeshina Emmanuel founded RELIASTRA and leads its engineering. Read about his infrastructure security work, research, public tools, and measurement principles.",
+      "robots": "index, follow",
+      "h1": "Adeshina Emmanuel",
+      "jsonld_types": [
+        "AboutPage",
+        "BreadcrumbList",
+        "ListItem",
+        "Person"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#person",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/about"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 189,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/security",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/security",
+      "og_url": "https://reliastra.com/security",
+      "title": "Security - How RELIASTRA protects your data | RELIASTRA",
+      "description": "Encryption, SSRF-safe probing, session controls, tenant isolation and evidence integrity: how RELIASTRA keeps your monitoring data yours.",
+      "robots": "index, follow",
+      "h1": "Security: your monitoring data stays yours",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/security"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 184,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/contact",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/contact",
+      "og_url": "https://reliastra.com/contact",
+      "title": "Contact - Talk to RELIASTRA | RELIASTRA",
+      "description": "Contact RELIASTRA: support, billing and security. A human reads every message - there is no sales team.",
+      "robots": "index, follow",
+      "h1": "Talk to RELIASTRA",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ContactPage",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/contact"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 185,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/status",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/status",
+      "og_url": "https://reliastra.com/status",
+      "title": "Status - Platform health | RELIASTRA",
+      "description": "RELIASTRA platform status: how to check system health, what the health endpoint reports, and where live vendor posture lives.",
+      "robots": "index, follow",
+      "h1": "Platform status",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem"
+      ],
+      "jsonld_urls": [],
+      "sitemap_present": true,
+      "incoming_internal_links": 365,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/llms.txt",
+      "http_status": 200,
+      "content_type": "text/plain; charset=utf-8",
+      "incoming_internal_links": 181
+    },
+    {
+      "url": "https://reliastra.com/docs/quickstart",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/quickstart",
+      "og_url": "https://reliastra.com/docs/quickstart",
+      "title": "Quickstart - RELIASTRA docs | RELIASTRA",
+      "description": "Install the CLI, add an endpoint, read the first observation, and follow an incident through to its evidence record.",
+      "robots": "index, follow",
+      "h1": "Quickstart",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/quickstart"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 371,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/concepts",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/concepts",
+      "og_url": "https://reliastra.com/docs/concepts",
+      "title": "Concepts - RELIASTRA docs | RELIASTRA",
+      "description": "Four ideas the rest of these docs assume: observation, confirmation, attribution, evidence.",
+      "robots": "index, follow",
+      "h1": "Concepts",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/concepts"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 32,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/configuration",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/configuration",
+      "og_url": "https://reliastra.com/docs/configuration",
+      "title": "Configuration - RELIASTRA docs | RELIASTRA",
+      "description": "Every field on a dependency, its default, and the two that can lock you out of your own endpoint.",
+      "robots": "index, follow",
+      "h1": "Configuration",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/configuration"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 34,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/monitoring",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/monitoring",
+      "og_url": "https://reliastra.com/docs/monitoring",
+      "title": "Monitoring - RELIASTRA docs | RELIASTRA",
+      "description": "What a probe does, what it records, and the four things it structurally cannot see.",
+      "robots": "index, follow",
+      "h1": "Monitoring",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/monitoring"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 85,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/incidents",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/incidents",
+      "og_url": "https://reliastra.com/docs/incidents",
+      "title": "Incidents - RELIASTRA docs | RELIASTRA",
+      "description": "The detection rule, the fields on an incident, and what resolution does and does not mean.",
+      "robots": "index, follow",
+      "h1": "Incidents",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/incidents"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 34,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/evidence",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/evidence",
+      "og_url": "https://reliastra.com/docs/evidence",
+      "title": "Evidence - RELIASTRA docs | RELIASTRA",
+      "description": "What the artifact contains, how it is generated, and how long it is retained.",
+      "robots": "index, follow",
+      "h1": "Evidence",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/evidence"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 86,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/verification",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/verification",
+      "og_url": "https://reliastra.com/docs/verification",
+      "title": "Verification - RELIASTRA docs | RELIASTRA",
+      "description": "How a third party checks an artifact without trusting RELIASTRA, and without an account.",
+      "robots": "index, follow",
+      "h1": "Verification",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/verification"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 35,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/api",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/api",
+      "og_url": "https://reliastra.com/docs/api",
+      "title": "REST API - RELIASTRA docs | RELIASTRA",
+      "description": "Authentication, the endpoints that matter, pagination and rate limits.",
+      "robots": "index, follow",
+      "h1": "REST API",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/api"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 365,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/cli",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/cli",
+      "og_url": "https://reliastra.com/docs/cli",
+      "title": "CLI - RELIASTRA docs | RELIASTRA",
+      "description": "Install, authenticate, read dependencies and incidents, retrieve evidence, and gate a pipeline on verification.",
+      "robots": "index, follow",
+      "h1": "CLI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/cli"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 367,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/webhooks",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/webhooks",
+      "og_url": "https://reliastra.com/docs/webhooks",
+      "title": "Webhooks - RELIASTRA docs | RELIASTRA",
+      "description": "Push incidents and evidence into your own systems instead of polling for them.",
+      "robots": "index, follow",
+      "h1": "Webhooks",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/webhooks"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 365,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/methodology",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/methodology",
+      "og_url": "https://reliastra.com/docs/methodology",
+      "title": "Methodology - RELIASTRA docs | RELIASTRA",
+      "description": "The canonical explanation of every rule and number RELIASTRA reports, and the limits of each.",
+      "robots": "index, follow",
+      "h1": "Methodology",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/methodology"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 235,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/docs/security",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/docs/security",
+      "og_url": "https://reliastra.com/docs/security",
+      "title": "Security - RELIASTRA docs | RELIASTRA",
+      "description": "What RELIASTRA stores, what it encrypts, and what the public surfaces can expose.",
+      "robots": "index, follow",
+      "h1": "Security",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#organization",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/docs/security"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 32,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/privacy",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/privacy",
+      "og_url": "https://reliastra.com",
+      "title": "Privacy Policy - RELIASTRA | RELIASTRA",
+      "description": "How RELIASTRA collects, uses, and protects customer data across its monitoring, evidence, and billing systems.",
+      "robots": "index, follow",
+      "h1": "Privacy Policy",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem"
+      ],
+      "jsonld_urls": [],
+      "sitemap_present": true,
+      "incoming_internal_links": 367,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/terms",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/terms",
+      "og_url": "https://reliastra.com",
+      "title": "Terms of Service - RELIASTRA | RELIASTRA",
+      "description": "The terms governing use of the RELIASTRA dependency monitoring, incident correlation, and evidence platform.",
+      "robots": "index, follow",
+      "h1": "Terms of Service",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem"
+      ],
+      "jsonld_urls": [],
+      "sitemap_present": true,
+      "incoming_internal_links": 368,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/refund-policy",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/refund-policy",
+      "og_url": "https://reliastra.com",
+      "title": "Refund Policy - RELIASTRA | RELIASTRA",
+      "description": "How RELIASTRA handles cancellation, collected payments, and refund requests. There is no advertised money-back window.",
+      "robots": "index, follow",
+      "h1": "Refund Policy",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem"
+      ],
+      "jsonld_urls": [],
+      "sitemap_present": true,
+      "incoming_internal_links": 186,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/external-dependency-intelligence",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/external-dependency-intelligence",
+      "og_url": "https://reliastra.com/glossary/external-dependency-intelligence",
+      "title": "External Dependency Intelligence - Definition | RELIASTRA",
+      "description": "Independent knowledge about the third-party services your product depends on.",
+      "robots": "index, follow",
+      "h1": "External Dependency Intelligence",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/external-dependency-intelligence"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/dependency-monitoring",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/dependency-monitoring",
+      "og_url": "https://reliastra.com/glossary/dependency-monitoring",
+      "title": "Dependency Monitoring - Definition | RELIASTRA",
+      "description": "Continuous third-party observation with deterministic fault confirmation.",
+      "robots": "index, follow",
+      "h1": "Dependency Monitoring",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/dependency-monitoring"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/incident-attribution",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/incident-attribution",
+      "og_url": "https://reliastra.com/glossary/incident-attribution",
+      "title": "Incident Attribution - Definition | RELIASTRA",
+      "description": "Determining whether an incident originated inside your stack or with a vendor.",
+      "robots": "index, follow",
+      "h1": "Incident Attribution",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/incident-attribution"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 6,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/sla-evidence",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/sla-evidence",
+      "og_url": "https://reliastra.com/glossary/sla-evidence",
+      "title": "SLA Evidence - Definition | RELIASTRA",
+      "description": "Timestamped, checksummed records of vendor behavior for credit conversations.",
+      "robots": "index, follow",
+      "h1": "SLA Evidence",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/sla-evidence"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/vendor-reliability",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/vendor-reliability",
+      "og_url": "https://reliastra.com/glossary/vendor-reliability",
+      "title": "Vendor Reliability - Definition | RELIASTRA",
+      "description": "How consistently a third-party service meets its expected behavior over time.",
+      "robots": "index, follow",
+      "h1": "Vendor Reliability",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/vendor-reliability"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/dependency-telemetry",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/dependency-telemetry",
+      "og_url": "https://reliastra.com/glossary/dependency-telemetry",
+      "title": "Dependency Telemetry - Definition | RELIASTRA",
+      "description": "The raw observations behind every reliability claim: checks, outcomes, timestamps.",
+      "robots": "index, follow",
+      "h1": "Dependency Telemetry",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/dependency-telemetry"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 11,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/infrastructure-evidence",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/infrastructure-evidence",
+      "og_url": "https://reliastra.com/glossary/infrastructure-evidence",
+      "title": "Infrastructure Evidence - Definition | RELIASTRA",
+      "description": "Verifiable records of how infrastructure behaved during a window.",
+      "robots": "index, follow",
+      "h1": "Infrastructure Evidence",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/infrastructure-evidence"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/external-dependency-fault-report",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/external-dependency-fault-report",
+      "og_url": "https://reliastra.com/glossary/external-dependency-fault-report",
+      "title": "External Dependency Fault Report - Definition | RELIASTRA",
+      "description": "The artifact that attributes a failure window to a specific dependency.",
+      "robots": "index, follow",
+      "h1": "External Dependency Fault Report",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/external-dependency-fault-report"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/independent-measurement",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/independent-measurement",
+      "og_url": "https://reliastra.com/glossary/independent-measurement",
+      "title": "Independent Measurement - Definition | RELIASTRA",
+      "description": "A record produced by an observer with no stake in the outcome, from its own requests.",
+      "robots": "index, follow",
+      "h1": "Independent Measurement",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/independent-measurement"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/quorum-detection",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/quorum-detection",
+      "og_url": "https://reliastra.com/glossary/quorum-detection",
+      "title": "Quorum Detection - Definition | RELIASTRA",
+      "description": "Confirming a dependency incident only when independent observation points agree.",
+      "robots": "index, follow",
+      "h1": "Quorum Detection",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/quorum-detection"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/transport-error",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/transport-error",
+      "og_url": "https://reliastra.com/glossary/transport-error",
+      "title": "Transport Error - Definition | RELIASTRA",
+      "description": "A failure below HTTP: the request never produced a complete response.",
+      "robots": "index, follow",
+      "h1": "Transport Error",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/transport-error"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 6,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/vendor-reported-status",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/vendor-reported-status",
+      "og_url": "https://reliastra.com/glossary/vendor-reported-status",
+      "title": "Vendor-Reported Status - Definition | RELIASTRA",
+      "description": "What a provider says about itself - one record among several, not the ground truth.",
+      "robots": "index, follow",
+      "h1": "Vendor-Reported Status",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/vendor-reported-status"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 6,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/partial-outage",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/partial-outage",
+      "og_url": "https://reliastra.com/glossary/partial-outage",
+      "title": "Partial Outage - Definition | RELIASTRA",
+      "description": "A dependency failing for some traffic, regions, routes or models - not all of them.",
+      "robots": "index, follow",
+      "h1": "Partial Outage",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/partial-outage"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/availability",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/availability",
+      "og_url": "https://reliastra.com/glossary/availability",
+      "title": "Availability - Definition | RELIASTRA",
+      "description": "The share of scheduled observations that received the expected response, per stated window.",
+      "robots": "index, follow",
+      "h1": "Availability",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/availability"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 6,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/latency",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/latency",
+      "og_url": "https://reliastra.com/glossary/latency",
+      "title": "Latency - Definition | RELIASTRA",
+      "description": "Time from probe dispatch to complete response - the leading indicator of degradation.",
+      "robots": "index, follow",
+      "h1": "Latency",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/latency"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 3,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/observation-density",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/observation-density",
+      "og_url": "https://reliastra.com/glossary/observation-density",
+      "title": "Observation density - Definition | RELIASTRA",
+      "description": "Observations that exist, against observations the schedule implies.",
+      "robots": "index, follow",
+      "h1": "Observation density",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/observation-density"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/telemetry-integrity",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/telemetry-integrity",
+      "og_url": "https://reliastra.com/glossary/telemetry-integrity",
+      "title": "Telemetry integrity - Definition | RELIASTRA",
+      "description": "Whether a record can be trusted to be complete, correctly labelled and auditable.",
+      "robots": "index, follow",
+      "h1": "Telemetry integrity",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/telemetry-integrity"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/dependency-blast-radius",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/dependency-blast-radius",
+      "og_url": "https://reliastra.com/glossary/dependency-blast-radius",
+      "title": "Dependency blast radius - Definition | RELIASTRA",
+      "description": "The set of your functionality that fails when one external dependency does.",
+      "robots": "index, follow",
+      "h1": "Dependency blast radius",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/dependency-blast-radius"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/failure-domain",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/failure-domain",
+      "og_url": "https://reliastra.com/glossary/failure-domain",
+      "title": "Failure domain - Definition | RELIASTRA",
+      "description": "The set of components that fail together, and therefore must be reasoned about together.",
+      "robots": "index, follow",
+      "h1": "Failure domain",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/failure-domain"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/control-plane",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/control-plane",
+      "og_url": "https://reliastra.com/glossary/control-plane",
+      "title": "Control plane - Definition | RELIASTRA",
+      "description": "The part of a system that decides what should happen.",
+      "robots": "index, follow",
+      "h1": "Control plane",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/control-plane"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 6,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/data-plane",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/data-plane",
+      "og_url": "https://reliastra.com/glossary/data-plane",
+      "title": "Data plane - Definition | RELIASTRA",
+      "description": "The part of a system that carries the workload.",
+      "robots": "index, follow",
+      "h1": "Data plane",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/data-plane"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/external-trust-boundary",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/external-trust-boundary",
+      "og_url": "https://reliastra.com/glossary/external-trust-boundary",
+      "title": "External trust boundary - Definition | RELIASTRA",
+      "description": "The line where your controls stop and a third party’s begin.",
+      "robots": "index, follow",
+      "h1": "External trust boundary",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/external-trust-boundary"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/ai-api-dependency",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/ai-api-dependency",
+      "og_url": "https://reliastra.com/glossary/ai-api-dependency",
+      "title": "AI API dependency - Definition | RELIASTRA",
+      "description": "A model reached over the network - a dependency whose payload you only partly control.",
+      "robots": "index, follow",
+      "h1": "AI API dependency",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/ai-api-dependency"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/model-routing",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/model-routing",
+      "og_url": "https://reliastra.com/glossary/model-routing",
+      "title": "Model routing - Definition | RELIASTRA",
+      "description": "The provider-side decision about what actually serves your request.",
+      "robots": "index, follow",
+      "h1": "Model routing",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/model-routing"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/observability-blind-spot",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/observability-blind-spot",
+      "og_url": "https://reliastra.com/glossary/observability-blind-spot",
+      "title": "Observability blind spot - Definition | RELIASTRA",
+      "description": "A failure mode your instrumentation is structurally unable to report.",
+      "robots": "index, follow",
+      "h1": "Observability blind spot",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/observability-blind-spot"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 3,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/explicit-deny",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/explicit-deny",
+      "og_url": "https://reliastra.com/glossary/explicit-deny",
+      "title": "Explicit deny - Definition | RELIASTRA",
+      "description": "A policy statement with Effect Deny that overrides every Allow it matches.",
+      "robots": "index, follow",
+      "h1": "Explicit deny",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/explicit-deny"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 4,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/implicit-deny",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/implicit-deny",
+      "og_url": "https://reliastra.com/glossary/implicit-deny",
+      "title": "Implicit deny - Definition | RELIASTRA",
+      "description": "The default refusal a request receives when nothing in scope explicitly allows it.",
+      "robots": "index, follow",
+      "h1": "Implicit deny",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/implicit-deny"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/identity-based-policy",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/identity-based-policy",
+      "og_url": "https://reliastra.com/glossary/identity-based-policy",
+      "title": "Identity-based policy - Definition | RELIASTRA",
+      "description": "A policy attached to an IAM principal that states what that principal may do.",
+      "robots": "index, follow",
+      "h1": "Identity-based policy",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/identity-based-policy"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/resource-based-policy",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/resource-based-policy",
+      "og_url": "https://reliastra.com/glossary/resource-based-policy",
+      "title": "Resource-based policy - Definition | RELIASTRA",
+      "description": "A policy attached to a resource that states who may act on it.",
+      "robots": "index, follow",
+      "h1": "Resource-based policy",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/resource-based-policy"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/permissions-boundary",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/permissions-boundary",
+      "og_url": "https://reliastra.com/glossary/permissions-boundary",
+      "title": "Permissions boundary - Definition | RELIASTRA",
+      "description": "A policy that caps the maximum permissions an IAM principal can be granted.",
+      "robots": "index, follow",
+      "h1": "Permissions boundary",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/permissions-boundary"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/glossary/non-human-identity",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/glossary/non-human-identity",
+      "og_url": "https://reliastra.com/glossary/non-human-identity",
+      "title": "Non-human identity - Definition | RELIASTRA",
+      "description": "A principal that is a workload rather than a person: service roles, pipelines, agents.",
+      "robots": "index, follow",
+      "h1": "Non-human identity",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "DefinedTerm",
+        "ListItem"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/glossary/non-human-identity"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 3,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/ai-infrastructure",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/ai-infrastructure",
+      "og_url": "https://reliastra.com/research/ai-infrastructure",
+      "title": "AI infrastructure status &amp; reliability - the independent observatory | RELIASTRA",
+      "description": "Is OpenAI down? How would anyone know? RELIASTRA’s public record for AI providers: independently measured endpoint availability, latency windows, incident records, methodology and limits - not vendor status reporting.",
+      "robots": "index, follow",
+      "h1": "AI infrastructure status &amp; reliability",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ListItem",
+        "TechArticle",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/anthropic",
+        "https://reliastra.com/observatory/cohere",
+        "https://reliastra.com/observatory/groq",
+        "https://reliastra.com/observatory/huggingface",
+        "https://reliastra.com/observatory/mistral",
+        "https://reliastra.com/observatory/openai",
+        "https://reliastra.com/observatory/together",
+        "https://reliastra.com/observatory/xai",
+        "https://reliastra.com/research/ai-infrastructure",
+        "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence",
+        "https://reliastra.com/research/ai-infrastructure/is-openai-down",
+        "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 210,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/measurement-integrity",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/measurement-integrity",
+      "og_url": "https://reliastra.com/research/measurement-integrity",
+      "title": "Measurement integrity research - RELIASTRA | RELIASTRA",
+      "description": "What a reliability record actually measures and what it silently omits. Audits of published availability records, telemetry estimation defects, and the checks that expose a thin denominator - including RELIASTRA’s own pu",
+      "robots": "index, follow",
+      "h1": "Measurement integrity",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/research/measurement-integrity",
+        "https://reliastra.com/research/measurement-integrity/availability-record-audit",
+        "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 8,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/cloud-security",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/cloud-security",
+      "og_url": "https://reliastra.com/research/cloud-security",
+      "title": "Cloud &amp; AI infrastructure security research - RELIASTRA | RELIASTRA",
+      "description": "Trust boundaries, failure domains and attack surface in architectures that depend on cloud control planes and hosted model APIs. Architecture analysis for cloud security and AI infrastructure engineers.",
+      "robots": "index, follow",
+      "h1": "Cloud &amp; AI infrastructure security",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CollectionPage",
+        "ListItem",
+        "TechArticle"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/#website",
+        "https://reliastra.com/research/cloud-security",
+        "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+        "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 8,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/the-dependency-gap",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/the-dependency-gap",
+      "og_url": "https://reliastra.com/research/the-dependency-gap",
+      "title": "The Dependency Gap - RELIASTRA Research | RELIASTRA",
+      "description": "Why an outage you caused and an outage your vendor caused look identical from inside your own monitoring - and what it takes to tell them apart.",
+      "robots": "index, follow",
+      "h1": "The Dependency Gap",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/the-dependency-gap",
+        "https://reliastra.com/research/the-dependency-gap#article"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 238,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/how-reliastra-measures-vendor-reliability",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/how-reliastra-measures-vendor-reliability",
+      "og_url": "https://reliastra.com/research/how-reliastra-measures-vendor-reliability",
+      "title": "How RELIASTRA measures vendor reliability - RELIASTRA Research | RELIASTRA",
+      "description": "The measurement methodology behind every check: where probes originate, retry semantics, the incident detection rule, and the cases we deliberately refuse to call an outage.",
+      "robots": "index, follow",
+      "h1": "How RELIASTRA measures vendor reliability",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/how-reliastra-measures-vendor-reliability",
+        "https://reliastra.com/research/how-reliastra-measures-vendor-reliability#article"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 236,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/reliastra-research-agenda",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/reliastra-research-agenda",
+      "og_url": "https://reliastra.com/research/reliastra-research-agenda",
+      "title": "The RELIASTRA research agenda - RELIASTRA Research | RELIASTRA",
+      "description": "What we intend to publish, what we will not, and the standards we hold our own reliability data to.",
+      "robots": "index, follow",
+      "h1": "The RELIASTRA research agenda",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/reliastra-research-agenda",
+        "https://reliastra.com/research/reliastra-research-agenda#article"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 63,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/ai-infrastructure/is-openai-down",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/ai-infrastructure/is-openai-down",
+      "og_url": "https://reliastra.com/research/ai-infrastructure/is-openai-down",
+      "title": "“Is OpenAI down?” - how to answer the question honestly - RELIASTRA AI infrastructure research | RELIASTRA",
+      "description": "The question hides three different claims - API, consumer app, status site. What an outside observer can measure, what RELIASTRA actually measures today, and a probe you can reproduce in thirty seconds.",
+      "robots": "index, follow",
+      "h1": "“Is OpenAI down?” - how to answer the question honestly",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/ai-infrastructure/is-openai-down",
+        "https://reliastra.com/research/ai-infrastructure/is-openai-down#article"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 57,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence",
+      "og_url": "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence",
+      "title": "When an AI API misbehaves: an evidence playbook - RELIASTRA AI infrastructure research | RELIASTRA",
+      "description": "What to capture in the first ten minutes of an AI-provider incident so the window is still checkable a month later - and how independent observations turn a bad evening into an attributable record.",
+      "robots": "index, follow",
+      "h1": "When an AI API misbehaves: an evidence playbook",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence",
+        "https://reliastra.com/research/ai-infrastructure/ai-api-outage-evidence#article"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 55,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy",
+      "og_url": "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy",
+      "title": "What a status-page payload actually asserts - RELIASTRA AI infrastructure research | RELIASTRA",
+      "description": "RELIASTRA read the machine-readable summary behind OpenAI’s status site: 25 components, one aggregate indicator, and a last-change timestamp sixty-four days old. A structural analysis of what a status page can and cannot",
+      "robots": "index, follow",
+      "h1": "What a status-page payload actually asserts",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CreativeWork",
+        "Dataset",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "TechArticle",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://api.reliastra.com/v1/vendors/openai",
+        "https://developer.atlassian.com/cloud/statuspage/rest/intro/",
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy",
+        "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy#article",
+        "https://reliastra.com/research/ai-infrastructure/status-page-payload-anatomy#dataset",
+        "https://reliastra.com/research/how-reliastra-measures-vendor-reliability",
+        "https://status.openai.com/api/v2/summary.json"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 55,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/measurement-integrity/availability-record-audit",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/measurement-integrity/availability-record-audit",
+      "og_url": "https://reliastra.com/research/measurement-integrity/availability-record-audit",
+      "title": "How much evidence stands behind a published availability figure? - RELIASTRA Research | RELIASTRA",
+      "description": "RELIASTRA audited its own public availability record and found the 30- and 90-day windows returning aggregates identical to the 7-day window, and roughly 2.1 days of observations behind a &quot;90 days&quot; label. Three",
+      "robots": "index, follow",
+      "h1": "How much evidence stands behind a published availability figure?",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CreativeWork",
+        "Dataset",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "TechArticle",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://api.reliastra.com/v1/vendors/openai/metrics",
+        "https://api.reliastra.com/v1/vendors/openai/timeline?window=1h&resolution=1m",
+        "https://github.com/ReliaAstra/Reliastra/blob/main/backend/app/modules/dependencies/schemas.py",
+        "https://github.com/ReliaAstra/Reliastra/blob/main/backend/app/modules/vendors/service.py",
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/observatory/openai",
+        "https://reliastra.com/research/measurement-integrity/availability-record-audit",
+        "https://reliastra.com/research/measurement-integrity/availability-record-audit#article",
+        "https://reliastra.com/research/measurement-integrity/availability-record-audit#dataset",
+        "https://sre.google/sre-book/service-level-objectives/"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 59,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry",
+      "og_url": "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry",
+      "title": "Why an interval estimated from bucketed telemetry converges on the bucket length - RELIASTRA Research | RELIASTRA",
+      "description": "A production record printed &quot;about every 60 seconds&quot; for a dependency probed every 300 seconds, and printed 300 seconds for the same schedule elsewhere on the same page. The estimator is bounded above by the re",
+      "robots": "index, follow",
+      "h1": "Why an interval estimated from bucketed telemetry converges on the bucket length",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CreativeWork",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://api.reliastra.com/v1/vendors/openai/timeline?window=1h&resolution=1m",
+        "https://github.com/ReliaAstra/Reliastra/blob/main/backend/app/config.py",
+        "https://github.com/ReliaAstra/Reliastra/blob/main/frontend/src/lib/track-api.ts",
+        "https://prometheus.io/docs/prometheus/latest/querying/functions/#rate",
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry",
+        "https://reliastra.com/research/measurement-integrity/probe-interval-from-bucketed-telemetry#article"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 57,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+      "og_url": "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+      "title": "The trust boundary of an AI API dependency - RELIASTRA Research | RELIASTRA",
+      "description": "What changes about an application’s trust boundary when its model is a network call: prompt content leaving the domain, routing the consumer cannot observe, retries that are a cost control as well as a reliability one - ",
+      "robots": "index, follow",
+      "h1": "The trust boundary of an AI API dependency",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CreativeWork",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "TechArticle",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://api.reliastra.com/v1/vendors/openai",
+        "https://csrc.nist.gov/pubs/sp/800/207/final",
+        "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+        "https://platform.openai.com/docs",
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+        "https://reliastra.com/research/cloud-security/ai-api-trust-boundary#article",
+        "https://status.openai.com/",
+        "https://www.rfc-editor.org/rfc/rfc8446"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 59,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order",
+      "og_url": "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order",
+      "title": "AWS IAM policy evaluation logic: identity vs resource - RELIASTRA Research | RELIASTRA",
+      "description": "The seven policy classes AWS evaluates, in order: which short-circuit, which cap, which grant. Same-account union, cross-account conjunction, the principal-type branch that decides whether a ceiling applies - and the cla",
+      "robots": "index, follow",
+      "h1": "AWS IAM policy evaluation logic: identity vs resource",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "CreativeWork",
+        "ImageObject",
+        "ListItem",
+        "Organization",
+        "Person",
+        "TechArticle",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://csrc.nist.gov/pubs/sp/800/207/final",
+        "https://dev.classmethod.jp/en/articles/iam-policy-simulator-iam-console-update/",
+        "https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulateCustomPolicy.html",
+        "https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies-cross-account-resource-access.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic-cross-account.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html",
+        "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic_policy-eval-denyallow.html",
+        "https://docs.aws.amazon.com/STS/latest/APIReference/API_DecodeAuthorizationMessage.html",
+        "https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference-user-identity.html",
+        "https://docs.aws.amazon.com/cli/latest/reference/accessanalyzer/check-no-new-access.html",
+        "https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html",
+        "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_rcps.html",
+        "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html",
+        "https://github.com/aws/aws-cli/issues/10314",
+        "https://ieeexplore.ieee.org/document/8602994",
+        "https://link.springer.com/chapter/10.1007/978-3-030-53288-8_9",
+        "https://link.springer.com/chapter/10.1007/978-3-031-13185-1_1",
+        "https://reliastra.com",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/about",
+        "https://reliastra.com/logo.svg",
+        "https://reliastra.com/research/cloud-security/ai-api-trust-boundary",
+        "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order",
+        "https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order#article",
+        "https://reliastra.com/research/reliastra-research-agenda"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 60,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/adyen",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/adyen",
+      "og_url": "https://reliastra.com/observatory/adyen",
+      "title": "Adyen status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Adyen (status.adyen.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Adyen",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/adyen",
+        "https://reliastra.com/observatory/adyen#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 60,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/aws",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/aws",
+      "og_url": "https://reliastra.com/observatory/aws",
+      "title": "Amazon Web Services status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Amazon Web Services (status.aws.amazon.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Amazon Web Services",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/aws",
+        "https://reliastra.com/observatory/aws#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 58,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/anthropic",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/anthropic",
+      "og_url": "https://reliastra.com/observatory/anthropic",
+      "title": "Anthropic status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Anthropic (status.anthropic.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Anthropic",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/anthropic",
+        "https://reliastra.com/observatory/anthropic#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 61,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/auth0",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/auth0",
+      "og_url": "https://reliastra.com/observatory/auth0",
+      "title": "Auth0 status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Auth0 (status.auth0.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Auth0",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/auth0",
+        "https://reliastra.com/observatory/auth0#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 58,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/backblaze",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/backblaze",
+      "og_url": "https://reliastra.com/observatory/backblaze",
+      "title": "Backblaze B2 status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Backblaze B2 (status.backblaze.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Backblaze B2",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/backblaze",
+        "https://reliastra.com/observatory/backblaze#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 58,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/braintree",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/braintree",
+      "og_url": "https://reliastra.com/observatory/braintree",
+      "title": "Braintree status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Braintree (status.braintreepayments.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Braintree",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/braintree",
+        "https://reliastra.com/observatory/braintree#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 58,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/circleci",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/circleci",
+      "og_url": "https://reliastra.com/observatory/circleci",
+      "title": "CircleCI status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of CircleCI (status.circleci.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "CircleCI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/circleci",
+        "https://reliastra.com/observatory/circleci#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 58,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/clerk",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/clerk",
+      "og_url": "https://reliastra.com/observatory/clerk",
+      "title": "Clerk status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Clerk (status.clerk.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Clerk",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/clerk",
+        "https://reliastra.com/observatory/clerk#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 58,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/cloudflare",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/cloudflare",
+      "og_url": "https://reliastra.com/observatory/cloudflare",
+      "title": "Cloudflare status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Cloudflare (www.cloudflarestatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Cloudflare",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/cloudflare",
+        "https://reliastra.com/observatory/cloudflare#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 17,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/cohere",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/cohere",
+      "og_url": "https://reliastra.com/observatory/cohere",
+      "title": "Cohere status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Cohere (status.cohere.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Cohere",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/cohere",
+        "https://reliastra.com/observatory/cohere#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 10,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/datadog",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/datadog",
+      "og_url": "https://reliastra.com/observatory/datadog",
+      "title": "Datadog status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Datadog (status.datadoghq.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Datadog",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/datadog",
+        "https://reliastra.com/observatory/datadog#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/digitalocean",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/digitalocean",
+      "og_url": "https://reliastra.com/observatory/digitalocean",
+      "title": "DigitalOcean status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of DigitalOcean (status.digitalocean.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "DigitalOcean",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/digitalocean",
+        "https://reliastra.com/observatory/digitalocean#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/discord",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/discord",
+      "og_url": "https://reliastra.com/observatory/discord",
+      "title": "Discord status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Discord (discordstatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Discord",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/discord",
+        "https://reliastra.com/observatory/discord#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/docker",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/docker",
+      "og_url": "https://reliastra.com/observatory/docker",
+      "title": "Docker Hub status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Docker Hub (status.docker.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Docker Hub",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/docker",
+        "https://reliastra.com/observatory/docker#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/flyio",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/flyio",
+      "og_url": "https://reliastra.com/observatory/flyio",
+      "title": "Fly.io status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Fly.io (status.flyio.net): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Fly.io",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/flyio",
+        "https://reliastra.com/observatory/flyio#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/github",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/github",
+      "og_url": "https://reliastra.com/observatory/github",
+      "title": "GitHub status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of GitHub (www.githubstatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "GitHub",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/github",
+        "https://reliastra.com/observatory/github#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/gitlab",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/gitlab",
+      "og_url": "https://reliastra.com/observatory/gitlab",
+      "title": "GitLab status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of GitLab (status.gitlab.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "GitLab",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/gitlab",
+        "https://reliastra.com/observatory/gitlab#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/grafana",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/grafana",
+      "og_url": "https://reliastra.com/observatory/grafana",
+      "title": "Grafana Cloud status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Grafana Cloud (status.grafana.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Grafana Cloud",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/grafana",
+        "https://reliastra.com/observatory/grafana#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/groq",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/groq",
+      "og_url": "https://reliastra.com/observatory/groq",
+      "title": "Groq status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Groq (groqstatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Groq",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/groq",
+        "https://reliastra.com/observatory/groq#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 10,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/huggingface",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/huggingface",
+      "og_url": "https://reliastra.com/observatory/huggingface",
+      "title": "Hugging Face status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Hugging Face (status.huggingface.co): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Hugging Face",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/huggingface",
+        "https://reliastra.com/observatory/huggingface#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 10,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/linear",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/linear",
+      "og_url": "https://reliastra.com/observatory/linear",
+      "title": "Linear status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Linear (linearstatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Linear",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/linear",
+        "https://reliastra.com/observatory/linear#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/mistral",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/mistral",
+      "og_url": "https://reliastra.com/observatory/mistral",
+      "title": "Mistral AI status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Mistral AI (status.mistral.ai): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Mistral AI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/mistral",
+        "https://reliastra.com/observatory/mistral#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 13,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/mongodb",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/mongodb",
+      "og_url": "https://reliastra.com/observatory/mongodb",
+      "title": "MongoDB Atlas status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of MongoDB Atlas (status.cloud.mongodb.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "MongoDB Atlas",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/mongodb",
+        "https://reliastra.com/observatory/mongodb#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/neon",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/neon",
+      "og_url": "https://reliastra.com/observatory/neon",
+      "title": "Neon status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Neon (neonstatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Neon",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/neon",
+        "https://reliastra.com/observatory/neon#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/netlify",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/netlify",
+      "og_url": "https://reliastra.com/observatory/netlify",
+      "title": "Netlify status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Netlify (status.netlify.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Netlify",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/netlify",
+        "https://reliastra.com/observatory/netlify#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/notion",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/notion",
+      "og_url": "https://reliastra.com/observatory/notion",
+      "title": "Notion status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Notion (status.notion.so): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Notion",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/notion",
+        "https://reliastra.com/observatory/notion#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/npm",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/npm",
+      "og_url": "https://reliastra.com/observatory/npm",
+      "title": "npm status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of npm (status.npmjs.org): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "npm",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/npm",
+        "https://reliastra.com/observatory/npm#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/okta",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/okta",
+      "og_url": "https://reliastra.com/observatory/okta",
+      "title": "Okta status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Okta (status.okta.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Okta",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/okta",
+        "https://reliastra.com/observatory/okta#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/openai",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/openai",
+      "og_url": "https://reliastra.com/observatory/openai",
+      "title": "OpenAI status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of OpenAI (status.openai.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "OpenAI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/openai",
+        "https://reliastra.com/observatory/openai#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 18,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/paddle",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/paddle",
+      "og_url": "https://reliastra.com/observatory/paddle",
+      "title": "Paddle status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Paddle (status.paddle.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Paddle",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/paddle",
+        "https://reliastra.com/observatory/paddle#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/pagerduty",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/pagerduty",
+      "og_url": "https://reliastra.com/observatory/pagerduty",
+      "title": "PagerDuty status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of PagerDuty (status.pagerduty.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "PagerDuty",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/pagerduty",
+        "https://reliastra.com/observatory/pagerduty#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/paypal",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/paypal",
+      "og_url": "https://reliastra.com/observatory/paypal",
+      "title": "PayPal status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of PayPal (www.paypal-status.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "PayPal",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/paypal",
+        "https://reliastra.com/observatory/paypal#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/planetscale",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/planetscale",
+      "og_url": "https://reliastra.com/observatory/planetscale",
+      "title": "PlanetScale status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of PlanetScale (www.planetscalestatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "PlanetScale",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/planetscale",
+        "https://reliastra.com/observatory/planetscale#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/postmark",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/postmark",
+      "og_url": "https://reliastra.com/observatory/postmark",
+      "title": "Postmark status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Postmark (status.postmarkapp.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Postmark",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/postmark",
+        "https://reliastra.com/observatory/postmark#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/pypi",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/pypi",
+      "og_url": "https://reliastra.com/observatory/pypi",
+      "title": "PyPI status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of PyPI (status.python.org): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "PyPI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/pypi",
+        "https://reliastra.com/observatory/pypi#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/render",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/render",
+      "og_url": "https://reliastra.com/observatory/render",
+      "title": "Render status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Render (status.render.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Render",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/render",
+        "https://reliastra.com/observatory/render#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/resend",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/resend",
+      "og_url": "https://reliastra.com/observatory/resend",
+      "title": "Resend status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Resend (status.resend.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Resend",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/resend",
+        "https://reliastra.com/observatory/resend#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/sendgrid",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/sendgrid",
+      "og_url": "https://reliastra.com/observatory/sendgrid",
+      "title": "SendGrid status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of SendGrid (status.sendgrid.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "SendGrid",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/sendgrid",
+        "https://reliastra.com/observatory/sendgrid#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/sentry",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/sentry",
+      "og_url": "https://reliastra.com/observatory/sentry",
+      "title": "Sentry status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Sentry (status.sentry.io): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Sentry",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/sentry",
+        "https://reliastra.com/observatory/sentry#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/slack",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/slack",
+      "og_url": "https://reliastra.com/observatory/slack",
+      "title": "Slack status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Slack (status.slack.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Slack",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/slack",
+        "https://reliastra.com/observatory/slack#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/stripe",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/stripe",
+      "og_url": "https://reliastra.com/observatory/stripe",
+      "title": "Stripe status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Stripe (status.stripe.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Stripe",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/stripe",
+        "https://reliastra.com/observatory/stripe#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/stytch",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/stytch",
+      "og_url": "https://reliastra.com/observatory/stytch",
+      "title": "Stytch status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Stytch (status.stytch.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Stytch",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/stytch",
+        "https://reliastra.com/observatory/stytch#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/supabase",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/supabase",
+      "og_url": "https://reliastra.com/observatory/supabase",
+      "title": "Supabase status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Supabase (status.supabase.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Supabase",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/supabase",
+        "https://reliastra.com/observatory/supabase#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/telnyx",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/telnyx",
+      "og_url": "https://reliastra.com/observatory/telnyx",
+      "title": "Telnyx status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Telnyx (status.telnyx.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Telnyx",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/telnyx",
+        "https://reliastra.com/observatory/telnyx#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/together",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/together",
+      "og_url": "https://reliastra.com/observatory/together",
+      "title": "Together AI status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Together AI (status.together.ai): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Together AI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/together",
+        "https://reliastra.com/observatory/together#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 10,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/twilio",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/twilio",
+      "og_url": "https://reliastra.com/observatory/twilio",
+      "title": "Twilio status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Twilio (status.twilio.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Twilio",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/twilio",
+        "https://reliastra.com/observatory/twilio#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/upstash",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/upstash",
+      "og_url": "https://reliastra.com/observatory/upstash",
+      "title": "Upstash status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Upstash (upstash.instatus.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Upstash",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/upstash",
+        "https://reliastra.com/observatory/upstash#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/vercel",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/vercel",
+      "og_url": "https://reliastra.com/observatory/vercel",
+      "title": "Vercel status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of Vercel (www.vercel-status.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "Vercel",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/vercel",
+        "https://reliastra.com/observatory/vercel#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/workos",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/workos",
+      "og_url": "https://reliastra.com/observatory/workos",
+      "title": "WorkOS status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of WorkOS (status.workos.com): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "WorkOS",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/workos",
+        "https://reliastra.com/observatory/workos#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 7,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/xai",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/xai",
+      "og_url": "https://reliastra.com/observatory/xai",
+      "title": "xAI status and reliability record - independently measured | RELIASTRA",
+      "description": "Independent RELIASTRA measurement of xAI (status.x.ai): HTTP availability and latency from us-east, with incident and evidence history. Endpoint-scoped, measured - not a vendor status page.",
+      "robots": "index, follow",
+      "h1": "xAI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "Dataset",
+        "ListItem",
+        "Organization",
+        "PropertyValue",
+        "Thing",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/",
+        "https://reliastra.com/#website",
+        "https://reliastra.com/observatory/xai",
+        "https://reliastra.com/observatory/xai#dataset"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 13,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/adyen",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/adyen",
+      "og_url": "https://reliastra.com/down/adyen",
+      "title": "Is Adyen down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.adyen.com all received the expected response. This measures the endpoint, not all of Adyen - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Adyen down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/adyen#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/aws",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/aws",
+      "og_url": "https://reliastra.com/down/aws",
+      "title": "Is Amazon Web Services down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.aws.amazon.com all received the expected response. This measures the endpoint, not all of Amazon Web Services - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Amazon Web Services down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/aws#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/anthropic",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/anthropic",
+      "og_url": "https://reliastra.com/down/anthropic",
+      "title": "Is Anthropic down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.anthropic.com all received the expected response. This measures the endpoint, not all of Anthropic - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Anthropic down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/anthropic#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/auth0",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/auth0",
+      "og_url": "https://reliastra.com/down/auth0",
+      "title": "Is Auth0 down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.auth0.com all received the expected response. This measures the endpoint, not all of Auth0 - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Auth0 down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/auth0#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/backblaze",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/backblaze",
+      "og_url": "https://reliastra.com/down/backblaze",
+      "title": "Is Backblaze B2 down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.backblaze.com all received the expected response. This measures the endpoint, not all of Backblaze B2 - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Backblaze B2 down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/backblaze#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/braintree",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/braintree",
+      "og_url": "https://reliastra.com/down/braintree",
+      "title": "Is Braintree down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.braintreepayments.com all received the expected response. This measures the endpoint, not all of Braintree - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Braintree down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/braintree#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/circleci",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/circleci",
+      "og_url": "https://reliastra.com/down/circleci",
+      "title": "Is CircleCI down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.circleci.com all received the expected response. This measures the endpoint, not all of CircleCI - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is CircleCI down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/circleci#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/clerk",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/clerk",
+      "og_url": "https://reliastra.com/down/clerk",
+      "title": "Is Clerk down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.clerk.com all received the expected response. This measures the endpoint, not all of Clerk - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Clerk down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/clerk#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/cloudflare",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/cloudflare",
+      "og_url": "https://reliastra.com/down/cloudflare",
+      "title": "Is Cloudflare down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of www.cloudflarestatus.com all received the expected response. This measures the endpoint, not all of Cloudflare - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Cloudflare down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/cloudflare#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/cohere",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/cohere",
+      "og_url": "https://reliastra.com/down/cohere",
+      "title": "Is Cohere down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.cohere.com all received the expected response. This measures the endpoint, not all of Cohere - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Cohere down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/cohere#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/datadog",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/datadog",
+      "og_url": "https://reliastra.com/down/datadog",
+      "title": "Is Datadog down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.datadoghq.com all received the expected response. This measures the endpoint, not all of Datadog - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Datadog down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/datadog#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/digitalocean",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/digitalocean",
+      "og_url": "https://reliastra.com/down/digitalocean",
+      "title": "Is DigitalOcean down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.digitalocean.com all received the expected response. This measures the endpoint, not all of DigitalOcean - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is DigitalOcean down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/digitalocean#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/discord",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/discord",
+      "og_url": "https://reliastra.com/down/discord",
+      "title": "Is Discord down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of discordstatus.com all received the expected response. This measures the endpoint, not all of Discord - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Discord down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/discord#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/docker",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/docker",
+      "og_url": "https://reliastra.com/down/docker",
+      "title": "Is Docker Hub down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.docker.com all received the expected response. This measures the endpoint, not all of Docker Hub - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Docker Hub down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/docker#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/flyio",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/flyio",
+      "og_url": "https://reliastra.com/down/flyio",
+      "title": "Is Fly.io down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.flyio.net all received the expected response. This measures the endpoint, not all of Fly.io - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Fly.io down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/flyio#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/github",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/github",
+      "og_url": "https://reliastra.com/down/github",
+      "title": "Is GitHub down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of www.githubstatus.com all received the expected response. This measures the endpoint, not all of GitHub - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is GitHub down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/github#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/gitlab",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/gitlab",
+      "og_url": "https://reliastra.com/down/gitlab",
+      "title": "Is GitLab down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.gitlab.com all received the expected response. This measures the endpoint, not all of GitLab - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is GitLab down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/gitlab#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/grafana",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/grafana",
+      "og_url": "https://reliastra.com/down/grafana",
+      "title": "Is Grafana Cloud down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.grafana.com all received the expected response. This measures the endpoint, not all of Grafana Cloud - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Grafana Cloud down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/grafana#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/groq",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/groq",
+      "og_url": "https://reliastra.com/down/groq",
+      "title": "Is Groq down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of groqstatus.com all received the expected response. This measures the endpoint, not all of Groq - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Groq down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/groq#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/huggingface",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/huggingface",
+      "og_url": "https://reliastra.com/down/huggingface",
+      "title": "Is Hugging Face down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.huggingface.co all received the expected response. This measures the endpoint, not all of Hugging Face - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Hugging Face down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/huggingface#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/linear",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/linear",
+      "og_url": "https://reliastra.com/down/linear",
+      "title": "Is Linear down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of linearstatus.com all received the expected response. This measures the endpoint, not all of Linear - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Linear down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/linear#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/mistral",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/mistral",
+      "og_url": "https://reliastra.com/down/mistral",
+      "title": "Is Mistral AI down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "The endpoint Mistral AI is observed at did not meet its response contract: the latest RELIASTRA check of status.mistral.ai did not receive the expected response. Whether Mistral AI’s services are affected is a separate q",
+      "robots": "index, follow",
+      "h1": "Is Mistral AI down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/mistral#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/mongodb",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/mongodb",
+      "og_url": "https://reliastra.com/down/mongodb",
+      "title": "Is MongoDB Atlas down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.cloud.mongodb.com all received the expected response. This measures the endpoint, not all of MongoDB Atlas - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is MongoDB Atlas down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/mongodb#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/neon",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/neon",
+      "og_url": "https://reliastra.com/down/neon",
+      "title": "Is Neon down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of neonstatus.com all received the expected response. This measures the endpoint, not all of Neon - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Neon down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/neon#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/netlify",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/netlify",
+      "og_url": "https://reliastra.com/down/netlify",
+      "title": "Is Netlify down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.netlify.com all received the expected response. This measures the endpoint, not all of Netlify - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Netlify down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/netlify#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/notion",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/notion",
+      "og_url": "https://reliastra.com/down/notion",
+      "title": "Is Notion down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.notion.so all received the expected response. This measures the endpoint, not all of Notion - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Notion down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/notion#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/npm",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/npm",
+      "og_url": "https://reliastra.com/down/npm",
+      "title": "Is npm down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.npmjs.org all received the expected response. This measures the endpoint, not all of npm - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is npm down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/npm#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/okta",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/okta",
+      "og_url": "https://reliastra.com/down/okta",
+      "title": "Is Okta down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.okta.com all received the expected response. This measures the endpoint, not all of Okta - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Okta down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/okta#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/openai",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/openai",
+      "og_url": "https://reliastra.com/down/openai",
+      "title": "Is OpenAI down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.openai.com all received the expected response. This measures the endpoint, not all of OpenAI - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is OpenAI down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/openai#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/paddle",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/paddle",
+      "og_url": "https://reliastra.com/down/paddle",
+      "title": "Is Paddle down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.paddle.com all received the expected response. This measures the endpoint, not all of Paddle - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Paddle down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/paddle#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/pagerduty",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/pagerduty",
+      "og_url": "https://reliastra.com/down/pagerduty",
+      "title": "Is PagerDuty down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.pagerduty.com all received the expected response. This measures the endpoint, not all of PagerDuty - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is PagerDuty down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/pagerduty#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/paypal",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/paypal",
+      "og_url": "https://reliastra.com/down/paypal",
+      "title": "Is PayPal down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of www.paypal-status.com all received the expected response. This measures the endpoint, not all of PayPal - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is PayPal down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/paypal#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/planetscale",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/planetscale",
+      "og_url": "https://reliastra.com/down/planetscale",
+      "title": "Is PlanetScale down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of www.planetscalestatus.com all received the expected response. This measures the endpoint, not all of PlanetScale - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is PlanetScale down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/planetscale#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/postmark",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/postmark",
+      "og_url": "https://reliastra.com/down/postmark",
+      "title": "Is Postmark down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.postmarkapp.com all received the expected response. This measures the endpoint, not all of Postmark - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Postmark down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/postmark#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/pypi",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/pypi",
+      "og_url": "https://reliastra.com/down/pypi",
+      "title": "Is PyPI down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.python.org all received the expected response. This measures the endpoint, not all of PyPI - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is PyPI down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/pypi#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/render",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/render",
+      "og_url": "https://reliastra.com/down/render",
+      "title": "Is Render down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.render.com all received the expected response. This measures the endpoint, not all of Render - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Render down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/render#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/resend",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/resend",
+      "og_url": "https://reliastra.com/down/resend",
+      "title": "Is Resend down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.resend.com all received the expected response. This measures the endpoint, not all of Resend - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Resend down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/resend#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/sendgrid",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/sendgrid",
+      "og_url": "https://reliastra.com/down/sendgrid",
+      "title": "Is SendGrid down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.sendgrid.com all received the expected response. This measures the endpoint, not all of SendGrid - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is SendGrid down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/sendgrid#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/sentry",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/sentry",
+      "og_url": "https://reliastra.com/down/sentry",
+      "title": "Is Sentry down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.sentry.io all received the expected response. This measures the endpoint, not all of Sentry - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Sentry down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/sentry#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/slack",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/slack",
+      "og_url": "https://reliastra.com/down/slack",
+      "title": "Is Slack down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.slack.com all received the expected response. This measures the endpoint, not all of Slack - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Slack down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/slack#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/stripe",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/stripe",
+      "og_url": "https://reliastra.com/down/stripe",
+      "title": "Is Stripe down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.stripe.com all received the expected response. This measures the endpoint, not all of Stripe - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Stripe down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/stripe#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/stytch",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/stytch",
+      "og_url": "https://reliastra.com/down/stytch",
+      "title": "Is Stytch down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.stytch.com all received the expected response. This measures the endpoint, not all of Stytch - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Stytch down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/stytch#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/supabase",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/supabase",
+      "og_url": "https://reliastra.com/down/supabase",
+      "title": "Is Supabase down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.supabase.com all received the expected response. This measures the endpoint, not all of Supabase - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Supabase down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/supabase#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/telnyx",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/telnyx",
+      "og_url": "https://reliastra.com/down/telnyx",
+      "title": "Is Telnyx down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.telnyx.com all received the expected response. This measures the endpoint, not all of Telnyx - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Telnyx down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/telnyx#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/together",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/together",
+      "og_url": "https://reliastra.com/down/together",
+      "title": "Is Together AI down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.together.ai all received the expected response. This measures the endpoint, not all of Together AI - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Together AI down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/together#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/twilio",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/twilio",
+      "og_url": "https://reliastra.com/down/twilio",
+      "title": "Is Twilio down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.twilio.com all received the expected response. This measures the endpoint, not all of Twilio - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Twilio down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/twilio#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/upstash",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/upstash",
+      "og_url": "https://reliastra.com/down/upstash",
+      "title": "Is Upstash down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of upstash.instatus.com all received the expected response. This measures the endpoint, not all of Upstash - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Upstash down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/upstash#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/vercel",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/vercel",
+      "og_url": "https://reliastra.com/down/vercel",
+      "title": "Is Vercel down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of www.vercel-status.com all received the expected response. This measures the endpoint, not all of Vercel - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is Vercel down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/vercel#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/workos",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/workos",
+      "og_url": "https://reliastra.com/down/workos",
+      "title": "Is WorkOS down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "No sign of it right now: the five most recent RELIASTRA observations of status.workos.com all received the expected response. This measures the endpoint, not all of WorkOS - the scope is stated below.",
+      "robots": "index, follow",
+      "h1": "Is WorkOS down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/workos#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/down/xai",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/down/xai",
+      "og_url": "https://reliastra.com/down/xai",
+      "title": "Is xAI down? - RELIASTRA observed answer | RELIASTRA",
+      "description": "The endpoint xAI is observed at did not meet its response contract: the latest RELIASTRA check of status.x.ai did not receive the expected response. Whether xAI’s services are affected is a separate question this record ",
+      "robots": "index, follow",
+      "h1": "Is xAI down?",
+      "jsonld_types": [
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "ListItem",
+        "Question"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/down/xai#faq"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 2,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/ai",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/payments",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/identity",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/communications",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/cloud",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/databases",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/storage",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/devtools",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/collaboration",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/observability",
+      "http_status": 500,
+      "content_type": "text/html; charset=utf-8",
+      "incoming_internal_links": 2
+    },
+    {
+      "url": "https://reliastra.com/observatory/mistral/incidents/aabff51e-2162-465d-9bae-235714236614",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/mistral/incidents/aabff51e-2162-465d-9bae-235714236614",
+      "og_url": "https://reliastra.com/observatory/mistral/incidents/aabff51e-2162-465d-9bae-235714236614",
+      "title": "Official status page failure window - Mistral AI observed incident (RELIASTRA) | RELIASTRA",
+      "description": "RELIASTRA observed a failure window against Official status page for Mistral AI: opened 26 Sep 2026 17:10:56 UTC, open at last read, measured from us-east. The published detection rule, the observed status codes and the ",
+      "robots": "index, follow",
+      "h1": "Official status page failure window - Mistral AI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/observatory/mistral",
+        "https://reliastra.com/observatory/mistral/incidents/aabff51e-2162-465d-9bae-235714236614"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    },
+    {
+      "url": "https://reliastra.com/observatory/xai/incidents/ebc94793-5950-488f-a0d4-73c05d290b1f",
+      "http_status": 200,
+      "indexable": true,
+      "canonical": "https://reliastra.com/observatory/xai/incidents/ebc94793-5950-488f-a0d4-73c05d290b1f",
+      "og_url": "https://reliastra.com/observatory/xai/incidents/ebc94793-5950-488f-a0d4-73c05d290b1f",
+      "title": "Official status page failure window - xAI observed incident (RELIASTRA) | RELIASTRA",
+      "description": "RELIASTRA observed a failure window against Official status page for xAI: opened 26 Sep 2026 17:10:58 UTC, open at last read, measured from us-east. The published detection rule, the observed status codes and the exact c",
+      "robots": "index, follow",
+      "h1": "Official status page failure window - xAI",
+      "jsonld_types": [
+        "BreadcrumbList",
+        "ListItem",
+        "WebPage"
+      ],
+      "jsonld_urls": [
+        "https://reliastra.com/observatory/xai",
+        "https://reliastra.com/observatory/xai/incidents/ebc94793-5950-488f-a0d4-73c05d290b1f"
+      ],
+      "sitemap_present": true,
+      "incoming_internal_links": 5,
+      "content_type": "text/html"
+    }
+  ],
+  "violations": [
+    "https://reliastra.com/observatory/incidents: og:url is https://reliastra.com",
+    "https://reliastra.com/privacy: og:url is https://reliastra.com",
+    "https://reliastra.com/terms: og:url is https://reliastra.com",
+    "https://reliastra.com/refund-policy: og:url is https://reliastra.com"
+  ]
+}

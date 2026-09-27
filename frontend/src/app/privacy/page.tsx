@@ -1,13 +1,29 @@
 import type { Metadata } from 'next';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { JsonLd } from '@/components/seo/json-ld';
-import { breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { PUBLIC_ROUTES } from '@/lib/routes';
 
+const PRIVACY_TITLE = 'Privacy Policy - RELIASTRA';
+const PRIVACY_DESCRIPTION =
+  'How RELIASTRA collects, uses, and protects customer data across its monitoring, evidence, and billing systems.';
+
 export const metadata: Metadata = {
-  title: 'Privacy Policy - RELIASTRA',
-  description: 'How RELIASTRA collects, uses, and protects customer data across its monitoring, evidence, and billing systems.',
-  alternates: { canonical: '/privacy', ...DISCOVERY_ALTERNATES },
+  title: PRIVACY_TITLE,
+  description: PRIVACY_DESCRIPTION,
+  alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.privacy), ...DISCOVERY_ALTERNATES },
+  openGraph: {
+    title: PRIVACY_TITLE,
+    description: PRIVACY_DESCRIPTION,
+    url: canonicalUrl(PUBLIC_ROUTES.privacy),
+    siteName: 'RELIASTRA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: PRIVACY_TITLE,
+    description: PRIVACY_DESCRIPTION,
+  },
 };
 
 const SECTIONS = [
@@ -26,7 +42,7 @@ const SECTIONS = [
       'To run the service: scheduling checks, detecting incidents, correlating vendor failures with your alerts, generating evidence reports, and delivering notifications through the channels you configure.',
       'To secure accounts: authentication, session management, rate limiting, payout-destination change verification, and abuse prevention.',
       'To bill accurately: subscription state, usage against plan limits, and payment processing through our payment provider (Paystack). Card details are handled by the provider; RELIASTRA never stores full card numbers.',
-      'We do not sell personal data, and we do not share monitoring data with other customers. Public Track pages only ever show aggregated posture for vendors that have been made public - never customer endpoints or credentials.',
+      'We do not sell personal data, and we do not share monitoring data with other customers. Public observatory records only ever show aggregated posture for vendors that have been made public - never customer endpoints or credentials.',
     ],
   },
   {

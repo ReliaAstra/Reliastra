@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { SiteHeader } from '@/components/site/site-header';
 import { SiteFooter } from '@/components/site/site-footer';
+import GlossaryPage from '@/app/glossary/page';
 import {
   FOOTER_GROUPS,
   HEADER_ACTIONS,
@@ -26,6 +27,7 @@ import {
   researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
+import { GLOSSARY_TERMS } from '@/lib/seo';
 
 /**
  * Link-integrity test for the public navigation.
@@ -107,6 +109,11 @@ function isDynamicVendorRoute(href: string): boolean {
   return /^\/observatory\/[^/?#]+$/.test(href);
 }
 
+/** Glossary term links resolve through `/glossary/[term]`, one per term. */
+const GLOSSARY_TERM_ROUTES = new Set(
+  GLOSSARY_TERMS.map((g) => `/glossary/${g.slug}`)
+);
+
 function flattenNavConfig(): NavLink[] {
   return [
     ...PRIMARY_NAV,
@@ -121,7 +128,11 @@ function flattenNavConfig(): NavLink[] {
 describe('public navigation link integrity', () => {
   const headerMarkup = renderToStaticMarkup(<SiteHeader />);
   const footerMarkup = renderToStaticMarkup(<SiteFooter />);
-  const allHrefs = [...hrefsOf(headerMarkup), ...hrefsOf(footerMarkup)];
+  // Page bodies can also link retired URLs (the glossary index once pointed
+  // at a consolidated capability page through a 308), so the glossary index
+  // - the densest internal link surface - is scanned with the chrome.
+  const glossaryMarkup = renderToStaticMarkup(<GlossaryPage />);
+  const allHrefs = [...hrefsOf(headerMarkup), ...hrefsOf(footerMarkup), ...hrefsOf(glossaryMarkup)];
 
   it('renders anchors at all', () => {
     expect(allHrefs.length).toBeGreaterThan(0);
@@ -147,6 +158,7 @@ describe('public navigation link integrity', () => {
       .filter(
         (href) =>
           !STATIC_ROUTES.has(href) &&
+          !GLOSSARY_TERM_ROUTES.has(href) &&
           !isDynamicVendorRoute(href)
       );
     expect(unresolved).toEqual([]);

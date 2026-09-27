@@ -71,18 +71,36 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     'Search every incident RELIASTRA independently detected across the public dependency catalog: ' +
     'consecutive failed observations, measured from named regions, endpoint scoped, with the exact ' +
     'window each detection rule fired and cleared. Derived from probes, not reported from status pages.';
+  // The canonical AND the og:url are both derived from the resolved path:
+  // the bare page and each curated single-axis filter is its own identity,
+  // everything else canonicalizes to the base URL (see the indexability
+  // note above). An og:url inherited from the layout would report every
+  // filtered view as the homepage.
+  const selfUrl = canonicalUrl(canonicalPath);
 
   return {
     title,
     description,
     alternates: {
-      canonical: canonicalUrl(canonicalPath),
+      canonical: selfUrl,
       types: {
         ...DISCOVERY_ALTERNATES.types,
         'application/rss+xml': canonicalUrl(`${SHARE_ROUTES.observatoryIncidents}/feed.xml`),
       },
     },
     robots: robotsDirective({ index: indexable, follow: true }),
+    openGraph: {
+      title,
+      description,
+      url: selfUrl,
+      siteName: 'RELIASTRA',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
   };
 }
 

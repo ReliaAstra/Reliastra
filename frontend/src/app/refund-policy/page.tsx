@@ -1,15 +1,30 @@
 import type { Metadata } from 'next';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { JsonLd } from '@/components/seo/json-ld';
-import { breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { PUBLIC_ROUTES } from '@/lib/routes';
 import { BILLING_EMAIL, COMMERCIAL_COPY, TRIAL_DAYS } from '@/lib/billing/commercial-terms';
 
+const REFUND_TITLE = 'Refund Policy - RELIASTRA';
+const REFUND_DESCRIPTION =
+  'How RELIASTRA handles cancellation, collected payments, and refund requests. There is no advertised money-back window.';
+
 export const metadata: Metadata = {
-  title: 'Refund Policy - RELIASTRA',
-  description:
-    'How RELIASTRA handles cancellation, collected payments, and refund requests. There is no advertised money-back window.',
-  alternates: { canonical: PUBLIC_ROUTES.refundPolicy, ...DISCOVERY_ALTERNATES },
+  title: REFUND_TITLE,
+  description: REFUND_DESCRIPTION,
+  alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.refundPolicy), ...DISCOVERY_ALTERNATES },
+  openGraph: {
+    title: REFUND_TITLE,
+    description: REFUND_DESCRIPTION,
+    url: canonicalUrl(PUBLIC_ROUTES.refundPolicy),
+    siteName: 'RELIASTRA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: REFUND_TITLE,
+    description: REFUND_DESCRIPTION,
+  },
 };
 
 const SECTIONS = [
