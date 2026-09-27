@@ -244,10 +244,34 @@ jobs:
         working-directory: frontend
         run: npm audit --audit-level=high
 
+      # The Gitleaks Action requires an organization license secret. Use the
+      # pinned upstream CLI and retain the action's event-range scan semantics.
+      - name: Setup Go (Gitleaks CLI)
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.11"
+          cache: false
+
+      - name: Install Gitleaks CLI
+        run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
+
       - name: Gitleaks (secret scanning)
-        uses: gitleaks/gitleaks-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          GITLEAKS_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          log_opts=""
+          if [[ "$GITHUB_EVENT_NAME" =~ ^(pull_request|push)$ ]] && \
+            [[ -n "${GITLEAKS_BASE_SHA:-}" && ! "$GITLEAKS_BASE_SHA" =~ ^0+$ ]]; then
+            log_opts="--no-merges --first-parent ${GITLEAKS_BASE_SHA}..${GITLEAKS_HEAD_SHA}"
+          fi
+          gitleaks="$(go env GOPATH)/bin/gitleaks"
+          if [ -n "$log_opts" ]; then
+            "$gitleaks" git --redact --exit-code 1 --log-opts="$log_opts" .
+          else
+            "$gitleaks" git --redact --exit-code 1 .
+          fi
 
       - name: Trivy FS scan (vuln + secret + misconfig)
         # Pinned to full SHA (zero-trust): tags on this repo were hijacked
@@ -261,7 +285,7 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Upload Trivy SARIF
-        if: always()
+        if: always() && hashFiles('trivy-fs.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-fs.sarif
