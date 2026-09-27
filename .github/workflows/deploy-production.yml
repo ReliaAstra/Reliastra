@@ -145,7 +145,7 @@ jobs:
           cat > ~/.ssh/config <<'SSHCONF'
           Host prod
             HostName ${{ secrets.PROD_TAILSCALE_IPV4 }}
-            User reliastra-deploy
+            User reliastra
             IdentityFile ~/.ssh/deploy_key
             IdentitiesOnly yes
             StrictHostKeyChecking yes
