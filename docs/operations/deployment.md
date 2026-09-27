@@ -2,9 +2,9 @@
 
 ## Source → Artifact → Release
 ```
-commit SHA (git) → CI (validate/test/security) → docker build → GHCR ghcr.io/reliastra/reliastra@sha256:<digest> → Tailscale → VPS → /opt/reliastra
+commit SHA (git) → CI (validate/test/security) → docker build → GHCR ghcr.io/reliaastra/reliastra@sha256:<digest> → Tailscale → VPS → /opt/reliastra
 ```
-Production identity = commit SHA + image digest (never `latest`). `IMAGE_REF=ghcr.io/reliastra/reliastra:sha-<sha>` and `IMAGE_DIGEST=sha256:...` stored in `/opt/reliastra/state`.
+Production identity = commit SHA + image digest (never `latest`). `IMAGE_REF=ghcr.io/reliaastra/reliastra:sha-<sha>` and `IMAGE_DIGEST=sha256:...` stored in `/opt/reliastra/state`.
 
 ## CI (is production-ready?)
 `.github/workflows/ci.yml`: `validate` (ruff, eslint, tsc, alembic check) → `test` (pytest with pgserver/fakeredis) → `security` (pip-audit, npm audit, gitleaks, trivy fs) → `build` (buildx, push GHCR, attest provenance, SBOM via Syft, trivy image). Fail closed.
@@ -39,8 +39,8 @@ Artifact ≠ config. Image has no secrets. Runtime env from `/opt/reliastra/.env
 ```bash
 # Manual (over Tailscale)
 ssh reliastra-admin@100.x
-sudo /opt/reliastra/scripts/preflight.sh --commit <sha> --image ghcr.io/reliastra/reliastra:sha-<sha>
-sudo /opt/reliastra/scripts/deploy.sh --commit <sha> --image ghcr.io/reliastra/reliastra:sha-<sha>
+sudo /opt/reliastra/scripts/preflight.sh --commit <sha> --image ghcr.io/reliaastra/reliastra:sha-<sha>
+sudo /opt/reliastra/scripts/deploy.sh --commit <sha> --image ghcr.io/reliaastra/reliastra:sha-<sha>
 sudo /opt/reliastra/scripts/healthcheck.sh --timeout 120
 sudo /opt/reliastra/scripts/smoke-test.sh
 sudo /opt/reliastra/scripts/rollback.sh --reason manual

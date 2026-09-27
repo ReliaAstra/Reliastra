@@ -60,6 +60,13 @@ jobs:
           fi
           echo "commit_sha=$SHA" >> "$GITHUB_OUTPUT"
 
+          # ghcr.io repository paths must be lowercase; github.repository keeps
+          # the owner's mixed case (ReliaAstra/...), which the docker client
+          # rejects ("invalid reference format: repository name must be
+          # lowercase"). CI's metadata-action lowercases automatically, so the
+          # pushed tag is lowercase — the pull ref must match it exactly.
+          REPO_LC="$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+
           # Resolve digest: either supplied or lookup via GHCR tag sha-$SHA
           if [ -n "${{ inputs.image_digest }}" ]; then
             DIGEST="${{ inputs.image_digest }}"
@@ -68,14 +75,14 @@ jobs:
             # Fallback: construct tag and let deploy verify digest after pull
             # We store digest after pull, but for deployment record we need it now.
             # Use gh api to fetch package version.
-            echo "::notice::Resolving digest for ghcr.io/${{ github.repository }}:sha-$SHA"
+            echo "::notice::Resolving digest for ghcr.io/$REPO_LC:sha-$SHA"
             DIGEST="sha256:$(echo -n "$SHA" | sha256sum | cut -d' ' -f1)"
             # Placeholder — real digest verified on host after pull via `docker inspect`
             # The deploy script will replace this with the true digest from registry.
             # For now we pass the tag as image_ref.
           fi
           echo "image_digest=$DIGEST" >> "$GITHUB_OUTPUT"
-          echo "image_ref=ghcr.io/${{ github.repository }}:sha-$SHA" >> "$GITHUB_OUTPUT"
+          echo "image_ref=ghcr.io/$REPO_LC:sha-$SHA" >> "$GITHUB_OUTPUT"
           echo "Resolved $SHA -> $DIGEST"
 
       - name: Create GitHub deployment (audit)

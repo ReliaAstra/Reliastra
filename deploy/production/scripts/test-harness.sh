@@ -33,7 +33,7 @@ run_case() {
 setup_mock() {
   mkdir -p /tmp/reliastra-test/state /tmp/reliastra-test/backups
   # Mock docker, curl, alembic, pg_dump if not present
-  echo '{"commit":"abc","image":"ghcr.io/reliastra/reliastra:sha-abc","digest":"sha256:abc","status":"success"}' > /tmp/reliastra-test/state/current.json
+  echo '{"commit":"abc","image":"ghcr.io/reliaastra/reliastra:sha-abc","digest":"sha256:abc","status":"success"}' > /tmp/reliastra-test/state/current.json
   cp /tmp/reliastra-test/state/current.json /tmp/reliastra-test/state/previous.json 2>/dev/null || true
 }
 
@@ -45,7 +45,7 @@ cat > /tmp/reliastra-test/bin/docker <<'MOCK'
 # Mock docker: support pull, inspect, ps, compose
 case "$1" in
   pull) echo "mock pull $2"; exit 0;;
-  inspect) echo "ghcr.io/reliastra/reliastra@sha256:mockdigest"; exit 0;;
+  inspect) echo "ghcr.io/reliaastra/reliastra@sha256:mockdigest"; exit 0;;
   ps) echo "reliastra-api Up"; exit 0;;
   *) echo "mock docker $*"; exit 0;;
 esac

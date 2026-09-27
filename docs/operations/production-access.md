@@ -20,7 +20,7 @@ ACL (`admin` Tailnet policy):
 
 ## Users
 - `reliastra-admin` - human admin, `NOPASSWD:ALL` via `/etc/sudoers.d/reliastra-admin`, SSH key in `~/.ssh/authorized_keys`, `PasswordAuthentication no`, `PermitRootLogin no`.
-- `reliastra-deploy` - CI deploy principal, **restricted**: `authorized_keys` `command="sudo /opt/reliastra/scripts/deploy.sh --commit $SSH_ORIGINAL_COMMAND",no-port-forwarding,no-agent-forwarding,no-pty` + sudoers allow only `deploy.sh, rollback.sh, healthcheck.sh, smoke-test.sh, preflight.sh, docker ps/logs, systemctl status`.
+- `reliastra-deploy` - CI deploy principal, **restricted**: plain public key in `authorized_keys` with `no-port-forwarding,no-agent-forwarding` and **no** `command="..."` forced command (the deploy runs `preflight.sh`, `deploy.sh`, and `smoke-test.sh` with varying args over this one key, so a forced command would break it — least privilege is enforced by the sudoers rule instead) + sudoers allow only `deploy.sh, rollback.sh, healthcheck.sh, smoke-test.sh, preflight.sh, docker ps/logs, systemctl status`.
 
 ## Verify
 ```bash

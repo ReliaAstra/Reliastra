@@ -41,9 +41,12 @@ $DEPLOY_USER ALL=(root) NOPASSWD: /opt/reliastra/scripts/deploy.sh *, /opt/relia
 SUDO
 chmod 440 /etc/sudoers.d/reliastra-*
 
-# Deploy user restricted shell: only via authorized_keys command=
+# Deploy user: plain key, NO forced command. The CI deploy runs preflight.sh,
+# deploy.sh AND smoke-test.sh with varying args over this one key, so a
+# `command="..."` forced command in authorized_keys would break the deploy.
+# Least privilege is enforced by the sudoers rule above instead.
 # Operator must add to /home/reliastra-deploy/.ssh/authorized_keys:
-# command="sudo /opt/reliastra/scripts/deploy.sh --commit \$SSH_ORIGINAL_COMMAND",no-port-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAAA...
+# no-port-forwarding,no-agent-forwarding ssh-ed25519 AAAA... ci-deploy
 
 # 3. SSH - Tailscale only, key only, no root, no password
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.$(date +%s) || true

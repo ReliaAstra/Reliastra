@@ -9,7 +9,7 @@ Single VPS today, extensible to multi-host, managed DB/Redis, external storage, 
 ## Trust boundaries
 - **Workstation untrusted** for prod admin - no public SSH.
 - **GitHub** - control plane, may deploy via least-privilege `reliastra-deploy` over Tailscale only.
-- **GHCR** - distribution plane, immutable `ghcr.io/reliastra/reliastra@sha256:...`.
+- **GHCR** - distribution plane, immutable `ghcr.io/reliaastra/reliastra@sha256:...`.
 - **Tailscale** - admin network (`tailscale0` 100.64/10), ACL `tag:prod:22` only for `autogroup:admin` and `tag:ci`.
 - **VPS** - execution env, assumed exposed to app threats, host firewall + container hardening.
 - **Containers** - workloads, receive only required secrets, `read_only`, `no-new-privileges`, `cap_drop: ALL`, `user: 10001`, no `privileged`, no `host` net, no `docker.sock`.

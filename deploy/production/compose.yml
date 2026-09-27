@@ -46,7 +46,7 @@ services:
         max-file: "5"
 
   api:
-    image: ${IMAGE_REF:-ghcr.io/reliastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
+    image: ${IMAGE_REF:-ghcr.io/reliaastra/reliastra@${IMAGE_DIGEST:?set IMAGE_DIGEST}}
     container_name: reliastra-api
     restart: unless-stopped
     env_file:
