@@ -6,7 +6,7 @@ import {
   readCategories,
   type TrackVendorListItem,
 } from '@/lib/track-api';
-import { deriveState, NO_OBSERVATION, utcStamp, elapsed } from '@/lib/observatory/format';
+import { deriveState, NO_OBSERVATION, elapsed } from '@/lib/observatory/format';
 import { robotsDirective } from '@/lib/indexability';
 import { canonicalUrl, breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -31,6 +31,9 @@ import {
   type RecordColumn,
 } from '@/components/observatory/primitives';
 import { renderAtRequestTime } from '@/lib/render-at-request-time';
+import { ObservatoryGlobePanel } from '@/components/observatory/observatory-globe-panel';
+import type { GlobeDependency } from '@/lib/infrastructure-visualization';
+import { OBSERVATION_POINTS } from '@/lib/methodology';
 
 /**
  * The observatory index.
@@ -140,7 +143,6 @@ export default async function ObservatoryIndexPage() {
     .filter((t): t is string => !!t)
     .sort((a, b) => Date.parse(b) - Date.parse(a));
   const freshest = observedTimes[0] ?? null;
-  const categories = new Set(items.map((v) => v.category)).size;
   const regionSet = new Set<string>();
   for (const r of rows) for (const g of r.item.regions ?? []) regionSet.add(g);
 
@@ -201,6 +203,27 @@ export default async function ObservatoryIndexPage() {
     },
   ];
 
+  const explorerDependencies: GlobeDependency[] = items.slice(0, 5).map((item) => {
+    const verdict = deriveState(item.recent_status, {
+      timestamp: item.last_check_at,
+      is_up: item.evaluation === 'expected' ? true : item.evaluation === 'unexpected' ? false : null,
+      response_received: item.response_received,
+      transport_status: item.transport_status,
+      status_code: item.status_code,
+    });
+    return {
+      id: item.id,
+      name: item.display_name,
+      category: item.category.replace(/[-_]/g, ' '),
+      status: verdict.state,
+      statusLabel: verdict.word,
+      regionLabels: item.region_state === 'configured' ? item.regions ?? [] : [],
+      lastObservedAt: item.last_check_at,
+      latencyMs: item.latency_ms ?? null,
+      href: SHARE_ROUTES.observatoryVendor(item.vendor_name),
+    };
+  });
+
   return (
     <ObservatoryShell>
       <JsonLd
@@ -239,44 +262,26 @@ export default async function ObservatoryIndexPage() {
         </div>
       </div>
 
-      <header className="bg-[var(--ob-void)]">
-        <div className="ob-container pb-12 pt-10 md:pb-16 md:pt-14">
-          <p className="ob-label flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-[var(--ob-signal)]">Public infrastructure observatory</span>
-            <span aria-hidden className="h-px w-6 bg-[var(--ob-line-2)]" />
-            <span>Open record · no account required</span>
-          </p>
-          <h1 className="obs-name mt-6 max-w-[15ch]">Dependency records</h1>
-          <p className="obs-descriptor mt-6 max-w-[62ch]">
-            RELIASTRA probes public third-party endpoints - today, mostly vendor status sites and
-            public health endpoints - and publishes what those probes measured: availability,
-            latency and the records an observation produced. Each vendor page states exactly which
-            endpoint stands behind its numbers. The status text a vendor publishes is never read,
-            mirrored or reconciled; where a vendor page and this record disagree, both are worth
-            reading.
-          </p>
+      <ObservatoryGlobePanel
+        title="Reliastra observes the world's external infrastructure and turns distributed observations into evidence."
+        description={`Public records show measured endpoint behavior and incident history. ${OBSERVATION_POINTS} observation ${OBSERVATION_POINTS === 1 ? 'point runs' : 'points run'} today; worker region labels do not indicate independent geographic origins.`}
+        dependencies={explorerDependencies}
+        totalDependencies={items.length}
+        regionLabels={[...regionSet].sort()}
+        latestObservation={freshest}
+      />
 
-          <dl className="mt-12 grid gap-x-8 gap-y-6 border-t border-[var(--ob-line-2)] pt-6 sm:grid-cols-2 lg:grid-cols-4">
-            <IndexFact term="Dependencies under observation">
-              {items.length ? String(items.length) : '0'}
-            </IndexFact>
-            <IndexFact term="Categories">{categories ? String(categories) : '0'}</IndexFact>
-            <IndexFact term="Region labels in use">
-              {regionSet.size ? [...regionSet].sort().join(' · ') : rows.every(r => r.item.region_state === 'unconfigured') ? 'unconfigured' : 'unknown'}
-            </IndexFact>
-            <IndexFact term="Most recent observation">
-              {freshest ? utcStamp(freshest) : NO_OBSERVATION}
-            </IndexFact>
-          </dl>
-          <p className="mt-8 border-t border-[var(--ob-line-2)] pt-5 text-[13.5px] text-[var(--ob-text-3)]">
-            Failure windows these probes confirmed are published as{' '}
-            <Link href={SHARE_ROUTES.observatoryIncidents} className="ob-link">
-              observed incident records
-            </Link>{' '}
-            - searchable across every dependency above.
+      <div className="border-b border-[var(--ob-line)] bg-[var(--ob-void)]">
+        <div className="ob-container flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-5">
+          <p className="max-w-[70ch] text-[13px] leading-[1.65] text-[var(--ob-text-3)]">
+            Failure windows these probes confirmed are published as observed incident records,
+            searchable across every dependency in the catalog.
           </p>
+          <Link href={SHARE_ROUTES.observatoryIncidents} className="ob-link shrink-0">
+            Browse incident records <span aria-hidden>→</span>
+          </Link>
         </div>
-      </header>
+      </div>
 
       <RecordSection
         index="01"
@@ -436,14 +441,5 @@ export default async function ObservatoryIndexPage() {
         </div>
       </section>
     </ObservatoryShell>
-  );
-}
-
-function IndexFact({ term, children }: { term: string; children: React.ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <dt className="ob-label">{term}</dt>
-      <dd className="obs-num obs-num-sm text-[var(--ob-text-2)]">{children}</dd>
-    </div>
   );
 }

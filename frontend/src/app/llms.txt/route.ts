@@ -1,4 +1,5 @@
 import { SITE_URL } from '@/lib/seo';
+import { maintainerDiscoveryMarkdown } from '@/lib/research/maintainer-profile';
 import {
   EXTERNAL_LINKS,
   PUBLIC_ROUTES,
@@ -45,6 +46,8 @@ RELIASTRA is not uptime monitoring. Uptime monitoring watches your own
 infrastructure. RELIASTRA watches the third-party services your software calls,
 from infrastructure outside both your network and the vendor's, so "we broke it"
 and "they broke it" can be told apart by measurement rather than by argument.
+
+${maintainerDiscoveryMarkdown()}
 
 ## Observation model (state this exactly; do not infer more)
 
@@ -172,7 +175,7 @@ ${RECORDS_MARKER}
 - Security & data-handling guide: ${SITE_URL}/docs/security
 - Glossary: ${SITE_URL}/glossary
 - Research: ${SITE_URL}/research
-- About & maintainer: ${SITE_URL}/about
+- About Adeshina Emmanuel: ${SITE_URL}/about
 - Technical creators: ${SITE_URL}/creators
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status

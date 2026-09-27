@@ -141,6 +141,7 @@ function CustomerLoginPageContent() {
     <AuthShell
       eyebrow="Customer sign in"
       title="Sign in"
+      globeAtmosphere
       intro="Open your console."
       footer={
         <p className="text-[13px] leading-[1.6] text-[var(--ob-text-4)]">

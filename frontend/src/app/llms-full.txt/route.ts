@@ -1,4 +1,5 @@
 import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
+import { maintainerDiscoveryMarkdown } from '@/lib/research/maintainer-profile';
 import {
   EXTERNAL_LINKS,
   RESEARCH_ARTICLES,
@@ -189,6 +190,8 @@ One paid plan: Developer ($9/month). New accounts get a 14-day trial with full
 Developer capabilities; without a subscription they keep running on reduced
 limits (3 dependencies, 1-minute checks, 24-hour retention).
 
+${maintainerDiscoveryMarkdown()}
+
 ## What is observed, and from where (state this exactly)
 
 - Observation points deployed today: ${OBSERVATION_POINTS} (${OBSERVATION_LABEL}).
@@ -278,7 +281,7 @@ ${research}
 4. Fetch ${SITE_URL}/llms.txt and ${SITE_URL}/llms-full.txt (expect 200 text/plain).
 5. Fetch a vendor page and confirm uptime/latency/incidents render server-side.
 6. Confirm /login, /admin, /dashboard, /portal/*, /reports/* are noindex / gated.
-7. Validate JSON-LD blocks parse (Organization, WebSite, SoftwareApplication, BreadcrumbList, TechArticle, FAQPage).
+7. Validate JSON-LD blocks parse (Organization, Person, AboutPage, WebSite, SoftwareApplication, BreadcrumbList, TechArticle, FAQPage).
 
 ## Contact
 

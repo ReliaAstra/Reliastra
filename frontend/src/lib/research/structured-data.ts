@@ -1,5 +1,6 @@
 import { SITE_URL } from '@/lib/seo';
 import { bylineFor, citationFor, RESEARCH_PUBLISHER, researchAuthor } from './authors';
+import type { ResearchAuthor } from './authors';
 import type { ResearchPaper } from './types';
 
 /**
@@ -18,6 +19,23 @@ import type { ResearchPaper } from './types';
  */
 
 const abs = (path: string) => (path.startsWith('http') ? path : `${SITE_URL}${path}`);
+
+/** Canonical site-wide Person entity for the declared RELIASTRA founder. */
+export function sitePersonJsonLd(author: ResearchAuthor) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': `${SITE_URL}/#person`,
+    name: author.name,
+    jobTitle: author.role,
+    description: author.bio,
+    url: `${SITE_URL}/about`,
+    ...(author.image ? { image: author.image } : {}),
+    ...(author.sameAs?.length ? { sameAs: author.sameAs } : {}),
+    ...(author.domains?.length ? { knowsAbout: author.domains } : {}),
+    worksFor: { '@id': `${SITE_URL}/#organization` },
+  };
+}
 
 /** `Person` node for a declared author, or null when there is none. */
 export function personJsonLd(authorId: string | undefined) {

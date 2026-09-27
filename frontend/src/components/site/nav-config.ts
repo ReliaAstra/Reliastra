@@ -221,7 +221,7 @@ export const FOOTER_GROUPS: NavGroup[] = [
   {
     label: 'Project',
     links: [
-      { label: 'About & maintainer', href: PUBLIC_ROUTES.about },
+      { label: 'About Adeshina', href: PUBLIC_ROUTES.about },
       { label: 'Security', href: PUBLIC_ROUTES.security },
       { label: 'Technical creators', href: PUBLIC_ROUTES.creators },
       { label: 'Contact', href: PUBLIC_ROUTES.contact },
