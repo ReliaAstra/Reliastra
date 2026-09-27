@@ -134,6 +134,20 @@ describe('the incident record', () => {
 });
 
 describe('the observatory index', () => {
+  it('describes the endpoint scope and one-point limit in search metadata and structured data', () => {
+    const metadata = hub.slice(0, hub.indexOf('/**\n * No route-level'));
+    const collection = hub.slice(
+      hub.indexOf("'@type': 'CollectionPage'"),
+      hub.indexOf('hasPart:')
+    );
+
+    expect(metadata).toContain('listed third-party endpoints');
+    expect(metadata).toContain('OBSERVATION_POINT_COUNT_LABEL');
+    expect(metadata).toContain('provider-wide service health');
+    expect(collection).toContain('name: \'Public endpoint observations\'');
+    expect(collection).toContain('description: OBSERVATORY_DESCRIPTION');
+  });
+
   it('lets a failed catalog read throw instead of rendering an empty index', () => {
     // A 200 index with no rows publishes the claim that RELIASTRA observes
     // nothing, on a page that is canonical and sitemap-listed.

@@ -1,125 +1,89 @@
 import Link from 'next/link';
-import { ObservationLedger } from './observation-ledger';
-import { AUTH_ROUTES, DOCS_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
-import {
-  DETECTION,
-  OBSERVATION_LABEL,
-  OBSERVATION_POINTS,
-  PROBE_INTERVAL_SECONDS,
-} from '@/lib/methodology';
+import { InfrastructureGlobe } from '@/components/observatory/infrastructure-globe';
+import type { ObservationPoint } from '@/lib/infrastructure-visualization';
+import { OBSERVATION_LABEL, OBSERVATION_POINTS } from '@/lib/methodology';
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
-/**
- * The homepage hero: a full-viewport mission scene.
- *
- * Composition: one near-monochrome infrastructure frame behind everything,
- * scrims that keep the type at full contrast, the proposition anchored
- * bottom-left, and a hairline-ruled deck at the foot of the viewport that
- * carries the product's own telemetry shape. Nothing on the deck invents a
- * value: the observation-point label, the interval and the rule id are read
- * from the methodology constants, and the illustrative record says it is
- * illustrative.
- *
- * The scene image is generated for RELIASTRA (public/media). It is a
- * backdrop, not a claim: no screenshot, no stock office, no one's logo.
- */
+const currentObservationPoint: ObservationPoint = {
+  id: 'reliastra-primary-observer',
+  label: 'RELIASTRA observation point',
+  region: OBSERVATION_LABEL,
+  latitude: null,
+  longitude: null,
+  state: 'unknown',
+  observedAt: null,
+};
+
+/** The public thesis, paired with an honest view of the deployed topology. */
 export function HomeHero() {
   return (
-    <section id="top" aria-labelledby="hero-title" className="ob-hero">
-      <div className="ob-hero-media">
-        <img
-          src="/media/scene-data-hall.webp"
-          srcSet="/media/scene-data-hall-sm.webp 1600w, /media/scene-data-hall.webp 1915w"
-          sizes="100vw"
-          alt=""
-          fetchPriority="high"
-          decoding="async"
-          className="ob-drift"
-        />
-        <div className="ob-hero-scrim-l" aria-hidden />
-        <div className="ob-hero-scrim-b" aria-hidden />
-      </div>
+    <section
+      id="top"
+      aria-labelledby="hero-title"
+      className="overflow-hidden border-b border-[var(--ob-line)] bg-[var(--ob-void)]"
+    >
+      <div className="ob-container pt-[102px] md:pt-[126px]">
+        <div className="grid items-center gap-8 pb-9 md:gap-12 lg:min-h-[660px] lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:gap-7 lg:pb-10 xl:min-h-[710px]">
+          <div className="relative z-[1] order-1 flex flex-col items-start lg:py-10">
+            <p className="ob-eyebrow mb-6">Independent infrastructure observation</p>
+            <h1
+              id="hero-title"
+              className="max-w-[24ch] text-[clamp(2.15rem,4.1vw,3.75rem)] font-semibold leading-[1.055] tracking-[-0.05em] text-[var(--ob-text)]"
+            >
+              Reliastra observes the world&apos;s external infrastructure and turns distributed observations into evidence.
+            </h1>
+            <p className="mt-6 max-w-[49ch] text-[clamp(1rem,1.25vw,1.125rem)] leading-[1.7] text-[var(--ob-text-2)]">
+              Independent probes record what a dependency returned. Persistent failures are
+              classified, attributed against a published method, and retained in a verifiable
+              incident record.
+            </p>
 
-      {/* Proposition, anchored low-left like a mission overlay. */}
-      <div className="ob-container relative z-[1] flex flex-1 flex-col pt-[96px] md:pt-[120px]">
-        <div className="flex flex-1 flex-col justify-end pb-10 md:pb-14">
-          <p className="ob-eyebrow ob-rise ob-rise-1">
-            External dependency intelligence
-          </p>
-
-          <h1
-            id="hero-title"
-            className="ob-display ob-rise ob-rise-2 mt-6 max-w-[24ch]"
-          >
-            Infrastructure you can prove.
-          </h1>
-
-          <p className="ob-rise ob-rise-3 mt-7 max-w-[46ch] text-[clamp(1rem,1.35vw,1.1875rem)] leading-[1.62] text-[var(--ob-text-2)]">
-            Your infrastructure does not stop at your network edge. RELIASTRA
-            independently observes the third-party services you depend on,
-            aligns their failures with your incidents, and produces evidence
-            you can hand over.
-          </p>
-
-          <div className="ob-rise ob-rise-4 mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
-              Start monitoring
-            </Link>
-            <Link href={PUBLIC_ROUTES.product} className="ob-btn ob-btn-outline">
-              Explore the platform
-            </Link>
-          </div>
-
-          <p className="ob-rise ob-rise-4 mt-7 max-w-[52ch] text-[0.875rem] leading-[1.6] text-[var(--ob-text-3)]">
-            {OBSERVATION_POINTS === 1
-              ? 'One observation point today, '
-              : `${OBSERVATION_POINTS} observation points today, `}
-            and every surface says so, including the ones where it weakens the
-            claim.{' '}
-            <Link href={DOCS_ROUTES.methodology} className="ob-link">
-              Read the methodology
-            </Link>
-            .
-          </p>
-        </div>
-      </div>
-
-      {/* The deck: product telemetry as the hero's instrument panel. */}
-      <div className="ob-hero-deck">
-        <div className="ob-container grid items-start gap-x-10 gap-y-6 py-6 lg:grid-cols-[minmax(0,572px)_minmax(0,1fr)] lg:items-center lg:py-0">
-          <ObservationLedger className="lg:my-5" />
-
-          <div className="hidden flex-col gap-5 lg:flex lg:py-5">
-            <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
-              {[
-                ['Observation point', OBSERVATION_LABEL],
-                [
-                  'Probe interval',
-                  `every ${PROBE_INTERVAL_SECONDS}s`,
-                ],
-                [
-                  'Confirmation rule',
-                  `${DETECTION.ruleId} · ${DETECTION.failureChecks}`,
-                ],
-                ['Evidence', 'SHA-256 · retained 365 days'],
-              ].map(([term, value]) => (
-                <div key={term} className="flex flex-col gap-2">
-                  <dt className="ob-label">{term}</dt>
-                  <dd className="ob-mono text-[12px] leading-[1.5] text-[var(--ob-text-2)]">
-                    {value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <div className="flex items-end justify-between gap-6 border-t border-[var(--ob-line)] pt-4">
-              <p className="ob-label max-w-[34ch] leading-[1.7]">
-                Telemetry values marked illustrative are illustrative. The
-                fields are the real schema.
+            <div className="mt-7 max-w-[49ch] border-l border-[var(--ob-signal)]/60 pl-4">
+              <p className="text-[13.5px] leading-[1.65] text-[var(--ob-text-3)]">
+                <span className="font-medium text-[var(--ob-text-2)]">
+                  Current topology: {OBSERVATION_POINTS} observation{' '}
+                  {OBSERVATION_POINTS === 1 ? 'point' : 'points'}.
+                </span>{' '}
+                Public region labels do not establish independent geographic origins, so this map
+                does not plot unverified locations or imply quorum.
               </p>
-              <span className="ob-scroll-cue">
-                <span className="ob-label">Scroll</span>
-              </span>
+            </div>
+
+            <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+                Start observing
+              </Link>
+              <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">
+                Open public observatory
+              </Link>
             </div>
           </div>
+
+          <div className="order-2 min-w-0 lg:-mr-8 xl:-mr-12">
+            <div className="mx-auto w-full max-w-[620px] lg:max-w-none">
+              <InfrastructureGlobe
+                mode="landing"
+                observations={[currentObservationPoint]}
+                interactive
+                label="Slowly rotating orthographic Earth with coastline and graticule. No observation coordinates are published, so no location markers are shown."
+              />
+            </div>
+            <div className="mx-auto mt-1 flex max-w-[600px] flex-wrap items-center justify-between gap-x-8 gap-y-2 border-t border-[var(--ob-line)] px-1 pt-4 text-[11px] text-[var(--ob-text-4)] lg:mt-0">
+              <span>GEOGRAPHIC REFERENCE · NATURAL EARTH</span>
+              <span>PLACED OBSERVATION LOCATIONS · NOT PUBLISHED</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid border-t border-[var(--ob-line)] py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-8">
+          <p className="text-[12px] font-medium tracking-[0.025em] text-[var(--ob-text-2)]">
+            Observation <span className="px-2 text-[var(--ob-text-4)]">/</span> Persistent condition{' '}
+            <span className="px-2 text-[var(--ob-text-4)]">/</span> Attribution{' '}
+            <span className="px-2 text-[var(--ob-text-4)]">/</span> Verifiable evidence
+          </p>
+          <Link href={PUBLIC_ROUTES.product + '/evidence'} className="ob-link mt-3 text-[12.5px] sm:mt-0">
+            How evidence is produced <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
     </section>

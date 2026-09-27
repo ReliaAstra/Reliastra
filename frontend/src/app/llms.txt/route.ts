@@ -1,4 +1,5 @@
 import { SITE_URL } from '@/lib/seo';
+import { maintainerDiscoveryMarkdown } from '@/lib/research/maintainer-profile';
 import {
   EXTERNAL_LINKS,
   PUBLIC_ROUTES,
@@ -45,6 +46,8 @@ RELIASTRA is not uptime monitoring. Uptime monitoring watches your own
 infrastructure. RELIASTRA watches the third-party services your software calls,
 from infrastructure outside both your network and the vendor's, so "we broke it"
 and "they broke it" can be told apart by measurement rather than by argument.
+
+${maintainerDiscoveryMarkdown()}
 
 ## Observation model (state this exactly; do not infer more)
 
@@ -114,10 +117,11 @@ billing. 14-day trial on every new account, no payment method required.
 
 ## Public observatory
 
-Independently measured status for endpoints RELIASTRA probes as its own public
-record. Customer dependencies are never included. Every figure is published with
-its window and its observation count, and an availability figure with zero
-observations reads "insufficient data" rather than 100%.
+Public records cover listed third-party endpoints probed by RELIASTRA; customer
+dependencies are not included. Each record describes endpoint behavior from
+${OBSERVATION_POINTS} observation point${OBSERVATION_POINTS === 1 ? '' : 's'}, not
+provider-wide service health. Every figure includes its window and observation
+count; zero observations are reported as "insufficient data," not 100%.
 
 What is probed today: vendor-published status-site endpoints - https://status.openai.com
 for OpenAI, and equivalents listed on each vendor record - recording HTTP status,
@@ -172,7 +176,7 @@ ${RECORDS_MARKER}
 - Security & data-handling guide: ${SITE_URL}/docs/security
 - Glossary: ${SITE_URL}/glossary
 - Research: ${SITE_URL}/research
-- About & maintainer: ${SITE_URL}/about
+- About Adeshina Emmanuel: ${SITE_URL}/about
 - Technical creators: ${SITE_URL}/creators
 - Contact: ${SITE_URL}/contact
 - Status: ${SITE_URL}/status

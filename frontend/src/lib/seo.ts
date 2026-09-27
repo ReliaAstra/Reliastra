@@ -153,6 +153,7 @@ export function organizationJsonLd() {
     url: `${SITE_URL}/`,
     logo: { '@type': 'ImageObject', url: SITE_ORG.logo },
     email: SITE_ORG.email,
+    founder: { '@id': `${SITE_URL}/#person` },
     sameAs: [SITE_ORG.github],
   };
 }

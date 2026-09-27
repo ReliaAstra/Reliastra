@@ -95,23 +95,21 @@ export function MaintainerSection() {
       <Container>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,0.68fr)_minmax(0,1.32fr)] lg:gap-20">
           <div className="flex flex-col gap-5">
-            <Eyebrow>Who builds this</Eyebrow>
+            <Eyebrow>Founder &amp; engineer</Eyebrow>
             <h2 id="maintainer-title" className="ob-h2 max-w-[16ch]">
-              One engineer, and a public repository.
+              Engineering led by its founder.
             </h2>
             <div className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
-              <ArrowLink href={PUBLIC_ROUTES.about}>About the maintainer</ArrowLink>
+              <ArrowLink href={PUBLIC_ROUTES.about}>About Adeshina Emmanuel</ArrowLink>
             </div>
           </div>
 
           <div className="flex flex-col gap-6">
             <p className="ob-body-lg max-w-[62ch]">
-              RELIASTRA is built and maintained by Adeshina Emmanuel, an
-              infrastructure security engineer working on identity, access
-              control and system hardening across cloud, Kubernetes and AI
-              environments. The detector, the evidence format, the research and
-              the product are one person's work, which is why it is one price,
-              and why the person who built it answers the support inbox.
+              Adeshina Emmanuel founded RELIASTRA and leads its engineering. His
+              work spans cloud identity and access control, Kubernetes security,
+              and AI systems. Alongside the platform, he publishes security
+              research and maintains open-source tools.
             </p>
 
             <div className="border-t border-[var(--ob-line)] pt-6">

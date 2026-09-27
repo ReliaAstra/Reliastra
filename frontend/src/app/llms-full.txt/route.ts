@@ -1,4 +1,5 @@
 import { GLOSSARY_TERMS, SITE_URL } from '@/lib/seo';
+import { maintainerDiscoveryMarkdown } from '@/lib/research/maintainer-profile';
 import {
   EXTERNAL_LINKS,
   RESEARCH_ARTICLES,
@@ -189,6 +190,8 @@ One paid plan: Developer ($9/month). New accounts get a 14-day trial with full
 Developer capabilities; without a subscription they keep running on reduced
 limits (3 dependencies, 1-minute checks, 24-hour retention).
 
+${maintainerDiscoveryMarkdown()}
+
 ## What is observed, and from where (state this exactly)
 
 - Observation points deployed today: ${OBSERVATION_POINTS} (${OBSERVATION_LABEL}).
@@ -258,6 +261,7 @@ ${research}
 ## Public observatory
 
 - Index: ${SITE_URL}/observatory
+- Scope: listed public endpoints only, observed from ${OBSERVATION_POINTS} observation point${OBSERVATION_POINTS === 1 ? '' : 's'}. Records do not establish provider-wide service or API status; customer dependencies are not included.
 - Detail pattern: ${SITE_URL}/observatory/{vendor} (only for vendors with real telemetry; empty or fabricated vendors are never generated)
 - Incident search: ${SITE_URL}/observatory/incidents - the cross-vendor public incident search. Filters: vendor, category, region, status (open|resolved); an RSS feed of recent detections is at /observatory/incidents/feed.xml. Records are endpoint scoped single-region measurements with the detection rule attached, never vendor-wide outage claims.
 - Incident pattern: ${SITE_URL}/observatory/{vendor}/incidents/{incident-id} - only for incidents RELIASTRA actually holds on its public incident channel; pages exist exactly when records exist, and a record is published for the evidence-retention window the API documents (${PUBLIC_INCIDENT_WINDOW_DAYS} days), after which the URL 404s. These pages are not described as permanent, because they are not.
@@ -278,7 +282,7 @@ ${research}
 4. Fetch ${SITE_URL}/llms.txt and ${SITE_URL}/llms-full.txt (expect 200 text/plain).
 5. Fetch a vendor page and confirm uptime/latency/incidents render server-side.
 6. Confirm /login, /admin, /dashboard, /portal/*, /reports/* are noindex / gated.
-7. Validate JSON-LD blocks parse (Organization, WebSite, SoftwareApplication, BreadcrumbList, TechArticle, FAQPage).
+7. Validate JSON-LD blocks parse (Organization, Person, AboutPage, WebSite, SoftwareApplication, BreadcrumbList, TechArticle, FAQPage).
 
 ## Contact
 

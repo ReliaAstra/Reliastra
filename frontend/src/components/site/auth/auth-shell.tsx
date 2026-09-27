@@ -1,9 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Wordmark } from '@/components/site/wordmark';
 import { cn } from '@/lib/utils';
+
+const AmbientGlobe = dynamic(
+  () => import('@/components/observatory/infrastructure-globe').then((module) => module.InfrastructureGlobe),
+  { ssr: false },
+);
 
 /**
  * The authentication shell.
@@ -29,9 +35,35 @@ import { cn } from '@/lib/utils';
  * the wrong register for this product twice over: a stock photo of somebody
  * else's racks says nothing true about a measurement service, and the four
  * photographs cost 716 KB before a visitor had created an account. The column
- * is now drawn - a survey grid with one measured point on it - and the only
- * bytes are CSS.
+ * keeps its survey grid; the customer sign-in page can add a low-contrast,
+ * slow geographic reference on desktop only. The form remains the interaction
+ * surface, and mobile does not load the globe chunk.
  */
+function LoginGlobeAtmosphere() {
+  const [desktop, setDesktop] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setDesktop(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  if (!desktop) return null;
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center opacity-[0.14]">
+      <AmbientGlobe
+        mode="login"
+        className="w-full"
+        interactive={false}
+        animate
+        label="Subtle geographic globe background"
+      />
+    </div>
+  );
+}
+
 export function AuthShell({
   eyebrow,
   title,
@@ -39,6 +71,7 @@ export function AuthShell({
   children,
   footer,
   aside,
+  globeAtmosphere = false,
 }: {
   eyebrow: string;
   title: string;
@@ -46,6 +79,7 @@ export function AuthShell({
   children: ReactNode;
   footer?: ReactNode;
   aside?: ReactNode;
+  globeAtmosphere?: boolean;
 }) {
   return (
     <div className="ob flex min-h-screen flex-col lg:flex-row">
@@ -91,7 +125,8 @@ export function AuthShell({
       {/* The technical column: desktop only, no request, no photograph */}
       <aside className="relative hidden flex-1 overflow-hidden border-l border-[var(--ob-line)] bg-[var(--ob-base)] lg:block">
         <div className="ob-grid-field absolute inset-0" aria-hidden />
-        <div className="relative flex h-full flex-col justify-between p-14 xl:p-16">
+        {globeAtmosphere && <LoginGlobeAtmosphere />}
+        <div className="relative z-10 flex h-full flex-col justify-between p-14 xl:p-16">
           <p className="ob-mono text-[var(--ob-text-4)]">reliastra.com</p>
           {aside ?? <DefaultAside />}
           <p className="ob-mono text-[var(--ob-text-4)]">

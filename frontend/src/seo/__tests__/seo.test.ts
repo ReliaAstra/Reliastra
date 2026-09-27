@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GLOSSARY_TERMS,
   PUBLIC_PAGES,
+  DISCOVERY_ALTERNATES,
   articleJsonLd,
   breadcrumbJsonLd,
   buildMetadata,
@@ -32,6 +33,8 @@ import {
 import { RESEARCH_ARTICLE_BODIES } from '@/content/research-articles';
 import robots from '@/app/robots';
 import { PAPER_OG_IMAGES, researchSocialImage } from '@/lib/research/social';
+import { RESEARCH_AUTHORS } from '@/lib/research/authors';
+import { sitePersonJsonLd } from '@/lib/research/structured-data';
 
 const PRIVATE_FRAGMENTS = [
   '/admin',
@@ -197,6 +200,19 @@ describe('canonical URL architecture', () => {
 });
 
 describe('metadata system', () => {
+  it('keeps the founder profile indexable and advertises both discovery files', () => {
+    expect(PUBLIC_PAGES.map((page) => page.path)).toContain(PUBLIC_ROUTES.about);
+    const metadata: any = buildMetadata({
+      title: 'About Adeshina Emmanuel',
+      description: 'Founder and engineer of RELIASTRA.',
+      path: PUBLIC_ROUTES.about,
+    });
+
+    expect(metadata.alternates.canonical).toBe('https://reliastra.com/about');
+    expect(metadata.alternates.types).toEqual(DISCOVERY_ALTERNATES.types);
+    expect(metadata.robots.index).toBe(true);
+  });
+
   it('builds unique title/description/canonical/OG/Twitter per page', () => {
     const m: any = buildMetadata({
       title: 'Evidence records',
@@ -250,6 +266,18 @@ describe('structured data', () => {
       expect((b as any)['@context']).toBe('https://schema.org');
     }
     expect((blocks[0] as any)['@id']).toContain('#organization');
+  });
+
+  it('connects the organization and founder through one canonical Person entity', () => {
+    const organization = organizationJsonLd() as any;
+    const person = sitePersonJsonLd(RESEARCH_AUTHORS[0]) as any;
+
+    expect(organization.founder['@id']).toBe('https://reliastra.com/#person');
+    expect(person['@id']).toBe(organization.founder['@id']);
+    expect(person.name).toBe('Adeshina Emmanuel');
+    expect(person.url).toBe('https://reliastra.com/about');
+    expect(person.sameAs).toContain('https://github.com/EmmanuelAdesina');
+    expect(person.description).toContain('cloud identity');
   });
 });
 
@@ -488,6 +516,13 @@ describe('machine-readable discovery', () => {
       // answer generated from them cannot invent multi-region confirmation.
       expect(body).toContain('RELIASTRA');
       expect(body.toLowerCase()).toContain('observation point');
+      expect(body).toContain('## Founder and engineer');
+      expect(body).toContain('Role: AI Infrastructure Security Engineer.');
+      expect(body).toContain('Adeshina Emmanuel');
+      expect(body).toContain('cloud-identity-security-engineering');
+      expect(body).toContain('https://reliastra.com/about');
+      expect(body).toContain('region labels identify the worker');
+      expect(body).toContain('provider-wide');
       expect(body).not.toContain('multi-region confirmation is claimed');
     }
     const body = await (await llms.GET()).text();

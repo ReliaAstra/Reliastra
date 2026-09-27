@@ -17,7 +17,7 @@ import { AUTH_ROUTES } from '@/lib/routes';
  * Each scene is one argument at one scale, and the page is the sequence an
  * engineer reads them in:
  *
- *   top          the proposition, over the product's own telemetry
+ *   top          the product thesis, paired with the deployed observation footprint
  *   statement    the claim, in one sentence
  *   problem      the blind spot, drawn as a topology
  *   observation  what a probe records, with the working

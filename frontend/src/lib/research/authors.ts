@@ -23,6 +23,8 @@ export type ResearchAuthor = {
   bio: string;
   /** Absolute URL of the author profile, when one is published. */
   url?: string;
+  /** Public profile image, when one is available. */
+  image?: string;
   /** Absolute URL, used for `sameAs` in structured data. */
   sameAs?: string[];
   /** Areas the author is accountable for, used on the research index. */
@@ -49,21 +51,28 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
   {
     id: 'adeshina-emmanuel',
     name: 'Adeshina Emmanuel',
-    role: 'AI Infrastructure Security Engineer | Cloud, Kubernetes & AI Systems Security',
+    role: 'AI Infrastructure Security Engineer',
     bio:
-      'AI infrastructure security engineer working on identity, access control and system ' +
-      'hardening across cloud, Kubernetes and AI production environments. Writes the Cloud ' +
-      'Identity Security Engineering research series and builds RELIASTRA, an infrastructure ' +
-      'trust platform that independently verifies third-party availability and produces ' +
-      'cryptographic incident evidence.',
-    url: 'https://reliastra.com/research/cloud-security/aws-iam-policy-evaluation-order',
+      'Adeshina Emmanuel is an infrastructure security engineer focused on cloud identity, ' +
+      'access control, Kubernetes, and AI systems. He founded and leads the engineering of ' +
+      'RELIASTRA and publishes research on cloud identity and infrastructure security.',
+    url: 'https://reliastra.com/about',
+    image: 'https://avatars.githubusercontent.com/u/219976014?v=4',
     sameAs: [
       'https://www.linkedin.com/in/emmanueladeshina01',
       'https://x.com/secengineerx01',
       'https://eadeshina.hashnode.dev/',
       'https://github.com/EmmanuelAdesina',
     ],
-    domains: ['AI infrastructure security', 'Cloud security', 'Kubernetes security', 'Zero trust', 'Dependency security'],
+    domains: [
+      'Infrastructure security',
+      'Cloud identity and access control',
+      'AWS IAM',
+      'Kubernetes security',
+      'AI systems security',
+      'Measurement integrity',
+      'Distributed systems',
+    ],
   },
 ];
 

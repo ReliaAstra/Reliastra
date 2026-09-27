@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { HomeLanding } from '@/components/site/home/home-landing';
 import { HOME_DEFINITIONS } from '@/components/site/home/sections';
 import { JsonLd } from '@/components/seo/json-ld';
+import { RESEARCH_AUTHORS } from '@/lib/research/authors';
+import { sitePersonJsonLd } from '@/lib/research/structured-data';
 import {
   SITE_URL,
   canonicalUrl,
@@ -54,6 +56,7 @@ export default function Home() {
       <JsonLd
         data={[
           organizationJsonLd(),
+          sitePersonJsonLd(RESEARCH_AUTHORS[0]),
           websiteJsonLd(),
           softwareAppJsonLd(),
           {
