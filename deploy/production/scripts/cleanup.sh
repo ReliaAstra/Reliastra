@@ -7,7 +7,7 @@ keep=5
 echo "cleanup: pruning old images, keeping $keep"
 
 # List images for reliastra, sorted newest first
-images=$(docker images --format '{{.Repository}}:{{.Tag}}@{{.ID}}' ghcr.io/reliastra/reliastra 2>/dev/null | head -20 || true)
+images=$(docker images --format '{{.Repository}}:{{.Tag}}@{{.ID}}' ghcr.io/reliaastra/reliastra 2>/dev/null | head -20 || true)
 if [[ -z "$images" ]]; then
   echo "no images to prune"
   exit 0
@@ -30,7 +30,7 @@ docker image prune -f --filter "dangling=true" 2>&1 | tail -5
 # Remove old reliastra images beyond keep, but never the kept digests
 # Use docker images --filter, but protect keep_digests
 count=0
-for img in $(docker images ghcr.io/reliastra/reliastra --format '{{.Repository}}:{{.Tag}}' | tail -n +$((keep + 1)) ); do
+for img in $(docker images ghcr.io/reliaastra/reliastra --format '{{.Repository}}:{{.Tag}}' | tail -n +$((keep + 1)) ); do
   # Check if its digest is in keep list
   digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$img" 2>/dev/null | cut -d'@' -f2 || true)
   skip=false

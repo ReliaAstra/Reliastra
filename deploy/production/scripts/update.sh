@@ -100,14 +100,14 @@ else
 fi
 
 echo "=== 2/4 build image ==="
-docker build --network host -t ghcr.io/reliastra/reliastra:local -f Dockerfile .
-IMAGE_ID=$(docker inspect --format='{{.Id}}' ghcr.io/reliastra/reliastra:local)
+docker build --network host -t ghcr.io/reliaastra/reliastra:local -f Dockerfile .
+IMAGE_ID=$(docker inspect --format='{{.Id}}' ghcr.io/reliaastra/reliastra:local)
 echo "built $IMAGE_ID"
 
 echo "=== 3/4 redeploy api ==="
 mkdir -p "$STATE_DIR"
 {
-  echo "IMAGE_REF=ghcr.io/reliastra/reliastra:local"
+  echo "IMAGE_REF=ghcr.io/reliaastra/reliastra:local"
   echo "IMAGE_DIGEST=$IMAGE_ID"
 } > "$STATE_DIR/image.env"
 cd /opt/reliastra

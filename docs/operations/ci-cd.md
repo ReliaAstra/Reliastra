@@ -2,7 +2,7 @@
 
 ## Artifact lifecycle
 ```
-commit SHA → CI (validate/test/security) → docker build → GHCR ghcr.io/reliastra/reliastra@sha256:<digest> → Tailscale → VPS → state/current.json
+commit SHA → CI (validate/test/security) → docker build → GHCR ghcr.io/reliaastra/reliastra@sha256:<digest> → Tailscale → VPS → state/current.json
 ```
 Production never rebuilds, never `git pull`, never `build:`.
 
@@ -10,7 +10,7 @@ Production never rebuilds, never `git pull`, never `build:`.
 - **validate** (5m): `ruff check`, `ruff format --check`, `eslint`, `tsc`, `alembic check` (fails on main if drift)
 - **test** (15m, needs validate): `pytest -v` with `pgserver` + `fakeredis` (no external DB)
 - **security** (10m): `pip-audit`, `npm audit --audit-level=high`, `gitleaks`, `trivy fs` → SARIF
-- **build** (25m, needs test+security): `docker buildx` `linux/amd64` → `ghcr.io/reliastra/reliastra:sha-<sha>` + `:latest` on main, `cache gha`, `provenance max`, `sbom true`, `trivy image` → `attest-build-provenance` + `sbom spdx` artifact. Digest is output.
+- **build** (25m, needs test+security): `docker buildx` `linux/amd64` → `ghcr.io/reliaastra/reliastra:sha-<sha>` + `:latest` on main, `cache gha`, `provenance max`, `sbom true`, `trivy image` → `attest-build-provenance` + `sbom spdx` artifact. Digest is output.
 
 All jobs `timeout-minutes`, `concurrency: cancel-in-progress`, pinned actions `v4/v5/v6`.
 
