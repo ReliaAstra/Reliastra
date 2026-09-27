@@ -121,12 +121,12 @@ fi
 # Backup (bounded, 7d retention, no secrets in log)
 log "INFO" "BACKUP"
 mkdir -p /opt/reliastra/backups
-BACKUP_FILE="/opt/reliastra/backups/pre-$COMMIT-$(date +%Y%m%d%H%M%S).sql.gz"
-if timeout 120 bash -c 'set -a; source /opt/reliastra/.env.production; pg_dump --no-owner --no-privileges --format=custom --file="$BACKUP_FILE" 2>&1 | head -20' 2>&1; then
-  log "INFO" "backup $BACKUP_FILE"
-  # Prune backups older than 7d, keep at most 10
+export BACKUP_FILE="/opt/reliastra/backups/pre-$COMMIT-$(date +%Y%m%d%H%M%S).sql.gz"
+if timeout 120 bash -c 'set -a; source /opt/reliastra/.env.production; pg_dump --no-owner --no-privileges --format=custom --file="$BACKUP_FILE"' 2>&1 | tail -3 && [[ -s "$BACKUP_FILE" ]]; then
+  log "INFO" "backup $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
+  # Prune backups older than 7d, keep at most 10 (guarded: empty dir must not fail the deploy)
   find /opt/reliastra/backups -name "pre-*.sql.gz" -mtime +7 -delete 2>/dev/null || true
-  ls -1t /opt/reliastra/backups/pre-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f
+  ls -1t /opt/reliastra/backups/pre-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f || true
 else
   log "WARN" "pg_dump failed - continuing if Supabase PITR available, else operator must verify"
   # Don't fail deploy if pg_dump fails but DB is reachable - Supabase has PITR
