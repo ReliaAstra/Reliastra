@@ -70,6 +70,10 @@ export default function robots(): MetadataRoute.Robots {
     '/signup',
     '/verify-email',
     '/reset-password',
+    // OAuth working surfaces (single-use codes in query strings, never
+    // documents). The segment layout also emits noindex in metadata.
+    '/auth/',
+    '/auth',
     '/r/',
     '/r',
     '/referral-unavailable',

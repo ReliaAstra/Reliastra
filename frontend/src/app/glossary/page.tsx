@@ -31,7 +31,7 @@ export default function GlossaryPage() {
         lede="The category’s vocabulary, defined once. Each term states the problem, an example, and RELIASTRA’s approach."
         breadcrumbs={crumbs}
         related={[
-          { label: 'External Dependency Intelligence', href: '/external-dependency-intelligence', description: 'The pillar page for the category.' },
+          { label: 'External Dependency Intelligence', href: '/product', description: 'The pillar page for the category.' },
           { label: 'Documentation', href: '/docs', description: 'From definitions to operations.' },
           { label: 'Research', href: '/research', description: 'Methodology behind the terms.' },
         ]}

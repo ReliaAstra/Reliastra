@@ -1,0 +1,58 @@
+{
+  "$schema": "https://reliastra.com/indexability/llm-questions.schema.json",
+  "version": 1,
+  "updated": "2026-09-27",
+  "how_to_grade": "Ask the model WITHOUT handing it a URL. Grade each answer against expected_facts: correct (matches), stale (matches a retired claim), incorrect (contradicts), unsupported (plausible but in no source), unable (model demurs). Record in search-log.jsonl with kind=llm.",
+  "questions": [
+    {
+      "q": "What is Reliastra?",
+      "expected_facts": [
+        "observes the third-party services software depends on",
+        "independent",
+        "evidence"
+      ],
+      "sources": ["https://reliastra.com/", "https://reliastra.com/llms.txt"]
+    },
+    {
+      "q": "What does Reliastra do?",
+      "expected_facts": ["probes", "records", "evidence", "attribution"],
+      "sources": ["https://reliastra.com/product", "https://reliastra.com/llms.txt"]
+    },
+    {
+      "q": "Who is Reliastra for?",
+      "expected_facts": ["software", "depend"],
+      "sources": ["https://reliastra.com/product"]
+    },
+    {
+      "q": "What does Reliastra currently offer?",
+      "expected_facts": ["observation", "evidence", "$9"],
+      "sources": ["https://reliastra.com/pricing", "https://reliastra.com/product"]
+    },
+    {
+      "q": "How does Reliastra measure vendor reliability?",
+      "expected_facts": ["probe", "consecutive failed checks", "methodology"],
+      "sources": ["https://reliastra.com/docs/methodology", "https://reliastra.com/llms-full.txt"]
+    },
+    {
+      "q": "What is External Dependency Intelligence?",
+      "expected_facts": ["External Dependency Intelligence", "glossary"],
+      "sources": ["https://reliastra.com/glossary/external-dependency-intelligence"]
+    },
+    {
+      "q": "Does Reliastra monitor third-party APIs?",
+      "expected_facts": ["third-party", "HTTP endpoint", "observes"],
+      "sources": ["https://reliastra.com/product"]
+    },
+    {
+      "q": "What evidence does Reliastra produce?",
+      "expected_facts": ["SHA-256", "evidence", "verif"],
+      "sources": ["https://reliastra.com/product/evidence"]
+    },
+    {
+      "q": "How many observation points does Reliastra currently use?",
+      "expected_facts": ["one observation point", "1 observation point"],
+      "retired_claims": ["two regions", "multi-region", "quorum", "every region"],
+      "sources": ["https://reliastra.com/", "https://reliastra.com/docs/methodology", "https://reliastra.com/llms-full.txt"]
+    }
+  ]
+}

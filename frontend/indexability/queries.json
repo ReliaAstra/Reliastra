@@ -1,0 +1,24 @@
+{
+  "$schema": "https://reliastra.com/indexability/queries.schema.json",
+  "version": 1,
+  "updated": "2026-09-27",
+  "brand_queries": [
+    "Reliastra",
+    "\"What is Reliastra?\"",
+    "Reliastra software",
+    "Reliastra infrastructure",
+    "Reliastra API",
+    "Reliastra observatory"
+  ],
+  "concept_queries": [
+    "external dependency intelligence",
+    "third-party API failure attribution",
+    "vendor outage independent evidence",
+    "API dependency incident evidence",
+    "external API reliability monitoring",
+    "SLA evidence vendor outage",
+    "third-party dependency observability"
+  ],
+  "record_fields": ["query", "engine", "date", "present", "url", "title", "snippet", "position"],
+  "engines": ["google", "bing", "brave", "perplexity", "chatgpt-search", "other"]
+}
