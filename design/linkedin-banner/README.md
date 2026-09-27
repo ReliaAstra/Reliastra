@@ -9,13 +9,11 @@ Two themes: **light** (airy / relaxing — the default) and **dark** (graphite).
 | --- | --- |
 | `banner-1584x396.png` | **Light theme — upload this to LinkedIn** (1x, sRGB) |
 | `banner-2x-3168x792.png` | Light 2x retina master (crisper on HiDPI; LinkedIn scales it down) |
-| `preview-linkedin-overlay.png` | Light safe-area proof: simulated avatar circle over the banner |
 | `banner-dark-1584x396.png` | Dark theme (graphite/cyan) — alternate upload |
 | `banner-dark-2x-3168x792.png` | Dark 2x retina master |
-| `preview-linkedin-overlay-dark.png` | Dark safe-area proof |
 | `banner.svg`, `banner-dark.svg` | Editable vector sources |
 | `banner(-dark)-safe-overlay.svg` | Vector sources with safe-area overlay |
-| `generate.cjs` | Generator — regenerates everything deterministically |
+| `generate.cjs` | Generator — regenerates everything deterministically, including the `preview-linkedin-overlay(-dark).png` safe-area proofs (generated on demand, not committed) |
 
 ## Design notes
 

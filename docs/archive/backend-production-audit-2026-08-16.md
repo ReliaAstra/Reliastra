@@ -1,5 +1,7 @@
 # Reliastra Backend - Production Readiness Audit
 
+> **Archived from `backend/docs/reliastra_production_audit.md`.** Point-in-time audit of commit `0b99514`; paths below (`app/…`, `audit/…`) are relative to `backend/`. Findings predate the fix batches that followed.
+
 **Auditor:** Founding Production Engineer (Staff+ SRE)
 **Date:** 2026-08-16
 **Commit audited:** `0b99514` - *feat: replace Celery with APScheduler in-process scheduler*

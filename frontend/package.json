@@ -1,5 +1,5 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
+  "name": "reliastra-frontend",
   "version": "0.2.1",
   "private": true,
   "scripts": {
@@ -8,12 +8,8 @@
     "start": "NODE_ENV=production HOSTNAME=0.0.0.0 PORT=3000 node .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:referral": "node e2e/partner-referral.http.mjs",
     "test:watch": "vitest",
-    "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -83,7 +79,6 @@
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
     "world-atlas": "^2.0.2",
-    "z-ai-web-dev-sdk": "^0.0.18",
     "zod": "^4.0.2",
     "zustand": "^5.0.15"
   },
@@ -95,7 +90,6 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "^19",
     "@types/topojson-client": "^3.1.5",
-    "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",

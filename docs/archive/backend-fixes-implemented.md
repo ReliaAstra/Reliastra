@@ -1,5 +1,7 @@
 # Reliastra Backend - Critical Bug Fixes Implementation Report
 
+> **Archived from `backend/FIXES_IMPLEMENTED.md`.** Branch report for `arena/01a01132-reliastra-backend`; paths below (`app/…`) are relative to `backend/`. Migrations have since advanced past `0015`.
+
 **Branch:** `arena/01a01132-reliastra-backend`
 **Base commit:** `3df6170` (main)
 **Date:** 2026-08-17

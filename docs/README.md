@@ -7,7 +7,7 @@ Living documentation is at the top level; point-in-time audits and session logs 
 | Path | Purpose |
 |------|---------|
 | [ROADMAP.md](ROADMAP.md) | Engineering roadmap, single source of truth for sequencing |
-| [checks-operating-model.md](checks-operating-model.md) | Runtime contract for checks: Postgres+Redis+Cerely, health, verification |
+| [checks-operating-model.md](checks-operating-model.md) | Runtime contract for checks: Postgres+Redis+Celery, health, verification |
 | [architecture/OVERVIEW.md](architecture/OVERVIEW.md) | System overview: frontend, API, workers, storage |
 | [architecture/ADMIN_CONTROL_PLANE_API.md](architecture/ADMIN_CONTROL_PLANE_API.md) | Admin control plane API contract |
 | [design/UI-SPEC.md](design/UI-SPEC.md) | Design system contract, tokens rs-*, source of truth globals.css |
@@ -25,7 +25,6 @@ Living documentation is at the top level; point-in-time audits and session logs 
 | [operations/rollback.md](operations/rollback.md) | Rollback procedure |
 | [engineering/discussion-starters.md](engineering/discussion-starters.md) | Four initial engineering questions pending Discussions enablement |
 | [engineering/github-setup.md](engineering/github-setup.md) | GitHub setup |
-| [engineering/prompt-fix-public-dependency-index.md](engineering/prompt-fix-public-dependency-index.md) | Prompt for fixing public dependency index |
 | [redesign/route-inventory.md](redesign/route-inventory.md) | Public site route inventory (phase 1) |
 | [redesign/console-inventory.md](redesign/console-inventory.md) | Console route inventory (phase 2) |
 | [redesign/observatory-inventory.md](redesign/observatory-inventory.md) | Observatory inventory (phase 3) |
@@ -52,9 +51,18 @@ Living documentation is at the top level; point-in-time audits and session logs 
 | [archive/resend-webhook.md](archive/resend-webhook.md) | Resend webhook notes |
 | [archive/diagnostics/2026-09-05-footer-links-session-logout-checks.md](archive/diagnostics/2026-09-05-footer-links-session-logout-checks.md) | Session log |
 | [archive/diagnostics/2026-09-21-docs-namespace-served-by-api.md](archive/diagnostics/2026-09-21-docs-namespace-served-by-api.md) | Session log |
+| [archive/frontend-qa-audit.md](archive/frontend-qa-audit.md) | Frontend forensic QA pass, previous design iteration (+ `qa-*.png` captures) |
+| [archive/frontend-ui-audit.md](archive/frontend-ui-audit.md) | UI/typography/accessibility audit, previous design iteration |
+| [archive/crawl-indexability-audit.md](archive/crawl-indexability-audit.md) | Crawl/indexability remediation record (`/agencies` 410, robots) |
+| [archive/backend-production-audit-2026-08-16.md](archive/backend-production-audit-2026-08-16.md) | Backend production readiness audit (commit `0b99514`) | 2026-08-16 |
+| [archive/backend-production-audit-2026-08-17.md](archive/backend-production-audit-2026-08-17.md) | Backend production readiness audit + remediation roadmap (commit `3df6170`) | 2026-08-17 |
+| [archive/backend-fixes-implemented.md](archive/backend-fixes-implemented.md) | Backend 40-fix implementation report (migrations to `0015`) | 2026-08-17 |
+| [archive/partner-network-b2b.md](archive/partner-network-b2b.md) | Removed B2B partner program design (unmounted; stage-2 teardown reference) |
+| [archive/email-center-b2b.md](archive/email-center-b2b.md) | Removed B2B email-center console (unmounted; stage-2 teardown reference) |
+| [archive/prompt-fix-public-dependency-index.md](archive/prompt-fix-public-dependency-index.md) | Landed one-shot remediation work order (SEO/LLM indexability) |
 
 ## Notes
 
 - `frontend/src/app/docs` routes are generated from `frontend/src/lib/docs/corpus.ts` and `frontend/src/app/docs/[slug]/page.tsx`. Verify that corpus matches reality before adding a guide.
-- `bun.lock` removed — npm only (`package-lock.json`). See `frontend/README` or root README for install.
+- `bun.lock` removed — npm only (`package-lock.json`). See root README for install.
 - `sharp` upgraded to `0.35.4` — breaking, verified via `next build` passing. See `frontend/next.config.ts` for image config.

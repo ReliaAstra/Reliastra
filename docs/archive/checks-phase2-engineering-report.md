@@ -313,8 +313,8 @@ Two historical documents claimed `RUN_IN_PROCESS_SCHEDULER` was a working
 escape hatch. Both were false and both are now annotated as superseded rather
 than silently deleted:
 
-- `backend/audit/reliastra_production_audit.md:101` - *"Fix shipped (partial)"*
-- `backend/FIXES_IMPLEMENTED.md:418` - *"`RUN_IN_PROCESS_SCHEDULER=false` on the API"*
+- `docs/archive/backend-production-audit-2026-08-17.md:101` - *"Fix shipped (partial)"*
+- `docs/archive/backend-fixes-implemented.md:418` - *"`RUN_IN_PROCESS_SCHEDULER=false` on the API"*
 
 ---
 

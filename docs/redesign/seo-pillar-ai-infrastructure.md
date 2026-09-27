@@ -16,8 +16,8 @@ title, or a sentence that the measurement API cannot support is not shipped.
 > of it have since moved. The surface it calls `/track` is now `/observatory` -
 > the developer-first refurbishment renamed and consolidated it, and `/track` is
 > a 308. Known production risks 1, 2 and 5 at the end were fixed afterwards;
-> `docs/public-dependency-index-seo-llm-audit.md` is the audit that found what
-> remained and `docs/engineering/prompt-fix-public-dependency-index.md` is the
+> `docs/archive/public-dependency-index-seo-llm-audit.md` is the audit that found
+> what remained and `docs/archive/prompt-fix-public-dependency-index.md` is the
 > remediation spec. The governing rule above is unchanged, and is now enforced
 > rather than stated: an unreadable catalog read throws, the page fails loudly
 > instead of publishing an empty index, and `sitemap.xml` refuses to serve a

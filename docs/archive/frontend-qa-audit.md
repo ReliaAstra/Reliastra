@@ -1,5 +1,7 @@
 # Frontend forensic QA pass
 
+> **Archived from `frontend/QA_AUDIT.md`.** Point-in-time record of a previous design iteration; paths below (`app/…`, `lib/…`, `scripts/…`) are relative to `frontend/`. The `qa-*.png` captures sit alongside this file.
+
 Live walkthrough of the redesigned RELIASTRA frontend, before and after edits.
 Rendered in headless Chromium (Playwright) against a fixture backend that
 mirrors the FastAPI contract (`scripts/qa-backend.mjs`). Nothing in this file

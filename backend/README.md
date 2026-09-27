@@ -8,8 +8,8 @@ Reliastra monitors third-party vendor APIs and services, correlates failures wit
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/ReliaAstra/Reliastra-backend.git
-cd Reliastra-backend
+git clone https://github.com/ReliaAstra/Reliastra.git
+cd Reliastra/backend
 pip install -r requirements.txt
 
 # 2. Configure environment
@@ -343,7 +343,7 @@ pytest tests/e2e -v         # End-to-end check execution and evidence flow
 ## Project Structure
 
 ```
-Reliastra-backend/
+backend/  (in the ReliaAstra/Reliastra monorepo)
 ├── app/
 │   ├── __init__.py
 │   ├── main.py                 # FastAPI app factory, lifespan hooks, idempotency & CORS middleware

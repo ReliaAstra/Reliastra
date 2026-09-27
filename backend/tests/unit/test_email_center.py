@@ -2,8 +2,10 @@
 
 Pure-function coverage (no DB): HTML sanitization, template variable
 rendering/extraction, Resend error classification + friendly copy, and
-attachment validation. API-level tests live in
-``tests/integration/test_email_center_api.py``.
+attachment validation. The API-level suite
+(``tests/integration/test_email_center_api.py``) was removed with the
+stage-1 unmount of the email-center surface; this unit coverage travels
+with the module to stage 2 (see ``docs/redesign/stage2-removal-ledger.md``).
 """
 
 from __future__ import annotations

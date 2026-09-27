@@ -1,5 +1,7 @@
 # UI / Typography / Accessibility Audit — reliastra.com
 
+> **Archived from `frontend/UI_AUDIT.md`.** Point-in-time record of a previous design iteration; paths below are relative to `frontend/`. The `qa-*.png` captures sit alongside this file.
+
 **Date:** 2026-09-21 · **Branch:** `arena/01a0c456-reliastra` · **Scope:** public site (`/`, marketing pages), mobile accessibility, authenticated developer console (`/dashboard` and siblings).
 
 ## Method & screenshot provenance (read this first)

@@ -1,5 +1,7 @@
 # PROMPT · Production remediation of the public dependency index (SEO + LLM indexability)
 
+> **Archived from `docs/engineering/prompt-fix-public-dependency-index.md`.** One-shot work order; the remediation it describes has landed. Paths below are repo-relative.
+
 > Hand this to an engineer or a coding agent with write access to the `ReliaAstra/Reliastra`
 > monorepo. It is self-contained: the defect set, the required behaviour, the design already
 > validated against the code, and the acceptance criteria. The evidence base is
