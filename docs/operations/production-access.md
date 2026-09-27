@@ -18,14 +18,14 @@ ACL (`admin` Tailnet policy):
 }
 ```
 
-## Users
-- `reliastra-admin` - human admin, `NOPASSWD:ALL` via `/etc/sudoers.d/reliastra-admin`, SSH key in `~/.ssh/authorized_keys`, `PasswordAuthentication no`, `PermitRootLogin no`.
-- `reliastra-deploy` - CI deploy principal, **restricted**: plain public key in `authorized_keys` with `no-port-forwarding,no-agent-forwarding` and **no** `command="..."` forced command (the deploy runs `preflight.sh`, `deploy.sh`, and `smoke-test.sh` with varying args over this one key, so a forced command would break it — least privilege is enforced by the sudoers rule instead) + sudoers allow only `deploy.sh, rollback.sh, healthcheck.sh, smoke-test.sh, preflight.sh, docker ps/logs, systemctl status`.
+## Users (actual state 2026-09-27, verified on host)
+- `reliastra` - human operator **and** CI deploy principal, `(ALL) NOPASSWD: ALL` (full passwordless sudo). CI uses a dedicated keypair (`reliaastra-ci-deploy`, private half in GH `production` secret `PROD_DEPLOY_SSH_PRIVATE_KEY`, public half in `~/.ssh/authorized_keys`).
+- Hardening TODO: split into `reliastra-admin` (human, `NOPASSWD:ALL`) + restricted `reliastra-deploy` (CI only, sudoers allow-list for deploy scripts, `no-port-forwarding,no-agent-forwarding` on its key) as originally designed.
 
 ## Verify
 ```bash
 # From admin laptop over Tailscale
-ssh reliastra-admin@100.x.y.z  # OK
+ssh reliastra@100.x.y.z  # OK (prod: 100.93.175.33 over tailnet)
 ssh -p 22 <public-ip>          # → timeout / 22 filtered (UFW)
 sudo ufw status verbose        # should show `22/tcp on tailscale0 ALLOW`, `80,443 ALLOW`, `22 DENY` public
 sudo sshd -T | grep -E "PasswordAuth|PermitRoot|ListenAddress"

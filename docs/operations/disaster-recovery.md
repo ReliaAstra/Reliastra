@@ -22,7 +22,7 @@ Deploying previous image **cannot** recover a destroyed database.
 
 ## Recovery steps (real data loss)
 ```bash
-ssh reliastra-admin@100.x
+ssh reliastra@100.x
 ls -lt /opt/reliastra/backups/
 # Supabase: use dashboard PITR to point-in-time, or
 pg_restore --clean --if-exists -d "$DATABASE_URL" /opt/reliastra/backups/pre-<sha>.sql.gz
