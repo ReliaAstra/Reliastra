@@ -98,6 +98,8 @@ npm run typecheck
 - TypeScript: only missing generated PrismaClient exports in `seed.ts` and
   `src/lib/db.ts`; Prisma generation is blocked by TLS failure downloading its
   engine from binaries.prisma.sh. No changed-file type errors remain.
+  (Both files were deleted afterwards with the retired Prisma layer, so this
+  noise is gone too.)
 - `tests/integration/test_observation_semantics.py`: production probe function
   with controlled HTTP/transport responses, actual migrated PostgreSQL writes,
   independent fact assertions, shared detector opening/recovery, SQL availability,

@@ -1,5 +1,7 @@
 # Reliastra Backend - Production Readiness Audit & Remediation Roadmap
 
+> **Archived from `backend/audit/reliastra_production_audit.md`.** Point-in-time audit of commit `3df6170`; paths below (`app/…`, `audit/…`) are relative to `backend/`. Findings predate the fix batches that followed.
+
 **Auditor:** Staff+ SRE (Datadog Synthetics / Stripe / UptimeRobot background)
 **Date:** 2026-08-17
 **Commit audited:** `3df6170` (`arena/01a01094-reliastra-backend`)

@@ -1,5 +1,7 @@
 # RELIASTRA — Production Crawl / Indexability Remediation
 
+> **Archived from the repository root.** Point-in-time remediation record (`/agencies` 410, robots.txt, homepage metadata); paths below are repo-relative.
+
 **Scope:** Make reliastra.com a single canonical, crawlable, machine-readable
 source of truth for Google, AI/search crawlers (OAI-SearchBot), LLM retrieval,
 and humans — under the current developer-first positioning

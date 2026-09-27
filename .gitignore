@@ -86,6 +86,15 @@ local-*
 .z-ai-config
 /skills/tool-results/
 
+# Frontend local artifacts - never committed (SQLite dev DB, agent scratch,
+# stray screenshots). The Prisma layer is retired except the one-shot
+# backfill script; its dev database must never be committed.
+frontend/db/
+frontend/tool-results/
+frontend/download/
+*.db
+*.sqlite3
+
 # Arena sandbox harness (browser builds, scratch DB) - never shipped
 .arena/
 

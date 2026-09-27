@@ -1,5 +1,7 @@
 # Email Center - admin operational email console
 
+> **Archived from `backend/docs/EMAIL_CENTER.md`.** Design record for the unmounted email-center console (stage 1; see `docs/redesign/stage2-removal-ledger.md`). Migration/table notes below are the stage-2 teardown reference.
+
 The Email Center (`/admin/email` in the Admin Dashboard, `app/modules/email_center/`
 in the backend) lets authorized admins compose and send operational/business
 emails through the Resend API using sender aliases on the Reliastra sending

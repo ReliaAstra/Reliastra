@@ -1,5 +1,7 @@
 # Partner Network & Distribution
 
+> **Archived from `backend/docs/PARTNER_NETWORK.md`.** Design record for the removed B2B partner program: its routers are unmounted in stage 1 (see `docs/redesign/stage2-removal-ledger.md`), and it describes economics the current config no longer implements — do not treat as the live contract. Only `GET /v1/public/referral/{code}` (creator-link resolution) remains mounted.
+
 Backend infrastructure for the RELIASTRA partner program: partner accounts,
 referral attribution, an immutable commission ledger, payouts, lead
 introductions, deployment claims, fraud review and country analytics.

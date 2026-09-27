@@ -2,7 +2,7 @@
 
 This map was prepared before the Admin Dashboard frontend implementation. It follows the currently registered FastAPI routers in `backend/app/modules/admin/router.py` and `backend/app/modules/partners/admin_router.py`.
 
-> **Contract note:** `backend/openapi.json` is currently behind the registered control-plane router: it lists the legacy growth and partner routes, while the source registers the canonical endpoints below in `app.main`. The frontend uses only the registered canonical routes and proxies them through its same-origin `/api/admin/*` route. Regenerate the backend OpenAPI artifact before treating it as the release contract.
+> **Contract note:** the single committed OpenAPI snapshot is `backend/docs/openapi.json` (the stale duplicate at `backend/openapi.json` was removed). It may lag the registered control-plane router: the source registers the canonical endpoints below in `app.main`, and the frontend uses only those canonical routes through its same-origin `/api/admin/*` proxy. Regenerate the snapshot from the live app (`/openapi.json`) before treating it as the release contract.
 
 All `/v1/admin/*` endpoints require a JWT Bearer token for a user with `is_system_admin=true` (`require_system_admin`). The backend remains the authorization authority. Errors use the normalized shape:
 

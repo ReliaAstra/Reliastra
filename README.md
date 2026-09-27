@@ -119,10 +119,7 @@ Other scripts from `frontend/package.json`:
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript (`tsc --noEmit`) |
 | `npm test` | Vitest unit tests |
-| `npm run db:generate` | `prisma generate` |
-| `npm run db:push` | `prisma db push` |
-| `npm run db:migrate` | `prisma migrate dev` |
-| `npm run db:reset` | `prisma migrate reset` |
+| `npm run db:generate` | `prisma generate` (one-shot support-ticket backfill only; the Prisma layer is otherwise retired) |
 
 Frontend browser tests live in `frontend/e2e/`; their runtime setup depends on
 the workflow being exercised.
@@ -228,7 +225,7 @@ The entrypoint validates configuration, runs `alembic upgrade head`, then superv
 Frontend and backend deploy independently. This monorepo does not force a combined release.
 
 - **Frontend:** Next.js `output: "standalone"` (`frontend/next.config.ts`). Host with your existing frontend platform.
-- **Backend:** Docker image (GHCR) and/or Nixpacks. GitHub Actions CD builds `backend/` and deploys the API container to the existing VPS. Compose file: `backend/docker-compose.production.yml`.
+- **Backend:** Docker image (GHCR) and/or Nixpacks. GitHub Actions CD builds the all-in-one image and deploys it to the existing VPS over Tailscale. Compose file: `deploy/production/compose.yml`.
 - **PaaS root directory** for backend-only hosts (Railway, Render, Nixpacks) must be `backend/`.
 
 See [CI](.github/workflows/ci.yml) for the current validation, test, security,
