@@ -39,6 +39,7 @@ interface PageProps {
 
 function titleFor(load: Awaited<ReturnType<typeof loadVerificationRecord>>): string {
   if (load.kind === 'verified') return 'Evidence verified';
+  if (load.kind === 'unverified') return 'Record found, not verified';
   if (load.kind === 'not_found') return 'Reference not found';
   return 'Verification unavailable';
 }
@@ -55,9 +56,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         }, ${
           load.record.retention.expired === true ? 'retention period elapsed' : 'within retention'
         }.`
-      : load.kind === 'not_found'
-        ? 'No RELIASTRA evidence record matches this reference.'
-        : 'RELIASTRA could not reach the verification service. The reference was not checked.';
+      : load.kind === 'unverified'
+        ? `RELIASTRA holds a record for this reference, but it did not verify: ${load.reason}.`
+        : load.kind === 'not_found'
+          ? 'No RELIASTRA evidence record matches this reference.'
+          : 'RELIASTRA could not reach the verification service. The reference was not checked.';
   const path = `/reports/${encodeURIComponent(token)}`;
   return {
     title: `${titleFor(load)} · RELIASTRA evidence`,
@@ -135,33 +138,79 @@ function FieldRow({
 function VerifiedRecord({
   token,
   record,
+  verified,
+  failureReason,
 }: {
   token: string;
   record: EvidenceVerificationRecord;
+  /** Re-derived server-side. False or null means the record does not hold. */
+  verified: boolean;
+  failureReason?: string;
 }) {
   const signed = record.authenticity.signed;
   const expired = record.retention.expired === true;
   const unavailableArtifact = record.retention.artifact_available === false;
+  const checks = record.verification_checks ?? [];
 
   return (
     <>
       <div className="flex items-start gap-4">
         <span
           aria-hidden="true"
-          className="mt-1 grid size-12 shrink-0 place-items-center rounded-full border border-[#17615A] text-[10px] font-bold tracking-[0.06em] text-[#17615A] uppercase"
+          className={`mt-1 grid size-12 shrink-0 place-items-center rounded-full border text-[10px] font-bold tracking-[0.06em] uppercase ${
+            verified
+              ? 'border-[#17615A] text-[#17615A]'
+              : 'border-[#8A3324] text-[#8A3324]'
+          }`}
         >
-          OK
+          {verified ? 'OK' : '!!'}
         </span>
         <div className="min-w-0">
           <h1 className="text-[26px] leading-tight font-bold tracking-[-0.02em] text-[#0B1220]">
-            Evidence verified
+            {verified ? 'Evidence verified' : 'Record found, not verified'}
           </h1>
           <p className="mt-2 max-w-[62ch] text-[14px] leading-relaxed text-[#3C4655]">
-            RELIASTRA holds an evidence snapshot for reference{' '}
-            <span className="font-mono text-[13px]">{token}</span>. The hashes, signature and
-            retention state below are read from the record at request time - this page is the
-            answer, not a copy of the document.
+            {verified ? (
+              <>
+                RELIASTRA holds an evidence snapshot for reference{' '}
+                <span className="font-mono text-[13px]">{token}</span>. The hashes, signature and
+                retention state below are read from the record at request time - this page is the
+                answer, not a copy of the document.
+              </>
+            ) : (
+              <>
+                RELIASTRA holds a record for reference{' '}
+                <span className="font-mono text-[13px]">{token}</span>, but it did not verify when
+                the stored payload was re-derived
+                {failureReason ? <> (<span className="font-mono text-[12px]">{failureReason}</span>)</> : null}. The figures
+                below are what the record says - they are not a statement that the record holds. Do
+                not rely on this document until the reference is resolved with RELIASTRA.
+              </>
+            )}
           </p>
+          {checks.length > 0 ? (
+            <ul className="mt-4 space-y-1">
+              {checks.map((check) => (
+                <li key={check.name} className="flex flex-wrap items-baseline gap-2 text-[12px]">
+                  <span
+                    className={`font-mono text-[11px] font-semibold ${
+                      check.status === 'pass'
+                        ? 'text-[#17615A]'
+                        : check.status === 'fail'
+                          ? 'text-[#8A3324]'
+                          : 'text-[#5A6472]'
+                    }`}
+                  >
+                    {check.status}
+                  </span>
+                  <span className="font-mono text-[12px] text-[#0B1220]">{check.name}</span>
+                  {check.detail ? (
+                    <span className="text-[#5A6472]">{check.detail}</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
       </div>
 
@@ -349,8 +398,13 @@ export default async function EvidenceReportPage({ params }: PageProps) {
 
       <main className="mx-auto max-w-[860px] px-0 py-0 sm:px-5 sm:py-10">
         <article className="border border-[#DFE4EB] bg-white px-5 py-8 sm:px-10 sm:py-11 print:border-0">
-          {load.kind === 'verified' ? (
-            <VerifiedRecord token={token} record={load.record} />
+          {load.kind === 'verified' || load.kind === 'unverified' ? (
+            <VerifiedRecord
+              token={token}
+              record={load.record}
+              verified={load.kind === 'verified'}
+              failureReason={load.kind === 'unverified' ? load.reason : undefined}
+            />
           ) : (
             <>
               <h1 className="text-[24px] leading-tight font-bold tracking-[-0.02em]">

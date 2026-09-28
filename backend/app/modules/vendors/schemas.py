@@ -83,17 +83,30 @@ class VendorCategoryDetailResponse(VendorCategorySummary):
 
 
 class VendorHistoryResponse(BaseModel):
+    """Public availability for one vendor.
+
+    ``uptime_percentage_24h`` is ``None`` when nothing was measured in the
+    window, and the response carries ``measurements_24h`` naming that state
+    explicitly. It is never 100.0: an endpoint nobody observed is not a healthy
+    endpoint, and a fabricated perfect score is the one figure this product must
+    never publish.
+    """
+
     vendor_name: str
-    uptime_percentage_24h: float
-    avg_latency_ms_24h: float
+    uptime_percentage_24h: float | None
+    measurements_24h: str = "measured"
+    avg_latency_ms_24h: float | None
     recent_checks_count: int
 
 
 class VendorWindowMetrics(BaseModel):
     window: str
     total_observations: int
-    uptime_percentage: float
-    avg_latency_ms: float
+    #: ``None`` when the window holds no measurements. See
+    #: :class:`VendorHistoryResponse` - never 100.0 for an unmeasured window.
+    uptime_percentage: float | None
+    measurements: str = "measured"
+    avg_latency_ms: float | None
     p95_latency_ms: float | None = None
 
 
@@ -126,7 +139,7 @@ class TimelineBucket(BaseModel):
     """A single aggregated time bucket in the vendor timeline."""
 
     timestamp: datetime
-    avg_latency_ms: float
+    avg_latency_ms: float | None
     status_code: int | None
     is_up: bool
     observation_count: int

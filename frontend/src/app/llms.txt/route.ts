@@ -7,7 +7,7 @@ import {
   SHARE_ROUTES,
   researchRoute,
 } from '@/lib/routes';
-import { DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
+import { ATTRIBUTION_METHODOLOGY_VERSION, DETECTION, OBSERVATION_LABEL, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
 import { readCatalogForDiscovery } from '@/lib/track-api';
 import { renderAtRequestTime } from '@/lib/render-at-request-time';
 
@@ -67,12 +67,29 @@ ${maintainerDiscoveryMarkdown()}
 
 ## Attribution
 
-Deterministic, versioned arithmetic. Five normalised signals with fixed weights:
-temporal overlap 0.20, endpoint overlap 0.25, latency correlation 0.25, error
-pattern 0.15, infrastructure baseline 0.15. Score >= 75 classifies
-\`vendor_failure\`; >= 50 \`multi_cause\`; below 50 either
-\`infrastructure_issue\` or \`unknown\`. A score is an alignment between two
-timelines, not proof of causation. Every result carries a methodology version.
+Deterministic, versioned arithmetic (\`${ATTRIBUTION_METHODOLOGY_VERSION}\`). Five
+normalised signals with fixed weights: temporal overlap 0.20, endpoint overlap
+0.25, latency correlation 0.25, error pattern 0.15, infrastructure baseline
+0.15. What each one actually measures:
+
+- temporal overlap - another incident open in the same 300s window. Binary.
+- endpoint overlap - a correlated incident on a shared endpoint. Binary.
+- latency correlation - coefficient of variation of observed latency. No
+  application error rate is read.
+- error pattern - the share of failures sharing the most common error type.
+  Status codes are not used.
+- infrastructure baseline - whether the probe itself reached anything. Degraded
+  when every failure in the window is a transport failure that received no HTTP
+  response, because from one observation point a DNS, TLS or connection failure
+  is indistinguishable from the observer being unable to reach the dependency.
+
+Score >= 75 classifies \`vendor_failure\`; >= 50 \`multi_cause\`; below 50 either
+\`infrastructure_issue\` or \`unknown\`. The two signals worth 0.45 between them -
+temporal and endpoint overlap - are the corroboration pair. One observation point
+watching one dependency has neither, so its ceiling is 55 and \`vendor_failure\`
+is unreachable: reaching the bar requires a second, independent source of
+evidence. A score is an alignment between two timelines, not proof of causation.
+Every result carries a methodology version.
 
 ## Evidence
 

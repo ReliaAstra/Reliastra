@@ -100,6 +100,7 @@ describe('attribution contract', () => {
 
 describe('confidence arithmetic', () => {
   it('matches the engine formula: weighted sum scaled to a percentage', () => {
+    // Pure arithmetic, any inputs in range.
     const signals = {
       temporal: 0.9,
       endpoint_overlap: 1,
@@ -110,6 +111,34 @@ describe('confidence arithmetic', () => {
     // 0.9*0.20 + 1*0.25 + 0.85*0.25 + 0.8*0.15 + 1*0.15 = 0.9125 -> 91.25
     expect(confidenceFromSignals(signals)).toBe(91.25);
     expect(classificationFor(91.25)).toBe('vendor_failure');
+  });
+
+  it('bounds what one observation point watching one dependency can score', () => {
+    // The corroborating signals are temporal (0.20) and endpoint overlap (0.25).
+    // With one dependency and no correlated endpoint both are 0, so the score
+    // cannot reach the 75 bar whatever the remaining signals read.
+    const ceiling = confidenceFromSignals({
+      temporal: 0,
+      endpoint_overlap: 0,
+      latency_correlation: 1,
+      error_pattern: 1,
+      infrastructure_baseline: 1,
+    });
+    expect(ceiling).toBe(55);
+    expect(classificationFor(ceiling)).not.toBe('vendor_failure');
+
+    // A correlated endpoint is what lifts it over the bar.
+    expect(
+      classificationFor(
+        confidenceFromSignals({
+          temporal: 0,
+          endpoint_overlap: 1,
+          latency_correlation: 0.9,
+          error_pattern: 0.85,
+          infrastructure_baseline: 1,
+        }),
+      ),
+    ).toBe('vendor_failure');
   });
 
   it('assigns classifications at the documented boundaries', () => {

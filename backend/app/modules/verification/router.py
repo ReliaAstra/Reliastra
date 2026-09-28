@@ -24,15 +24,17 @@ hash to, which is the only thing a verifier needs from us.
 import json
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Path, Response, status
+from fastapi import APIRouter, Depends, Path, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.modules.evidence import design, signing
+from app.modules.evidence import canonical, design, signing
 from app.modules.evidence.repository import (
     EvidenceRepository,
     EvidenceSnapshotRepository,
 )
+from app.platform.web.rate_limit import enforce_public_read_limit
+from app.modules.verification.service import verify_snapshot
 
 router = APIRouter(prefix="/v1/verify", tags=["Verification"])
 
@@ -64,22 +66,29 @@ def _unavailable(detail: str) -> Response:
 async def verification_keys() -> dict:
     """The public signing keys, in JWK form, for anyone to check a signature.
 
-    Published here and nowhere else on purpose: a public key must be
-    retrievable independently of the document it signs, or the signature only
-    proves that one file is self-consistent. The private half is never served
-    by any route in this application.
+    The **whole keyring** is served, not just the newest key. Publishing only the
+    current key means the first rotation makes every previously issued record
+    unverifiable by anyone, with no error to notice: the verification endpoint
+    keeps answering ``found: true`` while the key a record needs no longer
+    exists anywhere.
+
+    Each entry carries ``key_fingerprint`` - a digest of the key material,
+    independent of its id - so a verifier that pinned ``kid -> key`` can detect a
+    different key being published under a familiar id.
     """
     state = signing.signing_state()
-    jwk = signing.public_jwk(state)
+    keys = signing.public_jwks()
     return {
         "algorithm": signing.ALGORITHM,
         "signature_encoding": signing.SIGNATURE_ENCODING,
         "configured": state.available,
-        "keys": [jwk] if jwk else [],
+        "keys": keys,
         "note": (
             "Ed25519 signatures cover the canonical evidence payload bytes (the "
-            "value hashed into data_hash), not the rendered PDF."
-            if jwk
+            "value hashed into data_hash), not the rendered PDF. Entries with "
+            "status 'historical' are superseded keys retained so records issued "
+            "before a rotation stay verifiable."
+            if keys
             else "This deployment has no signing key configured, so evidence "
             "artifacts are issued unsigned and say so on the document."
         ),
@@ -88,12 +97,21 @@ async def verification_keys() -> dict:
 
 @router.get("/{verification_id}", response_model=None)
 async def verify_evidence(
+    request: Request,
     verification_id: str = Path(
         min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$"
     ),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """The public verification record for one evidence artifact."""
+    """The public verification record for one evidence artifact.
+
+    Rate limited like every other public read. The verification id is
+    unguessable, but it is delivered by email, and an unlimited public endpoint
+    that returns a tenant's ``org_id``, incident id, exact outage window and
+    signing key id turns one leaked link into an enumeration oracle.
+    """
+    await enforce_public_read_limit(request)
+
     try:
         snapshot = await EvidenceSnapshotRepository.get_by_verification_id(
             db, verification_id
@@ -130,15 +148,24 @@ async def verify_evidence(
         expires = report.expires_at
         if expires.tzinfo is None:  # defensive: a naive column value
             expires = expires.replace(tzinfo=timezone.utc)
+        created = snapshot.created_at
+        if created.tzinfo is None:  # defensive: a naive column value
+            created = created.replace(tzinfo=timezone.utc)
         now = datetime.now(timezone.utc)
         retention["expires_at"] = expires.isoformat()
         retention["expired"] = expires < now
-        retention["retention_days"] = max(
-            0, (expires - snapshot.created_at.replace(tzinfo=timezone.utc)).days
-        )
+        retention["retention_days"] = max(0, (expires - created).days)
+
+    # Actually re-derive the verdict from the stored payload. This endpoint used
+    # to echo the stored hash and signature columns, which proves only that the
+    # row is self-consistent - a property a tampered row retains. A caller that
+    # trusts this endpoint has learned nothing it could not have learned by
+    # trusting the party it is checking.
+    outcome = verify_snapshot(snapshot)
 
     return {
         "found": True,
+        "verified": outcome.verified,
         "incident_id": str(snapshot.incident_id),
         "dependency_id": str(snapshot.dependency_id),
         "org_id": str(snapshot.org_id),
@@ -158,7 +185,10 @@ async def verify_evidence(
             "signature": snapshot.signature,
             "signature_covers": "canonical payload bytes (the value hashed into data_hash)",
             "public_keys": design.keys_api_url(),
+            "verified": outcome.verified,
+            "verification_reason": outcome.reason,
         },
+        "verification_checks": outcome.as_dict()["checks"],
         "rendering": {
             "renderer": report.renderer if report else None,
             "renderer_version": report.renderer_version if report else None,
@@ -173,15 +203,13 @@ async def verify_evidence(
         "retention": retention,
         "verification": {
             "payload": "issued beside this document as the .json artifact",
-            "procedure": [
-                "canonicalise the payload with sorted keys and compact separators",
-                "sha256 those bytes and compare the hex digest with data_hash",
-                "sha256 the PDF and compare with report_checksum",
-                (
-                    "verify the Ed25519 signature over the payload bytes against the "
-                    "public key at /v1/verify/keys"
-                ),
-            ],
+            "procedure": canonical.verification_procedure(),
+            "note": (
+                "`verified` is re-derived from the stored payload on every "
+                "request. It is null when the record carries no signature or "
+                "the payload could not be read - a check that could not run is "
+                "never reported as a pass."
+            ),
         },
         "report_url": design.verification_url(verification_id),
         "record_url": design.verify_api_url(verification_id),

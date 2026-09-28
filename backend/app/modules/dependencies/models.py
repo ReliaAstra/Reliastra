@@ -37,7 +37,7 @@ class Dependency(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
         index=True,
     )
     regions: Mapped[list[str]] = mapped_column(
-        JSON, default=lambda: ["us-east", "eu-west"], nullable=False
+        JSON, default=lambda: list(DEFAULT_REGIONS), nullable=False
     )
     alert_threshold_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

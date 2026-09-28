@@ -122,6 +122,17 @@ const ORDER: PlanId[] = ['free', 'pro', 'enterprise'];
 /** The plans marketing surfaces render. The public catalog is one plan. */
 export const ALL_PLANS: PlanId[] = ['pro'];
 
+/**
+ * The plan table keyed by id.
+ *
+ * Consumers that need a price or a limit should read it from here. The demo
+ * store previously hardcoded $39 and 50 dependencies while this table says $9
+ * and 25, so the two drifted apart silently.
+ */
+export const PLAN_TABLE: Record<PlanId, PlanMeta> = Object.fromEntries(
+  PLANS.map((plan) => [plan.id, plan])
+) as Record<PlanId, PlanMeta>;
+
 export function getPlan(id: string | undefined | null): PlanMeta {
   const found = PLANS.find((p) => p.id === (id || 'free').toLowerCase());
   return found ?? PLANS[0];

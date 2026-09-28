@@ -184,12 +184,18 @@ class ProbeRunner:
 
         await enqueue_observation_outbox(session, result, url, method)
 
-        # FIX 8: feed the circuit breaker so dead dependencies stop consuming
-        # worker capacity (fails open when Redis is unavailable).
-        if is_up:
-            await circuit_breaker.record_success(dependency_id)
-        else:
-            await circuit_breaker.record_failure(dependency_id)
+        # FIX 8: feed the circuit breaker so a dependency that burns a full
+        # timeout on every probe stops consuming worker capacity (fails open when
+        # Redis is unavailable). Only transport failures count: an endpoint that
+        # answers with an unexpected status is cheap to observe and must never
+        # throttle how often we look at it, or a confirmed outage would suppress
+        # its own observation.
+        await circuit_breaker.record_outcome(
+            dependency_id,
+            is_up=is_up,
+            status_code=result.status_code,
+            error_type=result.error_type,
+        )
 
         # FIX 12: Prometheus instrumentation.
         checks_total.labels(region=region, status="up" if is_up else "down").inc()

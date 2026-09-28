@@ -38,6 +38,15 @@ def _snapshot(**overrides):
     return SimpleNamespace(**base)
 
 
+def _request():
+    """Minimal stand-in for the Starlette Request the rate limiter reads."""
+    return SimpleNamespace(
+        headers={"x-forwarded-for": "203.0.113.7"},
+        client=SimpleNamespace(host="203.0.113.7"),
+        url=None,
+    )
+
+
 def _report(**overrides):
     base = {
         "expires_at": T0 + timedelta(days=365),
@@ -73,7 +82,7 @@ class TestFound:
     async def test_the_record_carries_every_hash_a_verifier_needs(self, monkeypatch):
         snapshot = _snapshot()
         _wire(monkeypatch, snapshot, _report())
-        payload = await verify_router.verify_evidence("tok123", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok123", db=None)
         assert payload["found"] is True
         assert payload["data_hash"] == snapshot.data_hash
         assert payload["report_checksum"] == snapshot.report_checksum
@@ -90,7 +99,7 @@ class TestFound:
         self, monkeypatch
     ):
         _wire(monkeypatch, _snapshot(), _report())
-        payload = await verify_router.verify_evidence("tok", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok", db=None)
         steps = payload["verification"]["procedure"]
         assert any("sha256" in step for step in steps)
         assert any("/v1/verify/keys" in step for step in steps)
@@ -100,7 +109,7 @@ class TestFound:
     async def test_an_unsigned_artifact_is_reported_unsigned(self, monkeypatch):
         snapshot = _snapshot(signature=None, signature_alg=None, signing_key_id=None)
         _wire(monkeypatch, snapshot, _report())
-        payload = await verify_router.verify_evidence("tok", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok", db=None)
         assert payload["authenticity"]["signed"] is False
         assert payload["authenticity"]["signature"] is None
 
@@ -108,13 +117,13 @@ class TestFound:
     async def test_retention_state_is_answered(self, monkeypatch):
         expired_report = _report(expires_at=T0 - timedelta(days=1))
         _wire(monkeypatch, _snapshot(), expired_report)
-        payload = await verify_router.verify_evidence("tok", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok", db=None)
         assert payload["retention"]["expired"] is True
 
     @pytest.mark.asyncio
     async def test_an_artifact_row_from_before_provenance_says_so(self, monkeypatch):
         _wire(monkeypatch, _snapshot(), _report(renderer=None, renderer_version=None))
-        payload = await verify_router.verify_evidence("tok", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok", db=None)
         assert payload["rendering"]["renderer"] is None
         assert "recorded on artifacts issued from this version onward" in (
             payload["rendering"]["note"]
@@ -123,7 +132,7 @@ class TestFound:
     @pytest.mark.asyncio
     async def test_a_missing_report_row_is_not_reported_as_available(self, monkeypatch):
         _wire(monkeypatch, _snapshot(), None)
-        payload = await verify_router.verify_evidence("tok", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok", db=None)
         assert payload["retention"]["artifact_available"] is False
         assert payload["retention"]["expires_at"] is None
 
@@ -134,7 +143,7 @@ class TestFound:
         # per-check rows and the observation set stay private to the org.
         snapshot = _snapshot()
         _wire(monkeypatch, snapshot, _report())
-        payload = await verify_router.verify_evidence("tok", db=None)
+        payload = await verify_router.verify_evidence(_request(), "tok", db=None)
         blob = json.dumps(payload)
         for secret in ("observations", "window_metrics", "endpoint_url", "error_message"):
             assert secret not in blob, secret
@@ -147,7 +156,7 @@ class TestMissesAndFailures:
     @pytest.mark.asyncio
     async def test_an_unknown_token_is_a_404_that_says_nothing_else(self, monkeypatch):
         _wire(monkeypatch, None, None)
-        response = await verify_router.verify_evidence("nope", db=None)
+        response = await verify_router.verify_evidence(_request(), "nope", db=None)
         assert response.status_code == 404
         assert json.loads(response.body) == {"found": False, "error": "Evidence not found"}
 
@@ -161,7 +170,7 @@ class TestMissesAndFailures:
             "get_by_verification_id",
             staticmethod(explode),
         )
-        response = await verify_router.verify_evidence("tok", db=None)
+        response = await verify_router.verify_evidence(_request(), "tok", db=None)
         body = json.loads(response.body)
         assert response.status_code == 503
         assert body["found"] is False
@@ -170,10 +179,10 @@ class TestMissesAndFailures:
     @pytest.mark.asyncio
     async def test_nothing_is_cached_because_expiry_changes_the_answer(self, monkeypatch):
         _wire(monkeypatch, _snapshot(), _report())
-        response = await verify_router.verify_evidence("tok", db=None)
+        response = await verify_router.verify_evidence(_request(), "tok", db=None)
         _ = response
         # dict responses are serialised by FastAPI, so the no-store header is
         # asserted where it is set: on the explicit Response branches.
         _wire(monkeypatch, None, None)
-        missing = await verify_router.verify_evidence("tok", db=None)
+        missing = await verify_router.verify_evidence(_request(), "tok", db=None)
         assert missing.headers["cache-control"] == "no-store"

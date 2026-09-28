@@ -21,6 +21,20 @@ Setting `multi` on a single-host deployment is a misconfiguration, not a tuning
 choice: it would present one machine's opinion as a quorum. Nothing in the
 product infers the topology from the labels you configure.
 
+### The scheduler enforces this, not just the schema
+
+A dependency row can still carry several region labels — one created before the
+topology was corrected, or set through the API by a non-console client. The
+dispatcher does not trust them. `CheckDispatcher._regions_for`
+(`app/modules/checks/dispatch.py`) probes with exactly **one** label while the
+topology is `single`, and logs a warning naming the dependency. Migration
+`0045_dependencies_single_region` collapses the two-label legacy default on rows
+that still hold it; `dependencies.regions` now defaults to `["us-east"]`.
+
+This matters because the quorum rule counts distinct `observation_point` values.
+Without the guard, a single worker emitting two labels satisfies
+`QUORUM_MIN_REGIONS = 2` on its own.
+
 ## Detection
 
 `app/modules/checks/detection.py` is a pure function of the recorded checks.
@@ -84,6 +98,97 @@ Two deliberate exclusions from the hash:
   so it changes between runs over the same incident. Including it would make
   every retry produce a new artifact.
 - **AI explanation text.** Narrative is not a fact and must not move the hash.
+
+### The envelope boundary
+
+The served `.json` artifact is the hashed payload **plus an issuance envelope**:
+`context_metrics`, `data_hash`, `verification_id`, `report_checksum`,
+`generated_at`, `authenticity`. Those describe how the document was issued
+rather than what was measured, so they cannot be inside their own hash.
+
+`EVIDENCE_ENVELOPE_KEYS` in `app/modules/evidence/canonical.py` is the single
+definition of that boundary, and both generation and verification use it. The
+procedure published at `/v1/verify` is **generated from that constant** by
+`verification_procedure()`, so the documented recipe cannot drift away from the
+serialiser it describes. It previously was a hand-written list that omitted
+both the envelope keys and `ensure_ascii=False`, so a third party following it
+exactly computed a different digest and concluded a genuine record had been
+forged.
+
+## Verification is performed, not reported
+
+`GET /v1/verify/{id}` re-derives its answer on every request
+(`app/modules/verification/service.py`):
+
+1. fetch the stored payload from object storage;
+2. strip the envelope;
+3. re-serialise with `canonical_json_bytes` and re-hash against `data_hash`;
+4. cross-check the document's embedded `data_hash` against the row's, which
+   catches a payload swapped for a different but internally consistent one;
+5. verify the Ed25519 signature over those same bytes against the key published
+   for the recorded `signing_key_id`.
+
+The result is three-valued and the distinction is load-bearing:
+
+| `verified` | Meaning |
+| --- | --- |
+| `true` | re-derived and matched |
+| `false` | re-derived and did not match — altered, or signed by a key we do not publish |
+| `null` | could not determine: unsigned record, or the payload was unreadable |
+
+The endpoint used to return the stored `data_hash` / `signature` columns and let
+the caller infer integrity from their presence. That is circular: a tampered row
+stays self-consistent. The CLI (`reliastra verify`) and the public report page
+now require `verified === true` and fail closed otherwise, because a gate that
+cannot fail is not a gate.
+
+### Key rotation
+
+`/v1/verify/keys` publishes the whole keyring, not just the current key. Each
+entry carries `key_fingerprint` — a digest of the key material, independent of
+its id — so a verifier that pinned `kid -> key` can detect a different key being
+published under a familiar id.
+
+Register superseded keys in `EVIDENCE_SIGNING_KEYRING` **before** rotating, and
+use a new `EVIDENCE_KEY_ID`. Without the keyring, the first rotation silently
+makes every historical record unverifiable: the endpoint keeps answering
+`found: true, signed: true` while the key a record needs no longer exists
+anywhere. `verify_signature_over` accepts a record if **any** published key for
+its `kid` validates it, so a mistaken id reuse degrades to a detectable
+condition rather than destroyed evidence.
+
+## Load shedding must not blind the observer
+
+`CircuitBreaker` collapses repeated expensive probes so a dead dependency stops
+eating a worker. Only **transport** failures count — a failure where no HTTP
+response came back, which is what actually burns `timeout_seconds`
+(`is_expensive_failure` in `app/platform/resilience/circuit_breaker.py`).
+
+It previously counted every `is_up=False`. The detector opens an incident at 2
+consecutive failures and the breaker tripped at 3, so a *confirmed, ongoing
+outage* opened its own circuit one check later and was then probed at most once
+per `HALF_OPEN_INTERVAL_SECONDS` (60 s). Two consequences, both of which corrupt
+the published record:
+
+- "2 consecutive failures" stopped meaning consecutive *in time*, so two probes
+  60 s apart could confirm an incident with nothing measured in between;
+- suppressed checks write no rows, so the availability denominator became a
+  biased sample of the worst part of the outage.
+
+An endpoint that answers with an unexpected status is cheap to observe and must
+never throttle how often it is looked at.
+
+## Sampling gaps are recorded, not forgiven
+
+The in-flight dispatch marker (`record_check_dispatched`) exists to stop
+duplicate publishes, and is cleared by the worker on the success path. A worker
+killed mid-probe never clears it, so its TTL is an upper bound on how long one
+dead worker can silence a dependency. It is now `min(max(2 × interval, 30), 120)`
+seconds — it was `max(interval × 4, 360)`, which is 360 s at a 30 s interval, or
+twelve consecutive skipped cycles. Under memory pressure that TTL stopped being
+a backstop and became the dispatch mechanism: measured production cadence was one
+observation roughly every five minutes while the pricing page advertised 30 s.
+
 
 An incident that is **still open** has a window that ends "now", so every
 attempt would hash differently. In that case the service returns the latest
