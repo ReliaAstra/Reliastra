@@ -61,10 +61,16 @@ func cmdDoctor(ctx *commandContext) int {
 	path := configPath(ctx.env)
 	if info, err := os.Stat(path); err != nil {
 		reporter.add("config file", "warn", fmt.Sprintf("not present at %s (this is normal before the first login)", path), "reliastra login --email you@example.com", false)
-	} else if mode := info.Mode().Perm(); mode&0o077 != 0 {
+	} else if mode := info.Mode().Perm(); runtime.GOOS != "windows" && mode&0o077 != 0 {
 		// A credential any other user on the machine can read is the one local
 		// failure worth shouting about, and it is invisible without a stat.
 		reporter.add("config file", "fail", fmt.Sprintf("%s is mode %03o; a credential should be 0600", path, mode), "chmod 600 "+path, true)
+	} else if runtime.GOOS == "windows" {
+		// Windows has no POSIX mode bits: os.Stat synthesizes 0666 for every
+		// file, so the check above would fail forever and teach the operator
+		// to ignore doctor. Access there is governed by the user's ACL,
+		// inherited from the profile directory and outside this file's reach.
+		reporter.add("config file", "ok", fmt.Sprintf("%s (access governed by the Windows ACL; POSIX modes do not apply)", path), "", false)
 	} else {
 		reporter.add("config file", "ok", fmt.Sprintf("%s (mode %03o)", path, mode), "", false)
 	}
