@@ -11,9 +11,10 @@ distinct observation-point labels, which would have satisfied
 Only the *labels* are rewritten. No observation, incident or check result is
 touched: the extra rows stay in the record as what was actually measured.
 """
+import json
+
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
 
 revision = '0045_dependencies_single_region'
 down_revision = '0044_endpoint_expectations'
@@ -25,18 +26,33 @@ LEGACY_DEFAULT = ['us-east', 'eu-west']
 
 
 def upgrade():
-    bind = op.get_bind()
-    dependencies = sa.table(
-        'dependencies',
-        sa.column('id', postgresql.UUID),
-        sa.column('regions', sa.JSON),
-    )
-    # Only rows that still hold exactly the legacy default are rewritten, so a
+    # Raw SQL deliberately.
+    #
+    # `dependencies.regions` is JSON, not JSONB, and PostgreSQL's `json` type
+    # has **no equality operator at all**: `WHERE regions = '...'::json` raises
+    # `operator does not exist: json = json` and aborts the migration. That is
+    # what CI caught on the first attempt; expressing the same comparison through
+    # SQLAlchemy's expression language then failed differently, trying to
+    # JSON-serialise the JSONB *type object* as though it were a value. Neither
+    # problem exists in plain SQL, and a migration should not depend on a
+    # query-builder's type-inference rules to be correct.
+    #
+    # `regions::jsonb` supplies the operator *and* normalises formatting, so this
+    # matches a row stored as `["us-east", "eu-west"]` or `["us-east","eu-west"]`
+    # alike, rather than depending on the exact text SQLAlchemy happened to
+    # write when the column was populated.
+    #
+    # Only rows still holding exactly the legacy default are rewritten, so a
     # dependency someone deliberately configured is left alone.
-    bind.execute(
-        dependencies.update()
-        .where(dependencies.c.regions == LEGACY_DEFAULT)
-        .values(regions=[DEPLOYED_REGION])
+    op.execute(
+        sa.text(
+            "UPDATE dependencies "
+            "SET regions = CAST(:single AS json) "
+            "WHERE regions::jsonb = CAST(:legacy AS jsonb)"
+        ).bindparams(
+            single=json.dumps([DEPLOYED_REGION]),
+            legacy=json.dumps(LEGACY_DEFAULT),
+        )
     )
 
 
