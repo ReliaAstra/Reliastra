@@ -24,7 +24,7 @@ If migration was `expand` (additive), rollback is safe. If heads contained `drop
 
 ## Manual rollback
 ```bash
-ssh reliastra-admin@100.x
+ssh reliastra@100.x
 cat /opt/reliastra/state/current.json
 cat /opt/reliastra/state/previous.json
 sudo /opt/reliastra/scripts/rollback.sh --reason manual

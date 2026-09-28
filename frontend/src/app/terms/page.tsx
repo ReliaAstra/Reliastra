@@ -1,13 +1,29 @@
 import type { Metadata } from 'next';
 import { MarketingPage, Prose } from '@/components/marketing/marketing-page';
 import { JsonLd } from '@/components/seo/json-ld';
-import { breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { PUBLIC_ROUTES } from '@/lib/routes';
 
+const TERMS_TITLE = 'Terms of Service - RELIASTRA';
+const TERMS_DESCRIPTION =
+  'The terms governing use of the RELIASTRA dependency monitoring, incident correlation, and evidence platform.';
+
 export const metadata: Metadata = {
-  title: 'Terms of Service - RELIASTRA',
-  description: 'The terms governing use of the RELIASTRA dependency monitoring, incident correlation, and evidence platform.',
-  alternates: { canonical: '/terms', ...DISCOVERY_ALTERNATES },
+  title: TERMS_TITLE,
+  description: TERMS_DESCRIPTION,
+  alternates: { canonical: canonicalUrl(PUBLIC_ROUTES.terms), ...DISCOVERY_ALTERNATES },
+  openGraph: {
+    title: TERMS_TITLE,
+    description: TERMS_DESCRIPTION,
+    url: canonicalUrl(PUBLIC_ROUTES.terms),
+    siteName: 'RELIASTRA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: TERMS_TITLE,
+    description: TERMS_DESCRIPTION,
+  },
 };
 
 const SECTIONS = [

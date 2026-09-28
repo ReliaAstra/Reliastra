@@ -108,15 +108,23 @@ mv "$STATE_DIR/current.json.tmp" "$STATE_DIR/current.json"
 
 # 4. MIGRATION SAFETY CHECK + BACKUP
 log "INFO" "MIGRATE_CHECK"
-# Check migration state
-set +e
-MIG_BEFORE=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic current 2>&1 | head -5')
-MIG_RC=$?
-set -e
-if [[ $MIG_RC -ne 0 ]]; then
-  log "ERROR" "migrate pre-check failed: $MIG_BEFORE"
-  record_state "FAILED"
-  exit 1
+# Host-side alembic is optional: the api container runs `alembic upgrade head`
+# at boot. When /opt/venv is absent we skip these checks LOUDLY instead of
+# fake-passing through a masked pipeline.
+if [[ -x /opt/venv/bin/alembic ]]; then
+  # Check migration state
+  set +e
+  MIG_BEFORE=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic current 2>&1 | head -5')
+  MIG_RC=$?
+  set -e
+  if [[ $MIG_RC -ne 0 ]]; then
+    log "ERROR" "migrate pre-check failed: $MIG_BEFORE"
+    record_state "FAILED"
+    exit 1
+  fi
+else
+  log "WARN" "no host alembic toolchain - skipping host-side migrate pre-check (container migrates at boot)"
+  MIG_BEFORE="skipped-no-host-venv"
 fi
 # Backup (bounded, 7d retention, no secrets in log)
 log "INFO" "BACKUP"
@@ -135,21 +143,33 @@ else
 fi
 # Check for destructive migration (look for drop_column, drop_table in next heads)
 # We refuse to auto-run if heads contain destructive ops unless explicitly flagged
-HEADS_DIFF=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic history --verbose 2>&1 | head -100' || true)
+if [[ -x /opt/venv/bin/alembic ]]; then
+  HEADS_DIFF=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic history --verbose 2>&1 | head -100' || true)
+else
+  log "WARN" "no host alembic toolchain - skipping destructive-migration scan (container migrates at boot)"
+  HEADS_DIFF=""
+fi
 if echo "$HEADS_DIFF" | grep -qi "drop_table\|drop_column"; then
   log "WARN" "heads contain destructive ops - manual review required"
   # For now we still allow expand migrations (add), but log
 fi
 
 # 5. APPLY MIGRATION (expand only, timeout 180s)
-log "INFO" "MIGRATE_APPLY"
-if ! timeout 180 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic upgrade head 2>&1 | tee /opt/reliastra/logs/migrate-'$COMMIT'.log'; then
-  log "ERROR" "migration failed"
-  cat /opt/reliastra/logs/migrate-"$COMMIT".log | tail -20
-  record_state "FAILED"
-  exit 1
+# Runs on the host only when the host toolchain exists; otherwise the api
+# container applies migrations at boot (see deploy/entrypoint.sh).
+if [[ -x /opt/venv/bin/alembic ]]; then
+  log "INFO" "MIGRATE_APPLY (host)"
+  if ! timeout 180 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic upgrade head 2>&1 | tee /opt/reliastra/logs/migrate-'$COMMIT'.log'; then
+    log "ERROR" "migration failed"
+    cat /opt/reliastra/logs/migrate-"$COMMIT".log | tail -20
+    record_state "FAILED"
+    exit 1
+  fi
+  MIG_AFTER=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic current 2>&1 | head -5')
+else
+  log "WARN" "no host alembic toolchain - skipping host-side migrate apply (container migrates at boot)"
+  MIG_AFTER="skipped-no-host-venv"
 fi
-MIG_AFTER=$(timeout 30 bash -c 'set -a; source /opt/reliastra/.env.production; /opt/venv/bin/alembic current 2>&1 | head -5')
 log "INFO" "migrate $MIG_BEFORE -> $MIG_AFTER"
 
 # 6. START NEW RELEASE

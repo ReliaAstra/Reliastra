@@ -30,8 +30,19 @@ export const metadata: Metadata = {
   authors: [{ name: "Reliastra, Inc.", url: "https://reliastra.com" }],
   creator: "Reliastra, Inc.",
   publisher: "Reliastra, Inc.",
+  /**
+   * Identity fields are deliberately ABSENT here: no `alternates.canonical`,
+   * no `openGraph.url`. Next.js merges route metadata with this object, so
+   * anything set here becomes the identity of every page that does not set
+   * its own - which is exactly how deep pages ended up canonicalizing to the
+   * homepage and reporting `og:url: https://reliastra.com`. The homepage
+   * declares its own identity in `app/page.tsx`; every other public page
+   * declares its own canonical and og:url (via `buildMetadata` or
+   * explicitly); `src/seo/__tests__/identity-contract.test.ts` fails the
+   * build if a public page relies on an inherited identity. Private surfaces
+   * (console, admin, auth) correctly end up with no canonical at all.
+   */
   alternates: {
-    canonical: "https://reliastra.com",
     ...DISCOVERY_ALTERNATES,
   },
   /**
@@ -67,7 +78,8 @@ export const metadata: Metadata = {
     title: "RELIASTRA — Independent Evidence for External Dependencies",
     description:
       "Independent observation of the third-party APIs your software depends on. Deterministic fault confirmation. Verifiable evidence records.",
-    url: "https://reliastra.com",
+    // No `url` here, for the same reason as above: an inherited og:url is a
+    // homepage identity on a deep page. Public pages set their own.
     siteName: "RELIASTRA",
     locale: "en_US",
     type: "website",

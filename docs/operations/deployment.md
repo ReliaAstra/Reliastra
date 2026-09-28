@@ -12,7 +12,7 @@ Production identity = commit SHA + image digest (never `latest`). `IMAGE_REF=ghc
 ## CD (can this artifact be promoted?)
 `.github/workflows/deploy-production.yml` (env: `production` with protection/approval):
 - `workflow_run` on `main` after CI success, or `workflow_dispatch` with `commit_sha`/`image_digest`.
-- Tailscale GH Action → SSH as `reliastra-deploy` (least privilege) → `sudo /opt/reliastra/scripts/deploy.sh --commit <sha> --image <ref>`
+- Tailscale GH Action → SSH as `reliastra` (dedicated CI keypair `reliaastra-ci-deploy`) → `sudo /opt/reliastra/scripts/deploy.sh --commit <sha> --image <ref>`
 
 ### State machine (`deploy.sh`)
 ```
@@ -38,7 +38,7 @@ Artifact ≠ config. Image has no secrets. Runtime env from `/opt/reliastra/.env
 ## Commands
 ```bash
 # Manual (over Tailscale)
-ssh reliastra-admin@100.x
+ssh reliastra@100.x
 sudo /opt/reliastra/scripts/preflight.sh --commit <sha> --image ghcr.io/reliaastra/reliastra:sha-<sha>
 sudo /opt/reliastra/scripts/deploy.sh --commit <sha> --image ghcr.io/reliaastra/reliastra:sha-<sha>
 sudo /opt/reliastra/scripts/healthcheck.sh --timeout 120
