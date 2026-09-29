@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy import String, ForeignKey, Integer, Boolean, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin
+from app.modules.dependencies.constants import DEFAULT_REGIONS
 
 
 class Dependency(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
