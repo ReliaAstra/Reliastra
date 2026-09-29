@@ -227,7 +227,11 @@ class EvidenceContext:
                 "issued_date": design.utc_date(generated_at),
                 "expires_date": design.utc_date(expires_at),
                 "retention_days": DEFAULT_EVIDENCE_EXPIRY_DAYS,
-                "expired": False,
+                # Computed, not hardcoded. This was a literal ``False``, so the
+                # template's expiry notice could never fire and every artifact
+                # claimed to be live forever - including regenerated copies of
+                # records whose window has long passed.
+                "expired": bool(expires_at and expires_at < generated_at),
                 "window": design.window_phrase(
                     metrics.window_start, metrics.window_end
                 ),

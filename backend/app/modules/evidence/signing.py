@@ -25,6 +25,16 @@ checksum, not an authenticity claim. This module closes that gap.
   agree on the identifier without configuring it, and a rotation mints a new
   one automatically. ``EVIDENCE_KEY_ID`` overrides it when a stable citation
   handle has to survive a rotation.
+* **Rotation must never reuse an id.** A verifier that pins ``kid -> key`` sees
+  a new key published under an old id as the signature of a key-substitution
+  attack. Every published key therefore also carries ``key_fingerprint``, a
+  digest of the key material itself, so a substitution is detectable even when
+  the id is reused by mistake.
+* **A keyring keeps old records verifiable.** ``EVIDENCE_SIGNING_KEYRING``
+  holds superseded public keys as ``{"<kid>": "<base64url raw public key>"}``.
+  Without it the first rotation silently makes every previously issued record
+  unverifiable by anyone, which is the one outcome an evidence product cannot
+  afford.
 
 Verification is deliberately boring and independently reproducible: the
 endpoint hands out the public JWK and the recipient verifies with one command.
@@ -36,6 +46,7 @@ from __future__ import annotations
 import base64
 import binascii
 import hashlib
+import json
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -61,6 +72,34 @@ class SigningState:
     @property
     def available(self) -> bool:
         return self.configured and self.public_key is not None
+
+    @property
+    def fingerprint(self) -> str | None:
+        """Digest of the key material, independent of any configured id.
+
+        Published beside ``key_id`` so a verifier can tell "the same key, new
+        label" from "a different key wearing a familiar label".
+        """
+        if not self.available:
+            return None
+        return _fingerprint(_b64url_decode(self.public_key or ""))
+
+    def jwk(self) -> dict[str, Any]:
+        return {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": self.public_key,
+            "kid": self.key_id,
+            "key_fingerprint": self.fingerprint,
+            "alg": self.algorithm,
+            "use": "sig",
+        }
+
+
+def _fingerprint(raw_public: bytes) -> str:
+    """``sha256:<hex>`` over the raw public key. Stable, id-independent."""
+    return f"sha256:{hashlib.sha256(raw_public).hexdigest()}"
+
 
 
 def _b64url_decode(value: str) -> bytes:
@@ -158,6 +197,101 @@ def signing_state() -> SigningState:
         return SigningState(configured=False, error=f"{type(exc).__name__}: {exc}")
 
 
+def keyring() -> dict[str, str]:
+    """Superseded public keys, ``{key_id: base64url raw public key}``.
+
+    Configured as ``EVIDENCE_SIGNING_KEYRING`` holding a JSON object, or a JSON
+    array of ``{"kid": ..., "x": ...}`` entries. A record signed before a
+    rotation stays verifiable as long as its key is listed here.
+
+    Malformed configuration degrades to an empty keyring plus a loud warning
+    rather than raising: the verification endpoint must still answer, and
+    answering "this key is unknown" is a correct, useful answer.
+    """
+    raw = str(getattr(settings, "EVIDENCE_SIGNING_KEYRING", "") or "").strip()
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError) as exc:
+        logger.warning("evidence signing: EVIDENCE_SIGNING_KEYRING is not valid JSON: %s", exc)
+        return {}
+
+    entries: dict[str, str] = {}
+    if isinstance(parsed, dict):
+        pairs = parsed.items()
+    elif isinstance(parsed, list):
+        pairs = (
+            (str(item.get("kid") or ""), str(item.get("x") or ""))
+            for item in parsed
+            if isinstance(item, dict)
+        )
+    else:
+        logger.warning("evidence signing: EVIDENCE_SIGNING_KEYRING must be an object or array")
+        return {}
+
+    for key_id, public in pairs:
+        key_id = str(key_id).strip()
+        public = str(public).strip()
+        if not key_id or not public:
+            continue
+        try:
+            raw_key = _b64url_decode(public)
+        except (binascii.Error, ValueError):
+            logger.warning("evidence signing: keyring entry %r is not base64url", key_id)
+            continue
+        if len(raw_key) != 32:
+            logger.warning("evidence signing: keyring entry %r is not a 32-byte Ed25519 key", key_id)
+            continue
+        entries[key_id] = public
+    return entries
+
+
+def resolve_public_keys(key_id: str | None) -> list[str]:
+    """Every public key published under ``key_id``, current key first.
+
+    A list rather than a single value because a deployment that reuses a
+    ``kid`` across a rotation is indistinguishable, from the outside, from one
+    that does not - and the two must not behave differently in the direction
+    that loses evidence. A verifier tries each candidate and accepts the record
+    if any published key for that id validates it, which is sound: every
+    candidate was published by us for exactly that identifier.
+
+    An empty list means no key is published under that id, which is a
+    verification failure and never a pass.
+    """
+    candidates: list[str] = []
+    state = signing_state()
+    if state.available and key_id and state.key_id == key_id:
+        candidates.append(state.public_key or "")
+    if key_id:
+        historical = keyring().get(key_id)
+        if historical and historical not in candidates:
+            candidates.append(historical)
+    return [c for c in candidates if c]
+
+
+def resolve_public_key(key_id: str | None) -> str | None:
+    """The single key published under ``key_id``, for callers that want one.
+
+    Prefer :func:`resolve_public_keys` when the answer decides whether a record
+    is genuine.
+    """
+    candidates = resolve_public_keys(key_id)
+    return candidates[0] if candidates else None
+
+
+def verify_signature_over(
+    payload_bytes: bytes, signature_b64url: str, key_id: str | None
+) -> bool:
+    """Verify a signature against every public key published for ``key_id``."""
+    for public in resolve_public_keys(key_id):
+        if verify_payload(payload_bytes, signature_b64url, public):
+            return True
+    return False
+
+
+
 def sign_payload(payload_bytes: bytes) -> dict[str, str] | None:
     """Sign the canonical payload. ``None`` means "this deployment is unsigned"."""
     key = _private_key()
@@ -204,11 +338,37 @@ def public_jwk(state: SigningState | None = None) -> dict[str, Any] | None:
     state = state or signing_state()
     if not state.available:
         return None
-    return {
-        "kty": "OKP",
-        "crv": "Ed25519",
-        "x": state.public_key,
-        "kid": state.key_id,
-        "alg": ALGORITHM,
-        "use": "sig",
-    }
+    return state.jwk()
+
+
+def public_jwks() -> list[dict[str, Any]]:
+    """Every public key this deployment has ever signed under.
+
+    The current key plus the keyring. Entries are keyed by
+    ``(kid, key_fingerprint)`` rather than ``kid`` alone, so a deployment that
+    reuses an id across a rotation publishes both keys instead of silently
+    dropping the superseded one - which is exactly the substitution a pinned
+    verifier is entitled to be suspicious of.
+    """
+    entries: dict[tuple[str, str], dict[str, Any]] = {}
+    for key_id, public in keyring().items():
+        try:
+            raw = _b64url_decode(public)
+        except (binascii.Error, ValueError):  # pragma: no cover - filtered in keyring()
+            continue
+        entries[(key_id, _fingerprint(raw))] = {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": public,
+            "kid": key_id,
+            "key_fingerprint": _fingerprint(raw),
+            "alg": ALGORITHM,
+            "use": "sig",
+            "status": "historical",
+        }
+    state = signing_state()
+    if state.available:
+        jwk = state.jwk()
+        jwk["status"] = "current"
+        entries[(state.key_id or "", state.fingerprint or "")] = jwk
+    return list(entries.values())

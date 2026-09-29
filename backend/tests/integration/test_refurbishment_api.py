@@ -180,7 +180,11 @@ async def test_observation_attribution_snapshot_and_verification(
         db_session, incident.id
     )
     assert attribution is not None
-    assert attribution.methodology_version == "v1.0"
+    # v1.1: the observer-health signal became measured and endpoint overlap
+    # became binary, so a record issued now carries the new semantics. Asserting
+    # the version explicitly is the point - it is what makes a semantics change
+    # visible instead of silent.
+    assert attribution.methodology_version == "v1.1"
 
     mocker.patch.object(
         evidence_service._renderer,

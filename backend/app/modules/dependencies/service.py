@@ -10,7 +10,7 @@ from app.core.exceptions import (
 from app.core.permissions import (
     get_dependency_limit,
     get_effective_plan_for_org,
-    get_min_check_interval,
+    get_deliverable_check_interval,
 )
 from app.core.security import decrypt_jsonb, encrypt_jsonb
 from app.modules.dependencies.models import Dependency
@@ -87,8 +87,8 @@ class DependencyService:
         # custom/configured limits (None = no fixed cap enforced).
         effective = get_effective_plan_for_org(org)
 
-        min_interval = get_min_check_interval(effective)
-        if min_interval is not None and request.check_interval_seconds < min_interval:
+        min_interval = get_deliverable_check_interval(effective)
+        if request.check_interval_seconds < min_interval:
             raise ValidationException(
                 f"Minimum check interval for the current plan is {min_interval} seconds."
             )
@@ -165,8 +165,8 @@ class DependencyService:
         org = await self.org_repository.get_by_id(session, org_id)
         if org and request.check_interval_seconds is not None:
             effective = get_effective_plan_for_org(org)
-            min_interval = get_min_check_interval(effective)
-            if min_interval is not None and request.check_interval_seconds < min_interval:
+            min_interval = get_deliverable_check_interval(effective)
+            if request.check_interval_seconds < min_interval:
                 raise ValidationException(
                     f"Minimum check interval for the current plan is {min_interval} seconds."
                 )

@@ -159,6 +159,14 @@ export const EVIDENCE = {
  */
 export { PUBLIC_INCIDENT_WINDOW_DAYS };
 
+/**
+ * Re-exported so prose surfaces state the version they mean rather than a
+ * literal. The attribution semantics changed at v1.1 (the observer-health
+ * signal became measured, and endpoint overlap became binary), so a record
+ * carrying v1.0 must not be described with v1.1's rules.
+ */
+export { ATTRIBUTION_METHODOLOGY_VERSION };
+
 /** What an evidence record can be used for, and what it cannot. */
 export const EVIDENCE_CAN = [
   'Show what this dependency did during a window, from outside your network and the vendor’s.',

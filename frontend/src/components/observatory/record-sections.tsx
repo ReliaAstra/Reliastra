@@ -8,6 +8,11 @@ import {
   type TrackVendorListItem,
   type VendorRecord,
 } from '@/lib/track-api';
+// The published-record window. This file used to hardcode "rolling 90 days" in
+// two places while the API enforced PUBLIC_INCIDENT_WINDOW_DAYS (365) and
+// methodology.ts re-exported that constant for exactly this purpose - so the
+// page told a reader its records vanished 9 months before they did.
+import { PUBLIC_INCIDENT_WINDOW_DAYS } from '@/lib/methodology';
 import {
   availability,
   count,
@@ -707,7 +712,9 @@ export function IncidentsSection({
           <span className="ob-label">
             {incidents.length} record{incidents.length === 1 ? '' : 's'}
           </span>
-          <span className="ob-label">Published evidence: rolling 90 days</span>
+          <span className="ob-label">
+            Published evidence: rolling {PUBLIC_INCIDENT_WINDOW_DAYS} days
+          </span>
         </div>
       }
     >
@@ -726,8 +733,8 @@ export function IncidentsSection({
         />
       ) : (
         <Notice title="No public incident records">
-          RELIASTRA holds no public incident record for {vendorName} in the rolling 90-day
-          published-evidence window. That is an absence of published records, not evidence of an
+          RELIASTRA holds no public incident record for {vendorName} in the rolling{' '}
+          {PUBLIC_INCIDENT_WINDOW_DAYS}-day published-evidence window. That is an absence of published records, not evidence of an
           absence of outages: endpoint-level failures that did not produce a released evidence
           report never enter this channel. Use the observations above for what was measured.
         </Notice>

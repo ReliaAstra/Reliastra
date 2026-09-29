@@ -140,11 +140,45 @@ var routes = map[string]routeHandler{
 	}),
 	"DELETE /v1/api-keys/k1": jsonRoute(204, nil),
 	"GET /v1/verify/good-id": jsonRoute(200, map[string]any{
-		"found": true, "incident_id": "inc-1", "dependency_id": "dep-1234abcd",
+		"found": true, "verified": true, "incident_id": "inc-1", "dependency_id": "dep-1234abcd",
 		"time_window": map[string]any{"start": "2026-09-18T09:55:00Z", "end": "2026-09-18T10:06:00Z"},
 		"data_hash":   "aaaa1111", "report_checksum": reportChecksum,
 		"methodology_version": "v1.0",
-		"authenticity":        map[string]any{"signed": false, "algorithm": nil, "public_keys": "/v1/verify/keys"},
+		"authenticity":        map[string]any{"signed": false, "algorithm": nil, "public_keys": "/v1/verify/keys", "verified": true},
+		"verification_checks": []any{
+			map[string]any{"name": "data_hash_matches", "status": "pass"},
+			map[string]any{"name": "signature_valid", "status": "pass"},
+		},
+	}),
+	// A record the service re-derived and found altered must not exit zero.
+	"GET /v1/verify/tampered-id": jsonRoute(200, map[string]any{
+		"found": true, "verified": false, "incident_id": "inc-9", "dependency_id": "dep-9999",
+		"data_hash": "bbbb2222", "report_checksum": reportChecksum,
+		"methodology_version": "v1.0",
+		"authenticity": map[string]any{"signed": true, "public_keys": "/v1/verify/keys",
+			"verified": false, "verification_reason": "data_hash_matches"},
+		"verification_checks": []any{
+			map[string]any{"name": "data_hash_matches", "status": "fail", "detail": "recomputed digest differs"},
+			map[string]any{"name": "signature_valid", "status": "fail"},
+		},
+	}),
+	// Three-valued: an unsigned record is not verified, and must not pass.
+	"GET /v1/verify/unsigned-id": jsonRoute(200, map[string]any{
+		"found": true, "verified": nil, "incident_id": "inc-8", "dependency_id": "dep-8888",
+		"data_hash": "cccc3333", "report_checksum": reportChecksum,
+		"methodology_version": "v1.0",
+		"authenticity": map[string]any{"signed": false, "public_keys": "/v1/verify/keys",
+			"verified": nil, "verification_reason": "unsigned"},
+		"verification_checks": []any{
+			map[string]any{"name": "signature_present", "status": "unavailable"},
+		},
+	}),
+	// A service that answers 200 but performs no re-derivation at all.
+	"GET /v1/verify/no-verdict-id": jsonRoute(200, map[string]any{
+		"found": true, "incident_id": "inc-7", "dependency_id": "dep-7777",
+		"data_hash": "dddd4444", "report_checksum": reportChecksum,
+		"methodology_version": "v1.0",
+		"authenticity":        map[string]any{"signed": false, "public_keys": "/v1/verify/keys"},
 	}),
 	"GET /v1/verify/missing-id":  jsonRoute(404, map[string]any{"found": false, "error": "Evidence not found"}),
 	"GET /v1/verify/degraded-id": jsonRoute(503, map[string]any{"found": false, "service_degraded": true}),
@@ -610,7 +644,8 @@ func TestVerify_MatchReturnsZero(t *testing.T) {
 	if result.code != exitOK {
 		t.Fatalf("code = %d, want %d (err=%q)", result.code, exitOK, result.err)
 	}
-	match(t, result.out, "verification record found")
+	match(t, result.out, "verification record verified")
+	match(t, result.out, `re-derived\s+yes`)
 	match(t, result.out, `matches record\s+yes`)
 }
 
@@ -943,4 +978,33 @@ func TestTaxonomy_NeverPrintsStackTrace(t *testing.T) {
 	env["RELIASTRA_TOKEN"] = "denied-token"
 	result := run(t, []string{"deps", "list", "--api-url", apiBaseURL}, env)
 	noMatch(t, result.err, `\n\s+at `)
+}
+
+// A verification command that exits 0 has cleared the record, so it must never
+// do that on a record the service could not clear. These pin the fail-closed
+// behaviour: HTTP 200 plus `found: true` is not a pass.
+func TestVerify_ServerRejectionReturnsFour(t *testing.T) {
+	result := run(t, []string{"verify", "tampered-id", "--api-url", apiBaseURL}, baseEnv())
+	if result.code != exitUnverified {
+		t.Fatalf("code = %d, want %d (out=%q)", result.code, exitUnverified, result.out)
+	}
+	if !strings.Contains(result.out, "data_hash_matches") {
+		t.Errorf("expected the failing check to be named, got %q", result.out)
+	}
+}
+
+func TestVerify_UnsignedRecordIsNotAVerifiedRecord(t *testing.T) {
+	result := run(t, []string{"verify", "unsigned-id", "--api-url", apiBaseURL}, baseEnv())
+	if result.code != exitUnverified {
+		t.Fatalf("code = %d, want %d for an unsigned record (out=%q)", result.code, exitUnverified, result.out)
+	}
+}
+
+// A service that answers 200 without re-deriving anything is not evidence of
+// anything. Refusing is the only safe reading.
+func TestVerify_MissingVerdictFieldFailsClosed(t *testing.T) {
+	result := run(t, []string{"verify", "no-verdict-id", "--api-url", apiBaseURL}, baseEnv())
+	if result.code != exitUnverified {
+		t.Fatalf("code = %d, want %d when the service performed no check (out=%q)", result.code, exitUnverified, result.out)
+	}
 }

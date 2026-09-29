@@ -56,4 +56,4 @@ async def test_attribution_is_deterministic(mocker):
     assert first.confidence_score == second.confidence_score
     assert first.classification == second.classification
     assert first.signal_breakdown == second.signal_breakdown
-    assert first.methodology_version == "v1.0"
+    assert first.methodology_version == "v1.1"

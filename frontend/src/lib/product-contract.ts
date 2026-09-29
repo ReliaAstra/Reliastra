@@ -59,15 +59,40 @@ export const ATTRIBUTION_WEIGHTS = {
 
 export type AttributionSignal = keyof typeof ATTRIBUTION_WEIGHTS;
 
-export const ATTRIBUTION_METHODOLOGY_VERSION = 'v1.0';
+export const ATTRIBUTION_METHODOLOGY_VERSION = 'v1.1';
 
-/** Human-readable names for the five signals. Not sent over the wire. */
+/** Short display names for the five signals. Not sent over the wire. */
 export const SIGNAL_LABEL: Record<AttributionSignal, string> = {
   temporal: 'Temporal overlap',
   endpoint_overlap: 'Endpoint overlap',
   latency_correlation: 'Latency correlation',
   error_pattern: 'Error pattern',
   infrastructure_baseline: 'Infrastructure baseline',
+};
+
+/**
+ * What each signal actually computes, which is not always what the label
+ * suggests. Four of these were previously misdescribed on the public site:
+ *
+ * - `endpoint_overlap` read "affected endpoints shared with the suspected
+ *   dependency" and returned a correlation's confidence value. It is binary: a
+ *   correlated incident touching a shared endpoint, or nothing.
+ * - `latency_correlation` read "latency movement against your error rate". No
+ *   error rate is read; it is the coefficient of variation of observed latency.
+ * - `error_pattern` read "status codes returned by the dependency". Status
+ *   codes are never used; it is the share of failures sharing one error type.
+ * - `infrastructure_baseline` read "whether your own infrastructure was
+ *   healthy" and was a hardcoded 1.0. It is measured now: degraded when every
+ *   failure in the window is a transport failure that received no HTTP
+ *   response, because from one observation point those are indistinguishable
+ *   from the observer being unable to reach anything.
+ */
+export const SIGNAL_DESCRIPTION: Record<AttributionSignal, string> = {
+  temporal: 'Other incidents open in the same 300s window',
+  endpoint_overlap: 'A correlated incident on a shared endpoint',
+  latency_correlation: 'Observed latency movement (coefficient of variation)',
+  error_pattern: 'Share of failures sharing one error type',
+  infrastructure_baseline: 'Whether the probe itself reached anything',
 };
 
 /**

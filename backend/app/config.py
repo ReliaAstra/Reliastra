@@ -365,8 +365,24 @@ class Settings(BaseSettings):
         default="",
         description="Stable identifier for the signing key, published with the "
                     "public key. Defaults to the first 16 hex characters of "
-                    "the SHA-256 of the public key when unset; set it "
-                    "explicitly before a key rotation so citations survive.",
+                    "the SHA-256 of the public key when unset. Every published "
+                    "key also carries key_fingerprint (a digest of the key "
+                    "material) so a verifier can detect a different key being "
+                    "published under a familiar id. Do NOT reuse this value "
+                    "across a rotation: pinning kid -> key and then finding a "
+                    "new key under the same kid is indistinguishable from a "
+                    "key-substitution attack. On rotation, add the old public "
+                    "key to EVIDENCE_SIGNING_KEYRING and change the id.",
+    )
+    EVIDENCE_SIGNING_KEYRING: str = Field(
+        default="",
+        description="Superseded Ed25519 public keys as a JSON object mapping "
+                    "key id -> base64url raw 32-byte public key, or a JSON array "
+                    "of {\"kid\": ..., \"x\": ...}. Published alongside the "
+                    "current key at /v1/verify/keys so that records issued "
+                    "before a rotation remain verifiable by third parties. "
+                    "Without it, the first key rotation silently makes every "
+                    "historical record unverifiable.",
     )
     PUBLIC_INCIDENT_WINDOW_DAYS: int = Field(
         default=365,

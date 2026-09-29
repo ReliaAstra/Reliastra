@@ -20,7 +20,7 @@ from app.platform.commercial.entitlements import (
     PLAN_RETENTION_DAYS,
     PLAN_TAGS,
     PLAN_TEAM_LIMITS,
-    get_min_check_interval,
+    get_deliverable_check_interval,
     is_enterprise_plan,
 )
 from app.modules.billing.disclosure import (
@@ -191,7 +191,7 @@ async def get_pricing_plans() -> PricingPlansResponse:
                 price_annual_usd=get_plan_annual_price_usd(p),
                 max_dependencies=PLAN_DEPENDENCY_LIMITS.get(p),
                 max_team_members=PLAN_TEAM_LIMITS.get(p),
-                min_check_interval_seconds=get_min_check_interval(p),
+                min_check_interval_seconds=get_deliverable_check_interval(p),
                 data_retention_days=PLAN_RETENTION_DAYS.get(p),
                 features=PLAN_FEATURES.get(p, {}),
                 billing_availability=PLAN_BILLING_AVAILABILITY.get(p, "contact_sales"),

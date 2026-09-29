@@ -13,6 +13,16 @@
  *    in the region table and omitted from the plot, and the plot caption says
  *    how many regions could be placed. Guessing a coordinate would be
  *    fabricating the observation topology.
+ *
+ * **Bare worker labels are deliberately unplaceable.** RELIASTRA's own region
+ * values are scheduler labels (`us-east`), not cloud facility identifiers, and
+ * the backend states that a label "carries no confirmation weight at all" and
+ * names the worker rather than a location. This catalog used to resolve `us-east`
+ * to N. Virginia and `eu-west` to Dublin - the coordinates of AWS us-east-1 and
+ * eu-west-1 - which asserted a physical origin the deployment does not have and
+ * is exactly the claim the observatory's own copy refuses to make. Only
+ * facility-qualified codes (`us-east-1`) are placeable, and only when a
+ * deployment really runs in them.
  */
 
 export interface RegionInfo {
@@ -30,14 +40,13 @@ const CATALOG: Record<string, { place: string; lat: number; lon: number }> = {
   // North America
   'us-east-1': { place: 'N. Virginia, US', lat: 38.95, lon: -77.45 },
   'us-east-2': { place: 'Ohio, US', lat: 40.0, lon: -83.0 },
-  'us-east': { place: 'Eastern United States', lat: 38.95, lon: -77.45 },
   'us-west-1': { place: 'N. California, US', lat: 37.35, lon: -121.96 },
   'us-west-2': { place: 'Oregon, US', lat: 45.87, lon: -119.69 },
-  'us-west': { place: 'Western United States', lat: 45.87, lon: -119.69 },
   'us-central-1': { place: 'Iowa, US', lat: 41.26, lon: -95.94 },
   'ca-central-1': { place: 'Montréal, Canada', lat: 45.5, lon: -73.57 },
   // South America
   'sa-east-1': { place: 'São Paulo, Brazil', lat: -23.55, lon: -46.63 },
+  // Bare `sa-east` is a worker label, not a facility. Unplaceable.
   // Europe
   'eu-west-1': { place: 'Dublin, Ireland', lat: 53.35, lon: -6.26 },
   'eu-west-2': { place: 'London, United Kingdom', lat: 51.51, lon: -0.13 },
@@ -46,6 +55,7 @@ const CATALOG: Record<string, { place: string; lat: number; lon: number }> = {
   'eu-central-1': { place: 'Frankfurt, Germany', lat: 50.11, lon: 8.68 },
   'eu-north-1': { place: 'Stockholm, Sweden', lat: 59.33, lon: 18.07 },
   'eu-south-1': { place: 'Milan, Italy', lat: 45.46, lon: 9.19 },
+  // Note: bare `eu-west` is intentionally absent - see the module docstring.
   // Africa & Middle East
   'af-south-1': { place: 'Cape Town, South Africa', lat: -33.92, lon: 18.42 },
   'af-west-1': { place: 'Lagos, Nigeria', lat: 6.52, lon: 3.38 },
