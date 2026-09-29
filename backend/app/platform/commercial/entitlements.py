@@ -433,6 +433,32 @@ def get_min_check_interval(plan: str) -> int | None:
     return PLAN_CHECK_INTERVALS.get(normalize_plan(plan), 60)
 
 
+def get_deliverable_check_interval(plan: str) -> int:
+    """The shortest interval this deployment can actually honour.
+
+    A plan's floor is a commercial promise; this is a physical limit. They are
+    different, and only enforcing the commercial one lets a customer configure
+    an interval the scheduler can never reach.
+
+    Celery Beat dispatches due dependencies on a fixed tick,
+    ``CHECK_SCHEDULE_SECONDS`` (default 30). A dependency due sooner than the
+    tick simply waits for the next one, so the effective cadence rounds up to
+    the tick no matter what the row says. A Pro plan may set 30s and get 30s; an
+    Enterprise plan with no configured floor could previously set 1s and get
+    30s, and the row would claim 1s for as long as it existed.
+
+    The floor is therefore ``max(plan floor, tick)``, and it always exists - a
+    plan that sets no floor is bounded by the platform, not by infinity.
+    """
+    from app.config import settings
+
+    tick = max(1, int(float(getattr(settings, "CHECK_SCHEDULE_SECONDS", 30) or 30)))
+    plan_floor = get_min_check_interval(plan)
+    if plan_floor is None:
+        return tick
+    return max(int(plan_floor), tick)
+
+
 def get_dependency_limit(plan: str) -> int | None:
     return PLAN_DEPENDENCY_LIMITS.get(normalize_plan(plan), 3)
 

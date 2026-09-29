@@ -190,11 +190,17 @@ class ProbeRunner:
         # answers with an unexpected status is cheap to observe and must never
         # throttle how often we look at it, or a confirmed outage would suppress
         # its own observation.
+        #
+        # The error type comes from the probe outcome, not from `result`:
+        # `CheckResult` has no `error_type` column - that lives on the
+        # Observation row, which is written later and asynchronously via the
+        # outbox. Reading it off the ORM object raises AttributeError, and since
+        # this call sits in the probe hot path it would fail *every* check.
         await circuit_breaker.record_outcome(
             dependency_id,
             is_up=is_up,
-            status_code=result.status_code,
-            error_type=result.error_type,
+            status_code=status_code,
+            error_type=observed.error_type,
         )
 
         # FIX 12: Prometheus instrumentation.
