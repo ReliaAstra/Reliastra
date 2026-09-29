@@ -99,6 +99,53 @@
 	}
 }
 
+# ── API host ───────────────────────────────────────────────────────────────
+# `api.reliastra.com` is the documented API origin and the hardcoded default
+# of the shipped CLI (cli/cmd/reliastra/config.go: defaultAPIURL). DNS for it
+# has always pointed at this host, but it never had a site block here.
+#
+# That gap is a hard TLS failure, not a 404. Caddy issues certificates only
+# for the server names present in its configuration, and it does not perform
+# on-demand TLS unless `on_demand_tls` is configured. A ClientHello for
+# api.reliastra.com therefore matched no site and no certificate, so Caddy
+# aborted the handshake with `tlsv1 alert internal error` (alert 80) before
+# sending any certificate at all. It also contradicted the apex HSTS
+# directive above, which sets `includeSubDomains` and therefore requires
+# every subdomain - api included - to present valid TLS.
+#
+# The apex site deliberately does not cover this host: Caddy matches
+# certificates by exact server name, so `reliastra.com` never covers
+# `api.reliastra.com`.
+#
+# Every request on this host goes to the FastAPI backend. There is no
+# Next.js in this path: the marketing site, dashboard and documentation are
+# served from the apex, and Next.js reaches the backend through its own
+# /api/* route handlers. The backend serves /v1/*, /health, /openapi.json,
+# /api-docs, /api-redoc and /metrics; any other path correctly 404s as JSON.
+api.{$DOMAIN:reliastra.com} {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	encode gzip
+
+	reverse_proxy reliastra-api:8000 {
+		header_up Host {host}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
 # Redirect www → apex
 www.{$DOMAIN:reliastra.com} {
 	redir https://{$DOMAIN:reliastra.com}{uri} permanent

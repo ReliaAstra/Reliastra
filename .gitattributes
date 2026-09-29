@@ -1,0 +1,6 @@
+# The Caddyfile is deployed to production and compared byte-for-byte against
+# /opt/reliastra/Caddyfile by deploy/production/scripts/update.sh, which fails
+# the deploy on any diff ("PROXY CONFIG DRIFT"). A CRLF checkout on Windows
+# (core.autocrlf=true) changes every line and produces that false drift, so
+# this file must stay LF in the working tree as well as in the repository.
+deploy/production/Caddyfile text eol=lf
