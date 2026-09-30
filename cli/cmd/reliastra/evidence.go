@@ -293,7 +293,15 @@ func cmdVerify(ctx *commandContext) int {
 	// plus `found: true` as a pass, so a record whose signature bytes were
 	// garbage - or whose row had been tampered with - exited 0. A CI gate that
 	// cannot fail is not a gate. `verified` must now be exactly true.
-	serverVerified, serverPerformed := record["verified"].(bool)
+	// The service's verdict is three-valued, so presence and value must be read
+	// separately. A type assertion alone cannot tell "field absent" (this
+	// service performs no check) from "field present and null" (it performed
+	// the check and the answer is: unsigned, or the payload was unreadable) -
+	// both arrive as a failed assertion. Collapsing them reported "not
+	// performed" for a record the service had in fact just re-derived.
+	rawVerified, serverPerformed := record["verified"]
+	serverVerified, _ := rawVerified.(bool)
+	verificationReason := strField(asMap(record["authenticity"]), "verification_reason")
 	switch {
 	case !serverPerformed:
 		if found {
@@ -302,11 +310,10 @@ func cmdVerify(ctx *commandContext) int {
 					"treat this record as unverified and upgrade the CLI or the service")
 		}
 	case !serverVerified:
-		reason := strField(asMap(record["authenticity"]), "verification_reason")
-		if reason == "" {
-			reason = "the service re-derived the record and it did not match"
+		if verificationReason == "" {
+			verificationReason = "the service re-derived the record and it did not match"
 		}
-		problems = append(problems, "verification failed: "+reason)
+		problems = append(problems, "verification failed: "+verificationReason)
 	}
 	verdict := record["verification_checks"]
 
@@ -389,7 +396,7 @@ func cmdVerify(ctx *commandContext) int {
 			{"data hash", strField(record, "data_hash")},
 			{"document checksum", strField(record, "report_checksum")},
 			{"methodology", strField(record, "methodology_version")},
-			{"re-derived", verdictLine(serverVerified, serverPerformed)},
+			{"re-derived", verdictLine(serverVerified, serverPerformed, verificationReason)},
 			{"signed", signedAuthenticityLine(authenticity)},
 			{"public keys", field(authenticity, "public_keys")},
 			{"retention", retentionLine(retention)},
@@ -695,15 +702,20 @@ func showObs(ctx *commandContext) int {
 	return exitOK
 }
 
-// verdictLine renders the service's three-valued re-derivation result. "no" and
-// "could not check" are different answers and are rendered differently on
-// purpose: a record that could not be checked has not been cleared.
-func verdictLine(verified bool, performed bool) string {
+// verdictLine renders the service's three-valued re-derivation result.
+//
+// "not performed", "did not match" and "could not be signed" are different
+// answers and are rendered differently on purpose: a record that could not be
+// checked has not been cleared, and one that could not be signed is not the
+// same as one that failed.
+func verdictLine(verified bool, performed bool, reason string) string {
 	switch {
 	case !performed:
 		return "not performed by this service"
 	case verified:
 		return "yes"
+	case reason != "":
+		return "no - " + reason
 	default:
 		return "no"
 	}
