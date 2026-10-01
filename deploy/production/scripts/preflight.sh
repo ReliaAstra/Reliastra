@@ -48,10 +48,37 @@ fi
 # Keep lock fd open until script ends; caller (deploy.sh) will hold it
 
 # 2. Disk / memory
+#
+# Reclaim before refusing. cleanup.sh only runs at the *end* of a successful
+# deploy, so a host that filled up (build cache, an interrupted deploy, a
+# half-written image) could never recover on its own: preflight hard-failed,
+# cleanup was never reached, and the disk stayed full. That is a deadlock, not
+# a safety check, and it turns a routine full disk into a manual page.
+#
+# The reclaim is deliberately narrow. Build cache is regenerable and nothing
+# running depends on it; `image prune` without filters is not run here because
+# that would remove the very image this deploy is about to roll out.
+reclaim_disk() {
+  command -v docker >/dev/null 2>&1 || return 1
+  # Build cache first: it is the largest reclaimable class on a host that only
+  # ever *pulls* prebuilt images, so it is pure waste here.
+  timeout 300 docker buildx prune -af >/dev/null 2>&1 || true
+  # Dangling layers only. Never `-a`: the deploy target is unreferenced and
+  # would be destroyed.
+  timeout 120 docker image prune -f --filter 'dangling=true' >/dev/null 2>&1 || true
+}
+
 avail_mb=$(df -m / | awk 'NR==2{print $4}')
 if (( avail_mb < 2048 )); then
-  echo "FATAL: disk <2GB free ($avail_mb MB)" >&2; exit 1;
+  echo "WARN: disk <2GB free ($avail_mb MB) - reclaiming" >&2
+  reclaim_disk
+  avail_mb=$(df -m / | awk 'NR==2{print $4}')
 fi
+if (( avail_mb < 2048 )); then
+  # Only now is this a real refusal: reclamation ran and the host is still short.
+  echo "FATAL: disk <2GB free ($avail_mb MB) after reclaim" >&2; exit 1;
+fi
+
 mem_mb=$(free -m | awk '/Mem:/{print $2}')
 if (( mem_mb < 1024 )); then
   echo "FATAL: memory <1GB ($mem_mb MB)" >&2; exit 1;

@@ -4,3 +4,21 @@
 # (core.autocrlf=true) changes every line and produces that false drift, so
 # this file must stay LF in the working tree as well as in the repository.
 deploy/production/Caddyfile text eol=lf
+
+# Every script under deploy/production/scripts/ is copied to the production
+# host and executed there. A CRLF checkout on Windows (core.autocrlf=true)
+# makes bash fail outright on the first `case`/`for`, so a working copy can
+# break the host with no repository change at all - which is exactly what
+# happened to preflight.sh and cleanup.sh: `bash -n` failed on the host with
+# "syntax error near unexpected token" until the CRs were stripped.
+#
+# These are shell scripts, not configuration: there is no reason for any
+# checkout of them to contain a CR, so pin them to LF unconditionally.
+deploy/production/scripts/*.sh text eol=lf
+
+# The same class of bug for the CLI module: GoReleaser and the Go toolchain
+# both reject (or silently reformat) CRLF sources, and `gofmt -l` flags every
+# file, which fails the release workflow's formatting gate on a Windows
+# contributor's machine.
+cli/**/*.go text eol=lf
+cli/**/*.sh text eol=lf
