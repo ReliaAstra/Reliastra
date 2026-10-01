@@ -8,6 +8,7 @@ import {
   researchHubRoute,
   researchRoute,
 } from '@/lib/routes';
+import { RESEARCH_AUTHORS } from '@/lib/research/authors';
 
 /**
  * The public information architecture, in one place.
@@ -176,6 +177,35 @@ export const DOCS_GROUPS: NavGroup[] = [
   },
 ];
 
+/**
+ * The founder's own public profiles, as footer links.
+ *
+ * Derived from the declared author record instead of being written out here.
+ * A profile that disappears from `authors.ts` then disappears from the footer
+ * with it, and one that is added there is published everywhere the identity is
+ * asserted - the About page, the `Person` structured data and the footer agree
+ * by construction instead of by review.
+ *
+ * Only URLs present in the record are rendered: the map is a filter, so a label
+ * can never promote a profile nobody has declared. `sameAs` carries both
+ * Hashnode addresses because both are genuinely published, but the footer
+ * shows one link per platform - a reader wants the profile, not its aliases.
+ *
+ * Every one of these is a real, checkable profile, which is the test the rest
+ * of this file applies to navigation: an invented link on a product asking to
+ * be trusted with infrastructure is a claim a visitor can check in one click.
+ */
+const FOUNDER_PROFILE_LABELS: Record<string, string> = {
+  'https://www.linkedin.com/in/emmanueladeshina01': 'LinkedIn',
+  'https://x.com/secengineerx01': 'X',
+  'https://eadeshina.hashnode.dev/': 'Hashnode',
+  'https://github.com/EmmanuelAdesina': 'GitHub',
+};
+
+export const FOUNDER_LINKS: NavLink[] = (RESEARCH_AUTHORS[0]?.sameAs ?? [])
+  .filter((href) => href in FOUNDER_PROFILE_LABELS)
+  .map((href) => ({ label: FOUNDER_PROFILE_LABELS[href], href, external: true }));
+
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
 /**
@@ -228,6 +258,10 @@ export const FOOTER_GROUPS: NavGroup[] = [
       { label: 'Platform status', href: PUBLIC_ROUTES.status },
       { label: 'GitHub', href: EXTERNAL_LINKS.github, external: true },
     ],
+  },
+  {
+    label: 'Founder',
+    links: FOUNDER_LINKS,
   },
   {
     label: 'Legal',
