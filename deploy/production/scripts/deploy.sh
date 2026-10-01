@@ -130,16 +130,29 @@ fi
 log "INFO" "BACKUP"
 mkdir -p /opt/reliastra/backups
 export BACKUP_FILE="/opt/reliastra/backups/pre-$COMMIT-$(date +%Y%m%d%H%M%S).sql.gz"
-if timeout 120 bash -c 'set -a; source /opt/reliastra/.env.production; pg_dump --no-owner --no-privileges --format=custom --file="$BACKUP_FILE"' 2>&1 | tail -3 && [[ -s "$BACKUP_FILE" ]]; then
+# `pg_dump` is libpq, and libpq does NOT read DATABASE_URL - that is a
+# SQLAlchemy/driver variable. Sourcing .env.production exports it and
+# pg_dump silently ignores it, falling back to the local Unix socket, which
+# does not exist on this host. The dump then failed while `--file` had
+# already created the file, so every run left a 0-byte "backup" and the
+# deploy continued on a WARN. The database is Supabase; the connection has
+# to be passed to pg_dump as a positional conninfo URI, with the
+# `postgresql+asyncpg` driver suffix rewritten to plain `postgresql`.
+if timeout 180 bash -c 'set -a; source /opt/reliastra/.env.production
+  conn="${DATABASE_URL/postgresql+asyncpg/postgresql}"
+  pg_dump --no-owner --no-privileges --format=custom --file="$BACKUP_FILE" "$conn"' 2>&1 | tail -3 && [[ -s "$BACKUP_FILE" ]]; then
   log "INFO" "backup $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
   # Prune backups older than 7d, keep at most 10 (guarded: empty dir must not fail the deploy)
   find /opt/reliastra/backups -name "pre-*.sql.gz" -mtime +7 -delete 2>/dev/null || true
   ls -1t /opt/reliastra/backups/pre-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f || true
 else
-  log "WARN" "pg_dump failed - continuing if Supabase PITR available, else operator must verify"
-  # Don't fail deploy if pg_dump fails but DB is reachable - Supabase has PITR
-  # Record that backup was skipped
-  echo "backup: skipped or failed at $START_TS for $COMMIT" >> /opt/reliastra/logs/backup.log
+  # A missing or empty dump is not a warning: it means the only pre-deploy
+  # rollback point does not exist. Refuse to deploy, because the migrations
+  # further down may be destructive.
+  log "ERROR" "pg_dump produced no usable backup - refusing to deploy"
+  rm -f "$BACKUP_FILE" 2>/dev/null || true   # never leave a 0-byte file that looks like a backup
+  echo "backup: FAILED (no output) at $(date -Is) for $COMMIT" >> /opt/reliastra/logs/backup.log
+  exit 1
 fi
 # Check for destructive migration (look for drop_column, drop_table in next heads)
 # We refuse to auto-run if heads contain destructive ops unless explicitly flagged
