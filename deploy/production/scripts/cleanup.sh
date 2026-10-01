@@ -27,6 +27,16 @@ done
 # Prune dangling only, never -a
 docker image prune -f --filter "dangling=true" 2>&1 | tail -5
 
+# Build cache.
+#
+# This is the class that actually fills the disk: 14.7GB had accumulated,
+# against a 38GB volume, which is what tripped the 2GB preflight gate and
+# blocked every deploy. Images are only ever *pulled* here, never built, so
+# build cache is by definition regenerable and nothing running depends on it.
+# Image retention above bounds the images; without this line the cache is
+# unbounded and simply regrows until the next deploy cannot start.
+docker buildx prune -af 2>&1 | tail -3
+
 # Remove old reliastra images beyond keep, but never the kept digests
 # Use docker images --filter, but protect keep_digests
 count=0
