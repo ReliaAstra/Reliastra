@@ -23,7 +23,7 @@ import {
   utcStamp,
   windowLabel,
 } from '@/lib/observatory/format';
-import { canonicalUrl, breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { canonicalUrl, breadcrumbJsonLd, SITE_NAME, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { robotsDirective } from '@/lib/indexability';
 import { JsonLd } from '@/components/seo/json-ld';
 import { PUBLIC_ROUTES, SHARE_ROUTES } from '@/lib/routes';
@@ -144,6 +144,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           title: `${category.name} dependency records - RELIASTRA observatory`,
           description: categoryDescription,
           url: categoryUrl,
+          siteName: SITE_NAME,
           type: 'website',
           images: [
             {
@@ -216,6 +217,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${name} - independently measured reliability record`,
       description,
       url,
+      siteName: SITE_NAME,
       type: 'article',
       images: [
         {

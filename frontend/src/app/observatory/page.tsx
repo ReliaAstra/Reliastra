@@ -8,7 +8,7 @@ import {
 } from '@/lib/track-api';
 import { deriveState, NO_OBSERVATION, elapsed } from '@/lib/observatory/format';
 import { robotsDirective } from '@/lib/indexability';
-import { canonicalUrl, breadcrumbJsonLd, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { canonicalUrl, breadcrumbJsonLd, SITE_NAME, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { JsonLd } from '@/components/seo/json-ld';
 import { PreferredSourceSection } from '@/components/seo/preferred-source';
 import {
@@ -76,6 +76,7 @@ export const metadata: Metadata = {
     title: 'Public endpoint observations - RELIASTRA',
     description: OBSERVATORY_DESCRIPTION,
     url: canonicalUrl(PUBLIC_ROUTES.observatory),
+    siteName: SITE_NAME,
     type: 'website',
     images: [
       {
@@ -264,7 +265,7 @@ export default async function ObservatoryIndexPage() {
       </div>
 
       <ObservatoryGlobePanel
-        title="Reliastra observes the world's external infrastructure and turns distributed observations into evidence."
+        title="Public records for third-party endpoints, measured from RELIASTRA infrastructure."
         description={`Public records show measured endpoint behavior and incident history. ${OBSERVATION_POINTS} observation ${OBSERVATION_POINTS === 1 ? 'point runs' : 'points run'} today; worker region labels do not indicate independent geographic origins.`}
         dependencies={explorerDependencies}
         totalDependencies={items.length}

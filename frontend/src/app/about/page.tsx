@@ -59,6 +59,7 @@ export default function AboutPage() {
             url: canonicalUrl(PUBLIC_ROUTES.about),
             name: 'About Adeshina Emmanuel',
             isPartOf: { '@id': `${SITE_URL}/#website` },
+            mainEntity: { '@id': `${SITE_URL}/#person` },
             about: { '@id': `${SITE_URL}/#person` },
             inLanguage: 'en',
           },

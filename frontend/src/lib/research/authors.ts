@@ -17,6 +17,15 @@
 export type ResearchAuthor = {
   id: string;
   name: string;
+  /**
+   * Other published forms of the same person's name, for the same identity.
+   *
+   * A name is not a unique identifier and searchers do not agree on its order:
+   * "Adeshina Emmanuel" and "Emmanuel Adeshina" are the same engineer, and a
+   * `Person` node carrying only one of them gives an entity matcher nothing to
+   * join on. Only forms this person actually publishes are listed.
+   */
+  alternateName?: string[];
   /** Role as it should appear in the byline. */
   role: string;
   /** 2-3 sentences. Claims must be things the published work demonstrates. */
@@ -51,6 +60,7 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
   {
     id: 'adeshina-emmanuel',
     name: 'Adeshina Emmanuel',
+    alternateName: ['Emmanuel Adeshina'],
     role: 'AI Infrastructure Security Engineer',
     bio:
       'Adeshina Emmanuel is an infrastructure security engineer focused on cloud identity, ' +
@@ -62,6 +72,7 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
       'https://www.linkedin.com/in/emmanueladeshina01',
       'https://x.com/secengineerx01',
       'https://eadeshina.hashnode.dev/',
+      'https://hashnode.com/@emmanueladeshina01',
       'https://github.com/EmmanuelAdesina',
     ],
     domains: [

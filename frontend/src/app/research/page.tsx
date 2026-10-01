@@ -20,7 +20,7 @@ import {
   researchRoute,
 } from '@/lib/routes';
 import { JsonLd } from '@/components/seo/json-ld';
-import { SITE_URL, breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
+import { SITE_URL, SITE_NAME, breadcrumbJsonLd, canonicalUrl, DISCOVERY_ALTERNATES } from '@/lib/seo';
 import { isoDate, readingTimeFor } from '@/lib/research-meta';
 import { bylineFor } from '@/lib/research/authors';
 import { RESEARCH_PAPERS, researchPaper } from '@/lib/research/corpus';
@@ -39,6 +39,7 @@ export const metadata: Metadata = {
     description:
       'Dependency failure attribution, AI infrastructure reliability, telemetry integrity and cloud trust boundaries - measured, documented and reproducible.',
     url: canonicalUrl(PUBLIC_ROUTES.research),
+    siteName: SITE_NAME,
     type: 'website',
     images: [
       {

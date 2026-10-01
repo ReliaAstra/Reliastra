@@ -27,6 +27,7 @@ export function sitePersonJsonLd(author: ResearchAuthor) {
     '@type': 'Person',
     '@id': `${SITE_URL}/#person`,
     name: author.name,
+    ...(author.alternateName?.length ? { alternateName: author.alternateName } : {}),
     jobTitle: author.role,
     description: author.bio,
     url: `${SITE_URL}/about`,

@@ -1,0 +1,20 @@
+# Files that must never enter the graph.
+#
+# Why: docs/*.md semantic extraction can be routed to an external LLM backend.
+# These two files contain high-entropy values assigned to api_key/token keys.
+# They are not placeholders and do not match anything in the real .env files,
+# so they are excluded pending manual review.
+
+docs/archive/backend-production-audit-2026-08-17.md
+backend/docs/FRONTEND_API_INTEGRATION_GUIDE.md
+
+# Audit/archive dumps: superseded, noisy, and large. Re-enable individual
+# files with a '!' line if you ever need one in the graph.
+docs/archive/
+
+# Local runtime + agent scratch, per .gitignore intent. Kept explicit because
+# these have appeared untracked in git status.
+*.log
+backend/celerybeat-schedule*
+.ruff_cache/
+__pycache__/
