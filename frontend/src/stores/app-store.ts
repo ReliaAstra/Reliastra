@@ -13,6 +13,7 @@ import {
   clearCustomerTokens,
   clearAllSessionTokens,
 } from '@/lib/session-storage';
+import { PLAN_TABLE } from '@/lib/dashboard/plans';
 import { logSessionEnd, type AuthFailure } from '@/lib/session-expiry';
 
 export interface RecentItem {
@@ -120,15 +121,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       plan: mockPlan,
     }),
   setDemoPlan: (planId) => {
+    // Sourced from the plan table rather than retyped. These were hardcoded to
+    // $39 / 50 dependencies while the API charges $9 and caps at 25 - a demo
+    // that quotes a different price and a different limit from the one the
+    // server enforces is worse than no demo, and the figures drifted because
+    // they were written down twice.
     const prices: Record<PlanId, number> = {
-      free: 0,
-      pro: 39,
-      enterprise: 0,
+      free: PLAN_TABLE.free.priceMonthly ?? 0,
+      pro: PLAN_TABLE.pro.priceMonthly ?? 0,
+      enterprise: PLAN_TABLE.enterprise.priceMonthly ?? 0,
     };
     const limits: Record<PlanId, number | null> = {
-      free: 3,
-      pro: 50,
-      enterprise: null,
+      free: PLAN_TABLE.free.dependencies,
+      pro: PLAN_TABLE.pro.dependencies,
+      enterprise: PLAN_TABLE.enterprise.dependencies,
     };
     set({
       demoPlanOverride: planId,

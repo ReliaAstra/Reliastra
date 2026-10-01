@@ -4,6 +4,7 @@ from typing import Any
 from sqlalchemy import String, ForeignKey, Integer, Boolean, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UUIDMixin, TimestampMixin, SoftDeleteMixin
+from app.modules.dependencies.constants import DEFAULT_REGIONS
 
 
 class Dependency(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
@@ -37,7 +38,7 @@ class Dependency(UUIDMixin, TimestampMixin, SoftDeleteMixin, Base):
         index=True,
     )
     regions: Mapped[list[str]] = mapped_column(
-        JSON, default=lambda: ["us-east", "eu-west"], nullable=False
+        JSON, default=lambda: list(DEFAULT_REGIONS), nullable=False
     )
     alert_threshold_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

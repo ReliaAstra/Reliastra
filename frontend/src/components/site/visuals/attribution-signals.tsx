@@ -21,11 +21,28 @@ import {
  * percentage. Thresholds decide the classification.
  */
 
+/**
+ * An illustrative signal set the deployed engine can actually produce.
+ *
+ * These were `temporal: 0.9` and `endpoint_overlap: 1` with the rest near 1,
+ * which rendered 91.25% `vendor_failure`. That outcome was unreachable: the
+ * temporal signal is binary (0 or 1) and, for a single dependency, `temporal`
+ * is 0 - there is no second incident to corroborate. A panel that displays a
+ * verdict the engine cannot produce teaches the reader the wrong thing about
+ * what the number means.
+ *
+ * This set is a single dependency with a correlated endpoint, real latency
+ * movement, one coherent error class and a healthy observer:
+ *   0(0.20) + 1(0.25) + 0.90(0.225) + 0.85(0.1275) + 1(0.15) = 75.25
+ * which is what clearing the `vendor_failure` bar actually takes. Note that
+ * the corroborating endpoint correlation is doing the work: without it the
+ * ceiling is 50.
+ */
 const SIGNALS: Record<AttributionSignal, number> = {
-  temporal: 0.9,
+  temporal: 0,
   endpoint_overlap: 1,
-  latency_correlation: 0.85,
-  error_pattern: 0.8,
+  latency_correlation: 0.9,
+  error_pattern: 0.85,
   infrastructure_baseline: 1,
 };
 
@@ -159,7 +176,11 @@ export function AttributionSignals() {
         {CLASSIFICATION_THRESHOLDS.multi_cause} or more is{' '}
         <code>multi_cause</code>; {CLASSIFICATION_THRESHOLDS.vendor_failure} or
         more is <code>vendor_failure</code>. At {confidence.toFixed(2)} this
-        clears the higher bar. No model is involved in this decision.
+        clears the higher bar. Reaching it needs a second source of evidence:
+        without the correlated endpoint here, one observation point watching one
+        dependency tops out at 50, because a single probe failing twice is not
+        evidence about whose fault an outage is. No model is involved in this
+        decision.
       </p>
     </div>
   );

@@ -74,7 +74,7 @@ class DashboardService:
                     endpoint_url=dep.endpoint_url,
                     current_status=status,
                     uptime_percentage_24h=up_pct,
-                    avg_latency_ms_24h=stats.get("avg_latency_ms", 0.0),
+                    avg_latency_ms_24h=stats.get("avg_latency_ms") or 0.0,
                     last_check_at=stats.get("last_check_at"),
                     total_checks_24h=total_checks,
                 )

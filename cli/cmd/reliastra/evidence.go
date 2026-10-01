@@ -282,6 +282,34 @@ func cmdVerify(ctx *commandContext) int {
 		problems = append(problems, "no verification record exists for this id")
 	}
 
+	// ── The server's verdict, which is now a real re-derivation ──────────
+	//
+	// The verification endpoint re-hashes the stored payload and checks the
+	// Ed25519 signature on every request, and reports the result as `verified`.
+	// It is deliberately three-valued: true, false, or null when the record is
+	// unsigned or the payload could not be read.
+	//
+	// This command used to ignore that distinction entirely and treat HTTP 200
+	// plus `found: true` as a pass, so a record whose signature bytes were
+	// garbage - or whose row had been tampered with - exited 0. A CI gate that
+	// cannot fail is not a gate. `verified` must now be exactly true.
+	serverVerified, serverPerformed := record["verified"].(bool)
+	switch {
+	case !serverPerformed:
+		if found {
+			problems = append(problems,
+				"the verification service did not report a `verified` field, so nothing was actually checked; "+
+					"treat this record as unverified and upgrade the CLI or the service")
+		}
+	case !serverVerified:
+		reason := strField(asMap(record["authenticity"]), "verification_reason")
+		if reason == "" {
+			reason = "the service re-derived the record and it did not match"
+		}
+		problems = append(problems, "verification failed: "+reason)
+	}
+	verdict := record["verification_checks"]
+
 	// ── Local checks, when the caller supplied something to check against ──
 	//
 	// Only the rendered document is re-hashed here, and only against the
@@ -324,12 +352,14 @@ func cmdVerify(ctx *commandContext) int {
 			local = map[string]any{"file": ctx.flags.str("file"), "sha256": recomputed}
 		}
 		jsonOut(map[string]any{
-			"verification_id": verificationID,
-			"found":           found,
-			"ok":              ok,
-			"problems":        problems,
-			"record":          record,
-			"local":           local,
+			"verification_id":     verificationID,
+			"found":               found,
+			"verified":            serverVerified,
+			"verification_checks": verdict,
+			"ok":                  ok,
+			"problems":            problems,
+			"record":              record,
+			"local":               local,
 		})
 		if ok {
 			return exitOK
@@ -343,7 +373,7 @@ func cmdVerify(ctx *commandContext) int {
 	}
 
 	if ok {
-		heading("verification record found")
+		heading("verification record verified")
 	} else {
 		heading("verification did not hold")
 	}
@@ -359,11 +389,26 @@ func cmdVerify(ctx *commandContext) int {
 			{"data hash", strField(record, "data_hash")},
 			{"document checksum", strField(record, "report_checksum")},
 			{"methodology", strField(record, "methodology_version")},
+			{"re-derived", verdictLine(serverVerified, serverPerformed)},
 			{"signed", signedAuthenticityLine(authenticity)},
 			{"public keys", field(authenticity, "public_keys")},
 			{"retention", retentionLine(retention)},
 			{"renderer", field(rendering, "renderer")},
 		}, 0)
+		// The individual checks the service performed, so a failure names the
+		// step that failed rather than leaving a reader to guess.
+		if checks, isList := record["verification_checks"].([]any); isList && len(checks) > 0 {
+			heading("checks performed")
+			for _, raw := range checks {
+				entry := asMap(raw)
+				status := strField(entry, "status")
+				line := fmt.Sprintf("  %-12s %s", status, strField(entry, "name"))
+				if detail := strField(entry, "detail"); detail != "" {
+					line += "  (" + detail + ")"
+				}
+				write(line)
+			}
+		}
 	}
 	if recomputed != "" {
 		heading("local file")
@@ -648,4 +693,18 @@ func showObs(ctx *commandContext) int {
 		write("\npage     " + webUrls(ctx.session.siteURL).vendor(name))
 	}
 	return exitOK
+}
+
+// verdictLine renders the service's three-valued re-derivation result. "no" and
+// "could not check" are different answers and are rendered differently on
+// purpose: a record that could not be checked has not been cleared.
+func verdictLine(verified bool, performed bool) string {
+	switch {
+	case !performed:
+		return "not performed by this service"
+	case verified:
+		return "yes"
+	default:
+		return "no"
+	}
 }

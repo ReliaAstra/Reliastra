@@ -45,8 +45,8 @@ const REPORT = {
     'Major dependency event on payments-api - resolved: 83.33% measured availability over 35 min 25 s',
   finding: [
     '6 of 36 checks issued to https://api.payments.example/v1/charges failed inside a 35 min 25 s window beginning 14 Nov 2025, 09:12:41 UTC. Measured availability for the window is 83.3333%, computed from these checks only.',
-    'The longest unbroken run of failed checks was 6, at 1 observation point. The detection rule that opened this incident was recorded as “Consecutive failed checks (single observation point)”.',
-    'The attribution engine classified this as “Vendor failure” at 91.25% confidence under methodology v1.0. That classification describes what the timelines support, not fault or liability.',
+    'The longest unbroken run of failed checks was 6, at 1 observation point. The detection rule that opened this incident was recorded as “Consecutive failed checks (single observation point)”, threshold 2: the run began at the first failure and the second confirmed it, so the window covers all six checks rather than starting at the one that crossed the threshold.',
+    'The attribution engine classified this as “Vendor failure” at 75.25% confidence under methodology v1.1. Reaching that bar required a correlated endpoint on a second dependency; from a single dependency with no corroboration the same engine tops out at 50. That classification describes what the timelines support, not fault or liability.',
     'Every observation here was issued from a single RELIASTRA observation point. Confirmation is by persistence of failure over 35 min 25 s, not by agreement between independent points, and no cross-verification is claimed.',
   ],
 } as const;
@@ -70,7 +70,7 @@ const FIGURES = [
   {
     label: 'Attribution',
     value: 'Vendor failure',
-    note: '91.25% confidence · v1.0',
+    note: '75.25% confidence · v1.1',
   },
 ] as const;
 
@@ -108,8 +108,8 @@ const SLA = {
 
 const ATTRIBUTION = {
   classification: 'Vendor failure',
-  confidence: '91.25%',
-  methodology: 'v1.0',
+  confidence: '75.25%',
+  methodology: 'v1.1',
 } as const;
 
 const FOOTER = {

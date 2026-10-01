@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.modules.checks.service import CheckService
 from app.modules.dependencies.schemas import DependencyInternalDTO
+from app.modules.dependencies.constants import DEPLOYED_REGION
 
 
 def _fake_dto(dep_id: uuid.UUID, org_id: uuid.UUID) -> DependencyInternalDTO:
@@ -261,7 +262,15 @@ async def test_execute_check_writes_observation_outbox(db_session):
 
 @pytest.mark.asyncio
 async def test_schedule_due_checks_never_runs_http(db_session, monkeypatch):
-    """FIX 4: schedule_due_checks only reads due deps and enqueues."""
+    """FIX 4: schedule_due_checks only reads due deps and enqueues.
+
+    The dependency here deliberately carries two region labels. Under
+    ``single`` topology the scheduler must dispatch **one** probe anyway: the
+    labels are scheduling metadata emitted by a single worker, and dispatching
+    both produced two rows per interval from one host - which, under
+    ``OBSERVATION_TOPOLOGY=multi``, would have satisfied the quorum threshold
+    with one machine's opinion.
+    """
     dep_repo = MagicMock()
     dep = MagicMock()
     dep.id = uuid.uuid4()
@@ -282,8 +291,8 @@ async def test_schedule_due_checks_never_runs_http(db_session, monkeypatch):
 
     with patch("app.modules.checks.tasks.execute_check", _FakeTask):
         count = await service.schedule_due_checks(AsyncMock())
-    assert count == 2
-    assert delayed == [(str(dep.id), "us-east"), (str(dep.id), "eu-west")]
+    assert count == 1
+    assert delayed == [(str(dep.id), DEPLOYED_REGION)]
     service.execute_check.assert_not_awaited()
 
 

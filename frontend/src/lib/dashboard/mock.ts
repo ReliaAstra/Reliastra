@@ -1,3 +1,16 @@
+/**
+ * Demo fixtures. Not a fallback - `lib/dashboard/api.ts` never falls back to
+ * this, deliberately, so a customer mid-outage cannot be shown static fiction
+ * instead of their own degraded dependency.
+ *
+ * These fixtures describe ONE observation point. They previously declared three
+ * regions per dependency (one of them `us-west`, which the API's validator
+ * rejects) and asserted "Independent regional checks confirmed the spike" -
+ * describing corroboration from independent vantage points that a single-worker
+ * deployment cannot produce, in the one file a reader might mistake for a
+ * sample of real records.
+ */
+
 import type {
   AlertConfig,
   CheckResult,
@@ -131,7 +144,7 @@ export const mockDependencies: Dependency[] = [
     timeout_seconds: 10,
     check_interval_seconds: 60,
     next_check_at: minutes(-1),
-    regions: ['us-east', 'eu-west', 'ap-south'],
+    regions: ['us-east'],
     alert_threshold_ms: 500,
     is_active: true,
     created_at: days(3),
@@ -150,7 +163,7 @@ export const mockDependencies: Dependency[] = [
     timeout_seconds: 15,
     check_interval_seconds: 60,
     next_check_at: minutes(-1),
-    regions: ['us-east', 'us-west', 'eu-west'],
+    regions: ['us-east'],
     alert_threshold_ms: 800,
     is_active: true,
     created_at: days(2),
@@ -281,7 +294,7 @@ export const mockIncidentResolvedDetail: IncidentDetail = {
       id: 'r2',
       type: 'confirmation',
       timestamp: hours(18),
-      description: 'Independent regional checks confirmed the spike.',
+      description: 'A second consecutive check at the observation point confirmed the spike.',
     },
     {
       id: 'r3',
@@ -443,7 +456,7 @@ export function mockHistory(depId: string): DependencyHistory {
 }
 
 export function mockResults(depId: string): CheckResult[] {
-  const regions = ['us-east', 'eu-west', 'ap-south'];
+  const regions = ['us-east'];
   return Array.from({ length: 12 }, (_, i) => {
     const degraded = depId === IDS.twilio && i < 4;
     return {

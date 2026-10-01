@@ -73,8 +73,8 @@ const BEATS: Beat[] = [
     detail: 'Five weighted signals produce a reproducible confidence score. No model is involved.',
     data: [
       ['classification', 'vendor_failure'],
-      ['confidence', '91.25'],
-      ['methodology', 'v1.0'],
+      ['confidence', '75.25'],
+      ['methodology', 'v1.1'],
     ],
   },
   {

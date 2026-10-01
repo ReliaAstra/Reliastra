@@ -197,9 +197,23 @@ celery_app.conf.update(
             "schedule": 60.0,
             "options": {"expires": 55},
         },
-        "retention-cleanup-monthly": {
+        # Daily, not monthly. A Free organization is promised 24-hour retention
+        # (entitlements: free=1 day) and a Developer organization 90 days, but
+        # this job ran on the 1st of the month, so observations accumulated for
+        # up to ~31 days before any pruning happened: over-retention of up to 30x
+        # the advertised window, and a delay of the same order before a plan
+        # upgrade took effect. Retention promises have to be enforced on the same
+        # order of magnitude as they are published, so this is daily.
+        "retention-cleanup-daily": {
             "task": "app.modules.observations.tasks.retention_cleanup",
-            "schedule": crontab(minute=0, hour=3, day_of_month=1),
+            "schedule": crontab(minute=17, hour=3),
+        },
+        # Public vendor observations carry no org_id, so the per-org sweep above
+        # can never match them. They are pruned on their own schedule against
+        # PUBLIC_INCIDENT_WINDOW_DAYS.
+        "public-observation-cleanup-daily": {
+            "task": "app.modules.observations.tasks.public_observation_cleanup",
+            "schedule": crontab(minute=47, hour=3),
         },
         "aggregate-observation-daily": {
             "task": "app.modules.observations.tasks.daily_aggregation",

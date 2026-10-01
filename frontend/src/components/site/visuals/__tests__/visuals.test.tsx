@@ -149,8 +149,18 @@ describe('attribution signals', () => {
   });
 
   it('computes the score rather than hard-coding it', () => {
-    // 0.9*.20 + 1*.25 + .85*.25 + .8*.15 + 1*.15 = 0.9125 -> 91.25
-    expect(html.attribution).toContain('91.25');
+    // 0*.20 + 1*.25 + .9*.25 + .85*.15 + 1*.15 = 0.7525 -> 75.25
+    //
+    // `temporal` is 0 because the temporal signal is binary and a single
+    // dependency has no second incident to corroborate. The panel used to show
+    // temporal 0.9 and 91.25%, a verdict the engine could not produce.
+    expect(html.attribution).toContain('75.25');
+  });
+
+  it('does not display a confidence the single-point topology cannot reach', () => {
+    // Without the correlated endpoint the ceiling is 50; a panel advertising a
+    // higher number is teaching the reader the wrong thing about the scale.
+    expect(html.attribution).not.toContain('91.25');
   });
 
   it('draws the thresholds against the aggregate scale, not per signal', () => {

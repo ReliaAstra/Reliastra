@@ -15,6 +15,11 @@ from app.config import settings
 from app.core.exceptions import ConflictException, ResourceNotFoundException, ValidationException
 from app.core.security import get_password_hash
 from app.infrastructure.storage import storage_client
+from app.platform.integrations.storage import StorageError, StorageObjectMissing
+from app.platform.web.errors import (
+    ArtifactMissingException,
+    ServiceUnavailableException,
+)
 from app.modules.evidence.models import EvidenceReport
 from app.modules.evidence.repository import EvidenceRepository
 from app.modules.evidence_gate.models import PublicEvidenceReport
@@ -290,12 +295,26 @@ class EvidenceGateService:
         if not evidence_report:
             raise ResourceNotFoundException("Evidence report file not found")
 
-        # 4. Download file bytes from storage
+        # 4. Download file bytes from storage.
+        #
+        # The storage client raises StorageObjectMissing / StorageError, neither
+        # of which is a FileNotFoundError, so the old handler was unreachable:
+        # a pruned or missing artifact surfaced to a third party as an opaque
+        # 500 instead of the disclosed "no longer retained". Catching the real
+        # types is the difference between a clean answer and a support ticket in
+        # the middle of an SLA dispute.
         try:
             file_bytes = storage_client.download_bytes(evidence_report.file_path)
-        except FileNotFoundError as exc:
-            raise ResourceNotFoundException(
-                "Evidence report file not found in storage"
+        except StorageObjectMissing as exc:
+            raise ArtifactMissingException(
+                "Evidence report file is no longer retained in storage"
+            ) from exc
+        except StorageError as exc:
+            logger.warning(
+                "Evidence artifact %s unreadable: %s", evidence_report.file_path, exc
+            )
+            raise ServiceUnavailableException(
+                "Evidence storage is temporarily unavailable"
             ) from exc
 
         # 5. Mark token as downloaded and increment count

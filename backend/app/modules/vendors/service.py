@@ -391,6 +391,7 @@ class VendorService:
         return VendorHistoryResponse(
             vendor_name=vendor.vendor_name,
             uptime_percentage_24h=stats["uptime_percentage"],
+            measurements_24h=stats.get("measurements", "measured"),
             avg_latency_ms_24h=stats["avg_latency_ms"],
             recent_checks_count=stats["total"],
         )
@@ -416,6 +417,7 @@ class VendorService:
                 window=label,
                 total_observations=stats["total"],
                 uptime_percentage=stats["uptime_percentage"],
+                measurements=stats.get("measurements", "measured"),
                 avg_latency_ms=stats["avg_latency_ms"],
                 p95_latency_ms=stats["p95_latency_ms"],
             )
@@ -509,7 +511,10 @@ class VendorService:
         stats_24h = await ObservationRepository.get_endpoint_stats(
             session, urls, _WINDOW_HOURS["24h"]
         )
-        avg_latency_24h = round(stats_24h["avg_latency_ms"], 2)
+        raw_avg_latency_24h = stats_24h["avg_latency_ms"]
+        avg_latency_24h = (
+            round(raw_avg_latency_24h, 2) if raw_avg_latency_24h is not None else None
+        )
         p95_latency_24h = stats_24h["p95_latency_ms"]
 
         # Recent incidents (last 10)

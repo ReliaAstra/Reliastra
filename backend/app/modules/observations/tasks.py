@@ -84,6 +84,55 @@ def retention_cleanup(retention_days: int | None = None) -> int:
     return async_task_body(_run)
 
 
+@celery_app.task(name="app.modules.observations.tasks.public_observation_cleanup")
+def public_observation_cleanup(retention_days: int | None = None) -> int:
+    """Prune public (``org_id IS NULL``) vendor observations.
+
+    The per-organisation sweep above filters on ``org_id == org_id``, so it
+    cannot match a public row - and public vendor probes are written with no
+    ``org_id`` at all. Nothing pruned them, for any plan, ever: the published
+    observatory's measurement table grew without bound while the console told
+    customers their own data was kept for 24 hours or 90 days.
+
+    The public plane's window is ``PUBLIC_INCIDENT_WINDOW_DAYS`` (365), the same
+    lifetime the public incident URLs carry, so measurements outlive the
+    evidence that indexes them rather than the other way round.
+    """
+
+    async def _run(session) -> int:
+        from app.config import settings
+        from app.modules.observations.repository import ObservationRepository
+
+        try:
+            days = (
+                int(retention_days)
+                if retention_days is not None
+                else int(settings.PUBLIC_INCIDENT_WINDOW_DAYS)
+            )
+            if days <= 0:
+                logger.warning(
+                    "public_observation_cleanup: retention disabled (days=%s)", days
+                )
+                return 0
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+            deleted = await ObservationRepository.delete_unowned_before(
+                session, cutoff
+            )
+            if deleted:
+                logger.info(
+                    "Public observation cleanup: removed %s unowned observations "
+                    "older than %s",
+                    deleted,
+                    cutoff.isoformat(),
+                )
+            return deleted
+        except Exception:
+            logger.exception("Public observation retention cleanup failed")
+            raise
+
+    return async_task_body(_run)
+
+
 @celery_app.task(name="app.modules.observations.tasks.daily_aggregation")
 def daily_aggregation() -> int:
     """Record the prior day's volume for operational capacity reporting.

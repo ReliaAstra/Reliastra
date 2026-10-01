@@ -166,8 +166,16 @@ class ObservationRepository:
         if not endpoint_urls:
             return {
                 "total": 0,
-                "uptime_percentage": 100.0,
-                "avg_latency_ms": 0.0,
+                # Not 100.0. An endpoint nobody measured is not a healthy
+                # endpoint: it is an unmeasured one, and this repository's own
+                # research corpus argues that printing a number for something
+                # nobody observed is the failure mode the product exists to
+                # avoid. `None` forces every consumer - the console, the CLI,
+                # the dataset publisher - to render a named sentinel rather
+                # than a fabricated perfect score.
+                "uptime_percentage": None,
+                "measurements": "insufficient_data",
+                "avg_latency_ms": None,
                 "p95_latency_ms": None,
             }
         since = datetime.now(timezone.utc) - timedelta(hours=window_hours)
@@ -198,10 +206,18 @@ class ObservationRepository:
         failures = int(row.failures or 0)
         return {
             "total": total,
+            # A window with zero observations reports no availability figure at
+            # all. It used to report 100.0, which is a fabricated perfect score
+            # for a dependency that was never measured - and the console masked
+            # it while the CLI, the dataset publisher and every other API
+            # consumer received the raw 100.0.
             "uptime_percentage": (
-                round(((total - failures) / total) * 100, 2) if total else 100.0
+                round(((total - failures) / total) * 100, 2) if total else None
             ),
-            "avg_latency_ms": round(float(row.avg_latency or 0), 2),
+            "measurements": "measured" if total else "insufficient_data",
+            "avg_latency_ms": (
+                round(float(row.avg_latency), 2) if total and row.avg_latency is not None else None
+            ),
             "p95_latency_ms": (
                 round(float(row.p95), 2) if row.p95 is not None else None
             ),
@@ -250,6 +266,26 @@ class ObservationRepository:
     async def delete_before(session: AsyncSession, cutoff: datetime) -> int:
         result = await session.execute(
             delete(Observation).where(Observation.timestamp < cutoff)
+        )
+        return int(result.rowcount or 0)
+
+    @staticmethod
+    async def delete_unowned_before(
+        session: AsyncSession, cutoff: datetime
+    ) -> int:
+        """Delete public vendor observations (``org_id IS NULL``) older than *cutoff*.
+
+        The per-organisation sweep filters ``org_id == org_id`` and therefore
+        never matches a public row. Public probes are written with no ``org_id``
+        (``Observation.org_id`` is nullable and ``vendor_probe`` rows leave it
+        unset), so without this the published measurement table was never pruned
+        under any plan or any setting.
+        """
+        result = await session.execute(
+            delete(Observation).where(
+                Observation.org_id.is_(None),
+                Observation.timestamp < cutoff,
+            )
         )
         return int(result.rowcount or 0)
 

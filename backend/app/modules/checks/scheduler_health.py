@@ -293,12 +293,26 @@ EXECUTING_KEY_PREFIX = "reliastra:checks:executing:"
 
 
 def _marker_ttl_seconds() -> int:
-    """A dispatched-but-unconsumed marker must outlive one scheduling cycle.
+    """How long a dispatched-but-unconsumed marker survives.
 
-    Bounded below so a very short ``CHECK_SCHEDULE_SECONDS`` cannot expire the
-    marker before a worker has had a chance to pick the task up.
+    Bounded on both sides, and the upper bound is the one that matters.
+
+    The lower bound exists so a short ``CHECK_SCHEDULE_SECONDS`` cannot expire
+    the marker before a worker has had a chance to consume the task.
+
+    The upper bound exists because a worker that dies mid-probe never runs its
+    cleanup: the marker then survives for the whole TTL, and
+    :func:`is_check_dispatched` suppresses every dispatch for that dependency
+    until it expires. This TTL was ``max(interval * 4, 360)`` - 360 s at a 30 s
+    interval, twelve consecutive skipped cycles. Combined with a worker being
+    OOM-killed on a few-minute cycle, that TTL stopped being a backstop and
+    became the primary dispatch mechanism: measured production cadence was one
+    observation roughly every five minutes while the site advertised 30 s.
+
+    Two scheduling cycles is long enough for a healthy worker to be picked up
+    and short enough that one dead worker costs two missed probes, not twelve.
     """
-    return max(int(settings.CHECK_SCHEDULE_SECONDS * 4), 360)
+    return min(max(int(settings.CHECK_SCHEDULE_SECONDS * 2), 30), 120)
 
 
 async def _write_marker(prefix: str, dependency_id: Any, payload: dict[str, Any], ttl: int) -> bool:

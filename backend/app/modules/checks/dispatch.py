@@ -37,6 +37,7 @@ from app.platform.web.errors import (
     ServiceUnavailableException,
     ValidationException,
 )
+from app.modules.dependencies.constants import DEPLOYED_REGION
 from app.modules.dependencies.repository import DependencyRepository
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,46 @@ class CheckDispatcher:
         self, dep_repository: DependencyRepository = DependencyRepository()
     ) -> None:
         self.dep_repository = dep_repository
+
+    @staticmethod
+    def _regions_for(dep: Any, topology: str = "single") -> list[str]:
+        """The region labels to probe *this* cycle with.
+
+        Under ``single`` topology this is always exactly one label, whatever the
+        row says. The guard is deliberately in the scheduler rather than only in
+        a schema default, because the hazard is not the default - it is any row
+        that carries several labels while only one worker exists, which is also
+        the state ``OBSERVATION_TOPOLOGY=multi`` would be flipped into.
+
+        A single worker cannot produce independent vantage points. Silently
+        probing twice and reporting the labels as agreement would turn one
+        machine into corroboration for itself, so the extra labels are dropped
+        with a warning rather than dispatched.
+        """
+        configured = [r for r in (getattr(dep, "regions", None) or []) if r]
+        if not configured:
+            return [DEPLOYED_REGION]
+        if len(configured) == 1:
+            return configured
+        if str(topology) == "multi":
+            # Honour the request, but say so loudly: quorum from these labels is
+            # only as independent as the hosts that emit them.
+            logger.warning(
+                "dep %s configured with regions %s under multi topology; "
+                "quorum assumes these labels are emitted by distinct hosts",
+                getattr(dep, "id", "?"),
+                configured,
+            )
+            return configured
+        logger.warning(
+            "dep %s configured with regions %s but topology is 'single' and "
+            "one worker is deployed; probing with %s only. Multiple region "
+            "labels from one host are not independent observation points.",
+            getattr(dep, "id", "?"),
+            configured,
+            DEPLOYED_REGION,
+        )
+        return [DEPLOYED_REGION]
 
     async def schedule_due_checks(self, session: AsyncSession) -> int:
         """Celery Beat-driven scheduling: dispatch one Celery task per check.
@@ -137,7 +178,13 @@ class CheckDispatcher:
                 # Fail-fast: the broker died mid-cycle. Every remaining
                 # dependency stays due for the next cycle.
                 break
-            regions = dep.regions or ["us-east", "eu-west"]
+            # The number of probes per cycle must match the deployed topology.
+            # Under `single`, one worker issues one probe per interval: several
+            # region labels would mean several rows per interval from one host,
+            # and if anyone ever set OBSERVATION_TOPOLOGY=multi the quorum rule
+            # would count those labels as independent observation points and
+            # publish a single machine's opinion as corroboration.
+            regions = self._regions_for(dep, settings.OBSERVATION_TOPOLOGY)
             # FIX 8 / Proof 5: respect circuit breaker before dispatch.
             if not allow_dispatch:
                 logger.info(
@@ -287,7 +334,7 @@ class CheckDispatcher:
                 "triggering a check."
             )
 
-        configured = dep.regions or ["us-east", "eu-west"]
+        configured = dep.regions or [DEPLOYED_REGION]
         if region:
             if region not in configured:
                 raise ValidationException(
