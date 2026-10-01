@@ -1,49 +1,102 @@
 # RELIASTRA
 
-RELIASTRA records observations of third-party APIs, investigates their overlap
-with incidents, and generates evidence artifacts. Its deterministic attribution
-engine is a methodology to test, not proof that correlation establishes causality.
+**Independent verification for external API dependencies.**
 
-One engineer can understand, adopt and pay for it: **one plan, $9/month,
-monthly billing**. New accounts get a 14-day trial of full capabilities; after
-the trial an account without a subscription keeps running on reduced limits.
+Your API failed. Was the dependency actually down?
 
-The direction underneath the product is larger: a dependency intelligence
-network built from independent observations across real software systems. It
-is being earned through real usage, not claimed in advance - the public
-observatory states exactly what it measures and how many vantage points exist.
+Your monitoring proves *your* application failed. It cannot tell you whether the fault was
+internal or a third party's. Reliastra is the independent observation record between those two
+sources: it observes the same dependency separately, confirms the failure deterministically,
+and produces evidence you can hand to someone who asks *how do you know?*
 
-This is the canonical Reliastra monorepo: the Next.js frontend and the FastAPI
-backend live side by side as independent applications.
+```
+  RELIASTRA  ·  external dependency verification
+  ──────────────────────────────────────────────────────────────────────────────
 
-## Quickstart — CLI
+  Observation       ✖ DOWN
+                    The last probe reached the target and it failed.
 
-```bash
-npm install -g reliastra
-# or
-pipx install reliastra
-# from source
-go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest
+Dependency          Stripe Payments API
+Endpoint            https://api.stripe.com/v1/health
+HTTP status         503
+Latency             4.18 s
+Observed            2026-10-01 17:42:18 UTC
+Observation point   ● us-east  1 point, not a consensus
+Methodology         v1.0
+
+  ───────────────────────────────────────
+Incident            CONFIRMED 4c1f9e2a
+Attribution         vendor_failure (0.82)
+Evidence            https://reliastra.com/observatory/stripe
+
+  • Reliastra does not claim that provider causality is proven. Confirmation is
+  • deterministic; attribution is a weighted score, not proof of cause.
 ```
 
-One Go CLI, four channels: npm and PyPI install the same compiled binary
-the Go route builds. See [cli/README.md](cli/README.md#install) for
-channel status, supported platforms, upgrading and troubleshooting, and
-for binary verification, `doctor`, auth and `verify`.
+<sub>Reliastra runs **one** observation point. A region label is not corroboration, and no
+surface in this project will present it as one.</sub>
+
+## In your terminal
+
+```bash
+npm install -g reliastra        # or: pipx install reliastra
+
+reliastra login
+reliastra deps add "Payments API" https://api.stripe.com/v1/health --interval 60
+reliastra checks recent --limit 20
+reliastra incidents list --status open
+```
+
+Exit codes are explicit and stable, so this drops into a script without a wrapper:
+`0` ok · `1` usage · `2` api · `3` auth · `4` unverified · `5` denied · `6` network.
+
+One Go CLI, four channels: npm and PyPI install the same compiled binary the Go route builds.
+From source: `go install github.com/ReliaAstra/Reliastra/cli/cmd/reliastra@latest`. See
+[cli/README.md](cli/README.md#install) for channel status, platform support, upgrading,
+troubleshooting, binary verification, `doctor`, auth and `verify`.
+
+## In your CI
+
+```yaml
+- uses: ReliaAstra/reliastra-action@v1
+  with:
+    dependency: <your-dependency-uuid>
+    token: ${{ secrets.RELIASTRA_TOKEN }}
+    fail-on: degraded
+```
+
+The same exit codes, the same verdicts, rendered into your job summary with the evidence link.
+Full reference in [`ReliaAstra/reliastra-action`](https://github.com/ReliaAstra/reliastra-action).
+
+## Start here
+
+**[Try Reliastra](https://reliastra.com)** · **[Quickstart](https://reliastra.com/docs/quickstart)** ·
+**[API](https://reliastra.com/docs/api)** · **[CLI](https://reliastra.com/docs/cli)** ·
+**[Methodology](https://reliastra.com/docs/methodology)** · **[Observatory](https://reliastra.com/observatory)** ·
+**[Pricing](https://reliastra.com/pricing)**
+
+One plan, **$9/month**, monthly billing. 14-day trial of full capabilities, no payment method
+required.
+
+---
+---
 
 ## Engineering & Contributing
 
-Technical review and focused implementation contributions are welcome. Challenge
-the attribution assumptions, try the [CLI](cli/README.md) or development setup
-below, and report concrete failures with sanitized, reproducible evidence.
+This is the canonical Reliastra monorepo: the Next.js frontend and the FastAPI backend live
+side by side as independent applications. Everything below this line is for contributors.
 
-- [Discussions](https://github.com/ReliaAstra/Reliastra/discussions) — architectural questions and methodology review.
+Technical review and focused implementation contributions are welcome. Challenge the
+attribution assumptions, try the [CLI](cli/README.md) or development setup below, and report
+concrete failures with sanitized, reproducible evidence.
+
 - [Issues](https://github.com/ReliaAstra/Reliastra/issues) — reproducible problems and scoped implementation work.
 - [Contributor guide](.github/CONTRIBUTING.md), [architecture](docs/architecture/OVERVIEW.md), and [engineering roadmap](docs/ROADMAP.md).
 
-Discussions is pending administrator enablement; the [four initial engineering
-questions and setup status](docs/engineering/discussion-starters.md) are preserved
-in the repository. Until then, use an issue for technical review.
+The direction underneath the product is larger: a dependency intelligence network built from
+independent observations across real software systems. It is being earned through real usage,
+not claimed in advance — the public observatory states exactly what it measures and how many
+vantage points exist.
 
 ## Repository structure
 
