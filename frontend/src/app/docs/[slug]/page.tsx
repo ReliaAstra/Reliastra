@@ -187,7 +187,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
-              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
                 Start observing
               </Link>
               <Link href={DOCS_ROUTES.methodology} className="ob-btn ob-btn-outline">

@@ -47,7 +47,7 @@ function ResetPasswordContent() {
         <div className="mt-7 flex flex-col gap-3">
           <Link
             href={AUTH_ROUTES.login}
-            className="ob-btn ob-btn-signal ob-btn-block"
+            className="ob-btn ob-btn-primary ob-btn-block"
           >
             Request a new link
           </Link>
@@ -72,7 +72,7 @@ function ResetPasswordContent() {
         </AuthAlert>
         <Link
           href={AUTH_ROUTES.login}
-          className="ob-btn ob-btn-signal ob-btn-block mt-7"
+          className="ob-btn ob-btn-primary ob-btn-block mt-7"
         >
           Go to sign in
         </Link>

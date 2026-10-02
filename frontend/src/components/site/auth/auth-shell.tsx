@@ -271,7 +271,7 @@ export function AuthSubmit({
       type="submit"
       disabled={loading}
       aria-busy={loading}
-      className="ob-btn ob-btn-signal ob-btn-block"
+      className="ob-btn ob-btn-primary ob-btn-block"
     >
       {loading ? loadingLabel : children}
     </button>

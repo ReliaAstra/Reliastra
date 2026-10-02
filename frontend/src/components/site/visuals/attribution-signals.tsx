@@ -112,16 +112,20 @@ export function AttributionSignals() {
             style={{ left: `${CLASSIFICATION_THRESHOLDS.vendor_failure}%` }}
           />
         </div>
+        {/*
+          The threshold captions are centred on their marks. `multi_cause` at
+          50% and `vendor_failure` at 75% of a narrow track collide with each
+          other, and `vendor_failure` collides with the 100 end stop - both
+          thresholds sit in the right half of the track. Each caption is
+          therefore pinned to the left of its own mark instead of straddling
+          it, which keeps every caption inside the track at any width.
+        */}
         <div className="ob-attr-scale-labels">
-          <span>0</span>
-          <span
-            style={{ left: `${CLASSIFICATION_THRESHOLDS.multi_cause}%` }}
-          >
+          <span className="ob-attr-scale-zero">0</span>
+          <span style={{ left: `${CLASSIFICATION_THRESHOLDS.multi_cause}%` }}>
             {CLASSIFICATION_THRESHOLDS.multi_cause} multi_cause
           </span>
-          <span
-            style={{ left: `${CLASSIFICATION_THRESHOLDS.vendor_failure}%` }}
-          >
+          <span style={{ left: `${CLASSIFICATION_THRESHOLDS.vendor_failure}%` }}>
             {CLASSIFICATION_THRESHOLDS.vendor_failure} vendor_failure
           </span>
           <span className="ob-attr-scale-max">100</span>

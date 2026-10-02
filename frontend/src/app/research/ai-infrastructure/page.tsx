@@ -655,7 +655,7 @@ export default async function AiInfrastructureHubPage() {
             </div>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+                <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
                   Monitor your dependencies
                 </Link>
                 <Link href={PUBLIC_ROUTES.product} className="ob-btn ob-btn-outline">

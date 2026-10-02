@@ -173,7 +173,7 @@ export function SiteHeader({
               </Link>
               <Link
                 href={HEADER_ACTIONS.start.href}
-                className="ob-btn ob-btn-signal ob-btn-sm"
+                className="ob-btn ob-btn-primary ob-btn-sm"
               >
                 {HEADER_ACTIONS.start.label}
               </Link>
@@ -230,7 +230,7 @@ export function SiteHeader({
                 </p>
                 <Link
                   href={HEADER_ACTIONS.start.href}
-                  className="ob-btn ob-btn-signal ob-btn-sm ob-btn-block"
+                  className="ob-btn ob-btn-primary ob-btn-sm ob-btn-block"
                 >
                   Start observing
                 </Link>
@@ -301,7 +301,7 @@ export function SiteHeader({
           <div className="mt-auto flex flex-col gap-3 pt-12">
             <Link
               href={HEADER_ACTIONS.start.href}
-              className="ob-btn ob-btn-signal ob-btn-block"
+              className="ob-btn ob-btn-primary ob-btn-block"
             >
               {HEADER_ACTIONS.start.label}
             </Link>

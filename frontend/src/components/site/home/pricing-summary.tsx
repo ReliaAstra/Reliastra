@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { Eyebrow } from '@/components/site/primitives';
-import { CurrencyFootnote } from '@/components/site/billing-disclosure';
+import {
+  CurrencyFootnote,
+  PlanChargeSummary,
+} from '@/components/site/billing-disclosure';
 import { getPlan } from '@/lib/dashboard/plans';
 import { dependencyLabel, intervalLabel, retentionLabel } from '@/lib/dashboard/plans';
 import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
@@ -39,7 +42,7 @@ export function PricingSummary() {
               evidence gets better.
             </p>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row">
-              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
                 Start monitoring
               </Link>
               <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
@@ -50,8 +53,8 @@ export function PricingSummary() {
 
           <div className="flex flex-col">
             <p className="ob-label mb-5">The plan</p>
-            <div className="flex items-baseline gap-3 border-t border-[var(--ob-line)] pt-6">
-              <span className="ob-figure">$9</span>
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 border-t border-[var(--ob-line)] pt-6">
+              <span className="ob-figure ob-figure-xl">$9</span>
               <span className="ob-label">/ month · USD</span>
             </div>
             <p className="ob-small mt-3">
@@ -71,7 +74,22 @@ export function PricingSummary() {
               ))}
             </dl>
 
-            <div className="mt-6 border-t border-[var(--ob-line)] pt-6">
+            {/*
+              The charge currency is only stated here, never computed here:
+              `PlanChargeSummary` renders the list price, the amount Paystack
+              actually debits and the provider, all three read from the backend
+              currency endpoint. A visitor outside the US should not have to
+              open /pricing to learn what they will be charged.
+            */}
+            <div className="mt-6 border-t border-[var(--ob-line)] pt-5">
+              <PlanChargeSummary
+                plan={plan.id}
+                interval="monthly"
+                productPrice="$9.00 (USD)"
+              />
+            </div>
+
+            <div className="mt-5 border-t border-[var(--ob-line)] pt-5">
               <CurrencyFootnote />
             </div>
           </div>

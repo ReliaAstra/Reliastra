@@ -107,7 +107,7 @@ function VerifyEmailContent() {
           </AuthAlert>
           <Link
             href={AUTH_ROUTES.login}
-            className="ob-btn ob-btn-signal ob-btn-block mt-7"
+            className="ob-btn ob-btn-primary ob-btn-block mt-7"
           >
             Go to sign in
           </Link>
@@ -152,7 +152,7 @@ function VerifyEmailContent() {
         </AuthAlert>
         <Link
           href="/dashboard"
-          className="ob-btn ob-btn-signal ob-btn-block mt-7"
+          className="ob-btn ob-btn-primary ob-btn-block mt-7"
         >
           Open console
         </Link>

@@ -50,7 +50,7 @@ export function HomeHero() {
             </div>
 
             <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
                 Start observing
               </Link>
               <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">

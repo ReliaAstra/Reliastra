@@ -8,10 +8,11 @@ import {
 import {
   ATTRIBUTION,
   DETECTION,
-  NETWORK_DIRECTION,
   OBSERVATION_POINT,
   OBSERVATION_POINTS,
 } from '@/lib/methodology';
+import { RESEARCH_AUTHORS } from '@/lib/research/authors';
+import { MAINTAINER_PUBLIC_WORK } from '@/lib/research/maintainer-profile';
 import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 /* ── 10 · Reference ─────────────────────────────────────────────────────── */
@@ -89,48 +90,119 @@ export function ReferenceSection() {
 
 /* ── 11 · Maintainer ────────────────────────────────────────────────────── */
 
+/**
+ * What the founder actually does, stated as disciplines rather than adjectives.
+ *
+ * The claim is architecting, DevSecOps, SRE and platform work on cloud and AI
+ * infrastructure - which is the work that produced this product - rather than
+ * generic software engineering. The stack line names what he operates, because
+ * on an evidence product the operating stack is itself part of the evidence.
+ */
+const DISCIPLINES = [
+  {
+    title: 'AI & cloud infrastructure security',
+    body: 'Threat modelling and hardening for AI serving stacks, cloud identity, Kubernetes and the networks between them. IAM treated as a graph, not a list.',
+  },
+  {
+    title: 'Infrastructure architecture',
+    body: 'The observation network, the detection and attribution engine, and the evidence pipeline: boundaries drawn from failure modes, not from convenience.',
+  },
+  {
+    title: 'DevSecOps & SRE',
+    body: 'Policy and admission control, supply-chain and runtime security, and the observability needed to know what a system is doing while it does it.',
+  },
+] as const;
+
 export function MaintainerSection() {
+  const author = RESEARCH_AUTHORS[0];
+
   return (
     <Section id="maintainer" tone="void" aria-labelledby="maintainer-title">
       <Container>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.68fr)_minmax(0,1.32fr)] lg:gap-20">
-          <div className="flex flex-col gap-5">
-            <Eyebrow>Founder &amp; engineer</Eyebrow>
-            <h2 id="maintainer-title" className="ob-h2 max-w-[16ch]">
-              Engineering led by its founder.
-            </h2>
-            <div className="mt-2 flex flex-wrap gap-x-8 gap-y-3">
-              <ArrowLink href={PUBLIC_ROUTES.about}>About Adeshina Emmanuel</ArrowLink>
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] lg:gap-16">
+          {/*
+            Portrait, name, role. A founder-led infrastructure product has to
+            show the engineer; a paragraph asserting that a real person is
+            behind it is the weakest possible version of that claim.
+          */}
+          <div className="flex flex-col items-start gap-5">
+            <Eyebrow>Founder &amp; principal engineer</Eyebrow>
+            <div
+              className="relative w-full max-w-[300px] overflow-hidden border border-[var(--ob-line-2)] bg-[var(--ob-raised)]"
+              style={{ aspectRatio: '1 / 1' }}
+            >
+              <img
+                src="/media/maintainer-lg.webp"
+                srcSet="/media/maintainer-sm.webp 320w, /media/maintainer-md.webp 640w, /media/maintainer-lg.webp 960w"
+                sizes="(max-width: 1023px) 300px, 300px"
+                alt={`${author.name}, founder and principal engineer of RELIASTRA`}
+                width={960}
+                height={960}
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-[17px] font-semibold tracking-[-0.014em] text-[var(--ob-text)]">
+                {author.name}
+              </p>
+              <p className="ob-label">{author.role}</p>
+            </div>
+            <ArrowLink href={PUBLIC_ROUTES.about}>Full profile</ArrowLink>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <p className="ob-body-lg max-w-[62ch]">
-              Adeshina Emmanuel founded RELIASTRA and leads its engineering. His
-              work spans cloud identity and access control, Kubernetes security,
-              and AI systems. Alongside the platform, he publishes security
-              research and maintains open-source tools.
-            </p>
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-5">
+              <h2 id="maintainer-title" className="ob-scene-title max-w-[22ch]">
+                The engineer who operates the measurement network.
+              </h2>
+              <p className="ob-body-lg max-w-[62ch]">{author.bio}</p>
+              <p className="ob-small max-w-[62ch]">
+                The stack he designs and runs: Go for the CLI and probe tooling,
+                Python and FastAPI for the API, Postgres and Redis, Celery for the
+                scheduled measurement work, SHA-256 and Ed25519 for the evidence
+                records. Founder and principal engineer: the same person who
+                designed the system runs the probes and publishes the method.
+              </p>
+            </div>
+
+            <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-3">
+              {DISCIPLINES.map((d) => (
+                <li key={d.title} className="border-t border-[var(--ob-line)] pt-4">
+                  <p className="text-[14px] font-semibold leading-[1.35] tracking-[-0.008em] text-[var(--ob-text)]">
+                    {d.title}
+                  </p>
+                  <p className="mt-2 text-[13px] leading-[1.6] text-[var(--ob-text-3)]">
+                    {d.body}
+                  </p>
+                </li>
+              ))}
+            </ul>
 
             <div className="border-t border-[var(--ob-line)] pt-6">
-              <p className="ob-label mb-4">Where the network is going</p>
-              <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2">
-                {NETWORK_DIRECTION.map((step) => (
-                  <li key={step} className="flex items-start gap-3 py-1.5">
-                    <span
-                      aria-hidden
-                      className="mt-[7px] block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ob-line-3)]"
-                    />
-                    <span className="text-[13.5px] leading-[1.6] text-[var(--ob-text-3)]">
-                      {step}
-                    </span>
+              <p className="ob-label mb-4">Published work</p>
+              <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                {MAINTAINER_PUBLIC_WORK.map((work) => (
+                  <li key={work.name}>
+                    <a
+                      href={work.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ob-link text-[13.5px]"
+                    >
+                      {work.name} <span aria-hidden>↗</span>
+                    </a>
+                    <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[var(--ob-text-4)]">
+                      {work.body}
+                    </p>
                   </li>
                 ))}
               </ul>
-              <p className="ob-small mt-4 max-w-[58ch]">
-                The first step is the product. The rest is described as
-                direction, not as capability: nothing above is measured,
-                counted, or rendered as a live figure anywhere on this site.
+              <p className="ob-small mt-4 max-w-[64ch]">
+                Every repository linked here contains readable source. Forks of
+                upstream projects and repositories without an implementation are
+                deliberately not listed.
               </p>
             </div>
           </div>
@@ -169,7 +241,7 @@ export function FinalCTASection() {
           rest of it is worth your attention. The trial needs no card.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+          <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
             Start monitoring
           </Link>
           <Link href={PUBLIC_ROUTES.observatory} className="ob-btn ob-btn-outline">

@@ -119,7 +119,7 @@ export default function ProductPage() {
             what it is allowed to conclude, and what it deliberately does not.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+            <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
               Start monitoring
             </Link>
             <Link href={DOCS_ROUTES.quickstart} className="ob-btn ob-btn-outline">
@@ -447,7 +447,7 @@ export default function ProductPage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
-              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+              <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
                 Start monitoring
               </Link>
               <Link href={PUBLIC_ROUTES.productEvidence} className="ob-btn ob-btn-outline">

@@ -1661,6 +1661,17 @@
   font-size: clamp(1.5rem, 2.6vw, 2.125rem);
   line-height: 1;
 }
+/*
+  The price is the strongest conversion signal in the pricing section, so on a
+  section whose own headline already spells out the figure it is set at scene
+  scale rather than figure scale - otherwise the number the visitor came for is
+  the smallest thing in its own section.
+*/
+.ob-figure-xl {
+  font-size: clamp(3rem, 6.4vw, 4.75rem);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+}
 
 .ob-link {
   color: var(--ob-text);
@@ -2666,20 +2677,22 @@
   text-transform: uppercase;
   color: var(--ob-text-4);
 }
+/* Captions are anchored to the LEFT edge of their own mark rather than centred
+   on it. Both thresholds sit in the right half of the track (50 and 75), so a
+   centred caption at 75% runs straight into the 100 end stop; left-anchoring
+   keeps every caption inside the track at every width without moving the marks
+   themselves. */
 .ob-attr-scale-labels > span {
   position: absolute;
   top: 0;
-  transform: translateX(-50%);
+  transform: translateX(-4px);
   white-space: nowrap;
 }
-.ob-attr-scale-labels > span:first-child { left: 0; transform: none; }
-.ob-attr-scale-max { right: 0; left: auto !important; transform: none !important; }
-/* Anchor the highest threshold to the right instead of centring it, so it can
-   never overhang the track on an intermediate width. */
-.ob-attr-scale-labels > span:nth-last-child(2) {
-  left: auto !important;
+.ob-attr-scale-labels > .ob-attr-scale-zero { left: 0; transform: none; }
+.ob-attr-scale-labels > .ob-attr-scale-max {
   right: 0;
-  transform: none !important;
+  left: auto;
+  transform: none;
 }
 
 /*
@@ -3142,13 +3155,20 @@
 .ob-teaser:focus-visible .ob-teaser-row {
   padding-left: clamp(8px, 1.2vw, 20px);
 }
+/*
+  Research rows. Titles are the primary content of the band, so at rest they sit
+  at full text strength, not at the label grey used for metadata. The row still
+  reads as quieter than a scene title because of its scale, and the hover/focus
+  state now lifts rather than reveals - previously the resting colour was low
+  enough that these links read as disabled until hovered.
+*/
 .ob-teaser-title {
   font-size: clamp(1.75rem, 4.2vw, 3.5rem);
   line-height: 0.98;
   letter-spacing: -0.02em;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--ob-text-4);
+  color: var(--ob-text-2);
   transition: color 220ms ease;
 }
 .ob-teaser:hover .ob-teaser-title,

@@ -203,7 +203,7 @@ export function VerifyOtpStep({
           type="submit"
           disabled={verifying || code.length !== CODE_LENGTH}
           aria-busy={verifying}
-          className="ob-btn ob-btn-signal ob-btn-block mt-7"
+          className="ob-btn ob-btn-primary ob-btn-block mt-7"
         >
           {verifying ? 'Verifying…' : 'Verify email'}
         </button>

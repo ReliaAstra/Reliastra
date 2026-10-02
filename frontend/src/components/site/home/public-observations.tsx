@@ -21,6 +21,36 @@ import { SHARE_ROUTES } from '@/lib/routes';
  * so open tabs no longer share a rate-limit bucket with the server's own
  * reads.
  */
+/**
+ * How a check time reads in the row.
+ *
+ * The first paint is server-rendered and the polling ticker only starts after
+ * hydration, so `age` is null until the client has a clock. That window used to
+ * print the literal word "Observed" in a column labelled LAST CHECK - a column
+ * whose entire job is to state when the check happened. It now prints the
+ * check's own UTC time, derived only from the record, so the value is identical
+ * on the server and after hydration and cannot drift between the two renders.
+ * Once the ticker supplies a live clock the same cell tightens to a relative
+ * reading, which is what a person watching a 300s cadence actually wants.
+ */
+const ABSOLUTE_TIME = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+  timeZone: 'UTC',
+});
+
+function formatAge(lastCheckAt: string | null | undefined, age: number | null) {
+  if (!lastCheckAt) return 'Waiting';
+  const at = Date.parse(lastCheckAt);
+  if (Number.isNaN(at)) return 'Waiting';
+  if (age == null) return `${ABSOLUTE_TIME.format(at)} UTC`;
+  if (age < 60_000) return 'Just now';
+  if (age < 3_600_000) return `${Math.floor(age / 60_000)}m ago`;
+  return `${Math.floor(age / 3_600_000)}h ago`;
+}
+
 export function PublicObservations({ initial }: { initial: TrackVendorListItem[] }) {
   const [vendors, setVendors] = useState(initial);
   const [now, setNow] = useState<number | null>(null);
@@ -63,8 +93,11 @@ export function PublicObservations({ initial }: { initial: TrackVendorListItem[]
             </span>
             <span className="hidden md:block">
               <span className="ob-label block">Last check</span>
-              <time dateTime={v.last_check_at ?? undefined} className="ob-mono mt-2 block text-[12.5px] text-[var(--ob-text-3)]">
-                {v.last_check_at ? age == null ? 'Observed' : age < 60_000 ? 'Just now' : `${Math.floor(age / 60_000)}m ago` : 'Waiting'}
+              <time
+                dateTime={v.last_check_at ?? undefined}
+                className="ob-mono mt-2 block text-[12.5px] text-[var(--ob-text-3)]"
+              >
+                {formatAge(v.last_check_at, age)}
               </time>
             </span>
             <span className="hidden text-right md:block">

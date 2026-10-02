@@ -51,7 +51,7 @@ export function PlanMatrix({
           <div className="mt-auto flex flex-col gap-3">
             <Link
               href={cta.href}
-              className="ob-btn ob-btn-block ob-btn-signal"
+              className="ob-btn ob-btn-block ob-btn-primary"
               data-testid="pricing-cta-pro"
             >
               {cta.label}

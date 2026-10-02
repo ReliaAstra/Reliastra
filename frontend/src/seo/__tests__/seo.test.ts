@@ -517,9 +517,16 @@ describe('machine-readable discovery', () => {
       expect(body).toContain('RELIASTRA');
       expect(body.toLowerCase()).toContain('observation point');
       expect(body).toContain('## Founder and engineer');
-      expect(body).toContain('Role: AI Infrastructure Security Engineer.');
+      expect(body).toContain('Role: AI and Cloud Infrastructure Security Engineer.');
       expect(body).toContain('Adeshina Emmanuel');
-      expect(body).toContain('cloud-identity-security-engineering');
+      // Every listed project must be a repository with real source. The two
+      // formerly asserted here - `cloud-identity-security-engineering`
+      // (18 zero-byte .go files) and `aws-iam-attack-paths` (no Go source at
+      // all) - are asserted absent, so the discovery files cannot quietly
+      // reintroduce an empty scaffold as a Go engine.
+      expect(body).toContain('chimera');
+      expect(body).not.toContain('cloud-identity-security-engineering');
+      expect(body).not.toContain('aws-iam-attack-paths');
       expect(body).toContain('https://reliastra.com/about');
       expect(body).toContain('region labels identify the worker');
       expect(body).toContain('provider-wide');

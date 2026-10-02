@@ -14,6 +14,8 @@
  * which is a true statement, not a degraded one.
  */
 
+import { SITE_URL } from '@/lib/site-url';
+
 export type ResearchAuthor = {
   id: string;
   name: string;
@@ -61,13 +63,19 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
     id: 'adeshina-emmanuel',
     name: 'Adeshina Emmanuel',
     alternateName: ['Emmanuel Adeshina'],
-    role: 'AI Infrastructure Security Engineer',
+    role: 'AI and Cloud Infrastructure Security Engineer',
     bio:
-      'Adeshina Emmanuel is an infrastructure security engineer focused on cloud identity, ' +
-      'access control, Kubernetes, and AI systems. He founded and leads the engineering of ' +
-      'RELIASTRA and publishes research on cloud identity and infrastructure security.',
+      'Adeshina Emmanuel is an infrastructure security engineer working across cloud identity, ' +
+      'Kubernetes, AI systems, and the measurement systems that verify them. He architects and ' +
+      'builds the RELIASTRA platform - the probe network, the Go CLI, the evidence pipeline - and ' +
+      'publishes the method alongside the product.',
     url: 'https://reliastra.com/about',
-    image: 'https://avatars.githubusercontent.com/u/219976014?v=4',
+    // Self-hosted portrait, not the GitHub avatar: this is the profile image on
+    // the About page, the research bylines and the `Person` structured data, and
+    // an identity that resolves to a stranger's account picture is a worse
+    // signal than one that resolves to nothing. Absolute, because structured
+    // data has no notion of a relative path.
+    image: `${SITE_URL}/media/maintainer-lg.webp`,
     sameAs: [
       'https://www.linkedin.com/in/emmanueladeshina01',
       'https://x.com/secengineerx01',
@@ -76,11 +84,11 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
       'https://github.com/EmmanuelAdesina',
     ],
     domains: [
-      'Infrastructure security',
+      'AI infrastructure security',
       'Cloud identity and access control',
-      'AWS IAM',
-      'Kubernetes security',
-      'AI systems security',
+      'Kubernetes and platform security',
+      'Infrastructure architecture',
+      'DevSecOps and SRE practice',
       'Measurement integrity',
       'Distributed systems',
     ],

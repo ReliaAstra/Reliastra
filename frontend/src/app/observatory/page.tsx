@@ -424,7 +424,7 @@ export default async function ObservatoryIndexPage() {
             </div>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-signal">
+                <Link href={AUTH_ROUTES.signup} className="ob-btn ob-btn-primary">
                   Start observing
                 </Link>
                 <Link href={PUBLIC_ROUTES.pricing} className="ob-btn ob-btn-outline">
