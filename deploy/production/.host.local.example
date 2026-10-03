@@ -1,0 +1,19 @@
+# Production host addresses — LOCAL ONLY, NEVER COMMIT.
+#
+# Copy to `.host.local` and fill in:
+#   cp .host.local.example .host.local
+#
+# `.host.local` is gitignored. The real values belong in your password manager
+# as the primary copy; this file exists so deploy scripts have somewhere to read
+# from without hardcoding an address in a public repository.
+#
+# Why this file exists: this repository is public. Any host address committed
+# here discloses either a public origin IP or a private tailnet address. The
+# tailnet address is the more sensitive of the two, because it is the only path
+# to a host whose public SSH is firewalled off.
+
+# Tailscale IPv4 of the production host. Reach over this, never the public IP.
+TS_HOST="100.x.y.z"
+
+# Public IPv4. Present so you can assert that port 22 is NOT reachable on it.
+PUBLIC_HOST="203.0.113.x"

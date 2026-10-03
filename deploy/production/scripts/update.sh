@@ -2,8 +2,13 @@
 # update.sh - manual production update over Tailscale SSH.
 #
 # Usage (laptop, Tailscale on):
-#   ssh reliastra@100.93.175.33
+#   ssh "reliastra@${TS_HOST}"          # TS_HOST from deploy/production/.host.local
 #   sudo /opt/reliastra/scripts/update.sh [--ref origin/main]
+#
+# The production host address is NOT in this repository. Load it from the
+# untracked local file first:
+#   source deploy/production/.host.local
+# Anything committed here is public and discloses a private tailnet address.
 #
 # What it does:
 #   1. git fetch + reset --hard to the ref in the build tree

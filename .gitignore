@@ -131,3 +131,7 @@ cli/npm/*.tgz
 # `make cli` / `go build` in cli/ drops the binary beside the module
 /cli/reliastra
 /cli/reliastra.exe
+
+# Production host addresses. Public repo: never commit a real tailnet or origin IP.
+deploy/production/.host.local
+**/.host.local

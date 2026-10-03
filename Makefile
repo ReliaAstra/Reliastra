@@ -22,6 +22,22 @@ help:
 	@echo "                  npm + pip install from a dist/, then run the CLI"
 	@echo "  make cli-dry-run"
 	@echo "                  goreleaser --snapshot: build a release, publish nothing"
+	@echo "  make prod-host"
+	@echo "                  print the production host address from the untracked local file"
+
+# Production host addresses live in deploy/production/.host.local, which is
+# gitignored because this repository is public. This target exists so no doc
+# has to ever inline the address.
+prod-host:
+	@if [ -f deploy/production/.host.local ]; then \
+		. ./deploy/production/.host.local; \
+		echo "ssh reliastra@$$TS_HOST"; \
+	else \
+		echo "deploy/production/.host.local not found."; \
+		echo "cp deploy/production/.host.local.example deploy/production/.host.local"; \
+		echo "and fill it in, or read it from the operator password manager."; \
+		exit 1; \
+	fi
 
 install:
 	cd frontend && npm install
