@@ -34,11 +34,28 @@ CADDYFILE = REPO_ROOT / "deploy" / "production" / "Caddyfile"
 SCHEMA_PATHS = ("/openapi.json", "/api-docs", "/api-redoc")
 
 
+def _route_paths(app) -> list[str]:
+    """Every path the app will actually serve.
+
+    ``app.routes`` is not homogeneous. Mounted sub-applications appear as
+    ``_IncludedRouter`` entries, which carry no ``path`` attribute, so
+    ``route.path`` raises ``AttributeError`` and the assertion below errors out
+    instead of reporting a result. Read the attribute defensively and collect
+    the paths we can see; a schema route registered at the top level - which is
+    the only way FastAPI mounts one - is always directly addressable.
+    """
+    return sorted(
+        path
+        for path in (getattr(route, "path", None) for route in app.routes)
+        if isinstance(path, str)
+    )
+
+
 def _schema_routes(app) -> list[str]:
     return sorted(
-        route.path
-        for route in app.routes
-        if any(marker in route.path for marker in ("openapi", "api-docs", "api-redoc"))
+        path
+        for path in _route_paths(app)
+        if any(marker in path for marker in ("openapi", "api-docs", "api-redoc"))
     )
 
 
@@ -66,7 +83,7 @@ def test_create_app_still_serves_health_when_the_schema_is_withheld(monkeypatch)
 
     monkeypatch.setattr(settings_singleton, "EXPOSE_API_SCHEMA", False)
     app = create_app()
-    paths = {route.path for route in app.routes}
+    paths = set(_route_paths(app))
     assert "/health" in paths
     assert "/health/ready" in paths
 
