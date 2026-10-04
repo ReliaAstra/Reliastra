@@ -968,9 +968,17 @@ curl -sS https://api.reliastra.com/v1/dependencies -H "Authorization: Bearer $RE
         blocks: [
           {
             kind: 'p',
-            text: 'The FastAPI-generated OpenAPI document is served by the API itself and is the authoritative field list - these docs quote it rather than replacing it.',
+            text: 'This page is the field reference. The generated OpenAPI document is not published: it enumerates every route the API registers, including the authenticated ones, so serving it unauthenticated would hand an attacker the full attack surface from a single unauthenticated request.',
           },
-          { kind: 'code', lang: 'bash', code: 'curl -sS https://api.reliastra.com/openapi.json | jq ".paths | keys"' },
+          {
+            kind: 'p',
+            text: 'This is a deliberate choice, not an omission. Operators who need the machine-readable contract can generate it locally against their own deployment.',
+          },
+          {
+            kind: 'code',
+            lang: 'bash',
+            code: '# generate the schema from your own deployment\ncurl -sS https://api.reliastra.com/health\n# then, against a checkout of the API:\n#   EXPOSE_API_SCHEMA=true python -m scripts.export_openapi',
+          },
         ],
       },
     ],

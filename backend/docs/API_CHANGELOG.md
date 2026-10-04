@@ -456,9 +456,9 @@ machine-readable spec is unchanged:
 
 | Old | New |
 | --- | --- |
-| `GET /docs` (Swagger UI) | `GET /api-docs` |
-| `GET /redoc` (ReDoc) | `GET /api-redoc` |
-| `GET /openapi.json` | `GET /openapi.json` (unchanged) |
+| `GET /docs` (Swagger UI) | `GET /api-docs`, opt-in only |
+| `GET /redoc` (ReDoc) | `GET /api-redoc`, opt-in only |
+| `GET /openapi.json` | opt-in only; `EXPOSE_API_SCHEMA` defaults to `False` |
 
 ## Traffic analytics: internal traffic is no longer counted
 

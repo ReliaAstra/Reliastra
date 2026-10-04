@@ -166,6 +166,17 @@ class Settings(BaseSettings):
         default=True,
         description="Whether to allow cookies/credentials in CORS requests",
     )
+    EXPOSE_API_SCHEMA: bool = Field(
+        default=False,
+        description=(
+            "Serve the OpenAPI schema and interactive consoles at /openapi.json, "
+            "/api-docs and /api-redoc. OFF by default because the schema enumerates "
+            "every authenticated route (/v1/billing/*, /v1/api-keys/*, admin, "
+            "evidence token downloads), which hands an attacker the complete "
+            "attack surface from one unauthenticated GET. Turn on for local work "
+            "or contract tests only; never in production."
+        ),
+    )
     PAYSTACK_SECRET_KEY: str = Field(
         default="",
         description="Paystack secret key used for API calls and webhook signing",

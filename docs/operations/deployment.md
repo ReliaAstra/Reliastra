@@ -24,7 +24,7 @@ PRECHECK (lock flock 10m stale, disk>2GB, mem>1GB, env, DB via alembic, registry
 → MIGRATE (alembic upgrade head, timeout 180)
 → START (docker compose -f /opt/reliastra/compose.yml up -d --remove-orphans, timeout 180)
 → HEALTH (healthcheck.sh --timeout 120: /health/live 200 + /health/ready 200 + proxy 200)
-→ SMOKE (smoke-test.sh --timeout 60: openapi.json valid, /v1/public/vendors, frontend 200, auth 401 shape)
+→ SMOKE (smoke-test.sh --timeout 60: /health 200, schema confirmed closed (404), /v1/public/vendors, frontend 200, auth 401 shape)
 → SUCCESS (write current.json success, prune releases 10, cleanup.sh retention-aware)
 ```
 Any failure → `FAILED`; health/smoke fail → auto `rollback.sh` → `ROLLED_BACK` or `ROLLBACK_FAILED` (escalate).

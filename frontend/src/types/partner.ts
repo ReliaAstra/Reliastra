@@ -1,6 +1,7 @@
 /* ─────────────────────────────────────────────
    Types aligned with Reliastra Backend OpenAPI 3.1
-   https://api.reliastra.com/api-docs
+   (not published: /api-docs and /openapi.json are opt-in via EXPOSE_API_SCHEMA
+   and refused at the edge. See https://reliastra.com/docs/api for the field reference)
    ───────────────────────────────────────────── */
 
 // ── Auth ───────────────────────────────────────

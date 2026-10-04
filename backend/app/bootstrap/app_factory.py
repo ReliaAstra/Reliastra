@@ -34,17 +34,28 @@ from app.platform.web.errors import setup_exception_handlers
 
 def create_app() -> FastAPI:
     configure_logging()
+    expose_schema = settings.EXPOSE_API_SCHEMA
+
+    # The OpenAPI schema and the interactive consoles are OFF unless explicitly
+    # enabled. /openapi.json enumerates every registered route — including the
+    # authenticated ones (/v1/billing/*, /v1/api-keys/*, admin control plane,
+    # /v1/evidence/{report_token}/download). Serving it unauthenticated turns one
+    # GET into a complete attack-surface map, which for a security product is a
+    # disclosure that undercuts the product's own claim.
+    #
+    # Two independent layers guard this: this flag, and the Caddyfile, which does
+    # not proxy these paths at all. Either alone is sufficient; both are kept so
+    # a misconfigured proxy cannot re-expose the schema.
+    #
+    # The apex `/docs/*` namespace is unrelated and unaffected: it belongs to the
+    # public product documentation served by Next.js.
     app = FastAPI(
-        title="Reliastra MVP API",
+        title="Reliastra API",
         version="0.1.0",
         description="External dependency intelligence platform API",
-        # Interactive API consoles live off `/docs*` on purpose: the apex
-        # `/docs/*` namespace belongs to the public product documentation
-        # (Next.js, indexed by search engines). The machine-readable spec
-        # stays at the conventional `/openapi.json`.
-        docs_url="/api-docs",
-        redoc_url="/api-redoc",
-        openapi_url="/openapi.json",
+        docs_url="/api-docs" if expose_schema else None,
+        redoc_url="/api-redoc" if expose_schema else None,
+        openapi_url="/openapi.json" if expose_schema else None,
         lifespan=lifespan,
     )
 

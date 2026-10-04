@@ -7,10 +7,11 @@
  *
  *     404 {"error":{"code":"RESOURCE_NOT_FOUND","message":"Not Found", …}}
  *
- * The cause was not in the app. FastAPI is configured with
- * `docs_url="/api-docs"` (backend/app/bootstrap/app_factory.py) precisely so
- * that the apex `/docs` namespace stays free for the public documentation, so
- * the backend serves no `/docs` route at all and answers with its 404 handler
+ * The cause was not in the app. FastAPI mounts its consoles at `/api-docs` and
+ * `/openapi.json` (backend/app/bootstrap/app_factory.py, and only when
+ * EXPOSE_API_SCHEMA is on) precisely so that the apex `/docs` namespace stays
+ * free for the public documentation, so the backend serves no `/docs` route at
+ * all and answers with its 404 handler
  * (backend/app/platform/web/errors.py). The edge proxy was sending `/docs*` to
  * the backend port instead of Next.js, and because the proxy split is decided
  * in `deploy/production/Caddyfile` - a file no other test reads, validated by
@@ -144,7 +145,7 @@ const HANDLES = parseHandleBlocks(CADDYFILE);
 
 /**
  * Which upstream a path reaches, using Caddy's rule that a matcher'd `handle`
- * wins over the bare catch-all. Verified against production: `/openapi.json`
+ * wins over the bare catch-all. Verified against production: `/health/ready`
  * reaches FastAPI even though the bare `handle` is written first in the file.
  */
 function upstreamFor(path: string): string | null {
@@ -223,7 +224,7 @@ describe('the proxy split', () => {
   });
 
   it('keeps the backend console prefixes off the documentation namespace', () => {
-    // Read the prefixes FastAPI actually mounts, from FastAPI's own config.
+    // Read the prefixes FastAPI would mount, from FastAPI's own config.
     const consolePrefixes = ['docs_url', 'redoc_url', 'openapi_url']
       .map((key) => new RegExp(`${key}\\s*=\\s*"([^"]+)"`).exec(APP_FACTORY)?.[1])
       .filter((v): v is string => Boolean(v));
@@ -235,16 +236,30 @@ describe('the proxy split', () => {
         DOCS.some((doc) => prefixMatches(prefix, `/docs/${doc.slug}`)),
         `FastAPI console prefix ${prefix} collides with the documentation namespace`
       ).toBe(false);
-      // And the prefix must be reachable on the API upstream, or the console
-      // is unreachable for the opposite reason.
-      expect(upstreamFor(prefix)).toBe(API_UPSTREAM);
+    }
+  });
+
+  it('does not proxy the API schema to the API upstream', () => {
+    // The schema enumerates every registered route, including the
+    // authenticated ones. One unauthenticated GET must not be able to hand an
+    // attacker the full attack surface, so the edge must not offer it at all.
+    //
+    // This is deliberately the inverse of the previous assertion that these
+    // prefixes "must be reachable on the API upstream". Reachability was
+    // correct when the schema was only internal; it became the disclosure once
+    // the endpoint was public.
+    for (const path of ['/openapi.json', '/api-docs', '/api-redoc']) {
+      expect(
+        upstreamFor(path),
+        `${path} must not reach the API upstream; the schema is not public`
+      ).not.toBe(API_UPSTREAM);
     }
   });
 
   it('still reaches the API for the paths the site expects it to serve', () => {
     // The other half of the split, so a fix that simply routed everything to
-    // Next.js cannot pass.
-    for (const path of ['/v1/vendors', '/health/ready', '/openapi.json', '/api-docs']) {
+    // Next.js cannot pass. Note the schema is absent from this list by design.
+    for (const path of ['/v1/vendors', '/health/ready', '/health']) {
       expect(upstreamFor(path), `${path} should reach the API`).toBe(API_UPSTREAM);
     }
   });
@@ -259,5 +274,14 @@ describe('the production smoke test', () => {
     // happened. Assert the coverage survives.
     expect(SMOKE_TEST).toMatch(/\/docs/);
     expect(SMOKE_TEST).toMatch(/RESOURCE_NOT_FOUND/);
+  });
+
+  it('asserts the API schema stays closed after a deploy', () => {
+    // Same reasoning as the assertion above, pointed at the other failure
+    // mode. EXPOSE_API_SCHEMA can be set to true in an environment file by
+    // accident; the only thing standing between that and a public 186-route
+    // attack-surface map is a check that fails the deploy.
+    expect(SMOKE_TEST).toMatch(/openapi\.json/);
+    expect(SMOKE_TEST).toMatch(/EXPOSE_API_SCHEMA/);
   });
 });

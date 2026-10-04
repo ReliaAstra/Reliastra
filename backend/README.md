@@ -164,7 +164,9 @@ URL 200`.
 
 - **Swagger UI**: `/docs`
 - **ReDoc UI**: `/redoc`
-- **OpenAPI JSON**: `/openapi.json`
+- **OpenAPI JSON**: not published. `EXPOSE_API_SCHEMA` defaults to `False`, so the
+  API registers no schema route and the edge refuses `/openapi.json`. Generate it
+  locally with `EXPOSE_API_SCHEMA=true python -m scripts/export_openapi`.
 - **Frontend Integration Guide**: [`docs/FRONTEND_API_INTEGRATION_GUIDE.md`](./docs/FRONTEND_API_INTEGRATION_GUIDE.md)
 
 ## Architecture

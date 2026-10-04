@@ -43,7 +43,7 @@
 	# (see frontend/src/lib/backend-proxy.ts). A direct `handle /api/* ->
 	# api:8000` would shadow those routes AND 404, because the backend
 	# serves /v1/*, not /api/v1/*. Direct backend consumers use /v1/*,
-	# /health*, /openapi.json* and /api-docs* below.
+	# /health* and /metrics* below.
 	handle /v1/* {
 		reverse_proxy reliastra-api:8000
 	}
@@ -53,18 +53,29 @@
 	handle /metrics* {
 		reverse_proxy reliastra-api:8000
 	}
-	handle /openapi.json* {
-		reverse_proxy reliastra-api:8000
-	}
-	# Interactive API consoles. FastAPI is configured with docs_url="/api-docs"
-	# and redoc_url="/api-redoc" (see backend/app/bootstrap/app_factory.py), so
-	# these two prefixes - and ONLY these two - belong to the backend.
-	handle /api-docs* {
-		reverse_proxy reliastra-api:8000
-	}
-	handle /api-redoc* {
-		reverse_proxy reliastra-api:8000
-	}
+
+	# ── The API schema is deliberately NOT proxied ───────────────────────────
+	# /openapi.json, /api-docs and /api-redoc are intentionally absent from this
+	# file. Do not add them back.
+	#
+	# The schema enumerates every registered route, including the authenticated
+	# ones: /v1/billing/*, /v1/api-keys/*, the admin control plane and
+	# /v1/evidence/{report_token}/download. Serving it unauthenticated turns one
+	# GET into a complete attack-surface map, and the snapshot is committed
+	# nowhere public either.
+	#
+	# Two independent layers guard this:
+	#   1. EXPOSE_API_SCHEMA defaults to False in backend/app/config.py, which
+	#      makes FastAPI register no schema route at all.
+	#   2. This proxy, which does not forward the paths even if layer 1 is
+	#      misconfigured in production.
+	#
+	# Keep both. A layer that only exists in application config is one env
+	# variable away from being off in the wrong direction.
+	#
+	# `frontend/src/lib/__tests__/docs-namespace-routing.test.ts` asserts this
+	# file does NOT claim these prefixes. If you are re-adding them, delete that
+	# assertion in the same commit and justify it.
 
 	# ── The public documentation namespace, claimed positively ──────────────
 	# `/docs` and `/docs/*` are the product documentation: thirteen indexable
@@ -80,7 +91,7 @@
 	# landing, console and API all stay up) while every documentation URL - and
 	# every "Docs" link in the nav - dead-ends into raw JSON.
 	#
-	# Do NOT merge this into the /api-docs block above, and do not delete it in
+	# Do NOT merge this into a backend block, and do not delete it in
 	# favour of the catch-all. `deploy/production/scripts/smoke-test.sh` and
 	# `frontend/src/lib/__tests__/docs-namespace-routing.test.ts` both fail if
 	# this namespace stops rendering.
@@ -120,8 +131,8 @@
 # Every request on this host goes to the FastAPI backend. There is no
 # Next.js in this path: the marketing site, dashboard and documentation are
 # served from the apex, and Next.js reaches the backend through its own
-# /api/* route handlers. The backend serves /v1/*, /health, /openapi.json,
-# /api-docs, /api-redoc and /metrics; any other path correctly 404s as JSON.
+# /api/* route handlers. The backend serves /v1/*, /health and /metrics; the
+# schema paths are refused above; any other path correctly 404s as JSON.
 api.{$DOMAIN:reliastra.com} {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
@@ -133,11 +144,33 @@ api.{$DOMAIN:reliastra.com} {
 
 	encode gzip
 
-	reverse_proxy reliastra-api:8000 {
-		header_up Host {host}
-		header_up X-Real-IP {remote}
-		header_up X-Forwarded-For {remote}
-		header_up X-Forwarded-Proto {scheme}
+	# ── The API schema is refused here, explicitly ──────────────────────────
+	# This site block proxies everything to the backend, so without these the
+	# schema is reachable here even when the app does not register the route:
+	# an accidental `EXPOSE_API_SCHEMA=true` in .env.production would publish
+	# all 186 routes from the API host, which is the single host an attacker
+	# would try first.
+	#
+	# `abort` closes the connection without reaching the upstream. 404 would
+	# also work, but an explicit refusal cannot be confused with a route that
+	# happens to be missing.
+	handle /openapi.json* {
+		abort
+	}
+	handle /api-docs* {
+		abort
+	}
+	handle /api-redoc* {
+		abort
+	}
+
+	handle {
+		reverse_proxy reliastra-api:8000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+			header_up X-Forwarded-Proto {scheme}
+		}
 	}
 
 	log {

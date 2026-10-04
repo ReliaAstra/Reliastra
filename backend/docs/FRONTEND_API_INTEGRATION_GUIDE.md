@@ -8,7 +8,9 @@ This guide provides frontend and dashboard developers with complete integration 
 
 - **Base URL**: All REST endpoints are prefixed with `/v1`.
   - Local development: `http://localhost:8000/v1`
-  - OpenAPI Spec: `http://localhost:8000/openapi.json` (exported locally to `docs/openapi.json`)
+  - OpenAPI Spec: generated locally, never committed. Set
+    `EXPOSE_API_SCHEMA=true` and run `python -m scripts.export_openapi` to write
+    `docs/openapi.json` (gitignored). The schema is not served in production.
   - Swagger UI: `http://localhost:8000/docs`
 - **CORS**: The backend is configured via `CORS_ORIGINS` env var. Default: `http://localhost:3000`, `http://localhost:8000`. Set this to your production frontend domain when deploying.
 - **Idempotency Header**: For mutation requests (`POST`, `PUT`, `DELETE`), include a unique UUID in the `Idempotency-Key` HTTP header. The backend caches the response in Redis for 24 hours to prevent duplicate submissions on network retries.

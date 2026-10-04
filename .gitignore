@@ -135,3 +135,8 @@ cli/npm/*.tgz
 # Production host addresses. Public repo: never commit a real tailnet or origin IP.
 deploy/production/.host.local
 **/.host.local
+
+# API schema snapshot. Public repo: the OpenAPI document enumerates every
+# authenticated route, so a committed copy is an attack-surface disclosure.
+# Generate locally with: EXPOSE_API_SCHEMA=true python -m scripts.export_openapi
+backend/docs/openapi.json
