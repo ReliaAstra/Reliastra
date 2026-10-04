@@ -210,11 +210,27 @@ if ! timeout 120 /opt/reliastra/scripts/healthcheck.sh --timeout 120; then
 fi
 
 # 8. SMOKE TEST
+#
+# Probes retry internally (see smoke-test.sh): readiness proves DB and Redis
+# answer, not that the heavier read paths do, so a single cold-start 500 must
+# not be read as a regression.
 log "INFO" "SMOKE"
-if ! timeout 60 /opt/reliastra/scripts/smoke-test.sh --timeout 60; then
+if ! timeout 120 /opt/reliastra/scripts/smoke-test.sh --timeout 60; then
   log "ERROR" "smoke failed - rollback"
-  if /opt/reliastra/scripts/rollback.sh --reason "smoke"; then
+  # `set -e` is active, so the exit status is captured explicitly rather than
+  # read from `$?` inside an `if !` branch, where it does not survive.
+  rollback_rc=0
+  /opt/reliastra/scripts/rollback.sh --reason "smoke" || rollback_rc=$?
+  if [[ "$rollback_rc" -eq 0 ]]; then
     record_state "ROLLED_BACK"
+  elif [[ "$rollback_rc" -eq 2 ]]; then
+    # rollback.sh exits 2 when the restore completed but the post-restore
+    # verification failed. That is not a failed restore: production is on the
+    # previous release, and the failing assertion is evidence about the
+    # environment, not about this commit. Rolling back further cannot fix it,
+    # so the deploy stops here and says so precisely.
+    log "ERROR" "previous release is live but unverified - the failing assertion did not come from this release"
+    record_state "ROLLBACK_UNVERIFIED"
   else
     record_state "ROLLBACK_FAILED"
   fi

@@ -60,19 +60,55 @@ if ! timeout 180 bash -c 'set -a; source /opt/reliastra/state/image.env; source 
 fi
 
 # Health
+#
+# This IS part of the restore. Health failing means the previous release did
+# not come up, so the rollback genuinely did not achieve its goal and the
+# operator needs to know the host is not serving. `record_state` lives in
+# deploy.sh and is deliberately not called here - this script is also invoked
+# directly by an operator, where that function does not exist.
 if ! timeout 120 /opt/reliastra/scripts/healthcheck.sh --timeout 120; then
-  echo "ROLLBACK FAIL: health after rollback" >&2
+  echo "ROLLBACK FAIL: previous release did not become healthy" >&2
   exit 1
 fi
-if ! timeout 60 /opt/reliastra/scripts/smoke-test.sh --timeout 60; then
-  echo "ROLLBACK FAIL: smoke after rollback" >&2
-  exit 1
+
+# Smoke after rollback.
+#
+# This is a VERIFICATION step, not part of the restore. The previous image has
+# already been pulled, the environment written and `compose up` has returned
+# zero by the time this line runs - production is on the previous release
+# either way. Exiting non-zero here used to report ROLLBACK_FAILED, which
+# claims the restore itself broke when the only thing that failed was a
+# re-run of the same assertions against the same database and Redis.
+#
+# That distinction cost a real diagnosis: on 2026-10-03 the smoke probe for
+# /v1/vendors returned 500 both before and after the rollback, and the
+# ROLLBACK_FAILED verdict implied the previous release was also broken - which
+# was false, since that identical image had passed the identical probe two days
+# earlier. The fault was environmental, not in either image.
+#
+# So the restore is recorded as complete, and only the verification verdict is
+# allowed to change the exit status. ROLLBACK_UNVERIFIED means "the previous
+# release is live and something is wrong with it" - a different, and much more
+# actionable, statement than "the rollback failed".
+smoke_ok=1
+if ! timeout 90 /opt/reliastra/scripts/smoke-test.sh --timeout 60; then
+  smoke_ok=0
+  echo "ROLLBACK UNVERIFIED: smoke failed against the restored release" >&2
+  echo "  previous release IS live; the failing assertion above is not evidence" >&2
+  echo "  that this rollback caused it. Treat as an environment or data fault." >&2
 fi
 
 # Promote previous to current
 cp "$STATE_DIR/previous.json" "$STATE_DIR/current.json"
-cat > "$STATE_DIR/last.json" <<JSON
+
+if [[ "$smoke_ok" -eq 1 ]]; then
+  final_state="ROLLED_BACK"
+  cat > "$STATE_DIR/last.json" <<JSON
 {"commit":"$PREV_COMMIT","image":"$PREV_IMAGE","digest":"$PREV_DIGEST","reason":"rollback:$REASON","from":"$CUR_COMMIT","end":"$(date -u +%FT%TZ)","final_state":"ROLLED_BACK"}
 JSON
-echo "ROLLBACK SUCCESS to $PREV_COMMIT"
-exit 0
+  echo "ROLLBACK SUCCESS to $PREV_COMMIT"
+  exit 0
+fi
+
+echo "ROLLBACK COMPLETED BUT UNVERIFIED to $PREV_COMMIT" >&2
+exit 2
