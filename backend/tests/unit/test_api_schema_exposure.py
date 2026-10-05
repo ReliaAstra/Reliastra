@@ -24,6 +24,7 @@ import re
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app.bootstrap.app_factory import create_app
 from app.config import Settings
@@ -32,31 +33,6 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 CADDYFILE = REPO_ROOT / "deploy" / "production" / "Caddyfile"
 
 SCHEMA_PATHS = ("/openapi.json", "/api-docs", "/api-redoc")
-
-
-def _route_paths(app) -> list[str]:
-    """Every path the app will actually serve.
-
-    ``app.routes`` is not homogeneous. Mounted sub-applications appear as
-    ``_IncludedRouter`` entries, which carry no ``path`` attribute, so
-    ``route.path`` raises ``AttributeError`` and the assertion below errors out
-    instead of reporting a result. Read the attribute defensively and collect
-    the paths we can see; a schema route registered at the top level - which is
-    the only way FastAPI mounts one - is always directly addressable.
-    """
-    return sorted(
-        path
-        for path in (getattr(route, "path", None) for route in app.routes)
-        if isinstance(path, str)
-    )
-
-
-def _schema_routes(app) -> list[str]:
-    return sorted(
-        path
-        for path in _route_paths(app)
-        if any(marker in path for marker in ("openapi", "api-docs", "api-redoc"))
-    )
 
 
 def test_schema_is_not_exposed_by_default():
@@ -71,21 +47,44 @@ def test_create_app_registers_no_schema_route_by_default(monkeypatch):
     from app.config import settings as settings_singleton
 
     monkeypatch.setattr(settings_singleton, "EXPOSE_API_SCHEMA", False)
-    app = create_app()
-    assert _schema_routes(app) == [], (
-        "the application registered a schema route with EXPOSE_API_SCHEMA off"
-    )
+    client = TestClient(create_app())
+
+    for path in SCHEMA_PATHS:
+        response = client.get(path)
+        assert response.status_code == 404, (
+            f"{path} must return 404 when EXPOSE_API_SCHEMA is off"
+        )
 
 
 def test_create_app_still_serves_health_when_the_schema_is_withheld(monkeypatch):
     """Withholding the schema must not take down the probes deploys rely on."""
+    from app.bootstrap import health
     from app.config import settings as settings_singleton
 
+    async def healthy_probes():
+        return (
+            {
+                "status": "ok",
+                "service": "reliastra-backend",
+                "version": "0.1.0",
+                "checks": {},
+            },
+            200,
+        )
+
+    # The health endpoint's DB/Redis checks are covered separately; this test
+    # isolates HTTP route availability while TestClient deliberately skips the
+    # app lifespan (and runs requests on its own event loop).
+    monkeypatch.setattr(health, "_run_health_checks", healthy_probes)
+    monkeypatch.setattr(health, "_ready_cache", {"ts": 0.0, "payload": None})
     monkeypatch.setattr(settings_singleton, "EXPOSE_API_SCHEMA", False)
-    app = create_app()
-    paths = set(_route_paths(app))
-    assert "/health" in paths
-    assert "/health/ready" in paths
+    client = TestClient(create_app())
+
+    for path in ("/health", "/health/ready"):
+        response = client.get(path)
+        assert response.status_code == 200, (
+            f"{path} must remain available; got {response.status_code}: {response.text}"
+        )
 
 
 def test_opt_in_restores_the_schema(monkeypatch):
@@ -100,8 +99,8 @@ def test_opt_in_restores_the_schema(monkeypatch):
     from app.config import settings as settings_singleton
 
     monkeypatch.setattr(settings_singleton, "EXPOSE_API_SCHEMA", True)
-    app = create_app()
-    assert _schema_routes(app) == sorted(SCHEMA_PATHS)
+    response = TestClient(create_app()).get("/openapi.json")
+    assert response.status_code == 200
 
 
 def test_no_schema_path_is_committed_to_the_repository():
