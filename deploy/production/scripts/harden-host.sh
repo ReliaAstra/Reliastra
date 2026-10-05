@@ -201,6 +201,16 @@ UsePAM yes
 X11Forwarding no
 AllowTcpForwarding no
 PermitTunnel no
+# Pre-auth connection flood valve. OpenSSH ships 10:30:100 and this host was
+# tightened to 2:30:10, which starts RANDOMLY DROPPING connections once two
+# unauthenticated sessions overlap. That is not brute-force protection, it is
+# collateral damage: an operator running two commands at once, a CI job opening
+# a couple of parallel sessions, or an editor with a few saved hosts all get
+# spurious "Connection closed"/timeouts that look like a flaky host and burn
+# real time. The pre-auth defences that actually matter here are untouched:
+# this listener is tailnet-only, passwords are off, MaxAuthTries is 3 and
+# LoginGraceTime is 30. Restore the upstream default.
+MaxStartups 10:30:100
 SSHD
   if [[ -n "$TAILSCALE_IPV4" ]]; then
     cat >> /etc/ssh/sshd_config.d/99-reliastra.conf <<SSHD

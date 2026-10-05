@@ -128,10 +128,29 @@ tailscale ping "${TS_HOST:-<tailscale-ip>}"
   `DOCKER`/`DOCKER-FORWARD` chains. The `INPUT` policy is what protects the
   host-bound ports (`5432`, `6379`, `2375`, `8000`). Do not read INPUT counters
   expecting to see web hits.
-- **`sshd` runs `MaxStartups 2:30:10`.** Rapid repeated `ssh`/`scp` calls get
-  randomly dropped *before* authentication, which looks like a flaky host but is
-  the intended brute-force throttle. Reuse one connection
-  (`ControlMaster auto`/`ControlPersist`) or space attempts out.
+- **`sshd` runs `MaxStartups 10:30:100`** (the OpenSSH default; this host was
+  tightened to `2:30:10`, which randomly dropped connections whenever two
+  unauthenticated sessions overlapped and looked like a flaky host). The
+  pre-auth defences that matter are unchanged and are not affected by this
+  value: the listener is tailnet-only, password authentication is off,
+  `MaxAuthTries` is 3 and `LoginGraceTime` is 30.
+- **Never `scp` a script from your working tree onto the host.**
+  `/opt/reliastra/scripts` is *not* synced by `update.sh` or by CI - a human
+  copies it. A CRLF working tree therefore breaks the host even when the commit
+  is clean, which has happened more than once (`env: $'bash\r': No such file or
+  directory`). `.gitattributes` pins `deploy/production/scripts/*.sh` to LF but
+  only for git's own checkout, not for your editor. Before copying, run:
+
+  ```bash
+  ./deploy/production/scripts/test-script-eol.sh    # exit 0 = safe to copy
+  ```
+
+  To deploy, take the bytes from the commit rather than the working tree:
+
+  ```bash
+  git show :deploy/production/scripts/harden-host.sh > /tmp/harden-host.sh
+  scp /tmp/harden-host.sh <host>:/tmp/ && sudo install -m755 /tmp/harden-host.sh /opt/reliastra/scripts/
+  ```
 
 ## Re-asserting state
 

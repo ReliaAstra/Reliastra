@@ -128,6 +128,17 @@ else
   FAIL=$((FAIL+1))
 fi
 
+# CRLF guard: /opt/reliastra/scripts is copied by hand, so a CRLF working tree
+# breaks the host even when the commit is clean.
+if bash deploy/production/scripts/test-script-eol.sh >/tmp/script-eol.log 2>&1; then
+  echo "PASS script line endings ($(tail -1 /tmp/script-eol.log))"
+  PASS=$((PASS+1))
+else
+  echo "FAIL script line endings"
+  cat /tmp/script-eol.log
+  FAIL=$((FAIL+1))
+fi
+
 # Check GHCR digest usage (no build: for prod, only comments)
 if grep -q "IMAGE_DIGEST" deploy/production/compose.yml && ! grep -q "^\s*build:" deploy/production/compose.yml; then
   echo "PASS compose uses digest, no build"
