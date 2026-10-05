@@ -50,13 +50,41 @@ ALLOWED_ATTRS = frozenset(
 )
 
 VOID_TAGS = frozenset({"br", "hr", "img", "col"})
-
 _SAFE_URL_RE = re.compile(r"^(?:https?|mailto|cid):", re.IGNORECASE)
+_CHARREF_RE = re.compile(r"&(?:#\d+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);")
+_HELD_RE = re.compile(r"\x00(\d+)\x00")
+
 _UNSAFE_STYLE_RE = re.compile(
     r"(expression\s*\(|javascript\s*:|vbscript\s*:|data\s*:\s*text/html|@import|behavior\s*:|"
     r"-moz-binding|url\s*\(\s*['\"]?\s*javascript\s*:)",
     re.IGNORECASE,
 )
+
+
+def _escape_attr(value: str) -> str:
+    """Escape an attribute value, preserving existing character references.
+
+    ``html.escape`` unconditionally escapes ``&``, so a value already carrying
+    ``&#x27;`` - which is how every CSS font stack arrives from React - would
+    become ``&amp;#x27;``. A single pass is harmless. This sanitizer is not a
+    single pass: ``messages.send`` sanitizes again on every delivery, and the
+    admin UI loads the stored (already-sanitized) body back into the compose
+    box before re-submitting it, so the damage compounds and the stored body
+    stops being byte-identical to the body that sends.
+
+    Preserving references also makes the function idempotent, which the email
+    template compiler asserts from the frontend side: it can now guarantee that
+    the markup reviewed in the preview harness is exactly the markup delivered.
+    """
+    held: list[str] = []
+
+    def _hold(match: re.Match[str]) -> str:
+        held.append(match.group(0))
+        return f"\x00{len(held) - 1}\x00"
+
+    guarded = _CHARREF_RE.sub(_hold, value)
+    escaped = html.escape(guarded, quote=True)
+    return _HELD_RE.sub(lambda m: held[int(m.group(1))], escaped)
 
 
 def _clean_url(value: str) -> str | None:
@@ -115,7 +143,7 @@ class _Sanitizer(HTMLParser):
                 value = cleaned
             elif name == "target" and value.lower() not in {"_blank", "_self", "_top"}:
                 continue
-            safe_attrs.append(f' {name}="{html.escape(value, quote=True)}"')
+            safe_attrs.append(f' {name}="{_escape_attr(value)}"')
         if tag == "a" and not any(a.startswith(" href=") for a in safe_attrs):
             # Anchor without a safe destination becomes plain text.
             return

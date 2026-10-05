@@ -21,9 +21,12 @@ from app.core.rate_limit import SlidingWindowRateLimiter, enforce_rate_limit
 from app.db.session import get_db
 from app.modules.admin.decorators import audit_log
 from app.modules.admin.guards import require_system_admin
-from app.modules.email_center import resend_client
+from app.modules.email_center.compiled import load_catalogue
 from app.modules.email_center.models import EmailCenterMessage, EmailCenterTemplate
 from app.modules.email_center.schemas import (
+    EmailClassListResponse,
+    EmailClassResponse,
+    EmailClassVariable,
     MessageDetailResponse,
     MessageListItem,
     MessagesListResponse,
@@ -33,8 +36,8 @@ from app.modules.email_center.schemas import (
     SendEmailResponse,
     SenderCreateRequest,
     SenderResponse,
-    SenderUpdateRequest,
     SendersListResponse,
+    SenderUpdateRequest,
     TemplateInput,
     TemplateRenderRequest,
     TemplateRenderResponse,
@@ -44,7 +47,6 @@ from app.modules.email_center.schemas import (
 )
 from app.modules.email_center.service import (
     STATUS_FAILED,
-    STATUS_SENT,
     email_service,
     extract_variables,
     normalize_email,
@@ -326,6 +328,62 @@ async def get_message(
         template_id=row.template_id,
         attachments_meta=row.attachments_meta,
         updated_at=row.updated_at,
+    )
+
+
+# ── Compiled message classes ───────────────────────────────────────────────
+
+
+@router.get(
+    "/classes",
+    response_model=EmailClassListResponse,
+    summary="Compiled message classes and their field contracts",
+)
+async def list_classes(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> EmailClassListResponse:
+    """The design system's catalogue, for the compose UI to enforce.
+
+    Returns each class's required variables, what each one means, which API
+    field populates it, and the sender aliases the class may send as. This is
+    what turns the nine classes from a set of designs into a set of contracts:
+    the UI can refuse to send a message whose evidence provenance was never
+    bound instead of mailing a blank checksum.
+
+    Never raises on a missing or invalid design-system artefact - it reports the
+    error in ``load_error`` and returns an empty catalogue, so a frontend that
+    was never built cannot take the Email Center offline.
+    """
+    catalogue = load_catalogue()
+    return EmailClassListResponse(
+        classes=[
+            EmailClassResponse(
+                id=item.id,
+                name=item.name,
+                description=item.description,
+                audience=item.audience,
+                subject=item.subject,
+                preview_text=item.preview_text,
+                variables=[
+                    EmailClassVariable(
+                        name=v.name,
+                        required=v.required,
+                        description=v.description,
+                        bound=v.bound,
+                        machine=v.machine,
+                    )
+                    for v in item.variable_specs
+                ],
+                required_variables=list(item.required_variables),
+                permitted_senders=list(item.permitted_senders),
+                purpose=item.purpose,
+                verifiable=item.verifiable,
+            )
+            for item in catalogue.classes
+        ],
+        load_error=catalogue.load_error,
     )
 
 

@@ -201,6 +201,51 @@ class TemplateResponse(BaseModel):
     updated_at: datetime
 
 
+class EmailClassVariable(BaseModel):
+    """One declared ``{{variable}}`` and what it is for."""
+
+    name: str
+    required: bool
+    description: str
+    #: Dotted path on the API that populates this field, when it is populated
+    #: from live data rather than typed by an operator. Drives the "bind"
+    #: affordance in the admin UI and the provenance block in the email.
+    bound: str | None = None
+    #: Renders as a long machine string. UI hint only.
+    machine: bool = False
+
+
+class EmailClassResponse(BaseModel):
+    """A compiled message class: what it is, what it needs, what it may send as.
+
+    This is what makes a class *enforced* rather than decorative. The admin UI
+    refuses to send a ``dependency_failure`` whose ``verification_url`` or
+    ``document_checksum`` was never bound, and the sender picker is restricted
+    to the aliases this class is approved for.
+    """
+
+    id: str
+    name: str
+    description: str
+    audience: str
+    subject: str
+    preview_text: str
+    variables: list[EmailClassVariable]
+    required_variables: list[str]
+    permitted_senders: list[str]
+    purpose: str
+    verifiable: bool
+    #: Set when the design-system artefact is missing or invalid. The Email
+    #: Center keeps working for hand-authored templates in this state, so it is
+    #: reported rather than raised.
+    load_error: str | None = None
+
+
+class EmailClassListResponse(BaseModel):
+    classes: list[EmailClassResponse]
+    load_error: str | None = None
+
+
 class TemplateRenderRequest(BaseModel):
     template_id: uuid.UUID | None = None
     subject: str | None = Field(default=None, max_length=MAX_SUBJECT_LENGTH)
