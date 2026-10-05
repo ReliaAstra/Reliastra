@@ -116,6 +116,18 @@ else
   FAIL=$((FAIL+1))
 fi
 
+# The sshd listener verifier harden-host.sh trusts before it will declare the
+# tailnet-only restriction applied. It is wired to a rollback, so it is tested
+# here rather than eyeballed on a live host.
+if bash deploy/production/scripts/test-ssh-listener.sh >/tmp/ssh-listener-test.log 2>&1; then
+  echo "PASS ssh listener verifier ($(grep -cE '^ok ' /tmp/ssh-listener-test.log) cases)"
+  PASS=$((PASS+1))
+else
+  echo "FAIL ssh listener verifier"
+  cat /tmp/ssh-listener-test.log
+  FAIL=$((FAIL+1))
+fi
+
 # Check GHCR digest usage (no build: for prod, only comments)
 if grep -q "IMAGE_DIGEST" deploy/production/compose.yml && ! grep -q "^\s*build:" deploy/production/compose.yml; then
   echo "PASS compose uses digest, no build"
