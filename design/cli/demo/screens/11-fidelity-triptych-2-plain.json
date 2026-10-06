@@ -1,0 +1,70 @@
+{
+ "cols": 100,
+ "rows": 11,
+ "theme": "dark",
+ "title": "reliastra checks recent --limit 4  ·  piped",
+ "exit": 0,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "checks recent --limit 4"
+ },
+ "lines": [
+  [
+   [
+    " ",
+    "~/src/checkout-svc main ›  reliastra checks recent --limit 4"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "OBSERVATIONS ────────────────────────────────────────────────────────────────────────── newest first"
+   ]
+  ],
+  [
+   [
+    " ",
+    "EXECUTED (UTC)        RESULT      STATUS    LATENCY  DETAIL"
+   ]
+  ],
+  [
+   [
+    " ",
+    "────────────────────  ──────────  ──────  ─────────  ─────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "2026-10-06 18:41:12Z  × DOWN      503       4180 ms  gateway: upstream connect error"
+   ]
+  ],
+  [
+   [
+    " ",
+    "2026-10-06 18:41:12Z  ✓ UP        200        118 ms  ok"
+   ]
+  ],
+  [
+   [
+    " ",
+    "2026-10-06 18:40:03Z  ! DEGRADED  200       1412 ms  latency above the 1 s envelope"
+   ]
+  ],
+  [
+   [
+    " ",
+    "2026-10-06 18:36:12Z  ✓ UP        200        121 ms  ok"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  4 shown of 1,204 · 1 failed · us-east · 1 observation point"
+   ]
+  ]
+ ]
+}

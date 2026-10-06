@@ -1,0 +1,443 @@
+{
+ "cols": 110,
+ "rows": 23,
+ "theme": "dark",
+ "title": "reliastra verify 8Kd2xQ7mB4pL --file incident.pdf",
+ "exit": 0,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "verify 8Kd2xQ7mB4pL --file incident.pdf"
+ },
+ "lines": [
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "verify 8Kd2xQ7mB4pL --file incident.pdf"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓ VERIFIED"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "d",
+    "the document on disk is the document this record points at."
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "verification id  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "8Kd2xQ7mB4pL"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "incident         "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "9f1c8b0e"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "dep-4c1f9e2a"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "Payments API"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "window           "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "2026-09-04 09:12:00Z"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "2026-09-04 09:41:00Z"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "methodology      "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "v2.0"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "retention        "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "until 2027-09-04 09:12:00Z"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "CHECKS PERFORMED"
+   ],
+   [
+    "f",
+    " ───────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "3 passed · 1 advisory"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "record found"
+   ],
+   [
+    " ",
+    "       "
+   ],
+   [
+    "d",
+    "public record 8Kd2xQ7mB4pL exists and is readable"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "data hash"
+   ],
+   [
+    " ",
+    "          "
+   ],
+   [
+    "d",
+    "payload hashes to the recorded value"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "document checksum"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "d",
+    "incident.pdf matches report_checksum"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "W",
+    "!"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "signature"
+   ],
+   [
+    " ",
+    "          "
+   ],
+   [
+    "w",
+    "unsigned artifact"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "— the record says so, and so does the PDF footer"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "LOCAL FILE"
+   ],
+   [
+    "f",
+    " ───────────────────────────────────────────────────────────────────────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "file             "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "incident.pdf"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "(412 KB)"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "sha-256          "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "m",
+    "0c72b41e9d5a44c1b8e07f3a6d29c4b81e5f7a20d3c6b948e1f0a5c7d2b84e63"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "matches record   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "u",
+    "yes"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "d",
+    "The record proves what the payload must hash to. It does not restate the incident."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "p",
+    "public page"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "m",
+    "https://reliastra.com/verify/8Kd2xQ7mB4pL"
+   ]
+  ]
+ ]
+}

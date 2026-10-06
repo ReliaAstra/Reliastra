@@ -1,0 +1,1628 @@
+{
+ "cols": 150,
+ "rows": 54,
+ "theme": "dark",
+ "title": "reliastra cli · terminal design system · v0.1.0",
+ "exit": 0,
+ "prompt": null,
+ "lines": [
+  [
+   [
+    "H",
+    "RELIASTRA"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "cli design system v0.1.0"
+   ],
+   [
+    "f",
+    "                                                                      "
+   ],
+   [
+    "t",
+    "terminal surface · proposal"
+   ]
+  ],
+  [
+   [
+    "d",
+    "Restraint over decoration. One accent for identity, four semantic inks for verdicts, one"
+   ]
+  ],
+  [
+   [
+    "d",
+    "reserved ink for provenance, and a neutral ramp for everything else. Nothing is painted"
+   ]
+  ],
+  [
+   [
+    "d",
+    "inside this surface that a real terminal cannot print."
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "ROLES"
+   ],
+   [
+    "f",
+    " ──────────────────────────────────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "a role is never a colour name in code"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "b",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "brand           "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#3B82F6  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:68  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:blue       "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "identity + interaction: rails, links, selection marker, the command word"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "brand.bright    "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#60A5FA  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:75  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:brightblue "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "hover/active, focus, interactive affordance on dark"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "u",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "verdict.up      "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#34D399  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:78  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:green      "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "confirmed reachable / verification held"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "w",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "verdict.degraded"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#FBBF24  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:214 "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:yellow     "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "degraded, advisory, unsigned artifact"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "x",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "verdict.down    "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#F87171  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:203 "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:red        "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "confirmed failure / verification did not hold"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "q",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "verdict.unknown "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#6B7893  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:61  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:brightblack"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "no observation, field absent. Same ink as text.tertiary on purpose."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "p",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "provenance      "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#22D3EE  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:45  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:cyan       "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "RESERVED. Where a number came from: vantage point, methodology version, hash, signature "
+   ]
+  ],
+  [
+   [
+    " ",
+    "  ██████  "
+   ],
+   [
+    "v",
+    "text.primary    "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#F8FAFC  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:255 "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:white      "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "values, verdicts, the command you typed"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "d",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "text.secondary  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#A5B0C2  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:145 "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:brightblack"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "prose, hints, table body"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "text.tertiary   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#6B7893  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:61  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:brightblack"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "keys, column headers, units"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "██████"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "text.faint      "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "#4C5A75  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "256:238 "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "16:brightblack"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "rules, tick marks, scaffolding. Never carries meaning alone."
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "TYPE"
+   ],
+   [
+    "f",
+    " ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "ibm plex mono · 400 / 500 / 600"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "display   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "H",
+    "RELIASTRA"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "the wordmark only, upper, tracked"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "section   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "h",
+    "OBSERVATIONS IN WINDOW"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "ruled headings, upper"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "key       "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "k",
+    "document checksum"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "left column of a kv block"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "value     "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "7c1d0a5f"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "right column, medium"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "verdict   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "V",
+    "CONFIRMED DOWN"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "the words a pipeline branches on"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "numeric   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "n",
+    "4180 ms"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "right-aligned, always with its unit"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "mono_raw  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "m",
+    "0c72b41e9d5a44c1"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "ids, hashes, urls — wrapped, never elided"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "GLYPHS"
+   ],
+   [
+    "f",
+    " ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "twelve marks, no dingbats"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "tick"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "×"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "cross"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "!"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "warn"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "dot"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "›"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "caret"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "arrow"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "rail"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "─"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "rule"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "█"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "meter"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "▁▂▄▅▆"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "spark"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "—"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "missing"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "v",
+    "…"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "elide"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "d",
+    "ascii tier:"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "+"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "x"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "!"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "."
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    ">"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "->"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "-"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "_-=#"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "when the terminal is not UTF-8"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "COMPONENTS"
+   ],
+   [
+    "f",
+    " ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  chips    "
+   ],
+   [
+    "U",
+    "✓ UP"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "X",
+    "× DOWN"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "W",
+    "! DEGRADED"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "Q",
+    "· NO DATA"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "S",
+    "RELIASTRA"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "P",
+    "V2.0"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  meter    "
+   ],
+   [
+    "b",
+    "████████████████████"
+   ],
+   [
+    "e",
+    "████"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "n",
+    "0.82"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "vendor_failure · methodology v2.0"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  axis     "
+   ],
+   [
+    "e",
+    "────────"
+   ],
+   [
+    "b",
+    "█"
+   ],
+   [
+    "e",
+    "───────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "one marker at the value, for dense table rows"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  spark    "
+   ],
+   [
+    "f",
+    "▂▂▂▂▂▂▄▄"
+   ],
+   [
+    "x",
+    "██████"
+   ],
+   [
+    "f",
+    "▂▂▂▂▂▂▂▂▂▂"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "neutral ink · failures in red"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  sweep    "
+   ],
+   [
+    "B",
+    "█·····"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "·█····"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "··█···"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "···█··"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "····█·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "·····█"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "the spinner is a caliper, not a fidget toy"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  hint      "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra evidence show 7c1d0a5f"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  error    "
+   ],
+   [
+    "X",
+    "×"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "V",
+    "not permitted: missing scope read:incidents"
+   ]
+  ],
+  [
+   [
+    " ",
+    "           "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra keys create ci-deploy --scopes read:incidents"
+   ]
+  ],
+  [
+   [
+    " ",
+    "           "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "exit 5"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "FIDELITY"
+   ],
+   [
+    "f",
+    " ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "one code path, five levels"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "full    "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "stdout is a TTY, TERM != dumb, NO_COLOR unset, --color != neve  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "roles in truecolor, tint chips, meters, sparklines, ruled he"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "ansi256 "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "COLORTERM is not truecolor/24bit                                "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "identical layout; every role resolved through its ansi256 co"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "ansi16  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "TERM is xterm/screen-256color-less, or the terminal reports 8/  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "identical layout; roles resolved through ansi16, chips becom"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "plain   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "piped, redirected, NO_COLOR set, --color=never, TERM=dumb, or   "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "no escapes at all. Structure is carried by glyphs and alignm"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "json    "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "--json                                                          "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "the API's own shape, keys alphabetical, no chrome, no hints,"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "VOICE"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "the honesty contract, in the layout"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "A verdict is stated with its scope: where it was seen, when, and from how many points."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "A region label is never placed where a reader will take it for corroboration."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "Attribution prints as a score with its methodology version. Never as a cause."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "A field the API did not return is — , never 0, never unknown, never blank."
+   ]
+  ]
+ ]
+}

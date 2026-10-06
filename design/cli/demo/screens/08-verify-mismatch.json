@@ -1,0 +1,357 @@
+{
+ "cols": 110,
+ "rows": 20,
+ "theme": "dark",
+ "title": "reliastra verify 8Kd2xQ7mB4pL --file incident-edited.pdf",
+ "exit": 4,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "verify 8Kd2xQ7mB4pL --file incident-edited.pdf"
+ },
+ "lines": [
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "verify 8Kd2xQ7mB4pL --file incident-edited.pdf"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "X",
+    "× MISMATCH"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "d",
+    "the file on disk is not the artifact this record was issued for."
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "verification id  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "8Kd2xQ7mB4pL"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "record checksum  "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "m",
+    "0c72b41e9d5a44c1b8e07f3a6d29c4b81e5f7a20d3c6b948e1f0a5c7d2b84e63"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "file sha-256     "
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "m",
+    "9d41c07b2e8f4a63d5c19b70e2a84f6c0d3b5e71a9c82f40b6d17e35c90a2f48"
+   ]
+  ],
+  [
+   [
+    " ",
+    "                     "
+   ],
+   [
+    "x",
+    "^"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "x",
+    "first difference at nibble 0"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "CHECKS PERFORMED"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "2 passed · 1 failed · 1 advisory"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "record found"
+   ],
+   [
+    " ",
+    "       "
+   ],
+   [
+    "d",
+    "public record 8Kd2xQ7mB4pL exists and is readable"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "data hash"
+   ],
+   [
+    " ",
+    "          "
+   ],
+   [
+    "d",
+    "payload hashes to the recorded value"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "X",
+    "×"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "document checksum"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "x",
+    "incident-edited.pdf does not match report_checksum"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "W",
+    "!"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "signature"
+   ],
+   [
+    " ",
+    "          "
+   ],
+   [
+    "w",
+    "unsigned artifact"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "— a signature would have failed here too"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "re-fetch the artifact: reliastra evidence get 7c1d0a5f --out incident.pdf"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "if the file was edited deliberately, this record no longer describes"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "  it. Say that out loud before you hand the document to anyone."
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "t",
+    "exit 4 · a verification claim that did not hold"
+   ]
+  ]
+ ]
+}

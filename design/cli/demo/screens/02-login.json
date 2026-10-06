@@ -1,0 +1,257 @@
+{
+ "cols": 100,
+ "rows": 14,
+ "theme": "dark",
+ "title": "reliastra login",
+ "exit": 0,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "login"
+ },
+ "lines": [
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "login"
+   ]
+  ],
+  [],
+  [
+   [
+    "d",
+    "A password is never taken as a flag: it comes from a prompt, so it cannot"
+   ]
+  ],
+  [
+   [
+    "d",
+    "land in shell history or a process listing."
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "email"
+   ],
+   [
+    " ",
+    "       "
+   ],
+   [
+    "v",
+    "ada@acme.dev"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "k",
+    "password"
+   ],
+   [
+    " ",
+    "    "
+   ],
+   [
+    "d",
+    "••••••••••••••"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "···█··"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "exchanging credentials"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "0.6s"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "session stored"
+   ],
+   [
+    " ",
+    "   "
+   ],
+   [
+    "m",
+    "~/.config/reliastra/config.json"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "(mode 0600)"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "account"
+   ],
+   [
+    " ",
+    "         "
+   ],
+   [
+    "v",
+    "ada@acme.dev"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "org"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "acme-platform"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "plan"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "w",
+    "trial, 9 days left"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra whoami prints which credential an invocation resolves to."
+   ]
+  ]
+ ]
+}

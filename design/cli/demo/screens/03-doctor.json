@@ -1,0 +1,270 @@
+{
+ "cols": 100,
+ "rows": 11,
+ "theme": "dark",
+ "title": "reliastra doctor",
+ "exit": 0,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "doctor"
+ },
+ "lines": [
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "doctor"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "config file     "
+   ],
+   [
+    "d",
+    "~/.config/reliastra/config.json (mode 600)"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "credential      "
+   ],
+   [
+    "d",
+    "api key ci-deploy · read:checks read:incidents read:evidence"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "api url         "
+   ],
+   [
+    "d",
+    "https://api.reliastra.com"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "api reachable   "
+   ],
+   [
+    "d",
+    "/health answered in 84 ms"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "W",
+    "!"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "version         "
+   ],
+   [
+    "d",
+    "0.3.1 installed · 0.4.0 available"
+   ]
+  ],
+  [
+   [
+    " ",
+    "      "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "npm update -g reliastra"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "U",
+    "✓"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "authenticated   "
+   ],
+   [
+    "d",
+    "as ada@acme.dev"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "u",
+    "5 ok"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "w",
+    "1 advisory"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "0 failed"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "nothing essential is broken"
+   ]
+  ]
+ ]
+}
