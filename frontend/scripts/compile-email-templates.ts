@@ -36,6 +36,7 @@ import { createElement } from 'react';
 
 import { EMAIL_CLASSES, allVariables, type EmailClassSpec } from '../src/emails/registry';
 import { PREVIEW } from '../src/emails/preview-fixtures';
+import { extractBody as documentBody, toText } from '../src/emails/to-text';
 
 // ── The backend allowlist, mirrored ────────────────────────────────────────
 // Mirrored deliberately rather than imported. A Python module cannot be read
@@ -233,35 +234,6 @@ const allowlist = (html: string): string => {
 
   for (let i = openStack.length - 1; i >= 0; i -= 1) out.push(`</${openStack[i]}>`);
   return out.join('');
-};
-
-/** Pull the `<body>` content out of a React Email document. */
-const documentBody = (html: string): string => {
-  const m = /<body[^>]*>([\s\S]*)<\/body>/i.exec(html);
-  return m ? m[1] : html;
-};
-
-/** Plain-text multipart body. */
-const toText = (html: string): string => {
-  let t = html;
-  // The preheader lives in a hidden div; keep it, it is what a text client reads.
-  t = t.replace(/<\/(p|div|tr|li|h[1-6]|table)>/gi, '\n');
-  t = t.replace(/<br\s*\/?>/gi, '\n');
-  t = t.replace(/<\/t[dh]>/gi, '\t');
-  t = t.replace(/<[^>]+>/g, '');
-  t = t
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)));
-  return t
-    .split('\n')
-    .map((line) => line.replace(/[ \t]+$/g, '').replace(/^[ \t]+/, (m) => (m.includes('\t') ? '\t' : '')))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
 };
 
 // ── Compile ────────────────────────────────────────────────────────────────

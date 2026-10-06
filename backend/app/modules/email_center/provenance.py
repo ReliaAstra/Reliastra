@@ -268,6 +268,24 @@ def bind_incident(
     if score is not None:
         put("confidence_score", f"{float(score):.2f}")
     put("confidence_ceiling", f"{ceiling:.2f}")
+    # Per-signal scores, formatted the way the ledger prints them. The compose
+    # UI binds these onto the ledger rows; a non-numeric signal is left absent
+    # rather than coerced, so a broken measurement can never render as 0.00.
+    if isinstance(signals, Mapping):
+        for name in (
+            "temporal",
+            "endpoint_overlap",
+            "latency_correlation",
+            "error_pattern",
+            "infrastructure_baseline",
+        ):
+            raw = signals.get(name)
+            if raw is None:
+                continue
+            try:
+                put(f"{name}_score", f"{float(raw):.4f}")
+            except (TypeError, ValueError):
+                continue
 
     put("dependency_name", dep.get("name") or dep.get("label"))
     put("vendor_name", vendor)

@@ -970,3 +970,40 @@ export interface EmailCenterRenderResponse {
   variables: string[];
   missing_variables: string[];
 }
+
+/** One variable in a compiled message class's field contract. */
+export interface EmailClassVariable {
+  name: string;
+  required: boolean;
+  description: string;
+  bound?: string | null;
+  machine?: boolean;
+}
+
+/** A compiled message class: the design system's contract for one email. */
+export interface EmailClass {
+  id: string;
+  name: string;
+  description: string;
+  audience: string;
+  subject: string;
+  preview_text: string;
+  variables: EmailClassVariable[];
+  required_variables: string[];
+  permitted_senders: string[];
+  purpose: string;
+  verifiable: boolean;
+}
+
+export interface EmailClassListResponse {
+  classes: EmailClass[];
+  load_error?: string | null;
+}
+
+/** Live-record binding for a class: values records supplied + gaps. */
+export interface EmailClassBindResponse {
+  class_id: string;
+  variables: Record<string, string>;
+  missing: string[];
+  bound_from: Record<string, string>;
+}

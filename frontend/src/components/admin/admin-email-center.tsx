@@ -46,6 +46,10 @@ import {
   StatusPill,
 } from '@/components/admin/admin-primitives';
 import { EmailActivitySection } from '@/components/admin/admin-email-activity';
+import {
+  AdminEmailClassComposer,
+  type ClassDraft,
+} from '@/components/admin/admin-email-class-composer';
 import { EmailTemplatesSection } from '@/components/admin/admin-email-templates';
 import {
   AlertDialog,
@@ -523,6 +527,16 @@ export function EmailCenterPage() {
     regenerateIdempotencyKey();
   }
 
+  function applyClassDraft(draft: ClassDraft) {
+    // Class output carries no template row: it renders at compose time from
+    // live values, so there is nothing to detach later.
+    setTemplateId(null);
+    setSubject(draft.subject);
+    setHtml(draft.html);
+    setText(draft.text);
+    setVariables(draft.variables);
+  }
+
   function applyTemplate(template: EmailCenterTemplate) {
     setTemplateId(template.id);
     setSubject(template.subject);
@@ -598,6 +612,15 @@ export function EmailCenterPage() {
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         {/* ── Main: compose + preview ─────────────────────────────── */}
         <div className="min-w-0 space-y-6">
+          <AdminCard>
+            <SectionHeading
+              title="Compose from class"
+              subtitle="Nine message classes, rendered with live values — never fixtures."
+            />
+            <div className="mt-4">
+              <AdminEmailClassComposer onUse={applyClassDraft} />
+            </div>
+          </AdminCard>
           <AdminCard>
             <SectionHeading
               title="Compose Email"

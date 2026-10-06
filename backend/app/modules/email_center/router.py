@@ -24,6 +24,8 @@ from app.modules.admin.guards import require_system_admin
 from app.modules.email_center.compiled import load_catalogue
 from app.modules.email_center.models import EmailCenterMessage, EmailCenterTemplate
 from app.modules.email_center.schemas import (
+    BindRequest,
+    BindResponse,
     EmailClassListResponse,
     EmailClassResponse,
     EmailClassVariable,
@@ -384,6 +386,40 @@ async def list_classes(
             for item in catalogue.classes
         ],
         load_error=catalogue.load_error,
+    )
+
+
+@router.post(
+    "/classes/{class_id}/bind",
+    response_model=BindResponse,
+    summary="Bind live records onto a class's variables",
+)
+@audit_log(action="email_center.bind_class", entity_type="email_message")
+async def bind_class_variables(
+    request: Request,
+    class_id: str,
+    payload: BindRequest,
+    db: AsyncSession = Depends(get_db),
+    admin_user: User = Depends(require_system_admin),
+) -> BindResponse:
+    """Resolve incident/evidence records into a class's template variables.
+
+    The operator references records by id; the provenance binding layer turns
+    them into ``{{variable}}`` values. Anything no record supplies comes back
+    in ``missing`` for the operator to fill by hand - it is never invented.
+    Reads customer records, so the call itself is audit-logged like a send.
+    """
+    result = await email_service.bind_class_variables(
+        db,
+        class_id=class_id,
+        incident_id=payload.incident_id,
+        evidence_id=payload.evidence_id,
+    )
+    return BindResponse(
+        class_id=result["class_id"],
+        variables=result["variables"],
+        missing=result["missing"],
+        bound_from=result["bound_from"],
     )
 
 

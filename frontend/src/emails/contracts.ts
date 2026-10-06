@@ -75,14 +75,21 @@ export interface AttributionLedger {
     | 'unknown';
 }
 
-/** Shared by every class. */
+/**
+ * Shared by every class.
+ *
+ * Every field except organisationName carries a component-level default
+ * (DEFAULTS or an inline literal), so they are optional at the type level
+ * exactly as they are at runtime: omitting one renders the default, never a
+ * blank. organisationName has no default anywhere and stays required.
+ */
 export interface BaseProps {
-  recipientName: string;
+  recipientName?: string;
   organisationName: string;
-  dashboardUrl: string;
-  supportEmail: string;
+  dashboardUrl?: string;
+  supportEmail?: string;
   /** Physical sending address. Required on commercial mail in several markets. */
-  address: string;
+  address?: string;
   preferencesUrl?: string;
 }
 

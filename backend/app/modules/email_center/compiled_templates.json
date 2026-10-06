@@ -34,6 +34,12 @@
         "data_hash",
         "signed",
         "verification_url",
+        "confirm_threshold",
+        "temporal_score",
+        "endpoint_overlap_score",
+        "latency_correlation_score",
+        "error_pattern_score",
+        "infrastructure_baseline_score",
         "verification_id"
       ],
       "variable_specs": [
@@ -192,6 +198,48 @@
           "machine": true
         },
         {
+          "name": "confirm_threshold",
+          "required": true,
+          "description": "Consecutive failures required to open. Deterministic rule: 2.",
+          "bound": null,
+          "machine": false
+        },
+        {
+          "name": "temporal_score",
+          "required": true,
+          "description": "Temporal signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.temporal",
+          "machine": false
+        },
+        {
+          "name": "endpoint_overlap_score",
+          "required": true,
+          "description": "Endpoint-overlap signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.endpoint_overlap",
+          "machine": false
+        },
+        {
+          "name": "latency_correlation_score",
+          "required": true,
+          "description": "Latency-correlation signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.latency_correlation",
+          "machine": false
+        },
+        {
+          "name": "error_pattern_score",
+          "required": true,
+          "description": "Error-pattern signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.error_pattern",
+          "machine": false
+        },
+        {
+          "name": "infrastructure_baseline_score",
+          "required": true,
+          "description": "Infrastructure-baseline signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.infrastructure_baseline",
+          "machine": false
+        },
+        {
           "name": "verification_id",
           "required": false,
           "description": "Short verification reference.",
@@ -233,6 +281,8 @@
         "signed",
         "methodology_version",
         "verification_url",
+        "download_url",
+        "note",
         "verification_id"
       ],
       "variable_specs": [
@@ -356,6 +406,20 @@
           "machine": true
         },
         {
+          "name": "download_url",
+          "required": false,
+          "description": "Direct file link. Falls back to the verification page.",
+          "bound": null,
+          "machine": true
+        },
+        {
+          "name": "note",
+          "required": false,
+          "description": "One-paragraph cover note from the releasing operator.",
+          "bound": null,
+          "machine": false
+        },
+        {
           "name": "verification_id",
           "required": false,
           "description": "Short verification reference.",
@@ -400,6 +464,11 @@
         "methodology_version",
         "attribution_version",
         "verification_url",
+        "temporal_score",
+        "endpoint_overlap_score",
+        "latency_correlation_score",
+        "error_pattern_score",
+        "infrastructure_baseline_score",
         "verification_id"
       ],
       "variable_specs": [
@@ -544,6 +613,41 @@
           "machine": true
         },
         {
+          "name": "temporal_score",
+          "required": true,
+          "description": "Temporal signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.temporal",
+          "machine": false
+        },
+        {
+          "name": "endpoint_overlap_score",
+          "required": true,
+          "description": "Endpoint-overlap signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.endpoint_overlap",
+          "machine": false
+        },
+        {
+          "name": "latency_correlation_score",
+          "required": true,
+          "description": "Latency-correlation signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.latency_correlation",
+          "machine": false
+        },
+        {
+          "name": "error_pattern_score",
+          "required": true,
+          "description": "Error-pattern signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.error_pattern",
+          "machine": false
+        },
+        {
+          "name": "infrastructure_baseline_score",
+          "required": true,
+          "description": "Infrastructure-baseline signal, 0-1, four decimals.",
+          "bound": "attribution.signal_breakdown.infrastructure_baseline",
+          "machine": false
+        },
+        {
           "name": "verification_id",
           "required": false,
           "description": "Short verification reference.",
@@ -585,6 +689,7 @@
         "trial_ends_at",
         "days_remaining",
         "failure_reason",
+        "fallback_limits",
         "receipt_url"
       ],
       "variable_specs": [
@@ -715,6 +820,13 @@
           "machine": false
         },
         {
+          "name": "fallback_limits",
+          "required": false,
+          "description": "Limits now in effect (trial expiry). One per line: \"label: value\".",
+          "bound": null,
+          "machine": false
+        },
+        {
           "name": "receipt_url",
           "required": false,
           "description": "Receipt or billing page.",
@@ -750,6 +862,8 @@
         "body_1",
         "body_2",
         "awaiting_customer",
+        "ticket_url",
+        "awaiting_on",
         "sla_target_hours"
       ],
       "variable_specs": [
@@ -831,6 +945,20 @@
           "machine": false
         },
         {
+          "name": "ticket_url",
+          "required": false,
+          "description": "Ticket link. Falls back to the support queue.",
+          "bound": null,
+          "machine": true
+        },
+        {
+          "name": "awaiting_on",
+          "required": false,
+          "description": "The single thing needed from the customer. Required whenever awaiting_customer is set.",
+          "bound": null,
+          "machine": false
+        },
+        {
           "name": "sla_target_hours",
           "required": false,
           "description": "Target first-response time in hours.",
@@ -869,6 +997,8 @@
         "paid_via",
         "paid_at",
         "invitation_valid_days",
+        "earnings",
+        "benefits",
         "next_step"
       ],
       "variable_specs": [
@@ -978,6 +1108,20 @@
           "machine": false
         },
         {
+          "name": "earnings",
+          "required": false,
+          "description": "Commission breakdown. One per line: \"label: value\".",
+          "bound": null,
+          "machine": false
+        },
+        {
+          "name": "benefits",
+          "required": false,
+          "description": "Programme inclusions. One per line.",
+          "bound": null,
+          "machine": false
+        },
+        {
           "name": "next_step",
           "required": false,
           "description": "The single next action required of the partner.",
@@ -1020,6 +1164,7 @@
         "thread_ref",
         "methodology_version",
         "verification_url",
+        "enclosures",
         "verification_id"
       ],
       "variable_specs": [
@@ -1143,6 +1288,13 @@
           "machine": true
         },
         {
+          "name": "enclosures",
+          "required": false,
+          "description": "Signed evidence to list. One per line: \"filename sha256:<hex>\". Listed, not attached.",
+          "bound": null,
+          "machine": true
+        },
+        {
           "name": "verification_id",
           "required": false,
           "description": "Short verification reference.",
@@ -1180,6 +1332,8 @@
         "detail",
         "containment",
         "requires_confirmation",
+        "actor_label",
+        "contact_first",
         "audit_ref"
       ],
       "variable_specs": [
@@ -1275,6 +1429,20 @@
           "machine": false
         },
         {
+          "name": "actor_label",
+          "required": false,
+          "description": "Display name for the actor. Falls back to \"An account\".",
+          "bound": null,
+          "machine": false
+        },
+        {
+          "name": "contact_first",
+          "required": false,
+          "description": "Set when remediation is unsafe by email. Fail-closed: when set, no one-click link is rendered.",
+          "bound": null,
+          "machine": false
+        },
+        {
           "name": "audit_ref",
           "required": false,
           "description": "Audit-log id.",
@@ -1308,6 +1476,7 @@
         "detail",
         "actions_required",
         "runbook_url",
+        "facts",
         "suppressed"
       ],
       "variable_specs": [
@@ -1371,6 +1540,13 @@
           "name": "runbook_url",
           "required": false,
           "description": "Runbook for this alert class.",
+          "bound": null,
+          "machine": true
+        },
+        {
+          "name": "facts",
+          "required": true,
+          "description": "Emitting-system facts. One per line: \"label: value\".",
           "bound": null,
           "machine": true
         },

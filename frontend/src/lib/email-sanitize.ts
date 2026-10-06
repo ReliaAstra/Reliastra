@@ -23,10 +23,14 @@ const DROP_WITH_CONTENT = new Set([
   'video', 'source', 'track',
 ]);
 
+// bgcolor mirrors the backend allowlist: the design paints bands via the
+// presentation attribute (Outlook honours it, Gmail honours both it and the
+// inline-style twin). Dropping it here would show white bands in preview for
+// mail that sends with them.
 const ALLOWED_ATTRS = new Set([
   'href', 'src', 'alt', 'title', 'width', 'height', 'align',
   'valign', 'colspan', 'rowspan', 'cellpadding', 'cellspacing',
-  'border', 'style', 'class', 'id', 'target', 'rel',
+  'border', 'style', 'class', 'id', 'target', 'rel', 'bgcolor',
 ]);
 
 const SAFE_URL = /^(?:https?|mailto|cid):/i;

@@ -260,3 +260,24 @@ class TemplateRenderResponse(BaseModel):
     html_body: str
     variables: list[str]
     missing_variables: list[str]
+
+
+class BindRequest(BaseModel):
+    """Reference the live records a class should be bound from.
+
+    At least one of the two ids is required. The endpoint resolves the
+    records itself (system-admin scope) and runs them through the provenance
+    binding layer, so the operator never hand-copies a checksum.
+    """
+
+    incident_id: uuid.UUID | None = None
+    evidence_id: uuid.UUID | None = None
+
+
+class BindResponse(BaseModel):
+    class_id: str
+    variables: dict[str, str]
+    #: Required class variables no record supplied. Hand-filled by the
+    #: operator, or the send stays unbound for exactly these names.
+    missing: list[str]
+    bound_from: dict[str, str]
