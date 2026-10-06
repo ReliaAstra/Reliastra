@@ -1,5 +1,6 @@
 // Account-surface screens: help, login, doctor.
-import { Screen, section, kv, hint, rule, chip, padPlain } from '../screen.mjs';
+import { Screen, section, kv, hint, rule, chip, padPlain, widthOf } from '../screen.mjs';
+import { wordmark } from './moments.mjs';
 
 const G = { tick: '✓', cross: '×', warn: '!', dot: '·', caret: '›', arrow: '→', rail: '│', rule: '─' };
 
@@ -15,7 +16,8 @@ export function helpScreen() {
   s.prompt('--help');
   s.blank();
   const meta = 'independent observation of external dependencies';
-  s.add(padPlain('{H:RELIASTRA} {t:0.4.0}', C - meta.length) + `{t:${meta}}`);
+  const mark = wordmark();
+  s.add(mark + ' '.repeat(C - meta.length - widthOf(mark)) + `{t:${meta}}`);
   s.add('{d:Observe the endpoints your services call, confirm failures deterministically, and}');
   s.add('{d:carry the evidence to whoever asks how you know.}');
   s.blank();

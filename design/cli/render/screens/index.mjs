@@ -4,6 +4,7 @@ import { helpScreen, loginScreen, doctorScreen } from './core.mjs';
 import { depsListScreen, checksRecentScreen, obsShowScreen } from './monitor.mjs';
 import { incidentScreen, verifyPassScreen, verifyFailScreen } from './verdict.mjs';
 import { errorsScreen, fidelityFull, fidelityPlain, fidelityJson, designSheet } from './states.mjs';
+import { firstRunScreen, homeScreen } from './moments.mjs';
 
 export const SCREENS = [
   { id: '01-root-help', title: 'reliastra --help', screens: () => [{ screen: helpScreen() }] },
@@ -28,4 +29,6 @@ export const SCREENS = [
   },
   { id: '12-design-system', title: 'design system sheet', screens: () => [{ screen: designSheet() }] },
   { id: '13-light-incident', title: 'light theme parity', screens: () => [{ screen: incidentScreen('light') }] },
+  { id: '14-first-run', title: 'first run, no config', screens: () => [{ screen: firstRunScreen() }] },
+  { id: '15-home', title: 'bare invocation, signed in', screens: () => [{ screen: homeScreen() }] },
 ];

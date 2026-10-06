@@ -114,7 +114,28 @@ own line · `<80` one field per line, no meter, the number alone.
 | sweep (spinner) | `█·····` … `·····█` at 90 ms | one `\r`-redrawn line; suppressed when not a TTY |
 | status line (live) | redrawn at 1 Hz | scrollback and alternate screen untouched |
 
-## 5 · Fidelity matrix
+## 5 · Moments — the first five seconds
+
+A bare `reliastra` is never silence and never a usage wall. Three moments, one
+wordmark:
+
+| moment | when | prints | exit |
+|---|---|---|---|
+| `first_run` | no config file on this machine, TTY, not `--quiet` | the wordmark, the three-sentence promise, `not signed in · nothing probed yet`, three doors (login / public observatory / deps add), quickstart url | 0 |
+| `home` | bare invocation with a session, TTY, not `--quiet` | the wordmark, a live state block — account, probing counts, open incidents, evidence — and three *contextual* next commands (the open incident first) | 0 |
+| `plain` | piped, `--quiet`, `TERM=dumb` | today's `fullUsage()`, unchanged; bare invocation still exits 1 | 1 |
+
+The wordmark is the CLI image: `[▁▂█▄▂▁]  R E L I A S T R A  0.4.0` — nine cells of
+observation trace with one spike in `verdict.down`, then tracked caps. It is
+drawn from block elements and letters only, so it survives every font and every
+fidelity level, and in `plain` it degrades to the same nine honest cells.
+
+Two rules keep this from becoming banner spam: the first-run screen *is* the
+absence of a config file, so it can never print twice on a machine; and no
+moment prints when stdout is not a TTY, so prompts, pipes and CI logs stay
+exactly as clean as they are today.
+
+## 6 · Fidelity matrix
 
 | level | when | renders |
 |---|---|---|
@@ -139,7 +160,7 @@ command. A verdict is stated with its scope. A region label is never placed
 where a reader will take it for corroboration. The exit code is part of the
 message.
 
-## 7 · Screens
+## 8 · Screens
 
 | id | command | what to look at |
 |---|---|---|
@@ -156,8 +177,10 @@ message.
 | 11 | fidelity triptych | full / plain / `--json`, same screen |
 | 12 | design sheet | every token, glyph and component on one surface |
 | 13 | light theme | theme parity on the dossier |
+| 14 | bare `reliastra`, fresh install | the first-run moment: wordmark, promise, three doors |
+| 15 | bare `reliastra`, signed in | the home screen: live state block, contextual next commands |
 
-## 8 · Regenerating
+## 9 · Regenerating
 
 The renderer needs `@resvg/resvg-js` plus the two font packages, in any of
 `$RELIASTRA_DESIGN_TOOLS`, `~/.cache/tools` (this repo's existing convention —
@@ -173,7 +196,7 @@ cd - && node design/cli/render/build.mjs          # mockups/*.png + demo/screens
 `build.mjs` lints as it renders: any line wider than its screen's column budget
 is reported, because a wrapped line in a mockup is a wrapped line in a terminal.
 
-## 9 · What changes in Go (follow-up work, not in this proposal)
+## 10 · What changes in Go (follow-up work, not in this proposal)
 
 1. `theme.go`: the role table generated from `tokens.json`; code says
    `verdict.down`, never a hex value.
