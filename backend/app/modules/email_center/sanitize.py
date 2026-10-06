@@ -46,6 +46,10 @@ ALLOWED_ATTRS = frozenset(
         "href", "src", "alt", "title", "width", "height", "align",
         "valign", "colspan", "rowspan", "cellpadding", "cellspacing",
         "border", "style", "class", "id", "target", "rel",
+        # Presentation attribute the design system relies on: Outlook's Word
+        # engine honours bgcolor and largely ignores CSS backgrounds, while
+        # Gmail honours both. Values are escaped on output like any attribute.
+        "bgcolor",
     }
 )
 

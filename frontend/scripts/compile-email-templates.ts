@@ -49,9 +49,12 @@ const ALLOWED_TAGS = new Set(
    tfoot th thead tr u ul`.split(/\s+/).filter(Boolean),
 );
 
+// Mirrors backend sanitize.py: bgcolor is allowlisted because the design
+// system paints bands via the presentation attribute (Outlook honours it,
+// Gmail honours both it and the inline-style twin).
 const ALLOWED_ATTRS = new Set(
   `href src alt title width height align valign colspan rowspan cellpadding
-   cellspacing border style class id target rel`.split(/\s+/).filter(Boolean),
+   cellspacing border style class id target rel bgcolor`.split(/\s+/).filter(Boolean),
 );
 
 const VOID_TAGS = new Set(['br', 'hr', 'img', 'col']);
