@@ -1,0 +1,698 @@
+{
+ "cols": 100,
+ "rows": 44,
+ "theme": "dark",
+ "title": "reliastra --help",
+ "exit": 0,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "--help"
+ },
+ "lines": [
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "--help"
+   ]
+  ],
+  [],
+  [
+   [
+    "H",
+    "RELIASTRA"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "0.4.0"
+   ],
+   [
+    " ",
+    "                             "
+   ],
+   [
+    "t",
+    "independent observation of external dependencies"
+   ]
+  ],
+  [
+   [
+    "d",
+    "Observe the endpoints your services call, confirm failures deterministically, and"
+   ]
+  ],
+  [
+   [
+    "d",
+    "carry the evidence to whoever asks how you know."
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "ACCOUNT"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────────────────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "login                     "
+   ],
+   [
+    "d",
+    "Store a session on this machine"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "logout                    "
+   ],
+   [
+    "d",
+    "Revoke the session and remove it locally"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "whoami                    "
+   ],
+   [
+    "d",
+    "Show the account this invocation resolves to"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "doctor                    "
+   ],
+   [
+    "d",
+    "Check config, credential and API, and name the failure"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "PROBING"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────────────────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "deps list                 "
+   ],
+   [
+    "d",
+    "Dependencies being probed"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "deps show <id>            "
+   ],
+   [
+    "d",
+    "One dependency, its observations and its incidents"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "deps add <name> <url>     "
+   ],
+   [
+    "d",
+    "Start probing an endpoint"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "deps rm <id>              "
+   ],
+   [
+    "d",
+    "Stop probing an endpoint"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "checks recent             "
+   ],
+   [
+    "d",
+    "Observations, newest first"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "INCIDENTS AND EVIDENCE"
+   ],
+   [
+    "f",
+    " ─────────────────────────────────────────────────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "incidents list | show     "
+   ],
+   [
+    "d",
+    "Open incidents, or one incident in full"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "incidents correlate <id>  "
+   ],
+   [
+    "d",
+    "Score a degradation against this window"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "evidence list | show | get"
+   ],
+   [
+    "d",
+    "The records issued for this account"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "verify <verification-id>  "
+   ],
+   [
+    "d",
+    "Check a document against the public record"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "keys list | create | rm   "
+   ],
+   [
+    "d",
+    "API keys for CI and other services"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "PUBLIC"
+   ],
+   [
+    "f",
+    " ───────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "no credential"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "obs list | show <vendor>  "
+   ],
+   [
+    "d",
+    "The public observatory"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "open <kind> [id]          "
+   ],
+   [
+    "d",
+    "Print the web page for a resource"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "FLAGS"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "every command"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "--json                      "
+   ],
+   [
+    "d",
+    "Machine-readable output. The API’s own shape, unrenamed."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "--quiet                     "
+   ],
+   [
+    "d",
+    "Suppress the explanatory lines; data only."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "--color auto|always|never   "
+   ],
+   [
+    "d",
+    "Colour on a TTY by default; never when piped."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "--token <token>             "
+   ],
+   [
+    "d",
+    "Bearer token or API key for this invocation only."
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "v",
+    "-h, --help   -v, --version  "
+   ],
+   [
+    "d",
+    "This answer, and the release version."
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "EXIT CODES"
+   ],
+   [
+    "f",
+    " ─────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "the contract a pipeline branches on"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "n",
+    "0"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "ok"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "n",
+    "1"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "usage"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "n",
+    "2"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "api"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "n",
+    "3"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "auth"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "x",
+    "4"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "unverified"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "w",
+    "5"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "denied"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "·"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "w",
+    "6"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "network"
+   ]
+  ],
+  [],
+  [
+   [
+    "h",
+    "TRY"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────────────────────────────────────────────────"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra deps add \"Payments API\" https://api.example.com/health --interval 60"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra incidents list --status open"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra verify 8Kd2xQ7mB4pL --file incident.pdf"
+   ]
+  ]
+ ]
+}

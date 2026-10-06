@@ -1,0 +1,408 @@
+{
+ "cols": 120,
+ "rows": 21,
+ "theme": "dark",
+ "title": "reliastra · failure taxonomy",
+ "exit": 5,
+ "prompt": {
+  "cwd": "~/src/checkout-svc",
+  "branch": "main",
+  "argv": "verify"
+ },
+ "lines": [
+  [
+   [
+    "h",
+    "ERRORS"
+   ],
+   [
+    "f",
+    " ────────────────────────────────────────────────────"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "every failure is classified · the exit code says which class"
+   ]
+  ],
+  [],
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "incidents list --status open"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "X",
+    "×"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "V",
+    "not permitted: missing scope read:incidents"
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "x",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "this credential is valid but not permitted to make this call."
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "x",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra keys create ci-deploy --scopes read:incidents,read:checks"
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "exit 5"
+   ]
+  ],
+  [],
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "deps list"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "X",
+    "×"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "V",
+    "could not reach https://api.reliastra.com: connection refused"
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "x",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "the API could not be reached at all. Nothing was checked; nothing is claimed."
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "x",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "check the connection, then reliastra doctor; a self-hosted API needs --api-url"
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "exit 6"
+   ]
+  ],
+  [],
+  [
+   [
+    "t",
+    "~/src/checkout-svc"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "p",
+    "main"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "›"
+   ],
+   [
+    " ",
+    "  "
+   ],
+   [
+    "B",
+    "reliastra"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "v",
+    "verify"
+   ]
+  ],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "X",
+    "×"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "V",
+    "verification id required"
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "x",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "the id is printed in the artifact footer and encoded in its QR code."
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "x",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "B",
+    "→"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "reliastra verify <verification-id> --file incident.pdf"
+   ]
+  ],
+  [
+   [
+    " ",
+    "    "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "t",
+    "exit 1"
+   ]
+  ],
+  [],
+  [
+   [
+    " ",
+    "  "
+   ],
+   [
+    "f",
+    "│"
+   ],
+   [
+    " ",
+    " "
+   ],
+   [
+    "d",
+    "No stack traces: a stack from this tool describes our code, not your problem."
+   ]
+  ]
+ ]
+}
