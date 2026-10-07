@@ -38,6 +38,12 @@ export interface CustomerDependencyAlertProps extends BaseProps {
   remediation: string;
   /** Minutes until the next scheduled probe. */
   nextProbeSeconds?: number;
+  /** Section toggles. All default to shown; omitting a section renumbers
+      the rest automatically. */
+  showMeasurement?: boolean;
+  showConclusion?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 export const CustomerDependencyAlert: React.FC<CustomerDependencyAlertProps> = ({
@@ -51,6 +57,10 @@ export const CustomerDependencyAlert: React.FC<CustomerDependencyAlertProps> = (
   provenance,
   remediation,
   nextProbeSeconds,
+  showMeasurement,
+  showConclusion,
+  showAction,
+  showSignoff,
   dashboardUrl = DEFAULTS.dashboardUrl,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
@@ -107,10 +117,14 @@ export const CustomerDependencyAlert: React.FC<CustomerDependencyAlertProps> = (
         )}
       </Advisory>
 
-      <Action href={`${dashboardUrl}/dependencies`}>Open dependency detail</Action>
+      {showAction !== false && (
+        <Action href={`${dashboardUrl}/dependencies`}>Open dependency detail</Action>
+      )}
 
-      <SectionHeading index={sec.next()} title="Measurement" />
-      <DataRegister
+      {showMeasurement !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Measurement" />
+          <DataRegister
         caption="Observation record"
         rows={[
           { label: 'Dependency', value: dependencyName },
@@ -139,9 +153,13 @@ export const CustomerDependencyAlert: React.FC<CustomerDependencyAlertProps> = (
           },
         ]}
       />
+        </>
+      )}
 
-      <SectionHeading index={sec.next()} title="How this was concluded" />
-      <SignalLedger
+      {showConclusion !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="How this was concluded" />
+          <SignalLedger
         signals={ledger.signals.map((signal) => ({
           name: signal.name,
           weight: WEIGHTS[signal.name],
@@ -152,9 +170,11 @@ export const CustomerDependencyAlert: React.FC<CustomerDependencyAlertProps> = (
         ceiling={ledger.ceiling}
         classification={ledger.classification}
       />
+        </>
+      )}
 
 
-      <Signoff role="Reliastra Monitoring" />
+      {showSignoff !== false && <Signoff role="Reliastra Monitoring" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`You receive this because alert rules you configured for ${organisationName} match this dependency. Change which events reach this address at any time.`}

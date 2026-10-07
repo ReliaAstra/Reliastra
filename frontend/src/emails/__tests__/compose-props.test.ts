@@ -220,6 +220,28 @@ describe('other builders (smoke)', () => {
   });
 });
 
+describe('section toggles', () => {
+  it('default to shown and pass explicit omissions through', () => {
+    const full = buildProps('dependency_failure', incidentVars) as DependencyFailureProps;
+    expect(full.showAttribution).toBe(true);
+    expect(full.showSignoff).toBe(true);
+    const trimmed = buildProps('dependency_failure', {
+      ...incidentVars,
+      show_attribution: 'false',
+      show_signoff: 'false',
+    }) as DependencyFailureProps;
+    expect(trimmed.showAttribution).toBe(false);
+    expect(trimmed.showSignoff).toBe(false);
+    expect(trimmed.showObservations).toBe(true);
+  });
+
+  it('rejects non-boolean toggle values with the field name', () => {
+    expect(() =>
+      buildProps('dependency_failure', { ...incidentVars, show_artefact: 'maybe' }),
+    ).toThrowError(/show_artefact/);
+  });
+});
+
 describe('toText', () => {
   it('keeps preheader text and strips tags', () => {
     const out = toText('<div style="display:none">Preview line</div><p>Hello <strong>Ada</strong></p>');

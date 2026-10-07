@@ -40,6 +40,9 @@ export interface InternalOpsProps extends BaseProps {
   runbookUrl?: string;
   /** Set when the alert is a replay or an operator drill. */
   suppressed?: boolean;
+  /** Section toggles. All default to shown. */
+  showActions?: boolean;
+  showAction?: boolean;
 }
 
 export const InternalOps: React.FC<InternalOpsProps> = ({
@@ -54,6 +57,8 @@ export const InternalOps: React.FC<InternalOpsProps> = ({
   actionsRequired,
   runbookUrl,
   suppressed,
+  showActions,
+  showAction,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
 }) => {
@@ -104,7 +109,7 @@ export const InternalOps: React.FC<InternalOpsProps> = ({
         }))}
       />
 
-      {actionsRequired.length ? (
+      {showActions !== false && (actionsRequired.length ? (
         <>
           <SectionHeading index={sec.next()} title="Requires a human" />
           <Paragraph muted>
@@ -122,9 +127,9 @@ export const InternalOps: React.FC<InternalOpsProps> = ({
         </>
       ) : (
         <SectionHeading index={sec.next()} title="Requires a human" />
-      )}
+      ))}
 
-      {runbookUrl ? <Action href={runbookUrl} ghost>Open runbook</Action> : null}
+      {runbookUrl && showAction !== false ? <Action href={runbookUrl} ghost>Open runbook</Action> : null}
 
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer

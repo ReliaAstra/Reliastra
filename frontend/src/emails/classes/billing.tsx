@@ -56,6 +56,10 @@ export interface BillingProps extends BaseProps {
   /** Card brand + last four only. RELIASTRA stores no card data. */
   paymentMethod?: string;
   receiptUrl?: string;
+  /** Section toggles. All default to shown. */
+  showTransaction?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 type HeadlineFn = (p: {
@@ -124,6 +128,9 @@ export const Billing: React.FC<BillingProps> = ({
   failureReason,
   paymentMethod,
   receiptUrl,
+  showTransaction,
+  showAction,
+  showSignoff,
   dashboardUrl = DEFAULTS.dashboardUrl,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
@@ -233,8 +240,12 @@ export const Billing: React.FC<BillingProps> = ({
         </Paragraph>
       )}
 
-      <SectionHeading index={sec.next()} title="Transaction" />
-      <DataRegister caption="Amounts as recorded" rows={rows} />
+      {showTransaction !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Transaction" />
+          <DataRegister caption="Amounts as recorded" rows={rows} />
+        </>
+      )}
 
       {fxRate && fxSource ? (
         <Paragraph muted>
@@ -246,16 +257,18 @@ export const Billing: React.FC<BillingProps> = ({
         </Paragraph>
       ) : null}
 
-      <Action href={href}>
-        {event === 'payment_failed'
-          ? 'Update payment method'
-          : event === 'trial_ending' || event === 'trial_expired'
-            ? 'Keep full limits'
-            : 'Open billing'}
-      </Action>
+      {showAction !== false && (
+        <Action href={href}>
+          {event === 'payment_failed'
+            ? 'Update payment method'
+            : event === 'trial_ending' || event === 'trial_expired'
+              ? 'Keep full limits'
+              : 'Open billing'}
+        </Action>
+      )}
 
 
-      <Signoff role="Reliastra Billing" />
+      {showSignoff !== false && <Signoff role="Reliastra Billing" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`Transactional billing notice for ${organisationName}. Sent because a charge, plan or trial state changed on this account.`}

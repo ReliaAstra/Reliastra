@@ -46,6 +46,12 @@ export interface DependencyFailureProps extends BaseProps {
   provenance: Provenance;
   /** Rendered when the incident has since resolved. */
   resolvedAt?: string;
+  /** Section toggles. All default to shown; omitting a section renumbers
+      the rest automatically. The banner, lede and footer never toggle. */
+  showAttribution?: boolean;
+  showObservations?: boolean;
+  showArtefact?: boolean;
+  showSignoff?: boolean;
 }
 
 export const DependencyFailure: React.FC<DependencyFailureProps> = ({
@@ -58,6 +64,10 @@ export const DependencyFailure: React.FC<DependencyFailureProps> = ({
   window,
   provenance,
   resolvedAt,
+  showAttribution,
+  showObservations,
+  showArtefact,
+  showSignoff,
   dashboardUrl = DEFAULTS.dashboardUrl,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
@@ -101,8 +111,10 @@ export const DependencyFailure: React.FC<DependencyFailureProps> = ({
         </Advisory>
       ) : null}
 
-      <SectionHeading index={sec.next()} title="Attribution" />
-      <SignalLedger
+      {showAttribution !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Attribution" />
+          <SignalLedger
         signals={ledger.signals.map((signal) => ({
           name: signal.name,
           weight: WEIGHTS[signal.name],
@@ -113,8 +125,12 @@ export const DependencyFailure: React.FC<DependencyFailureProps> = ({
         ceiling={ledger.ceiling}
         classification={ledger.classification}
       />
+        </>
+      )}
 
-      <SectionHeading index={sec.next()} title="Observation record" />
+      {showObservations !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Observation record" />
       <DataRegister
         caption="Independent observation · single point"
         rows={[
@@ -144,8 +160,12 @@ export const DependencyFailure: React.FC<DependencyFailureProps> = ({
           },
         ]}
       />
+        </>
+      )}
 
-      <SectionHeading index={sec.next()} title="Artefact" />
+      {showArtefact !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Artefact" />
       <Paragraph muted>
         The signed evidence document for this incident is available to you. It
         contains the full observation series, the attribution breakdown and the
@@ -155,9 +175,11 @@ export const DependencyFailure: React.FC<DependencyFailureProps> = ({
       <Action href={`${provenance.verificationUrl}`}>
         Verify this incident
       </Action>
+        </>
+      )}
 
 
-      <Signoff role="Reliastra Operations" />
+      {showSignoff !== false && <Signoff role="Reliastra Operations" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`You receive this because ${organisationName} monitors ${dependencyName} and you are a member of its workspace. This is a service notification about a measurement we took, not a marketing message.`}

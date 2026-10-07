@@ -76,6 +76,18 @@ const BASE_VARS: VariableSpec[] = [
   { name: 'support_email', required: false, description: 'Reply-to address for this class.' },
 ];
 
+/**
+ * Sender-identity overrides, offered on every class. The components fall back
+ * to the application defaults when these are absent, so they only appear in
+ * the form for operators who need a send to come from somewhere specific.
+ */
+const IDENTITY_VARS: VariableSpec[] = [
+  { name: 'dashboard_url', required: false, description: 'Dashboard origin for in-email links.' },
+  { name: 'support_email', required: false, description: 'Reply-to address. Overrides the default.' },
+  { name: 'address', required: false, description: 'Physical sending address. Overrides the default.' },
+  { name: 'preferences_url', required: false, description: 'Notification preferences link. Overrides the default.' },
+];
+
 // ── Catalogue ──────────────────────────────────────────────────────────────
 
 export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
@@ -92,6 +104,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'severity', required: true, description: 'Banner severity word.', bound: 'incident.severity' },
       { name: 'state_word', required: true, description: 'Operational / Degraded / Failed / Indeterminate.', bound: 'attribution.classification' },
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'dependency_name', required: true, description: 'Dependency label as configured.', bound: 'dependency.name' },
       { name: 'vendor_name', required: true, description: 'Upstream vendor.', bound: 'dependency.vendor' },
       { name: 'endpoint', required: true, description: 'Probed URL.', bound: 'dependency.endpoint', machine: true },
@@ -115,7 +128,11 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'latency_correlation_score', required: true, description: 'Latency-correlation signal, 0-1, four decimals.', bound: 'attribution.signal_breakdown.latency_correlation' },
       { name: 'error_pattern_score', required: true, description: 'Error-pattern signal, 0-1, four decimals.', bound: 'attribution.signal_breakdown.error_pattern' },
       { name: 'infrastructure_baseline_score', required: true, description: 'Infrastructure-baseline signal, 0-1, four decimals.', bound: 'attribution.signal_breakdown.infrastructure_baseline' },
-{ name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'show_attribution', required: false, description: 'Omit the attribution section. Remaining sections renumber automatically.' },
+      { name: 'show_observations', required: false, description: 'Omit the observations section. Remaining sections renumber automatically.' },
+      { name: 'show_artefact', required: false, description: 'Omit the artefact section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
+      { name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
     ],
     permittedSenders: ['alerts@reliastra.com', 'observatory@reliastra.com'],
     purpose: 'Service notification about a measurement RELIASTRA took.',
@@ -132,6 +149,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'A signed, independently verifiable record of one incident.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'dependency_name', required: true, description: 'Dependency the evidence covers.', bound: 'dependency.name' },
       { name: 'report_id', required: true, description: 'Evidence report UUID.', bound: 'evidence.id', machine: true },
       { name: 'incident_id', required: true, description: 'Incident UUID.', bound: 'evidence.incident_id', machine: true },
@@ -148,7 +166,11 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'verification_url', required: true, description: 'Public verification page.', bound: 'evidence.verification_url', machine: true },
             { name: 'download_url', required: false, description: 'Direct file link. Falls back to the verification page.', machine: true },
       { name: 'note', required: false, description: 'One-paragraph cover note from the releasing operator.' },
-{ name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'show_artefact', required: false, description: 'Omit the artefact section. Remaining sections renumber automatically.' },
+      { name: 'show_provenance', required: false, description: 'Omit the provenance section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['evidence@reliastra.com', 'security@reliastra.com'],
     purpose: 'Release of an evidence document RELIASTRA generated.',
@@ -165,6 +187,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'Your monitored dependency is failing, and here is what to do about it.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'state_word', required: true, description: 'Operational / Degraded / Failed / Indeterminate.', bound: 'attribution.classification' },
       { name: 'dependency_name', required: true, description: 'Dependency label.', bound: 'dependency.name' },
       { name: 'vendor_name', required: true, description: 'Upstream vendor.', bound: 'dependency.vendor' },
@@ -187,7 +210,11 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'latency_correlation_score', required: true, description: 'Latency-correlation signal, 0-1, four decimals.', bound: 'attribution.signal_breakdown.latency_correlation' },
       { name: 'error_pattern_score', required: true, description: 'Error-pattern signal, 0-1, four decimals.', bound: 'attribution.signal_breakdown.error_pattern' },
       { name: 'infrastructure_baseline_score', required: true, description: 'Infrastructure-baseline signal, 0-1, four decimals.', bound: 'attribution.signal_breakdown.infrastructure_baseline' },
-{ name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'show_measurement', required: false, description: 'Omit the measurement section. Remaining sections renumber automatically.' },
+      { name: 'show_conclusion', required: false, description: 'Omit the conclusion section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['alerts@reliastra.com'],
     purpose: 'Alert configured by the recipient for a monitored dependency.',
@@ -204,6 +231,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'A charge, a failed payment, or a trial state change on your account.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'event', required: true, description: 'payment_succeeded / payment_failed / trial_ending / trial_expired / plan_changed / refund_processed' },
       { name: 'event_label', required: true, description: 'Human label for the event, used in the subject.' },
       { name: 'plan_name', required: true, description: 'Plan display name. RELIASTRA has exactly one paid plan: Developer.', bound: 'subscription.plan' },
@@ -221,6 +249,9 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'failure_reason', required: false, description: 'Processor-supplied decline reason.' },
       { name: 'fallback_limits', required: false, description: 'Limits now in effect (trial expiry). One per line: "label: value".' },
       { name: 'receipt_url', required: false, description: 'Receipt or billing page.', machine: true },
+      { name: 'show_transaction', required: false, description: 'Omit the transaction section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['billing@reliastra.com', 'support@reliastra.com'],
     purpose: 'Transactional billing notice for the named account.',
@@ -237,6 +268,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'A person from Reliastra has answered your ticket.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'ticket_ref', required: true, description: 'Ticket reference.', bound: 'ticket.reference', machine: true },
       { name: 'subject_prefix', required: true, description: 'Re: or Fwd: prefix preserved from the thread.' },
       { name: 'agent_name', required: true, description: 'Agent full name. Never initial-only.', bound: 'admin.name' },
@@ -248,6 +280,9 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'ticket_url', required: false, description: 'Ticket link. Falls back to the support queue.', machine: true },
       { name: 'awaiting_on', required: false, description: 'The single thing needed from the customer. Required whenever awaiting_customer is set.' },
       { name: 'sla_target_hours', required: false, description: 'Target first-response time in hours.' },
+      { name: 'show_context', required: false, description: 'Omit the context section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['support@reliastra.com'],
     purpose: 'Support correspondence about the named ticket.',
@@ -264,6 +299,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'Invitation, agreement terms, or a commission payout.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'event', required: true, description: 'invitation / terms / payout_sent / payout_pending' },
       { name: 'event_label', required: true, description: 'Human label for the event.' },
       { name: 'partner_company', required: true, description: 'Partner legal or trading name.', bound: 'partner.name' },
@@ -279,6 +315,11 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'earnings', required: false, description: 'Commission breakdown. One per line: "label: value".' },
       { name: 'benefits', required: false, description: 'Programme inclusions. One per line.' },
       { name: 'next_step', required: false, description: 'The single next action required of the partner.' },
+      { name: 'show_terms', required: false, description: 'Omit the terms section. Remaining sections renumber automatically.' },
+      { name: 'show_breakdown', required: false, description: 'Omit the breakdown section. Remaining sections renumber automatically.' },
+      { name: 'show_benefits', required: false, description: 'Omit the benefits section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['partners@reliastra.com', 'sales@reliastra.com', 'finance@reliastra.com'],
     purpose: 'Partner programme correspondence and commission settlement.',
@@ -295,6 +336,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'Our measurement of your endpoint, and one specific question.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'vendor_company', required: true, description: 'Vendor company name.', bound: 'vendor.name' },
       { name: 'vendor_name', required: true, description: 'Service name being observed.', bound: 'vendor.service' },
       { name: 'vendor_status_page', required: false, description: "The vendor's status page, if published.", machine: true },
@@ -310,7 +352,11 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'methodology_version', required: true, description: 'Methodology version.', bound: 'evidence.methodology_version', machine: true },
       { name: 'verification_url', required: true, description: 'Public verification page.', bound: 'evidence.verification_url', machine: true },
             { name: 'enclosures', required: false, description: 'Signed evidence to list. One per line: "filename sha256:<hex>". Listed, not attached.', machine: true },
-{ name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'verification_id', required: false, description: 'Short verification reference.', bound: 'evidence.verification_id', machine: true },
+      { name: 'show_observations', required: false, description: 'Omit the observations section. Remaining sections renumber automatically.' },
+      { name: 'show_enclosed', required: false, description: 'Omit the enclosed section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['observatory@reliastra.com', 'security@reliastra.com'],
     purpose: 'Third-party incident report published in the public record.',
@@ -327,6 +373,7 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
     preview: 'A security event on your account, with the exact facts from the audit log.',
     variables: [
       ...BASE_VARS,
+      ...IDENTITY_VARS,
       { name: 'event', required: true, description: 'new_device_login / admin_action / secret_rotated / api_key_created / suspicious_activity / domain_changed' },
       { name: 'event_label', required: true, description: 'Human label for the event.' },
       { name: 'actor_email', required: true, description: 'Account that acted.', bound: 'audit.actor_email', machine: true },
@@ -338,8 +385,12 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'containment', required: false, description: 'What RELIASTRA did in response.' },
       { name: 'requires_confirmation', required: true, description: 'Whether the operator must confirm the action.' },
       { name: 'actor_label', required: false, description: 'Display name for the actor. Falls back to "An account".' },
+      { name: 'security_email', required: false, description: 'Reply-to for this notice. Separate mailbox on purpose; defaults to security@reliastra.com.', machine: true },
       { name: 'contact_first', required: false, description: 'Set when remediation is unsafe by email. Fail-closed: when set, no one-click link is rendered.' },
       { name: 'audit_ref', required: false, description: 'Audit-log id.', bound: 'audit.id', machine: true },
+      { name: 'show_event', required: false, description: 'Omit the event section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      { name: 'show_signoff', required: false, description: 'Omit the signoff section. Remaining sections renumber automatically.' },
     ],
     permittedSenders: ['security@reliastra.com', 'alerts@reliastra.com'],
     purpose: 'Security notification for a privileged or authentication event.',
@@ -366,6 +417,9 @@ export const EMAIL_CLASSES: EmailClassSpec<unknown>[] = [
       { name: 'runbook_url', required: false, description: 'Runbook for this alert class.', machine: true },
       { name: 'facts', required: true, description: 'Emitting-system facts. One per line: "label: value".', machine: true },
       { name: 'suppressed', required: false, description: 'Set when the alert did not page and did not open an incident.' },
+      { name: 'show_actions', required: false, description: 'Omit the actions section. Remaining sections renumber automatically.' },
+      { name: 'show_action', required: false, description: 'Omit the action section. Remaining sections renumber automatically.' },
+      ...IDENTITY_VARS,
     ],
     permittedSenders: ['alerts@reliastra.com', 'observatory@reliastra.com'],
     purpose: 'Internal operational alert. Not for customer distribution.',

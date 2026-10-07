@@ -124,6 +124,11 @@ const reqBool = (v: Variables, name: string, what: string): boolean => {
   return b;
 };
 
+/** Section toggle. Absent means shown: fixtures and hand-built maps that
+    predate toggles render the full document, byte-identical to before. */
+const show = (v: Variables, name: string): boolean =>
+  parseBool(v, name, 'whether to include this section') ?? true;
+
 const reqEnum = <T extends string>(v: Variables, name: string, allowed: readonly T[]): T => {
   const t = str(v, name);
   if (t === undefined) throw new FieldError(name, 'required value is missing');
@@ -220,6 +225,10 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
     window: windowOf(v),
     provenance: provenanceOf(v, { signedRequired: true }),
     resolvedAt: optISO(v, 'resolved_at'),
+    showAttribution: show(v, 'show_attribution'),
+    showObservations: show(v, 'show_observations'),
+    showArtefact: show(v, 'show_artefact'),
+    showSignoff: show(v, 'show_signoff'),
   }),
 
   customer_dependency_alert: (v): CustomerDependencyAlertProps => ({
@@ -232,6 +241,10 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
     provenance: provenanceOf(v, { signedRequired: false }),
     remediation: reqStr(v, 'remediation'),
     nextProbeSeconds: optNum(v, 'next_probe_seconds'),
+    showMeasurement: show(v, 'show_measurement'),
+    showConclusion: show(v, 'show_conclusion'),
+    showAction: show(v, 'show_action'),
+    showSignoff: show(v, 'show_signoff'),
   }),
 
   evidence_delivery: (v): EvidenceDeliveryProps => ({
@@ -247,6 +260,10 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
     provenance: provenanceOf(v, { signedRequired: true }),
     downloadUrl: str(v, 'download_url'),
     note: str(v, 'note'),
+    showArtefact: show(v, 'show_artefact'),
+    showProvenance: show(v, 'show_provenance'),
+    showAction: show(v, 'show_action'),
+    showSignoff: show(v, 'show_signoff'),
   }),
 
   billing: (v): BillingProps => {
@@ -273,6 +290,9 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
       failureReason: str(v, 'failure_reason'),
       paymentMethod: str(v, 'payment_method'),
       receiptUrl: str(v, 'receipt_url'),
+      showTransaction: show(v, 'show_transaction'),
+      showAction: show(v, 'show_action'),
+      showSignoff: show(v, 'show_signoff'),
     };
   },
 
@@ -296,6 +316,9 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
       awaitingCustomer,
       awaitingOn,
       slaTargetHours: optNum(v, 'sla_target_hours'),
+      showContext: show(v, 'show_context'),
+      showAction: show(v, 'show_action'),
+      showSignoff: show(v, 'show_signoff'),
     };
   },
 
@@ -320,6 +343,11 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
       invitationValidDays: optNum(v, 'invitation_valid_days'),
       benefits: parseLines(v, 'benefits'),
       nextStep: str(v, 'next_step'),
+      showTerms: show(v, 'show_terms'),
+      showBreakdown: show(v, 'show_breakdown'),
+      showBenefits: show(v, 'show_benefits'),
+      showAction: show(v, 'show_action'),
+      showSignoff: show(v, 'show_signoff'),
     };
   },
 
@@ -345,6 +373,10 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
       },
       request: reqStr(v, 'request'),
       threadRef: str(v, 'thread_ref'),
+      showObservations: show(v, 'show_observations'),
+      showEnclosed: show(v, 'show_enclosed'),
+      showAction: show(v, 'show_action'),
+      showSignoff: show(v, 'show_signoff'),
       attachments: enclosures?.map((line, i) => {
         const m = /^(.*)\s+(?:sha256:)?([0-9a-fA-F]{16,})\s*$/.exec(line);
         if (!m) throw new FieldError('enclosures', `line ${i + 1} needs "filename sha256:<hex>"`);
@@ -375,6 +407,10 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
       requiresConfirmation: reqBool(v, 'requires_confirmation', 'whether the operator must confirm the action'),
       auditRef: str(v, 'audit_ref'),
       contactFirst: parseBool(v, 'contact_first', 'whether remediation is unsafe by email') ?? false,
+      securityEmail: str(v, 'security_email'),
+      showEvent: show(v, 'show_event'),
+      showAction: show(v, 'show_action'),
+      showSignoff: show(v, 'show_signoff'),
     };
   },
 
@@ -396,6 +432,8 @@ const builders: Record<EmailClassId, (v: Variables) => object> = {
       actionsRequired: parseLines(v, 'actions_required') ?? [],
       runbookUrl: str(v, 'runbook_url'),
       suppressed: parseBool(v, 'suppressed', 'whether the alert did not page') ?? false,
+      showActions: show(v, 'show_actions'),
+      showAction: show(v, 'show_action'),
     };
   },
 };

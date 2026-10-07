@@ -84,9 +84,19 @@ const DATE_RE = /(_at|_start|_end|_date)$/;
 const NUMBER_RE =
   /(count|seconds|score|ceiling|bytes|days|hours|threshold|interval|retention)$/;
 
-type FieldKind = 'text' | 'textarea' | 'number' | 'datetime' | 'boolean' | 'enum';
+type FieldKind = 'text' | 'textarea' | 'number' | 'datetime' | 'boolean' | 'toggle' | 'enum';
+
+const IDENTITY_DEFAULTS: Record<string, string> = {
+  dashboard_url: 'https://reliastra.com/dashboard',
+  support_email: 'support@reliastra.com',
+  address: 'Reliastra · Lagos, Nigeria',
+  preferences_url: 'https://reliastra.com/dashboard/settings/notifications',
+  security_email: 'security@reliastra.com',
+};
 
 function fieldKind(classId: string, name: string): FieldKind {
+  // Section toggles default to shown: an absent value renders the section.
+  if (name.startsWith('show_')) return 'toggle';
   if (BOOLEAN_VARS.has(name)) return 'boolean';
   const options = ENUM_OPTIONS[`${classId}:${name}`];
   if (options) return 'enum';
@@ -148,11 +158,15 @@ export function AdminEmailClassComposer({
     setPreview(null);
     setMissing([]);
     setFieldErrors([]);
-    // The deterministic open rule ships as an editable default, not a surprise.
+    // Editable defaults, not surprises: the deterministic open rule and
+    // every section toggle start in their showing state.
     const next: Record<string, string> = {};
     const target = classes.find((c) => c.id === id);
     if (target?.variables.some((v) => v.name === 'confirm_threshold')) {
       next.confirm_threshold = '2';
+    }
+    for (const v of target?.variables ?? []) {
+      if (v.name.startsWith('show_')) next[v.name] = 'true';
     }
     setValues(next);
     setIncidentId('');
@@ -324,8 +338,36 @@ export function AdminEmailClassComposer({
             )}
           </div>
 
+          {spec.variables.some((v) => v.name.startsWith('show_')) && (
+            <div className="rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Sections</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                Uncheck to omit a section. The rest renumber automatically.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2">
+                {spec.variables
+                  .filter((v) => v.name.startsWith('show_'))
+                  .map((v) => (
+                    <label key={v.name} className="flex cursor-pointer items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={(values[v.name] ?? 'true') !== 'false'}
+                        onChange={(e) => setValue(v.name, e.target.checked ? 'true' : 'false')}
+                        className="size-4 accent-slate-900 dark:accent-white"
+                      />
+                      <span className="text-slate-700 dark:text-slate-200">
+                        {v.name.slice(5).replace(/_/g, ' ')}
+                      </span>
+                    </label>
+                  ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-3 sm:grid-cols-2">
-            {spec.variables.map((v) => {
+            {spec.variables
+              .filter((v) => !v.name.startsWith('show_'))
+              .map((v) => {
               const kind = fieldKind(spec.id, v.name);
               const value = values[v.name] ?? '';
               const invalid = fieldErrors.includes(v.name);
@@ -349,17 +391,23 @@ export function AdminEmailClassComposer({
                     {v.name}
                     {v.required && <span className="ml-1 text-red-500">*</span>}
                   </Label>
-                  {kind === 'boolean' ? (
+                  {kind === 'boolean' || kind === 'toggle' ? (
                     <div className="mt-1.5 flex items-center gap-2">
                       <input
                         id={id}
                         type="checkbox"
-                        checked={value === 'true'}
+                        checked={kind === 'toggle' ? value !== 'false' : value === 'true'}
                         onChange={(e) => setValue(v.name, e.target.checked ? 'true' : 'false')}
                         className="size-4 accent-slate-900 dark:accent-white"
                       />
                       <span className="text-xs text-slate-500 dark:text-slate-400">
-                        {value === 'true' ? 'Set' : 'Unset'}
+                        {kind === 'toggle'
+                          ? value !== 'false'
+                            ? 'Shown'
+                            : 'Omitted'
+                          : value === 'true'
+                            ? 'Set'
+                            : 'Unset'}
                       </span>
                     </div>
                   ) : kind === 'enum' ? (
@@ -391,6 +439,7 @@ export function AdminEmailClassComposer({
                     <Input
                       id={id}
                       value={kind === 'datetime' ? isoToDatetimeLocal(value) : value}
+                      placeholder={IDENTITY_DEFAULTS[v.name]}
                       onChange={(e) =>
                         setValue(
                           v.name,

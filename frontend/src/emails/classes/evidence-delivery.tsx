@@ -39,6 +39,11 @@ export interface EvidenceDeliveryProps extends BaseProps {
   provenance: Provenance;
   downloadUrl?: string;
   note?: string;
+  /** Section toggles. All default to shown. */
+  showArtefact?: boolean;
+  showProvenance?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 export const EvidenceDelivery: React.FC<EvidenceDeliveryProps> = ({
@@ -55,6 +60,10 @@ export const EvidenceDelivery: React.FC<EvidenceDeliveryProps> = ({
   provenance,
   downloadUrl,
   note,
+  showArtefact,
+  showProvenance,
+  showAction,
+  showSignoff,
   dashboardUrl = DEFAULTS.dashboardUrl,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
@@ -79,14 +88,20 @@ export const EvidenceDelivery: React.FC<EvidenceDeliveryProps> = ({
 
       {note ? <Paragraph muted>{note}</Paragraph> : null}
 
-      <SectionHeading index={sec.next()} title="Artefact" />
-      <Artefact
+      {showArtefact !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Artefact" />
+          <Artefact
         name={fileName}
         meta={`${kb.toLocaleString('en-US')} KB · PDF · generated ${stamp(generatedAt)}`}
         sha256={provenance.documentChecksum}
       />
+        </>
+      )}
 
-      <SectionHeading index={sec.next()} title="Verify it independently" />
+      {showProvenance !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Verify it independently" />
       <Paragraph muted>
         Every claim in the document is checkable by a third party who has no
         relationship with RELIASTRA and no account. Two hashes are printed
@@ -143,10 +158,15 @@ export const EvidenceDelivery: React.FC<EvidenceDeliveryProps> = ({
         )}
       </Advisory>
 
-      <Action href={href}>Open the verification record</Action>
+        </>
+      )}
+
+      {showAction !== false && (
+        <Action href={href}>Open the verification record</Action>
+      )}
 
 
-      <Signoff role="Reliastra Evidence" />
+      {showSignoff !== false && <Signoff role="Reliastra Evidence" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`You receive this because ${organisationName} holds this evidence record. It documents a measurement we took of a third party's endpoint; it is not legal advice and not an admission of fault by any party.`}

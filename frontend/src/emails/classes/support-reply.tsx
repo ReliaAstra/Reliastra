@@ -45,6 +45,10 @@ export interface SupportReplyProps extends BaseProps {
    */
   awaitingOn?: string;
   slaTargetHours?: number;
+  /** Section toggles. All default to shown. */
+  showContext?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 export const SupportReply: React.FC<SupportReplyProps> = ({
@@ -60,6 +64,9 @@ export const SupportReply: React.FC<SupportReplyProps> = ({
   awaitingCustomer,
   awaitingOn,
   slaTargetHours,
+  showContext,
+  showAction,
+  showSignoff,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
 }) => {
@@ -92,7 +99,7 @@ export const SupportReply: React.FC<SupportReplyProps> = ({
         <Paragraph key={i}>{paragraph}</Paragraph>
       ))}
 
-      {context?.length ? (
+      {context?.length && showContext !== false ? (
         <>
           <SectionHeading index={sec.next()} title="What we are looking at" />
           <DataRegister caption="From your account" rows={context} />
@@ -108,16 +115,20 @@ export const SupportReply: React.FC<SupportReplyProps> = ({
         </>
       ) : null}
 
-      <Action href={href} ghost>
-        {showAsk ? 'Reply in the ticket' : 'View this ticket'}
-      </Action>
+      {showAction !== false && (
+        <Action href={href} ghost>
+          {showAsk ? 'Reply in the ticket' : 'View this ticket'}
+        </Action>
+      )}
 
-      <Signoff
-        name={agentName}
+      {showSignoff !== false && (
+        <Signoff
+          name={agentName}
         role={`${agentRole}, Reliastra${
           slaTargetHours ? ` · target first response ${slaTargetHours}h` : ''
         }`}
       />
+      )}
 
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer

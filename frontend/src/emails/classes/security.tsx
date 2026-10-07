@@ -61,6 +61,10 @@ export interface SecurityProps extends BaseProps {
    * mailbox with general support.
    */
   securityEmail?: string;
+  /** Section toggles. All default to shown. */
+  showEvent?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 const TITLES: Record<SecurityEvent, { headline: string; classification: string }> = {
@@ -105,6 +109,9 @@ export const Security: React.FC<SecurityProps> = ({
   requiresConfirmation,
   auditRef,
   contactFirst,
+  showEvent,
+  showAction,
+  showSignoff,
   dashboardUrl = DEFAULTS.dashboardUrl,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
@@ -149,8 +156,10 @@ export const Security: React.FC<SecurityProps> = ({
         password and rotate every stored secret before continuing.
       </Advisory>
 
-      <SectionHeading index={sec.next()} title="Event" />
-      <DataRegister
+      {showEvent !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="Event" />
+          <DataRegister
         caption="From the audit log"
         rows={[
           { label: 'Event', value: title.classification.replace('Security · ', '') },
@@ -163,6 +172,8 @@ export const Security: React.FC<SecurityProps> = ({
           ...(auditRef ? [{ label: 'Audit ref', value: auditRef, mono: true }] : []),
         ]}
       />
+        </>
+      )}
 
       <SectionHeading index={sec.next()} title="What happened" />
       <Paragraph>{detail}</Paragraph>
@@ -174,20 +185,20 @@ export const Security: React.FC<SecurityProps> = ({
         </>
       ) : null}
 
-      {contactFirst ? (
+      {showAction !== false && contactFirst ? (
         <Paragraph muted>
           We have deliberately not put a one-click remediation link in this
           message. Reply to {securityEmail} from the address on the workspace
           and we will confirm the event before you change anything.
         </Paragraph>
-      ) : (
+      ) : showAction !== false ? (
         <Action href={`${dashboardUrl}/settings/security`}>
           Review account security
         </Action>
-      )}
+      ) : null}
 
 
-      <Signoff role="Reliastra Security" />
+      {showSignoff !== false && <Signoff role="Reliastra Security" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`Security notice for ${organisationName}. Sent to workspace administrators because a privileged or authentication event was recorded on this account.`}

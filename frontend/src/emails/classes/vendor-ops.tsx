@@ -43,6 +43,11 @@ export interface VendorOpsProps extends BaseProps {
   attachments?: { name: string; sha256: string }[];
   /** Our read of whether this is a real incident or expected behaviour. */
   assessment?: string;
+  /** Section toggles. All default to shown. */
+  showObservations?: boolean;
+  showEnclosed?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 export const VendorOps: React.FC<VendorOpsProps> = ({
@@ -60,6 +65,10 @@ export const VendorOps: React.FC<VendorOpsProps> = ({
   threadRef,
   attachments,
   assessment,
+  showObservations,
+  showEnclosed,
+  showAction,
+  showSignoff,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
 }) => {
@@ -92,8 +101,10 @@ export const VendorOps: React.FC<VendorOpsProps> = ({
         the cause.
       </Paragraph>
 
-      <SectionHeading index={sec.next()} title="What we observed" />
-      <DataRegister
+      {showObservations !== false && (
+        <>
+          <SectionHeading index={sec.next()} title="What we observed" />
+          <DataRegister
         caption={`${vendorName} · public observatory`}
         rows={[
           { label: 'Service', value: vendorName },
@@ -140,6 +151,8 @@ export const VendorOps: React.FC<VendorOpsProps> = ({
             : []),
         ]}
       />
+        </>
+      )}
 
       {assessment ? (
         <>
@@ -148,7 +161,7 @@ export const VendorOps: React.FC<VendorOpsProps> = ({
         </>
       ) : null}
 
-      <SectionHeading index={assessment ? '03' : '02'} title="What we are asking" />
+      <SectionHeading index={sec.next()} title="What we are asking" />
       <Paragraph>{request}</Paragraph>
 
       <Advisory state="unknown">
@@ -159,7 +172,7 @@ export const VendorOps: React.FC<VendorOpsProps> = ({
         whether one should be opened.
       </Advisory>
 
-      {attachments?.length ? (
+      {attachments?.length && showEnclosed !== false ? (
         <>
           <SectionHeading index={sec.next()} title="Enclosed" />
           <DataRegister
@@ -173,12 +186,14 @@ export const VendorOps: React.FC<VendorOpsProps> = ({
         </>
       ) : null}
 
-      <Action href={observatoryUrl ?? provenance.verificationUrl} ghost>
-        {observatoryUrl ? `View our published record for ${vendorName}` : 'View the evidence record'}
-      </Action>
+      {showAction !== false && (
+        <Action href={observatoryUrl ?? provenance.verificationUrl} ghost>
+          {observatoryUrl ? `View our published record for ${vendorName}` : 'View the evidence record'}
+        </Action>
+      )}
 
 
-      <Signoff role="Reliastra Observatory" />
+      {showSignoff !== false && <Signoff role="Reliastra Observatory" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`Third-party incident report sent by ${organisationName} to ${vendorCompany}. Our measurement record for ${vendorName} is published and may be cited.`}

@@ -146,13 +146,13 @@ export const Masthead: React.FC<MastheadProps> = ({ classification }) => (
         </Row>
       </Cell>
     </Row>
-    {/* The signal rule. Three pixels of near-white under the wordmark: the
+    {/* The signal rule. Three pixels of brand blue under the wordmark: the
         one place the identity is allowed to assert itself. */}
     <Row>
       <Cell
-        bgcolor={color.signalOnDark}
+        bgcolor={color.brand}
         style={{
-          backgroundColor: color.signalOnDark,
+          backgroundColor: color.brand,
           height: '3px',
           lineHeight: '3px',
           fontSize: '0',
@@ -292,19 +292,27 @@ export const Paragraph: React.FC<{
 
 export const Lede: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Row>
-    <Cell style={{ padding: `26px ${GUTTER}px 0` }}>
+    <Cell style={{ padding: `30px ${GUTTER}px 0` }}>
       <Text style={{ ...h1, margin: 0 }}>{children}</Text>
     </Cell>
   </Row>
 );
 
-export const Hairline: React.FC<{ spaceBefore?: number; spaceAfter?: number }> = ({
-  spaceBefore = 24,
-  spaceAfter = 0,
-}) => (
+export const Hairline: React.FC<{
+  spaceBefore?: number;
+  spaceAfter?: number;
+  /** Brand tone for the footer rule. Everywhere else stays neutral. */
+  tone?: 'rule' | 'brand';
+}> = ({ spaceBefore = 24, spaceAfter = 0, tone = 'rule' }) => (
   <Row>
     <Cell style={{ padding: `${spaceBefore}px ${GUTTER}px ${spaceAfter}px` }}>
-      <Hr style={{ borderColor: color.rule, margin: 0 }} />
+      <Hr
+        style={{
+          borderColor: tone === 'brand' ? color.brand : color.rule,
+          borderTopWidth: tone === 'brand' ? '2px' : '1px',
+          margin: 0,
+        }}
+      />
     </Cell>
   </Row>
 );
@@ -458,7 +466,7 @@ export const ClassificationBanner: React.FC<{
         style={{
           backgroundColor: tone.wash,
           borderLeft: `3px solid ${tone.fg}`,
-          padding: '13px 36px',
+          padding: '15px 36px',
         }}
       >
         <Text
@@ -466,7 +474,9 @@ export const ClassificationBanner: React.FC<{
             ...label,
             margin: 0,
             color: tone.fg,
-            letterSpacing: '0.1em',
+            fontSize: '12px',
+            lineHeight: '17px',
+            letterSpacing: '0.12em',
           }}
         >
           {children}
@@ -561,7 +571,15 @@ export const SignalLedger: React.FC<{
                   </Text>
                 </Cell>
                 <Cell align="right" style={{ verticalAlign: 'top' }}>
-                  <Text style={{ ...figure, margin: '9px 0 9px', fontSize: '16px' }}>
+                  <Text
+                    style={{
+                      ...figure,
+                      margin: '7px 0 9px',
+                      fontSize: '20px',
+                      lineHeight: '26px',
+                      fontWeight: 800,
+                    }}
+                  >
                     {score.toFixed(2)} / 100
                   </Text>
                 </Cell>
@@ -654,7 +672,7 @@ const labelWidth = (text: string): number => {
 };
 
 /**
- * The single call to action. Near-black on white in the primary variant, and a
+ * The single call to action. Brand blue in the primary variant, and a
  * hairline ghost for anything secondary - a filled button is a billboard, a
  * bordered one is an instruction.
  */
@@ -667,10 +685,12 @@ export const Action: React.FC<ActionProps> = ({
   const label = typeof children === 'string' ? children : '';
   const width = explicitWidth ?? labelWidth(label);
   const height = 46;
-  const bg = ghost ? color.paper : color.signal;
+  const bg = ghost ? color.paper : color.brand;
   const fg = ghost ? color.signal : color.signalOnDark;
   const radius = 6;
-  const border = ghost ? `1px solid ${color.ruleStrong}` : '1px solid #0B0F17';
+  const border = ghost
+    ? `1px solid ${color.ruleStrong}`
+    : `1px solid ${color.brandDeep}`;
 
   return (
     <Row>
@@ -871,6 +891,18 @@ export const Artefact: React.FC<{ name: string; meta: string; sha256: string }> 
   </Row>
 );
 
+/** Brand sign-off closing every footer: the line the product is known by. */
+const footerSignoff = {
+  fontFamily: font.mono,
+  fontSize: '9px',
+  lineHeight: '13px',
+  fontWeight: 500,
+  letterSpacing: '0.22em',
+  textTransform: 'uppercase',
+  color: color.onDarkTertiary,
+  msoLineHeightRule: 'exactly',
+} as const;
+
 // ── Footer ─────────────────────────────────────────────────────────────────
 
 export interface FooterProps {
@@ -904,7 +936,7 @@ export const Footer: React.FC<FooterProps> = ({
   legalNote,
 }) => (
   <>
-    <Hairline spaceBefore={32} />
+    <Hairline spaceBefore={32} tone="brand" />
     <Row>
       <Cell
         bgcolor={color.masthead}
@@ -1023,6 +1055,15 @@ export const Footer: React.FC<FooterProps> = ({
             {legalNote}
           </Text>
         ) : null}
+
+        <Text
+          style={{
+            ...footerSignoff,
+            margin: '18px 0 0',
+          }}
+        >
+          RELIASTRA · Infrastructure you can prove
+        </Text>
       </Cell>
     </Row>
   </>

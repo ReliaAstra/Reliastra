@@ -51,6 +51,12 @@ export interface PartnerProps extends BaseProps {
   /** What the partner gets for signing. */
   benefits?: string[];
   nextStep?: string;
+  /** Section toggles. All default to shown. */
+  showTerms?: boolean;
+  showBreakdown?: boolean;
+  showBenefits?: boolean;
+  showAction?: boolean;
+  showSignoff?: boolean;
 }
 
 export const Partner: React.FC<PartnerProps> = ({
@@ -70,6 +76,11 @@ export const Partner: React.FC<PartnerProps> = ({
   invitationValidDays,
   benefits,
   nextStep,
+  showTerms,
+  showBreakdown,
+  showBenefits,
+  showAction,
+  showSignoff,
   dashboardUrl = DEFAULTS.dashboardUrl,
   supportEmail = DEFAULTS.supportEmail,
   address = DEFAULTS.address,
@@ -131,7 +142,7 @@ export const Partner: React.FC<PartnerProps> = ({
         </Paragraph>
       )}
 
-      {(commissionRate || earnings?.length || payoutAmountUsd) && (
+      {(commissionRate || earnings?.length || payoutAmountUsd) && showTerms !== false && (
         <>
           <SectionHeading index={sec.next()} title="Commercial terms" />
           <DataRegister
@@ -164,16 +175,16 @@ export const Partner: React.FC<PartnerProps> = ({
         </>
       )}
 
-      {earnings?.length ? (
+      {earnings?.length && showBreakdown !== false ? (
         <>
           <SectionHeading index={sec.next()} title="Commission breakdown" />
           <DataRegister caption="Line items" rows={earnings} />
         </>
       ) : null}
 
-      {benefits?.length ? (
+      {benefits?.length && showBenefits !== false ? (
         <>
-          <SectionHeading index={earnings?.length ? '03' : '02'} title="What the programme includes" />
+          <SectionHeading index={sec.next()} title="What the programme includes" />
           <DataRegister
             caption="Included"
             rows={benefits.map((benefit, i) => ({ label: `${i + 1}`, value: benefit }))}
@@ -196,12 +207,14 @@ export const Partner: React.FC<PartnerProps> = ({
         </>
       ) : null}
 
-      <Action href={`${dashboardUrl}/partners`}>
-        {event === 'invitation' ? 'Review the programme' : 'Open partner console'}
-      </Action>
+      {showAction !== false && (
+        <Action href={`${dashboardUrl}/partners`}>
+          {event === 'invitation' ? 'Review the programme' : 'Open partner console'}
+        </Action>
+      )}
 
 
-      <Signoff role="Partnerships · Reliastra" />
+      {showSignoff !== false && <Signoff role="Partnerships · Reliastra" />}
       <Hairline spaceBefore={28} spaceAfter={6} />
       <Footer
         purpose={`Partner programme correspondence for ${partnerCompany}. ${organisationName} is the RELIASTRA entity issuing this invitation and administering partner payouts.`}
