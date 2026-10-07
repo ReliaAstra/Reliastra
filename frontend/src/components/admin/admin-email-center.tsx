@@ -8,6 +8,7 @@ import {
   ChevronsUpDown,
   ExternalLink,
   FileCode2,
+  FilePenLine,
   FileText,
   FlaskConical,
   Inbox,
@@ -47,6 +48,7 @@ import {
 } from '@/components/admin/admin-primitives';
 import { EmailActivitySection } from '@/components/admin/admin-email-activity';
 import { EmailTemplatesSection } from '@/components/admin/admin-email-templates';
+import { OutreachTemplateStudio } from '@/components/admin/outreach-template-studio';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -333,6 +335,7 @@ function SenderDot({ sender }: { sender: EmailCenterSender }) {
 
 export function EmailCenterPage() {
   const queryClient = useQueryClient();
+  const [centerMode, setCenterMode] = useState<'studio' | 'compose'>('studio');
 
   // Composer state
   const [senderEmail, setSenderEmail] = useState('');
@@ -574,7 +577,7 @@ export function EmailCenterPage() {
       <AdminPageHeader
         eyebrow="Admin · Operations"
         title="Email Center"
-        description="Send operational and business emails from verified Reliastra sender identities."
+        description="Design premium outreach templates, then compose and send from verified Reliastra identities."
         actions={
           <Button
             variant="outline"
@@ -595,7 +598,53 @@ export function EmailCenterPage() {
         refreshing={refreshMutation.isPending}
       />
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div role="group" aria-label="Email Center workspace" className="inline-flex h-auto max-w-full flex-wrap gap-1 rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10 dark:bg-card">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-pressed={centerMode === 'studio'}
+          onClick={() => setCenterMode('studio')}
+          className={cn(
+            'gap-2 rounded-lg px-4',
+            centerMode === 'studio'
+              ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100'
+              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white',
+          )}
+        >
+          <FilePenLine className="size-4" /> Outreach template studio
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-pressed={centerMode === 'compose'}
+          onClick={() => setCenterMode('compose')}
+          className={cn(
+            'gap-2 rounded-lg px-4',
+            centerMode === 'compose'
+              ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100'
+              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white',
+          )}
+        >
+          <Mail className="size-4" /> Compose &amp; send
+        </Button>
+      </div>
+
+      <div
+        aria-hidden={centerMode !== 'studio'}
+        hidden={centerMode !== 'studio'}
+        style={{ display: centerMode === 'studio' ? 'block' : 'none' }}
+      >
+        <OutreachTemplateStudio />
+      </div>
+
+      <div
+        aria-hidden={centerMode !== 'compose'}
+        className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"
+        hidden={centerMode !== 'compose'}
+        style={{ display: centerMode === 'compose' ? 'grid' : 'none' }}
+      >
         {/* ── Main: compose + preview ─────────────────────────────── */}
         <div className="min-w-0 space-y-6">
           <AdminCard>
@@ -957,16 +1006,22 @@ export function EmailCenterPage() {
         </div>
       </div>
 
-      <EmailTemplatesSection
-        templates={templates}
-        loading={templatesQuery.isLoading}
-        error={templatesQuery.isError}
-        onRetry={() => templatesQuery.refetch()}
-        onUse={applyTemplate}
-        activeId={templateId}
-      />
-
-      <EmailActivitySection />
+      <div
+        aria-hidden={centerMode !== 'compose'}
+        className="space-y-6"
+        hidden={centerMode !== 'compose'}
+        style={{ display: centerMode === 'compose' ? 'block' : 'none' }}
+      >
+        <EmailTemplatesSection
+          templates={templates}
+          loading={templatesQuery.isLoading}
+          error={templatesQuery.isError}
+          onRetry={() => templatesQuery.refetch()}
+          onUse={applyTemplate}
+          activeId={templateId}
+        />
+        <EmailActivitySection />
+      </div>
 
       <SendConfirmDialog
         open={confirmOpen}
