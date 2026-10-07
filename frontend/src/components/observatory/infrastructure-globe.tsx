@@ -10,9 +10,13 @@ import {
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 import worldTopology from 'world-atlas/countries-110m.json';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react';
 import {
+  GLOBE_AMBIENT_LONGITUDE_DEGREES_PER_SECOND,
+  GLOBE_LONGITUDE_DEGREES_PER_SECOND,
+  advanceLongitude,
   hasPublishedCoordinates,
+  normalizeLongitude,
   type InfrastructureGlobeMode,
   type ObservationPoint,
 } from '@/lib/infrastructure-visualization';
@@ -46,6 +50,14 @@ export interface InfrastructureGlobeProps {
  * has no verified geographic origin points to layer over the map. If a caller
  * supplies coordinates, only those points are drawn. Region codes alone are
  * deliberately insufficient.
+ *
+ * Motion: the globe rotates continuously without being touched — one
+ * revolution every three minutes (half that on the `login` backdrop) — so the
+ * map reads as live on every surface it appears on, not only after somebody
+ * drags it. Dragging still steers it, the arrows still step it, and the pause
+ * control stops it. Rotation runs only while the globe is on screen and the
+ * tab is in the foreground, and it starts paused when the reader's system asks
+ * for reduced motion.
  */
 export function InfrastructureGlobe({
   mode,
@@ -62,6 +74,22 @@ export function InfrastructureGlobe({
   const rotationRef = useRef<[number, number, number]>([-18, -10, 0]);
   const dragRef = useRef<{ x: number; y: number; rotation: [number, number, number] } | null>(null);
   const [canRotate, setCanRotate] = useState(false);
+  // Continuous rotation is the default. The release valve below pauses it, and
+  // a reader whose system asks for reduced motion starts paused rather than
+  // being handed a moving surface they did not ask for.
+  const autoRotateRef = useRef(true);
+  const [rotating, setRotating] = useState(true);
+  const loopRef = useRef<{ start: () => void; stop: () => void }>({
+    start: () => {},
+    stop: () => {},
+  });
+
+  // The sign-in backdrop is atmosphere behind a form; every other surface is
+  // the primary geographic reference and turns at the full rate.
+  const degreesPerSecond =
+    mode === 'login'
+      ? GLOBE_AMBIENT_LONGITUDE_DEGREES_PER_SECOND
+      : GLOBE_LONGITUDE_DEGREES_PER_SECOND;
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -168,11 +196,14 @@ export function InfrastructureGlobe({
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reducedMotion.matches) {
+      autoRotateRef.current = false;
+      setRotating(false);
+    }
     let visible = true;
     let pageVisible = !document.hidden;
     let frame = 0;
     let lastFrame = 0;
-    let startLoop = () => {};
 
     const resize = new ResizeObserver(draw);
     resize.observe(wrapper);
@@ -198,16 +229,27 @@ export function InfrastructureGlobe({
     document.addEventListener('visibilitychange', onVisibility);
 
     const tick = (time: number) => {
-      if (!visible || !pageVisible) {
+      if (!visible || !pageVisible || !autoRotateRef.current) {
         frame = 0;
         return;
       }
       const elapsedFrameTime = lastFrame ? time - lastFrame : 0;
-      const frameInterval = window.innerWidth < 640 ? 50 : 32;
+      const frameInterval = mode === 'login' ? 80 : window.innerWidth < 640 ? 50 : 32;
       if (lastFrame && elapsedFrameTime >= frameInterval) {
-        // Deliberate motion: about four degrees per minute at 60Hz. Redraws
-        // are capped at ~20 fps on mobile and ~30 fps on larger screens.
-        rotationRef.current[0] = (rotationRef.current[0] + 0.0012 * (elapsedFrameTime / 16.667)) % 360;
+        // Continuous rotation, on by default and independent of any input: the
+        // globe turns from the moment it is on screen and keeps turning while
+        // the reader scrolls past it. Longitude advances by elapsed time, so
+        // the rate is the same whether this redraws at ~12 fps (backdrop), ~20
+        // fps (mobile) or ~30 fps (desktop). A drag pauses the auto-advance for
+        // its duration and the pointer owns the angle; on release the globe
+        // carries on from wherever the reader left it.
+        if (!dragRef.current) {
+          rotationRef.current[0] = advanceLongitude(
+            rotationRef.current[0],
+            elapsedFrameTime,
+            degreesPerSecond,
+          );
+        }
         draw();
         lastFrame = time;
       } else if (!lastFrame) {
@@ -215,14 +257,23 @@ export function InfrastructureGlobe({
       }
       frame = window.requestAnimationFrame(tick);
     };
-    startLoop = () => {
-      if (!animate || reducedMotion.matches || !visible || !pageVisible || frame) return;
+    const startLoop = () => {
+      if (!animate || !autoRotateRef.current || !visible || !pageVisible || frame) return;
       lastFrame = 0;
       frame = window.requestAnimationFrame(tick);
     };
-    const onMotionPreference = () => {
-      if (reducedMotion.matches && frame) window.cancelAnimationFrame(frame);
+    const stopLoop = () => {
+      if (frame) window.cancelAnimationFrame(frame);
       frame = 0;
+    };
+    // The pause control lives outside this effect, so it reaches the loop
+    // through a ref rather than by re-subscribing the observers on every press.
+    loopRef.current = { start: startLoop, stop: stopLoop };
+
+    const onMotionPreference = () => {
+      autoRotateRef.current = !reducedMotion.matches;
+      setRotating(!reducedMotion.matches);
+      stopLoop();
       draw();
       startLoop();
     };
@@ -235,12 +286,27 @@ export function InfrastructureGlobe({
       intersection.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
       reducedMotion.removeEventListener('change', onMotionPreference);
-      if (frame) window.cancelAnimationFrame(frame);
+      stopLoop();
     };
-  }, [animate, draw]);
+  }, [animate, degreesPerSecond, draw, mode]);
+
+  /**
+   * Pause / resume the auto-rotation.
+   *
+   * WCAG 2.2.2 asks that motion which starts on its own and runs for more than
+   * five seconds can be stopped: this is that mechanism, and it is also the
+   * way back in for anyone whose system requests reduced motion.
+   */
+  const toggleRotation = () => {
+    const next = !autoRotateRef.current;
+    autoRotateRef.current = next;
+    setRotating(next);
+    if (next) loopRef.current.start();
+    else loopRef.current.stop();
+  };
 
   const rotateBy = (degrees: number) => {
-    rotationRef.current[0] += degrees;
+    rotationRef.current[0] = normalizeLongitude(rotationRef.current[0] + degrees);
     draw();
   };
 
@@ -254,7 +320,9 @@ export function InfrastructureGlobe({
     const drag = dragRef.current;
     const bounds = event.currentTarget.getBoundingClientRect();
     if (!drag || bounds.width < 1) return;
-    rotationRef.current[0] = drag.rotation[0] + ((event.clientX - drag.x) / bounds.width) * 180;
+    rotationRef.current[0] = normalizeLongitude(
+      drag.rotation[0] + ((event.clientX - drag.x) / bounds.width) * 180,
+    );
     rotationRef.current[1] = Math.max(-65, Math.min(65, drag.rotation[1] - ((event.clientY - drag.y) / bounds.height) * 130));
     draw();
   };
@@ -302,9 +370,26 @@ export function InfrastructureGlobe({
         {interactive && (
           <div className="absolute inset-x-0 bottom-2 flex items-center justify-between gap-3 px-3 sm:bottom-4 sm:px-5">
             <p className="text-[11px] text-[var(--ob-text-4)]" aria-live="polite">
-              {canRotate ? 'Rotate the globe' : 'Drag to rotate'}
+              {canRotate
+                ? 'Rotate the globe'
+                : rotating
+                  ? 'Rotating · drag to steer'
+                  : 'Rotation paused · drag to rotate'}
             </p>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleRotation}
+                aria-label={rotating ? 'Pause rotation' : 'Resume rotation'}
+                aria-pressed={!rotating}
+                className="inline-flex size-11 items-center justify-center border border-[var(--ob-line-2)] bg-[var(--ob-void)] text-[var(--ob-text-3)] transition-colors hover:text-[var(--ob-text)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ob-signal)]"
+              >
+                {rotating ? (
+                  <Pause size={15} aria-hidden="true" />
+                ) : (
+                  <Play size={15} aria-hidden="true" />
+                )}
+              </button>
               <button
                 type="button"
                 onClick={() => rotateBy(-12)}
@@ -326,9 +411,9 @@ export function InfrastructureGlobe({
         )}
       </div>
       <p className="sr-only">
-        The coastline and graticule are geographic reference only. No points are
-        plotted unless a verified latitude and longitude is supplied by the
-        observation source.
+        The globe rotates continuously and can be paused. The coastline and
+        graticule are geographic reference only. No points are plotted unless a
+        verified latitude and longitude is supplied by the observation source.
       </p>
     </div>
   );
