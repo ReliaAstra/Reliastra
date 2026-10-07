@@ -22,8 +22,6 @@ import type {
   EmailCampaignListResponse,
   EmailCenterMessageDetail,
   EmailCenterMessagesResponse,
-  EmailClassBindResponse,
-  EmailClassListResponse,
   EmailCenterRenderResponse,
   EmailCenterSendRequest,
   EmailCenterSendResponse,
@@ -554,9 +552,6 @@ export const adminApi = {
     request<EmailCenterTemplate>(`/email-center/templates/${templateId}/duplicate`, {
       method: 'POST',
     }),
-  emailClasses: () => request<EmailClassListResponse>('/email-center/classes'),
-  bindEmailClass: (classId: string, data: { incident_id?: string; evidence_id?: string }) =>
-    request<EmailClassBindResponse>(`/email-center/classes/${classId}/bind`, { method: 'POST', body: data }),
   renderEmailTemplate: (data: {
     template_id?: string;
     subject?: string;

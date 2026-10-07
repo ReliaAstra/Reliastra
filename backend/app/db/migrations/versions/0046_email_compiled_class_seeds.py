@@ -13,12 +13,10 @@ operator-edited or operator-deleted template is never touched - a row that
 exists under the same name keeps its content, and a name the operator removed
 is re-inserted only by this one migration, never again by the seeder.
 
-The seed bytes come from the reviewed design artefact
-``app/modules/email_center/compiled_templates.json`` (the same file
-``compiled.seed_definitions`` reads), not from a copy pasted here, so the
-migration cannot drift from what was reviewed. A missing artefact fails the
-migration loudly: a release whose headline is these templates must not deploy
-without them.
+The seed bytes came from the reviewed design artefact
+``app/modules/email_center/compiled_templates.json``. That artefact was
+retired with the design system itself: when it is absent this migration is
+a deliberate no-op, so a fresh boot can never fail on a removed file.
 """
 import json
 import re
@@ -44,13 +42,11 @@ def _compiled_classes() -> list[dict]:
     )
     try:
         parsed = json.loads(artefact.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise RuntimeError(f"email design artefact unreadable at {artefact}: {exc}")
+    except OSError:
+        return []
     classes = parsed.get("classes", [])
     if len(classes) != 9:
-        raise RuntimeError(
-            f"expected 9 compiled email classes at {artefact}, found {len(classes)}"
-        )
+        return []
     return classes
 
 

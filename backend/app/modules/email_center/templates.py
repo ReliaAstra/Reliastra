@@ -14,7 +14,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictException, ResourceNotFoundException
-from app.modules.email_center.compiled import seed_definitions
 from app.modules.email_center.models import (
     EmailCenterTemplate,
 )
@@ -52,18 +51,9 @@ def render_variables(text: str, variables: dict[str, str], *, escape_html: bool)
     return VARIABLE_RE.sub(_replace, text or "")
 
 
-# ── Legacy hand-authored seed ──────────────────────────────────────────────
-# Superseded by the compiled design system, which carries enforced fields, a
-# compliance footer and a multipart text body that these do not.
-#
-# "Welcome Email", "Billing Notification", "System Alert" and "Partner
-# Invitation" each have a designed equivalent among the nine compiled classes.
-# Seeding both would put fourteen templates in the picker, four of them
-# visually inferior versions of a class that already exists.
-#
-# "Kora - USD International Payments Request" is kept: it is a specific piece of
-# correspondence that was actually sent to a named vendor, not a generic
-# template, and no class covers a one-off KYC thread.
+# ── Seed templates ────────────────────────────────────────────────────────
+# Stored as plain data (editable + deletable from the Admin UI). Variables
+# use the safe {{name}} substitution - never a template engine.
 
 _KORA_TEXT = """Hello Kora Support,
 
@@ -116,7 +106,7 @@ _KORA_HTML = """<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe 
 <p>{{admin_name}}<br>Founder, Reliastra<br><a href="mailto:finance@reliastra.com">finance@reliastra.com</a></p>
 </div>"""
 
-_LEGACY_SEEDS: tuple[dict, ...] = (
+_SEED_TEMPLATES: tuple[dict, ...] = (
     {
         "name": "Kora - USD International Payments Request",
         "description": "Outreach to Kora support requesting USD virtual account and international payment collection.",
@@ -124,42 +114,98 @@ _LEGACY_SEEDS: tuple[dict, ...] = (
         "text_body": _KORA_TEXT,
         "html_body": _KORA_HTML,
     },
+    {
+        "name": "Welcome Email",
+        "description": "Welcome a new customer to Reliastra.",
+        "subject": "Welcome to Reliastra, {{customer_name}}",
+        "text_body": (
+            "Hello {{customer_name}},\n\nWelcome to Reliastra. Your workspace for "
+            "{{company_name}} is ready, and you can connect your first dependency "
+            "from the dashboard.\n\nIf you need anything, reply to this email and "
+            "our team will help.\n\n- The Reliastra Team"
+        ),
+        "html_body": (
+            '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+            'color:#1f2937;line-height:1.65;max-width:640px;">'
+            "<p>Hello {{customer_name}},</p>"
+            "<p>Welcome to <strong>Reliastra</strong>. Your workspace for {{company_name}} is ready, "
+            "and you can connect your first dependency from the dashboard.</p>"
+            "<p>If you need anything, reply to this email and our team will help.</p>"
+            "<p>- The Reliastra Team</p></div>"
+        ),
+    },
+    {
+        "name": "Billing Notification",
+        "description": "Notify a customer about an invoice or billing event.",
+        "subject": "Billing update for {{company_name}} - {{invoice_id}}",
+        "text_body": (
+            "Hello {{customer_name}},\n\nThis is a billing notification regarding "
+            "invoice {{invoice_id}} for {{company_name}}.\n\nAmount due: {{amount_due}}\n"
+            "Due date: {{due_date}}\n\nYou can review and pay from your Reliastra "
+            "billing page. Reply to this email with any questions.\n\n- Reliastra Billing"
+        ),
+        "html_body": (
+            '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+            'color:#1f2937;line-height:1.65;max-width:640px;">'
+            "<p>Hello {{customer_name}},</p>"
+            "<p>This is a billing notification regarding invoice <strong>{{invoice_id}}</strong> "
+            "for {{company_name}}.</p>"
+            "<p><strong>Amount due:</strong> {{amount_due}}<br>"
+            "<strong>Due date:</strong> {{due_date}}</p>"
+            "<p>You can review and pay from your Reliastra billing page. "
+            "Reply to this email with any questions.</p>"
+            "<p>- Reliastra Billing</p></div>"
+        ),
+    },
+    {
+        "name": "System Alert",
+        "description": "Operational alert notification for internal or customer follow-up.",
+        "subject": "[Reliastra] {{alert_title}}",
+        "text_body": (
+            "Reliastra system alert\n\n{{alert_title}}\n\n{{alert_details}}\n\n"
+            "Detected at: {{detected_at}}\n\n- Reliastra Operations"
+        ),
+        "html_body": (
+            '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+            'color:#1f2937;line-height:1.65;max-width:640px;">'
+            "<p><strong>Reliastra system alert</strong></p>"
+            "<p><strong>{{alert_title}}</strong></p>"
+            "<p>{{alert_details}}</p>"
+            "<p>Detected at: {{detected_at}}</p>"
+            "<p>- Reliastra Operations</p></div>"
+        ),
+    },
+    {
+        "name": "Partner Invitation",
+        "description": "Invite a company to the Reliastra partner program.",
+        "subject": "Invitation: partner with Reliastra",
+        "text_body": (
+            "Hello {{partner_name}},\n\nI'd like to invite {{company_name}} to partner "
+            "with Reliastra. Our partners earn recurring revenue by bringing "
+            "reliability intelligence to their customers.\n\nYou can start here: "
+            "https://reliastra.com/partners\n\nHappy to walk you through the program "
+            "on a short call.\n\n- {{admin_name}}\nReliastra Partnerships"
+        ),
+        "html_body": (
+            '<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;'
+            'color:#1f2937;line-height:1.65;max-width:640px;">'
+            "<p>Hello {{partner_name}},</p>"
+            "<p>I&rsquo;d like to invite {{company_name}} to partner with <strong>Reliastra</strong>. "
+            "Our partners earn recurring revenue by bringing reliability intelligence to "
+            "their customers.</p>"
+            '<p>You can start here: <a href="https://reliastra.com/partners">'
+            "https://reliastra.com/partners</a></p>"
+            "<p>Happy to walk you through the program on a short call.</p>"
+            "<p>- {{admin_name}}<br>Reliastra Partnerships</p></div>"
+        ),
+    },
 )
-
-#: The compiled transactional design system, rendered from
-#: ``frontend/src/emails`` by ``npm run emails:compile``. These are the primary
-#: seeds: they are the nine classes every outbound RELIASTRA message is
-#: composed from.
-_COMPILED_SEEDS: tuple[dict, ...] = tuple(seed_definitions())
-
-#: Order matters only for the picker's alphabetisation, which sorts by name;
-#: the split is here so the two provenance paths stay legible.
-_SEED_TEMPLATES: tuple[dict, ...] = _COMPILED_SEEDS + _LEGACY_SEEDS
-
-
-def _seed_description(seed: dict) -> str | None:
-    """Prefix compiled seeds so the picker distinguishes them from hand-authored.
-
-    ``name`` is already unique and human-readable, so the discriminator lives in
-    the description rather than in a name the operator has to read twice.
-    """
-    base = (seed.get("description") or "").strip()
-    class_id = seed.get("class_id")
-    if class_id:
-        return f"[{class_id}] {base}".strip()
-    return base or None
 
 
 class EmailTemplates:
     """Template CRUD and seeding (stateless; takes ``db`` per call)."""
 
     async def ensure_seed_templates(self, db: AsyncSession) -> None:
-        """Seed the compiled design system plus the surviving legacy seed.
-
-        Only runs on an empty table. An installation that already has templates
-        keeps exactly what it has, including any the operator has edited or
-        deleted - this must never resurrect a template a human removed.
-        """
         count = (await db.execute(select(func.count(EmailCenterTemplate.id)))).scalar() or 0
         if count:
             return
@@ -167,7 +213,7 @@ class EmailTemplates:
             db.add(
                 EmailCenterTemplate(
                     name=seed["name"],
-                    description=_seed_description(seed),
+                    description=seed.get("description"),
                     subject=seed["subject"],
                     text_body=seed.get("text_body", ""),
                     html_body=seed.get("html_body", ""),

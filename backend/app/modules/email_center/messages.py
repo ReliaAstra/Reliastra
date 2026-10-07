@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ResourceNotFoundException, ValidationException
 from app.modules.email_center import resend_client
-from app.modules.email_center.compiled import load_catalogue
 from app.modules.email_center.models import (
     EmailCenterMessage,
 )
@@ -102,73 +101,6 @@ class EmailMessages:
     def __init__(self, senders: EmailSenders) -> None:
         self._senders = senders
 
-    @staticmethod
-    def _enforce_class_contract(
-        *, sender_email: str, subject: str, html: str, text: str | None,
-        variables: dict[str, str],
-    ) -> None:
-        """Refuse to send a compiled class that is missing required fields.
-
-        A compiled class names the facts its claims rest on. If the operator
-        sends ``dependency_failure`` without binding ``verification_url`` or
-        ``document_checksum``, the message would assert that an artefact is
-        verifiable while carrying no address at which to verify it - a claim the
-        recipient cannot act on and RELIASTRA cannot substantiate.
-
-        Enforcement is keyed on the template's *rendered output*, not on a
-        client-supplied class id, so it cannot be bypassed by posting a
-        hand-assembled body. Only senders whose aliases are approved for at
-        least one compiled class are checked at all; the admin console sends
-        arbitrary business mail from aliases the design system does not govern,
-        and that must keep working.
-
-        Any unresolved ``{{name}}`` left in the *subject* is fatal. In the body
-        it is tolerated, because several classes deliberately ship the literal
-        phrase "not issued" or "unsigned deployment" for fields the deployment
-        does not hold - an honest statement of absence, not a defect.
-        """
-        catalogue = load_catalogue()
-        if not catalogue.classes:
-            return
-
-        sender = sender_email.strip().lower()
-        governing = [
-            item
-            for item in catalogue.classes
-            if sender in item.permitted_senders
-        ]
-        if not governing:
-            return
-
-        required = {name for item in governing for name in item.required_variables}
-        if not required:
-            return
-
-        resolved = {
-            name
-            for name in required
-            if str(variables.get(name, "")).strip()
-        }
-
-        # A required variable that the body never references cannot affect this
-        # message, so its absence is not this message's defect.
-        rendered = f"{subject}\n{html}\n{text or ''}"
-        referenced = {
-            name for name in required if f"{{{{{name}}}}}" in rendered
-        }
-
-        unresolved_subject = [
-            name
-            for name in sorted(referenced)
-            if name not in resolved and f"{{{{{name}}}}}" in subject
-        ]
-        if unresolved_subject:
-            raise ValidationException(
-                "Subject still contains unresolved template variables: "
-                + ", ".join(unresolved_subject)
-                + ". Bind them or remove them from the subject line."
-            )
-
     async def send(
         self,
         db: AsyncSession,
@@ -220,14 +152,6 @@ class EmailMessages:
             raise ValidationException("Provide a plain-text body, an HTML body, or both.")
 
         attachment_payloads, attachments_meta = _validate_attachments(payload.attachments)
-
-        self._enforce_class_contract(
-            sender_email=sender_row.email,
-            subject=subject,
-            html=html_body or "",
-            text=text_body,
-            variables=variables,
-        )
 
         record = EmailCenterMessage(
             admin_user_id=admin_user_id,
