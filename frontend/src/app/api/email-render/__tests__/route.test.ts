@@ -1,11 +1,13 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { POST } from '../route';
 
-process.env.ADMIN_TOKEN_SECRET =
-  'test-secret-that-is-long-enough-for-the-gate-123456';
+// Generated per run: no secret-shaped literal may live in source, even as a
+// test value, or the secret scanner (correctly) blocks the deploy.
+const TEST_SECRET = randomBytes(32).toString('hex');
+process.env.ADMIN_TOKEN_SECRET = TEST_SECRET;
 
 function b64url(input: string): string {
   return Buffer.from(input, 'utf8')
@@ -66,8 +68,7 @@ const INTERNAL_VARS = {
 describe('POST /api/email-render', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
-    process.env.ADMIN_TOKEN_SECRET =
-      'test-secret-that-is-long-enough-for-the-gate-123456';
+    process.env.ADMIN_TOKEN_SECRET = TEST_SECRET;
   });
 
   it('rejects requests without the admin marker', async () => {
