@@ -16,8 +16,14 @@
  * broken layout costs credibility. Billing and security notices in particular
  * get printed, forwarded and archived.
  *
- * Decoration budget: one hairline weight, one accent (near-black), and colour
- * reserved exclusively for reporting system state.
+ * Decoration budget: one hairline weight, one brand accent for identity, and
+ * colour reserved otherwise exclusively for reporting system state.
+ *
+ * The accent is a deep mission blue in the RELIASTRA brand family
+ * (--rs-brand: #2563EB), deepened to hold small tracked type on paper.
+ * It appears in exactly three places: the masthead signal rule, the section
+ * register numerals, and the primary call to action. Everything else stays
+ * neutral so the accent reads as authority, not decoration.
  */
 
 export const px = (n: number): string => `${n}px`;
@@ -38,22 +44,22 @@ export const BANNER_H = 44;
 export const color = {
   /** Masthead ground. Never #000 - pure black bands look like a rendering fault. */
   masthead: '#050505',
-  /** Document ground. */
-  paper: '#FFFFFF',
+  /** Document ground. Warm paper, not clinical white. */
+  paper: '#FAFAF8',
   /** Recessed panel: telemetry blocks, provenance, notices. */
-  recessed: '#F7F8FA',
-  /** Table header / zebra band. */
-  band: '#FBFBFC',
+  recessed: '#F3F3EE',
+  /** Table header / zebra band, and the outer ground behind the card. */
+  band: '#EFEFE7',
 
   // Masthead type
   onDark: '#F5F5F5',
   onDarkSecondary: '#A0A0A0',
   onDarkTertiary: '#8F8F8F',
 
-  // Body type - all verified against #FFFFFF
-  ink: '#0B0F17', // 19.1:1
-  inkSecondary: '#4A5261', // 8.2:1
-  inkTertiary: '#6E7686', // 5.0:1
+  // Body type - all verified against paper (#FAFAF8), AAA throughout
+  ink: '#0B0F17', // ~18:1
+  inkSecondary: '#4A5261', // ~8:1
+  inkTertiary: '#6E7686', // ~4.9:1
 
   // Structure
   rule: '#E3E6EB',
@@ -61,9 +67,16 @@ export const color = {
   ruleDark: 'rgba(255,255,255,0.14)',
   ruleDarkStrong: 'rgba(255,255,255,0.28)',
 
-  /** The single accent. Monochrome on purpose - see module docstring. */
+  /** Structural ink. Near-black, never pure black. */
   signal: '#0B0F17',
   signalOnDark: '#F5F5F5',
+  /**
+   * The brand accent. Deep mission blue, text-safe on paper at tracked sizes.
+   * Three uses only: masthead signal rule, section numerals, primary action.
+   */
+  brand: '#1D4ED8',
+  brandDeep: '#1E3A8A',
+  brandWash: '#EDF2FE',
 
   // System state - the only permitted use of hue
   up: '#1E7A4D',
@@ -121,27 +134,41 @@ export const label = {
   msoLineHeightRule: 'exactly',
 } as const;
 
-/** Section index in the mission-report register: `01`, `02`, ... */
+/**
+ * Section index in the mission-report register.
+ *
+ * Set large and in the brand accent: the register is the spine of the
+ * document, and the numerals doubling as brand moments is what makes a
+ * mission report read as one at a glance.
+ */
 export const sectionIndex = {
   ...label,
-  color: color.signal,
+  fontSize: '13px',
+  lineHeight: '18px',
+  fontWeight: 700,
+  color: color.brand,
 } as const;
 
+/**
+ * Display headline. Set at poster mass with tight tracking: the single
+ * loudest element in the message, the way a mission patch carries one strong
+ * mark. Email clients honour numeric weights, so 800 renders as intended.
+ */
 export const h1 = {
   fontFamily: font.sans,
-  fontSize: '21px',
-  lineHeight: '28px',
-  fontWeight: 600,
-  letterSpacing: '-0.018em',
+  fontSize: '30px',
+  lineHeight: '36px',
+  fontWeight: 800,
+  letterSpacing: '-0.03em',
   color: color.ink,
 } as const;
 
 export const h2 = {
   fontFamily: font.sans,
-  fontSize: '15px',
-  lineHeight: '22px',
-  fontWeight: 600,
-  letterSpacing: '-0.008em',
+  fontSize: '17px',
+  lineHeight: '24px',
+  fontWeight: 700,
+  letterSpacing: '-0.015em',
   color: color.ink,
 } as const;
 
@@ -216,10 +243,10 @@ export const noteStrong = {
  */
 export const wordmark = {
   fontFamily: font.sans,
-  fontSize: '17px',
-  lineHeight: '22px',
-  fontWeight: 700,
-  letterSpacing: '-0.02em',
+  fontSize: '22px',
+  lineHeight: '27px',
+  fontWeight: 800,
+  letterSpacing: '-0.025em',
   color: color.onDark,
 } as const;
 
