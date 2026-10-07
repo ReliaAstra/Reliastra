@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Inbox, Play, Search, Send, ShieldAlert } from 'lucide-react';
+import { ArrowUpRight, FilePenLine, Inbox, Play, Search, Send, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminApi } from '@/lib/admin-api';
+import { renderEmailVariables } from '@/lib/email-sanitize';
 import { formatAdminDate, formatCompactNumber } from '@/lib/admin-utils';
 import { cn } from '@/lib/utils';
 import type { OutreachDraft } from '@/types/admin';
@@ -58,6 +60,13 @@ export function OutreachPage() {
         eyebrow="Outreach"
         title="Outreach hunter"
         description="Review-queue only. Nothing sends without you approving that draft."
+        actions={
+          <Button asChild variant="outline" className="gap-1.5">
+            <Link href="/admin/email">
+              <FilePenLine className="size-3.5" /> Template studio <ArrowUpRight className="size-3.5" />
+            </Link>
+          </Button>
+        }
       />
       <OutreachMetrics query={overviewQuery} />
       <Tabs defaultValue="queue">
@@ -182,16 +191,49 @@ function DraftInspector({ draft, onClose, onChanged }: {
   const queryClient = useQueryClient();
   const [subject, setSubject] = useState<string | null>(null);
   const [body, setBody] = useState<string | null>(null);
+  const [templateId, setTemplateId] = useState('');
   const activeSubject = subject ?? draft?.subject ?? '';
   const activeBody = body ?? draft?.body_text ?? '';
+  const templatesQuery = useQuery({
+    queryKey: ['admin', 'email-center', 'templates'],
+    queryFn: adminApi.emailTemplates,
+    enabled: Boolean(draft),
+    staleTime: 60_000,
+  });
+  const outreachTemplates = (templatesQuery.data ?? []).filter((template) =>
+    template.html_body.includes('rs-outreach-studio-v1')
+  );
+
+  useEffect(() => {
+    setSubject(null);
+    setBody(null);
+    setTemplateId('');
+  }, [draft?.id]);
+
+  const applyTemplate = (id: string) => {
+    setTemplateId(id);
+    const template = outreachTemplates.find((item) => item.id === id);
+    if (!template || !draft) return;
+    const values = {
+      company: draft.agency_name || draft.domain || '',
+      organization: draft.agency_name || draft.domain || '',
+      agency_name: draft.agency_name || draft.domain || '',
+      domain: draft.domain || '',
+      website: draft.domain || '',
+      contact_email: draft.contact_email || '',
+    };
+    setSubject(renderEmailVariables(template.subject, values));
+    setBody(renderEmailVariables(template.text_body || '', values));
+    toast.success('Outreach template applied', { description: 'Available lead details were merged. Review any remaining tokens before saving.' });
+  };
 
   const save = useMutation({
     mutationFn: (data: { subject?: string; body_text?: string; status?: string }) =>
       adminApi.outreachReviewDraft(draft!.id, data),
-    onSuccess: async () => {
+    onSuccess: async (_updatedDraft, data) => {
       toast.success('Draft updated.');
-      setSubject(null);
-      setBody(null);
+      if (data.subject !== undefined) setSubject(data.subject);
+      if (data.body_text !== undefined) setBody(data.body_text);
       await queryClient.invalidateQueries({ queryKey: ['admin', 'outreach'] });
       onChanged();
     },
@@ -216,6 +258,27 @@ function DraftInspector({ draft, onClose, onChanged }: {
           <SheetDescription>{draft?.domain} · {draft?.contact_email || 'no public email - send disabled'}</SheetDescription>
         </SheetHeader>
         <div className="mt-4 space-y-3 px-4 sm:px-6">
+          {outreachTemplates.length > 0 && (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <label htmlFor="outreach-draft-template" className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">
+                Start from outreach template
+              </label>
+              <select
+                id="outreach-draft-template"
+                value={templateId}
+                onChange={(event) => applyTemplate(event.target.value)}
+                className="h-9 w-full rounded-md border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 dark:border-white/10 dark:bg-card dark:text-slate-100"
+              >
+                <option value="">Choose a saved template…</option>
+                {outreachTemplates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+                Known lead details are merged in. Review any remaining tokens before saving.
+              </p>
+            </div>
+          )}
           <Input value={activeSubject} onChange={(e) => setSubject(e.target.value)} aria-label="Subject" />
           <Textarea value={activeBody} onChange={(e) => setBody(e.target.value)} rows={14} aria-label="Body" />
           {draft?.send_error && <p className="text-xs text-red-600">Last send blocked: {draft.send_error}</p>}
