@@ -541,13 +541,8 @@ export const EXTERNAL_LINKS = {
  */
 export const LANDING_SECTIONS = [
   'top',
-  'problem',
   'observation',
-  'correlation',
-  'attribution',
-  'evidence',
   'index',
-  'research',
   'pricing',
   'reference',
   'maintainer',

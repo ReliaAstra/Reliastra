@@ -6,13 +6,10 @@ import {
   Section,
 } from '@/components/site/primitives';
 import {
-  ATTRIBUTION,
   DETECTION,
   OBSERVATION_POINT,
-  OBSERVATION_POINTS,
 } from '@/lib/methodology';
 import { RESEARCH_AUTHORS } from '@/lib/research/authors';
-import { MAINTAINER_PUBLIC_WORK } from '@/lib/research/maintainer-profile';
 import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 
 /* ── 10 · Reference ─────────────────────────────────────────────────────── */
@@ -20,16 +17,13 @@ import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/routes';
 /**
  * Short, machine-legible definitions. They mirror the FAQPage structured data
  * emitted by the page, so the structured data cannot describe a different
- * product than the copy.
+ * product than the copy. Four questions only: the rest of the answers live
+ * on `/product`, `/docs/methodology` and `/security`, which this page links to.
  */
 export const HOME_DEFINITIONS: { q: string; a: string }[] = [
   {
     q: 'What is RELIASTRA?',
     a: 'An external dependency observation product. It probes the third-party services your software depends on, from infrastructure you do not operate, records what each probe saw, and keeps a verifiable record of what happened.',
-  },
-  {
-    q: 'What does it observe?',
-    a: 'Any HTTP endpoint that returns a status code: payment providers, identity providers, cloud platforms, model APIs, messaging, managed databases, DNS.',
   },
   {
     q: 'How is an incident confirmed?',
@@ -42,16 +36,6 @@ export const HOME_DEFINITIONS: { q: string; a: string }[] = [
   {
     q: 'What is in an evidence record?',
     a: 'The dependency, the incident window and the observation topology behind it, every observation in the window, the arithmetic behind the availability figures, the attribution result with its methodology version, and a SHA-256 checksum over the payload.',
-  },
-  {
-    q: 'How does attribution work?',
-    a: `Deterministically, from five weighted signals summing to 1: ${ATTRIBUTION.signals
-      .map((s) => s.label.toLowerCase())
-      .join(', ')}. A score at or above ${ATTRIBUTION.vendorFailureAt} classifies as vendor failure; below ${ATTRIBUTION.multiCauseAt} the result is often \`unknown\`, which is a result rather than an error.`,
-  },
-  {
-    q: 'Who can see my monitoring data?',
-    a: 'Only your account. Dependency endpoints, headers and evidence records are never shared with the vendors being measured, and customer dependencies never appear in the public observatory.',
   },
 ];
 
@@ -91,28 +75,13 @@ export function ReferenceSection() {
 /* ── 11 · Maintainer ────────────────────────────────────────────────────── */
 
 /**
- * What the founder actually does, stated as disciplines rather than adjectives.
- *
- * The claim is architecting, DevSecOps, SRE and platform work on cloud and AI
- * infrastructure - which is the work that produced this product - rather than
- * generic software engineering. The stack line names what he operates, because
- * on an evidence product the operating stack is itself part of the evidence.
+ * The founder, briefly. One portrait, one paragraph, one link: the full
+ * profile — disciplines, published work, operating stack — lives on `/about`.
+ * A founder-led infrastructure product has to show the engineer; a paragraph
+ * asserting that a real person is behind it is the weakest possible version
+ * of that claim, so this section points at the evidence instead of
+ * reproducing it.
  */
-const DISCIPLINES = [
-  {
-    title: 'AI & cloud infrastructure security',
-    body: 'Threat modelling and hardening for AI serving stacks, cloud identity, Kubernetes and the networks between them. IAM treated as a graph, not a list.',
-  },
-  {
-    title: 'Infrastructure architecture',
-    body: 'The observation network, the detection and attribution engine, and the evidence pipeline: boundaries drawn from failure modes, not from convenience.',
-  },
-  {
-    title: 'DevSecOps & SRE',
-    body: 'Policy and admission control, supply-chain and runtime security, and the observability needed to know what a system is doing while it does it.',
-  },
-] as const;
-
 export function MaintainerSection() {
   const author = RESEARCH_AUTHORS[0];
 
@@ -152,59 +121,17 @@ export function MaintainerSection() {
             <ArrowLink href={PUBLIC_ROUTES.about}>Full profile</ArrowLink>
           </div>
 
-          <div className="flex flex-col gap-8">
-            <div className="flex flex-col gap-5">
-              <h2 id="maintainer-title" className="ob-scene-title max-w-[22ch]">
-                The engineer who operates the measurement network.
-              </h2>
-              <p className="ob-body-lg max-w-[62ch]">{author.bio}</p>
-              <p className="ob-small max-w-[62ch]">
-                The stack he designs and runs: Go for the CLI and probe tooling,
-                Python and FastAPI for the API, Postgres and Redis, Celery for the
-                scheduled measurement work, SHA-256 and Ed25519 for the evidence
-                records. Founder and principal engineer: the same person who
-                designed the system runs the probes and publishes the method.
-              </p>
-            </div>
-
-            <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-3">
-              {DISCIPLINES.map((d) => (
-                <li key={d.title} className="border-t border-[var(--ob-line)] pt-4">
-                  <p className="text-[14px] font-semibold leading-[1.35] tracking-[-0.008em] text-[var(--ob-text)]">
-                    {d.title}
-                  </p>
-                  <p className="mt-2 text-[13px] leading-[1.6] text-[var(--ob-text-3)]">
-                    {d.body}
-                  </p>
-                </li>
-              ))}
-            </ul>
-
-            <div className="border-t border-[var(--ob-line)] pt-6">
-              <p className="ob-label mb-4">Published work</p>
-              <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-                {MAINTAINER_PUBLIC_WORK.map((work) => (
-                  <li key={work.name}>
-                    <a
-                      href={work.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ob-link text-[13.5px]"
-                    >
-                      {work.name} <span aria-hidden>↗</span>
-                    </a>
-                    <p className="mt-1.5 text-[12.5px] leading-[1.6] text-[var(--ob-text-4)]">
-                      {work.body}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <p className="ob-small mt-4 max-w-[64ch]">
-                Every repository linked here contains readable source. Forks of
-                upstream projects and repositories without an implementation are
-                deliberately not listed.
-              </p>
-            </div>
+          <div className="flex flex-col gap-5">
+            <h2 id="maintainer-title" className="ob-scene-title max-w-[22ch]">
+              The engineer who operates the measurement network.
+            </h2>
+            <p className="ob-body-lg max-w-[62ch]">{author.bio}</p>
+            <p className="ob-small max-w-[62ch]">
+              The stack he designs and runs: Go for the CLI and probe tooling,
+              Python and FastAPI for the API, Postgres and Redis, Celery for the
+              scheduled measurement work, SHA-256 and Ed25519 for the evidence
+              records.
+            </p>
           </div>
         </div>
       </Container>

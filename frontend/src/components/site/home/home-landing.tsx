@@ -1,31 +1,25 @@
-import Link from 'next/link';
 import { SiteShell } from '@/components/site/site-shell';
 import { HomeHero } from './hero';
 import { Manifesto } from './scenes';
-import { ProblemScene } from './problem-scene';
-import { CorrelateBand, ObserveBand, ProveBand } from './method-bands';
-import { AttributionScene } from './attribution-scene';
+import { MethodSection } from './method-bands';
 import { IndexScene } from './index-scene';
-import { ResearchTeaser } from './research-teaser';
 import { PricingSummary } from './pricing-summary';
 import { FinalCTASection, MaintainerSection, ReferenceSection } from './sections';
-import { AUTH_ROUTES } from '@/lib/routes';
 
 /**
  * The RELIASTRA homepage, composed as scenes.
  *
- * Each scene is one argument at one scale, and the page is the sequence an
- * engineer reads them in:
+ * Deliberately short. The homepage makes the proposition at billboard scale
+ * and links to the pages that prove it — `/product` owns the explanation,
+ * `/product/evidence` owns the artifact, `/observatory` owns the live data,
+ * `/docs` owns the method, `/research` owns the papers. A section that
+ * repeats what one of those pages already says is a section this page
+ * does not need.
  *
- *   top          the product thesis, paired with the deployed observation footprint
+ *   top          the proposition, staged on a full-viewport Earth
  *   statement    the claim, in one sentence
- *   problem      the blind spot, drawn as a topology
- *   observation  what a probe records, with the working
- *   correlation  how a failure becomes an incident
- *   attribution  how an incident names a contributor
- *   evidence     what you can still verify a year later
- *   index        the same probes, published
- *   research     the published method behind the claims
+ *   observation  what the product does, in three sentences
+ *   index        the same probes, published (real data or an honest empty state)
  *   pricing      what it costs
  *   reference    the questions this page raises, answered plainly
  *   maintainer   who is behind it
@@ -38,29 +32,11 @@ export function HomeLanding() {
   return (
     <SiteShell overHero>
       <HomeHero />
-      <Manifesto
-        aside={
-          <p className="ob-body">
-            When a third-party dependency degrades, your users file it under
-            your name. RELIASTRA gives you the observation record that shows
-            where it actually failed, and evidence that still verifies after
-            the incident is over.{' '}
-            <Link href={AUTH_ROUTES.signup} className="ob-link">
-              Start with one endpoint
-            </Link>
-            .
-          </p>
-        }
-      >
+      <Manifesto>
         Your infrastructure includes services you do not operate.
       </Manifesto>
-      <ProblemScene />
-      <ObserveBand />
-      <CorrelateBand />
-      <AttributionScene />
-      <ProveBand />
+      <MethodSection />
       <IndexScene />
-      <ResearchTeaser />
       <PricingSummary />
       <ReferenceSection />
       <MaintainerSection />

@@ -66,14 +66,8 @@ const PUBLIC_ROUTES = [
  */
 const LANDING_SECTION_IDS = [
   'top',
-  'problem',
   'observation',
-  'correlation',
-  'attribution',
-  'evidence',
   'index',
-  'research',
-  'agencies',
   'pricing',
   'reference',
   'maintainer',
