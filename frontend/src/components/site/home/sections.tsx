@@ -89,29 +89,8 @@ export function MaintainerSection() {
     <Section id="maintainer" tone="void" aria-labelledby="maintainer-title">
       <Container>
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.62fr)_minmax(0,1.38fr)] lg:gap-16">
-          {/*
-            Portrait, name, role. A founder-led infrastructure product has to
-            show the engineer; a paragraph asserting that a real person is
-            behind it is the weakest possible version of that claim.
-          */}
           <div className="flex flex-col items-start gap-5">
             <Eyebrow>Founder &amp; principal engineer</Eyebrow>
-            <div
-              className="relative w-full max-w-[300px] overflow-hidden border border-[var(--ob-line-2)] bg-[var(--ob-raised)]"
-              style={{ aspectRatio: '1 / 1' }}
-            >
-              <img
-                src="/media/maintainer-lg.webp"
-                srcSet="/media/maintainer-sm.webp 320w, /media/maintainer-md.webp 640w, /media/maintainer-lg.webp 960w"
-                sizes="(max-width: 1023px) 300px, 300px"
-                alt={`${author.name}, founder and principal engineer of RELIASTRA`}
-                width={960}
-                height={960}
-                loading="lazy"
-                decoding="async"
-                className="h-full w-full object-cover"
-              />
-            </div>
             <div className="flex flex-col gap-1">
               <p className="text-[17px] font-semibold tracking-[-0.014em] text-[var(--ob-text)]">
                 {author.name}

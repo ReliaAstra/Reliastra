@@ -70,12 +70,6 @@ export const RESEARCH_AUTHORS: readonly ResearchAuthor[] = [
       'builds the RELIASTRA platform - the probe network, the Go CLI, the evidence pipeline - and ' +
       'publishes the method alongside the product.',
     url: 'https://reliastra.com/about',
-    // Self-hosted portrait, not the GitHub avatar: this is the profile image on
-    // the About page, the research bylines and the `Person` structured data, and
-    // an identity that resolves to a stranger's account picture is a worse
-    // signal than one that resolves to nothing. Absolute, because structured
-    // data has no notion of a relative path.
-    image: `${SITE_URL}/media/maintainer-lg.webp`,
     sameAs: [
       'https://www.linkedin.com/in/emmanueladeshina01',
       'https://x.com/secengineerx01',
