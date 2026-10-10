@@ -9,7 +9,6 @@ import {
   Eyebrow,
   Section,
 } from '@/components/site/primitives';
-import { MaintainerAvatar } from '@/components/site/maintainer-avatar';
 import { RESEARCH_AUTHORS } from '@/lib/research/authors';
 import { MAINTAINER_PUBLIC_WORK } from '@/lib/research/maintainer-profile';
 import { sitePersonJsonLd } from '@/lib/research/structured-data';
@@ -91,11 +90,6 @@ export default function AboutPage() {
           </h2>
           <div className="grid gap-10 border-t border-[var(--ob-line)] pt-10 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-14">
             <div className="flex flex-col gap-5">
-              <MaintainerAvatar
-                src={author.image ?? 'https://avatars.githubusercontent.com/u/219976014?v=4'}
-                alt={`${author.name}, maintainer of RELIASTRA`}
-                initials="AE"
-              />
               <div className="flex flex-col gap-1">
                 <p className="ob-label">Founder &amp; engineer</p>
                 <p className="text-[16px] font-semibold tracking-[-0.012em] text-[var(--ob-text)]">
