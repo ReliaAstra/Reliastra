@@ -1,1 +1,1 @@
-AI Infrastructure Security - production platform topology across cloud, Kubernetes, and AI systems: applications, API gateway, identity and policy, Kubernetes, services, GPU inference, observability, and evidence-backed security.
+RELIASTRA — Infrastructure you can prove. Independent observation for the services your software depends on: observe, attribute, evidence. Dependency surface panel showing responding and observing endpoints across an observation window. reliastra.com

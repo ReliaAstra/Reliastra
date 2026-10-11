@@ -86,8 +86,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/opengraph-image.png",
-        width: 1584,
-        height: 396,
+        width: 1200,
+        height: 630,
         alt: "RELIASTRA — independent evidence for the external dependencies your software depends on",
       },
     ],
