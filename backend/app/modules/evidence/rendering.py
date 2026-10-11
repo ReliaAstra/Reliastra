@@ -64,7 +64,7 @@ def _footer_template(note: str) -> str:
     )
     return (
         f'<div style="{style}">'
-        f"<div>RELIASTRA · {safe}</div>"
+        f"<div>ATTESTED BY RELIASTRA · {safe}</div>"
         '<div>Page <span class="pageNumber"></span> of '
         '<span class="totalPages"></span></div>'
         "</div>"
