@@ -62,10 +62,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY backend/ .
 
+# '.[mcp]' installs the optional MCP server sidecar (backend/mcp_server) into the
+# same venv, so ENABLE_MCP=true is a runtime switch and not an image rebuild.
+#
+# This was measured rather than assumed. A clean resolve of '.' and of '.[mcp]'
+# produces identical versions for all 89 existing packages: the extra ADDS ten
+# (mcp, mcp-types, httpx2, httpcore2, jsonschema, jsonschema-specifications,
+# referencing, rpds-py, sse-starlette, truststore) and changes nothing - no
+# pydantic or starlette bump, because fastapi 0.143 already resolves to the
+# versions mcp asks for. With mcp present, the whole existing backend suite still
+# passes (1001 unit + 183 integration, 3 skipped).
+#
+# backend/requirements-mcp.txt keeps the same pins for an operator installing it
+# by hand; the API-only image (backend/Dockerfile) does not install it at all.
 RUN python -m venv --copies /opt/venv && \
     . /opt/venv/bin/activate && \
     pip install --upgrade pip setuptools build && \
-    pip install .
+    pip install '.[mcp]'
 
 
 # ── Stage 3: Runtime ────────────────────────────────────────────────────────

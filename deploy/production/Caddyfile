@@ -164,6 +164,38 @@ api.{$DOMAIN:reliastra.com} {
 		abort
 	}
 
+	# ── MCP: the agent-native interface, served by a separate process ────────
+	# Streamable HTTP on 127.0.0.1:8765 inside the api container, started only
+	# when ENABLE_MCP=true (deploy/supervisord-all.conf). This is the sole public
+	# path to it; the port is never published.
+	#
+	# A named matcher rather than `/mcp*` so that `/mcpanything` cannot reach the
+	# MCP port: the path is an exact endpoint plus its stream sub-paths.
+	#
+	# Host is forwarded as the PUBLIC hostname, which is what the MCP SDK's
+	# DNS-rebinding allow-list validates. That is why MCP_HTTP_ALLOWED_HOSTS must
+	# contain api.{$DOMAIN} - without it every request answers 421 Misdirected
+	# Request, and in ENVIRONMENT=production the server refuses to start at all
+	# rather than serve that.
+	#
+	# flush_interval -1 disables proxy response buffering. Streamable HTTP holds
+	# long-lived POST connections open to stream server -> client messages, and a
+	# buffered proxy turns that into a stall until the response completes.
+	#
+	# With ENABLE_MCP=false nothing listens on 8765 and this answers 502. That is
+	# deliberate: a 404 here would be indistinguishable from a wrong path, and
+	# the real question an operator has is "is the process up?".
+	@mcp path /mcp /mcp/*
+	handle @mcp {
+		reverse_proxy reliastra-api:8765 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+			header_up X-Forwarded-For {remote}
+			header_up X-Forwarded-Proto {scheme}
+			flush_interval -1
+		}
+	}
+
 	handle {
 		reverse_proxy reliastra-api:8000 {
 			header_up Host {host}

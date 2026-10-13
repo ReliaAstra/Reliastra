@@ -1,4 +1,4 @@
-.PHONY: help frontend backend test lint install cli cli-test cli-wrappers-test cli-version-check cli-release-check cli-artifacts cli-install-smoke cli-dry-run
+.PHONY: help frontend backend test lint install cli cli-test cli-wrappers-test cli-version-check cli-release-check cli-artifacts cli-install-smoke cli-dry-run mcp-install test-mcp smoke-mcp mcp-capabilities mcp-check-config mcp-stdio
 
 help:
 	@echo "Reliastra monorepo"
@@ -22,6 +22,15 @@ help:
 	@echo "                  npm + pip install from a dist/, then run the CLI"
 	@echo "  make cli-dry-run"
 	@echo "                  goreleaser --snapshot: build a release, publish nothing"
+	@echo "  make mcp-install"
+	@echo "                  Install the MCP server's (separate) dependencies"
+	@echo "  make test-mcp   Run the MCP server test suite"
+	@echo "  make smoke-mcp  Drive the real server with a real MCP client, both transports"
+	@echo "  make mcp-capabilities"
+	@echo "                  Print the verified capability registry as JSON"
+	@echo "  make mcp-check-config"
+	@echo "                  Validate MCP configuration from the environment and print it"
+	@echo "  make mcp-stdio  Run the MCP server on stdio (needs RELIASTRA_API_KEY)"
 	@echo "  make prod-host"
 	@echo "                  print the production host address from the untracked local file"
 
@@ -54,7 +63,33 @@ test:
 
 lint:
 	cd frontend && npm run lint
-	cd backend && python -m ruff check app/ tests/
+	cd backend && python -m ruff check app/ tests/ mcp_server/ scripts/
+
+# ── MCP server ─────────────────────────────────────────────────────────────
+# A separate, optional process: backend/mcp_server. Its dependencies are
+# deliberately not in backend/requirements.txt (see backend/requirements-mcp.txt
+# for why, and for the evidence that co-installing them changes no existing
+# version). `make test` already covers tests/unit/mcp once they are installed.
+mcp-install:
+	cd backend && pip install -r requirements-mcp.txt
+
+test-mcp:
+	cd backend && pytest tests/unit/mcp -q
+
+# Not a unit test: spawns the server as a real subprocess on both transports and
+# drives it with the official SDK client. Needs no database, no Redis and no
+# network - it points the upstream at a port nothing listens on.
+smoke-mcp:
+	cd backend && python scripts/mcp_smoke.py
+
+mcp-capabilities:
+	cd backend && python -m mcp_server --print-capabilities
+
+mcp-check-config:
+	cd backend && python -m mcp_server --check-config
+
+mcp-stdio:
+	cd backend && python -m mcp_server --transport stdio
 
 cli:
 	cd cli && go build ./...
