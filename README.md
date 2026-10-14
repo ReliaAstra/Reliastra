@@ -271,6 +271,8 @@ The entrypoint validates configuration, runs `alembic upgrade head`, then superv
 | `REDIS_URL` | in-container redis | External broker/cache override |
 | `RELIASTRA_API_URL` | `http://127.0.0.1:8000` | Where the frontend proxies API calls |
 | `ENABLE_CELERY` | `true` | Set `false` when a dedicated worker deployment owns scheduling |
+| `ENABLE_MCP` | `false` | Start the MCP server (`:8765`, public at `api.$DOMAIN/mcp`). See [docs/mcp](docs/mcp/README.md) |
+| `MCP_HTTP_ALLOWED_HOSTS` | derived | Required when `ENABLE_MCP=true` in production: the hostname Caddy forwards. Unset, every call answers 421 |
 | `API_WORKERS` | `2` | Uvicorn worker processes |
 
 ## Production architecture

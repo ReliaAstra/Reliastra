@@ -1,0 +1,44 @@
+# =============================================================================
+# Reliastra MCP server - backend/mcp_server
+# =============================================================================
+#
+# Installed SEPARATELY from requirements.txt:
+#
+#   pip install -r backend/requirements-mcp.txt
+#
+# Why not folded into requirements.txt
+# ------------------------------------
+# The MCP server is an optional sidecar process. The API, the Celery worker and
+# the Beat scheduler never import it. `mcp` pulls pydantic>=2.12 and starlette
+# 1.x; the API does not need either, and forcing that floor onto every API
+# deployment to satisfy a component most deployments will not run is the wrong
+# trade. Keeping it here means an operator installs it only when they serve it.
+#
+# Co-installation was verified rather than assumed: with `mcp==2.3.0` present in
+# the same environment, the whole existing backend suite still passes
+# (1001 unit + 183 integration, 3 skipped). So sharing one virtualenv is safe -
+# it is simply not required.
+#
+# Why the SDK version is bounded
+# ------------------------------
+# The MCP 2.x line renamed its public surface (FastMCP -> MCPServer, mcp.types
+# -> mcp_types, streamablehttp_client -> streamable_http_client). This server is
+# contract-tested against the shape below by tests/unit/mcp/, so a bump is a
+# deliberate act with the suite as its gate, not something pip should decide
+# quietly overnight. `<2.4` allows patch fixes inside the tested minor.
+mcp>=2.3.0,<2.4
+
+# ── Used directly by mcp_server, listed so this file stands alone ────────────
+# httpx: the upstream client (mcp_server/upstream.py) talks to the Reliastra API
+#        with it. `mcp` itself depends on httpx2, which is a different package;
+#        both are present and they do not conflict.
+httpx>=0.27.0
+# pydantic / pydantic-settings: McpServerConfig and tool argument validation.
+pydantic>=2.12.0
+pydantic-settings>=2.2.0
+# starlette: McpAuthMiddleware, the transport gate, and the health/metrics routes.
+starlette>=0.27
+# prometheus-client: reliastra_mcp_* metrics on /metrics.
+prometheus-client>=0.20.0
+# uvicorn: the ASGI server for the Streamable HTTP transport.
+uvicorn>=0.30.0

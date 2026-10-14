@@ -57,6 +57,10 @@ services:
     expose:
       - "8000"
       - "3000"
+      # MCP server (Streamable HTTP), served only when ENABLE_MCP=true and
+      # reachable only through the proxy's api.{$DOMAIN}/mcp route. Never
+      # published on a host port.
+      - "8765"
     networks:
       - internal
     depends_on:

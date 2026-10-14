@@ -1,19 +1,24 @@
 # Reliastra architecture
 
-Reliastra is two independently deployable applications and an API client CLI in
-one canonical repository.
+Reliastra is two independently deployable applications, an API client CLI and an
+optional MCP server in one canonical repository.
 
 ```text
-User
-  ↓
-Next.js frontend   (frontend/)
-  ↓  HTTPS / existing API contract
-Reliastra API      (backend/ FastAPI)
+User                                        AI agent
+  ↓                                           ↓  MCP: stdio or Streamable HTTP
+Next.js frontend   (frontend/)              MCP server (backend/mcp_server/, :8765)
+  ↓  HTTPS / existing API contract            ↓  HTTPS / the same public API
+Reliastra API      (backend/ FastAPI)  ←──────┘
   ↓
 Supabase Postgres · Redis · Celery · Supabase Storage (S3)
   ↓
 External vendor APIs, OAuth, Paystack, SMTP
 ```
+
+The MCP server is a **client** of the API, exactly like the frontend and the CLI.
+It has no database connection and reimplements no rule: authorization, tenant
+scope and plan entitlement are decided by the API, once, in the place that already
+decides them. See [docs/mcp/](../mcp/README.md).
 
 ## Applications
 
@@ -22,8 +27,15 @@ External vendor APIs, OAuth, Paystack, SMTP
 | `frontend/` | Next.js 16, React 19, Tailwind, Prisma (SQLite) | Product site, observatory, console, Next.js API routes |
 | `backend/` | FastAPI, SQLAlchemy, Celery, Redis, Supabase Postgres + S3 | Product API: monitoring, incidents, evidence, billing, orgs |
 | `cli/` | Node.js, no runtime dependencies | API client for dependencies, observations, incidents, evidence, and verification |
+| `backend/mcp_server/` | Python, official `mcp` SDK | Optional MCP server: gives AI agents the observatory, workspace, evidence and analysis surfaces. Separate process, HTTP client of the API |
 
 They communicate over the existing HTTP API. They do not share a runtime, database, or package manager.
+
+The MCP server is the one component with a **separate dependency file**
+(`backend/requirements-mcp.txt`, or `pip install -e '.[mcp]'`), because `mcp` is an
+optional sidecar and the API should not have its dependency floor raised by a
+component most deployments never run. Adding it changes no existing resolved
+version. It is off by default in production (`ENABLE_MCP=false`).
 
 ## Frontend → backend
 

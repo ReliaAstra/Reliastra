@@ -54,11 +54,16 @@ const SMOKE_TEST = readFileSync(
 /* ── The proxy's own routing table, read out of the Caddyfile ─────────────── */
 
 /**
- * The two upstreams the all-in-one container publishes: Next.js on 3000 and
- * FastAPI on 8000 (see deploy/production/compose.yml).
+ * The upstreams the all-in-one container publishes: Next.js on 3000 and
+ * FastAPI on 8000 (see deploy/production/compose.yml), plus the MCP
+ * Streamable HTTP server on 8765. The MCP process runs inside the same
+ * container, starts only when ENABLE_MCP=true
+ * (deploy/supervisord-all.conf), and is reachable solely through the
+ * proxy's `/mcp` route — the port is never published on a host port.
  */
 const WEB_UPSTREAM = 'reliastra-api:3000';
 const API_UPSTREAM = 'reliastra-api:8000';
+const MCP_UPSTREAM = 'reliastra-api:8765';
 
 interface HandleBlock {
   /** The matcher as written, e.g. `/docs*`, or `''` for the bare catch-all. */
@@ -166,13 +171,27 @@ const PUBLISHED_PATHS: string[] = [
 /* ── The documentation namespace ─────────────────────────────────────────── */
 
 describe('the /docs namespace at the edge', () => {
-  it('finds a bare catch-all and the two known upstreams', () => {
+  it('finds a bare catch-all and the known upstreams', () => {
     // Guards the parser itself: if the Caddyfile is restructured such that
     // nothing is parsed, every assertion below would pass vacuously.
     expect(HANDLES.length).toBeGreaterThan(3);
     expect(HANDLES.some((h) => h.matcher === '')).toBe(true);
     const upstreams = new Set(HANDLES.flatMap((h) => h.upstreams));
-    expect(upstreams).toEqual(new Set([WEB_UPSTREAM, API_UPSTREAM]));
+    expect(upstreams).toEqual(new Set([WEB_UPSTREAM, API_UPSTREAM, MCP_UPSTREAM]));
+  });
+
+  it('routes the MCP endpoint to the MCP upstream only', () => {
+    // The `@mcp` named matcher is Caddy snippet form and lives outside the
+    // handle block, so the block parser cannot see which paths it claims —
+    // pin the wiring from both sides instead: the matcher must claim exactly
+    // `/mcp` (plus sub-paths, never a greedy prefix that could swallow other
+    // routes), and every block proxying to the MCP port must proxy only there.
+    expect(CADDYFILE).toMatch(/@mcp\s+path\s+\/mcp(\s|\*|$)/);
+    const mcp = HANDLES.filter((h) => h.upstreams.includes(MCP_UPSTREAM));
+    expect(mcp.length).toBeGreaterThan(0);
+    for (const block of mcp) {
+      expect(block.upstreams).toEqual([MCP_UPSTREAM]);
+    }
   });
 
   it('routes the docs index to Next.js', () => {

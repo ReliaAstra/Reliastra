@@ -10,6 +10,11 @@ Living documentation is at the top level; point-in-time audits and session logs 
 | [checks-operating-model.md](checks-operating-model.md) | Runtime contract for checks: Postgres+Redis+Celery, health, verification |
 | [architecture/OVERVIEW.md](architecture/OVERVIEW.md) | System overview: frontend, API, workers, storage |
 | [architecture/ADMIN_CONTROL_PLANE_API.md](architecture/ADMIN_CONTROL_PLANE_API.md) | Admin control plane API contract |
+| [mcp/README.md](mcp/README.md) | MCP server: install, connect a client, tools/resources/prompts, configuration, deployment |
+| [mcp/SECURITY.md](mcp/SECURITY.md) | MCP threat model (17 threats), authentication, tenant isolation, approval gate |
+| [mcp/ARCHITECTURE.md](mcp/ARCHITECTURE.md) | MCP module layout, the decisions and why, how to add a tool |
+| [mcp/TESTING.md](mcp/TESTING.md) | MCP test matrix, harness design, recorded hazards, what is not covered |
+| [mcp/ENGINEERING_REPORT.md](mcp/ENGINEERING_REPORT.md) | MCP delivery report: verification, 20 defects found and fixed, limitations |
 | [design/UI-SPEC.md](design/UI-SPEC.md) | Design system contract, tokens rs-*, source of truth globals.css |
 | [email/architecture.md](email/architecture.md) | Email architecture (Resend outbound, ImprovMX inbound) |
 | [operations/architecture.md](operations/architecture.md) | Ops architecture |

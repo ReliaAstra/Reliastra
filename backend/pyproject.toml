@@ -36,6 +36,14 @@ dev = [
     "pgserver>=0.1.4",
     "moto>=5.0.0",
 ]
+# Optional MCP server sidecar (backend/mcp_server). Deliberately NOT in
+# `dependencies`: the API and workers never import it, and `mcp` raises the
+# pydantic/starlette floors for no benefit to them. See requirements-mcp.txt for
+# the reasoning and the co-installation evidence.
+#   pip install -e '.[mcp]'
+mcp = [
+    "mcp>=2.3.0,<2.4",
+]
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]

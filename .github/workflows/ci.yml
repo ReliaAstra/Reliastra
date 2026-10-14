@@ -46,11 +46,11 @@ jobs:
 
       - name: Ruff check (backend)
         working-directory: backend
-        run: python -m ruff check app/ tests/ --output-format=github || echo "::warning::ruff check found issues (non-blocking for now)"
+        run: python -m ruff check app/ tests/ mcp_server/ scripts/ --output-format=github || echo "::warning::ruff check found issues (non-blocking for now)"
 
       - name: Ruff format check
         working-directory: backend
-        run: python -m ruff format --check app/ tests/ || echo "::warning::ruff format check failed (non-blocking)"
+        run: python -m ruff format --check app/ tests/ mcp_server/ scripts/ || echo "::warning::ruff format check failed (non-blocking)"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -197,7 +197,11 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -e ".[dev]"
+          # `mcp` is required because tests/unit/mcp is collected by this job's
+          # plain `pytest` run. It changes no existing resolved version (see the
+          # comment in the root Dockerfile), so this does not alter what the API
+          # runs on - it only makes the MCP suite collectable here.
+          pip install -e ".[dev,mcp]"
 
       - name: Pytest (unit + integration + e2e)
         working-directory: backend
@@ -209,6 +213,63 @@ jobs:
         with:
           name: pytest-logs
           path: backend/.pytest_cache
+
+  # ─────────────────────────────────────────────────────────
+  # 2b. MCP — protocol suite plus a real client handshake
+  # ─────────────────────────────────────────────────────────
+  # The `test` job already collects tests/unit/mcp. This job exists for the part
+  # that job cannot do: start the server as a real process and drive it with a
+  # real MCP client from the official SDK, on both transports. A protocol server
+  # whose wire behaviour is only ever exercised through fakes is not shown to
+  # work, so that claim gets its own gate.
+  #
+  # No database, no Redis, no service containers and no network: the smoke test
+  # points the upstream at a port nothing listens on, and the tool it calls reads
+  # the local verified capability registry. If any of that changed, this job would
+  # be testing live infrastructure instead of the server.
+  mcp:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install backend + MCP deps
+        working-directory: backend
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e ".[dev,mcp]"
+
+      - name: MCP protocol, security and contract suite
+        working-directory: backend
+        run: pytest tests/unit/mcp -q --tb=short
+
+      - name: MCP capability registry is pinned to the product
+        working-directory: backend
+        # Separated so a drift failure is obvious in the job summary: this is the
+        # anti-fabrication gate, and "the registry no longer matches the API" is a
+        # different problem from "a test broke".
+        run: pytest tests/unit/mcp/test_capability_contract.py -q --tb=long
+
+      - name: Live handshake smoke test (stdio + Streamable HTTP)
+        working-directory: backend
+        run: python scripts/mcp_smoke.py
+
+      - name: Configuration and registry are printable without a credential
+        working-directory: backend
+        # Both must work with no API key and no reachable upstream: an operator
+        # auditing what this server claims should not need production access.
+        run: |
+          python -m mcp_server --version
+          python -m mcp_server --check-config > /dev/null
+          python -m mcp_server --print-capabilities > /dev/null
 
   # ─────────────────────────────────────────────────────────
   # 3. SECURITY — deps, secrets, container
