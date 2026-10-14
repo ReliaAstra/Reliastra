@@ -262,7 +262,7 @@ def test_attribution_thresholds_match_the_engine_source(backend):
     """Thresholds are inline in compute_attribution, so read the source text."""
     from app.modules import attribution
 
-    source = (Path(attribution.__file__).parent / "service.py").read_text()
+    source = (Path(attribution.__file__).parent / "service.py").read_text(encoding="utf-8")
     for classification, threshold in METHODOLOGY["attribution"][
         "classification_thresholds"
     ].items():
@@ -273,7 +273,7 @@ def test_attribution_thresholds_match_the_engine_source(backend):
 def test_classification_list_is_exactly_the_engine_output(backend):
     from app.modules import attribution
 
-    source = (Path(attribution.__file__).parent / "service.py").read_text()
+    source = (Path(attribution.__file__).parent / "service.py").read_text(encoding="utf-8")
     for classification in METHODOLOGY["attribution"]["classifications"]:
         assert f'classification = "{classification}"' in source, classification
 
@@ -395,7 +395,7 @@ def test_api_access_is_a_paid_entitlement_and_the_registry_says_so(backend):
 def test_cli_commands_are_quoted_from_help_go():
     """No invented flags: every command string must appear in the CLI's help source."""
     assert CLI_HELP.exists(), f"CLI help source moved? expected {CLI_HELP}"
-    source = CLI_HELP.read_text()
+    source = CLI_HELP.read_text(encoding="utf-8")
     usages = set(re.findall(r'usage:\s+"([^"]+)"', source))
     assert usages, "could not extract usage strings; has help.go's shape changed?"
     for command in INTEGRATIONS["cli"]["verified_commands"]:
@@ -405,13 +405,13 @@ def test_cli_commands_are_quoted_from_help_go():
 
 
 def test_cli_environment_variables_are_documented_in_help_go():
-    source = CLI_HELP.read_text()
+    source = CLI_HELP.read_text(encoding="utf-8")
     for name in INTEGRATIONS["cli"]["environment"]:
         assert name in source, f"environment variable not in help.go: {name}"
 
 
 def test_cli_exit_codes_match_help_go():
-    source = CLI_HELP.read_text()
+    source = CLI_HELP.read_text(encoding="utf-8")
     for code, text in INTEGRATIONS["cli"]["exit_codes"].items():
         assert f'{{"{code}", "{text}"}}' in source, f"exit code {code} text drifted"
 
@@ -488,7 +488,7 @@ def test_action_inputs_used_by_this_readme_exist_in_the_registry():
     The root README shows a workflow snippet. Every input it passes must be a real
     declared input, so the two documents cannot disagree without a test failing.
     """
-    readme = (REPO_ROOT / "README.md").read_text()
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     block = readme[readme.index("uses: ReliaAstra/reliastra-action"):]
     block = block[: block.index("```")]
     declared = set(INTEGRATIONS["github_action"]["inputs"])
@@ -510,7 +510,7 @@ def test_this_repository_does_not_define_or_consume_the_action():
     """
     workflows = REPO_ROOT / ".github" / "workflows"
     for path in workflows.glob("*.yml"):
-        text = path.read_text().lower()
+        text = path.read_text(encoding="utf-8").lower()
         assert "uses: reliastra/reliastra-action" not in text, path.name
         assert "uses: reliaastra/reliastra-action" not in text, path.name
     assert not (REPO_ROOT / "action.yml").exists()
@@ -524,7 +524,7 @@ def test_api_key_header_forms_match_deps_source(backend):
     """Each header form the registry advertises must be one get_current_user accepts."""
     from app.api import deps
 
-    source = Path(deps.__file__).read_text()
+    source = Path(deps.__file__).read_text(encoding="utf-8")
     assert 'APIKeyHeader(name="X-API-Key"' in source
     accepted = INTEGRATIONS["rest_api"]["auth_headers_accepted"]
     assert any(header.startswith("X-API-Key:") for header in accepted)
@@ -542,7 +542,7 @@ def test_api_key_header_forms_match_deps_source(backend):
 def test_rate_limits_match_the_limiter_definitions(backend):
     from app.platform.web import rate_limit
 
-    source = Path(rate_limit.__file__).read_text()
+    source = Path(rate_limit.__file__).read_text(encoding="utf-8")
     limits = CREDENTIALS["rate_limits"]
     assert 'limit=1000, window_seconds=60, key_prefix="rl_apikey"' in source
     assert limits["api_key"].startswith("1000 requests/min")
@@ -572,7 +572,7 @@ def test_openapi_schema_is_really_not_published(backend):
     # Layer 1: the flag defaults off, so no route is registered at all.
     assert Settings.model_fields["EXPOSE_API_SCHEMA"].default is False
     # Layer 2: the proxy refuses the paths even if layer 1 is misconfigured.
-    caddy = (REPO_ROOT / "deploy" / "production" / "Caddyfile").read_text()
+    caddy = (REPO_ROOT / "deploy" / "production" / "Caddyfile").read_text(encoding="utf-8")
     assert "handle /openapi.json*" in caddy
     assert "abort" in caddy
 
