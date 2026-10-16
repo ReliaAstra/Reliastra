@@ -17,6 +17,7 @@ export const PUBLIC_ROUTES = {
   home: '/',
   product: '/product',
   productEvidence: '/product/evidence',
+  integrationsMcp: '/integrations/mcp',
   observatory: '/observatory',
   pricing: '/pricing',
   creators: '/creators',
@@ -104,6 +105,7 @@ export const DOCS_ROUTES = {
   api: '/docs/api',
   cli: '/docs/cli',
   webhooks: '/docs/webhooks',
+  mcp: '/docs/mcp',
   methodology: '/docs/methodology',
   security: '/docs/security',
 } as const;

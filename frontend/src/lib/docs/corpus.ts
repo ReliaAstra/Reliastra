@@ -16,6 +16,7 @@
  */
 
 import { DETECTION, OBSERVATION_POINTS, PROBE_INTERVAL_SECONDS } from '@/lib/methodology';
+import { MCP_TOOL_GROUPS } from '@/lib/mcp-catalog';
 import type { Doc } from './types';
 
 export const DOCS: Doc[] = [
@@ -1269,6 +1270,149 @@ open "$(reliastra open evidence <report-id>)"  # printing is the default, so thi
             tone: 'warn',
             title: 'Treat the body as untrusted input',
             text: 'Verify the delivery against the shared secret before acting on it, and never let a webhook body trigger a privileged operation directly.',
+          },
+        ],
+      },
+    ],
+  },
+
+  /* ── MCP server ───────────────────────────────────────────────────────── */
+  {
+    slug: 'mcp',
+    title: 'MCP server',
+    summary: 'Let a compatible AI coding agent use Reliastra: 18 tools over stdio or Streamable HTTP, authenticated with a scoped API key.',
+    group: 'Integrate',
+    sections: [
+      {
+        id: 'what',
+        heading: 'What the MCP server is',
+        blocks: [
+          {
+            kind: 'p',
+            text: 'The MCP server exposes Reliastra over the Model Context Protocol: capability discovery, the public observatory, incident and evidence retrieval, workspace reads, dependency analysis, integration planning, and two narrowly scoped writes. It is an HTTP client of the canonical API and nothing else - no database, no duplicated business logic. What it can do is exactly what the API and the caller credential permit.',
+          },
+          {
+            kind: 'note',
+            tone: 'info',
+            title: 'Usable by agents, not recommended by them',
+            text: 'The server makes Reliastra usable by a compatible AI agent. It does not make agents discover Reliastra on their own, and an honest evaluation can conclude Reliastra adds no value to a given architecture - the analysis tool is built to return that verdict.',
+          },
+        ],
+      },
+      {
+        id: 'transports',
+        heading: 'Transports',
+        blocks: [
+          {
+            kind: 'table',
+            columns: ['Transport', 'How to reach it', 'Authentication'],
+            rows: [
+              ['`stdio`', 'Run `python -m mcp_server --transport stdio` from a backend checkout with `RELIASTRA_API_KEY` set. For a local agent that spawns the process.', 'API key from the environment; without one only public tools work'],
+              ['Streamable HTTP', '`https://api.reliastra.com/mcp`. For remote callers.', 'Always required: `Authorization: Bearer <rel_...>` per request. No anonymous access exists on this transport.'],
+            ],
+          },
+          {
+            kind: 'p',
+            text: 'Legacy HTTP/SSE is deliberately not offered. Only the official Python SDK client has been exercised against the server (protocol 2025-11-25 negotiated); other MCP clients speak the same standard surface but have not been tested, so verify before depending on one.',
+          },
+        ],
+      },
+      {
+        id: 'install',
+        heading: 'Install and configure',
+        blocks: [
+          {
+            kind: 'steps',
+            items: [
+              {
+                title: 'Get a Reliastra API key',
+                text: 'Create one with `reliastra keys create <name> [--scopes <list>]`, or in the console under /settings/developer. Reads need read scopes; the two write tools need write scope. The organization is pinned to the key: cross-org access is impossible by construction.',
+              },
+              {
+                title: 'Connect a local agent over stdio',
+                text: 'Check out the repository, install the server dependencies, and point the agent at the process. No package is published: the server ships with the backend.',
+                code: {
+                  lang: 'bash',
+                  code: `pip install -r backend/requirements-mcp.txt
+RELIASTRA_API_KEY=rel_... python -m mcp_server --transport stdio
+python -m mcp_server --check-config   # validate configuration, exit`,
+                },
+              },
+              {
+                title: 'Or connect remotely',
+                text: 'Point any MCP-compatible client at `https://api.reliastra.com/mcp` with the key as a `Bearer` token. A copy-paste client configuration for both transports is on [the MCP feature page](/integrations/mcp).',
+              },
+              {
+                title: 'Verify with one call',
+                text: '`reliastra_get_capabilities` needs no credential and returns the permission-aware capability document. If it answers, the transport, auth and server are all working.',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'tools',
+        heading: 'Tools',
+        blocks: [
+          {
+            kind: 'p',
+            text: '18 tools. Read-only unless marked (write). API key required where marked (key). Every tool returns a uniform `{ok, data, meta}` envelope with its source endpoint and request id; failures are typed errors, never empty successes. The list below is generated from the same catalog the feature page renders, and a test diffs both against the server registration.',
+          },
+          {
+            kind: 'definitions',
+            // Single source: lib/mcp-catalog.ts. Never hand-edit this list.
+            items: MCP_TOOL_GROUPS.flatMap((group) =>
+              group.tools.map((tool) => ({
+                term:
+                  `\`${tool.name}\`` +
+                  (tool.needsKey ? ' (key)' : '') +
+                  (tool.writes ? ' (write)' : ''),
+                def: `${group.title} — ${tool.blurb}`,
+              }))
+            ),
+          },
+        ],
+      },
+      {
+        id: 'resources-prompts',
+        heading: 'Resources and prompts',
+        blocks: [
+          {
+            kind: 'list',
+            items: [
+              'Resources: `reliastra://capabilities`, `reliastra://methodology`, `reliastra://limitations`, `reliastra://integration-guide`, and `reliastra://observatory/{provider}` - machine-readable product truth, no tool call needed to read them.',
+              'Prompts: `reliastra_workflow_assess_observability`, `reliastra_workflow_investigate_failure`, `reliastra_workflow_evaluate_fit`, `reliastra_workflow_plan_integration` - reusable workflows that guide tool use without forcing a recommendation.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'evidence-limits',
+        heading: 'What the evidence establishes',
+        blocks: [
+          {
+            kind: 'p',
+            text: 'Tools return what the API recorded and nothing more: timestamps, provider identity, observation scope, provenance, methodology version, and stated limits. Vendor-level evidence never proves a specific application request failed, and correlation is never presented as causation. Scores below 50 are often `unknown`, which is a valid result.',
+          },
+        ],
+      },
+      {
+        id: 'troubleshooting',
+        heading: 'Troubleshooting',
+        blocks: [
+          {
+            kind: 'table',
+            columns: ['Symptom', 'Meaning'],
+            rows: [
+              ['`401 invalid_token`', 'Missing, malformed, or non-`rel_` credential. Send `Authorization: Bearer rel_...`.'],
+              ['Tool error `forbidden`', 'The credential was rejected upstream or lacks the scope. Check the key is active and the plan includes API access.'],
+              ['`502` on the remote endpoint', 'The MCP process is not running on the host. Operator-side; nothing the caller can fix.'],
+              ['Public tool works, workspace tool fails closed', 'No credential on the call. Provide the API key and retry - this is the designed behavior, not an outage.'],
+            ],
+          },
+          {
+            kind: 'p',
+            text: 'Source and full operator documentation live with the implementation in `backend/mcp_server/` (start at its README), including architecture, threat model, and the 427-test suite that guards it.',
           },
         ],
       },

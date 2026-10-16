@@ -893,6 +893,7 @@ const CORE_PUBLIC_PAGES: PublicPage[] = [
   { path: '/', changeFrequency: 'daily', priority: 1.0 },
   { path: '/product', changeFrequency: 'weekly', priority: 0.9 },
   { path: '/product/evidence', changeFrequency: 'weekly', priority: 0.9 },
+  { path: '/integrations/mcp', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/observatory', changeFrequency: 'hourly', priority: 0.9 },
   {
     // The cross-vendor observed incident search - the public product surface
@@ -913,6 +914,7 @@ const CORE_PUBLIC_PAGES: PublicPage[] = [
   { path: DOCS_ROUTES.api, changeFrequency: 'monthly', priority: 0.7 },
   { path: DOCS_ROUTES.cli, changeFrequency: 'monthly', priority: 0.7 },
   { path: DOCS_ROUTES.webhooks, changeFrequency: 'monthly', priority: 0.7 },
+  { path: DOCS_ROUTES.mcp, changeFrequency: 'monthly', priority: 0.7 },
   { path: DOCS_ROUTES.methodology, changeFrequency: 'monthly', priority: 0.7 },
   { path: DOCS_ROUTES.security, changeFrequency: 'monthly', priority: 0.7 },
   { path: '/research', changeFrequency: 'weekly', priority: 0.8 },

@@ -126,6 +126,13 @@ infrastructure, nor that every one of the vendor's customers was affected.
   on a fixed backoff (1m, 5m, 15m, 1h, 3h; then permanently failed). The event
   enum also accepts vendor.degraded, vendor.down, vendor.recovered, sla.breach
   and check.failed, but nothing emits those yet.
+- MCP server: 18 tools over stdio (\`python -m mcp_server --transport stdio\`
+  from a backend checkout) or Streamable HTTP at ${API}/mcp (Bearer rel_...
+  required on every request). Capability discovery, observatory reads, incident
+  evidence, workspace reads, dependency analysis, integration planning, and two
+  safe writes. Only the official Python SDK client has been exercised
+  (protocol 2025-11-25). Start: ${SITE_URL}/integrations/mcp, reference:
+  ${SITE_URL}/docs/mcp.
 
 ## Pricing
 
@@ -175,6 +182,7 @@ ${RECORDS_MARKER}
 - Home: ${SITE_URL}/
 - Product: ${SITE_URL}/product
 - Evidence records: ${SITE_URL}/product/evidence
+- MCP server: ${SITE_URL}/integrations/mcp
 - Public observatory: ${SITE_URL}/observatory
 - Pricing: ${SITE_URL}/pricing
 - Documentation: ${SITE_URL}/docs
@@ -187,6 +195,7 @@ ${RECORDS_MARKER}
 - Verification: ${SITE_URL}/docs/verification
 - REST API: ${SITE_URL}/docs/api
 - CLI: ${SITE_URL}/docs/cli
+- MCP server: ${SITE_URL}/docs/mcp
 - Webhooks: ${SITE_URL}/docs/webhooks
 - Methodology: ${SITE_URL}/docs/methodology
 - Security (product): ${SITE_URL}/security

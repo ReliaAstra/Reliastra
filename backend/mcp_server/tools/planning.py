@@ -1002,9 +1002,10 @@ justified=false, conclusion="not_justified", the reasons, and what to use instea
 No plan is manufactured. Report that outcome honestly; do not re-ask with invented
 HTTP endpoints to force a plan.
 
-THERE IS NO RELIASTRA GITHUB ACTION. A CI plan shows the verified CLI or REST call
-inside your own workflow and says so explicitly. Any example showing
-'uses: reliastra/...' would be fabricated.
+A CI plan prefers the published GitHub Action (ReliaAstra/reliastra-action@v1)
+where it fits, else shows the verified CLI or REST call inside your own
+workflow and says so explicitly. Any example showing any other 'uses:' value
+would be fabricated.
 
 WHAT THE OUTPUT PROVES: that these steps match the product's real interface. It does
 not prove the integration will be valuable - that was the analysis tool's job.

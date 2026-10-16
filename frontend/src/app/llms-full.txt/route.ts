@@ -162,6 +162,24 @@ Keys are denied by default: they cannot reach identity, account, webhook or
 key-management surfaces, whatever scopes they carry, so a leaked key cannot mint
 a credential or redirect events.
 
+MCP server (Model Context Protocol): 18 tools over stdio
+(\`python -m mcp_server --transport stdio\` from a backend checkout after
+\`pip install -r backend/requirements-mcp.txt\`) or Streamable HTTP at
+\`${EXTERNAL_LINKS.api}/mcp\` (always authenticated per request:
+\`Authorization: Bearer rel_...\`). Tools: reliastra_get_capabilities,
+reliastra_search_observatory, reliastra_get_provider,
+reliastra_get_provider_metrics, reliastra_get_provider_timeline,
+reliastra_get_pipeline_health, reliastra_search_incidents,
+reliastra_get_public_incident, reliastra_get_incident_evidence,
+reliastra_verify_evidence, reliastra_list_dependencies,
+reliastra_get_dependency_observations, reliastra_list_workspace_incidents,
+reliastra_get_evidence_report, reliastra_analyze_dependencies,
+reliastra_plan_integration, reliastra_register_dependency (writes),
+reliastra_trigger_check (writes). Only the two writes change state; both need
+write scope, are never retried and are audit-logged. Only the official Python
+SDK client has been exercised (protocol 2025-11-25). Full reference:
+${SITE_URL}/docs/mcp, overview: ${SITE_URL}/integrations/mcp.
+
 Webhooks: \`POST /v1/webhooks\` with \`events\` from incident.opened,
 incident.updated, incident.resolved and evidence.ready (the enum also accepts
 vendor.degraded, vendor.down, vendor.recovered, sla.breach and check.failed,

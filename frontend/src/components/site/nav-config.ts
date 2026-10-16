@@ -96,6 +96,11 @@ export const PRODUCT_PANEL: NavGroup[] = [
         description: 'reliastra deps, checks, incidents, evidence, verify',
       },
       {
+        label: 'MCP server',
+        href: DOCS_ROUTES.mcp,
+        description: 'Let a compatible AI agent use Reliastra',
+      },
+      {
         label: 'Webhooks',
         href: DOCS_ROUTES.webhooks,
         description: 'Push incidents and evidence into your own systems',
@@ -136,6 +141,7 @@ export const DOCS_NAV: NavLink[] = [
   { label: 'REST API', href: DOCS_ROUTES.api },
   { label: 'CLI', href: DOCS_ROUTES.cli },
   { label: 'Webhooks', href: DOCS_ROUTES.webhooks },
+  { label: 'MCP server', href: DOCS_ROUTES.mcp },
   { label: 'Methodology', href: DOCS_ROUTES.methodology },
   { label: 'Security', href: DOCS_ROUTES.security },
 ];
@@ -165,6 +171,7 @@ export const DOCS_GROUPS: NavGroup[] = [
       { label: 'REST API', href: DOCS_ROUTES.api, description: 'Endpoints, auth, pagination, rate limits' },
       { label: 'CLI', href: DOCS_ROUTES.cli, description: 'Install, login, script, exit codes' },
       { label: 'Webhooks', href: DOCS_ROUTES.webhooks, description: 'Delivery, signatures, replay' },
+      { label: 'MCP server', href: DOCS_ROUTES.mcp, description: '18 tools for compatible AI agents' },
     ],
   },
   {
@@ -230,6 +237,7 @@ export const FOOTER_GROUPS: NavGroup[] = [
       { label: 'REST API', href: DOCS_ROUTES.api },
       { label: 'CLI', href: DOCS_ROUTES.cli },
       { label: 'Webhooks', href: DOCS_ROUTES.webhooks },
+      { label: 'MCP server', href: DOCS_ROUTES.mcp },
       { label: 'Methodology', href: DOCS_ROUTES.methodology },
       { label: 'Glossary', href: PUBLIC_ROUTES.glossary },
     ],

@@ -68,10 +68,30 @@ troubleshooting, binary verification, `doctor`, auth and `verify`.
 The same exit codes, the same verdicts, rendered into your job summary with the evidence link.
 Full reference in [`ReliaAstra/reliastra-action`](https://github.com/ReliaAstra/reliastra-action).
 
+## For your agent
+
+An MCP server with 18 tools over stdio or Streamable HTTP: the public
+observatory, incident evidence, workspace reads, dependency analysis, and two
+safe writes — authenticated with a scoped API key (`rel_...`).
+
+```bash
+pip install -r backend/requirements-mcp.txt
+RELIASTRA_API_KEY=rel_... python -m mcp_server --transport stdio
+```
+
+Remote, live in production: `https://api.reliastra.com/mcp` with
+`Authorization: Bearer rel_...` on every request. Only the official Python SDK
+client has been exercised (protocol 2025-11-25); only two tools write, both
+need write scope and are audit-logged. Start at
+[the MCP feature page](https://reliastra.com/integrations/mcp), full reference
+at [the MCP docs](https://reliastra.com/docs/mcp), implementation in
+[`backend/mcp_server`](backend/mcp_server).
+
 ## Start here
 
 **[Try Reliastra](https://reliastra.com)** · **[Quickstart](https://reliastra.com/docs/quickstart)** ·
 **[API](https://reliastra.com/docs/api)** · **[CLI](https://reliastra.com/docs/cli)** ·
+**[MCP server](https://reliastra.com/integrations/mcp)** ·
 **[Methodology](https://reliastra.com/docs/methodology)** · **[Observatory](https://reliastra.com/observatory)** ·
 **[Pricing](https://reliastra.com/pricing)**
 

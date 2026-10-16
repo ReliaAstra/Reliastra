@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.reliaastra/reliastra-mcp",
+  "title": "RELIASTRA MCP server",
+  "description": "External dependency evidence for AI coding agents: 18 tools.",
+  "repository": {
+    "url": "https://github.com/ReliaAstra/Reliastra",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "websiteUrl": "https://reliastra.com/integrations/mcp",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.reliastra.com/mcp"
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "auth": "Authorization: Bearer rel_... (Reliastra API key, always required)",
+      "docs": "https://reliastra.com/docs/mcp",
+      "status": "prepared, not yet published"
+    }
+  }
+}
