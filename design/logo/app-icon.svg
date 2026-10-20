@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="RELIASTRA">
+  <title>RELIASTRA</title>
+  <rect width="512" height="512" fill="#08090A"/>
+  <g transform="translate(87.04 87.04) scale(3.38)">
+    <g stroke="#F2F2EE" stroke-width="13" fill="none">
+      <path d="M45.05 5.05L94.95 54.95"/>
+      <path d="M94.95 45.05L45.05 94.95"/>
+      <path d="M54.95 94.95L5.05 45.05"/>
+      <path d="M5.05 54.95L54.95 5.05"/>
+    </g>
+    
+    <path d="M50 28L72 50L50 72L28 50Z" fill="#D9A441"/>
+  </g>
+</svg>
