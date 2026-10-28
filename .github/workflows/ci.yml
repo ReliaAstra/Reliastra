@@ -218,11 +218,12 @@ jobs:
           # the userns/socketpair path; the render inputs are our own
           # generated markup, not untrusted web content.
           RELIASTRA_CHROMIUM_EXTRA_ARGS: no-sandbox,disable-dev-shm-usage
-          # conftest.py stack-dumps every thread and exits 4 minutes into a
-          # wedged test - a hang becomes diagnosable instead of a silent
-          # 20-minute timeout kill.
-          PYTEST_STACK_DUMP: "240"
-        run: pytest -v --tb=short --maxfail=10
+        # pytest's own faulthandler (per-test, re-armed around each test):
+        # a test stuck >4 min dumps every thread's stack to the original
+        # stderr fd - visible in the log, past the capture buffers - and
+        # exits, failing the job fast instead of a silent 20-min timeout.
+        # (pytest 9 moved these from CLI flags to ini options; -o overrides.)
+        run: pytest -v --tb=short --maxfail=10 -o faulthandler_timeout=240 -o faulthandler_exit_on_timeout=true
 
       - name: Upload test logs on failure
         if: failure()
