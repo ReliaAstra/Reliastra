@@ -7,8 +7,8 @@ nothing consumes - invisible to the celery-queue depth probe, i.e. a total
 monitoring blackout. Region stays a task-level label. These tests pin that:
 no custom routes, everything lands on `celery`.
 """
-from app.infrastructure.celery_app import celery_app
 from app.config import settings
+from app.infrastructure.celery_app import celery_app
 
 
 def test_no_custom_task_routes_on_single_host():
@@ -23,9 +23,10 @@ def test_worker_queues_and_vendor_pipeline_registered():
 
 def test_probe_tasks_publish_to_default_queue(monkeypatch):
     import uuid
+
     from app.modules.checks.tasks import execute_check
     from app.modules.vendors.tasks import execute_vendor_check
-    monkeypatch.setattr(celery_app.conf, 'task_always_eager', False)
+    monkeypatch.setitem(celery_app.conf, 'task_always_eager', False)
     with celery_app.connection_for_write('memory://') as connection:
         with celery_app.amqp.Producer(connection) as producer:
             execute_check.apply_async(args=[str(uuid.uuid4()), 'eu-west'], producer=producer, ignore_result=True)
