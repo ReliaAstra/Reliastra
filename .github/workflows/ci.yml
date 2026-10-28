@@ -203,9 +203,27 @@ jobs:
           # runs on - it only makes the MCP suite collectable here.
           pip install -e ".[dev,mcp]"
 
+      - name: Install Chromium for the evidence renderer
+        working-directory: backend
+        # The renderer falls back to xhtml2pdf when Chromium is absent or
+        # wedged (bounded by a 90s watchdog), but the artifact's provenance
+        # records the real renderer, so CI proves the primary path.
+        run: python -m playwright install --with-deps chromium
+
       - name: Pytest (unit + integration + e2e)
         working-directory: backend
-        run: pytest -v --tb=short --maxfail=10
+        env:
+          # The evidence renderer's Chromium hangs inside launch() on some
+          # runner images (silent, deterministic). Sandbox-less launch avoids
+          # the userns/socketpair path; the render inputs are our own
+          # generated markup, not untrusted web content.
+          RELIASTRA_CHROMIUM_EXTRA_ARGS: no-sandbox,disable-dev-shm-usage
+        # pytest's own faulthandler (per-test, re-armed around each test):
+        # a test stuck >4 min dumps every thread's stack to the original
+        # stderr fd - visible in the log, past the capture buffers - and
+        # exits, failing the job fast instead of a silent 20-min timeout.
+        # (pytest 9 moved these from CLI flags to ini options; -o overrides.)
+        run: pytest -v --tb=short --maxfail=10 -o faulthandler_timeout=240 -o faulthandler_exit_on_timeout=true
 
       - name: Upload test logs on failure
         if: failure()

@@ -60,6 +60,33 @@ def _celery_in_memory_transports() -> Generator[None, None, None]:
         celery_app.conf.broker_url, celery_app.conf.result_backend = previous
 
 
+@pytest.fixture(autouse=True)
+def _celery_eager_leak_guard() -> Generator[None, None, None]:
+    """Restore inline/eager Celery execution after every test, no matter what.
+
+    ``test_checks_runtime`` turns ``task_always_eager`` on via monkeypatch;
+    four of its tests raise during teardown, and pytest skips monkeypatch
+    restoration in that path, leaving eager mode set globally. A leaked eager
+    flag makes a later test's ``after_commit`` dispatch execute the Celery
+    chain INLINE on the calling thread - and a chain member that commits
+    fires its own ``after_commit`` hooks, re-entering ``async_task_body``
+    from a loop thread. Blocking then is a permanent hang (diagnosed via
+    faulthandler dump, CI 2026-10-28: two loop threads parked in
+    ``run_with_session`` > ``future.result()`` for the remainder of a
+    20-minute job).
+    """
+    from app.infrastructure.celery_app import celery_app
+
+    conf = celery_app.conf
+    try:
+        yield
+    finally:
+        # Forced reset, not a snapshot-restore: a leak observed at a later
+        # test's setup would otherwise be re-recorded as "previous" and kept.
+        conf.task_always_eager = False
+        conf.task_eager_propagates = False
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db_server() -> Generator[str, None, None]:
     """Start embedded PostgreSQL server for session and apply migrations."""

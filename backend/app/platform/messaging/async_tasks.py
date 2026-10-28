@@ -34,7 +34,7 @@ _process_loop: asyncio.AbstractEventLoop | None = None
 _process_loop_lock = threading.Lock()
 
 # Single worker thread (with its own loop + engine) for in-loop callers.
-_worker: "_LoopWorker | None" = None
+_worker: _LoopWorker | None = None
 _worker_lock = threading.Lock()
 
 
@@ -44,36 +44,89 @@ class _LoopWorker:
     def __init__(self) -> None:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._session_maker: Any = None
+        self._failure: BaseException | None = None
         self._ready = threading.Event()
         self._thread = threading.Thread(
             target=self._run_loop, name="reliastra-async-worker", daemon=True
         )
         self._thread.start()
-        self._ready.wait(timeout=10)
+        if not self._ready.wait(timeout=10):
+            raise RuntimeError(
+                "reliastra-async-worker did not become ready within 10s"
+            )
+        if self._failure is not None:
+            raise RuntimeError(
+                "reliastra-async-worker failed to start"
+            ) from self._failure
+        if self._loop is None:
+            raise RuntimeError(
+                "reliastra-async-worker loop never started"
+            ) from self._failure
 
     def _run_loop(self) -> None:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        self._loop = loop
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            self._loop = loop
 
-        # The worker owns its engine so asyncpg connections are always
-        # created (and reused) on THIS loop.
-        from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+            # The worker owns its engine so asyncpg connections are always
+            # created (and reused) on THIS loop.
+            from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-        from app.platform.persistence.session import build_engine
+            from app.platform.persistence.session import build_engine
 
-        self._session_maker = async_sessionmaker(
-            build_engine(),
-            class_=AsyncSession,
-            expire_on_commit=False,
-            autoflush=False,
-        )
+            self._session_maker = async_sessionmaker(
+                build_engine(),
+                class_=AsyncSession,
+                expire_on_commit=False,
+                autoflush=False,
+            )
+        except BaseException as exc:
+            self._failure = exc
+            # Callers must never block on readiness of a worker that failed
+            # to construct its engine: set the event even on failure so
+            # __init__ returns promptly and run*() raise the recorded cause.
+            self._ready.set()
+            return
         self._ready.set()
-        loop.run_forever()
+        self._loop.run_forever()
+
+    def _assert_postable(self) -> None:
+        """Refuse a post that cannot be served - fail fast, never deadlock.
+
+        Two failure modes historically ate whole CI runs in silence:
+
+        * *Self-re-entry*: an eager Celery task executed inline inside an
+        ``after_commit`` hook on THIS worker's loop thread re-enters
+        ``async_task_body`` and would block the loop thread on a future that
+        only this very loop can resolve - a permanent circular wait.
+        * *Dead worker*: a future posted to a loop whose thread already died
+        would hang forever in ``result()`` because nothing will ever run it.
+        """
+        if threading.current_thread() is self._thread:
+            raise RuntimeError(
+                "async task re-entered on reliastra-async-worker's own event "
+                "loop thread (inline/eager Celery execution inside an "
+                "after_commit hook). Blocking on this loop from itself is a "
+                "guaranteed deadlock; the side effect is abandoned and must "
+                "be reconciled out of band."
+            )
+        self._assert_ready()
+
+    def _assert_ready(self) -> None:
+        if self._failure is not None:
+            raise RuntimeError(
+                "reliastra-async-worker failed to start"
+            ) from self._failure
+        if self._loop is None:
+            raise RuntimeError(
+                "reliastra-async-worker loop never started"
+            ) from self._failure
+        if self._thread is None or not self._thread.is_alive():
+            raise RuntimeError("reliastra-async-worker thread is not running")
 
     def run(self, coro: Any) -> Any:
-        if self._loop is None:
-            raise RuntimeError("async worker loop failed to start")
+        self._assert_postable()
         future = asyncio.run_coroutine_threadsafe(coro, self._loop)
         return future.result()
 
@@ -83,8 +136,7 @@ class _LoopWorker:
         The coroutine is created on the worker's loop so the loop-bound
         asyncpg pool of the worker engine is used consistently.
         """
-        if self._loop is None:
-            raise RuntimeError("async worker loop failed to start")
+        self._assert_postable()
 
         async def _run() -> Any:
             async with self._session_maker() as session:

@@ -47,6 +47,7 @@ from app.modules.outreach.router import router as outreach_admin_router
 from app.modules.partners.admin_router import admin_partners_router
 from app.modules.partners.public_router import public_partners_router
 from app.modules.partners.router import partners_router
+from app.modules.prospect_ai.router import router as prospect_ai_router
 from app.modules.referrals.router import referrals_router
 from app.modules.status_pages.router import status_page_router, status_router
 from app.modules.support.router import support_router
@@ -140,6 +141,12 @@ ROUTER_REGISTRY: tuple[RouterMount, ...] = (
         "admin: derived data-quality report over the measurement registry (read-only)",
     ),
     RouterMount("outreach_admin", outreach_admin_router, False, "B2B: outreach sequences"),
+    RouterMount(
+        "prospect_ai",
+        prospect_ai_router,
+        True,
+        "admin: prospect report import + AI first-touch drafts (review-then-send)",
+    ),
 )
 
 

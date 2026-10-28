@@ -127,12 +127,15 @@ class AIService:
             )
             return None
 
-        if session is not None and org_id is not None:
-            if not await self._org_opted_in(session, org_id):
-                logger.info(
-                    "Organization %s has AI explanations disabled - skipping", org_id
-                )
-                return None
+        if (
+            session is not None
+            and org_id is not None
+            and not await self._org_opted_in(session, org_id)
+        ):
+            logger.info(
+                "Organization %s has AI explanations disabled - skipping", org_id
+            )
+            return None
 
         # Bound context size - prevent prompt injection / huge payloads
         try:
@@ -176,86 +179,7 @@ class AIService:
     async def _call_model(
         self, model: PlatformLLM, prompt: str
     ) -> dict[str, Any]:
-        """Pinned, retrying HTTP call to the platform LLM. Returns {'text': str|None}."""
-        # Metrics
-        from app.core.metrics import ai_generation_latency, ai_generation_total
-
-        start = time.monotonic()
-        # Resolve + pin DNS once - closes DNS-rebinding TOCTOU
-        try:
-            target = resolve_pinned_target(model.endpoint_url)
-        except ValueError as exc:
-            raise ValidationException(str(exc)) from exc
-
-        transport = pinned_transport_for(target)
-        headers, payload = self._request(model, prompt)
-
-        from app.platform.integrations.http import build_client
-
-        last_exc: Exception | None = None
-        for attempt in range(MAX_RETRIES + 1):
-            try:
-                async with build_client(
-                    "llm",
-                    transport=transport,
-                    timeout=model.timeout_seconds,
-                ) as client:
-                    response = await client.post(
-                        model.endpoint_url, headers=headers, json=payload
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    text = self._extract(model.provider_type, data)
-                    elapsed = time.monotonic() - start
-                    try:
-                        ai_generation_total.labels(
-                            provider_type=model.provider_type, status="success"
-                        ).inc()
-                        ai_generation_latency.labels(
-                            provider_type=model.provider_type
-                        ).observe(elapsed)
-                    except Exception:
-                        pass
-                    return {"text": text, "raw": data}
-            except httpx.HTTPStatusError as exc:
-                last_exc = exc
-                status = exc.response.status_code if exc.response is not None else 0
-                # Retry only on transient errors
-                if status in (429, 500, 502, 503, 504) and attempt < MAX_RETRIES:
-                    await asyncio.sleep(RETRY_BACKOFF_BASE * (2**attempt))
-                    continue
-                try:
-                    ai_generation_total.labels(
-                        provider_type=model.provider_type, status="error"
-                    ).inc()
-                except Exception:
-                    pass
-                raise
-            except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as exc:
-                last_exc = exc
-                if attempt < MAX_RETRIES:
-                    await asyncio.sleep(RETRY_BACKOFF_BASE * (2**attempt))
-                    continue
-                try:
-                    ai_generation_total.labels(
-                        provider_type=model.provider_type, status="error"
-                    ).inc()
-                except Exception:
-                    pass
-                raise
-            except Exception as exc:
-                last_exc = exc
-                try:
-                    ai_generation_total.labels(
-                        provider_type=model.provider_type, status="error"
-                    ).inc()
-                except Exception:
-                    pass
-                raise
-
-        if last_exc:
-            raise last_exc
-        return {"text": None}
+        return await call_llm(model, prompt)
 
     @staticmethod
     def _request(
@@ -319,3 +243,91 @@ class AIService:
 
 
 ai_service = AIService()
+
+
+async def call_llm(model: PlatformLLM, prompt: str) -> dict[str, Any]:
+    """Pinned, retrying HTTP call against one LLM spec.
+
+    Module-level so non-platform callers (AI provider profiles) share the
+    same authenticated transport, retries, metrics and extraction without
+    instantiating the explanation service.
+    """
+    # Metrics
+    from app.core.metrics import ai_generation_latency, ai_generation_total
+
+    start = time.monotonic()
+    # Resolve + pin DNS once - closes DNS-rebinding TOCTOU
+    try:
+        target = resolve_pinned_target(model.endpoint_url)
+    except ValueError as exc:
+        raise ValidationException(str(exc)) from exc
+
+    transport = pinned_transport_for(target)
+    headers, payload = AIService._request(model, prompt)
+
+    from app.platform.integrations.http import build_client
+
+    last_exc: Exception | None = None
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            async with build_client(
+                "llm",
+                transport=transport,
+                timeout=model.timeout_seconds,
+            ) as client:
+                response = await client.post(
+                    model.endpoint_url, headers=headers, json=payload
+                )
+                response.raise_for_status()
+                data = response.json()
+                text = AIService._extract(model.provider_type, data)
+                elapsed = time.monotonic() - start
+                try:
+                    ai_generation_total.labels(
+                        provider_type=model.provider_type, status="success"
+                    ).inc()
+                    ai_generation_latency.labels(
+                        provider_type=model.provider_type
+                    ).observe(elapsed)
+                except Exception:
+                    pass
+                return {"text": text, "raw": data}
+        except httpx.HTTPStatusError as exc:
+            last_exc = exc
+            status = exc.response.status_code if exc.response is not None else 0
+            # Retry only on transient errors
+            if status in (429, 500, 502, 503, 504) and attempt < MAX_RETRIES:
+                await asyncio.sleep(RETRY_BACKOFF_BASE * (2**attempt))
+                continue
+            try:
+                ai_generation_total.labels(
+                    provider_type=model.provider_type, status="error"
+                ).inc()
+            except Exception:
+                pass
+            raise
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.NetworkError) as exc:
+            last_exc = exc
+            if attempt < MAX_RETRIES:
+                await asyncio.sleep(RETRY_BACKOFF_BASE * (2**attempt))
+                continue
+            try:
+                ai_generation_total.labels(
+                    provider_type=model.provider_type, status="error"
+                ).inc()
+            except Exception:
+                pass
+            raise
+        except Exception as exc:
+            last_exc = exc
+            try:
+                ai_generation_total.labels(
+                    provider_type=model.provider_type, status="error"
+                ).inc()
+            except Exception:
+                pass
+            raise
+
+    if last_exc:
+        raise last_exc
+    return {"text": None}

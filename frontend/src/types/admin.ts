@@ -970,3 +970,101 @@ export interface EmailCenterRenderResponse {
   variables: string[];
   missing_variables: string[];
 }
+
+/* ── Prospect AI ──────────────────────────────────────────────────────── */
+
+export interface ProspectReport {
+  id: string;
+  title: string;
+  report_date: string | null;
+  source_filename: string;
+  prospect_count: number;
+  skipped_count: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ProspectLead {
+  id: string;
+  report_id: string;
+  rank: number | null;
+  company: string;
+  product: string | null;
+  website: string | null;
+  domain: string;
+  contact_name: string | null;
+  role: string | null;
+  contact_email: string | null;
+  pain_signal: string | null;
+  external_dependencies: string | null;
+  evidence: string | null;
+  why_reliastra_is_relevant: string | null;
+  outreach_hook: string | null;
+  verdict: string | null;
+  draft_subject: string | null;
+  draft_body: string | null;
+  draft_status: 'pending' | 'ready' | 'approved' | 'failed' | 'sent';
+  draft_error: string | null;
+  draft_angle: string | null;
+  draft_rejected_angles: { angle: string; why_not?: string }[] | null;
+  drafted_at: string | null;
+  approved_at: string | null;
+  sent_message_id: string | null;
+  sent_at: string | null;
+  batch_id: string | null;
+}
+
+export interface ProspectImportResult {
+  report: ProspectReport;
+  imported: number;
+  skipped: number;
+}
+
+export interface ProspectAiStatus {
+  ai_available: boolean;
+  model_name: string | null;
+  total_reports: number;
+  total_leads: number;
+  leads_by_status: Record<string, number>;
+  provider_source: 'profile' | 'platform';
+  daily_send_cap: number;
+  sends_remaining_today: number;
+}
+
+export interface ProspectProvider {
+  label: string;
+  provider_type: string;
+  endpoint_url: string;
+  model: string;
+  api_key_last4: string | null;
+  temperature: number;
+  max_tokens: number;
+  timeout_seconds: number;
+  is_active: boolean;
+  last_test_at: string | null;
+  last_test_ok: boolean | null;
+  last_test_detail: string | null;
+  source: 'profile' | 'platform';
+}
+
+export interface ProspectProviderTestResult {
+  ok: boolean;
+  latency_ms: number | null;
+  model: string | null;
+  detail: string;
+}
+
+export interface ProspectLeadBatchResult {
+  lead_id: string;
+  status: 'sent' | 'failed' | 'skipped';
+  message_id: string | null;
+  error: string | null;
+}
+
+export interface ProspectBatchSendResult {
+  batch_id: string;
+  requested: number;
+  sent: number;
+  failed: number;
+  results: ProspectLeadBatchResult[];
+}

@@ -82,9 +82,9 @@ export function humanize(value?: string | null) {
 
 export function healthTone(status?: HealthStatus) {
   const normalized = String(status || 'unknown').toLowerCase();
-  if (['healthy', 'ok', 'running', 'active', 'resolved'].includes(normalized)) return 'healthy';
+  if (['healthy', 'ok', 'running', 'active', 'resolved', 'approved', 'sent'].includes(normalized)) return 'healthy';
   if (['critical', 'error', 'failed', 'down', 'banned'].includes(normalized)) return 'critical';
-  if (['degraded', 'warning', 'pending', 'at_risk', 'churning', 'suspended'].includes(normalized)) return 'warning';
+  if (['degraded', 'warning', 'pending', 'at_risk', 'churning', 'suspended', 'ready'].includes(normalized)) return 'warning';
   return 'neutral';
 }
 

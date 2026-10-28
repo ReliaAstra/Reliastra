@@ -157,31 +157,46 @@ class EvidenceRenderer:
             )
         else:
             try:
-                async with async_playwright() as playwright:
-                    browser = await playwright.chromium.launch(headless=True)
-                    try:
-                        version = browser.version
-                        page = await browser.new_page()
-                        await page.set_content(html_str)
-                        data = await page.pdf(
-                            format="A4",
-                            print_background=True,
-                            # The stylesheet carries @page margins that
-                            # xhtml2pdf honours too; Chromium needs the same
-                            # frame passed here because the running footer is
-                            # drawn inside the bottom margin.
-                            margin={
-                                "top": "17mm",
-                                "bottom": "18mm",
-                                "left": "15mm",
-                                "right": "15mm",
-                            },
-                            display_header_footer=True,
-                            header_template="<div></div>",
-                            footer_template=_footer_template(footer_note),
+                # Watchdog: a wedged renderer launch (observed as an
+                # indefinite block inside ``chromium.launch`` on some CI
+                # runners, twice) must fail into the fallback, not eat a
+                # whole test or evidence-generation budget. 90s covers a
+                # cold start plus a real A4 render with a large margin.
+                async def _render_chromium() -> tuple[bytes, str]:
+                    import os
+
+                    extra = os.environ.get("RELIASTRA_CHROMIUM_EXTRA_ARGS", "")
+                    args = [a.strip() for a in extra.split(",") if a.strip()]
+                    async with async_playwright() as playwright:
+                        browser = await playwright.chromium.launch(
+                            headless=True, args=args or None
                         )
-                    finally:
-                        await browser.close()
+                        try:
+                            version = browser.version
+                            page = await browser.new_page()
+                            await page.set_content(html_str)
+                            data = await page.pdf(
+                                format="A4",
+                                print_background=True,
+                                # The stylesheet carries @page margins that
+                                # xhtml2pdf honours too; Chromium needs the same
+                                # frame passed here because the running footer is
+                                # drawn inside the bottom margin.
+                                margin={
+                                    "top": "17mm",
+                                    "bottom": "18mm",
+                                    "left": "15mm",
+                                    "right": "15mm",
+                                },
+                                display_header_footer=True,
+                                header_template="<div></div>",
+                                footer_template=_footer_template(footer_note),
+                            )
+                            return data, version
+                        finally:
+                            await browser.close()
+
+                data, version = await asyncio.wait_for(_render_chromium(), timeout=90.0)
                 if not data:
                     raise EvidenceGenerationError(
                         "Playwright produced an empty document"
@@ -191,6 +206,11 @@ class EvidenceRenderer:
                     "renderer_version": version,
                     "pagination": "running footer with page numbers",
                 }
+            except TimeoutError:
+                logger.warning(
+                    "evidence: chromium rendering did not finish within 90s; "
+                    "falling back to xhtml2pdf and recording it on the artifact"
+                )
             except Exception as exc:
                 logger.warning(
                     "evidence: chromium rendering failed (%s); falling back to "

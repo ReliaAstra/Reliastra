@@ -20,15 +20,27 @@ import httpx
 import pytest
 
 from app.config import settings
-from app.modules.billing import fx_reference
 from app.core.payment_pricing import FX_REFERENCE_DISCLAIMER
+from app.modules.billing import fx_reference
 
 
 @pytest.fixture(autouse=True)
-def _clear_cache():
-    fx_reference._memory_cache = None
+async def _clear_cache():
+    """Empty both cache layers around every test in this file.
+
+    The unit phase runs after the integration phase, and the check-out flow
+    live-fetches the real rate - its payload stays cached on the shared
+    (fake) Redis. Without clearing it, a cached live rate answers every read
+    here before the mocked transport is ever reached.
+    """
+    from app.modules.billing import fx_reference as _fx
+    from app.platform.integrations.redis import safe_redis_delete
+
+    _fx._memory_cache = None
+    await safe_redis_delete(_fx._redis_cache_key)
     yield
-    fx_reference._memory_cache = None
+    _fx._memory_cache = None
+    await safe_redis_delete(_fx._redis_cache_key)
 
 
 def _transport(payload, status=200):
