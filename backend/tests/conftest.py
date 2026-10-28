@@ -6,6 +6,17 @@ from typing import Any
 
 import fakeredis.aioredis
 
+# Stack-dump watchdog: when a test wedges (the CI renderer hang serialized
+# three runs as silent 20-minute kills), faulthandler prints every thread's
+# stack from a background thread the event loop cannot block - then exits
+# so the job fails fast instead of burning the whole budget.
+if os.environ.get("PYTEST_STACK_DUMP"):
+    import faulthandler
+
+    faulthandler.dump_traceback_later(
+        int(os.environ["PYTEST_STACK_DUMP"]), exit=True
+    )
+
 try:
     import pgserver  # type: ignore
 except ImportError:  # pragma: no cover - missing in CI python 3.13 win
