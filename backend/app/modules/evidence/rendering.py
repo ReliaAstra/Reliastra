@@ -163,8 +163,14 @@ class EvidenceRenderer:
                 # whole test or evidence-generation budget. 90s covers a
                 # cold start plus a real A4 render with a large margin.
                 async def _render_chromium() -> tuple[bytes, str]:
+                    import os
+
+                    extra = os.environ.get("RELIASTRA_CHROMIUM_EXTRA_ARGS", "")
+                    args = [a.strip() for a in extra.split(",") if a.strip()]
                     async with async_playwright() as playwright:
-                        browser = await playwright.chromium.launch(headless=True)
+                        browser = await playwright.chromium.launch(
+                            headless=True, args=args or None
+                        )
                         try:
                             version = browser.version
                             page = await browser.new_page()

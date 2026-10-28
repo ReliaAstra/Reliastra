@@ -212,7 +212,16 @@ jobs:
 
       - name: Pytest (unit + integration + e2e)
         working-directory: backend
-        run: pytest -v --tb=short --maxfail=10
+        env:
+          # The evidence renderer's Chromium hangs inside launch() on some
+          # runner images (silent, deterministic). Sandbox-less launch avoids
+          # the userns/socketpair path; the render inputs are our own
+          # generated markup, not untrusted web content.
+          RELIASTRA_CHROMIUM_EXTRA_ARGS: no-sandbox,disable-dev-shm-usage
+        # faulthandler dumps every thread's stack to the log 4 minutes into
+        # a stuck test - a hang becomes diagnosable instead of a silent
+        # 20-minute timeout kill.
+        run: pytest -v --tb=short --maxfail=10 --faulthandler-timeout=240
 
       - name: Upload test logs on failure
         if: failure()
