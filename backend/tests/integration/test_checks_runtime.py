@@ -151,7 +151,7 @@ async def test_state_endpoint_reports_a_blocked_target_as_our_policy_not_an_outa
         endpoint_url="http://127.0.0.1:9/nope",
     )
 
-    monkeypatch.setattr(celery_app.conf, "task_always_eager", True)
+    monkeypatch.setitem(celery_app.conf, "task_always_eager", True)
     from app.modules.checks.tasks import execute_check
 
     execute_check.apply(args=[dep["id"], "us-east"]).get()
@@ -188,7 +188,7 @@ async def test_worker_task_execution_writes_a_check_result(
     headers = auth_data["headers"]
     dep = await _create_dependency(async_client, headers)
 
-    monkeypatch.setattr(celery_app.conf, "task_always_eager", True)
+    monkeypatch.setitem(celery_app.conf, "task_always_eager", True)
     from app.modules.checks.tasks import execute_check
 
     with patch(
@@ -229,7 +229,7 @@ async def test_state_after_a_real_probe_reports_the_target(async_client, auth_da
     headers = auth_data["headers"]
     dep = await _create_dependency(async_client, headers)
 
-    monkeypatch.setattr(celery_app.conf, "task_always_eager", True)
+    monkeypatch.setitem(celery_app.conf, "task_always_eager", True)
     from app.modules.checks.tasks import execute_check
 
     await record_scheduler_heartbeat()
@@ -422,12 +422,14 @@ class OperationalError(Exception):
 async def test_duplicate_task_delivery_keeps_result_and_outbox_identity(async_client, auth_data, monkeypatch, db_session):
     import json
     import uuid
+
     from sqlalchemy import select
+
     from app.modules.checks.models import CheckResult
-    from app.modules.observations.models import OutboxEvent
     from app.modules.checks.tasks import execute_check
+    from app.modules.observations.models import OutboxEvent
     dep = await _create_dependency(async_client, auth_data['headers'])
-    monkeypatch.setattr(celery_app.conf, 'task_always_eager', True)
+    monkeypatch.setitem(celery_app.conf, 'task_always_eager', True)
     task_id = str(uuid.uuid4())
     with patch('app.modules.checks.http_probe.resolve_pinned_target_async', new=AsyncMock(return_value=_public_target())), patch('app.modules.checks.http_probe.pinned_transport_for', return_value=_FakePinnedTransport(status_code=200)):
         first = execute_check.apply(args=[dep['id'], 'us-east'], task_id=task_id).get()
