@@ -13,7 +13,17 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,7 +49,9 @@ class ProspectLead(UUIDMixin, TimestampMixin, Base):
 
     Evidence fields are stored verbatim from the report; the draft columns
     are the only AI-generated content. ``draft_status``:
-    ``pending`` -> ``ready`` -> ``sent`` (or ``failed``).
+    ``pending`` -> ``ready`` -> ``approved`` -> ``sent`` (or ``failed``).
+    Only a human moves a draft to ``approved``; only ``approved`` drafts
+    can be sent (single or batch).
     """
 
     __tablename__ = "prospect_leads"
@@ -75,4 +87,40 @@ class ProspectLead(UUIDMixin, TimestampMixin, Base):
     draft_status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
     draft_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     drafted_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_message_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    sent_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    batch_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    draft_angle: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    draft_rejected_angles: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+
+class AIProviderProfile(UUIDMixin, TimestampMixin, Base):
+    """Admin-configured LLM provider for Prospect AI drafting.
+
+    One active row at a time (``is_active``). The API key is stored
+    Fernet-encrypted at rest via the platform field-encryption utility and
+    is never returned in a response - only its last four characters. When
+    no profile is active, drafting falls back to the platform
+    ``RELIASTRA_AI_*`` environment configuration.
+
+    Admin-supplied ``endpoint_url`` is SSRF-validated at call time: every
+    LLM request resolves and pins DNS through the shared pinned-transport
+    helpers before a byte leaves the process.
+    """
+
+    __tablename__ = "ai_provider_profiles"
+    __table_args__ = (Index("ix_ai_provider_profiles_active", "is_active"),)
+
+    label: Mapped[str] = mapped_column(String(120), nullable=False, default="Primary")
+    provider_type: Mapped[str] = mapped_column(String(32), nullable=False, default="openai_compatible")
+    endpoint_url: Mapped[str] = mapped_column(String(1024), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    temperature: Mapped[float] = mapped_column(Float, nullable=False, default=0.3)
+    max_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=1024)
+    timeout_seconds: Mapped[float] = mapped_column(Float, nullable=False, default=60.0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    last_test_at: Mapped[object | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_test_ok: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    last_test_detail: Mapped[str | None] = mapped_column(Text, nullable=True)

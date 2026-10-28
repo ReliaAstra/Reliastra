@@ -42,6 +42,9 @@ import type {
   ProspectReport,
   ProspectLead,
   ProspectImportResult,
+  ProspectBatchSendResult,
+  ProspectProvider,
+  ProspectProviderTestResult,
   ProspectAiStatus,
   PartnerAdminListResponse,
   PartnerDetailResponse,
@@ -572,14 +575,48 @@ export const adminApi = {
     request<ProspectLead[]>('/prospect-ai/leads', { params }),
   prospectAiImport: (data: { filename: string; json_text: string; md_text?: string }) =>
     request<ProspectImportResult>('/prospect-ai/import', { method: 'POST', body: data }),
-  prospectAiGenerate: (data: { lead_ids: string[]; tone?: string }) =>
+  prospectAiGenerate: (data: { lead_ids: string[]; tone?: string; force?: boolean }) =>
     request<ProspectLead[]>('/prospect-ai/generate', { method: 'POST', body: data }),
   prospectAiReviewDraft: (
     leadId: string,
     data: { subject?: string; body_text?: string }
   ) => request<ProspectLead>(`/prospect-ai/leads/${leadId}`, { method: 'PATCH', body: data }),
-  prospectAiSend: (leadId: string, data: { sender: string; reply_to?: string }) =>
+  prospectAiApprove: (leadId: string) =>
+    request<ProspectLead>(`/prospect-ai/leads/${leadId}/approve`, { method: 'POST' }),
+  prospectAiUnapprove: (leadId: string) =>
+    request<ProspectLead>(`/prospect-ai/leads/${leadId}/unapprove`, { method: 'POST' }),
+  prospectAiApproveBatch: (data: { lead_ids: string[] }) =>
+    request<ProspectLead[]>('/prospect-ai/approve-batch', { method: 'POST', body: data }),
+  prospectAiSend: (leadId: string, data: { sender: string; reply_to?: string; template_id?: string }) =>
     request<ProspectLead>(`/prospect-ai/leads/${leadId}/send`, { method: 'POST', body: data }),
+  prospectAiSendBatch: (data: {
+    lead_ids: string[];
+    sender: string;
+    reply_to?: string;
+    template_id?: string;
+  }) =>
+    request<ProspectBatchSendResult>('/prospect-ai/send-batch', { method: 'POST', body: data }),
+  prospectAiProvider: () => request<ProspectProvider | null>('/prospect-ai/provider'),
+  prospectAiSaveProvider: (data: {
+    label?: string;
+    provider_type: string;
+    endpoint_url: string;
+    model: string;
+    api_key?: string;
+    temperature?: number;
+    max_tokens?: number;
+    timeout_seconds?: number;
+  }) => request<ProspectProvider>('/prospect-ai/provider', { method: 'PUT', body: data }),
+  prospectAiTestProvider: (data: {
+    provider_type?: string;
+    endpoint_url?: string;
+    model?: string;
+    api_key?: string;
+  }) =>
+    request<ProspectProviderTestResult>('/prospect-ai/provider/test', {
+      method: 'POST',
+      body: data,
+    }),
   prospectAiDeleteReport: (reportId: string) =>
     request<{ deleted: string }>(`/prospect-ai/reports/${reportId}`, { method: 'DELETE' }),
 };

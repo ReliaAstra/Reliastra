@@ -21,33 +21,21 @@ from typing import Any
 from urllib.parse import urlparse
 
 from app.core.exceptions import ValidationException
-from app.modules.ai_integration.service import AIService
 from app.modules.email_center.schemas import SendEmailRequest
+from app.modules.email_center.templates import render_variables
 from app.modules.prospect_ai.models import ProspectLead
-from app.modules.prospect_ai.schemas import LeadEvidence
 
 logger = logging.getLogger(__name__)
 
 MAX_COMPANY_LENGTH = 255
 MAX_DOMAIN_LENGTH = 253
-
-_DRAFT_INSTRUCTION = (
-    "You write first-touch cold emails for RELIASTRA, an independent "
-    "external-dependency monitoring product. RELIASTRA observes the third-party "
-    "APIs a SaaS product depends on, confirms outages deterministically (two "
-    "consecutive failures open an incident, two consecutive recoveries close "
-    "it), and issues verifiable evidence.\n\n"
-    "Write a cold email using ONLY the evidence supplied. Do not invent "
-    "metrics, incidents, vendor claims, customer names, or facts. If an "
-    "evidence field is empty, do not reference that topic. Reference at most "
-    "one or two concrete evidence details - specificity beats volume.\n\n"
-    "Requirements:\n"
-    "- subject: under 60 characters, lowercase-friendly, no clickbait, no emoji\n"
-    "- body: plain text, under 140 words, 3 short paragraphs max\n"
-    "- open with a specific observation about the prospect, not about RELIASTRA\n"
-    "- close with one low-pressure call to action\n"
-    "- no signature block; the send pipeline appends the operator signature\n"
-    '- Return ONLY a JSON object: {"subject": str, "body": str}'
+# Deliverability floor: a fresh sending domain that fires hundreds of cold
+# emails on day one burns its own reputation. The cap is deliberately low;
+# raise it deliberately, not per-batch.
+DAILY_SEND_CAP = 20
+LEAD_TEMPLATE_VARIABLES = (
+    "company", "contact_name", "role", "domain", "website", "product",
+    "external_dependencies", "pain_signal", "outreach_hook",
 )
 
 
@@ -157,73 +145,63 @@ def company_or_slug(company: str) -> str:
     return (slug or "unknown")[:MAX_DOMAIN_LENGTH]
 
 
-def build_prompt(lead: ProspectLead, tone: str | None) -> str:
-    evidence = LeadEvidence(
-        rank=lead.rank,
-        company=lead.company,
-        product=lead.product,
-        website=lead.website,
-        contact_name=lead.contact_name,
-        role=lead.role,
-        external_dependencies=lead.external_dependencies,
-        evidence=lead.evidence,
-        pain_signal=lead.pain_signal,
-        why_reliastra_is_relevant=lead.why_reliastra_is_relevant,
-        outreach_hook=lead.outreach_hook,
-        verdict=lead.verdict,
-    )
-    evidence_json = json.dumps(evidence.model_dump(), ensure_ascii=False, indent=1)
-    tone_line = (
-        f"Tone: {tone.strip()} - but never at the cost of factual discipline."
-        if tone
-        else "Tone: direct, engineering-respectful, zero hype."
-    )
-    return (
-        f"{_DRAFT_INSTRUCTION}\n\n"
-        f"{tone_line}\n\n"
-        f"Prospect evidence:\n{evidence_json}"
-    )
+def build_prompt(lead: ProspectLead, tone: str | None, lint_issues: list[str] | None = None) -> str:
+    """Backward-compatible alias for the v2 drafting prompt."""
+    from app.modules.prospect_ai.drafting import build_prompt_v2
+
+    return build_prompt_v2(lead, tone, lint_issues)
 
 
 def parse_draft(text: str | None) -> tuple[str, str] | None:
     """Extract ``(subject, body)`` from a model reply. Tolerates fenced or
     trailing prose around the JSON object. Returns None when unusable."""
-    if not text or not text.strip():
+    from app.modules.prospect_ai.drafting import parse_v2
+
+    parsed = parse_v2(text)
+    if parsed is None:
         return None
-    candidate = text.strip()
-    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", candidate, re.DOTALL)
-    if fence:
-        candidate = fence.group(1)
-    else:
-        brace = re.search(r"\{.*\}", candidate, re.DOTALL)
-        if brace:
-            candidate = brace.group(0)
-    try:
-        data = json.loads(candidate)
-    except json.JSONDecodeError:
-        return None
-    subject = data.get("subject")
-    body = data.get("body")
-    if not isinstance(subject, str) or not isinstance(body, str):
-        return None
-    subject = subject.strip()[:500]
-    body = body.strip()
-    if not subject or not body:
-        return None
-    return subject, body
+    return parsed["subject"], parsed["body"]
 
 
-async def draft_lead(lead: ProspectLead, tone: str | None) -> ProspectLead:
-    """Generate and persist a draft for one lead via the platform LLM."""
-    service = AIService()
-    model = service.platform_model()
+async def draft_lead(
+    lead: ProspectLead, tone: str | None, db: Any
+) -> ProspectLead:
+    """Generate and persist a draft for one lead (v2 two-stage prompt + lint).
+
+    One lint-informed retry: if the first draft fails the deterministic
+    lint, the corrected issues are appended to the prompt and the model
+    gets exactly one more attempt. A second failure records every issue -
+    a failed draft is data, not a silent skip.
+    """
+    from app.modules.ai_integration.service import call_llm
+    from app.modules.prospect_ai.drafting import build_prompt_v2, lint_draft, parse_v2
+    from app.modules.prospect_ai.provider import resolve_active_profile
+
+    model = await resolve_active_profile(db)
     if model is None:
         raise ValidationException(
-            "The RELIASTRA-managed LLM is not configured (RELIASTRA_AI_* settings)."
+            "No LLM available: no active AI provider profile and no "
+            "RELIASTRA_AI_* platform configuration."
         )
+
+    async def call_model(prompt: str) -> dict[str, Any]:
+        return await call_llm(model, prompt)
+
     try:
-        result = await service._call_model(model, build_prompt(lead, tone))
-        parsed = parse_draft(result.get("text"))
+        result = await call_model(build_prompt_v2(lead, tone))
+        parsed = parse_v2(result.get("text"))
+        lint_issues: list[str] = []
+        if parsed is not None:
+            lint_issues, _warnings = lint_draft(parsed["subject"], parsed["body"], lead)
+            if lint_issues:
+                result = await call_model(
+                    build_prompt_v2(lead, tone, lint_issues)
+                )
+                parsed = parse_v2(result.get("text"))
+                if parsed is not None:
+                    lint_issues, _warnings = lint_draft(
+                        parsed["subject"], parsed["body"], lead
+                    )
     except ValidationException:
         lead.draft_status = "failed"
         lead.draft_error = "LLM endpoint failed safety validation"
@@ -233,30 +211,71 @@ async def draft_lead(lead: ProspectLead, tone: str | None) -> ProspectLead:
         lead.draft_status = "failed"
         lead.draft_error = str(exc)[:1000]
         return lead
+
     if parsed is None:
         lead.draft_status = "failed"
         lead.draft_error = "Model reply was not usable JSON with subject/body"
         return lead
-    subject, body = parsed
-    lead.draft_subject = subject
-    lead.draft_body = body
+    lead.draft_subject = parsed["subject"]
+    lead.draft_body = parsed["body"]
+    lead.draft_angle = parsed.get("angle")
+    lead.draft_rejected_angles = parsed.get("rejected_angles")
     lead.draft_status = "ready"
-    lead.draft_error = None
+    # A draft that still fails the lint after its corrective retry is NOT
+    # hidden - it lands in review with every issue listed, because the
+    # human, not the model, is the final gate. Nothing can be sent without
+    # an explicit approve regardless.
+    lead.draft_error = (
+        "lint issues: " + "; ".join(issue[:140] for issue in lint_issues[:5])
+        if lint_issues
+        else None
+    )
     lead.drafted_at = datetime.now(timezone.utc)
     return lead
 
 
-def build_send_request(lead: ProspectLead, sender: str, reply_to: str | None) -> SendEmailRequest:
-    """Build the Email Center payload for a reviewed lead draft."""
+def lead_email_variables(lead: ProspectLead) -> dict[str, str]:
+    """Lead fields a studio template may reference as {{variables}}."""
+    variables: dict[str, str] = {}
+    for field in LEAD_TEMPLATE_VARIABLES:
+        value = getattr(lead, field, None)
+        if isinstance(value, str) and value.strip():
+            variables[field] = value.strip()
+    if lead.contact_name:
+        first = lead.contact_name.strip().split(" ", 1)[0]
+        if first:
+            variables["first_name"] = first
+    return variables
+
+
+def build_send_request(
+    lead: ProspectLead,
+    sender: str,
+    reply_to: str | None,
+    *,
+    template_html: str | None = None,
+) -> SendEmailRequest:
+    """Build the Email Center payload for an approved lead draft.
+
+    ``template_html`` (the studio template's HTML body) wraps the optional
+    design layer: lead fields render into its {{variables}} (HTML-escaped)
+    while the AI's text draft stays the plain-text body. Without a
+    template the draft sends as plain text, exactly as reviewed.
+    """
     if not lead.contact_email:
         raise ValidationException("This lead has no contact email - it cannot be sent.")
     if lead.draft_status == "sent":
         raise ValidationException("Draft was already sent.")
+    if lead.draft_status != "approved":
+        raise ValidationException(
+            "Only approved drafts can be sent - approve it in the "
+            "inspector (or approve the selection) first."
+        )
     subject = (lead.draft_subject or "").strip()
     body = (lead.draft_body or "").strip()
     if not subject or not body:
         raise ValidationException("Draft is empty - generate or write one before sending.")
-    return SendEmailRequest(
+    payload = SendEmailRequest(
         sender=sender,
         to=[lead.contact_email],
         reply_to=reply_to,
@@ -264,3 +283,33 @@ def build_send_request(lead: ProspectLead, sender: str, reply_to: str | None) ->
         text=body,
         idempotency_key=f"prospect-ai-{lead.id}",
     )
+    if template_html:
+        variables = lead_email_variables(lead)
+        payload.html = render_variables(template_html, variables, escape_html=True)
+        payload.template_id = None
+    return payload
+
+
+def _daily_send_cap() -> int:
+    """Deliverability cap, overridable via PROSPECT_DAILY_SEND_CAP."""
+    from app.config import settings
+
+    return max(1, int(getattr(settings, "PROSPECT_DAILY_SEND_CAP", DAILY_SEND_CAP)))
+
+
+async def count_sent_today(db: Any) -> int:
+    """Drafts sent since local midnight UTC."""
+    from sqlalchemy import func, select
+
+    midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    rows = await db.execute(
+        select(func.count()).select_from(ProspectLead).where(
+            ProspectLead.sent_at.is_not(None),
+            ProspectLead.sent_at >= midnight,
+        )
+    )
+    return int(rows.scalar() or 0)
+
+
+def sends_remaining_today(sent_today: int) -> int:
+    return max(0, _daily_send_cap() - sent_today)

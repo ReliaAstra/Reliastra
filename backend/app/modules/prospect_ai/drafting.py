@@ -1,0 +1,336 @@
+"""Prospect AI drafting v2: two-stage reasoning, anti-generic lint.
+
+The persona is a senior sales engineer who has actually read the research
+report. The prompt forces the model to argue for an angle *and* against
+the alternatives before it writes a word - a draft that cannot defend its
+angle choice is, in practice, a template with tokens, and this module is
+built to make that outcome fail a gate instead of reaching an inbox.
+
+Determinism boundary: everything expensive to get wrong is checked in
+code, not in the model. The lint rejects stock phrases, banned dash
+characters (an em dash or en dash in prose is a word-processor artifact,
+not email craft), over-length subjects/bodies, and drafts with no anchor
+in the researched evidence. A failing lint triggers one corrective retry;
+a failing retry is recorded, not silently shipped.
+
+Product facts in ``RELIASTRA_BRIEF`` are Level-A claims only - the same
+facts the public observatory states - so the model can explain the
+product accurately but cannot widen scope or invent telemetry.
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from app.modules.prospect_ai.models import ProspectLead
+from app.modules.prospect_ai.schemas import LeadEvidence
+
+# ── Product brief (Level-A facts the model may restate) ──────────────────
+
+RELIASTRA_BRIEF = """\
+RELIASTRA - what it is, factually:
+- Category: External Dependency Intelligence. Tagline: "Infrastructure you can prove."
+- Thesis: your own monitoring proves YOUR app failed; it cannot tell you whether the
+  fault was internal or a third-party API's. RELIASTRA creates that independent
+  observation record.
+- How it works: instrument the external endpoints a product depends on (Auth0,
+  Cloudflare, Stripe, OpenAI, Twilio, etc.), probe on a fixed cadence, and confirm
+  failures deterministically - 2 consecutive failures open an incident, 2 consecutive
+  recoveries resolve it. A dropped probe is recorded as missing, never silently
+  folded into "up" or "down".
+- Attribution: five weighted signals sum to 1.0 and produce a verdict. >= 75 means
+  vendor failure with confidence. A verdict of "unknown" is a valid, published result -
+  the system would rather return unknown than guess.
+- Evidence: every conclusion ships as verifiable evidence - SHA-256 checksums and an
+  Ed25519 signature bound to the organization, with a public verification path.
+- Honest scope: the public observatory is one observation point. RELIASTRA states
+  what was observed, from where, over what window - and what it cannot conclude.
+  No multi-region consensus claims.
+
+What RELIASTRA is NOT (never claim these): blocks incidents from happening, predicts
+outages, offers multi-cloud consensus, or replaces the vendor's own status page as a
+source of truth about the vendor."""
+AngleArchetype = dict[str, str]
+
+ANGLE_ARCHETYPES: list[AngleArchetype] = [
+    {
+        "id": "peer-operator",
+        "label": "Infrastructure peer",
+        "use_when": "the contact is an infra/platform/SRE lead who owns uptime "
+        "and vendor decisions personally - write as a technical peer, "
+        "mechanism-first, zero sales framing.",
+    },
+    {
+        "id": "operator-burden",
+        "label": "Solo operator burden",
+        "use_when": "the prospect is a small team or solo founder wearing the "
+        "ops hat themselves - write around what one person cannot watch "
+        "at 3am, concrete and brief.",
+    },
+    {
+        "id": "multi-client-agency",
+        "label": "Agency / multi-tenant operator",
+        "use_when": "the company runs infrastructure for OTHER companies "
+        "(agency, MSP, consultant) - their dependency failures land on "
+        "many clients at once, and evidence reports protect their "
+        "credibility, not just uptime.",
+    },
+    {
+        "id": "observed-fact",
+        "label": "First-touch observation",
+        "use_when": "evidence is thin but a specific, factual detail from "
+        "their stack or public posture is worth one short, honest note - "
+        "underwrite the email with their fact, not RELIASTRA's.",
+    },
+]
+
+_SENTENCE_END = re.compile(r"[.!?]")
+_WORD = re.compile(r"[A-Za-z][A-Za-z0-9'-]*")
+# Dashes banned in prose: em dash, en dash, horizontal bar. A plain ASCII
+# hyphen-minus is legitimate craft; the typographic long dashes are the
+# signature of an LLM drafting into a word processor's habits.
+BANNED_DASHES = {"\u2014", "\u2013", "\u2015", "\u2212"}
+
+STOCK_PHRASES = (
+    "i hope this finds you well",
+    "i hope this email finds you",
+    "hope you're doing well",
+    "hope you are doing well",
+    "trust you are well",
+    "i hope you're well",
+    "wanted to reach out",
+    "i'm reaching out",
+    "just checking in",
+    "just following up",
+    "circle back",
+    "touch base",
+    "quick question",
+    "gentle reminder",
+    "as per my last email",
+    "at your earliest convenience",
+    "revolutionize",
+    "game-changer",
+    "cutting-edge",
+    "state-of-the-art",
+    "seamlessly",
+    "seamless integration",
+    "best-in-class",
+    "world-class",
+    "synergy",
+    "skyrocket",
+    "unlock the power",
+    "take your",
+    "elevate your",
+    "let me know if you're interested",
+    "i'd love to pick your brain",
+    "coding",
+    "sorry to bother you",
+)
+
+STOP_TOKENS = {
+    "about", "above", "after", "again", "against", "because", "before", "below",
+    "between", "company", "during", "found", "their", "there", "these", "those",
+    "through", "under", "until", "using", "which", "while", "would", "should",
+    "could", "where", "reported", "reports", "report", "product", "team",
+}
+
+_EVIDENCE_SOURCES = ("pain_signal", "outreach_hook", "evidence", "why_reliastra_is_relevant")
+
+
+def evidence_tokens(lead: ProspectLead | LeadEvidence) -> set[str]:
+    """Content-bearing lowercase tokens from the researched evidence."""
+    out: set[str] = set()
+    for attr in _EVIDENCE_SOURCES:
+        value = getattr(lead, attr, None)
+        if not value:
+            continue
+        for match in _WORD.findall(value.lower()):
+            if len(match) >= 6 and match not in STOCK_PHRASES and match not in STOP_TOKENS:
+                out.add(match)
+    return out
+
+
+def lint_draft(
+    subject: str, body: str, lead: ProspectLead | LeadEvidence
+) -> tuple[list[str], list[str]]:
+    """Deterministic quality gate.
+
+    Returns ``(hard_issues, warnings)``. Hard issues mean the draft is
+    unacceptable and (if a retry is still pending) must be regenerated;
+    warnings are surfaced to the human reviewer only.
+    """
+    hard: list[str] = []
+    warnings: list[str] = []
+    text = f"{subject}\n{body}"
+
+    for symbol in BANNED_DASHES:
+        if symbol in text:
+            name = {"\u2014": "em dash", "\u2013": "en dash", "\u2015": "horizontal bar", "\u2212": "minus sign"}[symbol]
+            hard.append(
+                f"banned-dash:{name} - replace every {name} (U+{ord(symbol):04X}) "
+                "with an ASCII hyphen or rephrase."
+            )
+
+    lowered = text.lower()
+    for phrase in STOCK_PHRASES:
+        if phrase in lowered:
+            hard.append(f"stock-phrase: \u201c{phrase}\u201d")
+
+    subject_clean = subject.strip()
+    if len(subject_clean) > 60:
+        hard.append(f"subject-length: {len(subject_clean)} chars (max 60).")
+    if subject_clean.endswith(("!", "?")) or subject_clean.isupper():
+        warnings.append("subject tone reads like marketing copy.")
+
+    words = body.split()
+    if len(words) > 140:
+        hard.append(f"body-length: {len(words)} words (max 140).")
+    if len(words) < 40:
+        hard.append(f"body-length: {len(words)} words - too thin to be substantial "
+                    "(40-140 required).")
+
+    paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
+    if len(paragraphs) > 3:
+        hard.append(f"paragraphs: {len(paragraphs)} (max 3).")
+
+    anchors = evidence_tokens(lead)
+    if anchors:
+        body_lower = body.lower()
+        hits = [tok for tok in anchors if tok in body_lower]
+        if not hits:
+            hard.append(
+                "evidence-anchor: no researched detail appears in the body. "
+                "Reference at least one concrete fact from the evidence."
+            )
+
+    company = (getattr(lead, "company", "") or "").strip().lower()
+    if company and len(company) > 3 and company not in body.lower() and company not in subject.lower():
+        warnings.append("the prospect's name does not appear in the email.")
+
+    if body.count("reliastra") + subject.count("reliastra") > 4:
+        warnings.append("too RELIASTRA-heavy; the subject is the prospect, not us.")
+
+    if "?" not in body and not re.search(r"\b(worth|open to|interested)\b", body.lower()):
+        warnings.append("no clear single-call-to-action found.")
+
+    return hard, warnings
+
+
+RETRY_INSTRUCTION = (
+    "Your previous draft failed the deterministic lint. Regenerate it from "
+    "the same evidence, fixing ONLY these issues:\n{issues}\n\n"
+    "Rules that do not change: em dashes and en dashes are banned - use "
+    "plain ASCII hyphens; no stock outreach phrases; subject under 60 "
+    "characters; body 40-140 words, at most 3 paragraphs; at least one "
+    "concrete detail from the evidence must appear in the body."
+)
+
+
+def build_prompt_v2(
+    lead: ProspectLead, tone: str | None, lint_issues: list[str] | None = None
+) -> str:
+    """The v2 drafting prompt: persona, brief, angle reasoning, output contract."""
+    evidence = LeadEvidence(
+        rank=lead.rank,
+        company=lead.company,
+        product=lead.product,
+        website=lead.website,
+        contact_name=lead.contact_name,
+        role=lead.role,
+        external_dependencies=lead.external_dependencies,
+        evidence=lead.evidence,
+        pain_signal=lead.pain_signal,
+        why_reliastra_is_relevant=lead.why_reliastra_is_relevant,
+        outreach_hook=lead.outreach_hook,
+        verdict=lead.verdict,
+    )
+    evidence_json = json_dumps(evidence.model_dump())
+    angles = "\n".join(
+        f'- {a["id"]} ({a["label"]}): {a["use_when"]}' for a in ANGLE_ARCHETYPES
+    )
+    tone_line = (
+        f"Tone: {tone.strip()} - but never at the cost of factual discipline."
+        if tone
+        else "Tone: direct, engineering-respectful, zero hype."
+    )
+    lint_block = ""
+    if lint_issues:
+        lint_block = RETRY_INSTRUCTION.format(issues="\n".join(f"- {i}" for i in lint_issues))
+
+    return f"""You are a senior sales engineer writing ONE first-touch cold email, by hand, to one technical human at a company, based on a research report written beforehand.
+
+Buyer knowledge - RELIASTRA, the product you sell:
+{RELIASTRA_BRIEF}
+
+Why you sell it well: you have personally carried a pager for third-party dependencies. You know the specific humiliation of "our app is down" when the truth is "Stripe's API is down for everyone and we had no way to prove it in the moment". You under-promise, show mechanism instead of adjectives, and you would rather a prospect reply "not now, this is sharp" than a vague "circle back later".
+
+Angle selection - reason first:
+{angles}
+
+Stage 1 (this reasoning goes in your output): pick ONE angle and reject the others, saying what only you know from this evidence - not generic reasons.
+
+Stage 2: write the email. Mechanics of a great cold technical email:
+- Open with THEIR situation - a paraphrase of the strongest concrete evidence item (at most 1-2 details; a quote-like paraphrase of their own engineering posture is more credible than any product claim).
+- One mechanism paragraph: deterministic confirmation (2 failures open / 2 recoveries close), dropped probes recorded, verifiable evidence with checksums and a signature. Explain like an engineer, in their vocabulary. If the evidence contains their dependency names, use them.
+- One low-pressure, specific call to action (e.g. "want the methodology write-up?" or a short question), never "15 minutes to pick your brain".
+- {tone_line}
+- Hard bans: em dash (U+2014), en dash (U+2013), any long typographic dash - use ASCII hyphens only; stock phrases like "I hope this finds you well" or "wanted to reach out"; invented metrics, incidents, customers, or vendor claims; emoji; signature block (the pipeline appends one).
+- subject: under 60 characters, no clickbait.
+- body: plain text, 40-140 words, max 3 paragraphs, never generic - if you cannot anchor it in this evidence, make it shorter and sharper, not vaguer.
+
+Output - ONLY this JSON object, nothing else:
+{{"angle": "<archetype id>", "rejected_angles": [{{"angle": "<id>", "why_not": "<evidence-specific reason>"}} for the other three], "subject": "<subject>", "body": "<body>"}}
+
+Prospect evidence (the ONLY facts you may use):
+{evidence_json}
+{lint_block}"""
+
+
+def json_dumps(data: dict[str, Any]) -> str:
+    import json
+
+    return json.dumps(data, ensure_ascii=False, indent=1)
+
+
+def parse_v2(text: str | None) -> dict[str, Any] | None:
+    """Extract the v2 output object from a model reply.
+
+    Tolerates fenced or surrounded JSON. ``subject``/``body`` are required;
+    ``angle``/``rejected_angles`` are recorded when present but tolerated
+    absent from older providers - the lint, not the shape, is the gate.
+    """
+    if not text or not text.strip():
+        return None
+    candidate = text.strip()
+    fence = re.search(r"```(?:json)?\s*(\{.*\})\s*```", candidate, re.DOTALL)
+    if fence:
+        candidate = fence.group(1)
+    else:
+        brace = re.search(r"\{.*\}", candidate, re.DOTALL)
+        if brace:
+            candidate = brace.group(0)
+    import json
+
+    try:
+        data = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    subject = data.get("subject")
+    body = data.get("body")
+    if not isinstance(subject, str) or not isinstance(body, str):
+        return None
+    subject = subject.strip()[:500]
+    body = body.strip()
+    if not subject or not body:
+        return None
+    angle = data.get("angle")
+    rejected = data.get("rejected_angles")
+    return {
+        "subject": subject,
+        "body": body,
+        "angle": angle.strip()[:64] if isinstance(angle, str) and angle.strip() else None,
+        "rejected_angles": rejected if isinstance(rejected, list) else None,
+    }

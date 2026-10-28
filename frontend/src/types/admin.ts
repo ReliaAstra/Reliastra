@@ -1003,10 +1003,15 @@ export interface ProspectLead {
   verdict: string | null;
   draft_subject: string | null;
   draft_body: string | null;
-  draft_status: 'pending' | 'ready' | 'failed' | 'sent';
+  draft_status: 'pending' | 'ready' | 'approved' | 'failed' | 'sent';
   draft_error: string | null;
+  draft_angle: string | null;
+  draft_rejected_angles: { angle: string; why_not?: string }[] | null;
   drafted_at: string | null;
+  approved_at: string | null;
   sent_message_id: string | null;
+  sent_at: string | null;
+  batch_id: string | null;
 }
 
 export interface ProspectImportResult {
@@ -1021,4 +1026,45 @@ export interface ProspectAiStatus {
   total_reports: number;
   total_leads: number;
   leads_by_status: Record<string, number>;
+  provider_source: 'profile' | 'platform';
+  daily_send_cap: number;
+  sends_remaining_today: number;
+}
+
+export interface ProspectProvider {
+  label: string;
+  provider_type: string;
+  endpoint_url: string;
+  model: string;
+  api_key_last4: string | null;
+  temperature: number;
+  max_tokens: number;
+  timeout_seconds: number;
+  is_active: boolean;
+  last_test_at: string | null;
+  last_test_ok: boolean | null;
+  last_test_detail: string | null;
+  source: 'profile' | 'platform';
+}
+
+export interface ProspectProviderTestResult {
+  ok: boolean;
+  latency_ms: number | null;
+  model: string | null;
+  detail: string;
+}
+
+export interface ProspectLeadBatchResult {
+  lead_id: string;
+  status: 'sent' | 'failed' | 'skipped';
+  message_id: string | null;
+  error: string | null;
+}
+
+export interface ProspectBatchSendResult {
+  batch_id: string;
+  requested: number;
+  sent: number;
+  failed: number;
+  results: ProspectLeadBatchResult[];
 }

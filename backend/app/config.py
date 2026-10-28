@@ -668,6 +668,16 @@ class Settings(BaseSettings):
         le=300,
         description="Per-request timeout (seconds) for LLM calls.",
     )
+    # ── Prospect AI outreach guardrails ─────────────────────────────────
+    PROSPECT_DAILY_SEND_CAP: int = Field(
+        default=20,
+        ge=1,
+        le=500,
+        description="Deliverability floor for AI prospecting sends: the "
+        "maximum drafts that may leave the system in one UTC day. A warm "
+        "sending domain earns its limits; cold outreach does not start at "
+        "bulk volume.",
+    )
 
     @field_validator("RELIASTRA_AI_ENDPOINT_URL")
     @classmethod

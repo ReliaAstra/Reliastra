@@ -203,6 +203,13 @@ jobs:
           # runs on - it only makes the MCP suite collectable here.
           pip install -e ".[dev,mcp]"
 
+      - name: Install Chromium for the evidence renderer
+        working-directory: backend
+        # The renderer falls back to xhtml2pdf when Chromium is absent or
+        # wedged (bounded by a 90s watchdog), but the artifact's provenance
+        # records the real renderer, so CI proves the primary path.
+        run: python -m playwright install --with-deps chromium
+
       - name: Pytest (unit + integration + e2e)
         working-directory: backend
         run: pytest -v --tb=short --maxfail=10
