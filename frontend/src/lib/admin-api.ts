@@ -39,6 +39,10 @@ import type {
   OutreachOverview,
   OutreachQaAnswer,
   OutreachDraft,
+  ProspectReport,
+  ProspectLead,
+  ProspectImportResult,
+  ProspectAiStatus,
   PartnerAdminListResponse,
   PartnerDetailResponse,
   PartnerStatsResponse,
@@ -559,6 +563,25 @@ export const adminApi = {
     html_body?: string;
     variables?: Record<string, string>;
   }) => request<EmailCenterRenderResponse>('/email-center/templates/render', { method: 'POST', body: data }),
+
+  /* ── Prospect AI ─────────────────────────────────────────────────── */
+
+  prospectAiStatus: () => request<ProspectAiStatus>('/prospect-ai/status'),
+  prospectAiReports: () => request<ProspectReport[]>('/prospect-ai/reports'),
+  prospectAiLeads: (params: QueryParams = {}) =>
+    request<ProspectLead[]>('/prospect-ai/leads', { params }),
+  prospectAiImport: (data: { filename: string; json_text: string; md_text?: string }) =>
+    request<ProspectImportResult>('/prospect-ai/import', { method: 'POST', body: data }),
+  prospectAiGenerate: (data: { lead_ids: string[]; tone?: string }) =>
+    request<ProspectLead[]>('/prospect-ai/generate', { method: 'POST', body: data }),
+  prospectAiReviewDraft: (
+    leadId: string,
+    data: { subject?: string; body_text?: string }
+  ) => request<ProspectLead>(`/prospect-ai/leads/${leadId}`, { method: 'PATCH', body: data }),
+  prospectAiSend: (leadId: string, data: { sender: string; reply_to?: string }) =>
+    request<ProspectLead>(`/prospect-ai/leads/${leadId}/send`, { method: 'POST', body: data }),
+  prospectAiDeleteReport: (reportId: string) =>
+    request<{ deleted: string }>(`/prospect-ai/reports/${reportId}`, { method: 'DELETE' }),
 };
 
 export function isAdminApiError(error: unknown): error is AdminApiError {

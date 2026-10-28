@@ -970,3 +970,55 @@ export interface EmailCenterRenderResponse {
   variables: string[];
   missing_variables: string[];
 }
+
+/* ── Prospect AI ──────────────────────────────────────────────────────── */
+
+export interface ProspectReport {
+  id: string;
+  title: string;
+  report_date: string | null;
+  source_filename: string;
+  prospect_count: number;
+  skipped_count: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ProspectLead {
+  id: string;
+  report_id: string;
+  rank: number | null;
+  company: string;
+  product: string | null;
+  website: string | null;
+  domain: string;
+  contact_name: string | null;
+  role: string | null;
+  contact_email: string | null;
+  pain_signal: string | null;
+  external_dependencies: string | null;
+  evidence: string | null;
+  why_reliastra_is_relevant: string | null;
+  outreach_hook: string | null;
+  verdict: string | null;
+  draft_subject: string | null;
+  draft_body: string | null;
+  draft_status: 'pending' | 'ready' | 'failed' | 'sent';
+  draft_error: string | null;
+  drafted_at: string | null;
+  sent_message_id: string | null;
+}
+
+export interface ProspectImportResult {
+  report: ProspectReport;
+  imported: number;
+  skipped: number;
+}
+
+export interface ProspectAiStatus {
+  ai_available: boolean;
+  model_name: string | null;
+  total_reports: number;
+  total_leads: number;
+  leads_by_status: Record<string, number>;
+}
