@@ -12,6 +12,14 @@ import { verifyAdminToken } from '@/lib/admin-token-verify';
 
 const BACKEND_URL = process.env.RELIASTRA_API_URL?.replace(/\/$/, '') || 'https://api.reliastra.com';
 
+// Ceiling for the generic admin proxy hop. Drafting is the slowest admin
+// route (two bounded LLM calls in the worst case); everything else answers
+// in well under a second. Kept below the platform's own request ceiling so a
+// genuinely stuck backend still fails visibly instead of hanging forever.
+const ADMIN_PROXY_TIMEOUT_MS = Number(
+  process.env.ADMIN_PROXY_TIMEOUT_MS ?? 180_000
+);
+
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -402,7 +410,14 @@ async function fetchBackend(
       method,
       headers,
       body: method !== 'GET' && method !== 'HEAD' ? await req.text() : undefined,
-      signal: AbortSignal.timeout(30_000),
+      // Admin routes are not all fast: Prospect AI drafting makes one or two
+      // LLM round-trips (a reasoning router can take 40-90s for a single
+      // call). A 30s ceiling aborted the proxy while the backend was still
+      // working, returned 502, and left the operator staring at "NO DRAFT"
+      // even though the draft landed a few seconds later. The backend bounds
+      // its own work (per-call timeout x bounded retries), so the proxy only
+      // needs a ceiling above that.
+      signal: AbortSignal.timeout(ADMIN_PROXY_TIMEOUT_MS),
       cache: 'no-store',
     });
   } catch {

@@ -119,6 +119,36 @@ def active_profile_source(profile: AIProviderProfile | None) -> str:
     return "profile" if profile is not None else "platform"
 
 
+async def resolve_drafting_models(db: AsyncSession) -> list[PlatformLLM]:
+    """Ordered drafting chain: saved profile first, platform config second.
+
+    The profile is the operator's explicit choice; the platform provider is
+    the safety net. A saved profile that is *configured* but broken (revoked
+    key, model retired, reasoning router returning no content, provider
+    outage) must not strand drafting - the chain is tried in order and the
+    first usable draft wins. Duplicates are collapsed so a profile that
+    already points at the platform endpoint is not called twice.
+    """
+    models: list[PlatformLLM] = []
+    profile = await get_active_profile(db)
+    if profile is not None:
+        llm = profile_to_llm(profile)
+        if llm.api_key:
+            models.append(llm)
+        else:
+            logger.warning(
+                "Active AI provider profile %s has no usable key - falling back "
+                "to platform config.", profile.id,
+            )
+    fallback = AIService.platform_model()
+    if fallback is not None and fallback.api_key and not any(
+        m.endpoint_url == fallback.endpoint_url and m.model_name == fallback.model_name
+        for m in models
+    ):
+        models.append(fallback)
+    return models
+
+
 async def save_profile(
     db: AsyncSession,
     *,

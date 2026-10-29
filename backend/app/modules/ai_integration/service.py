@@ -235,11 +235,41 @@ class AIService:
                 if isinstance(item, dict) and item.get("text")
             ) or None
         choices = data.get("choices") or []
-        return (
-            str(choices[0].get("message", {}).get("content"))
-            if choices
-            else None
-        )
+        if not choices:
+            return None
+        message = choices[0].get("message") or {}
+        content = message.get("content")
+        # Reasoning routers answer with `content: null` and spend the whole
+        # token budget on reasoning. `str(None)` used to turn that into the
+        # literal four-character reply "None", which then failed JSON parsing
+        # with a message that pointed at the parser instead of the model.
+        if isinstance(content, list):
+            content = "".join(
+                str(part.get("text", ""))
+                for part in content
+                if isinstance(part, dict) and part.get("text")
+            )
+        if not isinstance(content, str) or not content.strip():
+            return None
+        return content
+
+
+def _finish_reason(data: dict[str, Any]) -> str | None:
+    """Provider-neutral stop reason, for diagnosing empty completions."""
+    choices = data.get("choices") or []
+    if choices:
+        reason = choices[0].get("finish_reason")
+        if reason:
+            return str(reason)
+    stop = data.get("stop_reason")
+    if stop:
+        return str(stop)
+    candidates = data.get("candidates") or []
+    if candidates:
+        reason = candidates[0].get("finishReason")
+        if reason:
+            return str(reason)
+    return None
 
 
 ai_service = AIService()
@@ -291,7 +321,11 @@ async def call_llm(model: PlatformLLM, prompt: str) -> dict[str, Any]:
                     ).observe(elapsed)
                 except Exception:
                     pass
-                return {"text": text, "raw": data}
+                return {
+                    "text": text,
+                    "raw": data,
+                    "finish_reason": _finish_reason(data),
+                }
         except httpx.HTTPStatusError as exc:
             last_exc = exc
             status = exc.response.status_code if exc.response is not None else 0

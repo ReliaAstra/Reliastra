@@ -309,3 +309,162 @@ def test_build_send_request_with_template_renders_variables():
 def test_sends_remaining_today_counts_down_from_cap():
     assert sends_remaining_today(0) > 0
     assert sends_remaining_today(4) == max(0, sends_remaining_today(0) - 4)
+
+
+# ── LLM extraction and provider fallback ─────────────────────────────────
+
+
+def test_extract_returns_none_when_reasoning_router_sends_null_content():
+    from app.modules.ai_integration.service import AIService
+
+    data = {
+        "choices": [
+            {"message": {"content": None}, "finish_reason": "length"}
+        ]
+    }
+    # Regression: str(None) turned this into the literal reply "None", which
+    # surfaced as "reply was not usable JSON" instead of "no text returned".
+    assert AIService._extract("openai_compatible", data) is None
+
+
+def test_extract_joins_multipart_content():
+    from app.modules.ai_integration.service import AIService
+
+    data = {
+        "choices": [
+            {"message": {"content": [{"text": "a"}, {"text": "b"}]}}
+        ]
+    }
+    assert AIService._extract("openai_compatible", data) == "ab"
+
+
+def test_finish_reason_is_provider_neutral():
+    from app.modules.ai_integration.service import _finish_reason
+
+    assert _finish_reason({"choices": [{"finish_reason": "length"}]}) == "length"
+    assert _finish_reason({"stop_reason": "max_tokens"}) == "max_tokens"
+    assert _finish_reason({"candidates": [{"finishReason": "MAX_TOKENS"}]}) == "MAX_TOKENS"
+    assert _finish_reason({}) is None
+
+
+@pytest.mark.asyncio
+async def test_drafting_models_prefers_profile_and_appends_platform(monkeypatch):
+    from app.modules.ai_integration.service import PlatformLLM
+    from app.modules.prospect_ai import provider as provider_module
+
+    profile_llm = PlatformLLM(
+        provider_type="openai_compatible",
+        endpoint_url="https://primary.example/v1/chat/completions",
+        model_name="primary-model",
+        api_key="k1",
+        max_tokens=8192,
+        temperature=0.3,
+        timeout_seconds=60.0,
+    )
+    fallback_llm = PlatformLLM(
+        provider_type="openai_compatible",
+        endpoint_url="https://fallback.example/v1/chat/completions",
+        model_name="fallback-model",
+        api_key="k2",
+        max_tokens=4096,
+        temperature=0.3,
+        timeout_seconds=60.0,
+    )
+
+    async def fake_profile(db):
+        return object()
+
+    monkeypatch.setattr(provider_module, "get_active_profile", fake_profile)
+    monkeypatch.setattr(provider_module, "profile_to_llm", lambda profile: profile_llm)
+    monkeypatch.setattr(
+        provider_module.AIService, "platform_model", staticmethod(lambda: fallback_llm)
+    )
+
+    chain = await provider_module.resolve_drafting_models(db=None)
+    assert [m.model_name for m in chain] == ["primary-model", "fallback-model"]
+
+
+@pytest.mark.asyncio
+async def test_drafting_models_dedupes_platform_equal_to_profile(monkeypatch):
+    from app.modules.ai_integration.service import PlatformLLM
+    from app.modules.prospect_ai import provider as provider_module
+
+    same = PlatformLLM(
+        provider_type="openai_compatible",
+        endpoint_url="https://same.example/v1/chat/completions",
+        model_name="same-model",
+        api_key="k1",
+        max_tokens=8192,
+        temperature=0.3,
+        timeout_seconds=60.0,
+    )
+
+    async def fake_profile(db):
+        return object()
+
+    monkeypatch.setattr(provider_module, "get_active_profile", fake_profile)
+    monkeypatch.setattr(provider_module, "profile_to_llm", lambda profile: same)
+    monkeypatch.setattr(
+        provider_module.AIService, "platform_model", staticmethod(lambda: same)
+    )
+
+    chain = await provider_module.resolve_drafting_models(db=None)
+    assert len(chain) == 1
+
+
+@pytest.mark.asyncio
+async def test_draft_lead_falls_back_when_first_model_returns_no_text(
+    evidence_lead, monkeypatch
+):
+    """A reasoning router that returns content:null must not fail the lead
+    while a healthy provider is configured behind it."""
+    from app.modules.prospect_ai import service as service_module
+
+    good_draft = json.dumps(
+        {
+            "angle": "operator-burden",
+            "rejected_angles": [],
+            "subject": "Proof for upstream outages",
+            "body": (
+                "Your README documents a manual stripe fallback procedure, so "
+                "you already treat upstream failure as routine. RELIASTRA "
+                "probes those endpoints on a fixed cadence and records a "
+                "dropped probe instead of guessing."
+            ),
+        }
+    )
+
+    class FakeLLM:
+        def __init__(self, name):
+            self.model_name = name
+            self.provider_type = "openai_compatible"
+
+    async def fake_models(db):
+        return [FakeLLM("broken"), FakeLLM("healthy")]
+
+    calls: list[str] = []
+
+    async def fake_call_llm(model, prompt):
+        calls.append(model.model_name)
+        if model.model_name == "broken":
+            return {"text": None, "raw": {}, "finish_reason": "length"}
+        return {"text": good_draft, "raw": {}, "finish_reason": "stop"}
+
+    monkeypatch.setattr(
+        "app.modules.prospect_ai.provider.resolve_drafting_models", fake_models
+    )
+    monkeypatch.setattr(
+        "app.modules.ai_integration.service.call_llm", fake_call_llm
+    )
+
+    lead = evidence_lead
+    lead.draft_status = "pending"
+    lead = await service_module.draft_lead(lead, None, db=None)
+
+    # The healthy model may be called twice: once for the draft, once for the
+    # lint-informed retry. What matters is that the broken provider was
+    # skipped and the lead still ended up with a usable draft.
+    assert calls[0] == "broken"
+    assert "healthy" in calls
+    assert lead.draft_status == "ready"
+    assert lead.draft_subject == "Proof for upstream outages"

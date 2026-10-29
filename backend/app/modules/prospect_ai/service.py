@@ -175,46 +175,87 @@ async def draft_lead(
     """
     from app.modules.ai_integration.service import call_llm
     from app.modules.prospect_ai.drafting import build_prompt_v2, lint_draft, parse_v2
-    from app.modules.prospect_ai.provider import resolve_active_profile
+    from app.modules.prospect_ai.provider import resolve_drafting_models
 
-    model = await resolve_active_profile(db)
-    if model is None:
+    models = await resolve_drafting_models(db)
+    if not models:
         raise ValidationException(
             "No LLM available: no active AI provider profile and no "
             "RELIASTRA_AI_* platform configuration."
         )
 
-    async def call_model(prompt: str) -> dict[str, Any]:
-        return await call_llm(model, prompt)
+    def empty_reply_error(result: dict[str, Any]) -> str:
+        finish = result.get("finish_reason")
+        if finish == "length":
+            return (
+                "Model spent its whole token budget without answering "
+                f"(finish_reason={finish}). Raise max tokens on the profile "
+                "or pick a model that emits JSON instead of reasoning text."
+            )
+        suffix = f" (finish_reason={finish})" if finish else ""
+        return (
+            "Model returned no text"
+            f"{suffix}. Check the provider model name, quota and key."
+        )
 
-    try:
-        result = await call_model(build_prompt_v2(lead, tone))
-        parsed = parse_v2(result.get("text"))
-        lint_issues: list[str] = []
-        if parsed is not None:
+    # Walk the chain: the saved profile first, the platform provider second.
+    # A provider that errors, returns nothing, or returns something that is
+    # not a draft is a failed *attempt*, not a failed lead - the next model
+    # gets the same prompt. Only when every model has failed is the lead
+    # marked failed, and the last reason is what the reviewer sees.
+    parsed: dict[str, Any] | None = None
+    lint_issues: list[str] = []
+    last_error = "No model produced a draft."
+    for model in models:
+        try:
+            result = await call_llm(model, build_prompt_v2(lead, tone))
+            if not (result.get("text") or "").strip():
+                last_error = empty_reply_error(result)
+                logger.warning(
+                    "Prospect draft: %s/%s returned no text (%s)",
+                    model.provider_type, model.model_name, result.get("finish_reason"),
+                )
+                continue
+            parsed = parse_v2(result.get("text"))
+            if parsed is None:
+                last_error = (
+                    "Model reply was not usable JSON with subject/body "
+                    f"({model.model_name})."
+                )
+                logger.warning(
+                    "Prospect draft: %s/%s reply was not usable JSON",
+                    model.provider_type, model.model_name,
+                )
+                continue
             lint_issues, _warnings = lint_draft(parsed["subject"], parsed["body"], lead)
             if lint_issues:
-                result = await call_model(
-                    build_prompt_v2(lead, tone, lint_issues)
-                )
-                parsed = parse_v2(result.get("text"))
-                if parsed is not None:
+                retry = await call_llm(model, build_prompt_v2(lead, tone, lint_issues))
+                retried = parse_v2(retry.get("text"))
+                if retried is not None:
+                    parsed = retried
                     lint_issues, _warnings = lint_draft(
                         parsed["subject"], parsed["body"], lead
                     )
-    except ValidationException:
-        lead.draft_status = "failed"
-        lead.draft_error = "LLM endpoint failed safety validation"
-        raise
-    except Exception as exc:
-        logger.warning("Prospect draft failed for lead %s: %s", lead.id, exc)
-        lead.draft_status = "failed"
-        lead.draft_error = str(exc)[:1000]
-        return lead
+            break
+        except ValidationException as exc:
+            # Endpoint refused by the SSRF/safety boundary: a config error for
+            # this provider, not a reason to abandon the chain.
+            last_error = f"LLM endpoint failed safety validation: {exc}"
+            logger.warning("Prospect draft: %s rejected: %s", model.model_name, exc)
+            parsed = None
+            continue
+        except Exception as exc:
+            last_error = str(exc)[:1000]
+            logger.warning(
+                "Prospect draft failed for lead %s via %s: %s",
+                lead.id, model.model_name, exc,
+            )
+            parsed = None
+            continue
 
     if parsed is None:
         lead.draft_status = "failed"
-        lead.draft_error = "Model reply was not usable JSON with subject/body"
+        lead.draft_error = last_error
         return lead
     lead.draft_subject = parsed["subject"]
     lead.draft_body = parsed["body"]

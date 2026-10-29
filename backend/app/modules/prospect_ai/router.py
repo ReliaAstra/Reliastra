@@ -153,11 +153,16 @@ async def status(
 
     profile = await get_active_profile(db)
     model = await provider_layer.resolve_active_profile(db)
+    # Parenthesised deliberately: `.scalar()` binds to the coroutine unless the
+    # awaited Result is what it is called on, which raised AttributeError and
+    # took the whole status endpoint down with a 500.
     total_reports = int(
-        await db.execute(select(func.count()).select_from(ProspectReport)).scalar() or 0
+        (await db.execute(select(func.count()).select_from(ProspectReport))).scalar()
+        or 0
     )
     total_leads = int(
-        await db.execute(select(func.count()).select_from(ProspectLead)).scalar() or 0
+        (await db.execute(select(func.count()).select_from(ProspectLead))).scalar()
+        or 0
     )
     by_status_rows = (
         await db.execute(
