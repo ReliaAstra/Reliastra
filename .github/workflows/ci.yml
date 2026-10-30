@@ -29,7 +29,11 @@ jobs:
   # ─────────────────────────────────────────────────────────
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    # This job runs ruff, a full `npm ci` + lint + tsc + vitest, and a
+    # requirements install + alembic check. On a cold cache that is minutes of
+    # real work; at 10 minutes a slow dependency fetch killed the run, which
+    # in turn blocked `build` and skipped the production deploy.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,8 +60,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package.json
+          # No npm cache restore here. The 272 MB archive is the single
+          # largest thing this pipeline pulls, and when the account's cache
+          # egress is exhausted the restore does not fail fast - it sits at
+          # 0 bytes until the job timeout, which is how a cache problem
+          # stopped a production deploy. `npm ci` from the registry is
+          # deterministic and costs about a minute.
 
       - name: ESLint (frontend)
         working-directory: frontend
