@@ -133,7 +133,10 @@ class ProspectProviderConfig(BaseModel):
     model: str = Field(min_length=1, max_length=255)
     api_key: str | None = Field(default=None, max_length=4096)
     temperature: float = Field(default=0.3, ge=0.0, le=2.0)
-    max_tokens: int = Field(default=2048, ge=256, le=200_000)
+    # 4096 fits a full two-stage draft plus reasoning headroom on small models,
+    # and stays under the pre-auth ceiling that makes credit-less accounts
+    # return 402 before generating anything.
+    max_tokens: int = Field(default=4096, ge=256, le=200_000)
     timeout_seconds: float = Field(default=60.0, ge=5.0, le=300.0)
 
 
