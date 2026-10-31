@@ -528,3 +528,40 @@ def test_build_prompt_carries_report_date(evidence_lead):
     assert "collected on 2026-09-22" in prompt
     assert "never claim you 'saw' something 'yesterday'" in prompt
     assert "2026-09-22" not in build_prompt_v2(evidence_lead, None)
+
+
+def test_lint_bans_first_person_singular(evidence_lead):
+    """RELIASTRA speaks as an enterprise: 'we', never the singular."""
+    body = ("Dana - the Stripe checkout failed during your incident window "
+            "and nobody could tell which side broke. I keep watch on the "
+            "outside services so my team blames the right one. I've seen "
+            "that save weeks.\n\nWorth one look?")
+    hard, _ = lint_draft("Stripe checks your team can cite", body, evidence_lead)
+    singular = [i for i in hard if i.startswith("first-person-singular")]
+    assert len(singular) >= 3, singular
+    assert any("\u201cI\u201d" in i for i in singular)
+
+
+def test_lint_accepts_enterprise_voice_and_proper_nouns(evidence_lead):
+    """'We'/'our' is the voice, and brand names like MyCase are not the
+    singular hiding in a product name."""
+    body = ("Dana - your team was setting up manual checks when the Stripe "
+            "checkout failed and nobody could tell which side broke. Our "
+            "independent record names the side that broke, so the call "
+            "stops being a guess. MyCase users know that drill too.\n\n"
+            "Worth one look?")
+    hard, _ = lint_draft("Stripe checks your team can cite", body, evidence_lead)
+    assert not any(
+        "first-person-singular" in issue for issue in hard
+    ), hard
+
+
+def test_build_prompt_is_enterprise_voice(evidence_lead):
+    prompt = build_prompt_v2(evidence_lead, None, report_date="2026-09-22")
+    assert "You write first-touch emails for RELIASTRA" in prompt
+    assert 'The singular "I" never appears' in prompt
+    assert "any first-person singular" in prompt
+    assert '"we", "our"' in prompt
+    # The founder persona is gone, not just soft-pedalled.
+    assert "Emmanuel" not in prompt
+    assert "first person singular throughout" not in prompt
