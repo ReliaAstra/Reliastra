@@ -173,8 +173,11 @@ async def draft_lead(
     gets exactly one more attempt. A second failure records every issue -
     a failed draft is data, not a silent skip.
     """
+    from sqlalchemy import select
+
     from app.modules.ai_integration.service import call_llm
     from app.modules.prospect_ai.drafting import build_prompt_v2, lint_draft, parse_v2
+    from app.modules.prospect_ai.models import ProspectReport
     from app.modules.prospect_ai.provider import resolve_drafting_models
 
     models = await resolve_drafting_models(db)
@@ -183,6 +186,20 @@ async def draft_lead(
             "No LLM available: no active AI provider profile and no "
             "RELIASTRA_AI_* platform configuration."
         )
+
+    # When the evidence was collected matters: a model told nothing about
+    # age invents "saw your launch yesterday" hooks. The report date gives
+    # the prompt an honest anchor for what the email may and may not
+    # reference as fresh.
+    report_date: str | None = None
+    if db is not None and lead.report_id is not None:
+        report_date = (
+            await db.execute(
+                select(ProspectReport.report_date).where(
+                    ProspectReport.id == lead.report_id
+                )
+            )
+        ).scalar_one_or_none()
 
     def empty_reply_error(result: dict[str, Any]) -> str:
         finish = result.get("finish_reason")
@@ -208,7 +225,9 @@ async def draft_lead(
     last_error = "No model produced a draft."
     for model in models:
         try:
-            result = await call_llm(model, build_prompt_v2(lead, tone))
+            result = await call_llm(
+                model, build_prompt_v2(lead, tone, report_date=report_date)
+            )
             if not (result.get("text") or "").strip():
                 last_error = empty_reply_error(result)
                 logger.warning(
@@ -341,7 +360,6 @@ def _daily_send_cap() -> int:
 async def count_sent_today(db: Any) -> int:
     """Drafts sent since local midnight UTC."""
     from sqlalchemy import func, select
-
     midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     rows = await db.execute(
         select(func.count()).select_from(ProspectLead).where(

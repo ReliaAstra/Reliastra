@@ -99,6 +99,18 @@ NON_ASCII_DASH_RE = re.compile(
     "]"
 )
 
+# Recency the model asserts without knowing it. The research predates the
+# email, sometimes by weeks; "congrats on the launch yesterday" is a
+# fabricated hook, and a prospect who launched a month ago reads it as the
+# sender not doing their homework. Relative-time claims are allowed only
+# when the evidence itself carries the date.
+FRESHNESS_RE = re.compile(
+    r"\b(yesterday|tonight|just\s+(launched|shipped|shipped out|released|announced|went\s+live|published)|"
+    r"(this|last)\s+(morning|afternoon|evening|week|month)|recently\s+(launched|shipped|released)|"
+    r"fresh\s+off|i\s+saw\s+you\s+launched|days\s+ago|hours\s+ago)\b",
+    re.IGNORECASE,
+)
+
 STOCK_PHRASES = (
     "i hope this finds you well",
     "i hope this email finds you",
@@ -195,6 +207,16 @@ def lint_draft(
         if phrase in lowered:
             hard.append(f"stock-phrase: \u201c{phrase}\u201d")
 
+    # The research snapshot predates the draft, sometimes by weeks. A date
+    # recency the model invented is a factual error a prospect instantly
+    # notices, so it is a hard regenerate.
+    for match in FRESHNESS_RE.finditer(text):
+        hit = match.group(0)
+        hard.append(
+            f"stale-recency: \u201c{hit}\u201d - the research predates this email, "
+            "possibly by weeks; do not assert recency the evidence does not state."
+        )
+
     subject_clean = subject.strip()
     if len(subject_clean) > 45:
         hard.append(f"subject-length: {len(subject_clean)} chars (max 45).")
@@ -258,7 +280,10 @@ RETRY_INSTRUCTION = (
 
 
 def build_prompt_v2(
-    lead: ProspectLead, tone: str | None, lint_issues: list[str] | None = None
+    lead: ProspectLead,
+    tone: str | None,
+    lint_issues: list[str] | None = None,
+    report_date: str | None = None,
 ) -> str:
     """The v2 drafting prompt: persona, brief, angle reasoning, output contract."""
     evidence = LeadEvidence(
@@ -274,6 +299,7 @@ def build_prompt_v2(
         why_reliastra_is_relevant=lead.why_reliastra_is_relevant,
         outreach_hook=lead.outreach_hook,
         verdict=lead.verdict,
+        report_date=report_date,
     )
     evidence_json = json_dumps(evidence.model_dump())
     angles = "\n".join(
@@ -288,7 +314,18 @@ def build_prompt_v2(
     if lint_issues:
         lint_block = RETRY_INSTRUCTION.format(issues="\n".join(f"- {i}" for i in lint_issues))
 
-    return f"""You are a senior sales engineer writing ONE first-touch cold email, by hand, to one technical human at a company, based on a research report written beforehand.
+    age_line = (
+        f"\nEvidence age: this research was collected on {report_date}. "
+        "Whatever the date, it may be days or weeks before you write. Treat "
+        "every item as context you already know, never as breaking news: "
+        "never claim you 'saw' something 'yesterday', that something 'just "
+        "launched', 'just shipped', or happened 'this week' or 'recently' "
+        "unless the evidence itself says so. Timelessness is required - their "
+        "issue #3906 or their README is a fact, not a headline.\n"
+        ""
+    ) if report_date else "\nEvidence age: the research predates your writing, possibly by weeks - same rule: never assert freshness ('yesterday', 'just launched', 'recently').\n"
+
+    return f"""You are Emmanuel, founder of RELIASTRA, the engineer who built it and carries its pager in person. Write ONE first-touch cold email, by hand, from your own personal address to one technical human at one company. Voice: first person singular throughout - "I built", "I keep watch", "I can show you". Never "we", never a company voice, never sales-team framing. The pipeline appends your name and signature; do not sign.
 
 Buyer knowledge - RELIASTRA, the product you sell:
 {RELIASTRA_BRIEF}
@@ -314,6 +351,7 @@ Output - ONLY this JSON object, nothing else:
 
 Prospect evidence (the ONLY facts you may use):
 {evidence_json}
+{age_line}
 {lint_block}"""
 
 

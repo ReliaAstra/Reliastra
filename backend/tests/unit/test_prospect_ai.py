@@ -205,7 +205,7 @@ def test_lint_rejects_en_dash(evidence_lead):
 
 
 def test_lint_accepts_ascii_hyphen(evidence_lead):
-    body = ("Dana - last month your team was setting up manual checks "
+    body = ("Dana - your team was setting up manual checks "
             "when the Stripe checkout failed and nobody could tell "
             "which side broke. That call takes a guess today.\n\n"
             "Worth one look?")
@@ -508,3 +508,23 @@ def test_lint_catches_non_ascii_lookalike_hyphens(evidence_lead):
     hard, _ = lint_draft("deposit failures need clarity", body, evidence_lead)
     assert any("banned-dash" in issue for issue in hard)
     assert "U+2011" in next(i for i in hard if "banned-dash" in i)
+
+
+def test_lint_bans_fabricated_recency(evidence_lead):
+    """The snapshot predates the draft; 'saw you launched yesterday' is a
+    hallucinated hook a prospect reads as the sender not doing homework."""
+    body = ("Stripe stalled a deposit and the team could not tell whose "
+            "fault it was. RELIASTRA names the side that broke.\n\nWant "
+            "the two-minute version?")
+    stale = "Congrats on launching yesterday! " + body
+    hard, _ = lint_draft("binding uptime questions", stale, evidence_lead)
+    assert any("stale-recency" in issue for issue in hard)
+    hard_ok, _ = lint_draft("binding uptime questions", body, evidence_lead)
+    assert not any("stale-recency" in issue for issue in hard_ok)
+
+
+def test_build_prompt_carries_report_date(evidence_lead):
+    prompt = build_prompt_v2(evidence_lead, None, report_date="2026-09-22")
+    assert "collected on 2026-09-22" in prompt
+    assert "never claim you 'saw' something 'yesterday'" in prompt
+    assert "2026-09-22" not in build_prompt_v2(evidence_lead, None)

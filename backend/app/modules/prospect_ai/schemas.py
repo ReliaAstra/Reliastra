@@ -209,4 +209,5 @@ class LeadEvidence(BaseModel):
     why_reliastra_is_relevant: str | None = None
     outreach_hook: str | None = None
     verdict: str | None = None
+    report_date: str | None = None
     notes: dict[str, Any] | None = None
