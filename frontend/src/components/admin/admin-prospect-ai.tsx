@@ -669,8 +669,12 @@ function LeadTable({
         </thead>
         <tbody>
           {leads.map((lead) => (
-            <tr key={lead.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70 dark:border-white/10 dark:hover:bg-white/[0.03]">
-              <td className="px-4 py-3">
+            <tr
+              key={lead.id}
+              onClick={() => onSelect(lead)}
+              className="cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50/70 dark:border-white/10 dark:hover:bg-white/[0.03]"
+            >
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   checked={checkedIds.has(lead.id)}
