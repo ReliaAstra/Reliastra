@@ -191,7 +191,7 @@ def test_lint_rejects_em_dash_explicitly(evidence_lead):
             "an incident, recoveries close it, each verdict carries a "
             "checksum your team verifies in one command.\n\nWorth one look?")
     hard, _ = lint_draft("who owns the fallback here's a note \u2014 ok", body, evidence_lead)
-    assert any("em dash" in issue for issue in hard)
+    assert any("banned-dash" in issue for issue in hard)
 
 
 def test_lint_rejects_en_dash(evidence_lead):
@@ -201,7 +201,7 @@ def test_lint_rejects_en_dash(evidence_lead):
             "ships with a verifiable checksum your team can run.\n\n"
             "Worth one look?")
     hard, _ = lint_draft("who owns the stripe fallback \u2013 short", body, evidence_lead)
-    assert any("en dash" in issue for issue in hard)
+    assert any("banned-dash" in issue for issue in hard)
 
 
 def test_lint_accepts_ascii_hyphen(evidence_lead):
@@ -496,3 +496,15 @@ def test_lint_enforces_six_word_subject(evidence_lead):
         "one two three four five six seven", body, evidence_lead
     )
     assert any("subject-words" in issue for issue in hard)
+
+
+def test_lint_catches_non_ascii_lookalike_hyphens(evidence_lead):
+    """U+2011 rode through the em/en dash ban into two live drafts
+    ('two-minute', 'third-party'). Every non-ASCII dash glyph is a hard
+    issue, whatever codepoint it uses."""
+    body = ("Stripe stalled a deposit and the team could not tell whether "
+            "the fault sat inside or outside your own code.\n\nWant the "
+            "two\u2011minute version?")
+    hard, _ = lint_draft("deposit failures need clarity", body, evidence_lead)
+    assert any("banned-dash" in issue for issue in hard)
+    assert "U+2011" in next(i for i in hard if "banned-dash" in i)

@@ -87,10 +87,17 @@ ANGLE_ARCHETYPES: list[AngleArchetype] = [
 
 _SENTENCE_END = re.compile(r"[.!?]")
 _WORD = re.compile(r"[A-Za-z][A-Za-z0-9'-]*")
-# Dashes banned in prose: em dash, en dash, horizontal bar. A plain ASCII
-# hyphen-minus is legitimate craft; the typographic long dashes are the
-# signature of an LLM drafting into a word processor's habits.
-BANNED_DASHES = {"\u2014", "\u2013", "\u2015", "\u2212"}
+# Dashes banned in prose: em dash, en dash, horizontal bar, minus sign, and
+# every lookalike the model has substituted - soft hyphen, U+2010/2011/2012,
+# fullwidth hyphen. A plain ASCII hyphen-minus is legitimate craft; the rest
+# are the residue of an LLM drafting into a word processor's habits. They
+# survive a copy-paste into mail clients and render differently per font.
+NON_ASCII_DASH_RE = re.compile(
+    "["
+    "\u00ad\u1806\u2010\u2011\u2012\u2013\u2014\u2015"
+    "\u2212\u2e3a\u2e3b\ufe58\ufe63\uff0d"
+    "]"
+)
 
 STOCK_PHRASES = (
     "i hope this finds you well",
@@ -176,13 +183,12 @@ def lint_draft(
     warnings: list[str] = []
     text = f"{subject}\n{body}"
 
-    for symbol in BANNED_DASHES:
-        if symbol in text:
-            name = {"\u2014": "em dash", "\u2013": "en dash", "\u2015": "horizontal bar", "\u2212": "minus sign"}[symbol]
-            hard.append(
-                f"banned-dash:{name} - replace every {name} (U+{ord(symbol):04X}) "
-                "with an ASCII hyphen or rephrase."
-            )
+    for match in NON_ASCII_DASH_RE.finditer(text):
+        symbol = match.group(0)
+        hard.append(
+            f"banned-dash:{symbol!r} - a non-ASCII dash (U+{ord(symbol):04X}) "
+            "appeared in the draft. Replace it with an ASCII hyphen or rephrase."
+        )
 
     lowered = text.lower()
     for phrase in STOCK_PHRASES:
