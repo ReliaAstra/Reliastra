@@ -1,7 +1,8 @@
 """Prospect AI drafting v2: two-stage reasoning, anti-generic lint.
 
-The persona is a senior sales engineer who has actually read the research
-report. The prompt forces the model to argue for an angle *and* against
+The sender is RELIASTRA the company, in an enterprise voice: institutional
+and precise, first-person plural where a pronoun is needed. The prompt
+forces the model to argue for an angle *and* against
 the alternatives before it writes a word - a draft that cannot defend its
 angle choice is, in practice, a template with tokens, and this module is
 built to make that outcome fail a gate instead of reaching an inbox.
@@ -111,6 +112,20 @@ FRESHNESS_RE = re.compile(
     re.IGNORECASE,
 )
 
+# RELIASTRA writes as an enterprise, so the email carries the company voice:
+# first-person plural at most. The singular is banned outright (case-
+# sensitive so the prose token "i.e." is never a false positive), including
+# contractions and possessives. A draft that says "I" is not a style
+# problem, it is the wrong sender.
+FIRST_PERSON_SINGULAR_RE = re.compile(
+    r"(?<![A-Za-z])(?:"
+    r"I['\u2018\u2019](?:m|ve|d|ll)"
+    r"|I"
+    r"|Me|Myself|Mine|My"
+    r"|me|myself|mine|my"
+    r")(?![A-Za-z])"
+)
+
 STOCK_PHRASES = (
     "i hope this finds you well",
     "i hope this email finds you",
@@ -217,6 +232,15 @@ def lint_draft(
             "possibly by weeks; do not assert recency the evidence does not state."
         )
 
+    # The enterprise voice: this email goes out from RELIASTRA the company,
+    # so the singular is the wrong sender, not a style preference.
+    for match in FIRST_PERSON_SINGULAR_RE.finditer(text):
+        hit = match.group(0)
+        hard.append(
+            f"first-person-singular: \u201c{hit}\u201d - RELIASTRA writes as an "
+            "enterprise; speak as 'we' or the product, never 'I'/'my'."
+        )
+
     subject_clean = subject.strip()
     if len(subject_clean) > 45:
         hard.append(f"subject-length: {len(subject_clean)} chars (max 45).")
@@ -273,8 +297,10 @@ RETRY_INSTRUCTION = (
     "Your previous draft failed the deterministic lint. Regenerate it from "
     "the same evidence, fixing ONLY these issues:\n{issues}\n\n"
     "Rules that do not change: em dashes and en dashes are banned - use "
-    "plain ASCII hyphens; no stock outreach phrases; subject under 60 "
-    "characters; body 40-140 words, at most 3 paragraphs; at least one "
+    "plain ASCII hyphens; no stock outreach phrases; no first-person "
+    "singular (I/I'm/my/mine) - RELIASTRA speaks as an enterprise, 'we' "
+    "only; subject at most 45 characters and 6 words; body 30-60 words, "
+    "at most 2 short paragraphs plus the closing question; at least one "
     "concrete detail from the evidence must appear in the body."
 )
 
@@ -325,12 +351,12 @@ def build_prompt_v2(
         ""
     ) if report_date else "\nEvidence age: the research predates your writing, possibly by weeks - same rule: never assert freshness ('yesterday', 'just launched', 'recently').\n"
 
-    return f"""You are Emmanuel, founder of RELIASTRA, the engineer who built it and carries its pager in person. Write ONE first-touch cold email, by hand, from your own personal address to one technical human at one company. Voice: first person singular throughout - "I built", "I keep watch", "I can show you". Never "we", never a company voice, never sales-team framing. The pipeline appends your name and signature; do not sign.
+    return f"""You write first-touch emails for RELIASTRA, an enterprise infrastructure-intelligence company. Write ONE first-touch cold email, on the company's behalf, from the company's address, to one technical human at one company. Voice: enterprise throughout - institutional, calm, authoritative, first-person plural ("we", "our") where a pronoun is needed. The singular "I" never appears: no "I built", no "I can show you", no founder anecdotes, no personal asides - the company speaks, and it speaks with enterprise confidence. Never carry-the-pager or personal-story framing. The pipeline appends the sign-off; do not sign.
 
 Buyer knowledge - RELIASTRA, the product you sell:
 {RELIASTRA_BRIEF}
 
-Why you sell it well: you have personally carried a pager for third-party dependencies. You know the specific humiliation of "our app is down" when the truth is "Stripe's API is down for everyone and we had no way to prove it in the moment". You under-promise, show mechanism instead of adjectives, and you would rather a prospect reply "not now, this is sharp" than a vague "circle back later".
+Why RELIASTRA earns the reply: the company shows mechanism instead of adjectives, under-promises, and speaks from an evidence record rather than a sales script. A draft that reads like a template costs the company credibility; a draft a prospect answers with "not now, this is sharp" is a win.
 
 Angle selection - reason first:
 {angles}
@@ -342,7 +368,7 @@ Stage 2: write the email. Mechanics of a great first-touch cold email:
 - One plain sentence about what RELIASTRA does: it watches the outside services a product depends on and, when something stops working, says whether the fault is theirs or inside their own system. That is the whole pitch. Skip the methodology: the words endpoint, probe, payload, webhook, cadence, consecutive, checksum, signature, SHA, Ed25519, incident, ingest, deterministic, and verdict never appear in a first touch - the closing question can offer to explain the mechanism if they ask, and the reply does that.
 - One low-pressure, specific call to action as a short question (e.g. "want the two-minute version of how it works?"), never "15 minutes to pick your brain".
 - {tone_line}
-- Hard bans: em dash (U+2014), en dash (U+2013), any long typographic dash - use ASCII hyphens only; stock phrases like "I hope this finds you well" or "wanted to reach out"; invented metrics, incidents, customers, or vendor claims; emoji; signature block (the pipeline appends one).
+- Hard bans: em dash (U+2014), en dash (U+2013), any long typographic dash - use ASCII hyphens only; stock phrases like "wanted to reach out"; any first-person singular ("I", "I'm", "my", "mine") - "we" and "our" only; invented metrics, incidents, customers, or vendor claims; emoji; signature block (the pipeline appends one).
 - subject: under 45 characters, at most 6 words, a plain statement - not clickbait, not a question mark hook, no product name.
 - body: plain text, 30-60 words total, at most 2 short paragraphs and the closing question on its own line - three beats, no more: their situation, the one-sentence RELIASTRA line, the question. Short BEATS precise: if detail competes with brevity, cut the detail. Never generic - if you cannot anchor the opener in this evidence, make it shorter and sharper, not vaguer.
 
