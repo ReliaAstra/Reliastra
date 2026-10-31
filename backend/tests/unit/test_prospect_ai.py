@@ -205,12 +205,11 @@ def test_lint_rejects_en_dash(evidence_lead):
 
 
 def test_lint_accepts_ascii_hyphen(evidence_lead):
-    body = ("Dana - attributing checkout failures between your code and "
-            "Stripe is exactly the gap we close: two consecutive failures "
-            "open an incident, two recoveries close it, and every verdict "
-            "ships with a verifiable checksum your team can run.\n\n"
+    body = ("Dana - last month your team was setting up manual checks "
+            "when the Stripe checkout failed and nobody could tell "
+            "which side broke. That call takes a guess today.\n\n"
             "Worth one look?")
-    hard, _ = lint_draft("who owns the stripe fallback - short", body, evidence_lead)
+    hard, _ = lint_draft("who gets the blame", body, evidence_lead)
     assert hard == []
 
 
@@ -468,3 +467,32 @@ async def test_draft_lead_falls_back_when_first_model_returns_no_text(
     assert "healthy" in calls
     assert lead.draft_status == "ready"
     assert lead.draft_subject == "Proof for upstream outages"
+
+
+def test_lint_bans_mechanism_jargon(evidence_lead):
+    body = ("Stripe going down looks identical to your own checkout code "
+            "failing. RELIASTRA watches the services you depend on and "
+            "names the one that broke.\n\nWant the two-minute version?")
+    jargony = body.replace("names the one that broke", "probes each endpoint on a cadence")
+    hard, _ = lint_draft("who gets the blame, Stripe or your code", jargony, evidence_lead)
+    assert any("technical-jargon" in issue for issue in hard)
+    hard_ok, _ = lint_draft("who gets the blame, Stripe or your code", body, evidence_lead)
+    assert not any("technical-jargon" in issue for issue in hard_ok)
+
+
+def test_lint_enforces_sixty_word_body(evidence_lead):
+    anchor = evidence_lead.pain_signal or ""
+    assert anchor
+    body = " ".join(f"word{index}" for index in range(61))
+    anchored = f"{anchor}. {body}"[:800]
+    hard, _ = lint_draft("stripe or your code", anchored, evidence_lead)
+    assert any("body-length" in issue for issue in hard)
+
+
+def test_lint_enforces_six_word_subject(evidence_lead):
+    body = ("Stripe went down and it looked like your bug. RELIASTRA "
+            "names the side that broke.\n\nWant the two-minute version?")
+    hard, _ = lint_draft(
+        "one two three four five six seven", body, evidence_lead
+    )
+    assert any("subject-words" in issue for issue in hard)
