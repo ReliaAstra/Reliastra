@@ -151,6 +151,18 @@ def evidence_tokens(lead: ProspectLead | LeadEvidence) -> set[str]:
     return out
 
 
+# Jargon that should never appear in a first-touch cold email. The product's
+# mechanism is real and explained on reply; the OPEN reads as a vendor email
+# the moment these words show up. Kept to terms a founder never uses about
+# their own business.
+TECH_EMAIL_TERMS = re.compile(
+    r"\b(endpoint|endpoints|probe|probes|probing|payload|payloads|webhook|webhooks|"
+    r"cadence|consecutive|checksum|checksums|sha-256|sha256|ed25519|signature|"
+    r"signatures|incident|incidents|ingest|idempotency|deterministic|verdict|verdicts)\b",
+    re.IGNORECASE,
+)
+
+
 def lint_draft(
     subject: str, body: str, lead: ProspectLead | LeadEvidence
 ) -> tuple[list[str], list[str]]:
@@ -178,17 +190,29 @@ def lint_draft(
             hard.append(f"stock-phrase: \u201c{phrase}\u201d")
 
     subject_clean = subject.strip()
-    if len(subject_clean) > 60:
-        hard.append(f"subject-length: {len(subject_clean)} chars (max 60).")
+    if len(subject_clean) > 45:
+        hard.append(f"subject-length: {len(subject_clean)} chars (max 45).")
+    subject_words = len(subject_clean.split())
+    if subject_words > 6:
+        hard.append(f"subject-words: {subject_words} (max 6).")
     if subject_clean.endswith(("!", "?")) or subject_clean.isupper():
         warnings.append("subject tone reads like marketing copy.")
 
+    # The first touch sells the conversation, not the architecture. A
+    # methodology term here makes the email read like a vendor doc.
+    for match in TECH_EMAIL_TERMS.finditer(text):
+        term = match.group(0)
+        hard.append(
+            f"technical-jargon: \u201c{term}\u201d - rewrite in plain words; "
+            "the mechanism is explained on reply, not in the first touch."
+        )
+
     words = body.split()
-    if len(words) > 140:
-        hard.append(f"body-length: {len(words)} words (max 140).")
-    if len(words) < 40:
-        hard.append(f"body-length: {len(words)} words - too thin to be substantial "
-                    "(40-140 required).")
+    if len(words) > 60:
+        hard.append(f"body-length: {len(words)} words (max 60).")
+    if len(words) < 30:
+        hard.append(f"body-length: {len(words)} words - thin for 3 beats "
+                    "(30-60 required).")
 
     paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
     if len(paragraphs) > 3:
@@ -270,14 +294,14 @@ Angle selection - reason first:
 
 Stage 1 (this reasoning goes in your output): pick ONE angle and reject the others, saying what only you know from this evidence - not generic reasons.
 
-Stage 2: write the email. Mechanics of a great cold technical email:
-- Open with THEIR situation - a paraphrase of the strongest concrete evidence item (at most 1-2 details; a quote-like paraphrase of their own engineering posture is more credible than any product claim).
-- One mechanism paragraph: deterministic confirmation (2 failures open / 2 recoveries close), dropped probes recorded, verifiable evidence with checksums and a signature. Explain like an engineer, in their vocabulary. If the evidence contains their dependency names, use them.
-- One low-pressure, specific call to action (e.g. "want the methodology write-up?" or a short question), never "15 minutes to pick your brain".
+Stage 2: write the email. Mechanics of a great first-touch cold email:
+- Open with THEIR situation - a paraphrase of the strongest concrete evidence item (at most 1 detail; a quote-like paraphrase of their own engineering posture is more credible than any product claim).
+- One plain sentence about what RELIASTRA does: it watches the outside services a product depends on and, when something stops working, says whether the fault is theirs or inside their own system. That is the whole pitch. Skip the methodology: the words endpoint, probe, payload, webhook, cadence, consecutive, checksum, signature, SHA, Ed25519, incident, ingest, deterministic, and verdict never appear in a first touch - the closing question can offer to explain the mechanism if they ask, and the reply does that.
+- One low-pressure, specific call to action as a short question (e.g. "want the two-minute version of how it works?"), never "15 minutes to pick your brain".
 - {tone_line}
 - Hard bans: em dash (U+2014), en dash (U+2013), any long typographic dash - use ASCII hyphens only; stock phrases like "I hope this finds you well" or "wanted to reach out"; invented metrics, incidents, customers, or vendor claims; emoji; signature block (the pipeline appends one).
-- subject: under 60 characters, no clickbait.
-- body: plain text, 40-140 words, max 3 paragraphs, never generic - if you cannot anchor it in this evidence, make it shorter and sharper, not vaguer.
+- subject: under 45 characters, at most 6 words, a plain statement - not clickbait, not a question mark hook, no product name.
+- body: plain text, 30-60 words total, at most 2 short paragraphs and the closing question on its own line - three beats, no more: their situation, the one-sentence RELIASTRA line, the question. Short BEATS precise: if detail competes with brevity, cut the detail. Never generic - if you cannot anchor the opener in this evidence, make it shorter and sharper, not vaguer.
 
 Output - ONLY this JSON object, nothing else:
 {{"angle": "<archetype id>", "rejected_angles": [{{"angle": "<id>", "why_not": "<evidence-specific reason>"}} for the other three], "subject": "<subject>", "body": "<body>"}}
